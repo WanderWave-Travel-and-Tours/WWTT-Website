@@ -1,13 +1,11 @@
 const axios = require('axios');
 
-// Search Flights using Aviationstack
 exports.searchFlights = async (req, res) => {
   try {
     const { origin, destination, departureDate } = req.query;
 
     console.log('Aviationstack search params:', { origin, destination, departureDate });
 
-    // Validate inputs
     if (!origin || !destination) {
       return res.status(400).json({
         success: false,
@@ -15,7 +13,6 @@ exports.searchFlights = async (req, res) => {
       });
     }
 
-    // Aviationstack API endpoint
     const apiUrl = 'http://api.aviationstack.com/v1/flights';
     
     const params = {
@@ -31,7 +28,6 @@ exports.searchFlights = async (req, res) => {
 
     console.log('Aviationstack raw response:', JSON.stringify(response.data, null, 2));
 
-    // Check if API returned data
     if (!response.data.data || response.data.data.length === 0) {
       return res.json({
         success: true,
@@ -41,7 +37,6 @@ exports.searchFlights = async (req, res) => {
       });
     }
 
-    // Format response for frontend
     const flights = response.data.data.map(flight => ({
       id: flight.flight.iata,
       airline: {
@@ -108,7 +103,6 @@ exports.searchFlights = async (req, res) => {
   }
 };
 
-// Helper function to calculate flight duration
 function calculateDuration(departureTime, arrivalTime) {
   try {
     const dept = new Date(departureTime);
