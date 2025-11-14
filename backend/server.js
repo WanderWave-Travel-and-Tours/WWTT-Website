@@ -10,6 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+const flightRoutes = require('./routes/flightRoute');
+app.use('/api/flights', flightRoutes);
+
 app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
 });
