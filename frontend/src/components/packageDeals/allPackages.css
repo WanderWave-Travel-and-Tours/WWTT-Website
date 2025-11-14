@@ -1,0 +1,130 @@
+
+
+.all-packages-section {
+  margin-bottom: 48px;
+}
+
+.packages-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.packages-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--primary-navy);
+}
+
+.packages-count {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.scope-filter-container {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0; 
+}
+
+.scope-filter-btn {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.scope-filter-btn:hover {
+  background-color: var(--gray-100);
+  border-color: var(--gray-500);
+}
+
+.scope-filter-btn.active {
+  background-color: var(--primary-navy);
+  color: var(--white);
+  border-color: var(--primary-navy);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-section {
+  position: relative;
+  z-index: 10;
+  width: 100%; 
+  max-width: 400px; 
+}
+.search-wrapper {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s;
+}
+
+.search-wrapper:focus-within {
+  border-color: var(--primary-orange);
+  box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.1);
+}
+
+.search-icon {
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  color: var(--gray-900);
+}
+
+.search-input::placeholder {
+  color: var(--gray-400);
+}
+
+/* --- Bagong Style para sa Filter Bar --- */
+.filter-bar-container {
+  display: flex;
+  justify-content: space-between; /* Ito ang magic: pinaghihiwalay ang items */
+  align-items: center;
+  margin-bottom: 24px; /* Space bago ang package grid */
+  gap: 24px; /* Space para 'pag nag-wrap sa mobile */
+}
+/* --- End Scope Filter --- */
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .packages-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .packages-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .packages-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
