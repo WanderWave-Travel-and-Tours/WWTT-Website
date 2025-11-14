@@ -34,7 +34,7 @@ function PackageDeals() {
       name: 'Coron', 
       subtitle: 'Palawan, Philippines',
       scope: 'local',
-      image: 'https://images.unsplash.com/photo-1572282243282-b18f8c89cfa6?q=80&w=1974&auto=format&fit=crop'
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69115096d1ba951da7e80a51.jpg'
     },
     { 
       id: 'elnido', 
@@ -48,42 +48,42 @@ function PackageDeals() {
       name: 'Puerto Princesa', 
       subtitle: 'Palawan, Philippines',
       scope: 'local',
-      image: 'https://images.unsplash.com/photo-1547400033-69d3ea0a8e31?q=80&w=1935&auto=format&fit=crop'
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911846fd1ba953d5fef7768.jpg'
     },
     { 
       id: 'siquijor', 
       name: 'Siquijor', 
       subtitle: 'Philippines',
       scope: 'local',
-      image: 'https://images.unsplash.com/photo-1627885440781-7e81b6c3b652?q=80&w=1931&auto=format=fit=crop'
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911839bdaa4e34e3efada04.jpg'
     },
     { 
       id: 'hongkong', 
       name: 'Hong Kong Disneyland', 
       subtitle: 'Hong Kong',
       scope: 'international',
-      image: 'https://images.unsplash.com/photo-1563969018-a6878239e553?q=80&w=1932&auto=format&fit=crop' 
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69118686c3a1eafb4f245065.jpg' 
     },
     { 
       id: 'bangkok', 
       name: 'Bangkok', 
       subtitle: 'Thailand',
       scope: 'international',
-      image: 'https://images.unsplash.com/photo-1505030419235-e3b963107026?q=80&w=1974&auto=format&fit=crop' 
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69171615ac7fad32f8341f78.jpg' 
     },
     { 
       id: 'hanoi', 
       name: 'Hanoi', 
       subtitle: 'Vietnam',
       scope: 'international',
-      image: 'https://images.unsplash.com/photo-1555923304-629c424a1b02?q=80&w=1935&auto=format&fit=crop' 
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911855175ec1e9b374b5977.jpg' 
     },
     { 
       id: 'japan', 
       name: 'Japan', // Pwede mong palitan ng 'Tokyo' if specific
       subtitle: 'Japan',
       scope: 'international',
-      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6916db176c431e3bb8b83e16.jpg' 
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6917166d01e5bcc9cd11a103.jpg' 
     },
     // IDAGDAG MO PA RIN YUNG 'all' PARA SA RESETTING
     { 
@@ -97,10 +97,6 @@ function PackageDeals() {
   // --- END OF NEW CATEGORY DATA ---
 
   const packages = [
-    // ... (Yung 8 packages mo... siguraduhin mo lang na
-    //      naka-update din ang packages mo para may 'Seoul', 'Tokyo', etc.
-    //      para gumana ang filtering logic)
-    // ...
     {
       id: 1,
       name: 'Boracay Beach Paradise',
@@ -298,13 +294,6 @@ function PackageDeals() {
 
   return (
     <div className="package-deals-page">
-      {/* Hero Header */}
-      <div className="hero-header">
-        <div className="hero-container">
-          <h1 className="hero-title">Package Deals</h1>
-          <p className="hero-subtitle">Discover amazing travel packages with exclusive discounts</p>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="content-container">

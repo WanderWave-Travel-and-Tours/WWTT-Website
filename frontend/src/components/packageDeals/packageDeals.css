@@ -29,55 +29,6 @@
   width: 1700px;
 }
 
-/* Hero Header Section */
-.hero-header {
-  background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6916db176c431e3bb8b83e16.jpg');
-  background-size: cover;
-  background-position: center;
-  width: 100%;
-  padding: 60px 24px;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.7) 0%, transparent 50%);
-  z-index: 0;
-}
-
-.hero-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  text-align: left;
-  position: relative;
-  z-index: 1;
-}
-
-.hero-icon {
-  font-size: 3rem;
-  margin-bottom: 16px;
-}
-
-.hero-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--primary-navy);
-  margin-bottom: 8px;
-  line-height: 1.2;
-}
-
-.hero-subtitle {
-  font-size: 1.125rem;
-  color: var(--primary-navy);
-  opacity: 0.9;
-  font-weight: 400;
-}
 
 /* Content Container */
 .content-container {
@@ -96,6 +47,7 @@
   justify-content: space-between;
   align-items: center;
   box-shadow: var(--shadow);
+  margin-top: 32px; /* <-- IDAGDAG ITO */
 }
 
 .promo-content {
