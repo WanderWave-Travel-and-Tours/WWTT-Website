@@ -1,0 +1,249 @@
+/* Package Card Component Styles */
+
+.package-card {
+  background: var(--white);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+  position: relative;
+  cursor: pointer;
+}
+
+.package-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Badges */
+.badge {
+  position: absolute;
+  top: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 2;
+  box-shadow: var(--shadow-sm);
+}
+
+.badge-featured {
+  left: 12px;
+  background-color: #ff6b35;
+  color: var(--white);
+}
+
+.badge-discount {
+  right: 56px;
+  background-color: #10b981;
+  color: var(--white);
+}
+
+/* Favorite Button */
+.favorite-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  background: var(--white);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: var(--shadow);
+  transition: all 0.2s;
+}
+
+.favorite-button:hover {
+  transform: scale(1.1);
+}
+
+.favorite-button.active {
+  color: #e91e63;
+}
+
+/* Card Image */
+.card-image {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, var(--primary-orange) 0%, #fdb44b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.image-content {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+  transition: transform 0.3s ease; 
+}
+
+.package-card:hover .image-content {
+  transform: scale(1.05);
+}
+
+/* Card Body */
+.card-body {
+  padding: 20px;
+}
+
+.card-header {
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-navy);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.star-icon {
+  color: #fbbf24;
+}
+
+.rating-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.rating-count {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+/* Card Details */
+.card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-icon {
+  color: var(--primary-orange);
+  flex-shrink: 0;
+}
+
+.detail-text {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+/* Includes Section */
+.includes-section {
+  margin-bottom: 20px;
+}
+
+.includes-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.includes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.include-item {
+  background-color: var(--gray-100);
+  color: var(--gray-700);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Card Footer */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.price-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.price-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.price-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.currency {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.price-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-orange);
+}
+
+.book-button {
+  background-color: var(--primary-orange);
+  color: var(--white);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.book-button:hover {
+  background-color: #e68a0f;
+  transform: translateX(2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .card-title {
+    font-size: 1.125rem;
+  }
+}
