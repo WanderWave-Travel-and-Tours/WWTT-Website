@@ -1,13 +1,7 @@
 import { useState } from 'react'
 import './App.css'
-import FlightSearch from './components/flightSearch';
-
-const Dashboard = () => (
-  <div className="min-h-screen bg-blue-50 p-8">
-    <h1 className="text-4xl font-bold text-blue-900">Dashboard</h1>
-    <p className="mt-4 text-gray-700">Welcome to the dashboard page</p>
-  </div>
-)
+import FlightSearch from './components/flightSearch/flightSearch';
+import PackageDeals from './components/packagedeals/packageDeals';
 
 const Bookings = () => (
   <div className="min-h-screen bg-green-50 p-8">
@@ -35,7 +29,7 @@ function App() {
 
   const pages = {
     flights: { name: 'Flight Search', component: FlightSearch },
-    dashboard: { name: 'Dashboard', component: Dashboard },
+    dashboard: { name: 'Package Deals', component: PackageDeals },
     bookings: { name: 'My Bookings', component: Bookings },
     profile: { name: 'Profile', component: Profile },
     help: { name: 'Help & Support', component: Help },
