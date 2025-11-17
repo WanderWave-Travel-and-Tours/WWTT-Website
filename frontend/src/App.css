@@ -1,3 +1,6 @@
+/* --- ADD FONT AWESOME --- */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
+
 /* WanderWave Color Scheme */
 :root {
   --primary-orange: #fc9c1b;
@@ -7,6 +10,8 @@
   --gray-text: #6c757d;
   --border-color: #e0e0e0;
   --navbar-height: 70px;
+  --gray-100: #f5f5f5;
+  --orange-light-bg: #fef3e3;
 }
 
 * {
@@ -36,12 +41,13 @@ body {
   background-color: var(--light-bg);
 }
 
-/* Navigation Bar */
+/* Navigation Bar (Laging Puti) */
 .navbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  width: 100%;
   height: var(--navbar-height);
   background-color: var(--white);
   box-shadow: 0 2px 10px rgba(0, 27, 62, 0.1);
@@ -68,29 +74,24 @@ body {
 }
 
 .brand-logo {
-  width: 48px;
-  height: 48px;
-  background-color: var(--primary-orange);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.3);
+  object-fit: contain;
+}
+.brand-logo-desktop {
+  /* "Your Passport" logo sa desktop */
+  height: 40px; 
+  display: block;
+}
+.brand-logo-mobile-nav {
+  /* "Your Passport" logo (maliit) sa mobile white bar */
+  display: none; 
+}
+.brand-logo-mobile {
+  /* "Travel & Tours" logo sa blue header */
+  display: none; 
 }
 
-.logo-icon {
-  font-size: 1.8rem;
-  filter: brightness(1.2);
-}
 
-.brand-text {
-  font-weight: 800;
-  font-size: 1.4rem;
-  letter-spacing: 0.5px;
-  color: var(--primary-navy);
-}
-
-/* Navigation Links */
+/* --- DESKTOP Navigation Links --- */
 .nav-links {
   display: flex;
   gap: 8px;
@@ -110,6 +111,14 @@ body {
   position: relative;
   white-space: nowrap;
   letter-spacing: 0.3px;
+  -webkit-tap-highlight-color: transparent; /* Tanggalin ang blue flash sa mobile tap */
+}
+
+/* Tanggalin ang default focus outline */
+.nav-btn:focus,
+.nav-btn:focus-visible {
+  outline: none; 
+  box-shadow: none; 
 }
 
 .nav-btn:hover {
@@ -121,12 +130,13 @@ body {
   font-weight: 700;
 }
 
+/* Orange underline */
 .nav-btn.active::after {
   content: '';
   position: absolute;
-  bottom: -22px;
-  left: 0;
-  right: 0;
+  bottom: 6px; /* Inilayo sa text */
+  left: 20px;  /* Pantay sa padding ng button */
+  right: 20px; /* Pantay sa padding ng button */
   height: 3px;
   background-color: var(--primary-orange);
 }
@@ -151,6 +161,13 @@ body {
   transition: all 0.3s ease;
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0, 27, 62, 0.2);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.book-now-btn:focus,
+.book-now-btn:focus-visible {
+  outline: none; 
+  box-shadow: 0 2px 8px rgba(0, 27, 62, 0.2); 
 }
 
 .book-now-btn:hover {
@@ -158,6 +175,143 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 27, 62, 0.3);
 }
+
+/* --- MOBILE MENU BUTTON (Hidden on Desktop) --- */
+.mobile-menu-btn {
+  display: none;
+  padding: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--primary-navy); /* Kulay navy dahil nasa white bar */
+  -webkit-tap-highlight-color: transparent;
+  outline: none; 
+}
+
+.mobile-menu-btn:focus,
+.mobile-menu-btn:focus-visible {
+  outline: none; 
+  box-shadow: none; 
+}
+
+/* --- MOBILE NAV OVERLAY --- */
+.mobile-nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1999;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.mobile-nav-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --- MOBILE NAV MENU (Hidden on Desktop) --- */
+.mobile-nav-menu {
+  position: fixed;
+  top: 0; 
+  left: 0; /* Galing sa kaliwa */
+  width: 300px; 
+  height: 100vh;
+  background-color: var(--white); 
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+  transform: translateX(-100%); /* Naka-tago sa kaliwa */
+  transition: transform 0.3s ease-in-out;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  
+  /* I-hide sa desktop */
+  display: none;
+}
+
+.mobile-nav-menu.open {
+  transform: translateX(0); /* Lalabas galing kaliwa */
+}
+
+/* --- BLUE HEADER (Nasa loob ng slide menu) --- */
+.mobile-menu-header {
+  height: var(--navbar-height);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  background-color: var(--primary-navy);
+  flex-shrink: 0;
+}
+
+/* FIX: Ito ang logo sa loob ng blue header */
+.mobile-menu-header .brand-logo-mobile {
+  display: block;
+  height: 40px; /* NILAKIHAN MULA 35px to 40px */
+}
+
+.mobile-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--white);
+  cursor: pointer;
+  padding: 5px;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.mobile-close-btn:focus,
+.mobile-close-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Para itulak ang "Book Now" sa baba */
+  padding-top: 16px;
+}
+
+/* Style for links inside mobile menu */
+.mobile-nav-menu .nav-btn {
+  text-align: left;
+  padding: 16px 30px;
+  width: 100%;
+  border-radius: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.mobile-nav-menu .nav-btn:hover {
+  background-color: var(--gray-100); 
+}
+
+.mobile-nav-menu .nav-btn.active {
+  background-color: var(--orange-light-bg);
+  color: var(--primary-orange); 
+  font-weight: 700;
+  /* Orange border sa kaliwa gaya ng sa image */
+  border-left: 4px solid var(--primary-orange);
+  padding-left: 26px; /* Adjust padding para sa border */
+}
+
+.mobile-nav-menu .nav-btn.active::after {
+  display: none; /* Walang underline sa mobile */
+}
+
+/* Book Now button sa baba ng mobile nav */
+.mobile-nav-menu .book-now-btn {
+  margin: 16px 30px 30px; /* Padding sa baba */
+  text-align: center;
+  flex-shrink: 0;
+  width: calc(100% - 60px); /* Para sakto sa padding */
+}
+
 
 /* Main Content */
 .main-content {
@@ -192,97 +346,48 @@ body {
   line-height: 1.6;
 }
 
-/* Responsive Design */
+
+/* --- RESPONSIVE DESIGN (Breakpoint at 1024px) --- */
 @media (max-width: 1024px) {
   .navbar-content {
     padding: 0 20px;
   }
 
-  .nav-links {
-    gap: 6px;
-  }
-
-  .nav-btn {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-
-  .action-btn {
-    padding: 8px 20px;
-    font-size: 0.9rem;
-  }
-
-  .book-now-btn {
-    padding: 10px 28px;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 768px) {
+  /* --- Navbar (taas) ay laging puti --- */
   .navbar {
-    height: auto;
-    min-height: var(--navbar-height);
+    background-color: var(--white);
   }
 
-  .navbar-content {
-    flex-direction: column;
-    padding: 15px 20px;
-    gap: 15px;
+  /* Hide desktop links, show mobile button */
+  .nav-links { display: none; }
+  .nav-actions { display: none; }
+  .mobile-menu-btn { 
+    display: flex; 
+    color: var(--primary-navy); /* Itim na hamburger kasi white ang nav */
   }
 
-  .brand {
-    width: 100%;
-    justify-content: center;
+  /* --- Magpalit ng logo sa navbar --- */
+  .brand-logo-desktop {
+    display: none;
   }
-
-  .nav-links {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
+  .brand-logo-mobile-nav {
+    display: block;
+    height: 35px; /* "Your Passport" logo sa white navbar pag mobile */
   }
-
-  .nav-btn {
-    flex: 0 1 auto;
-    min-width: fit-content;
-  }
-
-  .nav-actions {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .main-content {
-    margin-top: auto;
-    padding-top: 15px;
-  }
-
-  .page-title {
-    font-size: 2rem;
-  }
-
-  .page-description {
-    font-size: 1rem;
+  
+  /* --- Ipakita ang mobile menu --- */
+  .mobile-nav-menu {
+    display: flex;
   }
 }
+
 
 @media (max-width: 480px) {
-  .brand-text {
-    font-size: 1.2rem;
-  }
-
-  .nav-btn {
-    padding: 8px 12px;
-    font-size: 0.85rem;
-  }
-
-  .action-btn {
-    padding: 8px 16px;
-    font-size: 0.85rem;
-  }
-
   .page-title {
     font-size: 1.8rem;
+  }
+  .mobile-nav-menu {
+    width: 100%; /* Full width sa sobrang liit na screen */
   }
 }
 
