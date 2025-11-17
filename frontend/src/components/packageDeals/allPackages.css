@@ -27,12 +27,28 @@
   gap: 24px;
 }
 
+/* --- SCOPE FILTERS (Scrollable Container) --- */
 .scope-filter-container {
   display: flex;
   gap: 12px;
   flex-shrink: 0; 
+  /* IMPORTANT: Allows scrolling horizontally */
+  overflow-x: auto; 
+  white-space: nowrap;
+  
+  /* Hide scrollbar aesthetics */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  
+  padding-bottom: 4px; /* Space for touch interaction */
+  padding-right: 4px;  /* Right padding fix */
 }
 
+.scope-filter-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* --- Filter Buttons --- */
 .scope-filter-btn {
   background: var(--white);
   border: 1px solid var(--gray-300);
@@ -44,6 +60,12 @@
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  flex-shrink: 0; /* Prevents buttons from shrinking */
+  
+  /* Flex Layout for Icons + Text */
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .scope-filter-btn:hover {
@@ -58,6 +80,25 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* --- Favorites Specifics --- */
+.fav-filter-btn:hover {
+  border-color: var(--primary-navy);
+  color: var(--primary-navy);
+  background-color: #ffffff;
+}
+
+.fav-filter-btn.active {
+  background-color: var(--primary-navy);
+  border-color: var(--primary-navy);
+  color: white;
+}
+
+.fav-count {
+  opacity: 0.9;
+  font-size: 0.85rem;
+}
+
+/* --- SEARCH BAR --- */
 .search-section {
   position: relative;
   z-index: 10;
@@ -100,13 +141,14 @@
   color: var(--gray-400);
 }
 
-/* --- Filter Bar Container --- */
+/* Parent Container for Filters */
 .filter-bar-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
   gap: 24px;
+  overflow: hidden; /* Prevents main page scrollbar issues */
 }
 
 /* --- RESPONSIVE --- */
@@ -119,8 +161,7 @@
 }
 
 @media (max-width: 768px) {
-  
-  /* Stack Filters and Search vertically on mobile */
+  /* Stack Search Bar below Filters */
   .filter-bar-container {
     flex-direction: column-reverse; 
     align-items: stretch;
@@ -129,17 +170,6 @@
 
   .search-section {
     max-width: 100%;
-  }
-
-  /* Horizontal scroll for filters */
-  .scope-filter-container {
-    overflow-x: auto;
-    padding-bottom: 4px;
-    justify-content: flex-start;
-  }
-  
-  .scope-filter-container::-webkit-scrollbar {
-    display: none;
   }
 
   .packages-grid {
@@ -154,5 +184,9 @@
   
   .packages-title {
     font-size: 1.5rem;
+  }
+  .scope-filter-btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
   }
 }

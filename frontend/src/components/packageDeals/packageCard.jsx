@@ -21,7 +21,11 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite }) {
         }}
         aria-label="Add to favorites"
       >
-        <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} />
+        {/* UPDATED: Added strokeWidth={2.5} to make lines thicker */}
+        <Heart 
+          strokeWidth={2.5} 
+          fill={isFavorite ? 'currentColor' : 'none'} 
+        />
       </button>
 
       <div className="card-image">

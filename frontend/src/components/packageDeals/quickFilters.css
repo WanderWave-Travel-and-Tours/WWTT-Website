@@ -33,3 +33,10 @@
   background-color: var(--gray-100);
   border-color: var(--primary-orange);
 }
+
+.filter-tag.active {
+  background-color: var(--primary-navy);
+  color: var(--white);
+  border-color: var(--primary-navy);
+  box-shadow: var(--shadow-sm);
+}

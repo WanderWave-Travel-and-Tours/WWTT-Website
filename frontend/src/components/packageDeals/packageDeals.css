@@ -66,6 +66,16 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
+.favorite-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  background: var(--white);
+  border: none;
+}
+
 /* --- RESPONSIVE BREAKPOINTS --- */
 
 /* Laptop/Tablet */

@@ -234,11 +234,13 @@ function PackageDeals() {
   ];
 
 
-  // --- FILTER LOGIC ---
+  // --- FILTER LOGIC (UPDATED) ---
   
   const selectedCategory = mostVisitedCategories.find(c => c.id === selectedFilter);
 
   let filteredPackages;
+  
+  // 1. Category Filter
   if (selectedFilter === 'all' || !selectedCategory) {
     filteredPackages = packages; 
   } else {
@@ -249,10 +251,21 @@ function PackageDeals() {
     );
   }
 
-  if (scopeFilter !== 'all') {
+  // 2. Scope Filter (Updated with Best Deals)
+  if (scopeFilter === 'favorites') {
+    filteredPackages = filteredPackages.filter(pkg => favorites.includes(pkg.id));
+  } 
+  else if (scopeFilter === 'best-deals') {
+    // Show only packages with discounts > 0
+    filteredPackages = filteredPackages.filter(pkg => pkg.discount && pkg.discount > 0);
+    // SORT by highest discount first
+    filteredPackages.sort((a, b) => b.discount - a.discount);
+  } 
+  else if (scopeFilter !== 'all') {
     filteredPackages = filteredPackages.filter(pkg => pkg.scope === scopeFilter);
   }
 
+  // 3. Search Filter
   if (searchQuery) {
     const searchLower = searchQuery.toLowerCase();
     filteredPackages = filteredPackages.filter(pkg => 
@@ -282,6 +295,12 @@ function PackageDeals() {
 
   const currentCategoryName = mostVisitedCategories.find(c => c.id === selectedFilter)?.name;
   const promoPackage = packages.find(pkg => pkg.featured);
+  
+  // Dynamic Title for the Header
+  let headerTitle = 'All Packages';
+  if (scopeFilter === 'favorites') headerTitle = 'My Favorites';
+  else if (scopeFilter === 'best-deals') headerTitle = 'Best Deals';
+  else if (selectedFilter !== 'all') headerTitle = currentCategoryName;
 
   return (
     <div className="package-deals-page">
@@ -308,14 +327,11 @@ function PackageDeals() {
           onCategoryClick={scrollToPackages}
         />
 
-        {/* --- QUICK FILTERS --- */}
-        <QuickFilters onFilterClick={handleQuickFilter} />
-
         {/* --- ALL PACKAGES --- */}
         <AllPackages 
           packages={filteredPackages}
           selectedFilter={selectedFilter}
-          categoryName={currentCategoryName}
+          categoryName={headerTitle} // Passed the dynamic title here
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
           packagesRef={packagesRef}
