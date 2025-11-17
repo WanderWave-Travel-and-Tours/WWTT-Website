@@ -1,5 +1,3 @@
-
-
 .all-packages-section {
   margin-bottom: 48px;
 }
@@ -45,6 +43,7 @@
   color: var(--gray-700);
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .scope-filter-btn:hover {
@@ -65,6 +64,7 @@
   width: 100%; 
   max-width: 400px; 
 }
+
 .search-wrapper {
   background: var(--white);
   border: 1px solid var(--gray-200);
@@ -93,23 +93,24 @@
   outline: none;
   font-size: 1rem;
   color: var(--gray-900);
+  width: 100%;
 }
 
 .search-input::placeholder {
   color: var(--gray-400);
 }
 
-/* --- Bagong Style para sa Filter Bar --- */
+/* --- Filter Bar Container --- */
 .filter-bar-container {
   display: flex;
-  justify-content: space-between; /* Ito ang magic: pinaghihiwalay ang items */
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px; /* Space bago ang package grid */
-  gap: 24px; /* Space para 'pag nag-wrap sa mobile */
+  margin-bottom: 24px;
+  gap: 24px;
 }
-/* --- End Scope Filter --- */
 
-/* Responsive */
+/* --- RESPONSIVE --- */
+
 @media (max-width: 1024px) {
   .packages-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -118,6 +119,29 @@
 }
 
 @media (max-width: 768px) {
+  
+  /* Stack Filters and Search vertically on mobile */
+  .filter-bar-container {
+    flex-direction: column-reverse; 
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .search-section {
+    max-width: 100%;
+  }
+
+  /* Horizontal scroll for filters */
+  .scope-filter-container {
+    overflow-x: auto;
+    padding-bottom: 4px;
+    justify-content: flex-start;
+  }
+  
+  .scope-filter-container::-webkit-scrollbar {
+    display: none;
+  }
+
   .packages-grid {
     grid-template-columns: 1fr;
   }
@@ -125,6 +149,10 @@
   .packages-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 4px;
+  }
+  
+  .packages-title {
+    font-size: 1.5rem;
   }
 }

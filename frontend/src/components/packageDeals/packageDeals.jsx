@@ -4,6 +4,7 @@ import BrowseCategory from './BrowseCategory';
 import QuickFilters from './quickFilters';
 import AllPackages from './allPackages';
 import './packageDeals.css';
+import PromoSection from './promoSection';
 
 function PackageDeals() {
   const [selectedFilter, setSelectedFilter] = useState('all');
@@ -11,9 +12,8 @@ function PackageDeals() {
   const [searchQuery, setSearchQuery] = useState('');
   const [scopeFilter, setScopeFilter] = useState('all'); 
   const packagesRef = useRef(null);
+  const [promoFilter, setPromoFilter] = useState('weekly');
 
-  // --- START OF NEW CATEGORY DATA ---
-  // Isang array na lang, lahat nandito na may 'scope'
   const mostVisitedCategories = [
     { 
       id: 'siargao', 
@@ -80,21 +80,19 @@ function PackageDeals() {
     },
     { 
       id: 'japan', 
-      name: 'Japan', // Pwede mong palitan ng 'Tokyo' if specific
+      name: 'Japan', 
       subtitle: 'Japan',
       scope: 'international',
       image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6917166d01e5bcc9cd11a103.jpg' 
     },
-    // IDAGDAG MO PA RIN YUNG 'all' PARA SA RESETTING
     { 
       id: 'all', 
       name: 'All Packages', 
       subtitle: 'All Destinations',
-      scope: 'all', // Special scope
+      scope: 'all', 
       image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911b2d6d1ba95589cf4b863.jpg'
     },
   ];
-  // --- END OF NEW CATEGORY DATA ---
 
   const packages = [
     {
@@ -150,7 +148,7 @@ function PackageDeals() {
     },
     {
       id: 4,
-      name: 'El Nido Island Hopping', // Pinalitan ko para match sa category
+      name: 'El Nido Island Hopping', 
       category: 'adventure',
       scope: 'local',
       location: 'El Nido, Palawan',
@@ -233,35 +231,28 @@ function PackageDeals() {
       maxGuests: 4,
       featured: false
     },
-    // ... magdagdag ka pa ng packages para sa Hong Kong, Bangkok, Hanoi, etc.
   ];
 
 
-  // --- FILTER LOGIC (UPDATED) ---
+  // --- FILTER LOGIC ---
   
-  // Hanapin ang category name (e.g., 'Siargao', 'Tokyo')
   const selectedCategory = mostVisitedCategories.find(c => c.id === selectedFilter);
 
-  // 1. Filter by Category
   let filteredPackages;
   if (selectedFilter === 'all' || !selectedCategory) {
     filteredPackages = packages; 
   } else {
-    // Hanapin ang 'name' ng category, e.g., "El Nido", "Hong Kong"
     const categorySearchName = selectedCategory.name.toLowerCase();
-    
     filteredPackages = packages.filter(pkg => 
       pkg.name.toLowerCase().includes(categorySearchName) ||
       pkg.location.toLowerCase().includes(categorySearchName)
     );
   }
 
-  // 2. Filter by Package Scope (All, Local, International)
   if (scopeFilter !== 'all') {
     filteredPackages = filteredPackages.filter(pkg => pkg.scope === scopeFilter);
   }
 
-  // 3. Filter by Search Query
   if (searchQuery) {
     const searchLower = searchQuery.toLowerCase();
     filteredPackages = filteredPackages.filter(pkg => 
@@ -269,7 +260,6 @@ function PackageDeals() {
       pkg.location.toLowerCase().includes(searchLower)
     );
   }
-  // --- END OF FILTER LOGIC ---
 
 
   const toggleFavorite = (id) => {
@@ -291,45 +281,37 @@ function PackageDeals() {
   };
 
   const currentCategoryName = mostVisitedCategories.find(c => c.id === selectedFilter)?.name;
+  const promoPackage = packages.find(pkg => pkg.featured);
 
   return (
     <div className="package-deals-page">
-
-      {/* Main Content */}
       <div className="content-container">
         
-        {/* Tinanggal na ang Search Bar dito */}
+        {/* --- PROMO SECTION --- */}
+        {promoPackage && (
+          <PromoSection
+            promoFilter={promoFilter}
+            onPromoFilterChange={setPromoFilter}
+            promoPackage={promoPackage}
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
+            onBookNow={scrollToPackages}
+          />
+        )}
 
-        {/* Promo Banner */}
-        <div className="promo-banner">
-          <div className="promo-content">
-            <h2 className="promo-title">Get 30% OFF on your first booking!</h2>
-            <p className="promo-text">Limited time offer for new travelers</p>
-            <button className="promo-button" onClick={scrollToPackages}>
-              Book Now
-            </button>
-          </div>
-          <div className="promo-icon">🎁</div>
-        </div>
-
-        {/* --- START OF BROWSE CATEGORY UPDATE --- */}
-        {/* Isa na lang na component call, pero updated data ang pinapasa */}
-
+        {/* --- BROWSE CATEGORIES --- */}
         <BrowseCategory 
           title="Most Visited Destination"
-          categories={mostVisitedCategories} // Pinapasa ang bagong data
+          categories={mostVisitedCategories}
           selectedFilter={selectedFilter}
           onFilterChange={setSelectedFilter}
           onCategoryClick={scrollToPackages}
         />
-        
-        {/* --- END OF BROWSE CATEGORY UPDATE --- */}
 
-
-        {/* Quick Filters */}
+        {/* --- QUICK FILTERS --- */}
         <QuickFilters onFilterClick={handleQuickFilter} />
 
-        {/* All Packages */}
+        {/* --- ALL PACKAGES --- */}
         <AllPackages 
           packages={filteredPackages}
           selectedFilter={selectedFilter}
@@ -342,13 +324,6 @@ function PackageDeals() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery} 
         />
-
-        {/* Bottom CTA */}
-        <div className="cta-section">
-          <h2 className="cta-title">Can't find what you're looking for?</h2>
-          <p className="cta-text">Create a custom package tailored to your preferences</p>
-          <button className="cta-button">Create Custom Package</button>
-        </div>
       </div>
     </div>
   );
