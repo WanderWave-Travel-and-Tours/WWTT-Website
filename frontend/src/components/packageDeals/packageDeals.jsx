@@ -118,30 +118,31 @@ function PackageDeals() {
         const result = await response.json();
         
         if (result.status === 'ok') {
-          const formattedPackages = result.data.map(pkg => ({
-            id: pkg._id,
-            name: pkg.title,
-            category: pkg.category.toLowerCase(),
-            scope: pkg.category.toLowerCase() === 'local' ? 'local' : 'international',
-            location: pkg.destination,
-            duration: pkg.duration,
-            nights: pkg.duration.includes('Days') ? `${parseInt(pkg.duration) - 1} Nights` : '0 Nights',
-            price: pkg.price,
-            originalPrice: pkg.price + Math.floor(pkg.price * 0.3), 
-            discount: 30,
-            rating: 4.5, 
-            reviews: 100, 
-            image: pkg.image ? `http://localhost:5000/uploads/${pkg.image}` : 'https://default-image-url.jpg', 
-            includes: [], 
-            excludes: [],
-            maxGuests: 4, 
-            featured: false, 
-            description: pkg.title,
-            itinerary: [], 
-          }));
-          
-          setPackages(formattedPackages);
-        } else {
+  const data = result.data;
+  const formattedPackages = data.map((pkg, index) => ({
+    id: pkg._id,
+    name: pkg.title,
+    category: pkg.category.toLowerCase(),
+    scope: pkg.category.toLowerCase() === 'local' ? 'local' : 'international',
+    location: pkg.destination,
+    duration: pkg.duration,
+    nights: pkg.duration.includes('Days') ? `${parseInt(pkg.duration) - 1} Nights` : '0 Nights',
+    price: pkg.price,
+    originalPrice: pkg.price + Math.floor(pkg.price * 0.3),
+    discount: 30,
+    rating: 4.5,
+    reviews: 100,
+    image: pkg.image ? `http://localhost:5000/uploads/${pkg.image}` : 'https://default-image-url.jpg',
+    includes: [],
+    excludes: [],
+    maxGuests: 4,
+    featured: index === 0,
+    description: pkg.title,
+    itinerary: [],
+  }));
+  
+  setPackages(formattedPackages);
+} else {
           setError(result.error || 'Failed to fetch packages.');
         }
 
