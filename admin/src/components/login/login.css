@@ -1,0 +1,80 @@
+/* admin/src/components/Login.css */
+
+/* Siguraduhing sakop buong screen */
+.login-container {
+    height: 100vh;
+    width: 100vw; /* Gamit ang viewport width para sure na full screen */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #eef2f6;
+    position: fixed; /* Para hindi maapektuhan ng padding ng parent/body */
+    top: 0;
+    left: 0;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    background-color: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); /* Mas soft na shadow */
+}
+
+.login-title {
+    text-align: center;
+    color: #333;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.input-group {
+    margin-bottom: 1.2rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #555;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.login-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    box-sizing: border-box; /* Para hindi lumagpas sa border */
+}
+
+.login-input:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.login-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-top: 10px;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+.login-button:hover {
+    background-color: #0056b3;
+}
+
+.login-button:active {
+    transform: scale(0.98);
+}
