@@ -26,6 +26,18 @@ function PackageDeals() {
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
 
+    const handleBookNow = (pkg) => {
+    setSelectedPackageForBooking(pkg);
+    setCurrentView('booking');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoBack = () => {
+    setCurrentView('list');
+    setSelectedPackageForBooking(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
   const mostVisitedCategories = [
     { 
       id: 'siargao', 
@@ -169,20 +181,6 @@ function PackageDeals() {
     return <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} />;
   }
 
-  // --- ✅ ADD THESE HANDLER FUNCTIONS ---
-  const handleBookNow = (pkg) => {
-    setSelectedPackageForBooking(pkg);
-    setCurrentView('booking');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleGoBack = () => {
-    setCurrentView('list');
-    setSelectedPackageForBooking(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // --- FILTER LOGIC ---
   const selectedCategory = mostVisitedCategories.find(c => c.id === selectedFilter);
 
   let filteredPackages = packages;
