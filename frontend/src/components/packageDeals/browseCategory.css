@@ -1,25 +1,87 @@
 /* Browse Category Component Styles */
 
+/* --- MAIN CONTAINER --- */
 .browse-category-section {
+  display: flex;
+  flex-direction: column; /* Stack vertically */
   margin-bottom: 48px;
+  position: relative;
+  width: 100%;
 }
 
+/* --- 1. TITLE (ORDER 1 - PINAKATAAS) --- */
 .category-section-title {
+  order: 1; /* Force to Top */
+  
   font-size: 1.875rem;
   font-weight: 700;
-  /* Ibalik sa dark color, 'di na glassy */
   color: var(--primary-navy, #333); 
   text-shadow: none;
-  margin-bottom: 24px;
+  margin-bottom: 16px; 
+  margin-top: 0;
+  width: 100%;
+  display: block;
 }
 
+/* --- 2. FILTER BUTTONS (ORDER 2 - GITNA) --- */
+/* Specific selector to ensure it targets the right container */
+.browse-category-section .scope-filter-container {
+  order: 2; /* Force to Middle */
+  
+  display: flex;
+  gap: 12px;
+  margin-top: 0; 
+  margin-bottom: 24px; 
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  padding-bottom: 4px; 
+  padding-right: 4px;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.browse-category-section .scope-filter-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Button Styles */
+.browse-category-section .scope-filter-btn {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0; 
+  flex-shrink: 0; 
+}
+
+.browse-category-section .scope-filter-btn:hover {
+  background-color: var(--gray-100);
+  border-color: var(--gray-500);
+}
+
+.browse-category-section .scope-filter-btn.active {
+  background-color: var(--primary-navy);
+  color: var(--white);
+  border-color: var(--primary-navy);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- 3. SLIDER CONTAINER (ORDER 3 - BABA) --- */
 .category-slider-container {
+  order: 3; /* Force to Bottom */
   position: relative;
+  width: 100%;
 }
 
 .category-scroller {
   display: flex;
-  gap: 20px; /* Nilakihan ang gap */
+  gap: 20px;
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
@@ -31,48 +93,41 @@
   display: none;
 }
 
-/* --- CARD UI UPDATE --- */
+/* --- CARD UI --- */
 .category-card {
   display: flex;
-  /* BINALIK SA VERTICAL LAYOUT */
   flex-direction: column; 
   align-items: stretch;
-  
-  flex: 0 0 250px; /* Nilakihan ang card width */
+  flex: 0 0 250px;
   scroll-snap-align: start;
-  
-  /* TINANGGAL ANG GLASS, GINAWANG SOLID WHITE */
   background: #ffffff;
   border: 1px solid #e0e0e0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-
   border-radius: 16px;
-  padding: 0; /* Alis padding para dumikit ang image */
+  padding: 0;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: left;
   font-family: inherit;
-  overflow: hidden; /* Para sa rounded corners ng image */
+  overflow: hidden;
 }
 
 .category-card:hover {
-  /* Alis glass hover, palit shadow/transform */
   transform: translateY(-4px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   border-color: #e0e0e0;
 }
 
 .category-card.active {
-  background: #fff; /* White pa rin */
-  border-color: #FF8C00; /* Orange border para active */
+  background: #fff;
+  border-color: #FF8C00;
   box-shadow: 0 0 10px rgba(255, 140, 0, 0.3);
 }
 
 .category-image-wrapper {
-  width: 100%; /* Buong lapad ng card */
-  height: 150px; /* Fixed height para sa image */
+  width: 100%;
+  height: 150px;
   flex-shrink: 0;
-  /* Alis specific radius, aangkop sa card */
   border-radius: 0; 
   overflow: hidden;
   display: flex;
@@ -90,48 +145,35 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-width: auto;
   width: 100%;
-  padding: 12px 16px; /* Lagay padding dito */
+  padding: 12px 16px;
   gap: 4px;
 }
 
 .category-label {
   font-size: 1rem;
   font-weight: 700;
-  /* Pinalitan ng dark color */
   color: #333;
   text-shadow: none;
-  font-family: Arial, sans-serif;
-  text-transform: none;
   padding: 0;
-  background: none;
 }
 
 .category-subtitle {
   font-size: 0.85rem;
-  /* Pinalitan ng grey color */
   color: #777;
   text-shadow: none;
 }
 
-/* --- ARROW BUTTONS UPDATE (Solid White) --- */
+/* --- ARROW BUTTONS --- */
 .scroll-arrow-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  
-  /* Ginawang solid white */
   background: #ffffff;
   border: 1px solid #e0e0e0;
-  color: #333; /* Dark icon */
-  
-  /* Inalis ang glass properties */
+  color: #333;
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  text-shadow: none;
-  
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -161,39 +203,7 @@
   right: -15px;
 }
 
-/* --- Scope Filter Buttons (kinopya galing sa allPackages.css) --- */
-.scope-filter-container {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px; /* Space bago ang category scroller */
-}
-
-.scope-filter-btn {
-  background: var(--white);
-  border: 1px solid var(--gray-300);
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--gray-700);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.scope-filter-btn:hover {
-  background-color: var(--gray-100);
-  border-color: var(--gray-500);
-}
-
-.scope-filter-btn.active {
-  background-color: var(--primary-navy);
-  color: var(--white);
-  border-color: var(--primary-navy);
-  box-shadow: var(--shadow-sm);
-}
-/* --- End Scope Filter --- */
-
-/* --- RESPONSIVE STYLES (Adjusted for new card size) --- */
+/* --- RESPONSIVE STYLES --- */
 
 @media (max-width: 768px) {
   .scroll-arrow-left,
@@ -203,18 +213,17 @@
   .category-section-title {
     font-size: 1.5rem;
   }
-  /* Paliitin ang card sa tablet */
   .category-card {
     flex-basis: 220px;
   }
   .category-image-wrapper {
     height: 130px;
   }
-  .category-label {
-    font-size: 0.95rem;
-  }
-  .category-subtitle {
-    font-size: 0.8rem;
+  
+  /* Tablet Spacing */
+  .browse-category-section .scope-filter-container {
+    margin-bottom: 20px;
+    gap: 10px;
   }
 }
 
@@ -225,7 +234,6 @@
   .category-scroller {
     gap: 12px;
   }
-  /* Paliitin pa sa mobile */
   .category-card {
     flex-basis: 180px;
   }
@@ -235,10 +243,10 @@
   .category-info {
     padding: 10px 12px;
   }
-  .category-label {
-    font-size: 0.9rem;
-  }
-  .category-subtitle {
-    font-size: 0.75rem;
+  
+  /* Mobile Spacing */
+  .browse-category-section .scope-filter-container {
+    margin-bottom: 16px;
+    gap: 8px;
   }
 }

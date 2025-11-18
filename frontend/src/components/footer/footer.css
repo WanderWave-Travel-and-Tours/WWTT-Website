@@ -1,0 +1,133 @@
+.site-footer {
+  background-color: var(--primary-navy);
+  color: rgba(255, 255, 255, 0.8);
+  padding-top: 60px;
+  font-size: 0.9rem;
+  /* Tinitiyak na laging 100% ang lapad */
+  width: 100%;
+  box-sizing: border-box;
+  /* --- TINANGGAL ANG 'Arial Black' DITO --- */
+  /* --- IBINALIK ANG DEFAULT FONT (galing sa App.css) --- */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+     sans-serif;
+}
+
+.footer-content {
+  /* Gagamitin natin ang max-width ng navbar mo */
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 30px;
+  box-sizing: border-box;
+}
+
+.footer-grid {
+  display: grid;
+  /* Responsive grid, magpapatong sa mobile */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+/* Column 1: About */
+.footer-about .footer-logo {
+  height: 120px;
+  margin-bottom: 2px;
+}
+
+.footer-about p {
+  line-height: 1.7;
+  max-width: 350px;
+  /* Tiyakin na normal font ito */
+  font-weight: normal; 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+     sans-serif;
+}
+
+/* Column 2 & 3: Links & Contact */
+.footer-links h4,
+.footer-contact h4 {
+  font-size: 1.1rem;
+  /* font-weight: 700; (hindi na kailangan kung Arial Black) */
+  color: var(--primary-orange);
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  /* --- INILIPAT ANG FONT DITO --- */
+  font-family: 'Arial Black', sans-serif;
+}
+
+.footer-links ul,
+.footer-contact ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li,
+.footer-contact li {
+  margin-bottom: 12px;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  /* Tiyakin na normal font ito */
+  font-weight: normal;
+}
+
+.footer-links a:hover {
+  color: var(--primary-orange);
+  opacity: 1;
+}
+
+.footer-contact li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  line-height: 1.6;
+  /* Tiyakin na normal font ito */
+  font-weight: normal;
+}
+
+.footer-contact i {
+  font-size: 1rem;
+  color: var(--primary-orange);
+  width: 20px;
+  text-align: center;
+}
+
+/* Bottom Bar */
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 24px 0;
+  margin-top: 20px;
+}
+
+.footer-bottom p {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 30px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  /* Tiyakin na normal font ito */
+  font-weight: normal; 
+}
+
+.footer-bottom span {
+  font-weight: 600; /* Pwedeng i-bold 'to kung gusto mo */
+  color: var(--primary-orange);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .footer-content {
+    padding: 0 20px;
+  }
+  .footer-bottom p {
+    padding: 0 20px;
+  }
+}

@@ -34,24 +34,31 @@
 }
 
 .badge-discount {
-  right: 56px;
+  right: 68px; /* Adjusted margin to not overlap with larger heart button */
   background-color: #10b981;
   color: var(--white);
 }
 
-/* Favorite Button */
+/* --- FAVORITE BUTTON (Container) --- */
 .favorite-button {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 40px;
-  height: 40px;
+  
+  /* UPDATED: Increased container size */
+  width: 48px;
+  height: 48px;
+  
   background: var(--white);
   border: none;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  
+  /* Force Flex Center */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  
   cursor: pointer;
   z-index: 3;
   box-shadow: var(--shadow);
@@ -64,6 +71,16 @@
 
 .favorite-button.active {
   color: #e91e63;
+}
+
+/* --- FORCE FIX FOR HEART ICON SIZE --- */
+/* This ensures the SVG is never tiny */
+.favorite-button svg {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  transform: none !important;
 }
 
 /* Card Image */
@@ -241,7 +258,6 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Responsive */
 @media (max-width: 480px) {
   .card-title {
     font-size: 1.125rem;

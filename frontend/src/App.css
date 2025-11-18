@@ -1,4 +1,5 @@
-/* WanderWave Color Scheme */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
+
 :root {
   --primary-orange: #fc9c1b;
   --primary-navy: #001b3e;
@@ -7,6 +8,8 @@
   --gray-text: #6c757d;
   --border-color: #e0e0e0;
   --navbar-height: 70px;
+  --gray-100: #f5f5f5;
+  --orange-light-bg: #fef3e3;
 }
 
 * {
@@ -30,18 +33,17 @@ body {
   padding: 0;
 }
 
-/* App Container */
 .app-container {
   min-height: 100vh;
   background-color: var(--light-bg);
 }
 
-/* Navigation Bar */
 .navbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  width: 100%;
   height: var(--navbar-height);
   background-color: var(--white);
   box-shadow: 0 2px 10px rgba(0, 27, 62, 0.1);
@@ -58,7 +60,6 @@ body {
   align-items: center;
 }
 
-/* Brand/Logo */
 .brand {
   display: flex;
   align-items: center;
@@ -68,29 +69,20 @@ body {
 }
 
 .brand-logo {
-  width: 48px;
-  height: 48px;
-  background-color: var(--primary-orange);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.3);
+  object-fit: contain;
+}
+.brand-logo-desktop {
+  height: 40px; 
+  display: block;
+}
+.brand-logo-mobile-nav {
+  display: none; 
+}
+.brand-logo-mobile {
+  display: none; 
 }
 
-.logo-icon {
-  font-size: 1.8rem;
-  filter: brightness(1.2);
-}
 
-.brand-text {
-  font-weight: 800;
-  font-size: 1.4rem;
-  letter-spacing: 0.5px;
-  color: var(--primary-navy);
-}
-
-/* Navigation Links */
 .nav-links {
   display: flex;
   gap: 8px;
@@ -110,6 +102,13 @@ body {
   position: relative;
   white-space: nowrap;
   letter-spacing: 0.3px;
+  -webkit-tap-highlight-color: transparent; 
+}
+
+.nav-btn:focus,
+.nav-btn:focus-visible {
+  outline: none; 
+  box-shadow: none; 
 }
 
 .nav-btn:hover {
@@ -124,14 +123,13 @@ body {
 .nav-btn.active::after {
   content: '';
   position: absolute;
-  bottom: -22px;
-  left: 0;
-  right: 0;
+  bottom: 6px;
+  left: 20px;  
+  right: 20px;
   height: 3px;
   background-color: var(--primary-orange);
 }
 
-/* Navigation Actions */
 .nav-actions {
   display: flex;
   gap: 12px;
@@ -151,6 +149,13 @@ body {
   transition: all 0.3s ease;
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0, 27, 62, 0.2);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.book-now-btn:focus,
+.book-now-btn:focus-visible {
+  outline: none; 
+  box-shadow: 0 2px 8px rgba(0, 27, 62, 0.2); 
 }
 
 .book-now-btn:hover {
@@ -159,13 +164,139 @@ body {
   box-shadow: 0 4px 12px rgba(0, 27, 62, 0.3);
 }
 
-/* Main Content */
+.mobile-menu-btn {
+  display: none;
+  padding: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--primary-navy); 
+  -webkit-tap-highlight-color: transparent;
+  outline: none; 
+}
+
+.mobile-menu-btn:focus,
+.mobile-menu-btn:focus-visible {
+  outline: none; 
+  box-shadow: none; 
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1999;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.mobile-nav-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-nav-menu {
+  position: fixed;
+  top: 0; 
+  left: 0; 
+  width: 300px; 
+  height: 100vh;
+  background-color: var(--white); 
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+  transform: translateX(-100%); 
+  transition: transform 0.3s ease-in-out;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  
+  display: none;
+}
+
+.mobile-nav-menu.open {
+  transform: translateX(0); 
+}
+
+.mobile-menu-header {
+  height: var(--navbar-height);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  background-color: var(--primary-navy);
+  flex-shrink: 0;
+}
+
+.mobile-menu-header .brand-logo-mobile {
+  display: block;
+  height: 40px; 
+}
+
+.mobile-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--white);
+  cursor: pointer;
+  padding: 5px;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.mobile-close-btn:focus,
+.mobile-close-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; 
+  padding-top: 16px;
+}
+
+.mobile-nav-menu .nav-btn {
+  text-align: left;
+  padding: 16px 30px;
+  width: 100%;
+  border-radius: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.mobile-nav-menu .nav-btn:hover {
+  background-color: var(--gray-100); 
+}
+
+.mobile-nav-menu .nav-btn.active {
+  background-color: var(--orange-light-bg);
+  color: var(--primary-orange); 
+  font-weight: 700;
+  border-left: 4px solid var(--primary-orange);
+  padding-left: 26px; 
+}
+
+.mobile-nav-menu .nav-btn.active::after {
+  display: none; 
+}
+
+.mobile-nav-menu .book-now-btn {
+  margin: 16px 30px 30px; 
+  text-align: center;
+  flex-shrink: 0;
+  width: calc(100% - 60px); 
+}
+
+
 .main-content {
   margin-top: var(--navbar-height);
   min-height: calc(100vh - var(--navbar-height));
 }
 
-/* Page Containers for placeholder pages */
 .page-container {
   min-height: calc(100vh - var(--navbar-height));
   display: flex;
@@ -192,101 +323,46 @@ body {
   line-height: 1.6;
 }
 
-/* Responsive Design */
+
 @media (max-width: 1024px) {
   .navbar-content {
     padding: 0 20px;
   }
 
-  .nav-links {
-    gap: 6px;
-  }
-
-  .nav-btn {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-
-  .action-btn {
-    padding: 8px 20px;
-    font-size: 0.9rem;
-  }
-
-  .book-now-btn {
-    padding: 10px 28px;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 768px) {
   .navbar {
-    height: auto;
-    min-height: var(--navbar-height);
+    background-color: var(--white);
   }
 
-  .navbar-content {
-    flex-direction: column;
-    padding: 15px 20px;
-    gap: 15px;
+  .nav-links { display: none; }
+  .nav-actions { display: none; }
+  .mobile-menu-btn { 
+    display: flex; 
+    color: var(--primary-navy); 
   }
 
-  .brand {
-    width: 100%;
-    justify-content: center;
+  .brand-logo-desktop {
+    display: none;
   }
-
-  .nav-links {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
+  .brand-logo-mobile-nav {
+    display: block;
+    height: 35px; 
   }
-
-  .nav-btn {
-    flex: 0 1 auto;
-    min-width: fit-content;
-  }
-
-  .nav-actions {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .main-content {
-    margin-top: auto;
-    padding-top: 15px;
-  }
-
-  .page-title {
-    font-size: 2rem;
-  }
-
-  .page-description {
-    font-size: 1rem;
+  
+  .mobile-nav-menu {
+    display: flex;
   }
 }
+
 
 @media (max-width: 480px) {
-  .brand-text {
-    font-size: 1.2rem;
-  }
-
-  .nav-btn {
-    padding: 8px 12px;
-    font-size: 0.85rem;
-  }
-
-  .action-btn {
-    padding: 8px 16px;
-    font-size: 0.85rem;
-  }
-
   .page-title {
     font-size: 1.8rem;
   }
+  .mobile-nav-menu {
+    width: 100%; 
+  }
 }
 
-/* Smooth Transitions */
 .main-content > * {
   animation: fadeIn 0.3s ease-in;
 }

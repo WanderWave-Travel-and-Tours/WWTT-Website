@@ -1,7 +1,7 @@
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
 import './PackageCard.css';
 
-function PackageCard({ package: pkg, isFavorite, onToggleFavorite }) {
+function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow }) { // ✅ ADD onBookNow PROP
   return (
     <div className="package-card">
       {pkg.featured && (
@@ -21,7 +21,10 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite }) {
         }}
         aria-label="Add to favorites"
       >
-        <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} />
+        <Heart 
+          strokeWidth={2.5} 
+          fill={isFavorite ? 'currentColor' : 'none'} 
+        />
       </button>
 
       <div className="card-image">
@@ -74,7 +77,14 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite }) {
               <span className="price-value">{pkg.price.toLocaleString()}</span>
             </div>
           </div>
-          <button className="book-button">
+          {/* ✅ UPDATE THIS BUTTON */}
+          <button 
+            className="book-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onBookNow) onBookNow(pkg); // ✅ ADD THIS
+            }}
+          >
             <span>Book Now</span>
             <ChevronRight size={18} />
           </button>
