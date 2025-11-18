@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// 👈 Pinalitan ang useParams ng useLocation
 import { useLocation, useNavigate } from 'react-router-dom'; 
 import Sidebar from '../sidebar/sidebar';
 import './EditPackage.css'; 
@@ -7,14 +6,11 @@ import './EditPackage.css';
 const API_BASE_URL = 'http://localhost:5000/api/packages';
 
 const EditPackage = () => {
-    // 👈 Gagamit ng useLocation para kunin ang state
     const location = useLocation();
     const navigate = useNavigate();
     
-    // Kukunin ang packageId mula sa state (dati ay mula sa useParams)
     const packageId = location.state?.packageId; 
 
-    // State para sa form
     const [title, setTitle] = useState('');
     const [destination, setDestination] = useState('');
     const [price, setPrice] = useState('');
@@ -26,7 +22,6 @@ const EditPackage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Kapag walang ID na naipasa, ire-redirect pabalik
     useEffect(() => {
         if (!packageId) {
             alert('Error: No package selected for editing.');
@@ -34,7 +29,6 @@ const EditPackage = () => {
         }
     }, [packageId, navigate]);
 
-    // 1. Fetch Current Package Data
     useEffect(() => {
         const fetchPackageData = async () => {
             const isLoggedIn = localStorage.getItem('adminToken');
@@ -43,11 +37,9 @@ const EditPackage = () => {
                 return;
             }
 
-            // Kapag wala pang ID, huwag mag-fetch
             if (!packageId) return; 
             
             try {
-                // Gamitin ang packageId sa fetch URL
                 const response = await fetch(`${API_BASE_URL}/${packageId}`);
                 const result = await response.json();
 
@@ -70,10 +62,8 @@ const EditPackage = () => {
         };
 
         fetchPackageData();
-    }, [packageId, navigate]); // I-depende sa packageId
+    }, [packageId, navigate]);
 
-
-    // 2. Handle Submission (Update Logic)
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -91,7 +81,6 @@ const EditPackage = () => {
         }
 
         try {
-            // Gamitin ang packageId sa PUT URL
             const response = await fetch(`${API_BASE_URL}/edit/${packageId}`, {
                 method: 'PUT',
                 body: formData, 
@@ -110,12 +99,10 @@ const EditPackage = () => {
         }
     };
 
-    if (loading || !packageId) { // Check kung loading pa O walang ID
-        // ... (loading and error states use the packageId variable for checking)
+    if (loading || !packageId) { 
     }
 
     if (error) {
-        // ... (error state)
     }
 
     return (
@@ -124,11 +111,9 @@ const EditPackage = () => {
             
             <div className="main-content">
                 <div className="editpackage-container">
-                    {/* Display the current package ID (for debugging, you can remove this later) */}
                     <small style={{display: 'block', marginBottom: '10px', color: '#999'}}>Internal ID: {packageId}</small>
                     <h2 className="form-title">✏️ Edit Package: {title}</h2>
                     
-                    {/* ... (rest of the form content) ... */}
                     <form onSubmit={handleSubmit} className="edit-form">
                         
                         {/* Current Image Display */}
