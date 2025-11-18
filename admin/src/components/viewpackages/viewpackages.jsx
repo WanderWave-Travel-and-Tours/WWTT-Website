@@ -40,6 +40,10 @@ const ViewPackages = () => {
         fetchPackages();
     }, []);
 
+    const handleEdit = (packageId) => {
+        navigate(`/edit-package/${packageId}`);
+    };
+
     if (loading) {
         return (
             <div className="viewpackages-page-container">
@@ -100,7 +104,7 @@ const ViewPackages = () => {
                                     </p>
                                     
                                     <div className="package-actions">
-                                        <button className="edit-btn">Edit</button>
+                                        <button className="edit-btn" onClick={() => handleEdit(pkg._id)}>Edit</button>
                                         <button className="delete-btn">Delete</button>
                                     </div>
                                 </div>
