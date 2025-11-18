@@ -23,13 +23,14 @@ mongoose.connect(process.env.MONGODB_URI)
         console.error("⚠️  Check your .env file or IP Whitelist.");
     });
 
-// Routes
 app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
 });
 
 // Routes
 const flightRoutes = require('./routes/flightRoute');
+const packageRoutes = require('./routes/packageRoute');
+app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 
 app.get('/', (req, res) => {
