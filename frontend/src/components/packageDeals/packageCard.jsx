@@ -60,14 +60,14 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow }) 
           </div>
         </div>
 
-        <div className="includes-section">
+        {/*<div className="includes-section">
           <span className="includes-title">Includes:</span>
           <div className="includes-list">
             {pkg.includes.map((item, idx) => (
               <span key={idx} className="include-item">{item}</span>
             ))}
           </div>
-        </div>
+        </div>*/}
 
         <div className="card-footer">
           <div className="price-info">
