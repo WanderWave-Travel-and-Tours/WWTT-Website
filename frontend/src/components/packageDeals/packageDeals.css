@@ -1,0 +1,101 @@
+/* Page Container */
+.package-deals-page {
+  min-height: 100vh;
+  background-color: var(--gray-50);
+  
+  /* --- ITO ANG FIX --- */
+  width: 100%; /* Ginawang 100% imbes na 1700px */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Ito ang mag-ce-center sa content-container */
+  overflow-x: hidden;
+}
+
+
+/* Content Container */
+.content-container {
+  width: 100%;
+  
+  /* Sine-set natin sa 1400px para kaparehas ng Navbar mo sa App.css */
+  max-width: 1400px; 
+  
+  /* Safety margin para siguradong gitna */
+  margin: 0 auto;
+  
+  padding: 0 30px 60px; /* Match sa padding ng navbar (30px) */
+  box-sizing: border-box;
+}
+
+/* CTA Section */
+.cta-section {
+  background: linear-gradient(135deg, var(--primary-navy) 0%, #003366 100%);
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+  margin-top: 48px;
+  color: var(--white);
+}
+
+.cta-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.cta-text {
+  font-size: 1.125rem;
+  opacity: 0.9;
+  margin-bottom: 24px;
+}
+
+.cta-button {
+  background-color: var(--primary-orange);
+  color: var(--white);
+  border: none;
+  padding: 14px 40px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cta-button:hover {
+  background-color: #e68a0f;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.favorite-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  background: var(--white);
+  border: none;
+}
+
+/* --- RESPONSIVE BREAKPOINTS --- */
+
+/* Laptop/Tablet */
+@media (max-width: 1024px) {
+  .content-container {
+    padding: 0 20px 48px; /* Liitan ang padding sa gilid */
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .content-container {
+    padding: 0 16px 40px;
+  }
+  
+  .cta-section {
+    padding: 32px 20px;
+  }
+
+  .cta-title { font-size: 1.5rem; }
+  .cta-text { font-size: 1rem; }
+  .cta-button { width: 100%; }
+}
