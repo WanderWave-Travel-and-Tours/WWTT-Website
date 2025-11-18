@@ -51,14 +51,29 @@ router.get('/:id', async (req, res) => {
 router.put('/edit/:id', upload.single('image'), async (req, res) => {
     try {
         const packageId = req.params.id;
-        const { title, destination, price, duration, category, existingImage } = req.body;
         
+        const { 
+            title, 
+            destination, 
+            price, 
+            duration, 
+            category, 
+            existingImage,
+            inclusions,
+            itinerary
+        } = req.body;
+        
+        const parsedInclusions = inclusions ? JSON.parse(inclusions) : [];
+        const parsedItinerary = itinerary ? JSON.parse(itinerary) : [];
+
         let updateData = {
             title,
             destination,
             price,
             duration,
             category,
+            inclusions: parsedInclusions,
+            itinerary: parsedItinerary,
         };
 
         if (req.file) {
@@ -76,7 +91,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
 
         const updatedPackage = await Package.findByIdAndUpdate(
             packageId,
-            updateData,
+            updateData, 
             { new: true, runValidators: true } 
         );
 
