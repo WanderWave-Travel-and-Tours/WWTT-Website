@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Sidebar from '../sidebar/sidebar'; // 👈 IMPORTANTE: I-import ang Sidebar
 import './AddPackage.css';
 
 const AddPackage = () => {
@@ -50,53 +51,63 @@ const AddPackage = () => {
     };
 
     return (
-        <div className="addpackage-container">
-            <h2 className="form-title">📦 Add New Tour Package</h2>
+        // I-wrap ang lahat sa isang container para sa layout
+        <div className="addpackage-page-container"> 
             
-            <form onSubmit={handleSubmit} className="add-form">
-                
-                <div className="form-group">
-                    <label className="form-label">Package Title:</label>
-                    <input type="text" placeholder="e.g. Boracay Super Sale" 
-                        value={title} onChange={e => setTitle(e.target.value)} required className="input-field" />
-                </div>
-
-                <div className="form-group">
-                    <label className="form-label">Destination (City/Province):</label>
-                    <input type="text" placeholder="e.g. Aklan, Philippines" 
-                        value={destination} onChange={e => setDestination(e.target.value)} required className="input-field" />
-                </div>
-
-                <div className="price-category-group">
-                    <div className="form-group" style={{ flex: 1 }}>
-                        <label className="form-label">Price (₱):</label>
-                        <input type="number" placeholder="e.g. 8999" 
-                            value={price} onChange={e => setPrice(e.target.value)} required className="input-field" />
-                    </div>
+            {/* I-callout ang Sidebar */}
+            <Sidebar /> 
+            
+            {/* Main Content Area */}
+            <div className="main-content"> 
+                <div className="addpackage-container">
+                    <h2 className="form-title">📦 Add New Tour Package</h2>
                     
-                    <div className="form-group" style={{ flex: 1 }}>
-                        <label className="form-label">Category:</label>
-                        <select value={category} onChange={e => setCategory(e.target.value)} className="select-field">
-                            <option value="Local">Local</option>
-                            <option value="International">International</option>
-                        </select>
-                    </div>
-                </div>
+                    <form onSubmit={handleSubmit} className="add-form">
+                        
+                        <div className="form-group">
+                            <label className="form-label">Package Title:</label>
+                            <input type="text" placeholder="e.g. Boracay Super Sale" 
+                                value={title} onChange={e => setTitle(e.target.value)} required className="input-field" />
+                        </div>
 
-                <div className="form-group">
-                    <label className="form-label">Duration (Days & Nights):</label>
-                    <input type="text" placeholder="e.g. 3D2N" 
-                        value={duration} onChange={e => setDuration(e.target.value)} required className="input-field" />
-                </div>
+                        <div className="form-group">
+                            <label className="form-label">Destination (City/Province):</label>
+                            <input type="text" placeholder="e.g. Aklan, Philippines" 
+                                value={destination} onChange={e => setDestination(e.target.value)} required className="input-field" />
+                        </div>
 
-                {/* FILE INPUT */}
-                <div className="form-group">
-                    <label className="form-label">Upload Image:</label>
-                    <input type="file" onChange={e => setFile(e.target.files[0])} accept="image/*" required className="file-input-group" />
-                </div>
+                        <div className="price-category-group">
+                            <div className="form-group" style={{ flex: 1 }}>
+                                <label className="form-label">Price (₱):</label>
+                                <input type="number" placeholder="e.g. 8999" 
+                                    value={price} onChange={e => setPrice(e.target.value)} required className="input-field" />
+                            </div>
+                            
+                            <div className="form-group" style={{ flex: 1 }}>
+                                <label className="form-label">Category:</label>
+                                <select value={category} onChange={e => setCategory(e.target.value)} className="select-field">
+                                    <option value="Local">Local</option>
+                                    <option value="International">International</option>
+                                </select>
+                            </div>
+                        </div>
 
-                <button type="submit" className="submit-button">Upload Package 🚀</button>
-            </form>
+                        <div className="form-group">
+                            <label className="form-label">Duration (Days & Nights):</label>
+                            <input type="text" placeholder="e.g. 3D2N" 
+                                value={duration} onChange={e => setDuration(e.target.value)} required className="input-field" />
+                        </div>
+
+                        {/* FILE INPUT */}
+                        <div className="form-group">
+                            <label className="form-label">Upload Image:</label>
+                            <input type="file" onChange={e => setFile(e.target.files[0])} accept="image/*" required className="file-input-group" />
+                        </div>
+
+                        <button type="submit" className="submit-button">Upload Package 🚀</button>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 };

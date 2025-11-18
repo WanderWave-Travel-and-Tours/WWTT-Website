@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './components/login/login'; 
 import Dashboard from './components/dashboard/dashboard'; 
-import AddPackage from './components/addpackage/addpackage'; // Import mo
+import AddPackage from './components/addpackage/addpackage';
 function App() {
   return (
     <BrowserRouter>
