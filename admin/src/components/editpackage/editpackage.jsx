@@ -311,7 +311,6 @@ const EditPackage = () => {
                                     <input 
                                         type="text" 
                                         placeholder={`Day ${dayItem.day} Title (e.g., Arrival & City Tour)`}
-                                        // Displaying the title text only by removing the 'Day N:' prefix
                                         value={dayItem.title.replace(`Day ${dayItem.day}: `, '')} 
                                         onChange={e => handleDayTitleChange(dayIndex, e.target.value)}
                                         className="input-field day-title-input"

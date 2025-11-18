@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../sidebar/sidebar'; // I-import ang Sidebar
-import './dashboard.css'; // Siguraduhin na ang natitirang CSS lang ng dashboard ang nandito
+import Sidebar from '../sidebar/sidebar';
+import './dashboard.css';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -13,11 +13,8 @@ const Dashboard = () => {
         }
     }, [navigate]);
 
-    // Tinanggal na ang handleLogout at navigateToAddPackage dahil nasa Sidebar.jsx na sila
-
     return (
         <div className="dashboard-container">
-            {/* Callout/Gamitin na ang Sidebar component */}
             <Sidebar />
 
             {/* Main Content */}

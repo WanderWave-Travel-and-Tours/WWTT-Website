@@ -1,8 +1,6 @@
-/* Ilagay ang mga styles para sa sidebar at menu dito, na dating nasa Dashboard.css */
 .sidebar {
-    /* Styles para sa sidebar container */
     width: 250px;
-    background-color: #333; /* Halimbawa lang */
+    background-color: #333;
     padding: 20px;
     height: 100vh;
     color: white;
@@ -23,10 +21,9 @@
 }
 
 .menu-item:hover, .new-menu-item:hover {
-    background-color: #555; /* Halimbawa lang */
+    background-color: #555; 
 }
 
 .new-menu-item {
-    /* Specific style kung mayroon man */
-    background-color: #007bff; /* Halimbawa lang */
+    background-color: #007bff;
 }
