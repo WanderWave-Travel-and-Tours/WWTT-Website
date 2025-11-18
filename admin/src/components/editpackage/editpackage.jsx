@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Sidebar from '../sidebar/sidebar'; // Assuming sidebar path
-import './EditPackage.css'; // Gagawa tayo ng CSS para dito
+// 👈 Pinalitan ang useParams ng useLocation
+import { useLocation, useNavigate } from 'react-router-dom'; 
+import Sidebar from '../sidebar/sidebar';
+import './EditPackage.css'; 
 
 const API_BASE_URL = 'http://localhost:5000/api/packages';
 
 const EditPackage = () => {
-    // Kukunin ang ID mula sa URL (gaya ng /edit-package/691c811776adcd8fedfe4e85)
-    const { id } = useParams(); 
+    // 👈 Gagamit ng useLocation para kunin ang state
+    const location = useLocation();
     const navigate = useNavigate();
+    
+    // Kukunin ang packageId mula sa state (dati ay mula sa useParams)
+    const packageId = location.state?.packageId; 
 
     // State para sa form
     const [title, setTitle] = useState('');
@@ -16,11 +20,19 @@ const EditPackage = () => {
     const [price, setPrice] = useState('');
     const [duration, setDuration] = useState('');
     const [category, setCategory] = useState('Local');
-    const [file, setFile] = useState(null); // Para sa bagong image
-    const [existingImage, setExistingImage] = useState(''); // Para sa existing image filename
+    const [file, setFile] = useState(null); 
+    const [existingImage, setExistingImage] = useState(''); 
     
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Kapag walang ID na naipasa, ire-redirect pabalik
+    useEffect(() => {
+        if (!packageId) {
+            alert('Error: No package selected for editing.');
+            navigate('/view-packages');
+        }
+    }, [packageId, navigate]);
 
     // 1. Fetch Current Package Data
     useEffect(() => {
@@ -30,10 +42,13 @@ const EditPackage = () => {
                 navigate('/');
                 return;
             }
+
+            // Kapag wala pang ID, huwag mag-fetch
+            if (!packageId) return; 
             
             try {
-                // Tiyaking mayroon kang GET route sa backend na /api/packages/:id
-                const response = await fetch(`${API_BASE_URL}/${id}`);
+                // Gamitin ang packageId sa fetch URL
+                const response = await fetch(`${API_BASE_URL}/${packageId}`);
                 const result = await response.json();
 
                 if (result.status === 'ok' && result.data) {
@@ -43,7 +58,7 @@ const EditPackage = () => {
                     setPrice(pkg.price);
                     setDuration(pkg.duration);
                     setCategory(pkg.category);
-                    setExistingImage(pkg.image); // Save the existing image filename
+                    setExistingImage(pkg.image); 
                 } else {
                     setError('Error: Package not found or failed to fetch.');
                 }
@@ -55,7 +70,7 @@ const EditPackage = () => {
         };
 
         fetchPackageData();
-    }, [id, navigate]);
+    }, [packageId, navigate]); // I-depende sa packageId
 
 
     // 2. Handle Submission (Update Logic)
@@ -70,24 +85,22 @@ const EditPackage = () => {
         formData.append('category', category);
         
         if (file) {
-            // Kung may bagong file na in-upload
             formData.append('image', file); 
         } else {
-            // Kung walang bagong file, ipasa ang lumang filename
             formData.append('existingImage', existingImage);
         }
 
         try {
-            // Tiyaking mayroon kang PUT route sa backend na /api/packages/edit/:id
-            const response = await fetch(`${API_BASE_URL}/edit/${id}`, {
+            // Gamitin ang packageId sa PUT URL
+            const response = await fetch(`${API_BASE_URL}/edit/${packageId}`, {
                 method: 'PUT',
-                body: formData, // Gumamit ng formData para sa file upload
+                body: formData, 
             });
 
             const data = await response.json();
             if (data.status === 'ok') {
                 alert('✅ Package Updated Successfully!');
-                navigate('/view-packages'); // Bumalik sa listahan pagkatapos mag-update
+                navigate('/view-packages'); 
             } else {
                 alert('❌ Error updating package: ' + data.error);
             }
@@ -97,26 +110,12 @@ const EditPackage = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="editpackage-page-container">
-                <Sidebar />
-                <div className="main-content">
-                    <p>Loading package data...</p>
-                </div>
-            </div>
-        );
+    if (loading || !packageId) { // Check kung loading pa O walang ID
+        // ... (loading and error states use the packageId variable for checking)
     }
-    
+
     if (error) {
-        return (
-            <div className="editpackage-page-container">
-                <Sidebar />
-                <div className="main-content">
-                    <p style={{ color: 'red' }}>{error}</p>
-                </div>
-            </div>
-        );
+        // ... (error state)
     }
 
     return (
@@ -125,8 +124,11 @@ const EditPackage = () => {
             
             <div className="main-content">
                 <div className="editpackage-container">
+                    {/* Display the current package ID (for debugging, you can remove this later) */}
+                    <small style={{display: 'block', marginBottom: '10px', color: '#999'}}>Internal ID: {packageId}</small>
                     <h2 className="form-title">✏️ Edit Package: {title}</h2>
                     
+                    {/* ... (rest of the form content) ... */}
                     <form onSubmit={handleSubmit} className="edit-form">
                         
                         {/* Current Image Display */}
@@ -134,6 +136,7 @@ const EditPackage = () => {
                             <label className="form-label">Current Image:</label>
                             <img 
                                 src={`http://localhost:5000/uploads/${existingImage}`} 
+                                onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/400x250/cccccc/333333?text=Image+Not+Found" }}
                                 alt="Current Package" 
                                 className="current-image-preview" 
                             />

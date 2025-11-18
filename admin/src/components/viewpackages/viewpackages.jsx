@@ -41,7 +41,7 @@ const ViewPackages = () => {
     }, []);
 
     const handleEdit = (packageId) => {
-        navigate(`/edit-package/${packageId}`);
+        navigate(`/edit-package`, { state: { packageId: packageId } });
     };
 
     if (loading) {
