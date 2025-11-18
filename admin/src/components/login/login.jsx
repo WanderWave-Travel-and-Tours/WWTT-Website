@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
-import './Login.css'; // Dito natin in-import yung CSS
+import { useNavigate } from 'react-router-dom';
+import './Login.css';
 
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const navigate = useNavigate(); // 2. Initialize hook
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -20,12 +20,9 @@ const Login = () => {
             const data = await response.json();
 
             if (data.status === 'ok') {
-                // 3. I-save ang "token" sa localStorage (parang ID pass)
                 localStorage.setItem('adminToken', 'true'); 
                 
                 alert('✅ Access Granted!');
-                
-                // 4. Ilipat sa Dashboard
                 navigate('/dashboard'); 
             } else {
                 alert('❌ Login Failed: ' + data.message);

@@ -1,14 +1,14 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './components/login/login'; 
 import Dashboard from './components/dashboard/dashboard'; 
-
+import AddPackage from './components/addpackage/addpackage'; // Import mo
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/add-package" element={<AddPackage />} />
       </Routes>
     </BrowserRouter>
   );

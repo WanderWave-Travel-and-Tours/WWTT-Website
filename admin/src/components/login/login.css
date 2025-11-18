@@ -1,14 +1,11 @@
-/* admin/src/components/Login.css */
-
-/* Siguraduhing sakop buong screen */
 .login-container {
     height: 100vh;
-    width: 100vw; /* Gamit ang viewport width para sure na full screen */
+    width: 100vw;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: #eef2f6;
-    position: fixed; /* Para hindi maapektuhan ng padding ng parent/body */
+    position: fixed;
     top: 0;
     left: 0;
 }
@@ -19,7 +16,7 @@
     background-color: white;
     padding: 2.5rem;
     border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); /* Mas soft na shadow */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .login-title {
@@ -49,7 +46,7 @@
     border: 1px solid #ddd;
     font-size: 1rem;
     transition: border-color 0.3s;
-    box-sizing: border-box; /* Para hindi lumagpas sa border */
+    box-sizing: border-box;
 }
 
 .login-input:focus {
