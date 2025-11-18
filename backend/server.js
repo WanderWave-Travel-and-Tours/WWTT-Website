@@ -75,8 +75,19 @@ app.use('/uploads', express.static('uploads'));
 
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {
     try {
-        const { title, destination, price, duration, category } = req.body;
+        const { 
+            title, 
+            destination, 
+            price, 
+            duration, 
+            category,
+            inclusions,
+            itinerary 
+        } = req.body;
+        
         const imageFilename = req.file ? req.file.filename : null;
+        const parsedInclusions = JSON.parse(inclusions);
+        const parsedItinerary = JSON.parse(itinerary);
 
         const newPackage = new PackageModel({
             title,
@@ -84,13 +95,16 @@ app.post('/api/packages/add', upload.single('image'), async (req, res) => {
             price,
             duration,
             category,
-            image: imageFilename
+            image: imageFilename,
+            inclusions: parsedInclusions,
+            itinerary: parsedItinerary 
         });
 
         await newPackage.save();
         res.json({ status: "ok", message: "Package added successfully!" });
 
     } catch (err) {
+        console.error("Error adding package:", err);
         res.status(500).json({ status: "error", error: err.message });
     }
 });
