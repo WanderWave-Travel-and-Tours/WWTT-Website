@@ -1,29 +1,191 @@
+/* Define CSS Variables for consistency */
+:root {
+    --sidebar-width-desktop: 300px;
+    --sidebar-width-mobile: 70px;
+    --primary-color: #FF8C42; /* Wanderwave Orange */
+    --secondary-color: #001F3F; /* Dark Blue */
+}
+
+/* Sidebar Container */
 .sidebar {
-    width: 250px;
-    background-color: #333;
-    padding: 20px;
+    width: var(--sidebar-width-desktop); /* Uses variable width */
+    background: linear-gradient(180deg, var(--secondary-color) 0%, #002B54 100%);
     height: 100vh;
-    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+    position: fixed; 
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    overflow: hidden;
+    transition: width 0.3s ease; /* Smooth collapse/expand transition */
 }
 
-.menu {
-    list-style: none;
-    padding: 0;
-    margin-top: 30px;
+/* Header Section */
+.sidebar-header {
+    padding: 20px 15px;
+    border-bottom: 2px solid rgba(255, 140, 66, 0.2);
 }
 
-.menu-item, .new-menu-item {
-    padding: 10px 15px;
+.logo-container {
+    text-align: center;
+}
+
+.logo-icon {
+    display: inline-block;
     margin-bottom: 10px;
+}
+
+.logo-icon img {
+    width: 100%;
+    height: auto;
+    max-width: 220px;
+    object-fit: contain;
+}
+
+.sidebar-title {
+    color: var(--primary-color);
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 5px 0;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.sidebar-subtitle {
+    color: #B0C4DE;
+    font-size: 14px;
+    margin: 0;
+    font-weight: 300;
+    white-space: nowrap;
+}
+
+/* Navigation Section */
+.sidebar-nav {
+    flex: 1;
+    padding: 20px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar .menu {
+    list-style: none;
+    padding: 0 15px;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sidebar .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+    margin-bottom: 8px;
     cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.2s;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    color: #E0E7F1;
+    font-size: 15px;
+    font-weight: 500;
+    border: 2px solid transparent;
+    width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
 }
 
-.menu-item:hover, .new-menu-item:hover {
-    background-color: #555; 
+.sidebar .menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 140, 66, 0.3);
+    transform: translateX(5px);
 }
 
-.new-menu-item {
-    background-color: #007bff;
+.sidebar .menu-item.primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #FF6B1A 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4);
+}
+
+.sidebar .menu-item.primary:hover {
+    background: linear-gradient(135deg, #FF6B1A 0%, var(--primary-color) 100%);
+    transform: translateX(5px) scale(1.02);
+    box-shadow: 0 6px 16px rgba(255, 140, 66, 0.5);
+}
+
+.sidebar .menu-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    min-width: 24px;
+}
+
+/* Footer Section */
+.sidebar-footer {
+    padding: 10px 15px;
+    border-top: 2px solid rgba(255, 140, 66, 0.2);
+}
+
+.sidebar .logout-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(220, 53, 69, 0.2);
+    border: 2px solid rgba(220, 53, 69, 0.4);
+    border-radius: 10px;
+    color: #FFB3BA;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    white-space: nowrap;
+    margin-bottom: 25px;
+}
+
+.sidebar .logout-btn:hover {
+    background: rgba(220, 53, 69, 0.9);
+    border-color: #DC3545;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* Active State */
+.sidebar .menu-item.active {
+    background-color: rgba(255, 140, 66, 0.15);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Responsive Design - Collapsing Sidebar for Mobile/Tablet */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: var(--sidebar-width-mobile); /* Collapse width to 70px */
+    }
+    
+    .logo-icon img {
+        max-width: 50px; /* Smaller logo in collapsed state */
+    }
+
+    /* Hide text elements in collapsed state */
+    .sidebar-title,
+    .sidebar-subtitle,
+    .sidebar .menu-text {
+        display: none;
+    }
+    
+    .sidebar .menu-item, .sidebar .logout-btn {
+        justify-content: center;
+        padding: 12px;
+        transform: none !important; 
+    }
+    
+    .sidebar .menu-icon {
+        margin-right: 0; /* Center icons */
+    }
 }
