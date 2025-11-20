@@ -1,77 +1,285 @@
-.login-container {
-    height: 100vh;
+.login-wrapper {
+    min-height: 100vh;
     width: 100vw;
     display: flex;
-    justify-content: center;
     align-items: center;
-    background-color: #eef2f6;
+    justify-content: center;
+    background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691ec3335c5cab55d0046c72.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 40px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     position: fixed;
     top: 0;
     left: 0;
+    overflow-y: auto;
 }
 
-.login-card {
+/* Dark Overlay for Background */
+.login-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.login-container {
+    position: relative;
+    z-index: 2;
+}
+
+/* Main Container - 2 Column Layout */
+.login-container {
+    position: relative;
+    z-index: 2;
     width: 100%;
-    max-width: 400px;
+    max-width: 1100px;
+    height: 600px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     background-color: white;
-    padding: 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
-.login-title {
-    text-align: center;
-    color: #333;
-    margin-bottom: 1.5rem;
-    font-size: 1.8rem;
+/* --- Left Column: Slideshow Panel --- */
+.slideshow-panel {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slide-item {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.slide-item.active {
+    opacity: 1;
+}
+
+.slide-content-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+    padding: 50px 30px 30px;
+    color: white;
+}
+
+.slide-title {
+    margin: 0;
+    font-size: 2.2rem;
     font-weight: 700;
-}
-
-.input-group {
-    margin-bottom: 1.2rem;
-}
-
-.input-group label {
-    display: block;
     margin-bottom: 6px;
-    color: #555;
-    font-weight: 500;
+}
+
+.slide-description {
+    margin: 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Slide Indicators */
+.slide-indicators {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.indicator-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: white;
+    opacity: 0.5;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.indicator-dot.active-dot {
+    width: 32px;
+    opacity: 1;
+}
+
+/* --- Right Column: Login Panel --- */
+.login-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    padding: 40px 35px;
+}
+
+.login-form-wrapper {
+    width: 100%;
+    max-width: 380px;
+}
+
+/* Logo Section */
+.logo-section {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.logo-img {
+    height: 60px;
+    margin-bottom: 16px;
+}
+
+.admin-title {
+    margin: 0;
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: #1a237e;
+    margin-bottom: 6px;
+}
+
+.admin-subtitle {
+    margin: 0;
+    color: #666;
     font-size: 0.9rem;
 }
 
-.login-input {
+/* Login Form */
+.login-form {
     width: 100%;
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    font-size: 1rem;
-    transition: border-color 0.3s;
-    box-sizing: border-box;
 }
 
-.login-input:focus {
-    border-color: #007bff;
+/* Input Group */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group:last-of-type {
+    margin-bottom: 28px;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.input-field {
+    width: 100%;
+    padding: 13px 15px;
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+    font-size: 0.95rem;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+    background-color: #f8f9fa;
+}
+
+.input-field:focus {
+    border-color: #ff9800;
     outline: none;
 }
 
+.input-field::placeholder {
+    color: #999;
+}
+
+/* Login Button */
 .login-button {
     width: 100%;
-    padding: 12px;
-    background-color: #007bff;
+    padding: 15px;
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 1rem;
-    margin-top: 10px;
-    transition: background-color 0.3s, transform 0.1s;
+    font-weight: 700;
+    font-size: 1.05rem;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
 }
 
 .login-button:hover {
-    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
 }
 
 .login-button:active {
-    transform: scale(0.98);
+    transform: translateY(0);
+}
+
+/* Footer Text */
+.footer-text {
+    text-align: center;
+    margin-top: 22px;
+    color: #999;
+    font-size: 0.8rem;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+    .login-container {
+        grid-template-columns: 1fr;
+        height: auto;
+        max-width: 450px;
+    }
+    
+    .slideshow-panel {
+        height: 280px;
+    }
+    
+    .login-panel {
+        padding: 35px 25px;
+    }
+    
+    .slide-title {
+        font-size: 1.8rem;
+    }
+    
+    .slide-description {
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 500px) {
+    .login-wrapper {
+        padding: 20px 15px;
+    }
+    
+    .login-container {
+        border-radius: 16px;
+    }
+    
+    .slideshow-panel {
+        height: 220px;
+    }
+    
+    .login-panel {
+        padding: 30px 20px;
+    }
+    
+    .logo-img {
+        height: 50px;
+    }
+    
+    .admin-title {
+        font-size: 1.4rem;
+    }
 }

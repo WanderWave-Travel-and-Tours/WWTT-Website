@@ -17,13 +17,14 @@ const Dashboard = () => {
         <div className="dashboard-container">
             <Sidebar />
 
-            {/* Main Content */}
+            {/* Main Content: This is the div that is now pushed away from the sidebar by the CSS margin-left */}
             <div className="main-content">
                 <div className="header">
                     <h2>Welcome back, Admin! 👋</h2>
                 </div>
 
                 <div className="content">
+                    {/* Data Cards */}
                     <div className="card">
                         <h3>Total Bookings</h3>
                         <h1>12</h1>
@@ -35,6 +36,10 @@ const Dashboard = () => {
                     <div className="card">
                         <h3>Total Sales</h3>
                         <h1>₱ 150,000</h1>
+                    </div>
+                    <div className="card">
+                        <h3>Packages Listed</h3>
+                        <h1>28</h1>
                     </div>
                 </div>
             </div>
