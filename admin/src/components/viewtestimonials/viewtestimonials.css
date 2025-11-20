@@ -1,0 +1,135 @@
+.admin-layout {
+    display: flex; 
+    min-height: 100vh;
+    background-color: #f4f7f9;
+}
+
+.view-testimonials-content {
+    flex-grow: 1; 
+    padding: 30px;
+    margin: 40px; 
+    max-width: 1200px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.view-testimonials-content h1 {
+    font-size: 32px;
+    color: #333333;
+    margin-bottom: 5px;
+}
+
+.view-testimonials-content p {
+    color: #666666;
+    margin-bottom: 30px;
+}
+
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.testimonial-card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.profile-picture {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+    border: 3px solid #8a2be2;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+}
+
+.source-tag {
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.source-tag.facebook {
+    background-color: #e6f0ff; 
+    color: #1877f2;
+}
+.source-tag.website {
+    background-color: #e6ffe6; 
+    color: #28a745;
+}
+.source-tag.email {
+    background-color: #fff8e6; 
+    color: #ffc107;
+}
+
+
+.feedback-text {
+    flex-grow: 1;
+    font-style: italic;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.delete-testimonial-btn {
+    align-self: flex-start;
+    padding: 8px 15px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.delete-testimonial-btn:hover {
+    background-color: #c82333;
+}
+
+.no-testimonials {
+    text-align: center;
+    padding: 50px;
+    color: #999;
+    grid-column: 1 / -1; 
+}
+
+@media (max-width: 768px) {
+    .view-testimonials-content {
+        margin: 20px 10px;
+        padding: 20px;
+    }
+}
