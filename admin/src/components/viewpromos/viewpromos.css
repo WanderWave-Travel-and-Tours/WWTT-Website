@@ -1,0 +1,117 @@
+/* Layout container inherited from addpromo.css, just repeating for clarity */
+.admin-layout {
+    display: flex; 
+    min-height: 100vh;
+    background-color: #f4f7f9;
+}
+
+.view-promos-content {
+    flex-grow: 1; 
+    padding: 30px;
+    margin: 40px; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.view-promos-content h1 {
+    font-size: 32px;
+    color: #333333;
+    margin-bottom: 5px;
+}
+
+.promo-summary {
+    color: #666666;
+    margin-bottom: 25px;
+    font-size: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.promo-table-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow-x: auto; /* Makes table scrollable on small screens */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eeeeee;
+}
+
+th {
+    background-color: #8a2be2; /* Same color as your submit button */
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 13px;
+}
+
+tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Specific styling for the Promo Code column */
+.promo-code-cell {
+    font-weight: 700;
+    color: #444;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge.active {
+    background-color: #e6ffed; /* Light green */
+    color: #008000; /* Dark green */
+    border: 1px solid #008000;
+}
+
+.status-badge.expired {
+    background-color: #ffeeee; /* Light red */
+    color: #cc0000; /* Dark red */
+    border: 1px solid #cc0000;
+}
+
+/* Actions Button */
+.action-btn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: opacity 0.2s;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+}
+
+.no-promos {
+    text-align: center;
+    padding: 50px;
+    color: #999;
+}
+
+@media (max-width: 768px) {
+    .view-promos-content {
+        margin: 20px 10px;
+        padding: 20px;
+    }
+}
