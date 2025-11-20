@@ -18,6 +18,14 @@ const Sidebar = () => {
         navigate('/view-packages');
     };
 
+    const navigateToAddPromo = () => {
+        navigate('/add-promo');
+    };
+
+    const navigateToViewPromos = () => {
+        navigate('/view-promos');
+    };
+
     return (
         <div className="sidebar">
             <h3 style={{color: 'white'}}>Wanderwave Admin</h3>
@@ -30,6 +38,14 @@ const Sidebar = () => {
                 
                 <li className="menu-item" onClick={navigateToViewPackages}>
                     🏖️ View Packages
+                </li>
+
+                <li className="new-menu-item" onClick={navigateToAddPromo}>
+                    🏷️ Add Promo
+                </li>
+
+                <li className="menu-item" onClick={navigateToViewPromos}>
+                    📋 List of Promos
                 </li>
                 
                 <li className="menu-item">✈️ Bookings</li>
