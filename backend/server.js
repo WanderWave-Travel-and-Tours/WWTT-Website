@@ -38,22 +38,25 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/admin/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password } = req.body; 
 
     try {
         const admin = await AdminModel.findOne({ username });
 
-        if (admin) {
-            if (admin.password === password) {
-                res.json({ status: "ok", message: "Login Success!" });
-            } else {
-                res.status(401).json({ status: "error", message: "Mali ang password" });
-            }
+        if (!admin) {
+            return res.status(401).json({ status: "error", message: "Invalid credentials" });
+        }
+
+        const isMatch = await admin.comparePassword(password); 
+
+        if (isMatch) {
+            res.json({ status: "ok", message: "Login Success!" });
         } else {
-            res.status(404).json({ status: "error", message: "Walang ganyang admin user" });
+            res.status(401).json({ status: "error", message: "Invalid credentials" });
         }
     } catch (err) {
-        res.status(500).json({ status: "error", error: err.message });
+        console.error("Login Error:", err);
+        res.status(500).json({ status: "error", message: "Server error during login." });
     }
 });
 
