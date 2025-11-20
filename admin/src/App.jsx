@@ -8,7 +8,7 @@ import AddPromo from './components/addpromo/addpromo.jsx';
 import ViewPromos from './components/viewpromos/viewpromos.jsx';
 import ViewTestimonials from './components/viewtestimonials/viewtestimonials.jsx';
 import AddTestimonial from './components/addtestimonial/addtestimonial.jsx';
-
+import ServiceManagement from './components/servicemanagement/servicemanagement.jsx';
 function App() {
   return (
     <BrowserRouter>
@@ -22,6 +22,10 @@ function App() {
         <Route path="/view-promos" element={<ViewPromos />} />
         <Route path="/view-testimonials" element={<ViewTestimonials />} />
         <Route path="/add-testimonial" element={<AddTestimonial />} />
+        <Route path="/services/visa" element={<ServiceManagement />} />
+        <Route path="/services/psa" element={<ServiceManagement />} />
+        <Route path="/services/cenomar" element={<ServiceManagement />} />
+        <Route path="/services/passport" element={<ServiceManagement />} />
       </Routes>
     </BrowserRouter>
   );
