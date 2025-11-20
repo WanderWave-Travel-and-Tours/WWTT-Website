@@ -3,23 +3,26 @@ import { Check, X } from 'lucide-react';
 
 const BookingLeftColumn = ({ pkg }) => {
   const [activeTab, setActiveTab] = useState('itinerary');
+  const hasExclusions = pkg.excludes && pkg.excludes.length > 0;
 
   return (
     <div className="booking-left-content">
       
-      {/* Hero Image */}
       <div className="booking-image-wrapper">
-        <img src={pkg.image} alt={pkg.name} className="booking-main-image" />
+        <img 
+            src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'} 
+            alt={pkg.name} 
+            className="booking-main-image" 
+        />
       </div>
 
-      {/* Inclusions Section */}
       <div className="info-section">
         <h3 className="section-title-with-icon">
           <Check className="icon-check" size={20} />
           What's Included
         </h3>
         <ul className="included-list">
-          {pkg.includes?.map((item, idx) => (
+          {pkg.inclusions?.map((item, idx) => (
             <li key={idx} className="included-item">
               <Check className="check-icon" size={16} />
               <span>{item}</span>
@@ -27,8 +30,7 @@ const BookingLeftColumn = ({ pkg }) => {
           ))}
         </ul>
 
-        {/* Exclusions (Only show if exists) */}
-        {pkg.excludes && pkg.excludes.length > 0 && (
+        {hasExclusions && (
           <>
             <h3 className="section-title-with-icon" style={{marginTop: '24px'}}>
               <X className="icon-x" size={20} />
@@ -74,6 +76,9 @@ const BookingLeftColumn = ({ pkg }) => {
                   </ul>
                 </div>
               ))}
+              {(!pkg.itinerary || pkg.itinerary.length === 0) && (
+                <p style={{color: '#999'}}>Walang itinerary na nakalista para sa package na ito.</p>
+              )}
             </div>
           )}
           

@@ -1,0 +1,45 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../sidebar/sidebar';
+import './dashboard.css';
+
+const Dashboard = () => {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const isLoggedIn = localStorage.getItem('adminToken');
+        if (!isLoggedIn) {
+            navigate('/');
+        }
+    }, [navigate]);
+
+    return (
+        <div className="dashboard-container">
+            <Sidebar />
+
+            {/* Main Content */}
+            <div className="main-content">
+                <div className="header">
+                    <h2>Welcome back, Admin! 👋</h2>
+                </div>
+
+                <div className="content">
+                    <div className="card">
+                        <h3>Total Bookings</h3>
+                        <h1>12</h1>
+                    </div>
+                    <div className="card">
+                        <h3>Pending Inquiries</h3>
+                        <h1>5</h1>
+                    </div>
+                    <div className="card">
+                        <h3>Total Sales</h3>
+                        <h1>₱ 150,000</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Dashboard;
