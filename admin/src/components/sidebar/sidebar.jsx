@@ -26,6 +26,14 @@ const Sidebar = () => {
         navigate('/view-promos');
     };
 
+    const navigateToAddTestimonial = () => {
+        navigate('/add-testimonial'); 
+    };
+
+    const navigateToViewTestimonials = () => {
+        navigate('/view-testimonials'); 
+    };
+
     return (
         <div className="sidebar">
             <h3 style={{color: 'white'}}>Wanderwave Admin</h3>
@@ -47,8 +55,16 @@ const Sidebar = () => {
                 <li className="menu-item" onClick={navigateToViewPromos}>
                     📋 List of Promos
                 </li>
+
+                <li className="new-menu-item" onClick={navigateToAddTestimonial}>
+                    ✍️ Add Testimonial
+                </li>
                 
-                <li className="menu-item">✈️ Bookings</li>
+                <li className="menu-item" onClick={navigateToViewTestimonials}>
+                    ⭐ Testimonials
+                </li>
+                
+                {/*<li className="menu-item">✈️ Bookings</li>*/}
                 <li className="menu-item">🏨 Users</li>
                 <li className="menu-item" onClick={handleLogout}>🚪 Logout</li>
             </ul>

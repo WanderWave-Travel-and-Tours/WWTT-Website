@@ -6,6 +6,9 @@ import ViewPackages from './components/viewpackages/viewpackages';
 import EditPackage from './components/editpackage/editpackage.jsx';
 import AddPromo from './components/addpromo/addpromo.jsx';
 import ViewPromos from './components/viewpromos/viewpromos.jsx';
+import ViewTestimonials from './components/viewtestimonials/viewtestimonials.jsx';
+import AddTestimonial from './components/addtestimonial/addtestimonial.jsx';
+
 function App() {
   return (
     <BrowserRouter>
@@ -17,6 +20,8 @@ function App() {
         <Route path="/edit-package" element={<EditPackage />} />
         <Route path="/add-promo" element={<AddPromo />} />
         <Route path="/view-promos" element={<ViewPromos />} />
+        <Route path="/view-testimonials" element={<ViewTestimonials />} />
+        <Route path="/add-testimonial" element={<AddTestimonial />} />
       </Routes>
     </BrowserRouter>
   );
