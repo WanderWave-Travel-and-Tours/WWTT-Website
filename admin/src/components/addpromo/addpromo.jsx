@@ -16,6 +16,8 @@ const AddPromo = () => {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // New state to track if "Other" is selected in the dropdown
+    const [isOtherCategory, setIsOtherCategory] = useState(false);
 
     // Auto-calculate end date based on duration type and start date
     useEffect(() => {
@@ -56,6 +58,19 @@ const AddPromo = () => {
         }));
     };
 
+    // Special handler for the Category Dropdown
+    const handleCategorySelect = (e) => {
+        const value = e.target.value;
+        
+        if (value === 'Other') {
+            setIsOtherCategory(true);
+            setPromoDetails(prev => ({ ...prev, category: '' })); // Clear value so user can type
+        } else {
+            setIsOtherCategory(false);
+            setPromoDetails(prev => ({ ...prev, category: value }));
+        }
+    };
+
     // --- DITO ANG API CALL ---
     const handleSubmit = async () => {
         // 1. Validation
@@ -69,7 +84,6 @@ const AddPromo = () => {
 
         try {
             // 2. Send Data to Backend
-            // NOTE: Ang URL ay naka-set sa localhost:5000/api/promos/add. 
             const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
                 headers: {
@@ -97,12 +111,11 @@ const AddPromo = () => {
                     durationType: 'Weekly',
                     startDate: ''
                 });
+                setIsOtherCategory(false);
             } else {
-                // 4. Server Error Handling
                 alert(`Error adding promo: ${data.message || 'Unknown error'}`);
             }
         } catch (error) {
-            // 5. Network Error Handling
             console.error('Network Error:', error);
             alert('Failed to connect to the server. Please check if your backend is running.');
         } finally {
@@ -122,6 +135,7 @@ const AddPromo = () => {
             durationType: 'Weekly',
             startDate: ''
         });
+        setIsOtherCategory(false);
     };
 
     return (
@@ -164,19 +178,34 @@ const AddPromo = () => {
                                         ></textarea>
                                     </div>
 
+                                    {/* MODIFIED CATEGORY SECTION */}
                                     <div className="promo-field promo-field--full">
                                         <label>Apply to Category</label>
                                         <select
-                                            name="category"
-                                            value={promoDetails.category}
-                                            onChange={handleChange}
+                                            name="categorySelect"
+                                            value={isOtherCategory ? 'Other' : promoDetails.category}
+                                            onChange={handleCategorySelect}
                                         >
                                             <option value="" disabled>Select Category</option>
                                             <option value="Barkada">Barkada Package</option>
                                             <option value="Tour Only">Tour Only</option>
                                             <option value="Package (Land)">Package (Land)</option>
                                             <option value="Full Package (Airfare)">Full Package (Airfare)</option>
+                                            <option value="Other" style={{fontWeight: 'bold', color: '#FF8C42'}}>+ Other (Custom)</option>
                                         </select>
+
+                                        {/* Custom Input appears if "Other" is selected */}
+                                        {isOtherCategory && (
+                                            <input
+                                                type="text"
+                                                name="category"
+                                                value={promoDetails.category}
+                                                onChange={handleChange}
+                                                placeholder="Type your custom category here..."
+                                                className="promo-input-custom"
+                                                autoFocus
+                                            />
+                                        )}
                                     </div>
 
                                     <div className="promo-field">
