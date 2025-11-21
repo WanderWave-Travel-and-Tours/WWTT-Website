@@ -1,119 +1,430 @@
-/* Using the same layout container for consistency */
-.admin-layout {
-    display: flex; 
-    min-height: 100vh;
-    background-color: #f4f7f9;
-}
+/* ========================================
+   ADD TESTIMONIAL PAGE STYLES
+   Scoped to .testi-main only - Sidebar SAFE
+======================================== */
 
-.testimonial-form-content {
-    flex-grow: 1; 
-    padding: 30px;
-    margin: 40px; 
-    max-width: 800px; /* Mas maliit na card size for forms */
-    /* Styling for the form card itself */
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.testimonial-form-content h1 {
-    font-size: 28px;
-    color: #333333;
-    margin-bottom: 5px;
+.testi-page {
     display: flex;
-    align-items: center;
+    min-height: 100vh;
+    background: #f8fafc;
 }
 
-.testimonial-form-content p {
-    color: #666666;
-    margin-bottom: 25px;
-    font-size: 15px;
+/* ========== MAIN CONTENT ONLY ========== */
+.testi-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: 40px 48px;
+    font-family: 'Segoe UI', Arial, sans-serif;
 }
 
-.add-testimonial-form {
+.testi-main *,
+.testi-main *::before,
+.testi-main *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.testi-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* ========== HEADER ========== */
+.testi-header {
+    margin-bottom: 32px;
+}
+
+.testi-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.testi-subtitle {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* ========== GRID LAYOUT ========== */
+.testi-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 32px;
+    align-items: start;
+}
+
+.testi-left {
     display: flex;
     flex-direction: column;
+    gap: 24px;
 }
 
-.form-group {
+/* ========== SECTIONS ========== */
+.testi-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 28px;
+}
+
+.testi-section-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1.5px;
     margin-bottom: 20px;
 }
 
-.form-group label {
+/* ========== UPLOAD ========== */
+.testi-upload {
     display: block;
+    cursor: pointer;
+}
+
+.testi-upload-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    transition: 0.2s ease;
+}
+
+.testi-upload-empty:hover {
+    border-color: #FF8C42;
+    background: #fffaf6;
+}
+
+.testi-upload-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    margin-bottom: 16px;
+}
+
+.testi-upload-icon svg {
+    width: 32px;
+    height: 32px;
+    color: #94a3b8;
+}
+
+.testi-upload-empty p {
+    font-size: 14px;
     font-weight: 600;
-    color: #444444;
-    margin-bottom: 8px;
-    font-size: 16px;
+    color: #1e293b;
+    margin-bottom: 4px;
 }
 
-.form-group input[type="text"],
-.form-group input[type="url"],
-.form-group select,
-.form-group textarea {
+.testi-upload-empty span {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.testi-upload-preview {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.testi-upload-preview img {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
-    font-size: 16px;
-    box-sizing: border-box; 
-    transition: border-color 0.3s, box-shadow 0.3s;
+    height: 100%;
+    object-fit: cover;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    border-color: #8a2be2;
-    box-shadow: 0 0 5px rgba(138, 43, 226, 0.3);
+.testi-upload-change {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(0,0,0,0.7);
+    text-align: center;
+}
+
+/* ========== FORM FIELDS ========== */
+.testi-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.testi-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.testi-field--full {
+    grid-column: 1 / -1;
+}
+
+.testi-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.testi-field input,
+.testi-field select,
+.testi-field textarea {
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: 0.15s ease;
+}
+
+.testi-field input:focus,
+.testi-field select:focus,
+.testi-field textarea:focus {
     outline: none;
+    border-color: #FF8C42;
+    background: #fff;
 }
 
-.form-group textarea {
+.testi-field input::placeholder,
+.testi-field textarea::placeholder {
+    color: #94a3b8;
+}
+
+.testi-field textarea {
     resize: vertical;
     min-height: 120px;
 }
 
-.form-group small {
-    display: block;
-    margin-top: 5px;
-    color: #999;
-    font-size: 12px;
+/* ========== ACTIONS ========== */
+.testi-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
 }
 
-/* Submit Button Styling */
-.submit-btn {
-    align-self: flex-start;
-    padding: 12px 30px;
-    background-color: #8a2be2; 
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    border: none;
-    border-radius: 4px;
+.testi-btn {
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.1s;
+    transition: 0.15s ease;
 }
 
-.submit-btn:hover {
-    background-color: #7b24d6;
+.testi-btn--cancel {
+    color: #64748b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
 }
 
-.submit-btn:active {
-    transform: translateY(1px); 
+.testi-btn--cancel:hover {
+    border-color: #94a3b8;
 }
 
-@media (max-width: 600px) {
-    .testimonial-form-content {
-        margin: 20px;
-        padding: 20px;
+.testi-btn--submit {
+    color: #fff;
+    background: #FF8C42;
+    border: none;
+}
+
+.testi-btn--submit:hover {
+    background: #e57a35;
+}
+
+/* ========== SIDEBAR PREVIEW ========== */
+.testi-right {
+    position: sticky;
+    top: 40px;
+}
+
+.testi-preview {
+    background: #001F3F;
+    border-radius: 10px;
+    padding: 24px;
+}
+
+.testi-preview-label {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    color: #FF8C42;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+}
+
+/* ========== TESTIMONIAL CARD ========== */
+.testi-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.testi-card-quote {
+    margin-bottom: 16px;
+}
+
+.testi-card-quote svg {
+    width: 32px;
+    height: 32px;
+    color: #FF8C42;
+    opacity: 0.3;
+}
+
+.testi-card-feedback {
+    font-size: 14px;
+    color: #1e293b;
+    line-height: 1.7;
+    font-style: italic;
+    margin-bottom: 20px;
+    min-height: 60px;
+}
+
+.testi-card-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.testi-card-avatar {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.testi-card-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.testi-card-avatar svg {
+    width: 24px;
+    height: 24px;
+    color: #94a3b8;
+}
+
+.testi-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.testi-card-info strong {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    color: #001F3F;
+}
+
+.testi-card-info span {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ========== STATS ========== */
+.testi-stats {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.testi-stat {
+    flex: 1;
+    text-align: center;
+    padding: 14px 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+}
+
+.testi-stat strong {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: #FF8C42;
+}
+
+.testi-stat span {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+    .testi-grid {
+        grid-template-columns: 1fr;
     }
 
-    .testimonial-form-content h1 {
-        font-size: 24px;
+    .testi-right {
+        position: static;
+        order: -1;
+        max-width: 380px;
+    }
+}
+
+@media (max-width: 900px) {
+    .testi-main {
+        margin-left: 70px;
+        padding: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .testi-main {
+        padding: 16px;
     }
 
-    .submit-btn {
-        width: 100%; 
+    .testi-title {
+        font-size: 1.5rem;
+    }
+
+    .testi-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .testi-right {
+        max-width: 100%;
+    }
+
+    .testi-actions {
+        flex-direction: column;
+    }
+
+    .testi-btn {
+        width: 100%;
     }
 }
