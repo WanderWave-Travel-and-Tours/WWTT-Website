@@ -1,4 +1,3 @@
-// Login.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
@@ -7,20 +6,51 @@ const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const destinations = [
-        { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eb2c3a1eaa1cc1c2ab8.jpg', name: 'Boracay', description: 'White Sand Paradise' },
-        { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114e5dd1ba9573b1e7c604.jpg', name: 'Palawan', description: 'Paradise on Earth' },
-        { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114ddbc3a1eac0761c08f1.jpg', name: 'Siargao', description: 'Surfing Capital' },
-        { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eedd1ba955b9ee7d600.jpg', name: 'Bohol', description: 'Chocolate Hills & Tarsiers' },
-        { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69118686d1ba952108efbba4.jpg', name: 'Bali, Indonesia', description: 'Island of Gods' },
-        { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69171615ac7fad32f8341f78.jpg', name: 'Thailand', description: 'Land of Smiles' },
-        { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6917166d01e5bcc9cd11a103.jpg', name: 'Japan', description: 'Land of the Rising Sun' },
-        { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911855175ec1e9b374b5977.jpg', name: 'Hanoi, Vietnam', description: 'Timeless Capital City' }
+        { 
+            image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eb2c3a1eaa1cc1c2ab8.jpg', 
+            name: 'Boracay', 
+            description: 'White Sand Paradise' 
+        },
+        { 
+            image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114e5dd1ba9573b1e7c604.jpg', 
+            name: 'Palawan', 
+            description: 'Paradise on Earth' 
+        },
+        { 
+            image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114ddbc3a1eac0761c08f1.jpg', 
+            name: 'Siargao', 
+            description: 'Surfing Capital' 
+        },
+        { 
+            image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eedd1ba955b9ee7d600.jpg', 
+            name: 'Bohol', 
+            description: 'Chocolate Hills & Tarsiers' 
+        },
+        { 
+            image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69118686d1ba952108efbba4.jpg', 
+            name: 'Bali, Indonesia', 
+            description: 'Island of Gods' 
+        },
+        { 
+            image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69171615ac7fad32f8341f78.jpg', 
+            name: 'Thailand', 
+            description: 'Land of Smiles' 
+        },
+        { 
+            image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6917166d01e5bcc9cd11a103.jpg', 
+            name: 'Japan', 
+            description: 'Land of the Rising Sun' 
+        },
+        { 
+            image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911855175ec1e9b374b5977.jpg', 
+            name: 'Hanoi, Vietnam', 
+            description: 'Timeless Capital City' 
+        }
     ];
-
-    const totalSlides = 11; 
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -31,6 +61,8 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
+
         try {
             const response = await fetch('http://localhost:5000/api/admin/login', {
                 method: 'POST',
@@ -51,21 +83,24 @@ const Login = () => {
             }
         } catch (error) {
             alert('Error connecting to server.');
+            console.error('Login error:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
         <div className="login-wrapper">
             <div className="login-container">
+                {/* Slideshow Panel */}
                 <div className="slideshow-panel">
                     <div className="slideshow-container">
                         {destinations.map((dest, index) => {
                             const isActive = index === currentSlide;
-                            const isPrev = index === (currentSlide - 1 + destinations.length) % destinations.length;
                             return (
                                 <div
                                     key={index}
-                                    className={`slide-item ${isActive ? 'active' : ''} ${isPrev ? 'next' : ''}`}
+                                    className={`slide-item ${isActive ? 'active' : ''}`}
                                     style={{ backgroundImage: `url(${dest.image})` }}
                                 >
                                     <div className="slide-content-overlay">
@@ -83,11 +118,13 @@ const Login = () => {
                                 key={index}
                                 onClick={() => setCurrentSlide(index)}
                                 className={`indicator-dot ${currentSlide === index ? 'active-dot' : ''}`}
+                                aria-label={`Go to slide ${index + 1}`}
                             />
                         ))}
                     </div>
                 </div>
 
+                {/* Login Panel */}
                 <div className="login-panel">
                     <div className="login-form-wrapper">
                         <div className="logo-section">
@@ -102,31 +139,39 @@ const Login = () => {
 
                         <form onSubmit={handleLogin} className="login-form">
                             <div className="input-group">
-                                <label className="input-label">Username</label>
+                                <label htmlFor="username" className="input-label">Username</label>
                                 <input
+                                    id="username"
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="Enter your username"
                                     className="input-field"
                                     required
+                                    autoComplete="username"
                                 />
                             </div>
 
                             <div className="input-group">
-                                <label className="input-label">Password</label>
+                                <label htmlFor="password" className="input-label">Password</label>
                                 <input
+                                    id="password"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
                                     className="input-field"
                                     required
+                                    autoComplete="current-password"
                                 />
                             </div>
 
-                            <button type="submit" className="login-button">
-                                Log In
+                            <button 
+                                type="submit" 
+                                className="login-button"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Logging in...' : 'Log In'}
                             </button>
                         </form>
 
