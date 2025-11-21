@@ -17,11 +17,12 @@ import {
   Menu,
   FilePlus,
   ListOrdered,
-  Settings, // Icon for Settings
+  Settings, 
   FileText,
   HeartHandshake,
   Plane,
-  BookOpen
+  BookOpen,
+  Hotel
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -171,6 +172,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Create Package', path: '/add-package', icon: FilePlus },
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
+                { name: 'Add Hotel', path: '/add-hotel', icon: Hotel }, // Added Here
               ]}
             />
 
@@ -182,6 +184,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Manage Packages', path: '/view-packages', icon: Package },
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
+                { name: 'Hotel List', path: '/view-hotels', icon: Hotel }, // Added Here
               ]}
             />
           </ul>
@@ -204,7 +207,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
             <MenuItem path="/users" icon={Users} label="Users" />
             
-            {/* --- DITO KO IDINAGDAG ANG SETTINGS BUTTON --- */}
             <MenuItem path="/settings" icon={Settings} label="Settings" />
             
           </ul>

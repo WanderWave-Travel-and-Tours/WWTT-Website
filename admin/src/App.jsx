@@ -10,6 +10,8 @@ import ViewTestimonials from './components/viewtestimonials/viewtestimonials.jsx
 import AddTestimonial from './components/addtestimonial/addtestimonial.jsx';
 import ServiceManagement from './components/servicemanagement/servicemanagement.jsx';
 import Settings from './components/settings/settings.jsx';
+import AddHotel from './components/addhotel/addhotel.jsx';
+import ViewHotels from './components/viewhotel/viewhotel.jsx';
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
         <Route path="/services/cenomar" element={<ServiceManagement />} />
         <Route path="/services/passport" element={<ServiceManagement />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/add-hotel" element={<AddHotel />} />
+        <Route path="/view-hotels" element={<ViewHotels />} />
       </Routes>
     </BrowserRouter>
   );
