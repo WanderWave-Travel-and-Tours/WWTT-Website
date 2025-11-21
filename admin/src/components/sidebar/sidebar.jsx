@@ -141,6 +141,13 @@ const Sidebar = () => {
                         <span className="menu-icon">👥</span>
                         <span className="menu-text">Users</span>
                     </li>
+                    <li 
+                        className={`menu-item ${isActive('/settings') ? 'active' : ''}`} 
+                        onClick={() => handleNavigate('/settings')}
+                    >
+                        <span className="menu-icon">⚙️</span>
+                        <span className="menu-text">Settings</span>
+                    </li>                
                 </ul>
             </nav>
 

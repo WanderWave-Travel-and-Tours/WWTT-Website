@@ -9,6 +9,8 @@ import ViewPromos from './components/viewpromos/viewpromos.jsx';
 import ViewTestimonials from './components/viewtestimonials/viewtestimonials.jsx';
 import AddTestimonial from './components/addtestimonial/addtestimonial.jsx';
 import ServiceManagement from './components/servicemanagement/servicemanagement.jsx';
+import Settings from './components/settings/settings.jsx';
+
 function App() {
   return (
     <BrowserRouter>
@@ -26,6 +28,7 @@ function App() {
         <Route path="/services/psa" element={<ServiceManagement />} />
         <Route path="/services/cenomar" element={<ServiceManagement />} />
         <Route path="/services/passport" element={<ServiceManagement />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </BrowserRouter>
   );

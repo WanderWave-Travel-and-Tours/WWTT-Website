@@ -9,7 +9,6 @@ const Login = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const navigate = useNavigate();
 
-    // Move destinations outside or use useMemo to prevent re-creation
     const destinations = [
         {
             image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eb2c3a1eaa1cc1c2ab8.jpg',
@@ -53,9 +52,8 @@ const Login = () => {
         }
     ];
 
-    const totalSlides = 11; // Hardcode para sure
+    const totalSlides = 11; 
 
-    // Auto-slide effect - Fixed to properly cycle through all destinations
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % totalSlides);
@@ -78,6 +76,8 @@ const Login = () => {
 
             if (data.status === 'ok') {
                 localStorage.setItem('adminToken', 'true'); 
+                localStorage.setItem('adminData', JSON.stringify(data.data)); 
+                
                 alert('✅ Access Granted!');
                 navigate('/dashboard'); 
             } else {
@@ -91,7 +91,6 @@ const Login = () => {
     return (
         <div className="login-wrapper">
             <div className="login-container">
-                {/* Left Column - Slideshow */}
                 <div className="slideshow-panel">
                     {destinations.map((dest, index) => (
                         <div
@@ -119,7 +118,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* Right Column - Login Form */}
                 <div className="login-panel">
                     <div className="login-form-wrapper">
                         <div className="logo-section">
