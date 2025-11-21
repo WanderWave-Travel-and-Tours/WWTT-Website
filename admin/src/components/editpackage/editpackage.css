@@ -1,81 +1,692 @@
-.editpackage-page-container {
-    display: flex; 
+/* ========================================
+   EDIT PACKAGE PAGE STYLES
+   Scoped to .edit-main only - Sidebar SAFE
+======================================== */
+
+.edit-page {
+    display: flex;
     min-height: 100vh;
-    background-color: #f4f7f6; 
+    background: #f8fafc;
 }
 
-.main-content {
-    flex-grow: 1; 
-    padding: 30px;
+/* ========== MAIN CONTENT ONLY ========== */
+.edit-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: 40px 48px;
+    font-family: 'Segoe UI', Arial, sans-serif;
 }
 
-.editpackage-container {
-    max-width: 800px;
+.edit-main *,
+.edit-main *::before,
+.edit-main *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.edit-container {
+    max-width: 1280px;
     margin: 0 auto;
-    background-color: #ffffff;
-    padding: 30px;
+}
+
+.edit-loading,
+.edit-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50vh;
+    font-size: 16px;
+    color: #64748b;
+}
+
+/* ========== HEADER ========== */
+.edit-header {
+    margin-bottom: 32px;
+}
+
+.edit-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #64748b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: 0.15s ease;
+}
+
+.edit-back:hover {
+    color: #001F3F;
+    border-color: #001F3F;
+}
+
+.edit-back svg {
+    width: 16px;
+    height: 16px;
+}
+
+.edit-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.edit-subtitle {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* ========== GRID LAYOUT ========== */
+.edit-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 32px;
+    align-items: start;
+}
+
+.edit-left {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ========== SECTIONS ========== */
+.edit-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 28px;
 }
 
-.form-title {
-    color: #1e3a8a;
-    margin-bottom: 25px;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 10px;
-}
-
-.form-group {
+.edit-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 20px;
 }
 
-.form-label {
+.edit-section-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1.5px;
+    margin-bottom: 20px;
+}
+
+.edit-section-header .edit-section-title {
+    margin-bottom: 0;
+}
+
+.edit-count {
+    font-size: 12px;
+    font-weight: 500;
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* ========== UPLOAD ========== */
+.edit-upload {
     display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #555;
+    cursor: pointer;
 }
 
-.input-field, .select-field, .file-input-group {
+.edit-upload-preview {
+    position: relative;
+    height: 220px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.edit-upload-preview img {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
+    height: 100%;
+    object-fit: cover;
 }
 
-.price-category-group {
+.edit-upload-change {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(0,0,0,0.7);
+    border-radius: 6px;
+    transition: 0.15s ease;
+}
+
+.edit-upload-preview:hover .edit-upload-change {
+    background: rgba(0,0,0,0.85);
+}
+
+.edit-upload-hint {
+    font-size: 12px;
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 12px;
+}
+
+/* ========== FORM FIELDS ========== */
+.edit-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.edit-field--full {
+    grid-column: 1 / -1;
+}
+
+.edit-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.edit-field input,
+.edit-field select {
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: 0.15s ease;
+}
+
+.edit-field input:focus,
+.edit-field select:focus {
+    outline: none;
+    border-color: #FF8C42;
+    background: #fff;
+}
+
+.edit-field input::placeholder {
+    color: #94a3b8;
+}
+
+/* ========== LIST ITEMS ========== */
+.edit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.edit-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.edit-bullet {
+    width: 8px;
+    height: 8px;
+    background: #FF8C42;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.edit-list-item input {
+    flex: 1;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: 0.15s ease;
+}
+
+.edit-list-item input:focus {
+    outline: none;
+    border-color: #FF8C42;
+    background: #fff;
+}
+
+.edit-remove {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: 0.15s ease;
+}
+
+.edit-remove:hover {
+    color: #dc2626;
+}
+
+.edit-remove svg {
+    width: 18px;
+    height: 18px;
+}
+
+.edit-remove--sm {
+    width: 32px;
+    height: 32px;
+}
+
+.edit-remove--sm svg {
+    width: 16px;
+    height: 16px;
+}
+
+.edit-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #64748b;
+    background: none;
+    border: 2px dashed #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.edit-add-btn:hover {
+    color: #FF8C42;
+    border-color: #FF8C42;
+}
+
+.edit-add-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ========== TIMELINE ========== */
+.edit-timeline {
+    margin-bottom: 20px;
+}
+
+.edit-day {
     display: flex;
     gap: 20px;
 }
 
-.current-image-group {
-    text-align: center;
-    margin-bottom: 30px;
+.edit-day-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 44px;
+    flex-shrink: 0;
 }
 
-.current-image-preview {
-    width: 100%;
-    max-height: 250px;
-    object-fit: cover;
+.edit-day-num {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #fff;
+    background: #001F3F;
+    border-radius: 50%;
+}
+
+.edit-day-line {
+    flex: 1;
+    width: 2px;
+    background: #e2e8f0;
+    margin: 8px 0;
+}
+
+.edit-day-content {
+    flex: 1;
+    background: #f8fafc;
     border-radius: 8px;
-    margin-top: 10px;
-    border: 1px solid #eee;
+    padding: 20px;
+    margin-bottom: 16px;
 }
 
-.update-btn {
-    background-color: #28a745;
-    color: white;
+.edit-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.edit-day-title {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-right: 12px;
+}
+
+.edit-day-title:focus {
+    outline: none;
+    border-color: #FF8C42;
+}
+
+.edit-day-remove {
+    font-size: 12px;
+    font-weight: 600;
+    color: #dc2626;
+    background: none;
     border: none;
-    padding: 12px 25px;
-    border-radius: 5px;
     cursor: pointer;
-    font-size: 1.1em;
-    font-weight: bold;
-    width: 100%;
-    transition: background-color 0.3s;
+    font-family: 'Segoe UI', Arial, sans-serif;
 }
 
-.update-btn:hover {
-    background-color: #218838;
+.edit-activities {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.edit-activity {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-activity input {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+
+.edit-activity input:focus {
+    outline: none;
+    border-color: #FF8C42;
+}
+
+.edit-add-activity {
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #94a3b8;
+    background: none;
+    border: 1px dashed #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.edit-add-activity:hover {
+    color: #FF8C42;
+    border-color: #FF8C42;
+}
+
+/* ========== SIDEBAR PREVIEW ========== */
+.edit-right {
+    position: sticky;
+    top: 40px;
+}
+
+.edit-preview {
+    background: #001F3F;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+.edit-preview-label {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    color: #FF8C42;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+}
+
+.edit-card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.edit-card-image {
+    height: 160px;
+    background: #f1f5f9;
+}
+
+.edit-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.edit-card-body {
+    padding: 20px;
+}
+
+.edit-card-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #FF8C42;
+    background: #fff4ec;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.edit-card-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #001F3F;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.edit-card-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.edit-card-location svg {
+    width: 14px;
+    height: 14px;
+}
+
+.edit-card-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 16px 0;
+}
+
+.edit-card-meta {
+    display: flex;
+    justify-content: space-between;
+}
+
+.edit-card-meta > div span {
+    display: block;
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.edit-card-meta > div strong {
+    font-size: 15px;
+    font-weight: 700;
+    color: #001F3F;
+}
+
+.edit-card-meta > div:first-child strong {
+    color: #FF8C42;
+}
+
+/* ========== STATS ========== */
+.edit-stats {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.edit-stat {
+    flex: 1;
+    text-align: center;
+    padding: 14px 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+}
+
+.edit-stat strong {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: #FF8C42;
+}
+
+.edit-stat span {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ========== ACTIONS ========== */
+.edit-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.edit-btn {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.edit-btn--cancel {
+    color: #64748b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+}
+
+.edit-btn--cancel:hover {
+    border-color: #94a3b8;
+}
+
+.edit-btn--submit {
+    color: #fff;
+    background: #FF8C42;
+    border: none;
+}
+
+.edit-btn--submit:hover {
+    background: #e57a35;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1100px) {
+    .edit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .edit-right {
+        position: static;
+        order: -1;
+        max-width: 400px;
+    }
+}
+
+@media (max-width: 900px) {
+    .edit-main {
+        margin-left: 70px;
+        padding: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .edit-main {
+        padding: 16px;
+    }
+
+    .edit-title {
+        font-size: 1.5rem;
+    }
+
+    .edit-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .edit-right {
+        max-width: 100%;
+    }
+
+    .edit-day {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .edit-day-marker {
+        flex-direction: row;
+        width: auto;
+    }
+
+    .edit-day-line {
+        display: none;
+    }
+
+    .edit-actions {
+        flex-direction: column;
+    }
+
+    .edit-btn {
+        width: 100%;
+    }
 }
