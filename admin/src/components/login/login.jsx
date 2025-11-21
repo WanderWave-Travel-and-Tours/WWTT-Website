@@ -20,7 +20,8 @@ const Login = () => {
         { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911855175ec1e9b374b5977.jpg', name: 'Hanoi, Vietnam', description: 'Timeless Capital City' }
     ];
 
-    // Auto slide every 4.5 seconds
+    const totalSlides = 11; 
+
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % destinations.length);
@@ -40,7 +41,9 @@ const Login = () => {
             const data = await response.json();
 
             if (data.status === 'ok') {
-                localStorage.setItem('adminToken', 'true');
+                localStorage.setItem('adminToken', 'true'); 
+                localStorage.setItem('adminData', JSON.stringify(data.data)); 
+                
                 alert('✅ Access Granted!');
                 navigate('/dashboard');
             } else {
@@ -54,7 +57,6 @@ const Login = () => {
     return (
         <div className="login-wrapper">
             <div className="login-container">
-                {/* Left: Slideshow */}
                 <div className="slideshow-panel">
                     <div className="slideshow-container">
                         {destinations.map((dest, index) => {
@@ -86,7 +88,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* Right: Login Form */}
                 <div className="login-panel">
                     <div className="login-form-wrapper">
                         <div className="logo-section">

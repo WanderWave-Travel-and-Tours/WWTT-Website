@@ -1,67 +1,107 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react'; 
 import './PromoSection.css';
 
-function PromoSection({ promoFilter, onPromoFilterChange, onBookNow }) {
+function PromoSection({ onBookNow }) {
   
-  const promos = [
-    {
-      id: 'weekly',
-      label: 'Weekly',
-      title: "GET 30% OFF ON YOUR FIRST BOOKING!",
-      text: "Limited time weekly offer for new travelers. Book now!",
-      icon: "🎁",
-      color: "linear-gradient(135deg, #ffe8cc 0%, #ffd9a8 100%)", 
-      btnColor: "#f97316"
-    },
-    {
-      id: 'monthly',
-      label: 'Monthly',
-      title: "MAY SUPER SALE: BORACAY FOR 2!",
-      text: "Exclusive monthly deal. All-inclusive package for couples.",
-      icon: "🏖️",
-      color: "linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)", 
-      btnColor: "#0891b2" 
-    },
-    {
-      id: 'yearly',
-      label: 'Yearly',
-      title: "YEAR-END BLOWOUT: JAPAN TOUR",
-      text: "Plan your year-end vacation early and save up to 50%!",
-      icon: "🌸",
-      color: "linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)", 
-      btnColor: "#db2777" 
+  const [promos, setPromos] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const getPromoDesign = (type) => {
+    switch(type) {
+      case 'Weekly':
+        return {
+          label: 'Weekly',
+          icon: "🎁",
+          color: "linear-gradient(135deg, #ffe8cc 0%, #ffd9a8 100%)", 
+          btnColor: "#f97316"
+        };
+      case 'Monthly':
+        return {
+          label: 'Monthly',
+          icon: "🏖️",
+          color: "linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)", 
+          btnColor: "#0891b2"
+        };
+      case 'Yearly':
+        return {
+          label: 'Yearly',
+          icon: "🌸",
+          color: "linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)", 
+          btnColor: "#db2777"
+        };
+      default: 
+        return {
+          label: 'Special',
+          icon: "✨",
+          color: "linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)",
+          btnColor: "#7e22ce"
+        };
     }
-  ];
+  };
 
-  const currentIndex = promos.findIndex(p => p.id === promoFilter);
+  useEffect(() => {
+    const fetchPromos = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/promos');
+        const data = await response.json();
 
-  // --- HANDLERS ---
+        if (Array.isArray(data)) {
+          const today = new Date();
+
+          const activePromos = data.filter(promo => {
+             const expiryDate = new Date(promo.validUntil);
+             return expiryDate >= today; 
+          });
+
+          const formattedPromos = activePromos.map(p => {
+            const design = getPromoDesign(p.durationType);
+            return {
+              id: p._id,
+              label: design.label, 
+              title: `${p.code}: GET ${p.discountType === 'Percentage' ? p.discountValue + '%' : '₱' + p.discountValue} OFF!`,
+              text: p.description,
+              icon: design.icon,
+              color: design.color,
+              btnColor: design.btnColor
+            };
+          });
+
+          setPromos(formattedPromos);
+        }
+      } catch (error) {
+        console.error("Error fetching promos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPromos();
+  }, []);
+
+  const handlePromoChange = (index) => {
+    setCurrentIndex(index);
+  };
+
   const handleNext = () => {
-    const nextIndex = (currentIndex + 1) % promos.length;
-    onPromoFilterChange(promos[nextIndex].id);
+    setCurrentIndex((prev) => (prev + 1) % promos.length);
   };
 
   const handlePrev = () => {
-    const prevIndex = (currentIndex - 1 + promos.length) % promos.length;
-    onPromoFilterChange(promos[prevIndex].id);
+    setCurrentIndex((prev) => (prev - 1 + promos.length) % promos.length);
   };
 
-  // --- AUTO-PLAY LOGIC (Desktop Only) ---
   useEffect(() => {
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-
-    if (isDesktop) {
+    if (isDesktop && promos.length > 0) {
       const interval = setInterval(() => {
         handleNext();
       }, 4000); 
-
       return () => clearInterval(interval);
     }
-  }, [currentIndex, onPromoFilterChange]); 
+  }, [currentIndex, promos.length]); 
 
-
-  // --- SWIPE LOGIC (Mobile Touch) ---
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const minSwipeDistance = 50;
@@ -78,12 +118,14 @@ function PromoSection({ promoFilter, onPromoFilterChange, onBookNow }) {
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) handleNext();
-    if (isRightSwipe) handlePrev();
+    if (distance > minSwipeDistance) handleNext();
+    if (distance < -minSwipeDistance) handlePrev();
   };
+
+  if (loading) return null; 
+  if (promos.length === 0) return null;
+
+  const currentPromo = promos[currentIndex];
 
   return (
     <section className="promo-section">
@@ -91,11 +133,11 @@ function PromoSection({ promoFilter, onPromoFilterChange, onBookNow }) {
       <div className="promo-header">
         <h2 className="promo-section-title">PROMO</h2>
         <div className="promo-filters">
-          {promos.map(item => (
+          {promos.map((item, index) => (
             <button
               key={item.id}
-              className={`promo-filter-btn ${promoFilter === item.id ? 'active' : ''}`}
-              onClick={() => onPromoFilterChange(item.id)}
+              className={`promo-filter-btn ${index === currentIndex ? 'active' : ''}`}
+              onClick={() => handlePromoChange(index)}
             >
               {item.label}
             </button>
@@ -109,7 +151,7 @@ function PromoSection({ promoFilter, onPromoFilterChange, onBookNow }) {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Arrows (Desktop only via CSS) */}
+        {/* Arrows */}
         <button className="slider-arrow arrow-left" onClick={handlePrev}>
           <ChevronLeft size={24} />
         </button>

@@ -22,15 +22,44 @@ const AddTestimonial = () => {
         if (file) setPreviewUrl(URL.createObjectURL(file));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => { 
         e.preventDefault();
-        console.log('Submitting Testimonial:', testimonialDetails);
-        if (pictureFile) console.log('Picture:', pictureFile.name);
-        alert(`Testimonial from ${testimonialDetails.name} added successfully!`);
-        setTestimonialDetails({ name: '', feedback: '', source: '' });
-        setPictureFile(null);
-        setPreviewUrl(null);
-        e.target.reset();
+        const formData = new FormData();
+
+        formData.append('customerName', testimonialDetails.name); 
+        formData.append('source', testimonialDetails.source);
+        formData.append('feedback', testimonialDetails.feedback);
+
+        if (pictureFile) {
+            formData.append('customerImage', pictureFile); 
+        }
+
+        try {
+            const response = await fetch('http://localhost:5000/api/testimonials', {
+                    method: 'POST',
+                body: formData, 
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(`Testimonial from ${testimonialDetails.name} added successfully!`);
+                
+                setTestimonialDetails({
+                    name: '',
+                    feedback: '',
+                    source: '',
+                });
+                setPictureFile(null);
+                e.target.reset();
+            } else {
+                console.error("Failed to submit");
+                alert("Error submitting testimonial.");
+            }
+
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Something went wrong with the server.");
+        }
     };
 
     return (

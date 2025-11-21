@@ -1,38 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import Sidebar from '../sidebar/sidebar';
-import './ViewTestimonials.css';
-
-const mockTestimonials = [
-    { 
-        id: 1, 
-        name: 'Maria T. Reyes', 
-        feedback: 'Absolutely loved the Batanes tour package! The hotels were excellent and the itinerary was perfect. Highly recommended!', 
-        pictureUrl: 'https://via.placeholder.com/150/007bff/FFFFFF?text=MR', 
-        source: 'Facebook' 
-    },
-    { 
-        id: 2, 
-        name: 'Juan Dela Cruz', 
-        feedback: "The Palawan trip was seamless. From booking to the actual flight, everything was handled professionally. Five stars!", 
-        pictureUrl: 'https://via.placeholder.com/150/28a745/FFFFFF?text=JD', 
-        source: 'Website' 
-    },
-    { 
-        id: 3, 
-        name: 'Sofia A. Gomez', 
-        feedback: 'Great customer service! They quickly resolved my booking conflict. Will definitely book my next vacation with Wanderwave.', 
-        pictureUrl: 'https://via.placeholder.com/150/ffc107/333333?text=SG', 
-        source: 'Email' 
-    },
-];
+import './viewtestimonials.css';
 
 const ViewTestimonials = () => {
-    const [testimonials, setTestimonials] = useState(mockTestimonials);
+    const [testimonials, setTestimonials] = useState([]);
 
-    const handleDelete = (id, name) => {
+    const fetchTestimonials = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/testimonials');
+            if (!response.ok) {
+                throw new Error('Failed to fetch');
+            }
+            const data = await response.json();
+            setTestimonials(data);
+        } catch (error) {
+            console.error("Error fetching testimonials:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchTestimonials();
+    }, []);
+
+    const handleDelete = async (id, name) => {
         if (window.confirm(`Are you sure you want to delete the testimonial from ${name}?`)) {
-            setTestimonials(testimonials.filter(t => t.id !== id));
-            alert(`Testimonial from ${name} has been deleted.`);
+            setTestimonials(testimonials.filter(t => t._id !== id));
+            alert(`Testimonial from ${name} has been deleted (from view).`);
         }
     };
 
