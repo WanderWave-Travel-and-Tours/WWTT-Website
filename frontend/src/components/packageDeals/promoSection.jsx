@@ -80,8 +80,12 @@ function PromoSection({ onBookNow }) {
     fetchPromos();
   }, []);
 
-  const handlePromoChange = (index) => {
-    setCurrentIndex(index);
+  const uniqueLabels = [...new Set(promos.map(item => item.label))];
+  const handleFilterClick = (label) => {
+    const newIndex = promos.findIndex(p => p.label === label);
+    if (newIndex !== -1) {
+      setCurrentIndex(newIndex);
+    }
   };
 
   const handleNext = () => {
@@ -133,13 +137,13 @@ function PromoSection({ onBookNow }) {
       <div className="promo-header">
         <h2 className="promo-section-title">PROMO</h2>
         <div className="promo-filters">
-          {promos.map((item, index) => (
+          {uniqueLabels.map((label) => (
             <button
-              key={item.id}
-              className={`promo-filter-btn ${index === currentIndex ? 'active' : ''}`}
-              onClick={() => handlePromoChange(index)}
+              key={label}
+              className={`promo-filter-btn ${currentPromo?.label === label ? 'active' : ''}`}
+              onClick={() => handleFilterClick(label)}
             >
-              {item.label}
+              {label}
             </button>
           ))}
         </div>
@@ -151,7 +155,6 @@ function PromoSection({ onBookNow }) {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Arrows */}
         <button className="slider-arrow arrow-left" onClick={handlePrev}>
           <ChevronLeft size={24} />
         </button>
