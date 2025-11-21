@@ -1,117 +1,328 @@
-/* Layout container inherited from addpromo.css, just repeating for clarity */
-.admin-layout {
-    display: flex; 
+/* ========================================
+   VIEW PROMOS PAGE STYLES
+   Scoped to .vpromos-main only - Sidebar SAFE
+======================================== */
+
+.vpromos-page {
+    display: flex;
     min-height: 100vh;
-    background-color: #f4f7f9;
+    background: #f8fafc;
 }
 
-.view-promos-content {
-    flex-grow: 1; 
-    padding: 30px;
-    margin: 40px; 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* ========== MAIN CONTENT ONLY ========== */
+.vpromos-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: 40px 48px;
+    font-family: 'Segoe UI', Arial, sans-serif;
 }
 
-.view-promos-content h1 {
-    font-size: 32px;
-    color: #333333;
-    margin-bottom: 5px;
+.vpromos-main *,
+.vpromos-main *::before,
+.vpromos-main *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-.promo-summary {
-    color: #666666;
-    margin-bottom: 25px;
-    font-size: 16px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #e0e0e0;
+.vpromos-container {
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.promo-table-container {
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    overflow-x: auto; /* Makes table scrollable on small screens */
+/* ========== HEADER ========== */
+.vpromos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
 }
 
-table {
+.vpromos-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.vpromos-subtitle {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* ========== BUTTONS ========== */
+.vpromos-btn {
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.vpromos-btn--add {
+    color: #fff;
+    background: #FF8C42;
+    border: none;
+}
+
+.vpromos-btn--add:hover {
+    background: #e57a35;
+}
+
+/* ========== EMPTY STATE ========== */
+.vpromos-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 50vh;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 60px;
+}
+
+.vpromos-empty-icon {
+    font-size: 56px;
+    margin-bottom: 8px;
+}
+
+.vpromos-empty h3 {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #001F3F;
+}
+
+.vpromos-empty p {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* ========== TABLE ========== */
+.vpromos-table-wrapper {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.vpromos-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 15px;
 }
 
-th, td {
-    padding: 12px 15px;
+.vpromos-table thead {
+    background: #001F3F;
+}
+
+.vpromos-table th {
+    padding: 16px 20px;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    color: #fff;
     text-align: left;
-    border-bottom: 1px solid #eeeeee;
+    letter-spacing: 1px;
 }
 
-th {
-    background-color: #8a2be2; /* Same color as your submit button */
-    color: white;
-    font-weight: 600;
-    text-transform: uppercase;
+.vpromos-table td {
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #1e293b;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.vpromos-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.vpromos-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Code Cell */
+.vpromos-code {
+    display: inline-block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
     font-size: 13px;
-}
-
-tbody tr:hover {
-    background-color: #f5f5f5;
-}
-
-/* Specific styling for the Promo Code column */
-.promo-code-cell {
-    font-weight: 700;
-    color: #444;
-}
-
-/* Status Badges */
-.status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.status-badge.active {
-    background-color: #e6ffed; /* Light green */
-    color: #008000; /* Dark green */
-    border: 1px solid #008000;
-}
-
-.status-badge.expired {
-    background-color: #ffeeee; /* Light red */
-    color: #cc0000; /* Dark red */
-    border: 1px solid #cc0000;
-}
-
-/* Actions Button */
-.action-btn {
-    padding: 6px 10px;
-    border: none;
+    font-weight: 900;
+    color: #001F3F;
+    background: #f1f5f9;
+    padding: 6px 12px;
     border-radius: 4px;
-    cursor: pointer;
+    letter-spacing: 1px;
+    border: 2px dashed #e2e8f0;
+}
+
+/* Discount Cell */
+.vpromos-discount {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #FF8C42;
+}
+
+/* Date Cell */
+.vpromos-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
     font-size: 13px;
-    transition: opacity 0.2s;
 }
 
-.delete-btn {
-    background-color: #dc3545;
-    color: white;
+.vpromos-date svg {
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
 }
 
-.delete-btn:hover {
-    background-color: #c82333;
+/* Status Badge */
+.vpromos-status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.no-promos {
+.vpromos-status--active {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.vpromos-status--expired {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* Description */
+.vpromos-desc {
+    color: #64748b;
+    font-size: 13px;
+    max-width: 200px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Actions */
+.vpromos-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.vpromos-action-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+    border: none;
+}
+
+.vpromos-action-btn--edit {
+    color: #fff;
+    background: #001F3F;
+}
+
+.vpromos-action-btn--edit:hover {
+    background: #003366;
+}
+
+.vpromos-action-btn--delete {
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.vpromos-action-btn--delete:hover {
+    background: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
+}
+
+/* ========== STATS ========== */
+.vpromos-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.vpromos-stat {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
     text-align: center;
-    padding: 50px;
-    color: #999;
 }
 
-@media (max-width: 768px) {
-    .view-promos-content {
-        margin: 20px 10px;
-        padding: 20px;
+.vpromos-stat strong {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: #FF8C42;
+    margin-bottom: 4px;
+}
+
+.vpromos-stat span {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+    .vpromos-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .vpromos-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .vpromos-table {
+        min-width: 800px;
+    }
+}
+
+@media (max-width: 900px) {
+    .vpromos-main {
+        margin-left: 70px;
+        padding: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .vpromos-main {
+        padding: 16px;
+    }
+
+    .vpromos-title {
+        font-size: 1.5rem;
+    }
+
+    .vpromos-stats {
+        flex-direction: column;
     }
 }

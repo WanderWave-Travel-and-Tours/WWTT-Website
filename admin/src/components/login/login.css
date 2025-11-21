@@ -16,24 +16,15 @@
     overflow-y: auto;
 }
 
-/* Dark Overlay for Background */
+/* Dark Overlay */
 .login-wrapper::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
     z-index: 1;
 }
 
-.login-container {
-    position: relative;
-    z-index: 2;
-}
-
-/* Main Container - 2 Column Layout */
 .login-container {
     position: relative;
     z-index: 2;
@@ -44,31 +35,45 @@
     grid-template-columns: 1fr 1fr;
     border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    box-shadow: 0 25px 70px rgba(0,0,0,0.6);
     background-color: white;
 }
 
-/* --- Left Column: Slideshow Panel --- */
+/* Slideshow Panel - Crossfade Fix */
 .slideshow-panel {
     position: relative;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #000;
+}
+
+.slideshow-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
 }
 
 .slide-item {
     position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     background-size: cover;
     background-position: center;
     opacity: 0;
-    transition: opacity 1s ease-in-out;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 1;
 }
 
 .slide-item.active {
     opacity: 1;
+    z-index: 2;
+}
+
+/* Preload next slide behind */
+.slide-item.next {
+    opacity: 1;
+    z-index: 3;
 }
 
 .slide-content-overlay {
@@ -76,57 +81,62 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
-    padding: 50px 30px 30px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+    padding: 60px 40px 40px;
     color: white;
+    z-index: 5;
 }
 
 .slide-title {
-    margin: 0;
-    font-size: 2.2rem;
-    font-weight: 700;
-    margin-bottom: 6px;
+    margin: 0 0 8px 0;
+    font-size: 2.4rem;
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
 }
 
 .slide-description {
     margin: 0;
-    font-size: 1.1rem;
-    opacity: 0.9;
+    font-size: 1.2rem;
+    opacity: 0.95;
+    font-weight: 500;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.7);
 }
 
-/* Slide Indicators */
+/* Indicators */
 .slide-indicators {
     position: absolute;
-    bottom: 20px;
+    bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 8px;
+    gap: 10px;
     z-index: 10;
 }
 
 .indicator-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
     background-color: white;
     opacity: 0.5;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s ease;
 }
 
 .indicator-dot.active-dot {
-    width: 32px;
+    width: 36px;
+    border-radius: 20px;
     opacity: 1;
+    background-color: #ff9800;
 }
 
-/* --- Right Column: Login Panel --- */
+/* Login Panel */
 .login-panel {
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #ffffff;
-    padding: 40px 35px;
+    padding: 40px 50px;
 }
 
 .login-form-wrapper {
@@ -134,43 +144,33 @@
     max-width: 380px;
 }
 
-/* Logo Section */
 .logo-section {
     text-align: center;
-    margin-bottom: 35px;
+    margin-bottom: 40px;
 }
 
 .logo-img {
-    height: 60px;
-    margin-bottom: 16px;
+    height: 68px;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
 }
 
 .admin-title {
     margin: 0;
-    font-size: 1.65rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 800;
     color: #1a237e;
-    margin-bottom: 6px;
+    letter-spacing: -0.5px;
 }
 
 .admin-subtitle {
-    margin: 0;
+    margin: 8px 0 0;
     color: #666;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
-/* Login Form */
-.login-form {
-    width: 100%;
-}
-
-/* Input Group */
 .input-group {
-    margin-bottom: 20px;
-}
-
-.input-group:last-of-type {
-    margin-bottom: 28px;
+    margin-bottom: 22px;
 }
 
 .input-label {
@@ -178,108 +178,84 @@
     margin-bottom: 8px;
     color: #333;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
 }
 
 .input-field {
     width: 100%;
-    padding: 13px 15px;
-    border-radius: 10px;
+    padding: 14px 16px;
+    border-radius: 12px;
     border: 2px solid #e0e0e0;
-    font-size: 0.95rem;
-    transition: border-color 0.3s;
-    box-sizing: border-box;
+    font-size: 1rem;
+    transition: all 0.3s ease;
     background-color: #f8f9fa;
+    box-sizing: border-box;
 }
 
 .input-field:focus {
     border-color: #ff9800;
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.1);
     outline: none;
 }
 
-.input-field::placeholder {
-    color: #999;
-}
-
-/* Login Button */
 .login-button {
     width: 100%;
-    padding: 15px;
+    padding: 16px;
     background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
     color: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 1.05rem;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+    font-size: 1.1rem;
+    margin-top: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3);
 }
 
 .login-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(255, 152, 0, 0.4);
 }
 
 .login-button:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
 }
 
-/* Footer Text */
 .footer-text {
     text-align: center;
-    margin-top: 22px;
+    margin-top: 28px;
     color: #999;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
 }
 
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 900px) {
     .login-container {
         grid-template-columns: 1fr;
         height: auto;
-        max-width: 450px;
+        max-width: 460px;
     }
     
     .slideshow-panel {
-        height: 280px;
+        height: 300px;
     }
     
     .login-panel {
-        padding: 35px 25px;
+        padding: 40px 30px;
     }
     
     .slide-title {
-        font-size: 1.8rem;
-    }
-    
-    .slide-description {
-        font-size: 0.95rem;
+        font-size: 2rem;
     }
 }
 
 @media (max-width: 500px) {
-    .login-wrapper {
-        padding: 20px 15px;
-    }
-    
-    .login-container {
-        border-radius: 16px;
-    }
-    
-    .slideshow-panel {
-        height: 220px;
-    }
-    
-    .login-panel {
-        padding: 30px 20px;
-    }
-    
-    .logo-img {
-        height: 50px;
-    }
-    
-    .admin-title {
-        font-size: 1.4rem;
-    }
+    .login-wrapper { padding: 20px 15px; }
+    .login-container { border-radius: 18px; }
+    .slideshow-panel { height: 240px; }
+    .login-panel { padding: 35px 25px; }
+    .logo-img { height: 55px; }
+    .admin-title { font-size: 1.55rem; }
 }
