@@ -1,18 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AddPromo.css';
-
-// --- Mock Sidebar para sa Preview (Upang maiwasan ang error sa import) ---
-const Sidebar = () => (
-  <div className="w-64 bg-blue-900 text-white min-h-screen hidden md:block p-4">
-    <div className="font-bold text-xl mb-8">Wanderwave Admin</div>
-    <div className="space-y-2">
-      <div className="p-2 hover:bg-blue-800 rounded cursor-pointer">Dashboard</div>
-      <div className="p-2 bg-blue-800 rounded cursor-pointer">Promos</div>
-      <div className="p-2 hover:bg-blue-800 rounded cursor-pointer">Bookings</div>
-    </div>
-  </div>
-);
-// -------------------------------------------------------------------------
+import Sidebar from '../sidebar/sidebar';
 
 const AddPromo = () => {
     const [promoDetails, setPromoDetails] = useState({
