@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import './AddPromo.css';
-import Sidebar from '../sidebar/sidebar';
+
+// --- Mock Sidebar para sa Preview (Upang maiwasan ang error sa import) ---
+const Sidebar = () => (
+  <div className="w-64 bg-blue-900 text-white min-h-screen hidden md:block p-4">
+    <div className="font-bold text-xl mb-8">Wanderwave Admin</div>
+    <div className="space-y-2">
+      <div className="p-2 hover:bg-blue-800 rounded cursor-pointer">Dashboard</div>
+      <div className="p-2 bg-blue-800 rounded cursor-pointer">Promos</div>
+      <div className="p-2 hover:bg-blue-800 rounded cursor-pointer">Bookings</div>
+    </div>
+  </div>
+);
+// -------------------------------------------------------------------------
 
 const AddPromo = () => {
     const [promoDetails, setPromoDetails] = useState({
@@ -17,6 +29,7 @@ const AddPromo = () => {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Auto-calculate end date based on duration type and start date
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
             const start = new Date(promoDetails.startDate);
@@ -36,11 +49,14 @@ const AddPromo = () => {
                     break;
             }
 
-            const formattedDate = endDate.toISOString().split('T')[0];
-            setPromoDetails(prev => ({
-                ...prev,
-                validUntil: formattedDate
-            }));
+            // Handle invalid date case
+            if (!isNaN(endDate.getTime())) {
+                const formattedDate = endDate.toISOString().split('T')[0];
+                setPromoDetails(prev => ({
+                    ...prev,
+                    validUntil: formattedDate
+                }));
+            }
         }
     }, [promoDetails.startDate, promoDetails.durationType]);
 
@@ -52,7 +68,9 @@ const AddPromo = () => {
         }));
     };
 
+    // --- DITO ANG API CALL ---
     const handleSubmit = async () => {
+        // 1. Validation
         if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
             !promoDetails.discountValue || !promoDetails.startDate) {
             alert('Please fill in all required fields');
@@ -62,6 +80,8 @@ const AddPromo = () => {
         setIsSubmitting(true);
 
         try {
+            // 2. Send Data to Backend
+            // NOTE: Ang URL ay naka-set sa localhost:5000/api/promos/add. 
             const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
                 headers: {
@@ -73,9 +93,11 @@ const AddPromo = () => {
             const data = await response.json();
 
             if (response.ok) {
+                // 3. Success Handling
                 alert(`Promo Code ${promoDetails.code} added successfully!`);
                 console.log('Saved Promo:', data);
 
+                // Reset form
                 setPromoDetails({
                     code: '',
                     discount: '',
@@ -88,9 +110,11 @@ const AddPromo = () => {
                     startDate: ''
                 });
             } else {
+                // 4. Server Error Handling
                 alert(`Error adding promo: ${data.message || 'Unknown error'}`);
             }
         } catch (error) {
+            // 5. Network Error Handling
             console.error('Network Error:', error);
             alert('Failed to connect to the server. Please check if your backend is running.');
         } finally {
@@ -236,6 +260,7 @@ const AddPromo = () => {
                                     type="button" 
                                     className="promo-btn promo-btn--cancel" 
                                     onClick={handleCancel}
+                                    disabled={isSubmitting}
                                 >
                                     Cancel
                                 </button>
@@ -243,8 +268,9 @@ const AddPromo = () => {
                                     type="button" 
                                     className="promo-btn promo-btn--submit"
                                     onClick={handleSubmit}
+                                    disabled={isSubmitting}
                                 >
-                                    Create Promo
+                                    {isSubmitting ? 'Creating...' : 'Create Promo'}
                                 </button>
                             </div>
                         </div>
