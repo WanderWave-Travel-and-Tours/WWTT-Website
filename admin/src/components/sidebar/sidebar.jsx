@@ -18,6 +18,7 @@ const Sidebar = () => {
         navigate(path);
     };
 
+    // Navigation Handlers
     const navigateToAddPackage = () => { navigate('/add-package'); };
     const navigateToViewPackages = () => { navigate('/view-packages'); };
     const navigateToAddPromo = () => { navigate('/add-promo'); };
@@ -28,7 +29,6 @@ const Sidebar = () => {
     const toggleServices = () => {
         setIsServicesOpen(!isServicesOpen);
     };
-
 
     return (
         <div className="sidebar">
@@ -77,7 +77,8 @@ const Sidebar = () => {
                     </li>
                     
                     <li className="menu-item" onClick={navigateToViewPromos}>
-                        📋 List of Promos
+                        <span className="menu-icon">📋</span>
+                        <span className="menu-text">List of Promos</span>
                     </li>
 
                     <li 
@@ -89,17 +90,23 @@ const Sidebar = () => {
                     </li>
                     
                     <li className="menu-item" onClick={navigateToViewTestimonials}>
-                        ⭐ Testimonials
+                         <span className="menu-icon">⭐</span>
+                        <span className="menu-text">Testimonials</span>
                     </li>
 
+                    {/* --- OTHER SERVICES SECTION --- */}
                     <li 
-                        className="menu-item services-parent" 
+                        className={`menu-item services-parent ${isServicesOpen ? 'open' : ''}`} 
                         onClick={toggleServices}
+                        // Optional: Pwede mong tanggalin ang hover kung gusto mo click lang
                         onMouseEnter={() => setIsServicesOpen(true)} 
                         onMouseLeave={() => setIsServicesOpen(false)}
                     >
                         <div className="services-header">
-                            <span>🛠️ Other Services</span>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <span className="menu-icon">🛠️</span>
+                                <span className="menu-text">Other Services</span>
+                            </div>
                             <span className="arrow">{isServicesOpen ? '▲' : '▼'}</span>
                         </div>
                         
@@ -114,14 +121,22 @@ const Sidebar = () => {
                                 <li className="sub-menu-item" onClick={(e) => { e.stopPropagation(); navigate('/services/cenomar'); }}>
                                     💍 CENOMAR
                                 </li>
+                                <li className="sub-menu-item" onClick={(e) => { e.stopPropagation(); navigate('/services/marriage-cert'); }}>
+                                    💑 Marriage Cert
+                                </li>
                                 <li className="sub-menu-item" onClick={(e) => { e.stopPropagation(); navigate('/services/passport'); }}>
                                     📘 Passport Appointment
+                                </li>
+                                <li className="sub-menu-item" onClick={(e) => { e.stopPropagation(); navigate('/services/travel-insurance'); }}>
+                                    🛡️ Travel Insurance
+                                </li>
+                                <li className="sub-menu-item" onClick={(e) => { e.stopPropagation(); navigate('/services/bills-payment'); }}>
+                                    🧾 Bills Payment
                                 </li>
                             </ul>
                         )}
                     </li>
 
-                    
                     <li className="menu-item">
                         <span className="menu-icon">👥</span>
                         <span className="menu-text">Users</span>
