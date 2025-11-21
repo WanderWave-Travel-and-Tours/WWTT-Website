@@ -15,7 +15,8 @@ app.use(express.json());
 //Models
 const AdminModel = require('./models/admin');
 const PackageModel = require('./models/package');
-
+const TestimonialModel = require('./models/testimonial');
+const PromoModel = require('./models/promo');
 mongoose.connect(process.env.MONGODB_URI) 
     .then(() => console.log("✅ DATABASE CONNECTED! Ready to Login."))
     .catch((err) => {
@@ -30,14 +31,20 @@ app.get('/', (req, res) => {
 // Routes
 const flightRoutes = require('./routes/flightRoute');
 const packageRoutes = require('./routes/packageRoute');
+const testimonialRoutes = require('./routes/testimonialRoute');
+const promoRoutes = require('./routes/promoRoute');
+const adminRoutes = require('./routes/adminRoute');
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
+app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/promos', promoRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
 });
 
-app.post('/api/admin/login', async (req, res) => {
+/*app.post('/api/admin/login', async (req, res) => {
     const { username, password } = req.body; 
 
     try {
@@ -50,7 +57,16 @@ app.post('/api/admin/login', async (req, res) => {
         const isMatch = await admin.comparePassword(password); 
 
         if (isMatch) {
-            res.json({ status: "ok", message: "Login Success!" });
+            res.json({ 
+                status: "ok", 
+                message: "Login Success!", 
+                data: {
+                    username: admin.username,
+                    businessName: admin.businessName,
+                    businessAddress: admin.businessAddress,
+                    businessLogo: admin.businessLogo
+                }
+            });
         } else {
             res.status(401).json({ status: "error", message: "Invalid credentials" });
         }
@@ -58,7 +74,7 @@ app.post('/api/admin/login', async (req, res) => {
         console.error("Login Error:", err);
         res.status(500).json({ status: "error", message: "Server error during login." });
     }
-});
+});*/
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -111,6 +127,7 @@ app.post('/api/packages/add', upload.single('image'), async (req, res) => {
         res.status(500).json({ status: "error", error: err.message });
     }
 });
+
 // Port
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

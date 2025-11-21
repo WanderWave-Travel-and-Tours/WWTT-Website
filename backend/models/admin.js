@@ -11,6 +11,18 @@ const AdminSchema = new mongoose.Schema({
     password: { 
         type: String, 
         required: true 
+    },
+    businessName: {
+        type: String,
+        default: "Wanderwave Travels"
+    },
+    businessAddress: {
+        type: String,
+        default: "" 
+    },
+    businessLogo: {
+        type: String,
+        default: ""
     }
 });
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
-import BrowseCategory from './BrowseCategory';
+import BrowseCategory from './browseCategory';
 import AllPackages from './allPackages';
 import PackageBooking from './packageBooking';
 import './packageDeals.css';
@@ -11,7 +11,6 @@ function PackageDeals() {
   const [searchQuery, setSearchQuery] = useState('');
   const [scopeFilter, setScopeFilter] = useState('all'); 
   const packagesRef = useRef(null);
-  const [promoFilter, setPromoFilter] = useState('weekly');
 
   const [currentView, setCurrentView] = useState('list'); 
   const [selectedPackageForBooking, setSelectedPackageForBooking] = useState(null);
@@ -243,7 +242,6 @@ function PackageDeals() {
   };
 
   const currentCategoryName = mostVisitedCategories.find(c => c.id === selectedFilter)?.name;
-  const promoPackage = packages.find(pkg => pkg.featured);
   
   let headerTitle = 'All Packages';
   if (scopeFilter === 'favorites') headerTitle = 'My Favorites';
@@ -258,14 +256,7 @@ function PackageDeals() {
     <div className="package-deals-page">
       <div className="content-container">
         
-        {promoPackage && (
-          <PromoSection
-            promoFilter={promoFilter}
-            onPromoFilterChange={setPromoFilter}
-            promoPackage={promoPackage}
-            onBookNow={scrollToPackages}
-          />
-        )}
+        <PromoSection onBookNow={scrollToPackages} />
 
         <BrowseCategory 
           title="Most Visited Destination"

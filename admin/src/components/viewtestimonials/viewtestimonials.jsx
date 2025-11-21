@@ -1,38 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import Sidebar from '../sidebar/sidebar';
 import './ViewTestimonials.css';
 
-const mockTestimonials = [
-    { 
-        id: 1, 
-        name: 'Maria T. Reyes', 
-        feedback: 'Absolutely loved the Batanes tour package! The hotels were excellent and the itinerary was perfect. Highly recommended!', 
-        pictureUrl: 'https://via.placeholder.com/150/007bff/FFFFFF?text=MR', 
-        source: 'Facebook' 
-    },
-    { 
-        id: 2, 
-        name: 'Juan Dela Cruz', 
-        feedback: "The Palawan trip was seamless. From booking to the actual flight, everything was handled professionally. Five stars!", 
-        pictureUrl: 'https://via.placeholder.com/150/28a745/FFFFFF?text=JD', 
-        source: 'Website' 
-    },
-    { 
-        id: 3, 
-        name: 'Sofia A. Gomez', 
-        feedback: 'Great customer service! They quickly resolved my booking conflict. Will definitely book my next vacation with Wanderwave.', 
-        pictureUrl: 'https://via.placeholder.com/150/ffc107/333333?text=SG', 
-        source: 'Email' 
-    },
-];
-
 const ViewTestimonials = () => {
-    const [testimonials, setTestimonials] = useState(mockTestimonials);
+    const [testimonials, setTestimonials] = useState([]);
 
-    const handleDelete = (id, name) => {
+    const fetchTestimonials = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/testimonials');
+            if (!response.ok) {
+                throw new Error('Failed to fetch');
+            }
+            const data = await response.json();
+            setTestimonials(data);
+        } catch (error) {
+            console.error("Error fetching testimonials:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchTestimonials();
+    }, []);
+
+    const handleDelete = async (id, name) => {
         if (window.confirm(`Are you sure you want to delete the testimonial from ${name}?`)) {
-            setTestimonials(testimonials.filter(t => t.id !== id));
-            alert(`Testimonial from ${name} has been deleted.`);
+            setTestimonials(testimonials.filter(t => t._id !== id));
+            alert(`Testimonial from ${name} has been deleted (from view).`);
         }
     };
 
@@ -92,6 +85,36 @@ const ViewTestimonials = () => {
                                         <p className="vtest-feedback">{t.feedback}</p>
                                     </div>
 
+                <div className="testimonials-grid">
+                    {testimonials.map(t => (
+                        <div key={t._id} className="testimonial-card">
+                            <div className="card-header">
+                                <img 
+                                    src={
+                                        t.customerImage 
+                                        ? `http://localhost:5000/uploads/${t.customerImage}` 
+                                        : 'https://via.placeholder.com/150/CCCCCC/000000?text=No+Img'
+                                    } 
+                                    alt={`Profile of ${t.customerName}`} 
+                                    className="profile-picture" 
+                                    onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150/CCCCCC/000000?text=Error"; }}
+                                />
+                                <div className="user-info">
+                                    <h3 className="user-name">{t.customerName}</h3>
+                                    <span className={`source-tag ${t.source ? t.source.split(' ')[0].toLowerCase() : 'other'}`}>
+                                        {t.source}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <p className="feedback-text">"{t.feedback}"</p>
+                            
+                            <button 
+                                className="delete-testimonial-btn"
+                                onClick={() => handleDelete(t._id, t.customerName)}
+                            >
+                                Delete
+                            </button>
                                     <div className="vtest-card-footer">
                                         <div className="vtest-rating">
                                             <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
@@ -127,6 +150,11 @@ const ViewTestimonials = () => {
                         </div>
                     </div>
                 </div>
+                
+                {testimonials.length === 0 && (
+                    <p className="no-testimonials">No testimonials found. Add some!</p>
+                )}
+            </div>
             </main>
         </div>
     );
