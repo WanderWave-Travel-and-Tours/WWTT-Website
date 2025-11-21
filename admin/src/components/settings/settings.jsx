@@ -78,104 +78,142 @@ const Settings = () => {
     };
 
     return (
-        <div className="admin-layout">
+        <div className="settings-page">
             <Sidebar />
             
-            <div className="settings-content">
-                <div className="header-section">
-                    <h1>Business Profile Settings</h1>
-                    <p>Manage your business profile information & settings</p>
-                </div>
+            <main className="settings-main">
+                <div className="settings-container">
+                    
+                    {/* Header */}
+                    <header className="settings-header">
+                        <h1 className="settings-title">BUSINESS PROFILE</h1>
+                        <p className="settings-subtitle">Manage your agency's public information and branding</p>
+                    </header>
 
-                <form onSubmit={handleSubmit} className="settings-grid">
-                    <div className="settings-card">
-                        <h3 className="card-title">General Information</h3>
-                        <div className="logo-upload-container">
-                            <div className="logo-preview">
-                                {previewUrl ? (
-                                    <img src={previewUrl} alt="Preview" />
-                                ) : settings.businessLogo ? (
-                                    <img src={`http://localhost:5000/uploads/${settings.businessLogo}`} alt="Business Logo" />
-                                ) : (
-                                    <div className="placeholder-logo">✈️</div>
-                                )}
+                    <form onSubmit={handleSubmit} className="settings-grid">
+                        
+                        {/* Section 1: General Info */}
+                        <section className="settings-section">
+                            <div className="settings-section-header">
+                                <h2 className="settings-section-title">General Information</h2>
                             </div>
-                            <div className="logo-actions">
-                                <label className="input-label">Business Logo</label>
-                                <p className="helper-text">The proposed size is 350px * 180px.</p>
-                                <div className="btn-group">
-                                    <label htmlFor="logo-upload" className="btn-upload">Upload</label>
-                                    <input type="file" id="logo-upload" hidden onChange={handleFileChange} accept="image/*" />
-                                    
-                                    <button 
-                                        type="button" 
-                                        className="btn-remove" 
-                                        onClick={() => {setLogoFile(null); setPreviewUrl(null);}}
-                                    >
-                                        Remove
-                                    </button>
+
+                            {/* Logo Area */}
+                            <div className="logo-upload-wrapper">
+                                <div className="logo-preview-box">
+                                    {previewUrl ? (
+                                        <img src={previewUrl} alt="Preview" />
+                                    ) : settings.businessLogo ? (
+                                        <img src={`http://localhost:5000/uploads/${settings.businessLogo}`} alt="Business Logo" />
+                                    ) : (
+                                        <div className="logo-placeholder">✈️</div>
+                                    )}
+                                </div>
+                                <div className="logo-info">
+                                    <span className="logo-label">Business Logo</span>
+                                    <p className="logo-helper">
+                                        Recommended size: 350px x 180px. <br />
+                                        Supports JPG, PNG.
+                                    </p>
+                                    <div className="logo-btn-group">
+                                        <label htmlFor="logo-upload" className="btn-upload-trigger">
+                                            Upload New
+                                        </label>
+                                        <input 
+                                            type="file" 
+                                            id="logo-upload" 
+                                            hidden 
+                                            onChange={handleFileChange} 
+                                            accept="image/*" 
+                                        />
+                                        <button 
+                                            type="button" 
+                                            className="btn-remove-trigger"
+                                            onClick={() => {setLogoFile(null); setPreviewUrl(null);}}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="form-group">
-                            <label>Friendly Business Name</label>
-                            <input 
-                                type="text" 
-                                name="businessName"
-                                value={settings.businessName}
-                                onChange={handleSettingsChange}
-                                placeholder="WanderWave Travel and Tours" 
-                            />
-                        </div>
+                            {/* Inputs Grid */}
+                            <div className="settings-fields-grid">
+                                <div className="settings-field">
+                                    <label>Friendly Business Name</label>
+                                    <input 
+                                        type="text" 
+                                        name="businessName"
+                                        value={settings.businessName}
+                                        onChange={handleSettingsChange}
+                                        placeholder="e.g., WanderWave Travel and Tours" 
+                                    />
+                                </div>
 
-                        <div className="form-group">
-                            <label>Legal Business Name (Admin ID)</label>
-                            <input 
-                                type="text" 
-                                value={settings.username} 
-                                disabled
-                                className="input-disabled"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="settings-card">
-                        <h3 className="card-title">Business Physical Address</h3>
-                        <div className="form-group">
-                            <label>Street Address / Full Address</label>
-                            <input 
-                                type="text" 
-                                name="businessAddress"
-                                value={settings.businessAddress}
-                                onChange={handleSettingsChange}
-                                placeholder="MQ4C+5R8, Pangasinan - Nueva Ecija Rd" 
-                            />
-                        </div>
-
-                        <div className="form-row">
-                            <div className="form-group half">
-                                <label>City</label>
-                                <input type="text" placeholder="Guimba, Nueva Ecija" disabled className="input-disabled" />
+                                <div className="settings-field">
+                                    <label>Legal Admin ID (Read Only)</label>
+                                    <input 
+                                        type="text" 
+                                        value={settings.username} 
+                                        disabled
+                                    />
+                                </div>
                             </div>
-                            <div className="form-group half">
-                                <label>Country</label>
-                                <select disabled className="input-disabled"><option>Philippines</option></select>
+                        </section>
+
+                        {/* Section 2: Address */}
+                        <section className="settings-section">
+                            <div className="settings-section-header">
+                                <h2 className="settings-section-title">Location Details</h2>
                             </div>
-                        </div>
-                        
-                        <div className="form-group">
-                            <label>Time Zone</label>
-                            <select disabled className="input-disabled"><option>Asia/Manila</option></select>
-                        </div>
 
-                        <div className="form-actions" style={{ marginTop: '30px' }}>
-                            <button type="submit" className="btn-save">Update Information</button>
-                        </div>
-                    </div>
+                            <div className="settings-fields-grid">
+                                <div className="settings-field full-width">
+                                    <label>Street Address / Full Address</label>
+                                    <input 
+                                        type="text" 
+                                        name="businessAddress"
+                                        value={settings.businessAddress}
+                                        onChange={handleSettingsChange}
+                                        placeholder="e.g., MQ4C+5R8, Pangasinan - Nueva Ecija Rd" 
+                                    />
+                                </div>
 
-                </form>
-            </div>
+                                <div className="settings-field">
+                                    <label>City / Municipality</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Guimba, Nueva Ecija" 
+                                        disabled 
+                                    />
+                                </div>
+
+                                <div className="settings-field">
+                                    <label>Country</label>
+                                    <select disabled>
+                                        <option>Philippines</option>
+                                    </select>
+                                </div>
+
+                                <div className="settings-field">
+                                    <label>Time Zone</label>
+                                    <select disabled>
+                                        <option>Asia/Manila (GMT+8)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Submit Button Action */}
+                            <div className="settings-actions">
+                                <button type="submit" className="btn-save-settings">
+                                    Update Information
+                                </button>
+                            </div>
+                        </section>
+
+                    </form>
+                </div>
+            </main>
         </div>
     );
 };

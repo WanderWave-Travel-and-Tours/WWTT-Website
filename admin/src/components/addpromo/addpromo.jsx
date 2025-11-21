@@ -15,6 +15,9 @@ const AddPromo = () => {
         startDate: ''
     });
 
+    // State to handle the "Other" category toggle
+    const [isOtherCategory, setIsOtherCategory] = useState(false);
+
     // Auto-calculate end date based on duration type and start date
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
@@ -51,6 +54,20 @@ const AddPromo = () => {
         }));
     };
 
+    // Special handler for the dropdown to toggle the "Other" input
+    const handleCategorySelect = (e) => {
+        const selectedValue = e.target.value;
+        
+        if (selectedValue === 'Other') {
+            setIsOtherCategory(true);
+            // Clear category so user can type new one, or keep generic if you prefer
+            setPromoDetails(prev => ({ ...prev, category: '' }));
+        } else {
+            setIsOtherCategory(false);
+            setPromoDetails(prev => ({ ...prev, category: selectedValue }));
+        }
+    };
+
     const handleSubmit = () => {
         // Validation
         if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
@@ -74,6 +91,7 @@ const AddPromo = () => {
             durationType: 'Weekly',
             startDate: ''
         });
+        setIsOtherCategory(false);
     };
 
     const handleCancel = () => {
@@ -88,6 +106,7 @@ const AddPromo = () => {
             durationType: 'Weekly',
             startDate: ''
         });
+        setIsOtherCategory(false);
     };
 
     return (
@@ -133,16 +152,30 @@ const AddPromo = () => {
                                     <div className="promo-field promo-field--full">
                                         <label>Apply to Category</label>
                                         <select
-                                            name="category"
-                                            value={promoDetails.category}
-                                            onChange={handleChange}
+                                            name="categorySelect"
+                                            value={isOtherCategory ? 'Other' : promoDetails.category}
+                                            onChange={handleCategorySelect}
                                         >
                                             <option value="" disabled>Select Category</option>
                                             <option value="Barkada">Barkada Package</option>
                                             <option value="Tour Only">Tour Only</option>
                                             <option value="Package (Land)">Package (Land)</option>
                                             <option value="Full Package (Airfare)">Full Package (Airfare)</option>
+                                            <option value="Other">Other</option>
                                         </select>
+
+                                        {/* Conditionally render input if "Other" is selected */}
+                                        {isOtherCategory && (
+                                            <input 
+                                                type="text"
+                                                name="category"
+                                                value={promoDetails.category}
+                                                onChange={handleChange}
+                                                placeholder="Type custom category here..."
+                                                className="promo-input-custom"
+                                                autoFocus
+                                            />
+                                        )}
                                     </div>
 
                                     <div className="promo-field">
