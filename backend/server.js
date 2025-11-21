@@ -16,7 +16,7 @@ app.use(express.json());
 const AdminModel = require('./models/admin');
 const PackageModel = require('./models/package');
 const TestimonialModel = require('./models/testimonial');
-
+const PromoModel = require('./models/promo');
 mongoose.connect(process.env.MONGODB_URI) 
     .then(() => console.log("✅ DATABASE CONNECTED! Ready to Login."))
     .catch((err) => {
@@ -32,9 +32,11 @@ app.get('/', (req, res) => {
 const flightRoutes = require('./routes/flightRoute');
 const packageRoutes = require('./routes/packageRoute');
 const testimonialRoutes = require('./routes/testimonialRoute');
+const promoRoutes = require('./routes/promoRoute');
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/promos', promoRoutes);
 
 app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
@@ -114,42 +116,6 @@ app.post('/api/packages/add', upload.single('image'), async (req, res) => {
         res.status(500).json({ status: "error", error: err.message });
     }
 });
-
-/*app.post('/api/testimonials/add', upload.single('customerImage'), async (req, res) => {
-    try {
-        const { 
-            customerName, 
-            source, 
-            feedback 
-        } = req.body;
-
-        const imageFilename = req.file ? req.file.filename : null;
-
-        const newTestimonial = new TestimonialModel({
-            customerName: customerName,
-            source: source,
-            customerImage: imageFilename,
-            feedback: feedback
-        });
-
-        await newTestimonial.save();
-        
-        res.json({ status: "ok", message: "Testimonial added successfully!" });
-
-    } catch (err) {
-        console.error("Error adding testimonial:", err);
-        res.status(500).json({ status: "error", error: err.message });
-    }
-});
-
-app.get('/api/testimonials', async (req, res) => {
-    try {
-        const testimonials = await TestimonialModel.find().sort({ createdAt: -1 }); // Latest first
-        res.json(testimonials);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});*/
 
 // Port
 const PORT = process.env.PORT || 5000;
