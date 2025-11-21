@@ -6,19 +6,14 @@ const Sidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isServicesOpen, setIsServicesOpen] = useState(false);
-
-    // Helper to determine if a menu item is active
     const isActive = (path) => location.pathname === path;
     
     const handleLogout = () => {
-        // NOTE: Replaced forbidden alert() with console.log(). 
-        // For production, use a custom modal or toast message.
         console.log('Logging out user...');
         localStorage.removeItem('adminToken');
         navigate('/');
     };
 
-    // Custom navigation handler
     const handleNavigate = (path) => {
         navigate(path);
     };
@@ -42,7 +37,7 @@ const Sidebar = () => {
                     <div className="logo-icon">
                         <img src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png" alt="Wanderwave Logo" />
                     </div>
-                    <h1 className="sidebar-title">Wanderwave Travels</h1> {/* Added title back */}
+                    <h1 className="sidebar-title">Wanderwave Travels</h1>
                     <p className="sidebar-subtitle">Admin Panel</p>
                 </div>
             </div>
@@ -72,17 +67,25 @@ const Sidebar = () => {
                         <span className="menu-icon">🏖️</span>
                         <span className="menu-text" onClick={navigateToViewPackages}>View Packages</span>
                     </li>
-                    
-                    <li className="new-menu-item" onClick={navigateToAddPromo}>
-                        🏷️ Add Promo
-                    </li>
 
+                    <li 
+                        className={`menu-item ${isActive('/add-promo') ? 'active' : ''}`} 
+                        onClick={() => handleNavigate('/add-promo')}
+                    >
+                        <span className="menu-icon">🏷️</span>
+                        <span className="menu-text" onClick={navigateToAddPromo}>Add Promo</span>
+                    </li>
+                    
                     <li className="menu-item" onClick={navigateToViewPromos}>
                         📋 List of Promos
                     </li>
 
-                    <li className="new-menu-item" onClick={navigateToAddTestimonial}>
-                        ✍️ Add Testimonial
+                    <li 
+                        className={`menu-item ${isActive('/add-testimonial') ? 'active' : ''}`} 
+                        onClick={() => handleNavigate('/add-testimonial')}
+                    >
+                        <span className="menu-icon">✍️</span>
+                        <span className="menu-text" onClick={navigateToAddTestimonial}>Add Testimonial</span>
                     </li>
                     
                     <li className="menu-item" onClick={navigateToViewTestimonials}>
