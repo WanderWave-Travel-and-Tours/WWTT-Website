@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'; 
 import Sidebar from '../sidebar/sidebar';
-import './ViewTestimonials.css';
+import './viewtestimonials.css';
 
 const ViewTestimonials = () => {
     const [testimonials, setTestimonials] = useState([]);
@@ -85,36 +85,6 @@ const ViewTestimonials = () => {
                                         <p className="vtest-feedback">{t.feedback}</p>
                                     </div>
 
-                <div className="testimonials-grid">
-                    {testimonials.map(t => (
-                        <div key={t._id} className="testimonial-card">
-                            <div className="card-header">
-                                <img 
-                                    src={
-                                        t.customerImage 
-                                        ? `http://localhost:5000/uploads/${t.customerImage}` 
-                                        : 'https://via.placeholder.com/150/CCCCCC/000000?text=No+Img'
-                                    } 
-                                    alt={`Profile of ${t.customerName}`} 
-                                    className="profile-picture" 
-                                    onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150/CCCCCC/000000?text=Error"; }}
-                                />
-                                <div className="user-info">
-                                    <h3 className="user-name">{t.customerName}</h3>
-                                    <span className={`source-tag ${t.source ? t.source.split(' ')[0].toLowerCase() : 'other'}`}>
-                                        {t.source}
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <p className="feedback-text">"{t.feedback}"</p>
-                            
-                            <button 
-                                className="delete-testimonial-btn"
-                                onClick={() => handleDelete(t._id, t.customerName)}
-                            >
-                                Delete
-                            </button>
                                     <div className="vtest-card-footer">
                                         <div className="vtest-rating">
                                             <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
@@ -150,11 +120,6 @@ const ViewTestimonials = () => {
                         </div>
                     </div>
                 </div>
-                
-                {testimonials.length === 0 && (
-                    <p className="no-testimonials">No testimonials found. Add some!</p>
-                )}
-            </div>
             </main>
         </div>
     );
