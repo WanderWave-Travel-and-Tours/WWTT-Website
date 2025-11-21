@@ -10,90 +10,39 @@ const AddPackage = () => {
     const [duration, setDuration] = useState('');
     const [category, setCategory] = useState('Local');
     const [file, setFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [inclusions, setInclusions] = useState(['']); 
     const [itinerary, setItinerary] = useState([{ day: 1, title: 'Arrival', activities: [''] }]);
 
     const navigate = useNavigate();
 
-    // --- INCLUSION HANDLERS ---
-
-    const addInclusion = () => {
-        setInclusions(prev => [...prev, '']);
+    const handleFileChange = (e) => {
+        const selected = e.target.files[0];
+        setFile(selected);
+        if (selected) setPreviewUrl(URL.createObjectURL(selected));
     };
 
-    const removeInclusion = (indexToRemove) => {
-        setInclusions(prev => prev.filter((_, index) => index !== indexToRemove));
+    const addInclusion = () => setInclusions([...inclusions, '']);
+    const removeInclusion = (i) => setInclusions(inclusions.filter((_, idx) => idx !== i));
+    const handleIncChange = (i, val) => setInclusions(inclusions.map((item, idx) => idx === i ? val : item));
+
+    const addDay = () => setItinerary([...itinerary, { day: itinerary.length + 1, title: '', activities: [''] }]);
+    const removeDay = (dayIndex) => {
+        setItinerary(itinerary.filter((_, index) => index !== dayIndex).map((day, index) => ({ ...day, day: index + 1, title: day.title.replace(/^Day \d+:?/, `Day ${index + 1}:`) })));
     };
-
-    const handleInclusionChange = (index, value) => {
-        setInclusions(prev => prev.map((item, i) => i === index ? value : item));
-    };
-
-    // --- ITINERARY HANDLERS ---
-
-    const addItineraryDay = () => {
-        setItinerary(prev => [
-            ...prev,
-            { day: prev.length + 1, title: '', activities: [''] }
-        ]);
-    };
-
-    const removeItineraryDay = (dayIndex) => {
-        setItinerary(prev => 
-            prev.filter((_, index) => index !== dayIndex)
-                .map((day, index) => ({ 
-                    ...day, 
-                    day: index + 1, 
-                    title: day.title.replace(/^Day \d+:?/, `Day ${index + 1}:`) 
-                }))
-        );
-    };
-
-    const handleDayTitleChange = (dayIndex, value) => {
+    const handleDayTitle = (dayIndex, value) => {
         const newTitle = value.trim() ? `Day ${dayIndex + 1}: ${value.trim()}` : '';
-        setItinerary(prev => prev.map((day, index) => 
-            index === dayIndex ? { ...day, title: newTitle } : day
-        ));
+        setItinerary(itinerary.map((day, index) => index === dayIndex ? { ...day, title: newTitle } : day));
     };
 
-    const addActivity = (dayIndex) => {
-        setItinerary(prev => prev.map((day, index) => 
-            index === dayIndex ? { ...day, activities: [...day.activities, ''] } : day
-        ));
-    };
-
-    const handleActivityChange = (dayIndex, activityIndex, value) => {
-        setItinerary(prev => prev.map((day, index) => 
-            index === dayIndex ? { 
-                ...day, 
-                activities: day.activities.map((activity, aIndex) => 
-                    aIndex === activityIndex ? value : activity
-                )
-            } : day
-        ));
-    };
-
-    const removeActivity = (dayIndex, activityIndex) => {
-        setItinerary(prev => prev.map((day, index) => 
-            index === dayIndex ? { 
-                ...day, 
-                activities: day.activities.filter((_, aIndex) => aIndex !== activityIndex)
-            } : day
-        ));
-    };
+    const addAct = (i) => setItinerary(itinerary.map((d, idx) => idx === i ? { ...d, activities: [...d.activities, ''] } : d));
+    const removeAct = (di, ai) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.filter((_, x) => x !== ai) } : d));
+    const handleAct = (di, ai, val) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.map((a, x) => x === ai ? val : a) } : d));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         const processedInclusions = inclusions.filter(item => item.trim().length > 0);
-
-        const cleanedItinerary = itinerary
-            .filter(day => day.activities.some(act => act.trim() !== ''))
-            .map(day => ({
-                day: day.day,
-                title: day.title.split(': ').slice(1).join(': ') || day.title.trim(), 
-                activities: day.activities.filter(act => act.trim() !== '')
-            }));
+        const cleanedItinerary = itinerary.filter(day => day.activities.some(act => act.trim() !== '')).map(day => ({ day: day.day, title: day.title.split(': ').slice(1).join(': ') || day.title.trim(), activities: day.activities.filter(act => act.trim() !== '') }));
 
         const formData = new FormData();
         formData.append('title', title);
@@ -107,198 +56,219 @@ const AddPackage = () => {
         if (file) {
             formData.append('image', file);
         } else {
-             console.error('Please upload an image for the package.');
-             return;
+            alert('Please upload an image for the package.');
+            return;
         }
 
-        // NOTE: This fetch call is for mock purposes and assumes a backend server is running at localhost:5000.
         try {
-            const response = await fetch('http://localhost:5000/api/packages/add', {
-                method: 'POST',
-                body: formData,
-            });
-
+            const response = await fetch('http://localhost:5000/api/packages/add', { method: 'POST', body: formData });
             const data = await response.json();
-            if (response.ok) { // Check for successful HTTP status code
-                console.log('✅ Package Added Successfully!');
-                
-                // Reset form state upon successful submission
-                setTitle('');
-                setDestination('');
-                setPrice('');
-                setDuration('');
-                setCategory('Local');
-                setFile(null);
-                setInclusions(['']); 
+            if (response.ok) { 
+                alert('✅ Package Added Successfully!');
+                setTitle(''); setDestination(''); setPrice(''); setDuration(''); setCategory('Local');
+                setFile(null); setPreviewUrl(null); setInclusions(['']); 
                 setItinerary([{ day: 1, title: 'Arrival', activities: [''] }]);
-                
-                // You might want to navigate after a successful addition
-                // navigate('/view-packages'); 
             } else {
-                console.error('❌ Error submitting package:', data.error || 'Server error');
+                alert('❌ Error: ' + (data.error || 'Server error'));
             }
         } catch (error) {
             console.error('Fetch error:', error);
+            alert('❌ Error connecting to server');
         }
     };
 
     return (
-        <div className="addpackage-page-container"> 
+        <div className="pkg-page">
             <Sidebar />
-            
-            <div className="main-content"> 
-                <div className="addpackage-container">
-                    <h2 className="form-title">Add New Tour Package (Admin)</h2>
-                    
-                    <form onSubmit={handleSubmit} className="add-form">
-                        
-                        {/* LEFT COLUMN: Basic Fields */}
-                        <div className="form-column">
-                            <div className="form-group">
-                                <label className="form-label">📝 Package Title:</label>
-                                <input type="text" placeholder="e.g. Boracay Super Sale" 
-                                    value={title} onChange={e => setTitle(e.target.value)} required className="input-field" />
-                            </div>
+            <main className="pkg-main">
+                <div className="pkg-container">
+                    {/* Header */}
+                    <header className="pkg-header">
+                        <button className="pkg-back" onClick={() => navigate(-1)}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            Back
+                        </button>
+                        <h1 className="pkg-title">NEW PACKAGE</h1>
+                        <p className="pkg-subtitle">Fill in the details below to create a new tour package</p>
+                    </header>
 
-                            <div className="form-group">
-                                <label className="form-label">📍 Destination (City/Province):</label>
-                                <input type="text" placeholder="e.g. Aklan, Philippines" 
-                                    value={destination} onChange={e => setDestination(e.target.value)} required className="input-field" />
-                            </div>
-
-                            <div className="price-category-group">
-                                <div className="form-group" style={{ flex: 1 }}>
-                                    <label className="form-label">💰 Price (₱):</label>
-                                    <input type="number" placeholder="e.g. 8999" 
-                                        value={price} onChange={e => setPrice(e.target.value)} required className="input-field" />
-                                </div>
-                                
-                                <div className="form-group" style={{ flex: 1 }}>
-                                    <label className="form-label">🏷️ Category:</label>
-                                    <select value={category} onChange={e => setCategory(e.target.value)} className="select-field">
-                                        <option value="Local">Local</option>
-                                        <option value="International">International</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">⏱️ Duration (Days & Nights):</label>
-                                <input type="text" placeholder="e.g. 3D2N" 
-                                    value={duration} onChange={e => setDuration(e.target.value)} required className="input-field" />
-                            </div>
-
-                            {/* FILE INPUT in left column */}
-                            <div className="form-group section-divider">
-                                <label className="form-label">🖼️ Upload Image:</label>
-                                <input type="file" onChange={e => setFile(e.target.files[0])} accept="image/*" required className="input-field" />
-                            </div>
-                        </div>
-
-                        {/* RIGHT COLUMN: Inclusions and Itinerary */}
-                        <div className="form-column">
-                            {/* INCLUSIONS FIELDS */}
-                            <div className="form-group section-divider">
-                                <h3 className="section-title">What's Included (Inclusions)</h3>
-                                <label className="form-label">Add inclusions one by one:</label>
-                                
-                                {inclusions.map((item, index) => (
-                                    <div key={index} className="inclusion-input-group activity-input-group">
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Daily Breakfast"
-                                            value={item}
-                                            onChange={e => handleInclusionChange(index, e.target.value)}
-                                            className="input-field"
-                                        />
-                                        {(inclusions.length > 1 || (inclusions.length === 1 && item !== '')) && (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => removeInclusion(index)}
-                                                className="remove-activity-button"
-                                            >
-                                                &times;
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-
-                                <button type="button" onClick={addInclusion} className="add-activity-button">
-                                    + Add Inclusion
-                                </button>
-                            </div>
-
-                            {/* ITINERARY FIELDS */}
-                            <div className="form-group section-divider">
-                                <h3 className="section-title">Itinerary Builder</h3>
-                                
-                                {itinerary.map((dayItem, dayIndex) => (
-                                    <div key={dayItem.day} className="itinerary-day-box">
-                                        <div className="itinerary-header">
-                                            <label className="form-label">Day {dayItem.day}:</label>
-                                            {itinerary.length > 1 && (
-                                                <button 
-                                                    type="button" 
-                                                    onClick={() => removeItineraryDay(dayIndex)}
-                                                    className="remove-day-button"
-                                                >
-                                                    Remove Day
-                                                </button>
-                                            )}
-                                        </div>
-                                        
-                                        <input 
-                                            type="text" 
-                                            placeholder={`Day ${dayItem.day} Title (e.g., Arrival & City Tour)`}
-                                            value={dayItem.title.replace(`Day ${dayItem.day}: `, '')} 
-                                            onChange={e => handleDayTitleChange(dayIndex, e.target.value)}
-                                            className="input-field day-title-input"
-                                            required
-                                        />
-
-                                        <div className="activities-list">
-                                            <label className="form-label activity-label">Activities:</label>
-                                            {dayItem.activities.map((activity, activityIndex) => (
-                                                <div key={activityIndex} className="activity-input-group">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="e.g. 8:00 AM - Hotel Pickup"
-                                                        value={activity}
-                                                        onChange={e => handleActivityChange(dayIndex, activityIndex, e.target.value)}
-                                                        className="input-field activity-input"
-                                                    />
-                                                    {(dayItem.activities.length > 1 || (dayItem.activities.length === 1 && activity !== '')) && (
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => removeActivity(dayIndex, activityIndex)}
-                                                            className="remove-activity-button"
-                                                        >
-                                                            &times;
-                                                        </button>
-                                                    )}
+                    <form onSubmit={handleSubmit} className="pkg-form">
+                        <div className="pkg-grid">
+                            {/* Left Column */}
+                            <div className="pkg-left">
+                                {/* Cover Image */}
+                                <section className="pkg-section">
+                                    <h2 className="pkg-section-title">COVER IMAGE</h2>
+                                    <label className="pkg-upload">
+                                        <input type="file" onChange={handleFileChange} accept="image/*" hidden required />
+                                        {previewUrl ? (
+                                            <div className="pkg-upload-preview">
+                                                <img src={previewUrl} alt="Cover" />
+                                                <span className="pkg-upload-change">Change Photo</span>
+                                            </div>
+                                        ) : (
+                                            <div className="pkg-upload-empty">
+                                                <div className="pkg-upload-icon">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                                                 </div>
-                                            ))}
-                                            <button 
-                                                type="button" 
-                                                onClick={() => addActivity(dayIndex)}
-                                                className="add-activity-button"
-                                            >
-                                                + Add Activity
-                                            </button>
+                                                <p>Click to upload cover photo</p>
+                                                <span>JPG, PNG or WebP • Max 5MB</span>
+                                            </div>
+                                        )}
+                                    </label>
+                                </section>
+
+                                {/* Basic Info */}
+                                <section className="pkg-section">
+                                    <h2 className="pkg-section-title">BASIC INFORMATION</h2>
+                                    <div className="pkg-fields">
+                                        <div className="pkg-field pkg-field--full">
+                                            <label>Package Name</label>
+                                            <input type="text" placeholder="Enter package name" value={title} onChange={e => setTitle(e.target.value)} required />
+                                        </div>
+                                        <div className="pkg-field">
+                                            <label>Destination</label>
+                                            <input type="text" placeholder="e.g. Boracay" value={destination} onChange={e => setDestination(e.target.value)} required />
+                                        </div>
+                                        <div className="pkg-field">
+                                            <label>Tour Type</label>
+                                            <select value={category} onChange={e => setCategory(e.target.value)}>
+                                                <option>Local Tour</option>
+                                                <option>International Tour</option>
+                                            </select>
+                                        </div>
+                                        <div className="pkg-field">
+                                            <label>Price (PHP)</label>
+                                            <input type="number" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} required step="0.01" min="0" />
+                                        </div>
+                                        <div className="pkg-field">
+                                            <label>Duration</label>
+                                            <input type="text" placeholder="e.g. 3D2N" value={duration} onChange={e => setDuration(e.target.value)} required />
                                         </div>
                                     </div>
-                                ))}
+                                </section>
 
-                                <button type="button" onClick={addItineraryDay} className="add-day-button">
-                                    ➕ Add New Day
-                                </button>
+                                {/* Inclusions */}
+                                <section className="pkg-section">
+                                    <div className="pkg-section-header">
+                                        <h2 className="pkg-section-title">INCLUSIONS</h2>
+                                        <span className="pkg-count">{inclusions.filter(i => i.trim()).length} items</span>
+                                    </div>
+                                    <div className="pkg-list">
+                                        {inclusions.map((inc, i) => (
+                                            <div key={i} className="pkg-list-item">
+                                                <span className="pkg-bullet"></span>
+                                                <input type="text" placeholder="What's included?" value={inc} onChange={e => handleIncChange(i, e.target.value)} />
+                                                {inclusions.length > 1 && (
+                                                    <button type="button" className="pkg-remove" onClick={() => removeInclusion(i)}>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button type="button" className="pkg-add-btn" onClick={addInclusion}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
+                                        Add Item
+                                    </button>
+                                </section>
+
+                                {/* Itinerary */}
+                                <section className="pkg-section">
+                                    <div className="pkg-section-header">
+                                        <h2 className="pkg-section-title">ITINERARY</h2>
+                                        <span className="pkg-count">{itinerary.length} days</span>
+                                    </div>
+                                    <div className="pkg-timeline">
+                                        {itinerary.map((day, dayIdx) => (
+                                            <div key={day.day} className="pkg-day">
+                                                <div className="pkg-day-marker">
+                                                    <span className="pkg-day-num">{day.day}</span>
+                                                    {dayIdx < itinerary.length - 1 && <div className="pkg-day-line"></div>}
+                                                </div>
+                                                <div className="pkg-day-content">
+                                                    <div className="pkg-day-header">
+                                                        <input type="text" className="pkg-day-title" placeholder="Day title" value={day.title.replace(`Day ${day.day}: `, '')} onChange={e => handleDayTitle(dayIdx, e.target.value)} required />
+                                                        {itinerary.length > 1 && (
+                                                            <button type="button" className="pkg-day-remove" onClick={() => removeDay(dayIdx)}>Delete</button>
+                                                        )}
+                                                    </div>
+                                                    <div className="pkg-activities">
+                                                        {day.activities.map((act, actIdx) => (
+                                                            <div key={actIdx} className="pkg-activity">
+                                                                <input type="text" placeholder="Add activity" value={act} onChange={e => handleAct(dayIdx, actIdx, e.target.value)} />
+                                                                {day.activities.length > 1 && (
+                                                                    <button type="button" className="pkg-remove pkg-remove--sm" onClick={() => removeAct(dayIdx, actIdx)}>
+                                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        <button type="button" className="pkg-add-activity" onClick={() => addAct(dayIdx)}>+ Activity</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button type="button" className="pkg-add-btn" onClick={addDay}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
+                                        Add Day
+                                    </button>
+                                </section>
                             </div>
+
+                            {/* Right Column - Preview */}
+                            <aside className="pkg-right">
+                                <div className="pkg-preview">
+                                    <span className="pkg-preview-label">PREVIEW</span>
+                                    <div className="pkg-card">
+                                        <div className="pkg-card-image">
+                                            {previewUrl ? <img src={previewUrl} alt="Preview" /> : <span>No Image</span>}
+                                        </div>
+                                        <div className="pkg-card-body">
+                                            <span className="pkg-card-badge">{category}</span>
+                                            <h3 className="pkg-card-title">{title || 'Package Name'}</h3>
+                                            <p className="pkg-card-location">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                                {destination || 'Destination'}
+                                            </p>
+                                            <div className="pkg-card-divider"></div>
+                                            <div className="pkg-card-meta">
+                                                <div>
+                                                    <span>Price</span>
+                                                    <strong>₱{price ? Number(price).toLocaleString() : '0'}</strong>
+                                                </div>
+                                                <div>
+                                                    <span>Duration</span>
+                                                    <strong>{duration || '--'}</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="pkg-stats">
+                                        <div className="pkg-stat">
+                                            <strong>{inclusions.filter(i => i.trim()).length}</strong>
+                                            <span>Inclusions</span>
+                                        </div>
+                                        <div className="pkg-stat">
+                                            <strong>{itinerary.length}</strong>
+                                            <span>Days</span>
+                                        </div>
+                                        <div className="pkg-stat">
+                                            <strong>{itinerary.reduce((a, d) => a + d.activities.filter(x => x.trim()).length, 0)}</strong>
+                                            <span>Activities</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="pkg-actions">
+                                    <button type="button" className="pkg-btn pkg-btn--cancel" onClick={() => navigate(-1)}>Cancel</button>
+                                    <button type="submit" className="pkg-btn pkg-btn--submit">Publish</button>
+                                </div>
+                            </aside>
                         </div>
-                        
-                        <button type="submit" className="submit-button">Upload Package 🚀</button>
                     </form>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };
