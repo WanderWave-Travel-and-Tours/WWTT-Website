@@ -46,73 +46,113 @@ const ViewPackages = () => {
 
     if (loading) {
         return (
-            <div className="viewpackages-page-container">
+            <div className="packages-page">
                 <Sidebar />
-                <div className="main-content">
-                    <p>Loading packages...</p>
-                </div>
+                <main className="packages-main">
+                    <div className="packages-loader">
+                        <div className="packages-spinner"></div>
+                        <p>Loading packages...</p>
+                    </div>
+                </main>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="viewpackages-page-container">
+            <div className="packages-page">
                 <Sidebar />
-                <div className="main-content">
-                    <p style={{ color: 'red' }}>{error}</p>
-                </div>
+                <main className="packages-main">
+                    <div className="packages-error">
+                        <span className="packages-error-icon">⚠️</span>
+                        <p>{error}</p>
+                    </div>
+                </main>
             </div>
         );
     }
 
     return (
-        <div className="viewpackages-page-container">
+        <div className="packages-page">
             <Sidebar />
-            <div className="main-content">
-                <div className="packages-header">
-                    <h2>🏖️ Current Tour Packages ({packages.length})</h2>
-                    <button className="add-package-btn" onClick={() => navigate('/add-package')}>
-                        + Add New Package
-                    </button>
-                </div>
+            <main className="packages-main">
+                <div className="packages-container">
+                    <header className="packages-header">
+                        <div className="packages-header-left">
+                            <h1 className="packages-title">TOUR PACKAGES</h1>
+                            <p className="packages-subtitle">Manage your travel packages ({packages.length} total)</p>
+                        </div>
+                        <button className="packages-btn packages-btn--add" onClick={() => navigate('/add-package')}>
+                            + Add New Package
+                        </button>
+                    </header>
 
-                {packages.length === 0 ? (
-                    <p>No packages have been uploaded yet.</p>
-                ) : (
-                    <div className="packages-list">
-                        {packages.map((pkg) => (
-                            <div key={pkg._id} className="package-card">
-                                <div className="image-container">
-                                    <img 
-                                        src={`http://localhost:5000/uploads/${pkg.image}`} 
-                                        alt={pkg.title} 
-                                        className="package-image"
-                                    />
-                                </div>
-                                
-                                <div className="package-details">
-                                    <p className="package-title-display">{pkg.title}</p> 
+                    {packages.length === 0 ? (
+                        <div className="packages-empty">
+                            <span className="packages-empty-icon">📦</span>
+                            <h3>No packages yet</h3>
+                            <p>Start by adding your first tour package</p>
+                            <button className="packages-btn packages-btn--add" onClick={() => navigate('/add-package')}>
+                                + Add Package
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="packages-grid">
+                            {packages.map((pkg) => (
+                                <div key={pkg._id} className="pkg-card">
+                                    <div className="pkg-card-image">
+                                        <img 
+                                            src={`http://localhost:5000/uploads/${pkg.image}`} 
+                                            alt={pkg.title} 
+                                        />
+                                        <span className="pkg-card-category">{pkg.category}</span>
+                                    </div>
                                     
-                                    <p>
-                                        <span className="detail-item">📍 {pkg.destination}</span>
-                                        <span className="detail-item">🏷️ {pkg.category}</span>
-                                    </p>
-                                    <p>
-                                        <span className="detail-item">⏳ {pkg.duration}</span> 
-                                        <span className="detail-item price-tag">💰 ₱{pkg.price.toLocaleString()}</span>
-                                    </p>
-                                    
-                                    <div className="package-actions">
-                                        <button className="edit-btn" onClick={() => handleEdit(pkg._id)}>Edit</button>
-                                        <button className="delete-btn">Delete</button>
+                                    <div className="pkg-card-body">
+                                        <h3 className="pkg-card-title">{pkg.title}</h3>
+                                        
+                                        <div className="pkg-card-info">
+                                            <div className="pkg-info-row">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                                                    <circle cx="12" cy="10" r="3"/>
+                                                </svg>
+                                                <span>{pkg.destination}</span>
+                                            </div>
+                                            <div className="pkg-info-row">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <circle cx="12" cy="12" r="10"/>
+                                                    <polyline points="12 6 12 12 16 14"/>
+                                                </svg>
+                                                <span>{pkg.duration}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pkg-card-footer">
+                                            <div className="pkg-price">
+                                                <span className="pkg-price-label">PRICE</span>
+                                                <span className="pkg-price-value">₱{pkg.price.toLocaleString()}</span>
+                                            </div>
+                                            
+                                            <div className="pkg-actions">
+                                                <button 
+                                                    className="pkg-btn pkg-btn--edit" 
+                                                    onClick={() => handleEdit(pkg._id)}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button className="pkg-btn pkg-btn--delete">
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </main>
         </div>
     );
 };

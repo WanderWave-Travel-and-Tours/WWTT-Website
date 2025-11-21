@@ -1,112 +1,353 @@
-.viewpackages-page-container {
+/* ========================================
+   VIEW PACKAGES PAGE STYLES
+   Scoped to .packages-main only - Sidebar SAFE
+======================================== */
+
+.packages-page {
     display: flex;
     min-height: 100vh;
-    background-color: #f4f7f6;
+    background: #f8fafc;
 }
 
-.main-content {
-    flex-grow: 1;
-    padding: 30px;
+/* ========== MAIN CONTENT ONLY ========== */
+.packages-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: 40px 48px;
+    font-family: 'Segoe UI', Arial, sans-serif;
 }
 
+.packages-main *,
+.packages-main *::before,
+.packages-main *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.packages-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ========== HEADER ========== */
 .packages-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    margin-bottom: 32px;
 }
 
-.add-package-btn {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
+.packages-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.packages-subtitle {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* ========== BUTTONS ========== */
+.packages-btn {
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: bold;
+    transition: 0.15s ease;
 }
 
-.packages-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+.packages-btn--add {
+    color: #fff;
+    background: #FF8C42;
+    border: none;
+}
+
+.packages-btn--add:hover {
+    background: #e57a35;
+}
+
+/* ========== LOADING STATE ========== */
+.packages-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
     gap: 20px;
 }
 
-.package-card {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+.packages-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #FF8C42;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.packages-loader p {
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* ========== ERROR STATE ========== */
+.packages-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 40px;
+}
+
+.packages-error-icon {
+    font-size: 48px;
+}
+
+.packages-error p {
+    color: #dc2626;
+    font-size: 14px;
+}
+
+/* ========== EMPTY STATE ========== */
+.packages-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 60px;
+}
+
+.packages-empty-icon {
+    font-size: 56px;
+    margin-bottom: 8px;
+}
+
+.packages-empty h3 {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #001F3F;
+}
+
+.packages-empty p {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* ========== CARDS GRID ========== */
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+/* ========== PACKAGE CARD ========== */
+.pkg-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: 0.2s ease;
+}
+
+.pkg-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.1);
+}
+
+/* Card Image */
+.pkg-card-image {
+    position: relative;
+    height: 180px;
     overflow: hidden;
 }
 
-.package-image {
+.pkg-card-image img {
     width: 100%;
-    height: auto; 
-    max-height: 250px; 
-    display: block;
+    height: 100%;
     object-fit: cover;
 }
 
-.package-title-display {
-    font-size: 1.1em;
-    font-weight: 600;
-    color: #1e3a8a;
-    margin-top: 5px;
-    margin-bottom: 10px;
-}
-
-.package-details {
-    padding: 15px;
-}
-
-.package-details h3 {
-    margin-top: 0;
-    color: #333;
-}
-
-.package-details p {
-    display: flex; 
-    justify-content: space-between;
-    margin: 8px 0;
-    font-size: 0.9em;
-    color: #666;
-    border-bottom: 1px dashed #eee;
-    padding-bottom: 5px;
-}
-
-.package-details p:last-of-type {
-    border-bottom: none; 
-}
-
-.detail-item {
-    margin-right: 15px; 
-}
-
-.price-tag {
-    font-weight: bold;
-    color: #dc2626; 
-}
-
-.package-actions {
-    margin-top: 15px;
-    display: flex;
-    gap: 10px;
-}
-
-.edit-btn, .delete-btn {
-    padding: 8px 15px;
-    border: none;
+.pkg-card-category {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #001F3F;
+    color: #fff;
+    padding: 6px 12px;
     border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Card Body */
+.pkg-card-body {
+    padding: 20px;
+}
+
+.pkg-card-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 1rem;
+    font-weight: 900;
+    color: #001F3F;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+/* Card Info */
+.pkg-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.pkg-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.pkg-info-row svg {
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+}
+
+/* Card Footer */
+.pkg-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pkg-price {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pkg-price-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pkg-price-value {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #FF8C42;
+}
+
+/* Action Buttons */
+.pkg-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.pkg-btn {
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: 500;
+    transition: 0.15s ease;
+    border: none;
 }
 
-.edit-btn {
-    background-color: #28a745;
-    color: white;
+.pkg-btn--edit {
+    color: #fff;
+    background: #001F3F;
 }
 
-.delete-btn {
-    background-color: #dc3545;
-    color: white;
+.pkg-btn--edit:hover {
+    background: #003366;
+}
+
+.pkg-btn--delete {
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.pkg-btn--delete:hover {
+    background: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+    .packages-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+}
+
+@media (max-width: 900px) {
+    .packages-main {
+        margin-left: 70px;
+        padding: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .packages-main {
+        padding: 16px;
+    }
+
+    .packages-title {
+        font-size: 1.5rem;
+    }
+
+    .packages-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pkg-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .pkg-actions {
+        width: 100%;
+    }
+
+    .pkg-btn {
+        flex: 1;
+        text-align: center;
+    }
 }
