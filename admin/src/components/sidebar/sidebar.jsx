@@ -6,7 +6,6 @@ import {
   Package, 
   Tag, 
   ClipboardList, 
-  PenTool, 
   Star, 
   Wrench, 
   Users, 
@@ -18,8 +17,7 @@ import {
   Menu,
   FilePlus,
   ListOrdered,
-  UserPlus,
-  Settings,
+  Settings, // Icon for Settings
   FileText,
   HeartHandshake,
   Plane,
@@ -205,6 +203,10 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             />
 
             <MenuItem path="/users" icon={Users} label="Users" />
+            
+            {/* --- DITO KO IDINAGDAG ANG SETTINGS BUTTON --- */}
+            <MenuItem path="/settings" icon={Settings} label="Settings" />
+            
           </ul>
         </div>
       </nav>
