@@ -36,6 +36,129 @@ const AddPromo = () => {
                         <p className="promo-subtitle">Create a new promotional code for your packages</p>
                     </header>
 
+            <div className="promo-content"> 
+                <h1>🎟️ Add New Promo Code</h1>
+                <p>Create distinct promo codes based on duration (Weekly, Monthly, Yearly).</p>
+                
+                <form onSubmit={handleSubmit} className="promo-form">
+                    
+                    <div className="form-group">
+                        <label htmlFor="code">Promo Code Name:</label>
+                        <input
+                            type="text"
+                            id="code"
+                            name="code"
+                            value={promoDetails.code}
+                            onChange={handleChange}
+                            placeholder="e.g., SUMMER2025"
+                            required
+                            style={{ textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="description">Description:</label>
+                        <input
+                            type="text"
+                            id="description"
+                            name="description"
+                            value={promoDetails.description}
+                            onChange={handleChange}
+                            placeholder="e.g., Special discount for this month"
+                            required
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="category">Apply to Category:</label>
+                        <select
+                            id="category"
+                            name="category"
+                            value={promoDetails.category}
+                            onChange={handleChange}
+                            required
+                        >
+                            <option value="" disabled>Select Category</option>
+                            <option value="Barkada">Barkada Package</option>
+                            <option value="Tour Only">Tour Only</option>
+                            <option value="Package (Land)">Package (Land)</option>
+                            <option value="Full Package (Airfare)">Full Package (Airfare)</option>
+                        </select>
+                    </div>
+
+                    <div className="form-row-split">
+                        <div className="form-group half-width">
+                            <label htmlFor="discountType">Discount Type:</label>
+                            <select
+                                id="discountType"
+                                name="discountType"
+                                value={promoDetails.discountType}
+                                onChange={handleChange}
+                            >
+                                <option value="Fixed Amount (Peso)">Fixed Amount (Peso)</option>
+                                <option value="Percentage">Percentage (%)</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group half-width">
+                            <label htmlFor="discountValue">Value:</label>
+                            <input
+                                type="number"
+                                id="discountValue"
+                                name="discountValue"
+                                value={promoDetails.discountValue}
+                                onChange={handleChange}
+                                placeholder="Amount or %"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-row-split" style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+                        <div className="form-group half-width">
+                            <label htmlFor="durationType" style={{ color: '#6200ea', fontWeight: 'bold' }}>1. Duration Type:</label>
+                            <select
+                                id="durationType"
+                                name="durationType"
+                                value={promoDetails.durationType}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="Weekly">Weekly (7 Days)</option>
+                                <option value="Monthly">Monthly (1 Month)</option>
+                                <option value="Yearly">Yearly (1 Year)</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group half-width">
+                            <label htmlFor="startDate" style={{ color: '#6200ea', fontWeight: 'bold' }}>2. Start Date:</label>
+                            <input
+                                type="date"
+                                id="startDate"
+                                name="startDate"
+                                value={promoDetails.startDate}
+                                onChange={handleChange}
+                                required 
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="validUntil">End Period (Auto-Calculated):</label>
+                        <input
+                            type="date"
+                            id="validUntil"
+                            name="validUntil"
+                            value={promoDetails.validUntil}
+                            readOnly 
+                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                        />
+                        <small style={{ color: '#888' }}>
+                            System automatically sets this based on Duration Type + Start Date.
+                        </small>
+                    </div>
+                </form>
+            </div>
                     <form onSubmit={handleSubmit} className="promo-form">
                         <div className="promo-grid">
                             {/* Left Column - Form */}
