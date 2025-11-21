@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Search, Plane, FileText, HeartHandshake, Package, TrendingUp, Users, MapPin, Calendar, FileCheck, ScrollText, Heart, BookOpen } from 'lucide-react';
+import { Bell, Search, Plane, FileText, HeartHandshake, Package, TrendingUp, Users, MapPin, Calendar, FileCheck, ScrollText, Heart, BookOpen, PlusCircle, Tag, MessageSquare } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './Dashboard.css';
 
@@ -45,6 +45,14 @@ const Dashboard = () => {
         { name: 'Passport Appt', icon: BookOpen, path: '/services/passport', pending: 15, completed: 67, color: 'purple' },
     ];
 
+    // Quick Actions Data
+    const quickActionsData = [
+        { name: 'Add Package', icon: PlusCircle, path: '/add-package', desc: 'Create new tour', color: 'blue' },
+        { name: 'Create Promo', icon: Tag, path: '/add-promo', desc: 'Special offers', color: 'orange' },
+        { name: 'Add Testimonial', icon: MessageSquare, path: '/add-testimonial', desc: 'Client feedback', color: 'purple' },
+        { name: 'View Packages', icon: MapPin, path: '/view-packages', desc: 'Manage list', color: 'green' },
+    ];
+
     return (
         <div className="dash-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
@@ -65,6 +73,7 @@ const Dashboard = () => {
                         </div>
                     </header>
 
+                    {/* STATS ROW */}
                     <div className="dash-stats">
                         <div className="dash-stat">
                             <div className="dash-stat-icon dash-stat-icon--blue"><Plane size={24} /></div>
@@ -101,6 +110,8 @@ const Dashboard = () => {
                     </div>
 
                     <div className="dash-grid">
+                        
+                        {/* OTHER SERVICES (Wide, Horizontal Layout) */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">OTHER SERVICES</h2>
@@ -125,6 +136,7 @@ const Dashboard = () => {
                             </div>
                         </section>
 
+                        {/* RECENT BOOKINGS */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">RECENT BOOKINGS</h2>
@@ -156,6 +168,7 @@ const Dashboard = () => {
                             </div>
                         </section>
 
+                        {/* 2 COLUMN GRID */}
                         <section className="dash-section">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">TOP PACKAGES</h2>
@@ -197,31 +210,33 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        <section className="dash-section">
+                        {/* QUICK ACTIONS - Moved to Bottom & Styled Differently */}
+                        <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">QUICK ACTIONS</h2>
                             </div>
-                            <div className="dash-quick-actions">
-                                <button className="dash-action-card" onClick={() => navigate('/add-package')}>
-                                    <Package size={20} />
-                                    <span>Add Package</span>
-                                </button>
-                                <button className="dash-action-card" onClick={() => navigate('/add-promo')}>
-                                    <span className="dash-action-emoji">🏷️</span>
-                                    <span>Create Promo</span>
-                                </button>
-                                <button className="dash-action-card" onClick={() => navigate('/add-testimonial')}>
-                                    <Users size={20} />
-                                    <span>Add Testimonial</span>
-                                </button>
-                                <button className="dash-action-card" onClick={() => navigate('/view-packages')}>
-                                    <MapPin size={20} />
-                                    <span>View Packages</span>
-                                </button>
+                            <div className="dash-actions-grid">
+                                {quickActionsData.map((action, i) => (
+                                    <button 
+                                        key={i} 
+                                        className={`dash-action-btn dash-action-btn--${action.color}`} 
+                                        onClick={() => navigate(action.path)}
+                                    >
+                                        <div className="dash-action-icon-wrapper">
+                                            <action.icon size={28} />
+                                        </div>
+                                        <div className="dash-action-text">
+                                            <span className="dash-action-title">{action.name}</span>
+                                            <span className="dash-action-sub">{action.desc}</span>
+                                        </div>
+                                    </button>
+                                ))}
                             </div>
                         </section>
+
                     </div>
 
+                    {/* FOOTER STATS */}
                     <div className="dash-footer-stats">
                         <div className="dash-footer-stat">
                             <Calendar size={20} />
