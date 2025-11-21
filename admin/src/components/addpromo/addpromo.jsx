@@ -15,7 +15,8 @@ const AddPromo = () => {
         startDate: ''
     });
 
-    // Auto-calculate end date based on duration type and start date
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
             const start = new Date(promoDetails.startDate);
@@ -51,29 +52,50 @@ const AddPromo = () => {
         }));
     };
 
-    const handleSubmit = () => {
-        // Validation
+    const handleSubmit = async () => {
         if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
             !promoDetails.discountValue || !promoDetails.startDate) {
             alert('Please fill in all required fields');
             return;
         }
 
-        console.log('Submitting Promo Details:', promoDetails);
-        alert(`Promo Code ${promoDetails.code} added successfully!`);
-        
-        // Reset form
-        setPromoDetails({
-            code: '',
-            discount: '',
-            validUntil: '',
-            description: '',
-            category: '',
-            discountType: 'Fixed Amount (Peso)',
-            discountValue: '',
-            durationType: 'Weekly',
-            startDate: ''
-        });
+        setIsSubmitting(true);
+
+        try {
+            const response = await fetch('http://localhost:5000/api/promos/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(promoDetails),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(`Promo Code ${promoDetails.code} added successfully!`);
+                console.log('Saved Promo:', data);
+
+                setPromoDetails({
+                    code: '',
+                    discount: '',
+                    validUntil: '',
+                    description: '',
+                    category: '',
+                    discountType: 'Fixed Amount (Peso)',
+                    discountValue: '',
+                    durationType: 'Weekly',
+                    startDate: ''
+                });
+            } else {
+                alert(`Error adding promo: ${data.message || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Network Error:', error);
+            alert('Failed to connect to the server. Please check if your backend is running.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleCancel = () => {
