@@ -25,21 +25,18 @@ import {
   Plane,
   BookOpen
 } from 'lucide-react';
-// IMPORTANT: Added .css extension
 import './sidebar.css';
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // State para sa mga dropdowns
   const [openMenus, setOpenMenus] = useState({
     add: false,
     list: false,
     services: false
   });
 
-  // Effect: Kapag nag-collapse ang sidebar, isara lahat ng dropdowns
   useEffect(() => {
     if (isCollapsed) {
       setOpenMenus({
@@ -50,19 +47,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     }
   }, [isCollapsed]);
 
-  // Toggle function para sa dropdown menus
   const toggleMenu = (menuKey) => {
-    // Kung naka-collapse ang sidebar at pinindot ang menu, i-expand muna ito
     if (isCollapsed) {
       toggleSidebar();
-      // Konting delay para smooth ang animation ng pagbukas
       setTimeout(() => {
         setOpenMenus(prev => ({ ...prev, [menuKey]: true }));
       }, 150);
       return;
     }
 
-    // Standard toggle behavior (bukas-sara)
     setOpenMenus(prev => ({
       ...prev,
       [menuKey]: !prev[menuKey]
@@ -77,7 +70,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   const isActive = (path) => location.pathname === path;
   
-  // Helper para sa Single Menu Item (Walang Dropdown)
   const MenuItem = ({ path, icon: Icon, label }) => {
     const active = isActive(path);
     return (
@@ -96,16 +88,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     );
   };
 
-  // Helper para sa Dropdown Menu Group
   const DropdownMenu = ({ title, icon: Icon, menuKey, childrenItems }) => {
     const isOpen = openMenus[menuKey];
-    // Check kung ang current page ay nasa loob ng dropdown na ito
     const isChildActive = childrenItems.some(item => item.path === location.pathname);
 
     return (
       <li className="nav-item">
         <div className="submenu-container">
-          {/* Parent Button */}
           <button
             onClick={() => toggleMenu(menuKey)}
             className={`menu-btn ${isChildActive || (isOpen && !isCollapsed) ? 'active' : ''}`}
@@ -116,13 +105,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               <span className="btn-label">{title}</span>
             </div>
             
-            {/* Arrow Icon (Hide pag naka-minimize) */}
             {!isCollapsed && (
               isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />
             )}
           </button>
 
-          {/* Submenu Items (Lalabas lang pag expanded ang sidebar at open ang menu) */}
           <div className={`submenu-wrapper ${isOpen && !isCollapsed ? 'open' : 'closed'}`}>
             <ul className="submenu-list">
               {childrenItems.map((item) => (
@@ -134,7 +121,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     }}
                     className={`submenu-btn ${isActive(item.path) ? 'active' : ''}`}
                   >
-                    {/* Icon para sa Sub-item */}
                     <item.icon size={16} className="sub-icon" />
                     <span className="sub-label">{item.name}</span>
                   </button>
@@ -149,8 +135,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   return (
     <div className={`sidebar-container custom-scrollbar ${isCollapsed ? 'collapsed' : ''}`}>
-      
-      {/* Header Section */}
       <div className="sidebar-header">
         <div className="logo-wrapper">
           <div className="logo-box">
@@ -166,7 +150,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           </div>
         </div>
         
-        {/* TOGGLE BUTTON (Arrow Key) */}
         <button 
             className="toggle-btn" 
             onClick={toggleSidebar}
@@ -176,14 +159,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         </button>
       </div>
 
-      {/* Navigation Links */}
       <nav className="sidebar-nav custom-scrollbar">
         <div className="menu-group">
           <h3 className="menu-title">Main Menu</h3>
           <ul className="nav-list">
             <MenuItem path="/dashboard" icon={LayoutDashboard} label="Dashboard" />
 
-            {/* Add Dropdown */}
             <DropdownMenu 
               title="Add" 
               icon={PlusCircle} 
@@ -195,7 +176,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               ]}
             />
 
-            {/* List Dropdown */}
             <DropdownMenu 
               title="List" 
               icon={List} 
@@ -212,7 +192,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         <div className="menu-group">
           <h3 className="menu-title">Management</h3>
           <ul className="nav-list">
-            {/* Other Services Dropdown */}
             <DropdownMenu 
               title="Other Services" 
               icon={Wrench} 

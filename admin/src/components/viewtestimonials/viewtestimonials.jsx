@@ -24,12 +24,14 @@ const ViewTestimonials = () => {
 
     const handleDelete = async (id, name) => {
         if (window.confirm(`Are you sure you want to delete the testimonial from ${name}?`)) {
+            // Add DELETE API call logic here if needed in backend
             setTestimonials(testimonials.filter(t => t._id !== id));
             alert(`Testimonial from ${name} has been deleted (from view).`);
         }
     };
 
     const getSourceClass = (source) => {
+        if (!source) return 'default';
         const s = source.toLowerCase();
         if (s.includes('facebook')) return 'facebook';
         if (s.includes('website')) return 'website';
@@ -49,7 +51,7 @@ const ViewTestimonials = () => {
                                 Managing {testimonials.length} customer reviews from various sources
                             </p>
                         </div>
-                        <button className="vtest-btn vtest-btn--add">
+                        <button className="vtest-btn vtest-btn--add" onClick={() => window.location.href='/add-testimonial'}>
                             + Add Testimonial
                         </button>
                     </header>
@@ -63,15 +65,22 @@ const ViewTestimonials = () => {
                     ) : (
                         <div className="vtest-grid">
                             {testimonials.map(t => (
-                                <div key={t.id} className="vtest-card">
+                                <div key={t._id} className="vtest-card">
                                     <div className="vtest-card-header">
+                                        {/* FIXED IMAGE SOURCE */}
                                         <img 
-                                            src={t.pictureUrl} 
-                                            alt={`Profile of ${t.name}`} 
+                                            src={
+                                                t.customerImage 
+                                                ? `http://localhost:5000/uploads/${t.customerImage}` 
+                                                : 'https://via.placeholder.com/150?text=No+Img'
+                                            } 
+                                            alt={`Profile of ${t.customerName}`} 
                                             className="vtest-avatar" 
+                                            onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Error"; }}
                                         />
                                         <div className="vtest-user">
-                                            <h3 className="vtest-name">{t.name}</h3>
+                                            {/* FIXED FIELD NAME (customerName) */}
+                                            <h3 className="vtest-name">{t.customerName}</h3>
                                             <span className={`vtest-source vtest-source--${getSourceClass(t.source)}`}>
                                                 {t.source}
                                             </span>
@@ -91,7 +100,7 @@ const ViewTestimonials = () => {
                                         </div>
                                         <button 
                                             className="vtest-delete-btn"
-                                            onClick={() => handleDelete(t.id, t.name)}
+                                            onClick={() => handleDelete(t._id, t.customerName)}
                                         >
                                             Delete
                                         </button>
@@ -107,15 +116,15 @@ const ViewTestimonials = () => {
                             <span>Total Reviews</span>
                         </div>
                         <div className="vtest-stat">
-                            <strong>{testimonials.filter(t => t.source.toLowerCase().includes('facebook')).length}</strong>
+                            <strong>{testimonials.filter(t => t.source && t.source.toLowerCase().includes('facebook')).length}</strong>
                             <span>Facebook</span>
                         </div>
                         <div className="vtest-stat">
-                            <strong>{testimonials.filter(t => t.source.toLowerCase().includes('website')).length}</strong>
+                            <strong>{testimonials.filter(t => t.source && t.source.toLowerCase().includes('website')).length}</strong>
                             <span>Website</span>
                         </div>
                         <div className="vtest-stat">
-                            <strong>{testimonials.filter(t => t.source.toLowerCase().includes('email')).length}</strong>
+                            <strong>{testimonials.filter(t => t.source && t.source.toLowerCase().includes('email')).length}</strong>
                             <span>Email</span>
                         </div>
                     </div>
