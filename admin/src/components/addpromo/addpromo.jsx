@@ -209,8 +209,6 @@ const AddPromo = () => {
                             System automatically sets this based on Duration Type + Start Date.
                         </small>
                     </div>
-                    
-                    <button type="submit" className="submit-btn">Create Promo</button>
                 </form>
             </div>
                     <form onSubmit={handleSubmit} className="promo-form">
