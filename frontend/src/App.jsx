@@ -2,17 +2,9 @@ import { useState } from 'react';
 import { Menu, X } from 'lucide-react'; 
 import './App.css';
 import FlightSearch from './components/flightSearch/flightSearch.jsx';
-import PackageDeals from './components/packageDeals/packageDeals.jsx';
+import PackageDeals from './components/packagedeals/packageDeals.jsx';
 import Footer from './components/footer/footer.jsx';
-
-const Bookings = () => (
-  <div className="page-container">
-    <div className="page-content">
-      <h1 className="page-title">My Bookings</h1>
-      <p className="page-description">View and manage your flight bookings here</p>
-    </div>
-  </div>
-);
+import OtherServices from './components/otherservices/otherservices.jsx'; 
 
 const Profile = () => (
   <div className="page-container">
@@ -42,7 +34,7 @@ function App() {
   const pages = {
     flights: { name: 'Flight Search', component: FlightSearch },
     packages: { name: 'Package Deals', component: PackageDeals },
-    bookings: { name: 'My Bookings', component: Bookings },
+    otherservices: { name: 'Other Services', component: OtherServices },
     profile: { name: 'Profile', component: Profile },
     help: { name: 'Help & Support', component: Help },
   };
@@ -56,11 +48,8 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* --- NAVIGATION BAR (Laging Puti) --- */}
       <nav className="navbar">
         <div className="navbar-content">
-          
-          {/* Logo/Brand - Nagpapalit depende sa screen size */}
           <div className="brand" onClick={() => handleMobileLinkClick('flights')}>
             <img 
               src={logoWhiteNav}
@@ -74,7 +63,6 @@ function App() {
             />
           </div>
 
-          {/* --- DESKTOP NAVIGATION --- */}
           <div className="nav-links">
             {Object.entries(pages).map(([key, page]) => (
               <button
@@ -90,7 +78,6 @@ function App() {
             <button className="book-now-btn">BOOK NOW</button>
           </div>
 
-          {/* --- MOBILE HAMBURGER BUTTON (Nasa white bar) --- */}
           <button 
             className="mobile-menu-btn" 
             onClick={() => setIsMobileMenuOpen(true)}
@@ -101,10 +88,7 @@ function App() {
         </div>
       </nav>
 
-      {/* --- MOBILE NAVIGATION MENU (Sliding panel) --- */}
       <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-        
-        {/* --- BLUE HEADER (Nasa loob ng slide menu) --- */}
         <div className="mobile-menu-header">
           <img 
             src={logoBlueHeader} 
@@ -120,7 +104,6 @@ function App() {
           </button>
         </div>
         
-        {/* --- WHITE LINKS (Nasa loob ng slide menu) --- */}
         <div className="mobile-nav-links">
           {Object.entries(pages).map(([key, page]) => (
             <button
@@ -133,11 +116,9 @@ function App() {
           ))}
         </div>
         
-        {/* --- BOOK NOW BUTTON (Nasa baba) --- */}
         <button className="book-now-btn">BOOK NOW</button>
       </div>
 
-      {/* Page Content */}
       <main className="main-content">
         <CurrentComponent />
       </main>
