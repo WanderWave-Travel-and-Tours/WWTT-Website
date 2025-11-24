@@ -17,6 +17,8 @@ const AdminModel = require('./models/admin');
 const PackageModel = require('./models/package');
 const TestimonialModel = require('./models/testimonial');
 const PromoModel = require('./models/promo');
+const Booking = require('./models/booking');
+
 mongoose.connect(process.env.MONGODB_URI) 
     .then(() => console.log("✅ DATABASE CONNECTED! Ready to Login."))
     .catch((err) => {
@@ -43,38 +45,6 @@ app.use('/api/admin', adminRoutes);
 app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
 });
-
-/*app.post('/api/admin/login', async (req, res) => {
-    const { username, password } = req.body; 
-
-    try {
-        const admin = await AdminModel.findOne({ username });
-
-        if (!admin) {
-            return res.status(401).json({ status: "error", message: "Invalid credentials" });
-        }
-
-        const isMatch = await admin.comparePassword(password); 
-
-        if (isMatch) {
-            res.json({ 
-                status: "ok", 
-                message: "Login Success!", 
-                data: {
-                    username: admin.username,
-                    businessName: admin.businessName,
-                    businessAddress: admin.businessAddress,
-                    businessLogo: admin.businessLogo
-                }
-            });
-        } else {
-            res.status(401).json({ status: "error", message: "Invalid credentials" });
-        }
-    } catch (err) {
-        console.error("Login Error:", err);
-        res.status(500).json({ status: "error", message: "Server error during login." });
-    }
-});*/
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -126,6 +96,31 @@ app.post('/api/packages/add', upload.single('image'), async (req, res) => {
         console.error("Error adding package:", err);
         res.status(500).json({ status: "error", error: err.message });
     }
+});
+
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const bookingData = req.body;
+    const newBooking = new Booking(bookingData);
+    await newBooking.save();
+    res.status(201).json({ message: 'Booking created successfully', booking: newBooking });
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    res.status(500).json({ message: 'Error creating booking', error });
+  }
+});
+
+app.get('/api/admin/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find()
+      .sort({ createdAt: -1 }) 
+      .select('-__v'); 
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ message: 'Failed to fetch bookings', error: error.message });
+  }
 });
 
 // Port
