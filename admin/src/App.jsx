@@ -12,6 +12,7 @@ import ServiceManagement from './components/servicemanagement/servicemanagement.
 import Settings from './components/settings/settings.jsx';
 import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
+import Booking from './components/booking/booking.jsx'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+         <Route path="/booking" element={<Booking />} />
         <Route path="/add-package" element={<AddPackage />} />
         <Route path="/view-packages" element={<ViewPackages />} />
         <Route path="/edit-package" element={<EditPackage />} />

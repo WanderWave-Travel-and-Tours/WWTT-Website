@@ -22,7 +22,8 @@ import {
   HeartHandshake,
   Plane,
   BookOpen,
-  Hotel
+  Hotel,
+  Calendar  // NEW IMPORT
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -163,7 +164,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           <h3 className="menu-title">Main Menu</h3>
           <ul className="nav-list">
             <MenuItem path="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-
+            <MenuItem path="/booking" icon={Calendar} label="Booking" />
             <DropdownMenu 
               title="Add" 
               icon={PlusCircle} 
@@ -172,7 +173,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Create Package', path: '/add-package', icon: FilePlus },
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
-                { name: 'Add Hotel', path: '/add-hotel', icon: Hotel }, // Added Here
+                { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
               ]}
             />
 
@@ -184,7 +185,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Manage Packages', path: '/view-packages', icon: Package },
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
-                { name: 'Hotel List', path: '/view-hotels', icon: Hotel }, // Added Here
+                { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
               ]}
             />
           </ul>

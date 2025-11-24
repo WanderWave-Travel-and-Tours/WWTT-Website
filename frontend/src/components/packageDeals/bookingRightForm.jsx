@@ -49,7 +49,6 @@ const BookingRightForm = ({ pkg }) => {
 
   const handleBookClick = () => {
     if (!selectedDate) {
-      // 2. REPLACED ALERT WITH ERROR TOAST
       toast.error("Please select a travel date first!", {
         style: { border: '1px solid #ef4444', color: '#ef4444' },
         iconTheme: { primary: '#ef4444', secondary: '#fff' },
@@ -64,30 +63,42 @@ const BookingRightForm = ({ pkg }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFinalSubmit = (e) => {
-    e.preventDefault();
-    console.log("Booking Request Sent:", {
-      package: pkg.name,
-      date: `${monthNames[currentMonth.getMonth()]} ${selectedDate}, ${currentMonth.getFullYear()}`,
-      pax: quantities,
-      total: totalAmount,
-      contact: formData
+  const handleFinalSubmit = async (e) => {
+  e.preventDefault();
+  
+  const bookingData = {
+    packageName: pkg.name,
+    date: `${monthNames[currentMonth.getMonth()]} ${selectedDate}, ${currentMonth.getFullYear()}`,
+    pax: quantities,
+    totalAmount: totalAmount,
+    fullName: formData.fullName,
+    email: formData.email,
+    message: formData.message
+  };
+
+  try {
+    const response = await fetch('http://localhost:5000/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bookingData)
     });
-    
-    // 3. REPLACED ALERT WITH SUCCESS TOAST
-    toast.success("Request Sent! Wait for our confirmation.", {
-      duration: 5000,
-      style: {
-        border: '1px solid #10b981',
-        padding: '16px',
-        color: '#064e3b',
-      },
-      iconTheme: {
-        primary: '#10b981',
-        secondary: '#FFFAEE',
-      },
-    });
-    
+
+    if (response.ok) {
+      toast.success("Booking confirmed! Check your email for details.", {
+        duration: 5000,
+        style: { border: '1px solid #10b981', padding: '16px', color: '#064e3b' },
+        iconTheme: { primary: '#10b981', secondary: '#FFFAEE' }
+      });
+    } else {
+      throw new Error('Failed to create booking');
+    }
+  } catch (error) {
+      toast.error("Error submitting booking. Please try again.", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+        iconTheme: { primary: '#ef4444', secondary: '#fff' }
+      });
+    }
+
     setShowModal(false);
   };
 
