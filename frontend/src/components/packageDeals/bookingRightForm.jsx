@@ -3,15 +3,14 @@ import {
   MapPin, Calendar, Plane, Hotel, Utensils, Bus, Camera, Briefcase, 
   ChevronLeft, ChevronRight, Minus, Plus, X, MessageCircle 
 } from 'lucide-react';
-// 1. IMPORT TOAST
 import toast, { Toaster } from 'react-hot-toast';
 
 const BookingRightForm = ({ pkg }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [quantities, setQuantities] = useState({ adult: 1 });
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10)); // Nov 2025
+  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10)); 
+  const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   
-  // Modal State
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -19,21 +18,29 @@ const BookingRightForm = ({ pkg }) => {
     message: ''
   });
 
-  // Package Definitions
   const packageTypes = [
     { id: 'adult', label: 'Standard Pax', description: '3+ years old', pricePerPax: pkg.price, discount: 'Best Value' }
   ];
 
-  // Calculation Logic
   const totalAmount = Object.entries(quantities).reduce((sum, [type, qty]) => {
     const pType = packageTypes.find(p => p.id === type);
     return sum + (pType?.pricePerPax || 0) * qty;
   }, 0);
 
-  // Calendar Helpers
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const isInSelectedRange = (day) => {
+    if (!selectedDate) return false;
+    const endDate = selectedDate + durationDays - 1;
+    return day >= selectedDate && day <= endDate;
+  };
+
+  const getEndDate = () => {
+    if (!selectedDate) return null;
+    return selectedDate + durationDays - 1;
+  };
 
   const handleQuantity = (type, delta) => {
     setQuantities(prev => ({
@@ -64,35 +71,38 @@ const BookingRightForm = ({ pkg }) => {
   };
 
   const handleFinalSubmit = async (e) => {
-  e.preventDefault();
-  
-  const bookingData = {
-    packageName: pkg.name,
-    date: `${monthNames[currentMonth.getMonth()]} ${selectedDate}, ${currentMonth.getFullYear()}`,
-    pax: quantities,
-    totalAmount: totalAmount,
-    fullName: formData.fullName,
-    email: formData.email,
-    message: formData.message
-  };
+    e.preventDefault();
+    
+    const endDate = getEndDate();
+    const bookingData = {
+      packageName: pkg.name,
+      startDate: `${monthNames[currentMonth.getMonth()]} ${selectedDate}, ${currentMonth.getFullYear()}`,
+      endDate: `${monthNames[currentMonth.getMonth()]} ${endDate}, ${currentMonth.getFullYear()}`,
+      duration: pkg.duration,
+      pax: quantities,
+      totalAmount: totalAmount,
+      fullName: formData.fullName,
+      email: formData.email,
+      message: formData.message
+    };
 
-  try {
-    const response = await fetch('http://localhost:5000/api/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bookingData)
-    });
-
-    if (response.ok) {
-      toast.success("Booking confirmed! Check your email for details.", {
-        duration: 5000,
-        style: { border: '1px solid #10b981', padding: '16px', color: '#064e3b' },
-        iconTheme: { primary: '#10b981', secondary: '#FFFAEE' }
+    try {
+      const response = await fetch('http://localhost:5000/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
       });
-    } else {
-      throw new Error('Failed to create booking');
-    }
-  } catch (error) {
+
+      if (response.ok) {
+        toast.success("Booking confirmed! Check your email for details.", {
+          duration: 5000,
+          style: { border: '1px solid #10b981', padding: '16px', color: '#064e3b' },
+          iconTheme: { primary: '#10b981', secondary: '#FFFAEE' }
+        });
+      } else {
+        throw new Error('Failed to create booking');
+      }
+    } catch (error) {
       toast.error("Error submitting booking. Please try again.", {
         style: { border: '1px solid #ef4444', color: '#ef4444' },
         iconTheme: { primary: '#ef4444', secondary: '#fff' }
@@ -103,7 +113,6 @@ const BookingRightForm = ({ pkg }) => {
   };
 
   const handleContactSales = () => {
-    // 4. REPLACED ALERT WITH CUSTOM LOADING TOAST
     toast.loading("Connecting to sales representative...", {
       duration: 3000,
       style: {
@@ -115,10 +124,7 @@ const BookingRightForm = ({ pkg }) => {
 
   return (
     <div className="booking-form-content">
-      {/* 5. ADD TOASTER COMPONENT HERE (Para lumabas ang toast) */}
       <Toaster position="top-center" reverseOrder={false} />
-
-      {/* Title & Price */}
       <div className="form-header">
         <h1 className="package-title">{pkg.name}</h1>
         <div className="price-row">
@@ -136,18 +142,29 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
-      {/* Service Icons */}
       <div className="service-icons">
         {[Plane, Hotel, Bus, Utensils, Camera, Briefcase].map((Icon, i) => (
           <Icon key={i} size={20} className="service-icon" />
         ))}
       </div>
 
-      {/* Calendar Section */}
       <div className="calendar-section">
         <label style={{display:'block', marginBottom:'12px', fontWeight:'600', color:'#374151'}}>
           Select Travel Date
         </label>
+        {selectedDate && (
+          <div style={{
+            padding: '12px',
+            background: '#f0fdf4',
+            border: '1px solid #86efac',
+            borderRadius: '8px',
+            marginBottom: '12px',
+            fontSize: '0.9rem',
+            color: '#166534'
+          }}>
+            <strong>Selected Trip:</strong> {monthNames[currentMonth.getMonth()]} {selectedDate} - {getEndDate()}, {currentMonth.getFullYear()} ({durationDays} days)
+          </div>
+        )}
         <div className="calendar-wrapper">
           <div className="calendar-header">
             <button onClick={() => changeMonth(-1)} style={{background:'none', border:'none', cursor:'pointer'}}>
@@ -166,12 +183,20 @@ const BookingRightForm = ({ pkg }) => {
             {[...Array(firstDay)].map((_, i) => <div key={`empty-${i}`} />)}
             {[...Array(daysInMonth)].map((_, i) => {
               const day = i + 1;
-              const isSelected = selectedDate === day;
+              const isStartDate = selectedDate === day;
+              const isInRange = isInSelectedRange(day);
+              const isEndDate = selectedDate && day === getEndDate();
+              
               return (
                 <button
                   key={day}
                   onClick={() => setSelectedDate(day)}
-                  className={`calendar-day ${isSelected ? 'selected' : ''}`}
+                  className={`calendar-day ${isStartDate ? 'selected' : ''} ${isInRange && !isStartDate ? 'in-range' : ''} ${isEndDate ? 'end-date' : ''}`}
+                  style={{
+                    background: isStartDate ? '#fc9c1b' : isEndDate ? '#22c55e' : isInRange ? '#fef3c7' : 'white',
+                    color: isStartDate || isEndDate ? 'white' : isInRange ? '#92400e' : '#374151',
+                    fontWeight: isStartDate || isEndDate ? '600' : '400'
+                  }}
                 >
                   {day}
                 </button>
@@ -181,7 +206,6 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
-      {/* Quantity Section */}
       <div className="quantity-section">
         {packageTypes.map((type) => (
           <div key={type.id} className="quantity-item">
@@ -206,19 +230,16 @@ const BookingRightForm = ({ pkg }) => {
         ))}
       </div>
 
-      {/* Bottom: Total & Buttons */}
       <div className="booking-footer">
         <div className="total-row">
           <span className="total-label">Total Amount</span>
           <span className="total-amount">₱{totalAmount.toLocaleString()}</span>
         </div>
         
-        {/* Main CTA */}
         <button className="book-now-btn" onClick={handleBookClick}>
           Book This Trip
         </button>
 
-        {/* Secondary CTA (Below Book Now) */}
         <button className="contact-sales-footer-btn" onClick={handleContactSales}>
            <MessageCircle size={20} />
            Contact Sales
@@ -229,12 +250,10 @@ const BookingRightForm = ({ pkg }) => {
         </p>
       </div>
 
-      {/* ================= MODAL START ================= */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
             
-            {/* SUPER LARGE CLOSE BUTTON */}
             <button 
               className="modal-close-btn" 
               onClick={() => setShowModal(false)}
@@ -255,11 +274,13 @@ const BookingRightForm = ({ pkg }) => {
                 Please complete your details below. We'll secure your spot for <strong>{pkg.name}</strong> instantly.
               </p>
               
-              {/* Trip Summary */}
               <div className="modal-trip-summary">
                 <div className="summary-item">
-                    <span className="summary-label">Selected Date</span>
-                    <strong className="summary-value">{monthNames[currentMonth.getMonth()]} {selectedDate}, {currentMonth.getFullYear()}</strong>
+                    <span className="summary-label">Travel Dates</span>
+                    <strong className="summary-value">
+                      {monthNames[currentMonth.getMonth()]} {selectedDate} - {getEndDate()}, {currentMonth.getFullYear()}
+                    </strong>
+                    <span style={{fontSize:'0.85rem', color:'#6b7280'}}>({durationDays} days trip)</span>
                 </div>
                 <div className="summary-divider"></div>
                 <div className="summary-item">
@@ -305,7 +326,6 @@ const BookingRightForm = ({ pkg }) => {
                 ></textarea>
               </div>
 
-              {/* Just One Confirm Button Inside Modal Now */}
               <button type="submit" className="modal-submit-btn">
                 Confirm Booking
               </button>
@@ -314,8 +334,7 @@ const BookingRightForm = ({ pkg }) => {
           </div>
         </div>
       )}
-      {/* ================= MODAL END ================= */}
-
+    
     </div>
   );
 };
