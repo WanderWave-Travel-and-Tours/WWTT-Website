@@ -133,8 +133,8 @@ const AddPackage = () => {
                                         <div className="pkg-field">
                                             <label>Tour Type</label>
                                             <select value={category} onChange={e => setCategory(e.target.value)}>
-                                                <option>Local Tour</option>
-                                                <option>International Tour</option>
+                                                <option>Local</option>
+                                                <option>International</option>
                                             </select>
                                         </div>
                                         <div className="pkg-field">

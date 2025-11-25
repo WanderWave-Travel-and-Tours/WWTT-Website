@@ -36,11 +36,15 @@ const packageRoutes = require('./routes/packageRoute');
 const testimonialRoutes = require('./routes/testimonialRoute');
 const promoRoutes = require('./routes/promoRoute');
 const adminRoutes = require('./routes/adminRoute');
+const paymentRoute = require('./routes/paymentRoute');
+const bookingRoute = require('./routes/bookingRoute');
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/promos', promoRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/payment', paymentRoute);
+app.use('/api/bookings', bookingRoute);
 
 app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
