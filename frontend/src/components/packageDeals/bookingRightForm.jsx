@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   MapPin, Calendar, Plane, Hotel, Utensils, Bus, Camera, Briefcase, 
   ChevronLeft, ChevronRight, Minus, Plus, X, MessageCircle 
@@ -6,11 +7,15 @@ import {
 import toast, { Toaster } from 'react-hot-toast';
 
 const BookingRightForm = ({ pkg }) => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(null);
   const [quantities, setQuantities] = useState({ adult: 1 });
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10)); 
+  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10)); // Nov 2025
+  
+  // Extract number of days from duration (e.g., "4D3N" -> 4)
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   
+  // Modal State
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -18,25 +23,30 @@ const BookingRightForm = ({ pkg }) => {
     message: ''
   });
 
+  // Package Definitions
   const packageTypes = [
     { id: 'adult', label: 'Standard Pax', description: '3+ years old', pricePerPax: pkg.price, discount: 'Best Value' }
   ];
 
+  // Calculation Logic
   const totalAmount = Object.entries(quantities).reduce((sum, [type, qty]) => {
     const pType = packageTypes.find(p => p.id === type);
     return sum + (pType?.pricePerPax || 0) * qty;
   }, 0);
 
+  // Calendar Helpers
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+  // Helper function to check if a day is in the selected range
   const isInSelectedRange = (day) => {
     if (!selectedDate) return false;
     const endDate = selectedDate + durationDays - 1;
     return day >= selectedDate && day <= endDate;
   };
 
+  // Helper function to get the end date
   const getEndDate = () => {
     if (!selectedDate) return null;
     return selectedDate + durationDays - 1;
@@ -86,30 +96,16 @@ const BookingRightForm = ({ pkg }) => {
       message: formData.message
     };
 
-    try {
-      const response = await fetch('http://localhost:5000/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData)
-      });
-
-      if (response.ok) {
-        toast.success("Booking confirmed! Check your email for details.", {
-          duration: 5000,
-          style: { border: '1px solid #10b981', padding: '16px', color: '#064e3b' },
-          iconTheme: { primary: '#10b981', secondary: '#FFFAEE' }
-        });
-      } else {
-        throw new Error('Failed to create booking');
-      }
-    } catch (error) {
-      toast.error("Error submitting booking. Please try again.", {
-        style: { border: '1px solid #ef4444', color: '#ef4444' },
-        iconTheme: { primary: '#ef4444', secondary: '#fff' }
-      });
-    }
-
+    // Close modal
     setShowModal(false);
+
+    // Show loading toast
+    toast.loading("Redirecting to payment...", { duration: 1500 });
+
+    // Redirect to payment page with booking data
+    setTimeout(() => {
+      navigate('/payment', { state: { bookingData } });
+    }, 1500);
   };
 
   const handleContactSales = () => {
@@ -125,6 +121,8 @@ const BookingRightForm = ({ pkg }) => {
   return (
     <div className="booking-form-content">
       <Toaster position="top-center" reverseOrder={false} />
+
+      {/* Title & Price */}
       <div className="form-header">
         <h1 className="package-title">{pkg.name}</h1>
         <div className="price-row">
@@ -142,12 +140,14 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
+      {/* Service Icons */}
       <div className="service-icons">
         {[Plane, Hotel, Bus, Utensils, Camera, Briefcase].map((Icon, i) => (
           <Icon key={i} size={20} className="service-icon" />
         ))}
       </div>
 
+      {/* Calendar Section */}
       <div className="calendar-section">
         <label style={{display:'block', marginBottom:'12px', fontWeight:'600', color:'#374151'}}>
           Select Travel Date
@@ -206,6 +206,7 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
+      {/* Quantity Section */}
       <div className="quantity-section">
         {packageTypes.map((type) => (
           <div key={type.id} className="quantity-item">
@@ -230,6 +231,7 @@ const BookingRightForm = ({ pkg }) => {
         ))}
       </div>
 
+      {/* Bottom: Total & Buttons */}
       <div className="booking-footer">
         <div className="total-row">
           <span className="total-label">Total Amount</span>
@@ -250,6 +252,7 @@ const BookingRightForm = ({ pkg }) => {
         </p>
       </div>
 
+      {/* ================= MODAL START ================= */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
@@ -274,6 +277,7 @@ const BookingRightForm = ({ pkg }) => {
                 Please complete your details below. We'll secure your spot for <strong>{pkg.name}</strong> instantly.
               </p>
               
+              {/* Trip Summary */}
               <div className="modal-trip-summary">
                 <div className="summary-item">
                     <span className="summary-label">Travel Dates</span>
@@ -334,7 +338,8 @@ const BookingRightForm = ({ pkg }) => {
           </div>
         </div>
       )}
-    
+      {/* ================= MODAL END ================= */}
+
     </div>
   );
 };
