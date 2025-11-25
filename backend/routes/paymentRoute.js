@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Booking = require('../models/booking'); 
+const Booking = require('../models/booking');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API = 'https://api.paymongo.com/v1';
@@ -12,7 +12,7 @@ router.post('/create-intent', async (req, res) => {
   try {
     const { amount, description, bookingData } = req.body;
 
-    console.log('📝 Creating booking and payment link:', { amount, description });
+    //console.log('📝 Creating booking and payment link:', { amount, description });
 
     if (!amount || !bookingData) {
       return res.status(400).json({
@@ -31,14 +31,13 @@ router.post('/create-intent', async (req, res) => {
       fullName: bookingData.fullName,
       email: bookingData.email,
       message: bookingData.message,
-      status: 'pending',
-      createdAt: new Date()
+      status: 'pending'
     });
 
     await newBooking.save();
-    const bookingId = newBooking._id;
+    const bookingId = newBooking._id.toString();
 
-    console.log('✅ Booking created (pending):', bookingId);
+    //console.log('✅ Booking created (pending):', bookingId);
 
     const paymentLinkResponse = await axios.post(
       `${PAYMONGO_API}/links`,
@@ -48,10 +47,6 @@ router.post('/create-intent', async (req, res) => {
             amount: amount,
             description: description,
             remarks: `Booking for ${bookingData.fullName}`,
-            redirect: {
-              success: `http://localhost:3000/payment-success?booking_id=${bookingId}`, 
-              failed: `http://localhost:3000/payment-failed`
-            },
             metadata: {
               booking_id: bookingId,
               customer_name: bookingData.fullName,
@@ -74,8 +69,14 @@ router.post('/create-intent', async (req, res) => {
     );
 
     const paymentLink = paymentLinkResponse.data.data;
-    console.log('✅ Payment link created:', paymentLink.id);
-    console.log('🔗 Checkout URL:', paymentLink.attributes.checkout_url);
+    
+    newBooking.paymentLinkId = paymentLink.id;
+    newBooking.referenceNumber = paymentLink.attributes.reference_number;
+    await newBooking.save();
+
+    /*console.log('✅ Payment link created:', paymentLink.id);
+    console.log('📋 Reference Number:', paymentLink.attributes.reference_number);
+    console.log('🔗 Checkout URL:', paymentLink.attributes.checkout_url);*/
 
     return res.json({
       success: true,
@@ -87,7 +88,7 @@ router.post('/create-intent', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ PayMongo or Booking Error:', error.response?.data || error.message);
+    //console.error('❌ Error:', error.response?.data || error.message);
     
     res.status(500).json({
       success: false,
@@ -97,47 +98,64 @@ router.post('/create-intent', async (req, res) => {
   }
 });
 
-// routes/paymentRoute.js → palitan mo lang yung /webhook part
-
 router.post('/webhook', async (req, res) => {
   try {
     const event = req.body.data;
-    console.log('Webhook received:', event.attributes.type);
+    //console.log('📨 Webhook received:', event.attributes.type);
 
     if (event.attributes.type === 'link.payment.paid') {
       const payment = event.attributes.data;
-      const link = payment.attributes.line_items?.[0]?.link || payment.attributes.source?.link; 
-      const metadata = payment.attributes.metadata;
+      const metadata = payment.attributes.data.attributes.metadata;
       const bookingId = metadata.booking_id;
 
-      console.log('Payment PAID! Updating booking:', bookingId);
+      /*console.log('💰 Payment PAID! Booking ID:', bookingId);
+      console.log('📋 Payment Details:', {
+        paymentId: payment.id,
+        amount: payment.attributes.data.attributes.amount,
+        status: payment.attributes.data.attributes.status
+      });*/
 
-      const updatedBooking = await Booking.findById(
+      const updatedBooking = await Booking.findByIdAndUpdate(
         bookingId,
         {
           status: 'confirmed',
-          paymentId: payment.id,                          
-          paymentLinkId: payment.attributes.link_id || link?.id,
-          referenceNumber: payment.attributes.reference_number, 
+          paymentId: payment.id,
+          paidAt: new Date(),
           updatedAt: new Date()
         },
         { new: true }
       );
 
       if (!updatedBooking) {
-        console.error('Booking not found:', bookingId);
-      } else {
-        console.log('Booking CONFIRMED & REFERENCE SAVED:', {
-          bookingId,
-          referenceNumber: updatedBooking.referenceNumber,
-          paymentId: updatedBooking.paymentId
+        console.error('❌ Booking not found:', bookingId);
+        return res.status(404).json({ 
+          received: true, 
+          error: 'Booking not found' 
         });
       }
+
+      /*console.log('✅ Booking CONFIRMED:', {
+        bookingId: updatedBooking._id,
+        referenceNumber: updatedBooking.referenceNumber,
+        status: updatedBooking.status,
+        paymentId: updatedBooking.paymentId
+      });*/
+
+      return res.json({ 
+        received: true,
+        bookingConfirmed: true,
+        bookingId: updatedBooking._id
+      });
     }
+
     res.json({ received: true });
+
   } catch (error) {
-    console.error('Webhook Error:', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
+    console.error('❌ Webhook Error:', error);
+    res.status(500).json({ 
+      received: true, 
+      error: 'Webhook processing failed' 
+    });
   }
 });
 
@@ -159,6 +177,7 @@ router.get('/verify/:linkId', async (req, res) => {
     res.json({
       success: true,
       status: link.attributes.status,
+      referenceNumber: link.attributes.reference_number,
       payments: link.attributes.payments,
       link: link
     });
