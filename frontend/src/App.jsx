@@ -4,7 +4,9 @@ import './App.css';
 import FlightSearch from './components/flightSearch/flightSearch.jsx';
 import PackageDeals from './components/packagedeals/packageDeals.jsx';
 import Footer from './components/footer/footer.jsx';
-import OtherServices from './components/otherservices/otherservices.jsx'; 
+import OtherServices from './components/otherservices/otherservices.jsx';
+import UserLogin from './components/userLogin/userLogin.jsx';
+import UserSignup from './components/userSignup/userSignup.jsx';
 
 const Profile = () => (
   <div className="page-container">
@@ -26,6 +28,7 @@ const Help = () => (
 
 function App() {
   const [currentPage, setCurrentPage] = useState('packages'); 
+  const [authPage, setAuthPage] = useState(null); // 'login', 'signup', or null
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const logoWhiteNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
@@ -39,12 +42,29 @@ function App() {
     help: { name: 'Help & Support', component: Help },
   };
 
-  const CurrentComponent = pages[currentPage].component;
-
   const handleMobileLinkClick = (pageKey) => {
     setCurrentPage(pageKey);
     setIsMobileMenuOpen(false);
   };
+
+  const handleAuthPageChange = (page) => {
+    if (page === 'main') {
+      setAuthPage(null);
+    } else {
+      setAuthPage(page);
+    }
+  };
+
+  // Show login or signup page if authPage is set
+  if (authPage === 'login') {                    // ← Dapat 'login' hindi 'userLogin'
+      return <UserLogin setAuthPage={handleAuthPageChange} />;
+  }
+
+  if (authPage === 'signup') {                   // ← Dapat 'signup'
+      return <UserSignup setAuthPage={handleAuthPageChange} />;
+  }
+
+  const CurrentComponent = pages[currentPage].component;
 
   return (
     <div className="app-container">
@@ -75,7 +95,12 @@ function App() {
             ))}
           </div>
           <div className="nav-actions">
-            <button className="book-now-btn">BOOK NOW</button>
+            <button 
+              className="book-now-btn"
+              onClick={() => setAuthPage('login')}
+            >
+              BOOK NOW
+            </button>
           </div>
 
           <button 
@@ -116,11 +141,19 @@ function App() {
           ))}
         </div>
         
-        <button className="book-now-btn">BOOK NOW</button>
+        <button 
+          className="book-now-btn"
+          onClick={() => {
+            setAuthPage('login');
+            setIsMobileMenuOpen(false);
+          }}
+        >
+          BOOK NOW
+        </button>
       </div>
 
       <main className="main-content">
-        <CurrentComponent />
+        <CurrentComponent setAuthPage={setAuthPage} />
       </main>
       <Footer />
     </div>
