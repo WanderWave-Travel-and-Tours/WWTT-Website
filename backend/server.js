@@ -38,6 +38,8 @@ app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
 });
 
+const paymentRoute = require('./routes/paymentRoute');
+const bookingRoute = require('./routes/bookingRoute');
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -45,6 +47,8 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/posters', posterRoutes); 
 app.use('/api/blogs', blogRoutes); // <--- NEW BLOG ENDPOINT
+app.use('/api/payment', paymentRoute);
+app.use('/api/bookings', bookingRoute);
 
 // --- 6. EXISTING INLINE LOGIC (PACKAGE UPLOAD & BOOKINGS) ---
 // Note: Ideally, these should be moved to their own controllers/routes files in the future
