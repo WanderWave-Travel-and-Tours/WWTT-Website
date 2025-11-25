@@ -35,9 +35,8 @@ const Booking = () => {
           id: `BK${String(data.length - index).padStart(4, '0')}`,
           customerName: b.fullName,
           email: b.email,
-          phone: b.phone || 'Not provided',
+          //phone: b.phone || 'Not provided',
           packageName: b.packageName,
-          // ✅ FIX: Use startDate and endDate from database
           travelDate: b.startDate || 'Not specified',
           startDate: b.startDate,
           endDate: b.endDate,
@@ -47,7 +46,6 @@ const Booking = () => {
           status: b.status || 'pending',
           bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
           message: b.message || '',
-          // Additional fields
           referenceNumber: b.referenceNumber || 'N/A',
           paymentLinkId: b.paymentLinkId,
           rawData: b
@@ -103,7 +101,6 @@ const Booking = () => {
           <p>View and manage all customer bookings</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-card-content">
@@ -166,7 +163,6 @@ const Booking = () => {
           </div>
         </div>
 
-        {/* Search and Filter */}
         <div className="search-filter-card">
           <div className="search-filter-wrapper">
             <div className="search-box">
@@ -209,7 +205,6 @@ const Booking = () => {
           </div>
         </div>
 
-        {/* Bookings Table */}
         <div className="table-card">
           {loading ? (
             <div className="loading-container">
@@ -259,10 +254,6 @@ const Booking = () => {
                         <div className="customer-contact">
                           <Mail size={12} />
                           <span>{booking.email}</span>
-                        </div>
-                        <div className="customer-contact">
-                          <Phone size={12} />
-                          <span>{booking.phone}</span>
                         </div>
                       </td>
                       <td>
@@ -315,7 +306,6 @@ const Booking = () => {
                         <button 
                           className="action-btn"
                           onClick={() => {
-                            // TODO: Open modal with full booking details
                             console.log('View booking:', booking);
                           }}
                         >
