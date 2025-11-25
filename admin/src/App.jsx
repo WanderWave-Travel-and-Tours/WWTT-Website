@@ -35,6 +35,13 @@ function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/add-hotel" element={<AddHotel />} />
         <Route path="/view-hotels" element={<ViewHotels />} />
+        <Route path="/services/airlinebooking" element={<ServiceManagement />} />
+        <Route path="/services/hotelbooking" element={<ServiceManagement />} />
+        <Route path="/services/tourarrangements" element={<ServiceManagement />} />
+        <Route path="/services/ferrybooking" element={<ServiceManagement />} />
+        <Route path="/services/marriagecert" element={<ServiceManagement />} />
+        <Route path="/services/travelinsurance" element={<ServiceManagement />} />
+        <Route path="/services/billspayment" element={<ServiceManagement />} />
       </Routes>
     </BrowserRouter>
   );
