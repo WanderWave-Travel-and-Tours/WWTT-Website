@@ -1,11 +1,11 @@
 :root {
-  /* Theme Colors */
-  --sidebar-bg: #FFFFFF;         
-  --header-bg: #001F3F;          
-  --text-default: #4b5563;       
-  --text-header: #FFFFFF;        
-  --active-yellow: #FFC107;      
-  --text-active: #001F3F;        
+  /* Theme Colors - YOUR ORIGINAL THEME */
+  --sidebar-bg: #FFFFFF;
+  --header-bg: #001F3F;
+  --text-default: #4b5563;
+  --text-header: #FFFFFF;
+  --active-yellow: #FFC107;
+  --text-active: #001F3F;
   --border-color: #e5e7eb;
   
   /* Sidebar Widths */
@@ -24,11 +24,9 @@
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1000; /* High Z-Index */
+  z-index: 1000;
   font-family: system-ui, -apple-system, sans-serif;
   box-shadow: 4px 0 24px rgba(0,0,0,0.05);
-  
-  /* Smooth Transition */
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden;
   white-space: nowrap;
@@ -116,7 +114,7 @@
   cursor: pointer;
   transition: background 0.2s;
   outline: none;
-  z-index: 1001; /* Ensure clickable above everything */
+  z-index: 1001;
   position: relative;
 }
 
@@ -196,7 +194,6 @@
   min-height: 50px;
 }
 
-/* Center icons when collapsed */
 .sidebar-container.collapsed .menu-btn {
   justify-content: center;
   padding: 0.75rem;
@@ -248,7 +245,7 @@
 }
 
 .submenu-wrapper.open {
-  max-height: 500px; /* Increased height for submenus */
+  max-height: 800px; /* Increased to ensure all items show */
   opacity: 1;
   padding-bottom: 0.5rem;
 }
@@ -270,7 +267,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.6rem 1rem 0.6rem 2.5rem; /* Indent content */
+  padding: 0.6rem 1rem 0.6rem 2.5rem;
   background: transparent;
   border: none;
   outline: none;
@@ -279,11 +276,6 @@
   cursor: pointer;
   border-radius: 0.5rem;
   transition: all 0.2s;
-}
-
-.submenu-btn:focus, .submenu-btn:active, .submenu-btn:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
 }
 
 .submenu-btn:hover {
@@ -373,11 +365,6 @@
   color: #ef4444;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-.logout-btn:focus, .logout-btn:active, .logout-btn:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
 }
 
 .logout-btn:hover {

@@ -1,0 +1,439 @@
+/* ========================================
+   ADD POSTER PAGE STYLES
+   Based on Add Promo Design
+======================================== */
+
+.poster-page {
+    display: flex;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+/* ========== MAIN CONTENT ========== */
+.poster-main {
+    flex: 1;
+    margin-left: 280px; /* Matches Sidebar width */
+    padding: 40px 48px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.poster-main *,
+.poster-main *::before,
+.poster-main *::after {
+    box-sizing: border-box;
+}
+
+.poster-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ========== HEADER ========== */
+.poster-header {
+    margin-bottom: 32px;
+}
+
+.poster-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #001F3F; /* Navy Blue */
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.poster-subtitle {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* ========== GRID LAYOUT ========== */
+.poster-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 32px;
+    align-items: start;
+}
+
+.poster-left {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ========== SECTIONS ========== */
+.poster-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.poster-section-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1.5px;
+    margin-bottom: 24px;
+}
+
+/* ========== FORM FIELDS ========== */
+.poster-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.poster-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.poster-field--full {
+    grid-column: 1 / -1;
+}
+
+.poster-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.poster-field input[type="text"],
+.poster-field input[type="date"],
+.poster-field textarea,
+.poster-field select {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.poster-field input:focus,
+.poster-field textarea:focus,
+.poster-field select:focus {
+    outline: none;
+    border-color: #FF8C42; /* Orange Theme */
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+/* ========== UPLOAD ZONE STYLES (NEW) ========== */
+.upload-zone {
+    width: 100%;
+}
+
+.upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 180px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-label:hover {
+    border-color: #FF8C42;
+    background-color: #fff7ed;
+}
+
+.upload-icon-wrapper {
+    color: #94a3b8;
+    margin-bottom: 12px;
+    transition: color 0.3s ease;
+}
+
+.upload-label:hover .upload-icon-wrapper {
+    color: #FF8C42;
+}
+
+.upload-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.upload-subtext {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* ========== IMAGE PREVIEW INSIDE FORM ========== */
+.image-preview-container {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.uploaded-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-image-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: #ef4444; /* Red */
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+}
+
+.remove-image-btn:hover {
+    background: #fff;
+    transform: scale(1.05);
+    color: #dc2626;
+}
+
+/* ========== ACTIONS ========== */
+.poster-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 0 32px 32px 32px;
+}
+
+.poster-btn {
+    padding: 12px 32px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.poster-btn--cancel {
+    color: #64748b;
+    background: #fff;
+    border: 2px solid #e2e8f0;
+}
+
+.poster-btn--cancel:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.poster-btn--submit {
+    color: #fff;
+    background: #FF8C42;
+    box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
+}
+
+.poster-btn--submit:hover {
+    background: #e57a35;
+    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4);
+    transform: translateY(-1px);
+}
+
+/* ========== RIGHT PREVIEW SIDEBAR ========== */
+.poster-right {
+    position: sticky;
+    top: 40px;
+}
+
+.poster-preview-card {
+    background: linear-gradient(135deg, #001F3F 0%, #002850 100%);
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.2);
+    color: white;
+}
+
+.poster-preview-label {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    color: #FF8C42;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Phone Mockup */
+.phone-mockup {
+    background: #1e293b;
+    border-radius: 24px;
+    border: 6px solid #334155;
+    padding: 10px;
+    max-width: 280px;
+    margin: 0 auto 24px auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.phone-screen {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    height: 400px;
+    position: relative;
+}
+
+.phone-header {
+    background: #FF8C42;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.phone-brand {
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    letter-spacing: 1px;
+}
+
+.phone-content {
+    padding: 0;
+    overflow-y: auto;
+    height: calc(100% - 40px);
+    display: flex;
+    flex-direction: column;
+}
+
+.preview-hero {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: #e2e8f0;
+}
+
+.preview-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    padding: 20px 12px 12px 12px;
+}
+
+.preview-overlay h3 {
+    color: white;
+    margin: 0;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.empty-state-preview {
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #cbd5e1;
+    text-align: center;
+    padding: 20px;
+}
+
+.empty-state-preview p {
+    font-size: 10px;
+    margin-top: 8px;
+}
+
+.fake-item {
+    height: 12px;
+    background: #f1f5f9;
+    margin: 15px 15px 0 15px;
+    border-radius: 4px;
+}
+
+/* Stats */
+.poster-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.p-stat {
+    text-align: center;
+    padding: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+}
+
+.p-stat strong {
+    display: block;
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.p-stat span {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    color: #FF8C42;
+    margin-top: 4px;
+}
+
+/* ========== RESPONSIVE (Copied and adapted from AddPromo) ========== */
+@media (max-width: 1024px) {
+    .poster-main {
+        margin-left: 70px; /* Collapsed sidebar width */
+        padding: 20px;
+    }
+    .poster-grid {
+        grid-template-columns: 1fr;
+    }
+    .poster-right {
+        position: static;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .poster-main {
+        margin-left: 0;
+    }
+    .poster-fields {
+        grid-template-columns: 1fr;
+    }
+    .poster-actions {
+        flex-direction: column;
+    }
+    .poster-btn {
+        width: 100%;
+    }
+}

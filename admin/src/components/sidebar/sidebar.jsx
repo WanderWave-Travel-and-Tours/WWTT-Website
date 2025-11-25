@@ -23,9 +23,13 @@ import {
   Plane,
   BookOpen,
   Hotel,
-  Calendar  // NEW IMPORT
+  Calendar,
+  Image, 
+  Images,
+  PenTool, // Icon for Add Blog
+  Newspaper // Icon for Blog List
 } from 'lucide-react';
-import './sidebar.css';
+import './Sidebar.css';
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
@@ -52,8 +56,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       toggleSidebar();
       setTimeout(() => {
         setOpenMenus(prev => ({ ...prev, [menuKey]: true }));
-      }, 150);
-      return;
+      }, 300);
+      return; 
     }
 
     setOpenMenus(prev => ({
@@ -104,7 +108,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               <Icon size={20} className="btn-icon" />
               <span className="btn-label">{title}</span>
             </div>
-            
             {!isCollapsed && (
               isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />
             )}
@@ -149,11 +152,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <span>Admin Panel</span>
           </div>
         </div>
-        
         <button 
             className="toggle-btn" 
             onClick={toggleSidebar}
             type="button"
+            style={{ zIndex: 1002 }}
         >
            {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
         </button>
@@ -165,6 +168,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           <ul className="nav-list">
             <MenuItem path="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <MenuItem path="/booking" icon={Calendar} label="Booking" />
+            
+            {/* ADD DROPDOWN */}
             <DropdownMenu 
               title="Add" 
               icon={PlusCircle} 
@@ -172,11 +177,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               childrenItems={[
                 { name: 'Create Package', path: '/add-package', icon: FilePlus },
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
+                { name: 'Add Promo Poster', path: '/add-poster', icon: Image },
+                { name: 'Create Blog', path: '/add-blog', icon: PenTool }, // <-- NEW
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
                 { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
               ]}
             />
 
+            {/* LIST DROPDOWN */}
             <DropdownMenu 
               title="List" 
               icon={List} 
@@ -184,6 +192,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               childrenItems={[
                 { name: 'Manage Packages', path: '/view-packages', icon: Package },
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
+                { name: 'Poster List', path: '/view-posters', icon: Images },
+                { name: 'Blog List', path: '/view-blogs', icon: Newspaper }, // <-- NEW
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
                 { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
               ]}
@@ -205,11 +215,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Passport Appt', path: '/services/passport', icon: Plane },
               ]}
             />
-
             <MenuItem path="/users" icon={Users} label="Users" />
-            
             <MenuItem path="/settings" icon={Settings} label="Settings" />
-            
           </ul>
         </div>
       </nav>
@@ -224,11 +231,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             </div>
           </div>
           {!isCollapsed && (
-            <button 
-              onClick={handleLogout}
-              className="logout-btn"
-              title="Logout"
-            >
+            <button onClick={handleLogout} className="logout-btn" title="Logout">
               <LogOut size={18} />
             </button>
           )}
