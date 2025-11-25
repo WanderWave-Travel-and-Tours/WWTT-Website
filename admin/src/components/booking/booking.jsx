@@ -23,7 +23,7 @@ const Booking = () => {
 
   useEffect(() => {
     const fetchBookings = async () => {
-        try {
+      try {
         setLoading(true);
         const res = await fetch('http://localhost:5000/api/admin/bookings'); 
 
@@ -32,32 +32,38 @@ const Booking = () => {
         const data = await res.json();
 
         const formatted = data.map((b, index) => ({
-            id: `BK${String(data.length - index).padStart(4, '0')}`,
-            customerName: b.fullName,
-            email: b.email,
-            phone: b.phone || 'Not provided',
-            packageName: b.packageName,
-            selectedDate: b.date,
-            totalAmount: b.totalAmount,
-            guests: b.pax?.adult || 1,
-            status: b.status || 'pending',
-            bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
-            message: b.message || '',
-            rawData: b // optional: para makita mo full data kapag nag-click ng view
+          id: `BK${String(data.length - index).padStart(4, '0')}`,
+          customerName: b.fullName,
+          email: b.email,
+          phone: b.phone || 'Not provided',
+          packageName: b.packageName,
+          // ✅ FIX: Use startDate and endDate from database
+          travelDate: b.startDate || 'Not specified',
+          startDate: b.startDate,
+          endDate: b.endDate,
+          duration: b.duration,
+          totalAmount: b.totalAmount,
+          guests: b.pax?.adult || 1,
+          status: b.status || 'pending',
+          bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
+          message: b.message || '',
+          // Additional fields
+          referenceNumber: b.referenceNumber || 'N/A',
+          paymentLinkId: b.paymentLinkId,
+          rawData: b
         }));
 
         setBookings(formatted);
         setFilteredBookings(formatted);
-        } catch (err) {
+      } catch (err) {
         console.error('Fetch error:', err);
-        // Optional: toast.error('Cannot load bookings');
-        } finally {
+      } finally {
         setLoading(false);
-        }
+      }
     };
 
     fetchBookings();
-    }, []);
+  }, []);
 
   useEffect(() => {
     let filtered = bookings;
@@ -66,7 +72,8 @@ const Booking = () => {
       filtered = filtered.filter(booking => 
         booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.packageName.toLowerCase().includes(searchTerm.toLowerCase())
+        booking.packageName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -89,7 +96,7 @@ const Booking = () => {
 
   return (
     <div className="booking-page">
-        <Sidebar/>
+      <Sidebar/>
       <div className="booking-container">
         <div className="booking-header">
           <h1>Booking Management</h1>
@@ -166,7 +173,7 @@ const Booking = () => {
               <Search className="search-icon" size={20} />
               <input
                 type="text"
-                placeholder="Search by name, booking ID, or package..."
+                placeholder="Search by name, booking ID, reference number, or package..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -236,6 +243,16 @@ const Booking = () => {
                       <td>
                         <div className="booking-id">{booking.id}</div>
                         <div className="booking-date-small">{booking.bookingDate}</div>
+                        {booking.referenceNumber !== 'N/A' && (
+                          <div className="reference-number" style={{
+                            fontSize: '0.75rem',
+                            color: '#6b7280',
+                            fontFamily: 'monospace',
+                            marginTop: '4px'
+                          }}>
+                            Ref: {booking.referenceNumber}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <div className="customer-name">{booking.customerName}</div>
@@ -250,12 +267,30 @@ const Booking = () => {
                       </td>
                       <td>
                         <div className="package-name">{booking.packageName}</div>
+                        {booking.duration && (
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#6b7280',
+                            marginTop: '4px'
+                          }}>
+                            {booking.duration}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <div className="date-cell">
                           <Calendar size={16} />
-                          <span>{booking.selectedDate}</span>
+                          <span>{booking.travelDate}</span>
                         </div>
+                        {booking.endDate && (
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#6b7280',
+                            marginTop: '4px'
+                          }}>
+                            to {booking.endDate}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <div className="guests-cell">
@@ -277,7 +312,13 @@ const Booking = () => {
                         </span>
                       </td>
                       <td>
-                        <button className="action-btn">
+                        <button 
+                          className="action-btn"
+                          onClick={() => {
+                            // TODO: Open modal with full booking details
+                            console.log('View booking:', booking);
+                          }}
+                        >
                           <Eye size={18} />
                         </button>
                       </td>
