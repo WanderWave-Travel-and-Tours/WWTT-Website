@@ -1,167 +1,351 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { 
-  Plane, 
-  Hotel, 
-  Map, 
-  Ship, 
-  Book, 
-  FileText, 
-  HeartHandshake, 
-  FileCheck, 
-  Globe, 
-  ShieldCheck, 
-  Receipt, 
-  PlusCircle,
-  ArrowRight
+  Plane, Hotel, Map, Ship, BookUser, Baby, HeartHandshake, FileCheck, Globe, ShieldCheck, Receipt, PlusCircle,
+  ArrowRight, ChevronLeft, ChevronRight, X, CheckCircle 
 } from 'lucide-react';
 import './OtherServices.css'; 
 
+// --- Universal Inquiry Form Component ---
+const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSubmit }) => {
+  return (
+    <form className="modal-form" onSubmit={handleSubmit}>
+        <h3 className="form-header-title">Contact & Inquiry Details</h3>
+        
+        {/* Full Name */}
+        <div className="form-group">
+            <label>FULL NAME</label>
+            <input 
+            type="text" 
+            name="fullName"
+            placeholder="e.g. Juan dela Cruz" 
+            value={formData.fullName}
+            onChange={handleInputChange}
+            required 
+            />
+        </div>
+
+        {/* Email Address */}
+        <div className="form-group">
+            <label>EMAIL ADDRESS</label>
+            <input 
+            type="email" 
+            name="email"
+            placeholder="name@email.com" 
+            value={formData.email}
+            onChange={handleInputChange}
+            required 
+            />
+        </div>
+
+        {/* Message/Specific Inquiry Field */}
+        <div className="form-group">
+            <label>MESSAGE (SPECIFY REQUEST FOR {pkgTitle.toUpperCase()})</label>
+            <textarea 
+            name="message"
+            placeholder={`e.g. I need assistance with my ${pkgTitle} for three people and my target date is October 15, 2026. (Include all details from the requirements checklist)`}
+            rows="5"
+            value={formData.message}
+            onChange={handleInputChange}
+            required // Made message required since it holds the specific details
+            ></textarea>
+        </div>
+
+        <button type="submit" className="modal-submit-btn">
+            Send Inquiry Request
+        </button>
+        <p className="modal-form-note">We will contact you via email within 24 hours.</p>
+    </form>
+  );
+};
+
+// --- Main OtherServices Component ---
 const OtherServices = () => {
-  const [activeFilter, setActiveFilter] = useState('all');
+  const sliderRef = useRef(null);
+  
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState({ 
+    title: '', 
+    desc: '', 
+    requirements: []
+  });
+  
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    message: '',
+  });
+
+
+  // --- Mock/Placeholder Data and Logic for Modal Content ---
+  const currentMonth = new Date();
+  const selectedDate = 15;
+  const totalAmount = 3599.99; // Mock price
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  
+  // Requirements logic (remains the same as the previous step)
+  const getRequirements = (title) => {
+    switch (title) {
+      case "Airline Booking":
+        return [
+          "Valid ID (Passport for international; any acceptable Gov't ID for domestic).",
+          "Target travel dates and cities/airports.",
+          "Confirmation/Voucher from the airline (if booking assistance is for existing ticket)."
+        ];
+      case "Hotel Booking":
+        return [
+          "Valid ID of the primary guest (Passport or other Gov't ID).",
+          "Booking Confirmation/Voucher (if assistance is for an existing reservation)."
+        ];
+      case "Tour Arrangements":
+        return [
+          "Valid ID (often a copy of Passport for international tours).",
+          "Signed Booking Form or Agreement.",
+          "Confirmed Travel Dates/Itinerary."
+        ];
+      case "Ferry Booking":
+        return [
+          "Valid ID of the passenger(s).",
+          "Booking Confirmation (if assistance is for an existing reservation)."
+        ];
+      case "Passport Assist":
+        return [
+          "Confirmed Online Appointment Slip (DFA).",
+          "Personal Appearance (Mandatory).",
+          "Original PSA-issued Birth Certificate (on security paper).",
+          "One (1) Acceptable Primary ID with 1 photocopy.",
+          "PSA-issued Marriage Certificate (Original & photocopy) if married female using spouse's surname."
+        ];
+      case "PSA Birth Cert":
+        return [
+          "Requestor's Valid ID (to be presented upon receipt).",
+          "Complete Personal Details of Subject (Full name, DoB, Parents' names).",
+          "Authorization Letter and Valid IDs of both parties (if requested by a representative)."
+        ];
+      case "Marriage Cert":
+        return [
+          "Requestor's Valid ID.",
+          "Complete Personal Details of Couple (Full names, Date of Marriage, Location).",
+          "Authorization Letter and Valid IDs of both parties (if requested by a representative)."
+        ];
+      case "CENOMAR":
+        return [
+          "Requestor's Valid ID.",
+          "Complete Personal Details of Subject (Full name, Date of Birth, Place of Birth).",
+          "Authorization Letter and Valid IDs of both parties (if requested by a representative)."
+        ];
+      case "Visa Assistance":
+        return [
+          "Valid Passport (usually 6 months validity beyond travel date).",
+          "Duly Accomplished Visa Application Form.",
+          "Passport-size Photo(s) (specifications vary by embassy).",
+          "Proof of Financial Capacity (Bank Certificate/Statement, ITR).",
+          "Proof of Travel (Flight/Hotel Reservations, Itinerary).",
+          "Proof of Strong Ties to Home Country (Employment/Business/School docs)."
+        ];
+      case "Travel Insurance":
+        return [
+          "Valid ID or Passport.",
+          "Confirmed Travel Dates/Itinerary."
+        ];
+      case "Bills Payment":
+        return [
+          "Actual Billing Statement or Account Details.",
+          "Exact Payment Amount."
+        ];
+      default:
+        return [
+          "Contact details (phone/email).",
+          "Detailed description of your needs.",
+          "Any relevant existing documents or references."
+        ];
+    }
+  };
+  // ----------------------------------------------
+
+  // Travel Themed Background
+  const backgroundImage = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop';
 
   const services = [
-    { 
-      icon: <Plane size={32} />, 
-      title: "Airline Booking", 
-      desc: "Domestic and international flight reservations with competitive rates.",
-      category: "travel"
-    },
-    { 
-      icon: <Hotel size={32} />, 
-      title: "Hotel Booking", 
-      desc: "Affordable and luxury accommodation deals worldwide.",
-      category: "travel"
-    },
-    { 
-      icon: <Map size={32} />, 
-      title: "Tour Arrangements", 
-      desc: "Complete tour packages for groups and solo travelers.",
-      category: "travel"
-    },
-    { 
-      icon: <Ship size={32} />, 
-      title: "Ferry Booking", 
-      desc: "Convenient sea travel ticket reservations.",
-      category: "travel"
-    },
-    { 
-      icon: <Book size={32} />, 
-      title: "Passport Assistance", 
-      desc: "New application and renewal processing support.",
-      category: "documents"
-    },
-    { 
-      icon: <FileText size={32} />, 
-      title: "PSA Birth Certificate", 
-      desc: "Hassle-free request for authentic PSA documents.",
-      category: "documents"
-    },
-    { 
-      icon: <HeartHandshake size={32} />, 
-      title: "Marriage Certificate", 
-      desc: "Assistance for marriage certificate documents.",
-      category: "documents"
-    },
-    { 
-      icon: <FileCheck size={32} />, 
-      title: "CENOMAR Request", 
-      desc: "Certificate of No Marriage application service.",
-      category: "documents"
-    },
-    { 
-      icon: <Globe size={32} />, 
-      title: "Visa Assistance", 
-      desc: "Expert guidance for your visa applications worldwide.",
-      category: "travel"
-    },
-    { 
-      icon: <ShieldCheck size={32} />, 
-      title: "Travel Insurance", 
-      desc: "Comprehensive coverage for worry-free travel.",
-      category: "travel"
-    },
-    { 
-      icon: <Receipt size={32} />, 
-      title: "Bills Payments", 
-      desc: "One-stop shop for paying your utility bills.",
-      category: "other"
-    },
-    { 
-      icon: <PlusCircle size={32} />, 
-      title: "And Many More!", 
-      desc: "Inquire with us for other special travel needs.",
-      category: "other"
-    },
+    { icon: <Plane size={24} />, title: "Airline Booking", desc: "Domestic & International flights at the best rates.", img: "https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?w=600&auto=format&fit=crop&q=60" },
+    { icon: <Hotel size={24} />, title: "Hotel Booking", desc: "Affordable stays and luxury accommodations worldwide.", img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=60" },
+    { icon: <Map size={24} />, title: "Tour Arrangements", desc: "Complete tour packages for solo or group travelers.", img: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=60" },
+    { icon: <Ship size={24} />, title: "Ferry Booking", desc: "Convenient sea travel ticket reservations.", img: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop&q=60" },
+    { icon: <BookUser size={24} />, title: "Passport Assist", desc: "New application and renewal processing assistance.", img: "https://images.unsplash.com/photo-1544084944-15a3ad08e81c?w=600&auto=format&fit=crop&q=60" },
+    { icon: <Baby size={24} />, title: "PSA Birth Cert", desc: "Hassle-free request for PSA authenticated documents.", img: "https://images.unsplash.com/photo-1632215864336-068d54bc1306?w=600&auto=format&fit=crop&q=60" },
+    { icon: <HeartHandshake size={24} />, title: "Marriage Cert", desc: "PSA Marriage Certificate processing support.", img: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=600&auto=format&fit=crop&q=60" },
+    { icon: <FileCheck size={24} />, title: "CENOMAR", desc: "Certificate of No Marriage (CENOMAR) requests.", img: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&auto=format&fit=crop&q=60" },
+    { icon: <Globe size={24} />, title: "Visa Assistance", desc: "Expert guidance for tourist and travel visa applications.", img: "https://images.unsplash.com/photo-1556565627-0a447cb6f054?w=600&auto=format&fit=crop&q=60" },
+    { icon: <ShieldCheck size={24} />, title: "Travel Insurance", desc: "Comprehensive coverage for safe and worry-free trips.", img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&auto=format&fit=crop&q=60" },
+    { icon: <Receipt size={24} />, title: "Bills Payment", desc: "One-stop shop for paying your utilities and bills.", img: "https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=600&auto=format&fit=crop&q=60" },
+    { icon: <PlusCircle size={24} />, title: "And Many More", desc: "Contact us for other special travel needs.", img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&auto=format&fit=crop&q=60" },
   ];
 
-  const categories = [
-    { value: 'all', label: 'All Services' },
-    { value: 'travel', label: 'Travel Services' },
-    { value: 'documents', label: 'Documentation' },
-    { value: 'other', label: 'Other Services' }
-  ];
+  const scroll = (direction) => {
+    if (sliderRef.current) {
+      const { current } = sliderRef;
+      const scrollAmount = 350; 
+      
+      if (direction === 'left') {
+        current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      } else {
+        current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+    }
+  };
 
-  const filteredServices = activeFilter === 'all' 
-    ? services 
-    : services.filter(service => service.category === activeFilter);
+  const handleInquireClick = (item) => {
+    setSelectedPackage({ 
+      title: item.title, 
+      desc: item.desc,
+      requirements: getRequirements(item.title)
+    });
+    // Reset formData state when modal opens
+    setFormData({
+        fullName: '', email: '', message: '',
+    });
+    setShowModal(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleInquirySubmit = (e) => {
+    e.preventDefault();
+    
+    console.log('Inquiry Submitted for:', selectedPackage.title);
+    console.log('Form Data:', formData);
+    
+    // Add your actual submission logic here (e.g., API call)
+    alert(`Thank you, ${formData.fullName}! Your inquiry for ${selectedPackage.title} has been received. We will contact you shortly.`);
+    setShowModal(false);
+  };
 
   return (
-    <div className="services-page-container">
-      <div className="services-header">
-        <div className="services-badge">What We Offer</div>
-        <h1 className="services-title">Our Premium Services</h1>
-        <p className="services-subtitle">
-          Your one-stop shop for all travel and documentation needs. 
-          We make processing easy so you can focus on the journey ahead.
-        </p>
-      </div>
+    <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
+      <div className="os-overlay"></div>
 
-      {/* Filter Categories */}
-      <div className="services-filter">
-        {categories.map((category) => (
-          <button
-            key={category.value}
-            className={`filter-btn ${activeFilter === category.value ? 'active' : ''}`}
-            onClick={() => setActiveFilter(category.value)}
-          >
-            {category.label}
+      <div className="os-content-wrapper">
+        
+        <div className="os-header">
+          <h2 className="os-title">WANDERWAVE SERVICES</h2>
+          <p className="os-subtitle">Your One-Stop Travel & Documentation Solution</p>
+        </div>
+
+        <div className="os-carousel-wrapper">
+          
+          <button className="os-nav-btn os-prev" onClick={() => scroll('left')} aria-label="Scroll Left">
+            <ChevronLeft size={28} />
           </button>
-        ))}
-      </div>
-      
-      {/* Services Grid */}
-      <div className="services-grid">
-        {filteredServices.map((service, index) => (
-          <div key={index} className="service-card">
-            <div className="service-card-inner">
-              <div className="icon-wrapper">
-                {service.icon}
-              </div>
-              <div className="card-content">
-                <h3 className="service-name">{service.title}</h3>
-                <p className="service-desc">{service.desc}</p>
-              </div>
-              <button className="inquire-btn">
-                <span>Inquire Now</span>
-                <ArrowRight size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {/* CTA Section */}
-      <div className="services-cta">
-        <div className="cta-content">
-          <h2 className="cta-title">Need Something Specific?</h2>
-          <p className="cta-desc">
-            Can't find what you're looking for? Contact us directly and we'll help you with your specific needs.
-          </p>
-          <button className="cta-btn">
-            Contact Us Today
+          <div className="os-scroll-container" ref={sliderRef}>
+            {services.map((item, idx) => (
+              <div key={idx} className="os-glass-card">
+                
+                <div className="os-card-img-box">
+                  <img src={item.img} alt={item.title} loading="lazy" />
+                  <div className="os-floating-icon">
+                    {item.icon}
+                  </div>
+                </div>
+
+                <div className="os-card-body">
+                  <h3 className="os-card-title">{item.title}</h3>
+                  <p className="os-card-desc">{item.desc}</p>
+                  <button onClick={() => handleInquireClick(item)} className="os-card-link">
+                    Inquire Now <ArrowRight size={16} />
+                  </button>
+                </div>
+                
+              </div>
+            ))}
+          </div>
+
+          <button className="os-nav-btn os-next" onClick={() => scroll('right')} aria-label="Scroll Right">
+            <ChevronRight size={28} />
           </button>
         </div>
+
+        <div className="os-swipe-hint">
+          Swipe to explore services
+        </div>
+
       </div>
+
+      {/* Modal Form Component */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-card modal-two-column">
+            
+            {/* SUPER LARGE CLOSE BUTTON */}
+            <button 
+              className="modal-close-btn" 
+              onClick={() => setShowModal(false)}
+              aria-label="Close Modal"
+            >
+              <X size={44} strokeWidth={3} />
+            </button>
+            
+            {/* 1. LEFT COLUMN: REQUIREMENTS (Scrollable content) */}
+            <div className="modal-requirements-col">
+              <div className="modal-header-small">
+                <img 
+                  src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" 
+                  alt="Wanderwave Logo" 
+                  className="modal-logo"
+                />
+                
+                <h2 className="modal-title">Inquire about {selectedPackage.title}</h2>
+                <p className="modal-subtitle">
+                  Please review the necessary documents/information below.
+                </p>
+              </div>
+              
+              <div className="modal-trip-summary">
+                <div className="summary-item">
+                  <span className="summary-label">Estimated Price</span>
+                  <strong className="summary-value price">₱{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                </div>
+                <div className="summary-divider"></div>
+                <div className="summary-item">
+                  <span className="summary-label">Process Started</span>
+                  <strong className="summary-value">{monthNames[currentMonth.getMonth()]} {selectedDate}, {currentMonth.getFullYear()}</strong>
+                </div>
+              </div>
+
+              <div className="requirements-list-container">
+                <h3 className="requirements-title">
+                  <CheckCircle size={20} className="req-icon" /> Checklist for {selectedPackage.title}
+                </h3>
+                <ul className="requirements-list">
+                  {selectedPackage.requirements.map((req, index) => (
+                    <li key={index} className="requirement-item">
+                      {req}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* 2. RIGHT COLUMN: UNIVERSAL FORM (Fixed/Sticky position) */}
+            <div className="modal-form-col">
+              <UniversalInquiryForm
+                pkgTitle={selectedPackage.title}
+                formData={formData}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleInquirySubmit}
+              />
+            </div>
+            
+          </div>
+        </div>
+      )}
     </div>
   );
 };
