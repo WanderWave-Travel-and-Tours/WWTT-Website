@@ -9,12 +9,19 @@ const ItineraryItemSchema = new mongoose.Schema({
 const PackageSchema = new mongoose.Schema({
     title: { type: String, required: true },
     destination: { type: String, required: true },
+    sellerPrice: { type: Number, required: true },
+    markup: { type: Number, default: 0 }, 
     price: { type: Number, required: true },
     duration: { type: String, required: true },
-    category: { type: String, enum: ['Local', 'International'], default: 'Local' },
+    category: { type: String, enum: ['Local', 'International', 'Internation Tour'], default: 'Local' },
     image: { type: String },
     inclusions: [{ type: String }],
     itinerary: [ItineraryItemSchema] 
+});
+
+PackageSchema.pre('save', function(next) {
+    this.price = this.sellerPrice + this.markup;
+    next();
 });
 
 const PackageModel = mongoose.model("packages", PackageSchema);
