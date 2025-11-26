@@ -64,23 +64,46 @@ const Booking = require('./models/booking');
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {
     try {
         const { 
-            title, destination, price, duration, 
+            title, destination, sellerPrice, markup, duration, 
             category, inclusions, itinerary 
         } = req.body;
+
+        console.log('Received data:', req.body); 
         
         const imageFilename = req.file ? req.file.filename : null;
         const parsedInclusions = inclusions ? JSON.parse(inclusions) : [];
         const parsedItinerary = itinerary ? JSON.parse(itinerary) : [];
+        const parsedSellerPrice = parseFloat(sellerPrice);
+        const parsedMarkup = parseFloat(markup) || 0;
+
+        if (isNaN(parsedSellerPrice)) {
+            return res.status(400).json({ 
+                status: "error", 
+                error: "Seller price must be a valid number" 
+            });
+        }
+
+        const totalPrice = parsedSellerPrice + parsedMarkup;
 
         const newPackage = new PackageModel({
-            title, destination, price, duration, category,
+            title, 
+            destination, 
+            sellerPrice: parsedSellerPrice,
+            markup: parsedMarkup,
+            price: totalPrice,
+            duration, 
+            category,
             image: imageFilename,
             inclusions: parsedInclusions,
             itinerary: parsedItinerary 
         });
 
         await newPackage.save();
-        res.json({ status: "ok", message: "Package added successfully!" });
+        res.json({ 
+            status: "ok", 
+            message: "Package added successfully!",
+            package: newPackage 
+        });
 
     } catch (err) {
         console.error("Error adding package:", err);
