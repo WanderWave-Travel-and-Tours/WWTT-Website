@@ -1,18 +1,15 @@
 import React, { useRef, useState } from 'react';
-// REMOVED: import { useNavigate } from 'react-router-dom'; 
 import { 
   Plane, Hotel, Map, Ship, BookUser, Baby, HeartHandshake, FileCheck, Globe, ShieldCheck, Receipt, PlusCircle,
   ArrowRight, ChevronLeft, ChevronRight, X, CheckCircle 
 } from 'lucide-react';
 import './OtherServices.css'; 
 
-// --- Universal Inquiry Form Component ---
 const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSubmit }) => {
   return (
     <form className="modal-form" onSubmit={handleSubmit}>
         <h3 className="form-header-title">Contact & Inquiry Details</h3>
         
-        {/* Full Name */}
         <div className="form-group">
             <label>FULL NAME</label>
             <input 
@@ -25,7 +22,6 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
             />
         </div>
 
-        {/* Email Address */}
         <div className="form-group">
             <label>EMAIL ADDRESS</label>
             <input 
@@ -38,7 +34,6 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
             />
         </div>
 
-        {/* Message/Specific Inquiry Field */}
         <div className="form-group">
             <label>MESSAGE (SPECIFY REQUEST FOR {pkgTitle.toUpperCase()})</label>
             <textarea 
@@ -59,7 +54,6 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
   );
 };
 
-// --- Main OtherServices Component ---
 const OtherServices = ({ setAuthPage }) => {
   const sliderRef = useRef(null);
   
@@ -76,8 +70,6 @@ const OtherServices = ({ setAuthPage }) => {
     message: '',
   });
 
-
-  // --- Mock/Placeholder Data and Logic for Modal Content ---
   const currentMonth = new Date();
   const selectedDate = 15;
   const totalAmount = 3599.99; // Mock price
@@ -85,7 +77,6 @@ const OtherServices = ({ setAuthPage }) => {
     "July", "August", "September", "October", "November", "December"
   ];
   
-  // Requirements logic (remains the same as the previous step)
   const getRequirements = (title) => {
     switch (title) {
       case "Airline Booking":
@@ -163,9 +154,7 @@ const OtherServices = ({ setAuthPage }) => {
         ];
     }
   };
-  // ----------------------------------------------
 
-  // Travel Themed Background
   const backgroundImage = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop';
 
   const services = [
@@ -202,7 +191,6 @@ const OtherServices = ({ setAuthPage }) => {
       desc: item.desc,
       requirements: getRequirements(item.title)
     });
-    // Reset formData state when modal opens
     setFormData({
         fullName: '', email: '', message: '',
     });
@@ -217,22 +205,17 @@ const OtherServices = ({ setAuthPage }) => {
     }));
   };
 
-   const handleInquirySubmit = (e) => {
-    e.preventDefault();
-    console.log('Inquiry Submitted for:', selectedPackage.title);
-    console.log('Form Data:', formData);
-    
-    // Using simple alert as per constraint
-    alert(`✅ Inquiry for "${selectedPackage.title}" sent successfully! We will contact you via email within 24 hours.`);
-    
-    setShowModal(false);
-    
-    // Ito ang magre-redirect sa Login Page.
-    if (setAuthPage) {
-        setAuthPage('login'); 
-    } else {
-        console.error("setAuthPage is undefined. Cannot redirect to login.");
-    }
+  const handleInquirySubmit = (e) => {
+      e.preventDefault();
+      console.log('Inquiry submitted:', formData);
+      
+      setFormData({ fullName: '', email: '', message: '' });
+      setShowModal(false);
+      if (setAuthPage) {
+          setAuthPage('login');
+      } else {
+          console.error('setAuthPage is still undefined.');
+      }
   };
 
   return (
@@ -286,12 +269,9 @@ const OtherServices = ({ setAuthPage }) => {
 
       </div>
 
-      {/* Modal Form Component */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card modal-two-column">
-            
-            {/* SUPER LARGE CLOSE BUTTON */}
             <button 
               className="modal-close-btn" 
               onClick={() => setShowModal(false)}
@@ -300,7 +280,6 @@ const OtherServices = ({ setAuthPage }) => {
               <X size={44} strokeWidth={3} />
             </button>
             
-            {/* 1. LEFT COLUMN: REQUIREMENTS (Scrollable content) */}
             <div className="modal-requirements-col">
               <div className="modal-header-small">
                 <img 
@@ -341,7 +320,6 @@ const OtherServices = ({ setAuthPage }) => {
               </div>
             </div>
 
-            {/* 2. RIGHT COLUMN: UNIVERSAL FORM (Fixed/Sticky position) */}
             <div className="modal-form-col">
               <UniversalInquiryForm
                 pkgTitle={selectedPackage.title}
