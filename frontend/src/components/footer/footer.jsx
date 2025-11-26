@@ -25,8 +25,6 @@ function Footer() {
               <li><a href="#">Flight Search</a></li>
               <li><a href="#">Package Deals</a></li>
               <li><a href="#">My Bookings</a></li>
-              <li><a href="#">Profile</a></li>
-              <li><a href="#">Help & Support</a></li>
             </ul>
           </div>
 
