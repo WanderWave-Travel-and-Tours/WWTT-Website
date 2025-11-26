@@ -30,7 +30,8 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/booking" element={<Booking />} />
-        
+        <Route path="/settings" element={<Settings />} />
+
         {/* Packages */}
         <Route path="/add-package" element={<AddPackage />} />
         <Route path="/view-packages" element={<ViewPackages />} />
