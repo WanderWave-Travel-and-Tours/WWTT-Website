@@ -36,6 +36,8 @@ const Dashboard = () => {
     const [recentBookings, setRecentBookings] = useState([]);
     const [topPackages, setTopPackages] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [trendData, setTrendData] = useState([]);
+
     const COLORS = ['#667eea', '#f56565', '#48bb78', '#ed8936', '#9f7aea'];
 
     useEffect(() => {
@@ -116,7 +118,7 @@ const Dashboard = () => {
                 .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
             const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
-
+            const totalRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
             const financialStats = confirmedBookings.reduce((acc, booking) => {
                 const pax = (booking.pax?.adult || 1) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
                 if (booking.sellerPrice && booking.markup) {
@@ -146,7 +148,33 @@ const Dashboard = () => {
                 totalSales: financialStats.totalSales,
                 profitMargin: profitMargin
             });
-            console.log('Set stats to:', { totalBookings: bookings.length, totalRevenue: revenue }); // Verify non-zero
+
+            const today = new Date();
+            const trendData = [];
+
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const monthName = date.toLocaleString('default', { month: 'short' });
+                const year = date.getFullYear();
+                const startOfMonth = new Date(year, date.getMonth(), 1);
+                const endOfMonth = new Date(year, date.getMonth() + 1, 0, 23, 59, 59);
+
+                const confirmedThisMonth = bookings.filter(b => {
+                    const created = new Date(b.createdAt);
+                    return b.status === 'confirmed' && created >= startOfMonth && created <= endOfMonth;
+                });
+
+                const confirmedCount = confirmedThisMonth.length;
+                const revenueThisMonth = confirmedThisMonth.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+                trendData.push({
+                    month: monthName,
+                    bookings: confirmedCount, 
+                    revenue: revenueThisMonth
+                });
+            }
+
+            setTrendData(trendData);
 
             const formatted = bookings
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -409,46 +437,29 @@ const Dashboard = () => {
                             </div>
                             <div className="dash-chart-container">
                                 <ResponsiveContainer width="100%" height={300}>
-                                    <AreaChart data={bookingsChartData}>
-                                        <defs>
-                                            <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
-                                                <stop offset="95%" stopColor="#667eea" stopOpacity={0}/>
-                                            </linearGradient>
-                                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#48bb78" stopOpacity={0.8}/>
-                                                <stop offset="95%" stopColor="#48bb78" stopOpacity={0}/>
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                        <XAxis dataKey="month" stroke="#6b7280" />
-                                        <YAxis yAxisId="left" stroke="#667eea" />
-                                        <YAxis yAxisId="right" orientation="right" stroke="#48bb78" />
-                                        <Tooltip 
-                                            contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                                            formatter={(value, name) => {
-                                                if (name === 'revenue') {
-                                                    return ['₱' + value.toLocaleString(), 'Revenue'];
-                                                }
-                                                return [value, 'Bookings'];
-                                            }}
-                                        />
+                                    <AreaChart data={trendData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                        <XAxis dataKey="month" stroke="#64748b" />
+                                        <YAxis yAxisId="left" stroke="#3b82f6" />
+                                        <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
+                                        <Tooltip formatter={(value) => value.toLocaleString()} />
                                         <Legend />
                                         <Area 
                                             yAxisId="left"
                                             type="monotone" 
                                             dataKey="bookings" 
-                                            stroke="#667eea" 
-                                            fillOpacity={1} 
-                                            fill="url(#colorBookings)" 
+                                            stroke="#3b82f6" 
+                                            fill="#3b82f680" 
+                                            name="Bookings"
                                         />
                                         <Area 
                                             yAxisId="right"
                                             type="monotone" 
                                             dataKey="revenue" 
-                                            stroke="#48bb78" 
-                                            fillOpacity={1} 
-                                            fill="url(#colorRevenue)" 
+                                            stroke="#10b981" 
+                                            fill="#10b98180" 
+                                            name="Revenue (₱)"
+                                            formatter={(value) => `₱${value.toLocaleString()}`}
                                         />
                                     </AreaChart>
                                 </ResponsiveContainer>
