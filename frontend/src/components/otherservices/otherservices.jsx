@@ -8,20 +8,6 @@ import './OtherServices.css';
 const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSubmit }) => {
   return (
     <form className="modal-form" onSubmit={handleSubmit}>
-      <h3 className="form-header-title">Contact & Inquiry Details</h3>
-      
-      {/* Full Name */}
-      <div className="form-group">
-        <label>FULL NAME</label>
-        <input 
-          type="text" 
-          name="fullName"
-          placeholder="e.g. Juan dela Cruz" 
-          value={formData.fullName}
-          onChange={handleInputChange}
-          required 
-        />
-      </div>
         <h3 className="form-header-title">Contact & Inquiry Details</h3>
         
         <div className="form-group">
@@ -36,18 +22,6 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
             />
         </div>
 
-      {/* Email Address */}
-      <div className="form-group">
-        <label>EMAIL ADDRESS</label>
-        <input 
-          type="email" 
-          name="email"
-          placeholder="name@email.com" 
-          value={formData.email}
-          onChange={handleInputChange}
-          required 
-        />
-      </div>
         <div className="form-group">
             <label>EMAIL ADDRESS</label>
             <input 
@@ -60,18 +34,6 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
             />
         </div>
 
-      {/* Message/Specific Inquiry Field */}
-      <div className="form-group">
-        <label>MESSAGE (SPECIFY REQUEST FOR {pkgTitle.toUpperCase()})</label>
-        <textarea 
-          name="message"
-          placeholder={`e.g. I need assistance with my ${pkgTitle} for three people and my target date is October 15, 2026. (Include all details from the requirements checklist)`}
-          rows="5"
-          value={formData.message}
-          onChange={handleInputChange}
-          required 
-        ></textarea>
-      </div>
         <div className="form-group">
             <label>MESSAGE (SPECIFY REQUEST FOR {pkgTitle.toUpperCase()})</label>
             <textarea 
@@ -84,10 +46,10 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
             ></textarea>
         </div>
 
-      <button type="submit" className="modal-submit-btn">
-        Send Inquiry Request
-      </button>
-      <p className="modal-form-note">We will contact you via email within 24 hours.</p>
+        <button type="submit" className="modal-submit-btn">
+            Send Inquiry Request
+        </button>
+        <p className="modal-form-note">We will contact you via email within 24 hours.</p>
     </form>
   );
 };
@@ -108,15 +70,13 @@ const OtherServices = ({ setAuthPage }) => {
     message: '',
   });
 
-  // Mock data for modal
   const currentMonth = new Date();
   const selectedDate = 15;
-  const totalAmount = 3599.99;
+  const totalAmount = 3599.99; // Mock price
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
   
-  // Requirements logic
   const getRequirements = (title) => {
     switch (title) {
       case "Airline Booking":
@@ -215,7 +175,7 @@ const OtherServices = ({ setAuthPage }) => {
   const scroll = (direction) => {
     if (sliderRef.current) {
       const { current } = sliderRef;
-      const scrollAmount = 400; // Adjusted for larger cards
+      const scrollAmount = 350; 
       
       if (direction === 'left') {
         current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
@@ -232,9 +192,7 @@ const OtherServices = ({ setAuthPage }) => {
       requirements: getRequirements(item.title)
     });
     setFormData({
-      fullName: '', 
-      email: '', 
-      message: '',
+        fullName: '', email: '', message: '',
     });
     setShowModal(true);
   };
@@ -247,18 +205,6 @@ const OtherServices = ({ setAuthPage }) => {
     }));
   };
 
-  const handleInquirySubmit = (e) => {
-    e.preventDefault();
-    console.log('Inquiry Submitted for:', selectedPackage.title);
-    console.log('Form Data:', formData);
-    
-    alert(`✅ Inquiry for "${selectedPackage.title}" sent successfully! We will contact you via email within 24 hours.`);
-    
-    setShowModal(false);
-    
-    if (setAuthPage) {
-      setAuthPage('login'); 
-    }
   const handleInquirySubmit = (e) => {
       e.preventDefault();
       console.log('Inquiry submitted:', formData);
@@ -326,17 +272,14 @@ const OtherServices = ({ setAuthPage }) => {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card modal-two-column">
-            
-            {/* Close Button */}
             <button 
               className="modal-close-btn" 
               onClick={() => setShowModal(false)}
               aria-label="Close Modal"
             >
-              <X size={36} strokeWidth={2.5} />
+              <X size={44} strokeWidth={3} />
             </button>
             
-            {/* LEFT COLUMN: REQUIREMENTS */}
             <div className="modal-requirements-col">
               <div className="modal-header-small">
                 <img 
@@ -377,7 +320,6 @@ const OtherServices = ({ setAuthPage }) => {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: FORM */}
             <div className="modal-form-col">
               <UniversalInquiryForm
                 pkgTitle={selectedPackage.title}
