@@ -1,0 +1,172 @@
+import React, { useState, useEffect } from 'react';
+import { Trash2, Calendar, Eye, EyeOff, Search } from 'lucide-react';
+import Sidebar from '../sidebar/sidebar';
+import './viewposter.css';
+
+const ViewPoster = () => {
+    // 1. Gawing empty array ang initial state (Wala nang mock data)
+    const [posters, setPosters] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // 2. Fetch Data from Database pag-load ng page
+    useEffect(() => {
+        fetchPosters();
+    }, []);
+
+    const fetchPosters = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('http://localhost:5000/api/posters');
+            if (!response.ok) throw new Error('Failed to fetch');
+            const data = await response.json();
+            setPosters(data);
+        } catch (error) {
+            console.error('Error fetching posters:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 3. Delete Logic connected to Backend
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this poster?')) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/posters/${id}`, { 
+                    method: 'DELETE' 
+                });
+
+                if (response.ok) {
+                    setPosters(posters.filter(poster => poster._id !== id));
+                    alert('Poster deleted successfully');
+                } else {
+                    alert('Failed to delete poster');
+                }
+            } catch (error) {
+                console.error('Error deleting:', error);
+                alert('Server error while deleting');
+            }
+        }
+    };
+
+    // 4. Toggle Status Logic connected to Backend
+    const toggleStatus = async (id, currentStatus) => {
+        const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+        
+        try {
+            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (response.ok) {
+                // Update local state agad para mabilis ang UI
+                setPosters(posters.map(p => 
+                    p._id === id ? { ...p, status: newStatus } : p
+                ));
+            } else {
+                alert('Failed to update status');
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+        }
+    };
+
+    // Filter Logic
+    const filteredPosters = posters.filter(poster => 
+        poster.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+        <div className="vp-page">
+            <Sidebar />
+            <main className="vp-main">
+                <div className="vp-container">
+                    {/* Header */}
+                    <header className="vp-header">
+                        <div>
+                            <h1 className="vp-title">POSTER LIST</h1>
+                            <p className="vp-subtitle">Manage your website's promotional banners</p>
+                        </div>
+                        <div className="vp-search-box">
+                            <Search size={18} className="vp-search-icon" />
+                            <input 
+                                type="text" 
+                                placeholder="Search poster title..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </header>
+
+                    {/* Content */}
+                    {loading ? (
+                        <div className="vp-loading">Loading posters from database...</div>
+                    ) : (
+                        <div className="vp-grid">
+                            {filteredPosters.length > 0 ? (
+                                filteredPosters.map((poster) => (
+                                    <div key={poster._id} className={`vp-card ${poster.status === 'Inactive' ? 'inactive' : ''}`}>
+                                        
+                                        {/* Status Badge */}
+                                        <div className={`vp-badge ${poster.status.toLowerCase()}`}>
+                                            {poster.status === 'Active' ? <Eye size={12} /> : <EyeOff size={12} />}
+                                            {poster.status}
+                                        </div>
+
+                                        {/* Image Area */}
+                                        <div className="vp-image-wrapper">
+                                            <img src={`http://localhost:5000/${poster.imageUrl}`} alt={poster.title} />
+                                        </div>
+
+                                        {/* Details */}
+                                        <div className="vp-content">
+                                            <h3 className="vp-card-title">{poster.title}</h3>
+                                            <p className="vp-card-desc">{poster.description || 'No description provided.'}</p>
+                                            
+                                            <div className="vp-meta">
+                                                <div className="vp-date">
+                                                    <Calendar size={14} />
+                                                    {/* Format date to be readable */}
+                                                    <span>Start: {poster.startDate ? new Date(poster.startDate).toLocaleDateString() : '--'}</span>
+                                                </div>
+                                                <div className="vp-date">
+                                                    <Calendar size={14} />
+                                                    <span>End: {poster.endDate ? new Date(poster.endDate).toLocaleDateString() : '--'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Actions Footer */}
+                                        <div className="vp-actions">
+                                            <button 
+                                                className="vp-btn-toggle"
+                                                onClick={() => toggleStatus(poster._id, poster.status)}
+                                            >
+                                                {poster.status === 'Active' ? 'Deactivate' : 'Activate'}
+                                            </button>
+                                            <button 
+                                                className="vp-btn-delete"
+                                                onClick={() => handleDelete(poster._id)}
+                                                title="Delete Poster"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="vp-empty">
+                                    <p>No posters found. Try adding one!</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </main>
+        </div>
+    );
+};
+
+export default ViewPoster;

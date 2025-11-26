@@ -9,7 +9,9 @@ import {
   XCircle,
   AlertCircle,
   Mail,
-  Phone
+  Phone,
+  Check,
+  X
 } from 'lucide-react';
 import './booking.css';
 import Sidebar from '../sidebar/sidebar';
@@ -20,44 +22,51 @@ const Booking = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    const fetchBookings = async () => {
-        try {
-        setLoading(true);
-        const res = await fetch('http://localhost:5000/api/admin/bookings'); 
-
-        if (!res.ok) throw new Error('Failed to fetch');
-
-        const data = await res.json();
-
-        const formatted = data.map((b, index) => ({
-            id: `BK${String(data.length - index).padStart(4, '0')}`,
-            customerName: b.fullName,
-            email: b.email,
-            phone: b.phone || 'Not provided',
-            packageName: b.packageName,
-            selectedDate: b.date,
-            totalAmount: b.totalAmount,
-            guests: b.pax?.adult || 1,
-            status: b.status || 'pending',
-            bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
-            message: b.message || '',
-            rawData: b // optional: para makita mo full data kapag nag-click ng view
-        }));
-
-        setBookings(formatted);
-        setFilteredBookings(formatted);
-        } catch (err) {
-        console.error('Fetch error:', err);
-        // Optional: toast.error('Cannot load bookings');
-        } finally {
-        setLoading(false);
-        }
-    };
-
     fetchBookings();
-    }, []);
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('http://localhost:5000/api/admin/bookings'); 
+
+      if (!res.ok) throw new Error('Failed to fetch');
+
+      const data = await res.json();
+
+      const formatted = data.map((b, index) => ({
+        id: `BK${String(data.length - index).padStart(4, '0')}`,
+        mongoId: b._id,
+        customerName: b.fullName,
+        email: b.email,
+        packageName: b.packageName,
+        travelDate: b.startDate || 'Not specified',
+        startDate: b.startDate,
+        endDate: b.endDate,
+        duration: b.duration,
+        totalAmount: b.totalAmount,
+        guests: b.pax?.adult || 1,
+        status: b.status || 'pending',
+        bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
+        message: b.message || '',
+        referenceNumber: b.referenceNumber || 'N/A',
+        paymentLinkId: b.paymentLinkId,
+        rawData: b
+      }));
+
+      setBookings(formatted);
+      setFilteredBookings(formatted);
+    } catch (err) {
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let filtered = bookings;
@@ -66,7 +75,8 @@ const Booking = () => {
       filtered = filtered.filter(booking => 
         booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.packageName.toLowerCase().includes(searchTerm.toLowerCase())
+        booking.packageName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -76,6 +86,61 @@ const Booking = () => {
 
     setFilteredBookings(filtered);
   }, [searchTerm, filterStatus, bookings]);
+
+  const handleConfirm = async (booking) => {
+    if (!confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) {
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/admin/bookings/${booking.mongoId}/confirm`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!res.ok) throw new Error('Failed to confirm booking');
+
+      // Refresh bookings
+      await fetchBookings();
+      alert('✅ Booking confirmed successfully!');
+    } catch (error) {
+      console.error('Confirm error:', error);
+      alert('❌ Failed to confirm booking. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancel = async (booking) => {
+    if (!confirm(`Cancel booking ${booking.id} for ${booking.customerName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/admin/bookings/${booking.mongoId}/cancel`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!res.ok) throw new Error('Failed to cancel booking');
+
+      // Refresh bookings
+      await fetchBookings();
+      alert('✅ Booking cancelled successfully!');
+    } catch (error) {
+      console.error('Cancel error:', error);
+      alert('❌ Failed to cancel booking. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleViewDetails = (booking) => {
+    setSelectedBooking(booking);
+    setShowModal(true);
+  };
 
   const stats = {
     total: bookings.length,
@@ -89,7 +154,7 @@ const Booking = () => {
 
   return (
     <div className="booking-page">
-        <Sidebar/>
+      <Sidebar/>
       <div className="booking-container">
         <div className="booking-header">
           <h1>Booking Management</h1>
@@ -166,7 +231,7 @@ const Booking = () => {
               <Search className="search-icon" size={20} />
               <input
                 type="text"
-                placeholder="Search by name, booking ID, or package..."
+                placeholder="Search by name, booking ID, reference number, or package..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -236,6 +301,16 @@ const Booking = () => {
                       <td>
                         <div className="booking-id">{booking.id}</div>
                         <div className="booking-date-small">{booking.bookingDate}</div>
+                        {booking.referenceNumber !== 'N/A' && (
+                          <div className="reference-number" style={{
+                            fontSize: '0.75rem',
+                            color: '#6b7280',
+                            fontFamily: 'monospace',
+                            marginTop: '4px'
+                          }}>
+                            Ref: {booking.referenceNumber}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <div className="customer-name">{booking.customerName}</div>
@@ -243,19 +318,33 @@ const Booking = () => {
                           <Mail size={12} />
                           <span>{booking.email}</span>
                         </div>
-                        <div className="customer-contact">
-                          <Phone size={12} />
-                          <span>{booking.phone}</span>
-                        </div>
                       </td>
                       <td>
                         <div className="package-name">{booking.packageName}</div>
+                        {booking.duration && (
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#6b7280',
+                            marginTop: '4px'
+                          }}>
+                            {booking.duration}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <div className="date-cell">
                           <Calendar size={16} />
-                          <span>{booking.selectedDate}</span>
+                          <span>{booking.travelDate}</span>
                         </div>
+                        {booking.endDate && (
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#6b7280',
+                            marginTop: '4px'
+                          }}>
+                            to {booking.endDate}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <div className="guests-cell">
@@ -277,9 +366,48 @@ const Booking = () => {
                         </span>
                       </td>
                       <td>
-                        <button className="action-btn">
-                          <Eye size={18} />
-                        </button>
+                        <div className="action-buttons-group">
+                          <button 
+                            className="action-btn view-btn"
+                            onClick={() => handleViewDetails(booking)}
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          
+                          {booking.status === 'pending' && (
+                            <>
+                              <button 
+                                className="action-btn confirm-btn"
+                                onClick={() => handleConfirm(booking)}
+                                disabled={actionLoading}
+                                title="Confirm Booking"
+                              >
+                                <Check size={18} />
+                              </button>
+                              
+                              <button 
+                                className="action-btn cancel-btn"
+                                onClick={() => handleCancel(booking)}
+                                disabled={actionLoading}
+                                title="Cancel Booking"
+                              >
+                                <X size={18} />
+                              </button>
+                            </>
+                          )}
+
+                          {booking.status === 'confirmed' && (
+                            <button 
+                              className="action-btn cancel-btn"
+                              onClick={() => handleCancel(booking)}
+                              disabled={actionLoading}
+                              title="Cancel Booking"
+                            >
+                              <X size={18} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -289,6 +417,139 @@ const Booking = () => {
           )}
         </div>
       </div>
+
+      {/* View Details Modal */}
+      {showModal && selectedBooking && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Booking Details</h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="detail-section">
+                <h3>Booking Information</h3>
+                <div className="detail-row">
+                  <span className="detail-label">Booking ID:</span>
+                  <span className="detail-value">{selectedBooking.id}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Reference Number:</span>
+                  <span className="detail-value">{selectedBooking.referenceNumber}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Booking Date:</span>
+                  <span className="detail-value">{selectedBooking.bookingDate}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Status:</span>
+                  <span className={`status-badge ${selectedBooking.status}`}>
+                    {selectedBooking.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h3>Customer Information</h3>
+                <div className="detail-row">
+                  <span className="detail-label">Name:</span>
+                  <span className="detail-value">{selectedBooking.customerName}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Email:</span>
+                  <span className="detail-value">{selectedBooking.email}</span>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h3>Package Information</h3>
+                <div className="detail-row">
+                  <span className="detail-label">Package:</span>
+                  <span className="detail-value">{selectedBooking.packageName}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Duration:</span>
+                  <span className="detail-value">{selectedBooking.duration}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Travel Date:</span>
+                  <span className="detail-value">
+                    {selectedBooking.startDate} to {selectedBooking.endDate}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Number of Guests:</span>
+                  <span className="detail-value">{selectedBooking.guests} person(s)</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Total Amount:</span>
+                  <span className="detail-value" style={{ color: '#10b981', fontWeight: 'bold' }}>
+                    ₱{selectedBooking.totalAmount.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {selectedBooking.message && (
+                <div className="detail-section">
+                  <h3>Special Requests</h3>
+                  <p className="detail-message">{selectedBooking.message}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              {selectedBooking.status === 'pending' && (
+                <>
+                  <button 
+                    className="modal-btn confirm-modal-btn"
+                    onClick={() => {
+                      handleConfirm(selectedBooking);
+                      setShowModal(false);
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <Check size={18} />
+                    Confirm Booking
+                  </button>
+                  <button 
+                    className="modal-btn cancel-modal-btn"
+                    onClick={() => {
+                      handleCancel(selectedBooking);
+                      setShowModal(false);
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <X size={18} />
+                    Cancel Booking
+                  </button>
+                </>
+              )}
+              {selectedBooking.status === 'confirmed' && (
+                <button 
+                  className="modal-btn cancel-modal-btn"
+                  onClick={() => {
+                    handleCancel(selectedBooking);
+                    setShowModal(false);
+                  }}
+                  disabled={actionLoading}
+                >
+                  <X size={18} />
+                  Cancel Booking
+                </button>
+              )}
+              <button 
+                className="modal-btn close-modal-btn"
+                onClick={() => setShowModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

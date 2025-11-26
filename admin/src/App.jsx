@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './components/login/login'; 
 import Dashboard from './components/dashboard/dashboard'; 
@@ -12,7 +13,15 @@ import ServiceManagement from './components/servicemanagement/servicemanagement.
 import Settings from './components/settings/settings.jsx';
 import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
-import Booking from './components/booking/booking.jsx'
+import Booking from './components/booking/booking.jsx';
+
+// Poster Imports
+import AddPoster from './components/addposter/addposter.jsx';
+import ViewPoster from './components/viewposter/viewposter.jsx';
+
+// Blog Imports (NEW)
+import AddBlog from './components/addblog/addblog.jsx';
+import ViewBlog from './components/viewblog/viewblog.jsx';
 
 function App() {
   return (
@@ -20,19 +29,34 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
-         <Route path="/booking" element={<Booking />} />
+        <Route path="/booking" element={<Booking />} />
+        
+        {/* Packages */}
         <Route path="/add-package" element={<AddPackage />} />
         <Route path="/view-packages" element={<ViewPackages />} />
         <Route path="/edit-package" element={<EditPackage />} />
+        
+        {/* Promos & Posters */}
         <Route path="/add-promo" element={<AddPromo />} />
         <Route path="/view-promos" element={<ViewPromos />} />
+        <Route path="/add-poster" element={<AddPoster />} />      
+        <Route path="/view-posters" element={<ViewPoster />} /> 
+
+        {/* Blogs (NEW) */}
+        <Route path="/add-blog" element={<AddBlog />} />
+        <Route path="/view-blogs" element={<ViewBlog />} />
+        
+        {/* Testimonials */}
         <Route path="/view-testimonials" element={<ViewTestimonials />} />
         <Route path="/add-testimonial" element={<AddTestimonial />} />
+        
+        {/* Services */}
         <Route path="/services/visa" element={<ServiceManagement />} />
         <Route path="/services/psa" element={<ServiceManagement />} />
         <Route path="/services/cenomar" element={<ServiceManagement />} />
         <Route path="/services/passport" element={<ServiceManagement />} />
-        <Route path="/settings" element={<Settings />} />
+        
+        {/* Hotels */}
         <Route path="/add-hotel" element={<AddHotel />} />
         <Route path="/view-hotels" element={<ViewHotels />} />
         <Route path="/services/airlinebooking" element={<ServiceManagement />} />
