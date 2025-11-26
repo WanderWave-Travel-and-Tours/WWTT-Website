@@ -87,7 +87,6 @@ router.put('/:id/confirm', async (req, res) => {
       });
     }
 
-    // Check if already confirmed
     if (booking.status === 'confirmed') {
       return res.status(400).json({
         success: false,
@@ -95,7 +94,6 @@ router.put('/:id/confirm', async (req, res) => {
       });
     }
 
-    // Check if cancelled
     if (booking.status === 'cancelled') {
       return res.status(400).json({
         success: false,
@@ -103,11 +101,9 @@ router.put('/:id/confirm', async (req, res) => {
       });
     }
 
-    // Update to confirmed
     booking.status = 'confirmed';
     booking.updatedAt = new Date();
     
-    // Set paidAt if not already set
     if (!booking.paidAt) {
       booking.paidAt = new Date();
     }
@@ -115,9 +111,6 @@ router.put('/:id/confirm', async (req, res) => {
     await booking.save();
 
     console.log('✅ Booking confirmed:', id);
-
-    // TODO: Send confirmation email
-    // await sendConfirmationEmail(booking);
 
     res.json({
       success: true,
@@ -135,7 +128,6 @@ router.put('/:id/confirm', async (req, res) => {
   }
 });
 
-// ❌ CANCEL BOOKING
 router.put('/:id/cancel', async (req, res) => {
   try {
     const { id } = req.params;
@@ -149,7 +141,6 @@ router.put('/:id/cancel', async (req, res) => {
       });
     }
 
-    // Check if already cancelled
     if (booking.status === 'cancelled') {
       return res.status(400).json({
         success: false,
@@ -157,7 +148,6 @@ router.put('/:id/cancel', async (req, res) => {
       });
     }
 
-    // Update to cancelled
     booking.status = 'cancelled';
     booking.updatedAt = new Date();
     booking.cancelledAt = new Date();
@@ -165,9 +155,6 @@ router.put('/:id/cancel', async (req, res) => {
     await booking.save();
 
     console.log('❌ Booking cancelled:', id);
-
-    // TODO: Send cancellation email
-    // await sendCancellationEmail(booking);
 
     res.json({
       success: true,
@@ -185,7 +172,6 @@ router.put('/:id/cancel', async (req, res) => {
   }
 });
 
-// Get booking statistics
 router.get('/stats/summary', async (req, res) => {
   try {
     const bookings = await Booking.find();
