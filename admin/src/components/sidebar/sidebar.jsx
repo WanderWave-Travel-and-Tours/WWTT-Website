@@ -26,9 +26,10 @@ import {
   Calendar,
   Image, 
   Images,
-  PenTool, 
+  PenTool,
   Newspaper,
-  Percent // New Icon for Deals
+  UploadCloud, // New Icon for Upload Image
+  Grid // New Icon for Gallery/View Images
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -179,8 +180,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Create Package', path: '/add-package', icon: FilePlus },
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
                 { name: 'Add Promo Poster', path: '/add-poster', icon: Image },
-                { name: 'Create Deal', path: '/add-deal', icon: Percent }, // <-- ADD DEAL
-                { name: 'Create Blog', path: '/add-blog', icon: PenTool }, 
+                { name: 'Create Blog', path: '/add-blog', icon: PenTool },
+                { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, // <-- NEW ITEM
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
                 { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
               ]}
@@ -195,8 +196,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Manage Packages', path: '/view-packages', icon: Package },
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
                 { name: 'Poster List', path: '/view-posters', icon: Images },
-                { name: 'Deals List', path: '/view-deals', icon: Percent }, // <-- VIEW DEALS
                 { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
+                { name: 'Image Gallery', path: '/view-images', icon: Grid }, // <-- NEW ITEM
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
                 { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
               ]}
@@ -216,13 +217,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'PSA Serbilis', path: '/services/psa', icon: FileText },
                 { name: 'CENOMAR', path: '/services/cenomar', icon: HeartHandshake },
                 { name: 'Passport Appt', path: '/services/passport', icon: Plane },
-                { name: 'Airline Booking', path: '/services/airlinebooking', icon: Plane },
-                { name: 'Hotel Booking', path: '/services/hotelbooking', icon: Hotel },
-                { name: 'Tour Arrangements', path: '/services/tourarrangements', icon: Calendar },
-                { name: 'Ferry Booking', path: '/services/ferrybooking', icon: Plane },
-                { name: 'Marriage Cert', path: '/services/marriagecert', icon: Plane },
-                { name: 'Travel Insurance', path: '/services/travelinsurance', icon: Plane },
-                { name: 'Bills Payment', path: '/services/billspayment', icon: Plane },
               ]}
             />
             <MenuItem path="/users" icon={Users} label="Users" />
