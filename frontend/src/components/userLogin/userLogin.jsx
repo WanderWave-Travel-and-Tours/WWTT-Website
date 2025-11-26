@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './UserLogin.css';
 
-const UserLogin = ({ setAuthPage }) => {
+const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [isSignup, setIsSignup] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -39,20 +39,32 @@ const UserLogin = ({ setAuthPage }) => {
 
         try {
             const res = await fetch(`http://localhost:5000${endpoint}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
             });
 
             const data = await res.json();
 
             if (res.ok) {
-            alert(data.message || (isSignup ? 'Account created!' : 'Welcome back!'));
-            if (setAuthPage) setAuthPage('main');
+                if (isSignup) {
+                    // After successful signup, switch to login
+                    alert(data.message || 'Account created successfully! Please log in.');
+                    setIsSignup(false);
+                    setFullName('');
+                    setPassword('');
+                    setConfirmPassword('');
+                } else {
+                    // After successful login, call onLoginSuccess
+                    alert(data.message || 'Welcome back!');
+                    if (data.user && onLoginSuccess) {
+                        onLoginSuccess(data.user);
+                    }
+                }
             } else {
-            alert(data.message || 'Something went wrong');
+                alert(data.message || 'Something went wrong');
             }
         } catch (err) {
             console.error(err);
@@ -60,7 +72,7 @@ const UserLogin = ({ setAuthPage }) => {
         } finally {
             setIsLoading(false);
         }
-        };
+    };
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !isLoading) handleSubmit(e);
@@ -185,7 +197,10 @@ const UserLogin = ({ setAuthPage }) => {
                                 className="switch-page-link"
                                 onClick={() => {
                                     setIsSignup(!isSignup);
-                                    setFullName(''); setEmail(''); setPassword(''); setConfirmPassword('');
+                                    setFullName(''); 
+                                    setEmail(''); 
+                                    setPassword(''); 
+                                    setConfirmPassword('');
                                 }}
                                 style={{ cursor: 'pointer', fontWeight: '600' }}
                             >
