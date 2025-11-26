@@ -213,6 +213,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'PSA Serbilis', path: '/services/psa', icon: FileText },
                 { name: 'CENOMAR', path: '/services/cenomar', icon: HeartHandshake },
                 { name: 'Passport Appt', path: '/services/passport', icon: Plane },
+                { name: 'Airline Booking', path: '/services/airlinebooking', icon: Plane },
+                { name: 'Hotel Booking', path: '/services/hotelbooking', icon: Hotel },
+                { name: 'Tour Arrangements', path: '/services/tourarrangements', icon: Calendar },
+                { name: 'Ferry Booking', path: '/services/ferrybooking', icon: Plane },
+                { name: 'Marriage Cert', path: '/services/marriagecert', icon: Plane },
+                { name: 'Travel Insurance', path: '/services/travelinsurance', icon: Plane },
+                { name: 'Bills Payment', path: '/services/billspayment', icon: Plane },
               ]}
             />
             <MenuItem path="/users" icon={Users} label="Users" />

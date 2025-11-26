@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+// REMOVED: import { useNavigate } from 'react-router-dom'; 
 import { 
   Plane, Hotel, Map, Ship, BookUser, Baby, HeartHandshake, FileCheck, Globe, ShieldCheck, Receipt, PlusCircle,
   ArrowRight, ChevronLeft, ChevronRight, X, CheckCircle 
@@ -46,7 +47,7 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
             rows="5"
             value={formData.message}
             onChange={handleInputChange}
-            required // Made message required since it holds the specific details
+            required 
             ></textarea>
         </div>
 
@@ -59,7 +60,7 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
 };
 
 // --- Main OtherServices Component ---
-const OtherServices = () => {
+const OtherServices = ({ setAuthPage }) => {
   const sliderRef = useRef(null);
   
   const [showModal, setShowModal] = useState(false);
@@ -216,15 +217,22 @@ const OtherServices = () => {
     }));
   };
 
-  const handleInquirySubmit = (e) => {
+   const handleInquirySubmit = (e) => {
     e.preventDefault();
-    
     console.log('Inquiry Submitted for:', selectedPackage.title);
     console.log('Form Data:', formData);
     
-    // Add your actual submission logic here (e.g., API call)
-    alert(`Thank you, ${formData.fullName}! Your inquiry for ${selectedPackage.title} has been received. We will contact you shortly.`);
+    // Using simple alert as per constraint
+    alert(`✅ Inquiry for "${selectedPackage.title}" sent successfully! We will contact you via email within 24 hours.`);
+    
     setShowModal(false);
+    
+    // Ito ang magre-redirect sa Login Page.
+    if (setAuthPage) {
+        setAuthPage('login'); 
+    } else {
+        console.error("setAuthPage is undefined. Cannot redirect to login.");
+    }
   };
 
   return (
