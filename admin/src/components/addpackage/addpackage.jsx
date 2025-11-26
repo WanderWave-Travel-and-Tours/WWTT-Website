@@ -8,10 +8,10 @@ const AddPackage = () => {
   const [destination, setDestination] = useState("");
   const [supplierRate, setSupplierRate] = useState("");
   const [markupValue, setMarkupValue] = useState("");
-  const [markupType, setMarkupType] = useState("percentage"); // 'percentage' or 'peso'
+  const [markupType, setMarkupType] = useState("peso");
   const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("");
-  const [category, setCategory] = useState("Local");
+  const [category, setCategory] = useState("Local Tour");
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [inclusions, setInclusions] = useState([""]);
@@ -23,21 +23,20 @@ const AddPackage = () => {
   const pasteAreaRef = useRef(null);
   const navigate = useNavigate();
 
-  // Calculate total price based on markup type
   const calculateTotalPrice = (supplier, markup, type) => {
     const supplierValue = parseFloat(supplier) || 0;
     const markupVal = parseFloat(markup) || 0;
 
-    if (supplierValue > 0) {
+    if (supplierValue > 0 && markupVal > 0) {
       let total;
       if (type === "percentage") {
-        // Calculate percentage markup
         total = supplierValue + supplierValue * (markupVal / 100);
       } else {
-        // Calculate peso markup
         total = supplierValue + markupVal;
       }
       setPrice(total.toFixed(2));
+    } else if (supplierValue > 0) {
+      setPrice(supplierValue.toFixed(2));
     } else {
       setPrice("");
     }
@@ -56,10 +55,12 @@ const AddPackage = () => {
   const toggleMarkupType = () => {
     const newType = markupType === "percentage" ? "peso" : "percentage";
     setMarkupType(newType);
-    setMarkupValue(""); // Reset markup value when switching
-    setPrice(""); // Reset total price
+    setMarkupValue(""); 
+    
     if (supplierRate) {
-      setPrice(supplierRate); // Set to supplier rate if it exists
+      setPrice(parseFloat(supplierRate).toFixed(2));
+    } else {
+      setPrice("");
     }
   };
 
@@ -71,7 +72,6 @@ const AddPackage = () => {
     }
   };
 
-  // Handle paste event
   const handlePaste = (e) => {
     e.preventDefault();
     const items = e.clipboardData?.items;
@@ -91,7 +91,6 @@ const AddPackage = () => {
     }
   };
 
-  // Add paste event listener when component mounts
   useEffect(() => {
     const handleGlobalPaste = (e) => {
       if (isPasteActive && pasteAreaRef.current) {
@@ -106,7 +105,6 @@ const AddPackage = () => {
     };
   }, [isPasteActive]);
 
-  // Focus on paste area when clicking it
   const activatePasteArea = () => {
     setIsPasteActive(true);
     if (pasteAreaRef.current) {
@@ -124,7 +122,8 @@ const AddPackage = () => {
     setItinerary([
       ...itinerary,
       { day: itinerary.length + 1, title: "", activities: [""] },
-    ]);
+  ]);
+
   const removeDay = (dayIndex) => {
     setItinerary(
       itinerary
@@ -136,6 +135,7 @@ const AddPackage = () => {
         }))
     );
   };
+  
   const handleDayTitle = (dayIndex, value) => {
     const newTitle = value.trim() ? `Day ${dayIndex + 1}: ${value.trim()}` : "";
     setItinerary(
@@ -173,6 +173,7 @@ const AddPackage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     const processedInclusions = inclusions.filter(
       (item) => item.trim().length > 0
     );
@@ -184,15 +185,36 @@ const AddPackage = () => {
         activities: day.activities.filter((act) => act.trim() !== ""),
       }));
 
+    const supplierRateNum = parseFloat(supplierRate) || 0;
+    const markupValueNum = parseFloat(markupValue) || 0;
+    
+    let markupInPeso = 0;
+    if (markupType === "percentage") {
+      markupInPeso = (supplierRateNum * markupValueNum) / 100;
+    } else {
+      markupInPeso = markupValueNum;
+    }
+    
+    markupInPeso = Math.round(markupInPeso * 100) / 100;
+
+    console.log('📊 Frontend Debug:', {
+      supplierRate: supplierRateNum,
+      markupValue: markupValueNum,
+      markupType,
+      markupInPeso,
+      expectedTotal: supplierRateNum + markupInPeso
+    });
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("destination", destination);
-    formData.append("supplierRate", supplierRate);
-    formData.append("markupValue", markupValue);
-    formData.append("markupType", markupType);
-    formData.append("price", price);
+    formData.append("sellerPrice", supplierRateNum.toString());
+    formData.append("markup", markupInPeso.toString());
     formData.append("duration", duration);
-    formData.append("category", category);
+    
+    const categoryValue = category === "Local Tour" ? "Local" : "International";
+    formData.append("category", categoryValue);
+    
     formData.append("inclusions", JSON.stringify(processedInclusions));
     formData.append("itinerary", JSON.stringify(cleanedItinerary));
 
@@ -217,13 +239,14 @@ const AddPackage = () => {
         setMarkupValue("");
         setPrice("");
         setDuration("");
-        setCategory("Local");
+        setCategory("Local Tour");
         setFile(null);
         setPreviewUrl(null);
         setInclusions([""]);
         setItinerary([{ day: 1, title: "Arrival", activities: [""] }]);
-        setMarkupType("percentage");
+        setMarkupType("peso");
       } else {
+        console.error("Server error:", data);
         alert("❌ Error: " + (data.error || "Server error"));
       }
     } catch (error) {
@@ -237,7 +260,6 @@ const AddPackage = () => {
       <Sidebar />
       <main className="pkg-main">
         <div className="pkg-container">
-          {/* Header */}
           <header className="pkg-header">
             <button className="pkg-back" onClick={() => navigate(-1)}>
               <svg
@@ -262,9 +284,7 @@ const AddPackage = () => {
 
           <form onSubmit={handleSubmit} className="pkg-form">
             <div className="pkg-grid">
-              {/* Left Column */}
               <div className="pkg-left">
-                {/* Cover Image */}
                 <section className="pkg-section">
                   <h2 className="pkg-section-title">COVER IMAGE</h2>
 
@@ -402,7 +422,6 @@ const AddPackage = () => {
                   )}
                 </section>
 
-                {/* Basic Info */}
                 <section className="pkg-section">
                   <h2 className="pkg-section-title">BASIC INFORMATION</h2>
                   <div className="pkg-fields">
@@ -442,14 +461,13 @@ const AddPackage = () => {
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
                       >
-                        <option>Local Tour</option>
-                        <option>International Tour</option>
+                        <option value="Local Tour">Local Tour</option>
+                        <option value="International Tour">International Tour</option>
                       </select>
                     </div>
                   </div>
                 </section>
 
-                {/* Pricing */}
                 <section className="pkg-section">
                   <h2 className="pkg-section-title">PRICING</h2>
                   <div className="pkg-pricing-layout">
@@ -470,18 +488,29 @@ const AddPackage = () => {
                       </div>
                       <div className="pkg-field">
                         <label>
-                          Markup ({markupType === "percentage" ? "%" : "PHP"})
+                          Markup 
+                          <span style={{
+                            marginLeft: '8px',
+                            padding: '3px 8px',
+                            background: markupType === "percentage" ? '#fef3c7' : '#dcfce7',
+                            color: markupType === "percentage" ? '#92400e' : '#166534',
+                            borderRadius: '4px',
+                            fontSize: '0.75em',
+                            fontWeight: 'bold'
+                          }}>
+                            {markupType === "percentage" ? "% MODE" : "₱ PESO MODE"}
+                          </span>
                         </label>
                         <div className="pkg-field-with-toggle">
                           <input
                             type="number"
                             placeholder={
-                              markupType === "percentage" ? "0" : "0.00"
+                              markupType === "percentage" ? "Enter %" : "Enter peso amount"
                             }
                             value={markupValue}
                             onChange={(e) => handleMarkupChange(e.target.value)}
                             required
-                            step={markupType === "percentage" ? "0.01" : "0.01"}
+                            step="0.01"
                             min="0"
                             max={
                               markupType === "percentage" ? "100" : undefined
@@ -570,7 +599,6 @@ const AddPackage = () => {
                   </div>
                 </section>
 
-                {/* Inclusions */}
                 <section className="pkg-section">
                   <div className="pkg-section-header">
                     <h2 className="pkg-section-title">INCLUSIONS</h2>
@@ -627,7 +655,6 @@ const AddPackage = () => {
                   </button>
                 </section>
 
-                {/* Itinerary */}
                 <section className="pkg-section">
                   <div className="pkg-section-header">
                     <h2 className="pkg-section-title">ITINERARY</h2>
@@ -726,7 +753,6 @@ const AddPackage = () => {
                 </section>
               </div>
 
-              {/* Right Column - Preview */}
               <aside className="pkg-right">
                 <div className="pkg-preview">
                   <span className="pkg-preview-label">PREVIEW</span>

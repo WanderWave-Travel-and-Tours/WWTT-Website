@@ -14,22 +14,12 @@ import Settings from './components/settings/settings.jsx';
 import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
 import Booking from './components/booking/booking.jsx';
-
-// Poster Imports
 import AddPoster from './components/addposter/addposter.jsx';
 import ViewPoster from './components/viewposter/viewposter.jsx';
-
-// Blog Imports
 import AddBlog from './components/addblog/addblog.jsx';
 import ViewBlog from './components/viewblog/viewblog.jsx';
-
-// Image Gallery Imports
-import AddImage from './components/addimage/addimage.jsx';
-import ViewImage from './components/viewimage/viewimage.jsx';
-
-// Deal Imports
-import AddDeal from './components/adddeals/adddeals.jsx';
-import ViewDeal from './components/viewdeals/viewdeals.jsx';
+import AddDeals from './adddeals/adddeals.jsx';
+import ViewDeals from './viewdeals/viewdeals.jsx';
 
 function App() {
   return (
@@ -38,7 +28,8 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/booking" element={<Booking />} />
-        
+        <Route path="/settings" element={<Settings />} />
+
         {/* Packages */}
         <Route path="/add-package" element={<AddPackage />} />
         <Route path="/view-packages" element={<ViewPackages />} />

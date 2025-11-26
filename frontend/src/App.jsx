@@ -6,8 +6,7 @@ import FlightSearch from './components/flightSearch/flightSearch.jsx';
 import PackageDeals from './components/packagedeals/packageDeals.jsx';
 import Footer from './components/footer/footer.jsx';
 import OtherServices from './components/otherservices/otherservices.jsx';
-import UserLogin from './components/userLogin/userLogin.jsx';
-import UserSignup from './components/userSignup/userSignup.jsx';
+import UserAuth from './components/userLogin/userLogin.jsx';  // ← NEW: Combined Login + Signup
 import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 
@@ -124,7 +123,6 @@ function MainLayout() {
     setIsMobileMenuOpen(false);
   };
 
-  // Check if on payment success page (hide footer only there)
   const isPaymentSuccessPage = location.pathname === '/payment/success';
 
   return (
@@ -211,11 +209,7 @@ function MainLayout() {
             </div>
           </div>
 
-          <button 
-            className="mobile-menu-btn" 
-            onClick={() => setIsMobileMenuOpen(true)}
-            aria-label="Toggle menu"
-          >
+          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
             <Menu size={28} />
           </button>
         </div>
@@ -224,16 +218,8 @@ function MainLayout() {
       {/* Mobile Menu */}
       <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="mobile-menu-header">
-          <img 
-            src={logoBlueHeader} 
-            alt="Wanderwave Travel & Tours"
-            className="brand-logo brand-logo-mobile"
-          />
-          <button 
-            className="mobile-close-btn"
-            onClick={() => setIsMobileMenuOpen(false)}
-            aria-label="Close menu"
-          >
+          <img src={logoBlueHeader} alt="Wanderwave Travel & Tours" className="brand-logo brand-logo-mobile" />
+          <button className="mobile-close-btn" onClick={() => setIsMobileMenuOpen(false)}>
             <X size={28} />
           </button>
         </div>
@@ -288,26 +274,21 @@ function MainLayout() {
 
       <main className="main-content">
         <Routes>
-          {/* Main navigation pages */}
           <Route path="/" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
-          <Route path="/other-services" element={<OtherServices />} />
+          <Route path="/other-services" element={<OtherServices setAuthPage={setAuthPage} />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/help" element={<Help />} />
-          
-          {/* Payment pages */}
           <Route path="/payment" element={<Payment />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
         </Routes>
       </main>
 
-      {/* Footer - hide only on success page */}
       {!isPaymentSuccessPage && <Footer />}
     </div>
   );
 }
 
-// Root App Component with BrowserRouter
 function App() {
   return (
     <BrowserRouter>

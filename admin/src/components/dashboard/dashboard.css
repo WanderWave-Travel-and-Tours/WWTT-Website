@@ -694,6 +694,215 @@
                     }
                 }
 
+                /* ========================================
+   FINANCIAL STATISTICS SECTION
+   Add this to your existing dashboard.css
+======================================== */
+
+/* Financial Stats Section */
+.dash-financial-stats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    margin-bottom: 32px;
+}
+
+.dash-financial-stats .dash-section-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+}
+
+.dash-financial-stats .dash-section-title {
+    color: #fff;
+}
+
+.dash-financial-stats .dash-section-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Financial Cards Grid */
+.dash-financial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.dash-financial-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    gap: 16px;
+    transition: all 0.3s ease;
+}
+
+.dash-financial-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.dash-financial-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.dash-financial-card--cost .dash-financial-icon {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.dash-financial-card--markup .dash-financial-icon {
+    background: rgba(34, 197, 94, 0.2);
+}
+
+.dash-financial-card--sales .dash-financial-icon {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.dash-financial-card--margin .dash-financial-icon {
+    background: rgba(168, 85, 247, 0.2);
+}
+
+.dash-financial-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.dash-financial-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dash-financial-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.dash-financial-desc {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+}
+
+/* Financial Breakdown */
+.dash-financial-breakdown {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.dash-breakdown-bar {
+    display: flex;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.1);
+    margin-bottom: 16px;
+}
+
+.dash-breakdown-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.dash-breakdown-segment:hover {
+    filter: brightness(1.1);
+}
+
+.dash-breakdown-segment--cost {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.dash-breakdown-segment--profit {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.dash-breakdown-legend {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+}
+
+.dash-breakdown-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.dash-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dash-legend-dot--cost {
+    background: #ef4444;
+}
+
+.dash-legend-dot--profit {
+    background: #22c55e;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dash-financial-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dash-financial-card {
+        padding: 20px;
+    }
+    
+    .dash-financial-value {
+        font-size: 24px;
+    }
+    
+    .dash-breakdown-bar {
+        height: 40px;
+    }
+    
+    .dash-breakdown-legend {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .dash-financial-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 1024px) {
     .dash-header { flex-direction: column; align-items: flex-start; gap: 20px; }

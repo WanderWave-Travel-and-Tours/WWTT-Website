@@ -3,12 +3,19 @@ const mongoose = require('mongoose');
 const bookingSchema = new mongoose.Schema({
   packageName: { type: String, required: true },
 
+  packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'packages' },
+  sellerPrice: { type: Number, required: true },
+  markup: { type: Number, required: true },
+  price: { type: Number, required: true }, 
+
   startDate: { type: String, required: true },   
   endDate:   { type: String, required: true },  
   duration:  { type: String, required: true },  
 
   pax: {
-    adult: { type: Number, required: true, min: 1 }
+    adult: { type: Number, required: true, min: 1 },
+    children: { type: Number, default: 0 },
+    infants: { type: Number, default: 0 },
   },
 
   totalAmount: { type: Number, required: true },
@@ -28,7 +35,9 @@ const bookingSchema = new mongoose.Schema({
   referenceNumber:  { type: String },
 
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date }
+  updatedAt: { type: Date },
+  paidAt: { type: Date },
+  cancelledAt: { type: Date }
 });
 
 bookingSchema.pre('save', function(next) {

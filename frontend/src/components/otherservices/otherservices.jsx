@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import './OtherServices.css'; 
 
-// --- Universal Inquiry Form Component ---
 const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSubmit }) => {
   return (
     <form className="modal-form" onSubmit={handleSubmit}>
@@ -23,6 +22,19 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
           required 
         />
       </div>
+        <h3 className="form-header-title">Contact & Inquiry Details</h3>
+        
+        <div className="form-group">
+            <label>FULL NAME</label>
+            <input 
+            type="text" 
+            name="fullName"
+            placeholder="e.g. Juan dela Cruz" 
+            value={formData.fullName}
+            onChange={handleInputChange}
+            required 
+            />
+        </div>
 
       {/* Email Address */}
       <div className="form-group">
@@ -36,6 +48,17 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
           required 
         />
       </div>
+        <div className="form-group">
+            <label>EMAIL ADDRESS</label>
+            <input 
+            type="email" 
+            name="email"
+            placeholder="name@email.com" 
+            value={formData.email}
+            onChange={handleInputChange}
+            required 
+            />
+        </div>
 
       {/* Message/Specific Inquiry Field */}
       <div className="form-group">
@@ -49,6 +72,17 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
           required 
         ></textarea>
       </div>
+        <div className="form-group">
+            <label>MESSAGE (SPECIFY REQUEST FOR {pkgTitle.toUpperCase()})</label>
+            <textarea 
+            name="message"
+            placeholder={`e.g. I need assistance with my ${pkgTitle} for three people and my target date is October 15, 2026. (Include all details from the requirements checklist)`}
+            rows="5"
+            value={formData.message}
+            onChange={handleInputChange}
+            required 
+            ></textarea>
+        </div>
 
       <button type="submit" className="modal-submit-btn">
         Send Inquiry Request
@@ -58,7 +92,6 @@ const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSub
   );
 };
 
-// --- Main OtherServices Component ---
 const OtherServices = ({ setAuthPage }) => {
   const sliderRef = useRef(null);
   
@@ -162,7 +195,6 @@ const OtherServices = ({ setAuthPage }) => {
     }
   };
 
-  // Travel Themed Background
   const backgroundImage = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop';
 
   const services = [
@@ -227,6 +259,17 @@ const OtherServices = ({ setAuthPage }) => {
     if (setAuthPage) {
       setAuthPage('login'); 
     }
+  const handleInquirySubmit = (e) => {
+      e.preventDefault();
+      console.log('Inquiry submitted:', formData);
+      
+      setFormData({ fullName: '', email: '', message: '' });
+      setShowModal(false);
+      if (setAuthPage) {
+          setAuthPage('login');
+      } else {
+          console.error('setAuthPage is still undefined.');
+      }
   };
 
   return (
@@ -280,7 +323,6 @@ const OtherServices = ({ setAuthPage }) => {
 
       </div>
 
-      {/* Modal Form Component */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card modal-two-column">
