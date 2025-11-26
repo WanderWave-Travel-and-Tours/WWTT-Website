@@ -14,12 +14,22 @@ import Settings from './components/settings/settings.jsx';
 import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
 import Booking from './components/booking/booking.jsx';
+
+// Poster Imports
 import AddPoster from './components/addposter/addposter.jsx';
 import ViewPoster from './components/viewposter/viewposter.jsx';
+
+// Blog Imports (NEW)
 import AddBlog from './components/addblog/addblog.jsx';
 import ViewBlog from './components/viewblog/viewblog.jsx';
-import AddDeals from './components/adddeals/adddeals.jsx';
-import ViewDeals from './components/viewdeals/viewdeals.jsx';
+
+import AddImage from './components/addimage/addimage.jsx';
+import ViewImage from './components/viewimage/viewimage.jsx';
+
+// Deal Imports
+import AddDeal from './components/adddeals/adddeals.jsx';
+import ViewDeal from './components/viewdeals/viewdeals.jsx';
+
 
 function App() {
   return (
@@ -41,7 +51,7 @@ function App() {
         <Route path="/add-poster" element={<AddPoster />} />      
         <Route path="/view-posters" element={<ViewPoster />} /> 
 
-        {/* Blogs */}
+        {/* Blogs (NEW) */}
         <Route path="/add-blog" element={<AddBlog />} />
         <Route path="/view-blogs" element={<ViewBlog />} />
 
@@ -66,9 +76,13 @@ function App() {
         {/* Hotels */}
         <Route path="/add-hotel" element={<AddHotel />} />
         <Route path="/view-hotels" element={<ViewHotels />} />
-
-        {/* Others */}
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/services/airlinebooking" element={<ServiceManagement />} />
+        <Route path="/services/hotelbooking" element={<ServiceManagement />} />
+        <Route path="/services/tourarrangements" element={<ServiceManagement />} />
+        <Route path="/services/ferrybooking" element={<ServiceManagement />} />
+        <Route path="/services/marriagecert" element={<ServiceManagement />} />
+        <Route path="/services/travelinsurance" element={<ServiceManagement />} />
+        <Route path="/services/billspayment" element={<ServiceManagement />} />
       </Routes>
     </BrowserRouter>
   );
