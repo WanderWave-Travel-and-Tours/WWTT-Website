@@ -50,15 +50,15 @@ const MapPinIcon = () => (
   </svg>
 );
 
-// Main App Layout Component (with navigation)
+// Main App Layout Component
 function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [authPage, setAuthPage] = useState(null); // 'login', 'signup', or null
+  const [authPage, setAuthPage] = useState(null);
   const [isTranslateOpen, setIsTranslateOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState('TL');
-  const [currentUser, setCurrentUser] = useState(null); // ⭐ NEW: Track logged in user
+  const [currentUser, setCurrentUser] = useState(null);
 
   const logoNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
@@ -88,24 +88,21 @@ function MainLayout() {
     { code: 'vi', name: 'Vietnamese', flag: '🇻🇳', shortCode: 'VI' },
   ];
 
-  // Determine current page based on pathname
   const getCurrentPage = () => {
     const currentPath = location.pathname;
     const page = Object.entries(pages).find(([_, page]) => page.path === currentPath);
     return page ? page[0] : 'packages';
   };
 
-  // ⭐ NEW: Handle login success
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     setAuthPage(null);
-    navigate('/dashboard'); // Redirect to dashboard after login
+    navigate('/dashboard');
   };
 
-  // ⭐ NEW: Handle logout
   const handleLogout = () => {
     setCurrentUser(null);
-    navigate('/packages'); // Redirect to home after logout
+    navigate('/packages');
   };
 
   const handleAuthPageChange = (page) => {
@@ -119,17 +116,6 @@ function MainLayout() {
   const handleLanguageSelect = (lang) => {
     setCurrentLang(lang.shortCode);
     setIsTranslateOpen(false);
-  };
-
-  // Show login or signup page if authPage is set
-  if (authPage === 'login') {
-    return <UserLogin setAuthPage={handleAuthPageChange} />;
-  }
-
-  if (authPage === 'signup') {
-    return <UserSignup setAuthPage={handleAuthPageChange} />;
-      setAuthPage(page); // 'login' or 'signup'
-    }
   };
 
   // Show UserAuth component if user clicks BOOK NOW
@@ -146,79 +132,102 @@ function MainLayout() {
   };
 
   const isPaymentSuccessPage = location.pathname === '/payment/success';
-  const isDashboardPage = location.pathname === '/dashboard'; // ⭐ NEW: Check if on dashboard
+  const isDashboardPage = location.pathname === '/dashboard';
 
   return (
     <div className="app-container">
-      {/* Top Bar */}
-      <div className="top-bar">
-        <div className="top-bar-content">
-          <div className="top-bar-item">
-            <MailIcon />
-            <span>info@wanderwavetravelandtours.com</span>
-          </div>
-          <div className="top-bar-item">
-            <PhoneIcon />
-            <span>+63 (44) 325 - 2836 | 0966 820 0292</span>
-          </div>
-          <div className="top-bar-item">
-            <MapPinIcon />
-            <span>Nueva Ecija, Philippines</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation bar */}
-      <nav className="navbar">
-        <div className="navbar-content">
-          <div className="brand" onClick={() => handleNavigation('packages')}>
-            <img 
-              src={logoNav}
-              alt="Wanderwave" 
-              className="brand-logo brand-logo-desktop"
-            />
-            <img 
-              src={logoNav} 
-              alt="Wanderwave" 
-              className="brand-logo brand-logo-mobile-nav"
-            />
-          </div>
-
-          <div className="nav-right">
-            <div className="nav-links">
-      {/* ⭐ Only show navbar if NOT on dashboard page */}
+      {/* Only show top bar and navbar if NOT on dashboard */}
       {!isDashboardPage && (
         <>
+          {/* Top Bar */}
+          <div className="top-bar">
+            <div className="top-bar-content">
+              <div className="top-bar-item">
+                <MailIcon />
+                <span>info@wanderwavetravelandtours.com</span>
+              </div>
+              <div className="top-bar-item">
+                <PhoneIcon />
+                <span>+63 (44) 325 - 2836 | 0966 820 0292</span>
+              </div>
+              <div className="top-bar-item">
+                <MapPinIcon />
+                <span>Nueva Ecija, Philippines</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation bar */}
           <nav className="navbar">
             <div className="navbar-content">
               <div className="brand" onClick={() => handleNavigation('packages')}>
-                <img src={logoWhiteNav} alt="Wanderwave" className="brand-logo brand-logo-desktop" />
-                <img src={logoWhiteNav} alt="Wanderwave" className="brand-logo brand-logo-mobile-nav" />
+                <img 
+                  src={logoNav}
+                  alt="Wanderwave" 
+                  className="brand-logo brand-logo-desktop"
+                />
+                <img 
+                  src={logoNav} 
+                  alt="Wanderwave" 
+                  className="brand-logo brand-logo-mobile-nav"
+                />
               </div>
 
-              <div className="nav-links">
-                {Object.entries(pages).map(([key, page]) => (
-                  <button
-                    key={key}
-                    onClick={() => handleNavigation(key)}
-                    className={`nav-btn ${currentPage === key ? 'active' : ''}`}
-                  >
-                    {page.name}
-                  </button>
-                ))}
-              </div>
-
-              <div className="nav-actions">
-                {/* ⭐ Show user name or BOOK NOW button */}
-                {currentUser ? (
-                  <button className="user-profile-btn" onClick={() => navigate('/dashboard')}>
-                    {currentUser.fullName}
-                  </button>
-                ) : (
-                  <button className="book-now-btn" onClick={() => setAuthPage('login')}>
-                    BOOK NOW
-                  </button>
-                )}
+              <div className="nav-right">
+                <div className="nav-links">
+                  {Object.entries(pages).map(([key, page]) => (
+                    <button
+                      key={key}
+                      onClick={() => handleNavigation(key)}
+                      className={`nav-btn ${currentPage === key ? 'active' : ''}`}
+                    >
+                      {page.name}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="nav-actions">
+                  <div className="translate-wrapper">
+                    <button 
+                      className={`translate-button ${isTranslateOpen ? 'active' : ''}`}
+                      onClick={() => setIsTranslateOpen(!isTranslateOpen)}
+                    >
+                      <Globe size={16} className="translate-button-icon" />
+                      <span className="translate-button-text">{currentLang}</span>
+                    </button>
+                    
+                    {isTranslateOpen && (
+                      <div className="translate-dropdown">
+                        {languages.map((lang) => (
+                          <div
+                            key={lang.code}
+                            className={`translate-option ${currentLang === lang.shortCode ? 'active' : ''}`}
+                            onClick={() => handleLanguageSelect(lang)}
+                          >
+                            <span className="translate-flag">{lang.flag}</span>
+                            <span>{lang.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {currentUser ? (
+                    <button 
+                      className="user-profile-btn" 
+                      onClick={() => navigate('/dashboard')}
+                    >
+                      {currentUser.fullName}
+                    </button>
+                  ) : (
+                    <button 
+                      className="book-now-btn"
+                      onClick={() => setAuthPage('login')}
+                    >
+                      Book Now
+                    </button>
+                  )}
+                </div>
               </div>
 
               <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
@@ -227,6 +236,7 @@ function MainLayout() {
             </div>
           </nav>
 
+          {/* Mobile Menu */}
           <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
             <div className="mobile-menu-header">
               <img src={logoBlueHeader} alt="Wanderwave Travel & Tours" className="brand-logo brand-logo-mobile" />
@@ -247,104 +257,31 @@ function MainLayout() {
               ))}
             </div>
             
-            <div className="nav-actions">
-              <div className="translate-wrapper">
-                <button 
-                  className={`translate-button ${isTranslateOpen ? 'active' : ''}`}
-                  onClick={() => setIsTranslateOpen(!isTranslateOpen)}
-                >
-                  <Globe size={16} className="translate-button-icon" />
-                  <span className="translate-button-text">{currentLang}</span>
-                </button>
-                
-                {isTranslateOpen && (
-                  <div className="translate-dropdown">
-                    {languages.map((lang) => (
-                      <div
-                        key={lang.code}
-                        className={`translate-option ${currentLang === lang.shortCode ? 'active' : ''}`}
-                        onClick={() => handleLanguageSelect(lang)}
-                      >
-                        <span className="translate-flag">{lang.flag}</span>
-                        <span>{lang.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
+            <div className="mobile-translate-wrapper">
               <button 
-                className="book-now-btn"
-                onClick={() => setAuthPage('login')}
+                className={`translate-button ${isTranslateOpen ? 'active' : ''}`}
+                onClick={() => setIsTranslateOpen(!isTranslateOpen)}
               >
-                Book Now
+                <Globe size={16} className="translate-button-icon" />
+                <span className="translate-button-text">{currentLang}</span>
               </button>
-            </div>
-          </div>
-
-          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
-            <Menu size={28} />
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile Menu */}
-      <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-        <div className="mobile-menu-header">
-          <img src={logoBlueHeader} alt="Wanderwave Travel & Tours" className="brand-logo brand-logo-mobile" />
-          <button className="mobile-close-btn" onClick={() => setIsMobileMenuOpen(false)}>
-            <X size={28} />
-          </button>
-        </div>
-        
-        <div className="mobile-nav-links">
-          {Object.entries(pages).map(([key, page]) => (
-            <button
-              key={key}
-              onClick={() => handleNavigation(key)}
-              className={`nav-btn ${currentPage === key ? 'active' : ''}`}
-            >
-              {page.name}
-            </button>
-          ))}
-        </div>
-        
-        <div className="mobile-translate-wrapper">
-          <button 
-            className={`translate-button ${isTranslateOpen ? 'active' : ''}`}
-            onClick={() => setIsTranslateOpen(!isTranslateOpen)}
-          >
-            <Globe size={16} className="translate-button-icon" />
-            <span className="translate-button-text">{currentLang}</span>
-          </button>
-          
-          {isTranslateOpen && (
-            <div className="translate-dropdown">
-              {languages.map((lang) => (
-                <div
-                  key={lang.code}
-                  className={`translate-option ${currentLang === lang.shortCode ? 'active' : ''}`}
-                  onClick={() => handleLanguageSelect(lang)}
-                >
-                  <span className="translate-flag">{lang.flag}</span>
-                  <span>{lang.name}</span>
+              
+              {isTranslateOpen && (
+                <div className="translate-dropdown">
+                  {languages.map((lang) => (
+                    <div
+                      key={lang.code}
+                      className={`translate-option ${currentLang === lang.shortCode ? 'active' : ''}`}
+                      onClick={() => handleLanguageSelect(lang)}
+                    >
+                      <span className="translate-flag">{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-        
-        <button 
-          className="book-now-btn"
-          onClick={() => {
-            setAuthPage('login');
-            setIsMobileMenuOpen(false);
-          }}
-        >
-          Book Now
-        </button>
-      </div>
-            {/* ⭐ Show user name or BOOK NOW in mobile menu */}
+            
             {currentUser ? (
               <button 
                 className="user-profile-btn"
@@ -363,7 +300,7 @@ function MainLayout() {
                   setIsMobileMenuOpen(false);
                 }}
               >
-                BOOK NOW
+                Book Now
               </button>
             )}
           </div>
@@ -379,7 +316,6 @@ function MainLayout() {
           <Route path="/help" element={<Help />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
-          {/* ⭐ NEW: Dashboard route */}
           <Route 
             path="/dashboard" 
             element={
@@ -396,7 +332,6 @@ function MainLayout() {
         </Routes>
       </main>
 
-      {/* ⭐ Only show footer if NOT on dashboard or payment success page */}
       {!isPaymentSuccessPage && !isDashboardPage && <Footer />}
     </div>
   );
