@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import './UserLogin.css';
 
-const UserLogin = ({ setAuthPage }) => {
-    const [isSignup, setIsSignup] = useState(false); // Toggle between Login & Signup
+const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
+    const [isSignup, setIsSignup] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
@@ -32,31 +32,43 @@ const UserLogin = ({ setAuthPage }) => {
         e.preventDefault();
         setIsLoading(true);
 
+        const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/login';
+        const body = isSignup
+            ? { fullName, email, password, confirmPassword }
+            : { email, password };
+
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const res = await fetch(`http://localhost:5000${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
 
-            if (isSignup) {
-                if (!fullName || !email || !password || !confirmPassword) {
-                    alert('Please fill in all fields.');
-                    return;
+            const data = await res.json();
+
+            if (res.ok) {
+                if (isSignup) {
+                    // After successful signup, switch to login
+                    alert(data.message || 'Account created successfully! Please log in.');
+                    setIsSignup(false);
+                    setFullName('');
+                    setPassword('');
+                    setConfirmPassword('');
+                } else {
+                    // After successful login, call onLoginSuccess
+                    alert(data.message || 'Welcome back!');
+                    if (data.user && onLoginSuccess) {
+                        onLoginSuccess(data.user);
+                    }
                 }
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match!');
-                    return;
-                }
-                alert(`Account created successfully for ${email}!`);
             } else {
-                if (!email || !password) {
-                    alert('Please enter email and password.');
-                    return;
-                }
-                alert(`Welcome back, ${email}!`);
+                alert(data.message || 'Something went wrong');
             }
-
-            // Back to main app
-            if (setAuthPage) setAuthPage('main');
         } catch (err) {
-            alert('Something went wrong. Try again.');
+            console.error(err);
+            alert('Cannot connect to server. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -69,7 +81,6 @@ const UserLogin = ({ setAuthPage }) => {
     return (
         <div className="user-login-wrapper">
             <div className="user-login-container">
-                {/* Left: Slideshow */}
                 <div className="slideshow-panel">
                     <div className="slideshow-container">
                         {destinations.map((dest, index) => (
@@ -96,7 +107,6 @@ const UserLogin = ({ setAuthPage }) => {
                     </div>
                 </div>
 
-                {/* Right: Form (Login or Signup) */}
                 <div className="login-panel">
                     <div className="login-form-wrapper">
                         <div className="logo-section">
@@ -187,8 +197,10 @@ const UserLogin = ({ setAuthPage }) => {
                                 className="switch-page-link"
                                 onClick={() => {
                                     setIsSignup(!isSignup);
-                                    // Clear form when switching
-                                    setFullName(''); setEmail(''); setPassword(''); setConfirmPassword('');
+                                    setFullName(''); 
+                                    setEmail(''); 
+                                    setPassword(''); 
+                                    setConfirmPassword('');
                                 }}
                                 style={{ cursor: 'pointer', fontWeight: '600' }}
                             >
