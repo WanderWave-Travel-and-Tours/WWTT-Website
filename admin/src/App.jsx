@@ -18,8 +18,8 @@ import AddPoster from './components/addposter/addposter.jsx';
 import ViewPoster from './components/viewposter/viewposter.jsx';
 import AddBlog from './components/addblog/addblog.jsx';
 import ViewBlog from './components/viewblog/viewblog.jsx';
-import AddDeals from './adddeals/adddeals.jsx';
-import ViewDeals from './viewdeals/viewdeals.jsx';
+import AddDeals from './components/adddeals/adddeals.jsx';
+import ViewDeals from './components/viewdeals/viewdeals.jsx';
 
 function App() {
   return (
