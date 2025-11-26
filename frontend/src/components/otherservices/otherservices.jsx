@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-// REMOVED: import { useNavigate } from 'react-router-dom'; 
 import { 
   Plane, Hotel, Map, Ship, BookUser, Baby, HeartHandshake, FileCheck, Globe, ShieldCheck, Receipt, PlusCircle,
   ArrowRight, ChevronLeft, ChevronRight, X, CheckCircle 
