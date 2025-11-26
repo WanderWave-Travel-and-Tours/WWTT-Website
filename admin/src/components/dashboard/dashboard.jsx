@@ -17,8 +17,6 @@ import './Dashboard.css';
 const Dashboard = () => {
     const navigate = useNavigate();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    
-    // Real data states
     const [stats, setStats] = useState({
         totalBookings: 0,
         confirmedBookings: 0,
@@ -29,7 +27,6 @@ const Dashboard = () => {
         totalBlogs: 0,
         totalPromos: 0,
         totalTestimonials: 0,
-        // ✅ NEW FINANCIAL STATS
         totalSellerCost: 0,
         totalMarkup: 0,
         totalSales: 0,
@@ -39,8 +36,6 @@ const Dashboard = () => {
     const [recentBookings, setRecentBookings] = useState([]);
     const [topPackages, setTopPackages] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    // Chart colors
     const COLORS = ['#667eea', '#f56565', '#48bb78', '#ed8936', '#9f7aea'];
 
     useEffect(() => {
@@ -60,15 +55,14 @@ const Dashboard = () => {
         let promos = [];
         let testimonials = [];
 
-        // Individual fetches with error handling
         try {
             const bookingsRes = await fetch('http://localhost:5000/api/admin/bookings');
             if (!bookingsRes.ok) throw new Error(`HTTP error! status: ${bookingsRes.status}`);
             bookings = await bookingsRes.json();
-            console.log('Fetched bookings:', bookings); // Check if array with data
+            console.log('Fetched bookings:', bookings); 
         } catch (err) {
             console.error('Error fetching bookings:', err);
-            bookings = []; // Default to empty to avoid breaking calculations
+            bookings = []; 
         }
 
         try {
@@ -111,9 +105,7 @@ const Dashboard = () => {
             testimonials = [];
         }
 
-        // Proceed with calculations even if some are empty
         try {
-            // Ensure bookings is array
             if (!Array.isArray(bookings)) bookings = [];
 
             const confirmed = bookings.filter(b => b.status === 'confirmed').length;
@@ -156,7 +148,6 @@ const Dashboard = () => {
             });
             console.log('Set stats to:', { totalBookings: bookings.length, totalRevenue: revenue }); // Verify non-zero
 
-            // Recent bookings
             const formatted = bookings
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .slice(0, 5)
@@ -170,7 +161,6 @@ const Dashboard = () => {
                 }));
             setRecentBookings(formatted);
 
-            // Top packages (fixed sort: sort before formatting revenue to string)
             const packageStats = {};
             bookings.forEach(b => {
                 const pkg = b.packageName || 'Unknown';
@@ -182,7 +172,7 @@ const Dashboard = () => {
             });
 
             const sortedPackages = Object.entries(packageStats)
-                .sort((a, b) => b[1].revenue - a[1].revenue)  // Sort using number revenue
+                .sort((a, b) => b[1].revenue - a[1].revenue) 
                 .slice(0, 5)
                 .map(([name, data]) => ({
                     name,
@@ -203,7 +193,6 @@ const Dashboard = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Chart data - Bookings by Month (last 6 months)
     const bookingsChartData = [
         { month: 'Jun', bookings: 45, revenue: 1125000 },
         { month: 'Jul', bookings: 52, revenue: 1300000 },
@@ -213,14 +202,12 @@ const Dashboard = () => {
         { month: 'Nov', bookings: stats.totalBookings, revenue: stats.totalRevenue }
     ];
 
-    // Status distribution for pie chart
     const statusData = [
         { name: 'Confirmed', value: stats.confirmedBookings, color: '#48bb78' },
         { name: 'Pending', value: stats.pendingBookings, color: '#ecc94b' },
         { name: 'Cancelled', value: stats.cancelledBookings, color: '#f56565' }
     ];
 
-    // Package distribution (top 5 packages)
     const packageData = topPackages.map(pkg => ({
         name: pkg.name.length > 20 ? pkg.name.substring(0, 20) + '...' : pkg.name,
         bookings: pkg.bookings
@@ -277,7 +264,6 @@ const Dashboard = () => {
                         </div>
                     </header>
 
-                    {/* STATS ROW - REAL DATA */}
                     <div className="dash-stats">
                         <div className="dash-stat">
                             <div className="dash-stat-icon dash-stat-icon--blue"><Plane size={24} /></div>
@@ -317,7 +303,6 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* ✅ NEW FINANCIAL STATISTICS SECTION */}
                     <section className="dash-section dash-section--wide dash-financial-stats">
                         <div className="dash-section-header">
                             <h2 className="dash-section-title">FINANCIAL OVERVIEW</h2>
@@ -384,7 +369,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Breakdown visualization */}
                         <div className="dash-financial-breakdown">
                             <div className="dash-breakdown-bar">
                                 <div 
@@ -418,8 +402,6 @@ const Dashboard = () => {
                     </section>
 
                     <div className="dash-grid">
-                        
-                        {/* CHARTS SECTION */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">BOOKINGS & REVENUE TRENDS</h2>
@@ -473,7 +455,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* TWO COLUMN CHARTS */}
                         <section className="dash-section">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">BOOKING STATUS</h2>
@@ -542,7 +523,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* OTHER SERVICES */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">OTHER SERVICES</h2>
@@ -567,7 +547,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* RECENT BOOKINGS - REAL DATA */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">RECENT BOOKINGS</h2>
@@ -606,7 +585,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* TOP PACKAGES LIST */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">TOP PERFORMING PACKAGES</h2>
@@ -633,7 +611,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* QUICK ACTIONS */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">QUICK ACTIONS</h2>
@@ -659,7 +636,6 @@ const Dashboard = () => {
 
                     </div>
 
-                    {/* FOOTER STATS - REAL DATA */}
                     <div className="dash-footer-stats">
                         <div className="dash-footer-stat">
                             <Package size={20} />
