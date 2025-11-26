@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react'; 
 import './App.css';
@@ -8,7 +8,6 @@ import Footer from './components/footer/footer.jsx';
 import OtherServices from './components/otherservices/otherservices.jsx';
 import UserLogin from './components/userLogin/userLogin.jsx';
 import UserSignup from './components/userSignup/userSignup.jsx';
-import OtherServices from './components/otherservices/otherservices.jsx'; 
 import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 
@@ -30,14 +29,12 @@ const Help = () => (
   </div>
 );
 
-function App() {
-  const [currentPage, setCurrentPage] = useState('packages'); 
-  const [authPage, setAuthPage] = useState(null); // 'login', 'signup', or null
 // Main App Layout Component (with navigation)
 function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [authPage, setAuthPage] = useState(null); // 'login', 'signup', or null
 
   const logoWhiteNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
@@ -57,11 +54,6 @@ function MainLayout() {
     return page ? page[0] : 'packages';
   };
 
-  const handleMobileLinkClick = (pageKey) => {
-    setCurrentPage(pageKey);
-    setIsMobileMenuOpen(false);
-  };
-
   const handleAuthPageChange = (page) => {
     if (page === 'main') {
       setAuthPage(null);
@@ -71,15 +63,14 @@ function MainLayout() {
   };
 
   // Show login or signup page if authPage is set
-  if (authPage === 'login') {                    // ← Dapat 'login' hindi 'userLogin'
-      return <UserLogin setAuthPage={handleAuthPageChange} />;
+  if (authPage === 'login') {
+    return <UserLogin setAuthPage={handleAuthPageChange} />;
   }
 
-  if (authPage === 'signup') {                   // ← Dapat 'signup'
-      return <UserSignup setAuthPage={handleAuthPageChange} />;
+  if (authPage === 'signup') {
+    return <UserSignup setAuthPage={handleAuthPageChange} />;
   }
 
-  const CurrentComponent = pages[currentPage].component;
   const currentPage = getCurrentPage();
 
   const handleNavigation = (pageKey) => {
@@ -179,7 +170,6 @@ function MainLayout() {
       </div>
 
       <main className="main-content">
-        <CurrentComponent setAuthPage={setAuthPage} />
         <Routes>
           {/* Main navigation pages */}
           <Route path="/" element={<FlightSearch />} />
