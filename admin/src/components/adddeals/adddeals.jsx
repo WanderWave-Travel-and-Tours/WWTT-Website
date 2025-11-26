@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, Globe, DollarSign, Calculator, Loader2, MapPin } from 'lucide-react';
-import Sidebar from '../components/sidebar/sidebar'; // Ensure path is correct
+import Sidebar from '../sidebar/sidebar'; // Ensure path is correct
 import './AddDeals.css';
 
 const AddDeals = () => {

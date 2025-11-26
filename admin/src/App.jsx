@@ -41,13 +41,17 @@ function App() {
         <Route path="/add-poster" element={<AddPoster />} />      
         <Route path="/view-posters" element={<ViewPoster />} /> 
 
-        {/* Deals (NEW) */}
-        <Route path="/add-deal" element={<AddDeals />} />
-        <Route path="/view-deals" element={<ViewDeals />} />
-
         {/* Blogs */}
         <Route path="/add-blog" element={<AddBlog />} />
         <Route path="/view-blogs" element={<ViewBlog />} />
+
+        {/* Image Gallery */}
+        <Route path="/add-image" element={<AddImage />} />
+        <Route path="/view-images" element={<ViewImage />} />
+
+        {/* Deals (New) */}
+        <Route path="/add-deals" element={<AddDeal />} />
+        <Route path="/view-deals" element={<ViewDeal />} />
         
         {/* Testimonials */}
         <Route path="/view-testimonials" element={<ViewTestimonials />} />
@@ -62,13 +66,9 @@ function App() {
         {/* Hotels */}
         <Route path="/add-hotel" element={<AddHotel />} />
         <Route path="/view-hotels" element={<ViewHotels />} />
-        <Route path="/services/airlinebooking" element={<ServiceManagement />} />
-        <Route path="/services/hotelbooking" element={<ServiceManagement />} />
-        <Route path="/services/tourarrangements" element={<ServiceManagement />} />
-        <Route path="/services/ferrybooking" element={<ServiceManagement />} />
-        <Route path="/services/marriagecert" element={<ServiceManagement />} />
-        <Route path="/services/travelinsurance" element={<ServiceManagement />} />
-        <Route path="/services/billspayment" element={<ServiceManagement />} />
+
+        {/* Others */}
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </BrowserRouter>
   );

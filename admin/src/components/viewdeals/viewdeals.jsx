@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Edit, Trash2, Plus } from 'lucide-react';
-import Sidebar from '../components/sidebar/sidebar';
+import Sidebar from "../sidebar/sidebar";
 import { useNavigate } from 'react-router-dom';
 import './ViewDeals.css';
 
