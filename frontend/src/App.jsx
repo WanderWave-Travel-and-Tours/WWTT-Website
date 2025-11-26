@@ -6,8 +6,7 @@ import FlightSearch from './components/flightSearch/flightSearch.jsx';
 import PackageDeals from './components/packagedeals/packageDeals.jsx';
 import Footer from './components/footer/footer.jsx';
 import OtherServices from './components/otherservices/otherservices.jsx';
-import UserLogin from './components/userLogin/userLogin.jsx';
-import UserSignup from './components/userSignup/userSignup.jsx';
+import UserAuth from './components/userLogin/userLogin.jsx';  // ← NEW: Combined Login + Signup
 import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 
@@ -33,7 +32,7 @@ function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [authPage, setAuthPage] = useState(null); 
+  const [authPage, setAuthPage] = useState(null); // 'login', 'signup', or null
 
   const logoWhiteNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
@@ -56,16 +55,13 @@ function MainLayout() {
     if (page === 'main') {
       setAuthPage(null);
     } else {
-      setAuthPage(page);
+      setAuthPage(page); // 'login' or 'signup' — both will show the same component
     }
   };
 
-  if (authPage === 'login') {
-    return <UserLogin setAuthPage={handleAuthPageChange} />;
-  }
-
-  if (authPage === 'signup') {
-    return <UserSignup setAuthPage={handleAuthPageChange} />;
+  // NEW: Combined condition — kahit login o signup, same component na
+  if (authPage === 'login' || authPage === 'signup') {
+    return <UserAuth setAuthPage={handleAuthPageChange} />;
   }
 
   const currentPage = getCurrentPage();
@@ -83,16 +79,8 @@ function MainLayout() {
       <nav className="navbar">
         <div className="navbar-content">
           <div className="brand" onClick={() => handleNavigation('packages')}>
-            <img 
-              src={logoWhiteNav}
-              alt="Wanderwave" 
-              className="brand-logo brand-logo-desktop"
-            />
-            <img 
-              src={logoWhiteNav} 
-              alt="Wanderwave" 
-              className="brand-logo brand-logo-mobile-nav"
-            />
+            <img src={logoWhiteNav} alt="Wanderwave" className="brand-logo brand-logo-desktop" />
+            <img src={logoWhiteNav} alt="Wanderwave" className="brand-logo brand-logo-mobile-nav" />
           </div>
 
           <div className="nav-links">
@@ -106,20 +94,14 @@ function MainLayout() {
               </button>
             ))}
           </div>
+
           <div className="nav-actions">
-            <button 
-              className="book-now-btn"
-              onClick={() => setAuthPage('login')}
-            >
+            <button className="book-now-btn" onClick={() => setAuthPage('login')}>
               BOOK NOW
             </button>
           </div>
 
-          <button 
-            className="mobile-menu-btn" 
-            onClick={() => setIsMobileMenuOpen(true)}
-            aria-label="Toggle menu"
-          >
+          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
             <Menu size={28} />
           </button>
         </div>
@@ -127,16 +109,8 @@ function MainLayout() {
 
       <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="mobile-menu-header">
-          <img 
-            src={logoBlueHeader} 
-            alt="Wanderwave Travel & Tours"
-            className="brand-logo brand-logo-mobile"
-          />
-          <button 
-            className="mobile-close-btn"
-            onClick={() => setIsMobileMenuOpen(false)}
-            aria-label="Close menu"
-          >
+          <img src={logoBlueHeader} alt="Wanderwave Travel & Tours" className="brand-logo brand-logo-mobile" />
+          <button className="mobile-close-btn" onClick={() => setIsMobileMenuOpen(false)}>
             <X size={28} />
           </button>
         </div>
@@ -168,16 +142,14 @@ function MainLayout() {
         <Routes>
           <Route path="/" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
-          <Route 
-            path="/other-services" 
-            element={<OtherServices setAuthPage={setAuthPage} />}  // ← Pass the prop here
-          />
+          <Route path="/other-services" element={<OtherServices setAuthPage={setAuthPage} />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/help" element={<Help />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
         </Routes>
       </main>
+
       {!isPaymentSuccessPage && <Footer />}
     </div>
   );
