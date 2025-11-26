@@ -1,0 +1,69 @@
+.vi-page { display: flex; min-height: 100vh; background: #f8fafc; }
+.vi-main { flex: 1; margin-left: 280px; padding: 40px; font-family: 'Segoe UI', sans-serif; }
+.vi-container { max-width: 1200px; margin: 0 auto; }
+
+.vi-header { text-align: center; margin-bottom: 40px; }
+.vi-title { font-size: 2rem; font-weight: 900; color: #001F3F; margin-bottom: 5px; }
+.vi-subtitle { font-size: 14px; color: #64748b; }
+
+.vi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.vi-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    background: #fff;
+}
+.vi-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.15); }
+
+.vi-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: #e2e8f0;
+}
+
+.vi-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.vi-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 31, 63, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.vi-card:hover .vi-overlay { opacity: 1; }
+
+.vi-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.vi-btn:hover { transform: scale(1.1); }
+
+.vi-copy { background: white; color: #001F3F; }
+.vi-delete { background: #ef4444; color: white; }
+
+.vi-loading, .vi-empty { text-align: center; color: #94a3b8; padding: 50px; grid-column: 1 / -1; }
+
+@media (max-width: 768px) {
+    .vi-main { margin-left: 70px; }
+}
