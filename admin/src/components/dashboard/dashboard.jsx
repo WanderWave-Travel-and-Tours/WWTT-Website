@@ -533,7 +533,8 @@ const Dashboard = () => {
                                 </ResponsiveContainer>
                             </div>
                         </section>
-
+                        
+                        {/*
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">OTHER SERVICES</h2>
@@ -557,6 +558,7 @@ const Dashboard = () => {
                                 ))}
                             </div>
                         </section>
+                        */}
 
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">

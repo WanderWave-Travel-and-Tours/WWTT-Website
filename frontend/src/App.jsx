@@ -29,12 +29,11 @@ const Help = () => (
   </div>
 );
 
-// Main App Layout Component (with navigation)
 function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [authPage, setAuthPage] = useState(null); // 'login', 'signup', or null
+  const [authPage, setAuthPage] = useState(null); 
 
   const logoWhiteNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
@@ -47,7 +46,6 @@ function MainLayout() {
     help: { name: 'Help & Support', path: '/help' },
   };
 
-  // Determine current page based on pathname
   const getCurrentPage = () => {
     const currentPath = location.pathname;
     const page = Object.entries(pages).find(([_, page]) => page.path === currentPath);
@@ -62,7 +60,6 @@ function MainLayout() {
     }
   };
 
-  // Show login or signup page if authPage is set
   if (authPage === 'login') {
     return <UserLogin setAuthPage={handleAuthPageChange} />;
   }
@@ -79,12 +76,10 @@ function MainLayout() {
     setIsMobileMenuOpen(false);
   };
 
-  // Check if on payment success page (hide footer only there)
   const isPaymentSuccessPage = location.pathname === '/payment/success';
 
   return (
     <div className="app-container">
-      {/* Navigation bar - always visible */}
       <nav className="navbar">
         <div className="navbar-content">
           <div className="brand" onClick={() => handleNavigation('packages')}>
@@ -171,26 +166,23 @@ function MainLayout() {
 
       <main className="main-content">
         <Routes>
-          {/* Main navigation pages */}
           <Route path="/" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
-          <Route path="/other-services" element={<OtherServices />} />
+          <Route 
+            path="/other-services" 
+            element={<OtherServices setAuthPage={setAuthPage} />}  // ← Pass the prop here
+          />
           <Route path="/profile" element={<Profile />} />
           <Route path="/help" element={<Help />} />
-          
-          {/* Payment pages */}
           <Route path="/payment" element={<Payment />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
         </Routes>
       </main>
-
-      {/* Footer - hide only on success page */}
       {!isPaymentSuccessPage && <Footer />}
     </div>
   );
 }
 
-// Root App Component with BrowserRouter
 function App() {
   return (
     <BrowserRouter>

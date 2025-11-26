@@ -14,16 +14,10 @@ import Settings from './components/settings/settings.jsx';
 import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
 import Booking from './components/booking/booking.jsx';
-
-// Poster Imports
 import AddPoster from './components/addposter/addposter.jsx';
 import ViewPoster from './components/viewposter/viewposter.jsx';
-
-// Blog Imports
 import AddBlog from './components/addblog/addblog.jsx';
 import ViewBlog from './components/viewblog/viewblog.jsx';
-
-// Deals Imports (NEW)
 import AddDeals from './adddeals/adddeals.jsx';
 import ViewDeals from './viewdeals/viewdeals.jsx';
 
