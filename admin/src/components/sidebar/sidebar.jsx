@@ -26,8 +26,9 @@ import {
   Calendar,
   Image, 
   Images,
-  PenTool, // Icon for Add Blog
-  Newspaper // Icon for Blog List
+  PenTool, 
+  Newspaper,
+  Percent // New Icon for Deals
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -178,7 +179,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Create Package', path: '/add-package', icon: FilePlus },
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
                 { name: 'Add Promo Poster', path: '/add-poster', icon: Image },
-                { name: 'Create Blog', path: '/add-blog', icon: PenTool }, // <-- NEW
+                { name: 'Create Deal', path: '/add-deal', icon: Percent }, // <-- ADD DEAL
+                { name: 'Create Blog', path: '/add-blog', icon: PenTool }, 
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
                 { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
               ]}
@@ -193,7 +195,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Manage Packages', path: '/view-packages', icon: Package },
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
                 { name: 'Poster List', path: '/view-posters', icon: Images },
-                { name: 'Blog List', path: '/view-blogs', icon: Newspaper }, // <-- NEW
+                { name: 'Deals List', path: '/view-deals', icon: Percent }, // <-- VIEW DEALS
+                { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
                 { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
               ]}

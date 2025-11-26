@@ -19,9 +19,13 @@ import Booking from './components/booking/booking.jsx';
 import AddPoster from './components/addposter/addposter.jsx';
 import ViewPoster from './components/viewposter/viewposter.jsx';
 
-// Blog Imports (NEW)
+// Blog Imports
 import AddBlog from './components/addblog/addblog.jsx';
 import ViewBlog from './components/viewblog/viewblog.jsx';
+
+// Deals Imports (NEW)
+import AddDeals from './adddeals/adddeals.jsx';
+import ViewDeals from './viewdeals/viewdeals.jsx';
 
 function App() {
   return (
@@ -42,7 +46,11 @@ function App() {
         <Route path="/add-poster" element={<AddPoster />} />      
         <Route path="/view-posters" element={<ViewPoster />} /> 
 
-        {/* Blogs (NEW) */}
+        {/* Deals (NEW) */}
+        <Route path="/add-deal" element={<AddDeals />} />
+        <Route path="/view-deals" element={<ViewDeals />} />
+
+        {/* Blogs */}
         <Route path="/add-blog" element={<AddBlog />} />
         <Route path="/view-blogs" element={<ViewBlog />} />
         
