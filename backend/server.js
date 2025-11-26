@@ -128,7 +128,106 @@ app.get('/api/admin/bookings', async (req, res) => {
   }
 });
 
-// --- 7. START SERVER ---
+app.put('/api/admin/bookings/:id/confirm', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.status === 'confirmed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already confirmed'
+      });
+    }
+
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot confirm a cancelled booking'
+      });
+    }
+
+    booking.status = 'confirmed';
+    booking.updatedAt = new Date();
+    
+    if (!booking.paidAt) {
+      booking.paidAt = new Date();
+    }
+
+    await booking.save();
+
+    console.log('✅ Booking confirmed:', id);
+
+    res.json({
+      success: true,
+      message: 'Booking confirmed successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Confirm booking error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to confirm booking',
+      error: error.message
+    });
+  }
+});
+
+// ❌ ADMIN: Cancel booking
+app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already cancelled'
+      });
+    }
+
+    booking.status = 'cancelled';
+    booking.updatedAt = new Date();
+    booking.cancelledAt = new Date();
+
+    await booking.save();
+
+    console.log('❌ Booking cancelled:', id);
+
+    res.json({
+      success: true,
+      message: 'Booking cancelled successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Cancel booking error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel booking',
+      error: error.message
+    });
+  }
+});
+
+// Port
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
