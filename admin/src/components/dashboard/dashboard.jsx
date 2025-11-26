@@ -53,25 +53,69 @@ const Dashboard = () => {
     }, [navigate]);
 
     const fetchDashboardData = async () => {
+        setLoading(true);
+        let bookings = [];
+        let packages = [];
+        let blogs = [];
+        let promos = [];
+        let testimonials = [];
+
+        // Individual fetches with error handling
         try {
-            setLoading(true);
+            const bookingsRes = await fetch('http://localhost:5000/api/admin/bookings');
+            if (!bookingsRes.ok) throw new Error(`HTTP error! status: ${bookingsRes.status}`);
+            bookings = await bookingsRes.json();
+            console.log('Fetched bookings:', bookings); // Check if array with data
+        } catch (err) {
+            console.error('Error fetching bookings:', err);
+            bookings = []; // Default to empty to avoid breaking calculations
+        }
 
-            // Fetch all data in parallel
-            const [bookingsRes, packagesRes, blogsRes, promosRes, testimonialsRes] = await Promise.all([
-                fetch('http://localhost:5000/api/admin/bookings'),
-                fetch('http://localhost:5000/api/packages'),
-                fetch('http://localhost:5000/api/blogs'),
-                fetch('http://localhost:5000/api/promos'),
-                fetch('http://localhost:5000/api/testimonials')
-            ]);
+        try {
+            const packagesRes = await fetch('http://localhost:5000/api/packages');
+            if (!packagesRes.ok) throw new Error(`HTTP error! status: ${packagesRes.status}`);
+            packages = await packagesRes.json();
+            console.log('Fetched packages:', packages);
+        } catch (err) {
+            console.error('Error fetching packages:', err);
+            packages = [];
+        }
 
-            const bookings = await bookingsRes.json();
-            const packages = await packagesRes.json();
-            const blogs = await blogsRes.json();
-            const promos = await promosRes.json();
-            const testimonials = await testimonialsRes.json();
+        try {
+            const blogsRes = await fetch('http://localhost:5000/api/blogs');
+            if (!blogsRes.ok) throw new Error(`HTTP error! status: ${blogsRes.status}`);
+            blogs = await blogsRes.json();
+            console.log('Fetched blogs:', blogs);
+        } catch (err) {
+            console.error('Error fetching blogs:', err);
+            blogs = [];
+        }
 
-            // Calculate statistics
+        try {
+            const promosRes = await fetch('http://localhost:5000/api/promos');
+            if (!promosRes.ok) throw new Error(`HTTP error! status: ${promosRes.status}`);
+            promos = await promosRes.json();
+            console.log('Fetched promos:', promos);
+        } catch (err) {
+            console.error('Error fetching promos:', err);
+            promos = [];
+        }
+
+        try {
+            const testimonialsRes = await fetch('http://localhost:5000/api/testimonials');
+            if (!testimonialsRes.ok) throw new Error(`HTTP error! status: ${testimonialsRes.status}`);
+            testimonials = await testimonialsRes.json();
+            console.log('Fetched testimonials:', testimonials);
+        } catch (err) {
+            console.error('Error fetching testimonials:', err);
+            testimonials = [];
+        }
+
+        // Proceed with calculations even if some are empty
+        try {
+            // Ensure bookings is array
+            if (!Array.isArray(bookings)) bookings = [];
+
             const confirmed = bookings.filter(b => b.status === 'confirmed').length;
             const pending = bookings.filter(b => b.status === 'pending').length;
             const cancelled = bookings.filter(b => b.status === 'cancelled').length;
@@ -79,31 +123,18 @@ const Dashboard = () => {
                 .filter(b => b.status === 'confirmed')
                 .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
-            // ✅ CALCULATE FINANCIAL STATISTICS
             const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
-            
+
             const financialStats = confirmedBookings.reduce((acc, booking) => {
-                // Get pax count
-                const pax = 
-                    (booking.pax?.adults || 1) + 
-                    (booking.pax?.children || 0) + 
-                    (booking.pax?.infants || 0);
-                
-                // Calculate totals (if booking has pricing data)
+                const pax = (booking.pax?.adult || 1) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
                 if (booking.sellerPrice && booking.markup) {
                     acc.totalSellerCost += booking.sellerPrice * pax;
                     acc.totalMarkup += booking.markup * pax;
                     acc.totalSales += booking.totalAmount || 0;
                 }
-                
                 return acc;
-            }, {
-                totalSellerCost: 0,
-                totalMarkup: 0,
-                totalSales: 0
-            });
+            }, { totalSellerCost: 0, totalMarkup: 0, totalSales: 0 });
 
-            // Calculate profit margin
             const profitMargin = financialStats.totalSales > 0 
                 ? ((financialStats.totalMarkup / financialStats.totalSales) * 100).toFixed(1)
                 : 0;
@@ -114,18 +145,18 @@ const Dashboard = () => {
                 pendingBookings: pending,
                 cancelledBookings: cancelled,
                 totalRevenue: revenue,
-                totalPackages: packages.length,
-                totalBlogs: blogs.length,
-                totalPromos: promos.length,
-                totalTestimonials: testimonials.length,
-                // ✅ ADD FINANCIAL STATS
+                totalPackages: Array.isArray(packages) ? packages.length : 0,
+                totalBlogs: Array.isArray(blogs) ? blogs.length : 0,
+                totalPromos: Array.isArray(promos) ? promos.length : 0,
+                totalTestimonials: Array.isArray(testimonials) ? testimonials.length : 0,
                 totalSellerCost: financialStats.totalSellerCost,
                 totalMarkup: financialStats.totalMarkup,
                 totalSales: financialStats.totalSales,
                 profitMargin: profitMargin
             });
+            console.log('Set stats to:', { totalBookings: bookings.length, totalRevenue: revenue }); // Verify non-zero
 
-            // Format recent bookings (last 5)
+            // Recent bookings
             const formatted = bookings
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .slice(0, 5)
@@ -133,44 +164,36 @@ const Dashboard = () => {
                     id: b._id,
                     client: b.fullName,
                     package: b.packageName,
-                    date: new Date(b.createdAt).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                    }),
+                    date: new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
                     status: b.status,
-                    amount: `₱${b.totalAmount?.toLocaleString() || 0}`
+                    amount: `₱${(b.totalAmount || 0).toLocaleString()}`
                 }));
             setRecentBookings(formatted);
 
-            // Calculate top packages
+            // Top packages (fixed sort: sort before formatting revenue to string)
             const packageStats = {};
             bookings.forEach(b => {
-                const pkg = b.packageName;
+                const pkg = b.packageName || 'Unknown';
                 if (!packageStats[pkg]) {
-                    packageStats[pkg] = { count: 0, revenue: 0 };
+                    packageStats[pkg] = { bookings: 0, revenue: 0 };
                 }
-                packageStats[pkg].count++;
-                if (b.status === 'confirmed') {
-                    packageStats[pkg].revenue += b.totalAmount || 0;
-                }
+                packageStats[pkg].bookings += 1;
+                packageStats[pkg].revenue += b.totalAmount || 0;
             });
 
-            const top = Object.entries(packageStats)
+            const sortedPackages = Object.entries(packageStats)
+                .sort((a, b) => b[1].revenue - a[1].revenue)  // Sort using number revenue
+                .slice(0, 5)
                 .map(([name, data]) => ({
                     name,
-                    bookings: data.count,
+                    bookings: data.bookings,
                     revenue: `₱${data.revenue.toLocaleString()}`,
-                    revenueNum: data.revenue,
-                    trend: '+' + Math.floor(Math.random() * 15 + 5) + '%' // Mock trend
-                }))
-                .sort((a, b) => b.revenueNum - a.revenueNum)
-                .slice(0, 5);
+                    trend: data.revenue > 0 ? <ArrowUp size={16} color="#10b981" /> : <ArrowDown size={16} color="#ef4444" />
+                }));
+            setTopPackages(sortedPackages);
 
-            setTopPackages(top);
-
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error);
+        } catch (calcErr) {
+            console.error('Error in calculations:', calcErr);
         } finally {
             setLoading(false);
         }

@@ -126,7 +126,7 @@ app.post('/api/bookings', async (req, res) => {
     }
     
     const totalPax = 
-      (bookingData.pax?.adults || 1) + 
+      (bookingData.pax?.adult || 1) + 
       (bookingData.pax?.children || 0) + 
       (bookingData.pax?.infants || 0);
     
@@ -291,7 +291,7 @@ app.get('/api/admin/statistics', async (req, res) => {
     const confirmedBookings = await Booking.find({ status: 'confirmed' });
     const statistics = confirmedBookings.reduce((acc, booking) => {
       const pax = 
-        (booking.pax?.adults || 1) + 
+        (booking.pax?.adult || 1) + 
         (booking.pax?.children || 0) + 
         (booking.pax?.infants || 0);
       if (booking.sellerPrice && booking.markup) {
