@@ -33,7 +33,7 @@ const posterRoutes = require('./routes/posters');
 const blogRoutes = require('./routes/blogs'); 
 const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
-
+const authRoute = require('./routes/authRoute');
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -43,6 +43,7 @@ app.use('/api/posters', posterRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/payment', paymentRoute);
 app.use('/api/bookings', bookingRoute);
+app.use('/api/auth', authRoute);
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
