@@ -5,6 +5,9 @@ import './App.css';
 import FlightSearch from './components/flightSearch/flightSearch.jsx';
 import PackageDeals from './components/packagedeals/packageDeals.jsx';
 import Footer from './components/footer/footer.jsx';
+import OtherServices from './components/otherservices/otherservices.jsx';
+import UserLogin from './components/userLogin/userLogin.jsx';
+import UserSignup from './components/userSignup/userSignup.jsx';
 import OtherServices from './components/otherservices/otherservices.jsx'; 
 import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
@@ -27,6 +30,9 @@ const Help = () => (
   </div>
 );
 
+function App() {
+  const [currentPage, setCurrentPage] = useState('packages'); 
+  const [authPage, setAuthPage] = useState(null); // 'login', 'signup', or null
 // Main App Layout Component (with navigation)
 function MainLayout() {
   const navigate = useNavigate();
@@ -51,6 +57,29 @@ function MainLayout() {
     return page ? page[0] : 'packages';
   };
 
+  const handleMobileLinkClick = (pageKey) => {
+    setCurrentPage(pageKey);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleAuthPageChange = (page) => {
+    if (page === 'main') {
+      setAuthPage(null);
+    } else {
+      setAuthPage(page);
+    }
+  };
+
+  // Show login or signup page if authPage is set
+  if (authPage === 'login') {                    // ← Dapat 'login' hindi 'userLogin'
+      return <UserLogin setAuthPage={handleAuthPageChange} />;
+  }
+
+  if (authPage === 'signup') {                   // ← Dapat 'signup'
+      return <UserSignup setAuthPage={handleAuthPageChange} />;
+  }
+
+  const CurrentComponent = pages[currentPage].component;
   const currentPage = getCurrentPage();
 
   const handleNavigation = (pageKey) => {
@@ -92,7 +121,12 @@ function MainLayout() {
             ))}
           </div>
           <div className="nav-actions">
-            <button className="book-now-btn">BOOK NOW</button>
+            <button 
+              className="book-now-btn"
+              onClick={() => setAuthPage('login')}
+            >
+              BOOK NOW
+            </button>
           </div>
 
           <button 
@@ -133,10 +167,19 @@ function MainLayout() {
           ))}
         </div>
         
-        <button className="book-now-btn">BOOK NOW</button>
+        <button 
+          className="book-now-btn"
+          onClick={() => {
+            setAuthPage('login');
+            setIsMobileMenuOpen(false);
+          }}
+        >
+          BOOK NOW
+        </button>
       </div>
 
       <main className="main-content">
+        <CurrentComponent setAuthPage={setAuthPage} />
         <Routes>
           {/* Main navigation pages */}
           <Route path="/" element={<FlightSearch />} />

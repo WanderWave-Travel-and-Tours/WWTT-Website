@@ -1,0 +1,469 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Main Wrapper */
+.user-login-wrapper {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691ec3335c5cab55d0046c72.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Dark Overlay */
+.user-login-wrapper::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1;
+}
+
+/* Main Container */
+.user-login-container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 1100px;
+    min-height: 600px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
+    background-color: white;
+}
+
+/* ===== SLIDESHOW PANEL ===== */
+.slideshow-panel {
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    min-height: 600px;
+}
+
+.slideshow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.slide-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 1;
+}
+
+.slide-item.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+/* Slide Content Overlay */
+.slide-content-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
+    padding: 60px 40px 40px;
+    color: white;
+    z-index: 5;
+}
+
+.slide-title {
+    margin: 0 0 8px 0;
+    font-size: 2.4rem;
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    line-height: 1.2;
+}
+
+.slide-description {
+    margin: 0;
+    font-size: 1.2rem;
+    opacity: 0.95;
+    font-weight: 500;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+}
+
+/* Slide Indicators */
+.slide-indicators {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.indicator-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: white;
+    opacity: 0.5;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    border: none;
+    padding: 0;
+}
+
+.indicator-dot:hover {
+    opacity: 0.8;
+}
+
+.indicator-dot.active-dot {
+    width: 36px;
+    border-radius: 20px;
+    opacity: 1;
+    background-color: #ff9800;
+}
+
+/* ===== LOGIN PANEL ===== */
+.login-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    padding: 40px 50px;
+}
+
+.login-form-wrapper {
+    width: 100%;
+    max-width: 380px;
+}
+
+/* Logo Section */
+.logo-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.logo-img {
+    height: 45px !important;
+    max-height: 45px;
+    width: auto;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+    object-fit: contain;
+}
+
+.admin-title {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #1a237e;
+    letter-spacing: -0.5px;
+}
+
+.admin-subtitle {
+    margin: 8px 0 0;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+/* Form Styles */
+.login-form {
+    width: 100%;
+}
+
+.input-group {
+    margin-bottom: 22px;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.input-field {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid #e0e0e0;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+    font-family: inherit;
+}
+
+.input-field:focus {
+    border-color: #ff9800;
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.1);
+    outline: none;
+}
+
+.input-field::placeholder {
+    color: #999;
+}
+
+/* Login Button */
+.login-button {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-top: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3);
+    font-family: inherit;
+}
+
+.login-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(255, 152, 0, 0.4);
+}
+
+.login-button:active:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.login-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Switch Page Text */
+.switch-page-text {
+    text-align: center;
+    margin-top: 24px;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.switch-page-link {
+    color: #ff9800;
+    font-weight: 600;
+    margin-left: 6px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.switch-page-link:hover {
+    color: #f57c00;
+    text-decoration: underline;
+}
+
+/* Footer Text */
+.footer-text {
+    text-align: center;
+    margin-top: 28px;
+    color: #999;
+    font-size: 0.85rem;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablets and below (900px) */
+@media (max-width: 900px) {
+    .user-login-container {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        min-height: auto;
+    }
+    
+    .slideshow-panel {
+        min-height: 320px;
+        height: 320px;
+    }
+    
+    .login-panel {
+        padding: 40px 35px;
+    }
+    
+    .slide-title {
+        font-size: 2rem;
+    }
+
+    .slide-description {
+        font-size: 1.1rem;
+    }
+
+    .slide-content-overlay {
+        padding: 40px 30px 30px;
+    }
+}
+
+/* Mobile devices (600px) */
+@media (max-width: 600px) {
+    .user-login-wrapper {
+        padding: 15px;
+    }
+
+    .user-login-container {
+        border-radius: 18px;
+        max-width: 100%;
+    }
+    
+    .slideshow-panel {
+        min-height: 280px;
+        height: 280px;
+    }
+    
+    .login-panel {
+        padding: 35px 25px;
+    }
+
+    .login-form-wrapper {
+        max-width: 100%;
+    }
+    
+    .logo-img {
+        height: 40px !important;
+        max-height: 40px;
+    }
+    
+    .admin-title {
+        font-size: 1.6rem;
+    }
+
+    .admin-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .slide-title {
+        font-size: 1.8rem;
+    }
+
+    .slide-description {
+        font-size: 1rem;
+    }
+
+    .slide-content-overlay {
+        padding: 30px 25px 25px;
+    }
+
+    .input-field {
+        padding: 13px 14px;
+        font-size: 0.95rem;
+    }
+
+    .login-button {
+        padding: 15px;
+        font-size: 1rem;
+    }
+}
+
+/* Small mobile devices (400px) */
+@media (max-width: 400px) {
+    .user-login-wrapper {
+        padding: 10px;
+    }
+
+    .user-login-container {
+        border-radius: 16px;
+    }
+
+    .slideshow-panel {
+        min-height: 240px;
+        height: 240px;
+    }
+
+    .login-panel {
+        padding: 30px 20px;
+    }
+
+    .logo-section {
+        margin-bottom: 30px;
+    }
+
+    .logo-img {
+        height: 38px !important;
+        max-height: 38px;
+    }
+
+    .admin-title {
+        font-size: 1.4rem;
+    }
+
+    .admin-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .slide-title {
+        font-size: 1.5rem;
+    }
+
+    .slide-description {
+        font-size: 0.9rem;
+    }
+
+    .slide-content-overlay {
+        padding: 25px 20px 20px;
+    }
+
+    .slide-indicators {
+        bottom: 18px;
+        gap: 8px;
+    }
+
+    .indicator-dot {
+        width: 8px;
+        height: 8px;
+    }
+
+    .indicator-dot.active-dot {
+        width: 28px;
+    }
+
+    .input-group {
+        margin-bottom: 18px;
+    }
+
+    .input-field {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+    }
+
+    .login-button {
+        padding: 14px;
+        font-size: 0.95rem;
+    }
+
+    .switch-page-text {
+        font-size: 0.9rem;
+        margin-top: 20px;
+    }
+
+    .footer-text {
+        font-size: 0.8rem;
+        margin-top: 24px;
+    }
+}

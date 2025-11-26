@@ -39,6 +39,55 @@ const ServiceManagement = () => {
                 emoji: '📘', 
                 description: 'Schedule and manage DFA passport appointments.' 
             });
+        } else if (path.includes('airlinebooking')) {
+            setServiceType('AIRLINE BOOKING');
+            setPageData({ 
+                title: 'Airline Booking', 
+                emoji: '📘', 
+                description: 'Ticketing for domestic and international flights.' 
+            });
+        } else if (path.includes('hotelbooking')) {
+            setServiceType('HOTEL BOOKING');
+            setPageData({ 
+                title: 'Hotel Booking', 
+                emoji: '📘', 
+                description: 'Room reservations for hotels and resorts worldwide.' 
+            });
+        } else if (path.includes('tourarrangements')) {
+        setServiceType('TOUR ARRANGEMENTS');
+            setPageData({ 
+                title: 'Tour Arrangements', 
+                emoji: '📘', 
+                description: 'Customized holiday packages and itineraries.' 
+            });
+        } else if (path.includes('ferrybooking')) {
+            setServiceType('FERRY BOOKING');
+            setPageData({ 
+                title: 'Ferry Booking', 
+                emoji: '📘', 
+                description: 'Reservations for inter-island ferries and fast crafts.' 
+            });
+        } else if (path.includes('marriagecert')) {
+            setServiceType('MARRIAGE CERTIFICATE');
+            setPageData({ 
+                title: 'Marriage Certificate', 
+                emoji: '📘', 
+                description: 'Secure PSA-authenticated copies of marriage records.' 
+            });
+        } else if (path.includes('travelinsurance')) {
+            setServiceType('TRAVEL INSURANCE');
+            setPageData({ 
+                title: 'Travel Insurance', 
+                emoji: '📘', 
+                description: 'Coverage for medical emergencies and flight cancellations.' 
+            });
+        } else if (path.includes('billspayment')) {
+            setServiceType('BILLS PAYMENT');
+            setPageData({ 
+                title: 'Bills Payment', 
+                emoji: '📘', 
+                description: 'One-stop payment for utilities, telecom, and government fees.' 
+            });
         }
     }, [location]);
 
