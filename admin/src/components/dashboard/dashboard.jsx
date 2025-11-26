@@ -4,7 +4,7 @@ import {
     Bell, Search, Plane, FileText, HeartHandshake, Package, 
     TrendingUp, Users, MapPin, Calendar, FileCheck, ScrollText, 
     Heart, BookOpen, PlusCircle, Tag, MessageSquare, DollarSign,
-    ArrowUp, ArrowDown, Activity
+    ArrowUp, ArrowDown, Activity, TrendingDown, Wallet, PiggyBank
 } from 'lucide-react';
 import { 
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -17,8 +17,6 @@ import './Dashboard.css';
 const Dashboard = () => {
     const navigate = useNavigate();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    
-    // Real data states
     const [stats, setStats] = useState({
         totalBookings: 0,
         confirmedBookings: 0,
@@ -28,14 +26,18 @@ const Dashboard = () => {
         totalPackages: 0,
         totalBlogs: 0,
         totalPromos: 0,
-        totalTestimonials: 0
+        totalTestimonials: 0,
+        totalSellerCost: 0,
+        totalMarkup: 0,
+        totalSales: 0,
+        profitMargin: 0
     });
 
     const [recentBookings, setRecentBookings] = useState([]);
     const [topPackages, setTopPackages] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [trendData, setTrendData] = useState([]);
 
-    // Chart colors
     const COLORS = ['#667eea', '#f56565', '#48bb78', '#ed8936', '#9f7aea'];
 
     useEffect(() => {
@@ -48,25 +50,66 @@ const Dashboard = () => {
     }, [navigate]);
 
     const fetchDashboardData = async () => {
+        setLoading(true);
+        let bookings = [];
+        let packages = [];
+        let blogs = [];
+        let promos = [];
+        let testimonials = [];
+
         try {
-            setLoading(true);
+            const bookingsRes = await fetch('http://localhost:5000/api/admin/bookings');
+            if (!bookingsRes.ok) throw new Error(`HTTP error! status: ${bookingsRes.status}`);
+            bookings = await bookingsRes.json();
+            console.log('Fetched bookings:', bookings); 
+        } catch (err) {
+            console.error('Error fetching bookings:', err);
+            bookings = []; 
+        }
 
-            // Fetch all data in parallel
-            const [bookingsRes, packagesRes, blogsRes, promosRes, testimonialsRes] = await Promise.all([
-                fetch('http://localhost:5000/api/admin/bookings'),
-                fetch('http://localhost:5000/api/packages'),
-                fetch('http://localhost:5000/api/blogs'),
-                fetch('http://localhost:5000/api/promos'),
-                fetch('http://localhost:5000/api/testimonials')
-            ]);
+        try {
+            const packagesRes = await fetch('http://localhost:5000/api/packages');
+            if (!packagesRes.ok) throw new Error(`HTTP error! status: ${packagesRes.status}`);
+            packages = await packagesRes.json();
+            console.log('Fetched packages:', packages);
+        } catch (err) {
+            console.error('Error fetching packages:', err);
+            packages = [];
+        }
 
-            const bookings = await bookingsRes.json();
-            const packages = await packagesRes.json();
-            const blogs = await blogsRes.json();
-            const promos = await promosRes.json();
-            const testimonials = await testimonialsRes.json();
+        try {
+            const blogsRes = await fetch('http://localhost:5000/api/blogs');
+            if (!blogsRes.ok) throw new Error(`HTTP error! status: ${blogsRes.status}`);
+            blogs = await blogsRes.json();
+            console.log('Fetched blogs:', blogs);
+        } catch (err) {
+            console.error('Error fetching blogs:', err);
+            blogs = [];
+        }
 
-            // Calculate statistics
+        try {
+            const promosRes = await fetch('http://localhost:5000/api/promos');
+            if (!promosRes.ok) throw new Error(`HTTP error! status: ${promosRes.status}`);
+            promos = await promosRes.json();
+            console.log('Fetched promos:', promos);
+        } catch (err) {
+            console.error('Error fetching promos:', err);
+            promos = [];
+        }
+
+        try {
+            const testimonialsRes = await fetch('http://localhost:5000/api/testimonials');
+            if (!testimonialsRes.ok) throw new Error(`HTTP error! status: ${testimonialsRes.status}`);
+            testimonials = await testimonialsRes.json();
+            console.log('Fetched testimonials:', testimonials);
+        } catch (err) {
+            console.error('Error fetching testimonials:', err);
+            testimonials = [];
+        }
+
+        try {
+            if (!Array.isArray(bookings)) bookings = [];
+
             const confirmed = bookings.filter(b => b.status === 'confirmed').length;
             const pending = bookings.filter(b => b.status === 'pending').length;
             const cancelled = bookings.filter(b => b.status === 'cancelled').length;
@@ -74,19 +117,65 @@ const Dashboard = () => {
                 .filter(b => b.status === 'confirmed')
                 .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
+            const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+            const totalRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+            const financialStats = confirmedBookings.reduce((acc, booking) => {
+                const pax = (booking.pax?.adult || 1) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
+                if (booking.sellerPrice && booking.markup) {
+                    acc.totalSellerCost += booking.sellerPrice * pax;
+                    acc.totalMarkup += booking.markup * pax;
+                    acc.totalSales += booking.totalAmount || 0;
+                }
+                return acc;
+            }, { totalSellerCost: 0, totalMarkup: 0, totalSales: 0 });
+
+            const profitMargin = financialStats.totalSales > 0 
+                ? ((financialStats.totalMarkup / financialStats.totalSales) * 100).toFixed(1)
+                : 0;
+
             setStats({
                 totalBookings: bookings.length,
                 confirmedBookings: confirmed,
                 pendingBookings: pending,
                 cancelledBookings: cancelled,
                 totalRevenue: revenue,
-                totalPackages: packages.length,
-                totalBlogs: blogs.length,
-                totalPromos: promos.length,
-                totalTestimonials: testimonials.length
+                totalPackages: Array.isArray(packages) ? packages.length : 0,
+                totalBlogs: Array.isArray(blogs) ? blogs.length : 0,
+                totalPromos: Array.isArray(promos) ? promos.length : 0,
+                totalTestimonials: Array.isArray(testimonials) ? testimonials.length : 0,
+                totalSellerCost: financialStats.totalSellerCost,
+                totalMarkup: financialStats.totalMarkup,
+                totalSales: financialStats.totalSales,
+                profitMargin: profitMargin
             });
 
-            // Format recent bookings (last 5)
+            const today = new Date();
+            const trendData = [];
+
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const monthName = date.toLocaleString('default', { month: 'short' });
+                const year = date.getFullYear();
+                const startOfMonth = new Date(year, date.getMonth(), 1);
+                const endOfMonth = new Date(year, date.getMonth() + 1, 0, 23, 59, 59);
+
+                const confirmedThisMonth = bookings.filter(b => {
+                    const created = new Date(b.createdAt);
+                    return b.status === 'confirmed' && created >= startOfMonth && created <= endOfMonth;
+                });
+
+                const confirmedCount = confirmedThisMonth.length;
+                const revenueThisMonth = confirmedThisMonth.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+                trendData.push({
+                    month: monthName,
+                    bookings: confirmedCount, 
+                    revenue: revenueThisMonth
+                });
+            }
+
+            setTrendData(trendData);
+
             const formatted = bookings
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .slice(0, 5)
@@ -94,44 +183,35 @@ const Dashboard = () => {
                     id: b._id,
                     client: b.fullName,
                     package: b.packageName,
-                    date: new Date(b.createdAt).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                    }),
+                    date: new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
                     status: b.status,
-                    amount: `₱${b.totalAmount?.toLocaleString() || 0}`
+                    amount: `₱${(b.totalAmount || 0).toLocaleString()}`
                 }));
             setRecentBookings(formatted);
 
-            // Calculate top packages
             const packageStats = {};
             bookings.forEach(b => {
-                const pkg = b.packageName;
+                const pkg = b.packageName || 'Unknown';
                 if (!packageStats[pkg]) {
-                    packageStats[pkg] = { count: 0, revenue: 0 };
+                    packageStats[pkg] = { bookings: 0, revenue: 0 };
                 }
-                packageStats[pkg].count++;
-                if (b.status === 'confirmed') {
-                    packageStats[pkg].revenue += b.totalAmount || 0;
-                }
+                packageStats[pkg].bookings += 1;
+                packageStats[pkg].revenue += b.totalAmount || 0;
             });
 
-            const top = Object.entries(packageStats)
+            const sortedPackages = Object.entries(packageStats)
+                .sort((a, b) => b[1].revenue - a[1].revenue) 
+                .slice(0, 5)
                 .map(([name, data]) => ({
                     name,
-                    bookings: data.count,
+                    bookings: data.bookings,
                     revenue: `₱${data.revenue.toLocaleString()}`,
-                    revenueNum: data.revenue,
-                    trend: '+' + Math.floor(Math.random() * 15 + 5) + '%' // Mock trend
-                }))
-                .sort((a, b) => b.revenueNum - a.revenueNum)
-                .slice(0, 5);
+                    trend: data.revenue > 0 ? <ArrowUp size={16} color="#10b981" /> : <ArrowDown size={16} color="#ef4444" />
+                }));
+            setTopPackages(sortedPackages);
 
-            setTopPackages(top);
-
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error);
+        } catch (calcErr) {
+            console.error('Error in calculations:', calcErr);
         } finally {
             setLoading(false);
         }
@@ -141,7 +221,6 @@ const Dashboard = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Chart data - Bookings by Month (last 6 months)
     const bookingsChartData = [
         { month: 'Jun', bookings: 45, revenue: 1125000 },
         { month: 'Jul', bookings: 52, revenue: 1300000 },
@@ -151,14 +230,12 @@ const Dashboard = () => {
         { month: 'Nov', bookings: stats.totalBookings, revenue: stats.totalRevenue }
     ];
 
-    // Status distribution for pie chart
     const statusData = [
         { name: 'Confirmed', value: stats.confirmedBookings, color: '#48bb78' },
         { name: 'Pending', value: stats.pendingBookings, color: '#ecc94b' },
         { name: 'Cancelled', value: stats.cancelledBookings, color: '#f56565' }
     ];
 
-    // Package distribution (top 5 packages)
     const packageData = topPackages.map(pkg => ({
         name: pkg.name.length > 20 ? pkg.name.substring(0, 20) + '...' : pkg.name,
         bookings: pkg.bookings
@@ -215,7 +292,6 @@ const Dashboard = () => {
                         </div>
                     </header>
 
-                    {/* STATS ROW - REAL DATA */}
                     <div className="dash-stats">
                         <div className="dash-stat">
                             <div className="dash-stat-icon dash-stat-icon--blue"><Plane size={24} /></div>
@@ -255,9 +331,105 @@ const Dashboard = () => {
                         </div>
                     </div>
 
+                    <section className="dash-section dash-section--wide dash-financial-stats">
+                        <div className="dash-section-header">
+                            <h2 className="dash-section-title">FINANCIAL OVERVIEW</h2>
+                            <span className="dash-section-badge">Confirmed Bookings Only</span>
+                        </div>
+                        <div className="dash-financial-grid">
+                            <div className="dash-financial-card dash-financial-card--cost">
+                                <div className="dash-financial-icon">
+                                    <Wallet size={28} />
+                                </div>
+                                <div className="dash-financial-content">
+                                    <span className="dash-financial-label">Total Seller Cost</span>
+                                    <strong className="dash-financial-value">
+                                        ₱{stats.totalSellerCost.toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </strong>
+                                    <span className="dash-financial-desc">Total cost from suppliers</span>
+                                </div>
+                            </div>
+
+                            <div className="dash-financial-card dash-financial-card--markup">
+                                <div className="dash-financial-icon">
+                                    <TrendingUp size={28} />
+                                </div>
+                                <div className="dash-financial-content">
+                                    <span className="dash-financial-label">Total Markup</span>
+                                    <strong className="dash-financial-value">
+                                        ₱{stats.totalMarkup.toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </strong>
+                                    <span className="dash-financial-desc">Your profit from bookings</span>
+                                </div>
+                            </div>
+
+                            <div className="dash-financial-card dash-financial-card--sales">
+                                <div className="dash-financial-icon">
+                                    <DollarSign size={28} />
+                                </div>
+                                <div className="dash-financial-content">
+                                    <span className="dash-financial-label">Total Sales</span>
+                                    <strong className="dash-financial-value">
+                                        ₱{stats.totalSales.toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </strong>
+                                    <span className="dash-financial-desc">Total revenue generated</span>
+                                </div>
+                            </div>
+
+                            <div className="dash-financial-card dash-financial-card--margin">
+                                <div className="dash-financial-icon">
+                                    <PiggyBank size={28} />
+                                </div>
+                                <div className="dash-financial-content">
+                                    <span className="dash-financial-label">Profit Margin</span>
+                                    <strong className="dash-financial-value">{stats.profitMargin}%</strong>
+                                    <span className="dash-financial-desc">Average markup percentage</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="dash-financial-breakdown">
+                            <div className="dash-breakdown-bar">
+                                <div 
+                                    className="dash-breakdown-segment dash-breakdown-segment--cost"
+                                    style={{ 
+                                        width: `${(stats.totalSellerCost / stats.totalSales * 100) || 0}%` 
+                                    }}
+                                >
+                                    <span>Seller Cost</span>
+                                </div>
+                                <div 
+                                    className="dash-breakdown-segment dash-breakdown-segment--profit"
+                                    style={{ 
+                                        width: `${(stats.totalMarkup / stats.totalSales * 100) || 0}%` 
+                                    }}
+                                >
+                                    <span>Your Profit</span>
+                                </div>
+                            </div>
+                            <div className="dash-breakdown-legend">
+                                <div className="dash-breakdown-legend-item">
+                                    <span className="dash-legend-dot dash-legend-dot--cost"></span>
+                                    <span>Seller Cost: {((stats.totalSellerCost / stats.totalSales * 100) || 0).toFixed(1)}%</span>
+                                </div>
+                                <div className="dash-breakdown-legend-item">
+                                    <span className="dash-legend-dot dash-legend-dot--profit"></span>
+                                    <span>Your Profit: {((stats.totalMarkup / stats.totalSales * 100) || 0).toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <div className="dash-grid">
-                        
-                        {/* CHARTS SECTION - NEW! */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">BOOKINGS & REVENUE TRENDS</h2>
@@ -265,53 +437,35 @@ const Dashboard = () => {
                             </div>
                             <div className="dash-chart-container">
                                 <ResponsiveContainer width="100%" height={300}>
-                                    <AreaChart data={bookingsChartData}>
-                                        <defs>
-                                            <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
-                                                <stop offset="95%" stopColor="#667eea" stopOpacity={0}/>
-                                            </linearGradient>
-                                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#48bb78" stopOpacity={0.8}/>
-                                                <stop offset="95%" stopColor="#48bb78" stopOpacity={0}/>
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                        <XAxis dataKey="month" stroke="#6b7280" />
-                                        <YAxis yAxisId="left" stroke="#667eea" />
-                                        <YAxis yAxisId="right" orientation="right" stroke="#48bb78" />
-                                        <Tooltip 
-                                            contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                                            formatter={(value, name) => {
-                                                if (name === 'revenue') {
-                                                    return ['₱' + value.toLocaleString(), 'Revenue'];
-                                                }
-                                                return [value, 'Bookings'];
-                                            }}
-                                        />
+                                    <AreaChart data={trendData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                        <XAxis dataKey="month" stroke="#64748b" />
+                                        <YAxis yAxisId="left" stroke="#3b82f6" />
+                                        <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
+                                        <Tooltip formatter={(value) => value.toLocaleString()} />
                                         <Legend />
                                         <Area 
                                             yAxisId="left"
                                             type="monotone" 
                                             dataKey="bookings" 
-                                            stroke="#667eea" 
-                                            fillOpacity={1} 
-                                            fill="url(#colorBookings)" 
+                                            stroke="#3b82f6" 
+                                            fill="#3b82f680" 
+                                            name="Bookings"
                                         />
                                         <Area 
                                             yAxisId="right"
                                             type="monotone" 
                                             dataKey="revenue" 
-                                            stroke="#48bb78" 
-                                            fillOpacity={1} 
-                                            fill="url(#colorRevenue)" 
+                                            stroke="#10b981" 
+                                            fill="#10b98180" 
+                                            name="Revenue (₱)"
+                                            formatter={(value) => `₱${value.toLocaleString()}`}
                                         />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </section>
 
-                        {/* TWO COLUMN CHARTS */}
                         <section className="dash-section">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">BOOKING STATUS</h2>
@@ -380,7 +534,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* OTHER SERVICES */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">OTHER SERVICES</h2>
@@ -405,7 +558,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* RECENT BOOKINGS - REAL DATA */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">RECENT BOOKINGS</h2>
@@ -444,7 +596,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* TOP PACKAGES LIST */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">TOP PERFORMING PACKAGES</h2>
@@ -471,7 +622,6 @@ const Dashboard = () => {
                             </div>
                         </section>
 
-                        {/* QUICK ACTIONS */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">QUICK ACTIONS</h2>
@@ -497,7 +647,6 @@ const Dashboard = () => {
 
                     </div>
 
-                    {/* FOOTER STATS - REAL DATA */}
                     <div className="dash-footer-stats">
                         <div className="dash-footer-stat">
                             <Package size={20} />
