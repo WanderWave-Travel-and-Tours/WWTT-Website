@@ -19,6 +19,11 @@ mongoose.connect(process.env.MONGODB_URI)
         console.error("⚠️ Check your .env file or IP Whitelist.");
     });
 
+    
+app.get('/', (req, res) => {
+  res.send('WanderWave API is running!');
+});
+
 const flightRoutes = require('./routes/flightRoute');
 const packageRoutes = require('./routes/packageRoute');
 const testimonialRoutes = require('./routes/testimonialRoute');
@@ -26,13 +31,9 @@ const promoRoutes = require('./routes/promoRoute');
 const adminRoutes = require('./routes/adminRoute');
 const posterRoutes = require('./routes/posters'); 
 const blogRoutes = require('./routes/blogs'); 
-
-app.get('/', (req, res) => {
-  res.send('WanderWave API is running!');
-});
-
 const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
+
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -60,6 +61,7 @@ const upload = multer({ storage: storage });
 
 const PackageModel = require('./models/package');
 const Booking = require('./models/booking');
+const Blog = require('./models/blog');
 
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {
     try {
@@ -114,12 +116,57 @@ app.post('/api/packages/add', upload.single('image'), async (req, res) => {
 app.post('/api/bookings', async (req, res) => {
   try {
     const bookingData = req.body;
-    const newBooking = new Booking(bookingData);
+    const package = await PackageModel.findOne({ title: bookingData.packageName });
+    
+    if (!package) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Package not found' 
+      });
+    }
+    
+    const totalPax = 
+      (bookingData.pax?.adults || 1) + 
+      (bookingData.pax?.children || 0) + 
+      (bookingData.pax?.infants || 0);
+    
+    const totalAmount = package.price * totalPax;
+    
+    console.log('📦 Creating booking with pricing:', {
+      packageName: package.title,
+      sellerPrice: package.sellerPrice,
+      markup: package.markup,
+      price: package.price,
+      totalPax,
+      totalAmount
+    });
+    
+    const newBooking = new Booking({
+      ...bookingData,
+      packageId: package._id,
+      sellerPrice: package.sellerPrice,
+      markup: package.markup,
+      price: package.price,
+      totalAmount: totalAmount
+    });
+    
     await newBooking.save();
-    res.status(201).json({ message: 'Booking created successfully', booking: newBooking });
+    
+    console.log('✅ Booking created successfully with ID:', newBooking._id);
+    
+    res.status(201).json({ 
+      success: true,
+      message: 'Booking created successfully', 
+      booking: newBooking 
+    });
+    
   } catch (error) {
-    console.error('Error creating booking:', error);
-    res.status(500).json({ message: 'Error creating booking', error });
+    console.error('❌ Error creating booking:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error creating booking', 
+      error: error.message 
+    });
   }
 });
 
@@ -237,6 +284,51 @@ app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
 app.get('/api/blogs', async (req, res) => {
   const blogs = await Blog.find();
   res.json(blogs);
+});
+
+app.get('/api/admin/statistics', async (req, res) => {
+  try {
+    const confirmedBookings = await Booking.find({ status: 'confirmed' });
+    const statistics = confirmedBookings.reduce((acc, booking) => {
+      const pax = 
+        (booking.pax?.adults || 1) + 
+        (booking.pax?.children || 0) + 
+        (booking.pax?.infants || 0);
+      if (booking.sellerPrice && booking.markup) {
+        acc.totalSellerCost += booking.sellerPrice * pax;
+        acc.totalMarkup += booking.markup * pax;
+        acc.totalSales += booking.totalAmount;
+      }
+      
+      acc.totalBookings += 1;
+      
+      return acc;
+    }, {
+      totalSellerCost: 0,
+      totalMarkup: 0,
+      totalSales: 0,
+      totalBookings: 0
+    });
+    
+    statistics.profitMargin = statistics.totalSales > 0 
+      ? ((statistics.totalMarkup / statistics.totalSales) * 100).toFixed(1)
+      : 0;
+    
+    console.log('📊 Statistics calculated:', statistics);
+    
+    res.json({
+      success: true,
+      data: statistics
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching statistics:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error fetching statistics', 
+      error: error.message 
+    });
+  }
 });
 
 // Port

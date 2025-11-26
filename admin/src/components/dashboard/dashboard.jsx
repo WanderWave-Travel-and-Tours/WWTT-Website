@@ -4,7 +4,7 @@ import {
     Bell, Search, Plane, FileText, HeartHandshake, Package, 
     TrendingUp, Users, MapPin, Calendar, FileCheck, ScrollText, 
     Heart, BookOpen, PlusCircle, Tag, MessageSquare, DollarSign,
-    ArrowUp, ArrowDown, Activity
+    ArrowUp, ArrowDown, Activity, TrendingDown, Wallet, PiggyBank
 } from 'lucide-react';
 import { 
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -28,7 +28,12 @@ const Dashboard = () => {
         totalPackages: 0,
         totalBlogs: 0,
         totalPromos: 0,
-        totalTestimonials: 0
+        totalTestimonials: 0,
+        // ✅ NEW FINANCIAL STATS
+        totalSellerCost: 0,
+        totalMarkup: 0,
+        totalSales: 0,
+        profitMargin: 0
     });
 
     const [recentBookings, setRecentBookings] = useState([]);
@@ -74,6 +79,35 @@ const Dashboard = () => {
                 .filter(b => b.status === 'confirmed')
                 .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
+            // ✅ CALCULATE FINANCIAL STATISTICS
+            const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+            
+            const financialStats = confirmedBookings.reduce((acc, booking) => {
+                // Get pax count
+                const pax = 
+                    (booking.pax?.adults || 1) + 
+                    (booking.pax?.children || 0) + 
+                    (booking.pax?.infants || 0);
+                
+                // Calculate totals (if booking has pricing data)
+                if (booking.sellerPrice && booking.markup) {
+                    acc.totalSellerCost += booking.sellerPrice * pax;
+                    acc.totalMarkup += booking.markup * pax;
+                    acc.totalSales += booking.totalAmount || 0;
+                }
+                
+                return acc;
+            }, {
+                totalSellerCost: 0,
+                totalMarkup: 0,
+                totalSales: 0
+            });
+
+            // Calculate profit margin
+            const profitMargin = financialStats.totalSales > 0 
+                ? ((financialStats.totalMarkup / financialStats.totalSales) * 100).toFixed(1)
+                : 0;
+
             setStats({
                 totalBookings: bookings.length,
                 confirmedBookings: confirmed,
@@ -83,7 +117,12 @@ const Dashboard = () => {
                 totalPackages: packages.length,
                 totalBlogs: blogs.length,
                 totalPromos: promos.length,
-                totalTestimonials: testimonials.length
+                totalTestimonials: testimonials.length,
+                // ✅ ADD FINANCIAL STATS
+                totalSellerCost: financialStats.totalSellerCost,
+                totalMarkup: financialStats.totalMarkup,
+                totalSales: financialStats.totalSales,
+                profitMargin: profitMargin
             });
 
             // Format recent bookings (last 5)
@@ -255,9 +294,109 @@ const Dashboard = () => {
                         </div>
                     </div>
 
+                    {/* ✅ NEW FINANCIAL STATISTICS SECTION */}
+                    <section className="dash-section dash-section--wide dash-financial-stats">
+                        <div className="dash-section-header">
+                            <h2 className="dash-section-title">FINANCIAL OVERVIEW</h2>
+                            <span className="dash-section-badge">Confirmed Bookings Only</span>
+                        </div>
+                        <div className="dash-financial-grid">
+                            <div className="dash-financial-card dash-financial-card--cost">
+                                <div className="dash-financial-icon">
+                                    <Wallet size={28} />
+                                </div>
+                                <div className="dash-financial-content">
+                                    <span className="dash-financial-label">Total Seller Cost</span>
+                                    <strong className="dash-financial-value">
+                                        ₱{stats.totalSellerCost.toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </strong>
+                                    <span className="dash-financial-desc">Total cost from suppliers</span>
+                                </div>
+                            </div>
+
+                            <div className="dash-financial-card dash-financial-card--markup">
+                                <div className="dash-financial-icon">
+                                    <TrendingUp size={28} />
+                                </div>
+                                <div className="dash-financial-content">
+                                    <span className="dash-financial-label">Total Markup</span>
+                                    <strong className="dash-financial-value">
+                                        ₱{stats.totalMarkup.toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </strong>
+                                    <span className="dash-financial-desc">Your profit from bookings</span>
+                                </div>
+                            </div>
+
+                            <div className="dash-financial-card dash-financial-card--sales">
+                                <div className="dash-financial-icon">
+                                    <DollarSign size={28} />
+                                </div>
+                                <div className="dash-financial-content">
+                                    <span className="dash-financial-label">Total Sales</span>
+                                    <strong className="dash-financial-value">
+                                        ₱{stats.totalSales.toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </strong>
+                                    <span className="dash-financial-desc">Total revenue generated</span>
+                                </div>
+                            </div>
+
+                            <div className="dash-financial-card dash-financial-card--margin">
+                                <div className="dash-financial-icon">
+                                    <PiggyBank size={28} />
+                                </div>
+                                <div className="dash-financial-content">
+                                    <span className="dash-financial-label">Profit Margin</span>
+                                    <strong className="dash-financial-value">{stats.profitMargin}%</strong>
+                                    <span className="dash-financial-desc">Average markup percentage</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Breakdown visualization */}
+                        <div className="dash-financial-breakdown">
+                            <div className="dash-breakdown-bar">
+                                <div 
+                                    className="dash-breakdown-segment dash-breakdown-segment--cost"
+                                    style={{ 
+                                        width: `${(stats.totalSellerCost / stats.totalSales * 100) || 0}%` 
+                                    }}
+                                >
+                                    <span>Seller Cost</span>
+                                </div>
+                                <div 
+                                    className="dash-breakdown-segment dash-breakdown-segment--profit"
+                                    style={{ 
+                                        width: `${(stats.totalMarkup / stats.totalSales * 100) || 0}%` 
+                                    }}
+                                >
+                                    <span>Your Profit</span>
+                                </div>
+                            </div>
+                            <div className="dash-breakdown-legend">
+                                <div className="dash-breakdown-legend-item">
+                                    <span className="dash-legend-dot dash-legend-dot--cost"></span>
+                                    <span>Seller Cost: {((stats.totalSellerCost / stats.totalSales * 100) || 0).toFixed(1)}%</span>
+                                </div>
+                                <div className="dash-breakdown-legend-item">
+                                    <span className="dash-legend-dot dash-legend-dot--profit"></span>
+                                    <span>Your Profit: {((stats.totalMarkup / stats.totalSales * 100) || 0).toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <div className="dash-grid">
                         
-                        {/* CHARTS SECTION - NEW! */}
+                        {/* CHARTS SECTION */}
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">
                                 <h2 className="dash-section-title">BOOKINGS & REVENUE TRENDS</h2>
