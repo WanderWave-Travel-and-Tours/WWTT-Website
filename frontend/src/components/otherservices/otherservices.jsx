@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-// REMOVED: import { useNavigate } from 'react-router-dom'; 
 import { 
   Plane, Hotel, Map, Ship, BookUser, Baby, HeartHandshake, FileCheck, Globe, ShieldCheck, Receipt, PlusCircle,
   ArrowRight, ChevronLeft, ChevronRight, X, CheckCircle 
@@ -10,51 +9,51 @@ import './OtherServices.css';
 const UniversalInquiryForm = ({ pkgTitle, formData, handleInputChange, handleSubmit }) => {
   return (
     <form className="modal-form" onSubmit={handleSubmit}>
-        <h3 className="form-header-title">Contact & Inquiry Details</h3>
-        
-        {/* Full Name */}
-        <div className="form-group">
-            <label>FULL NAME</label>
-            <input 
-            type="text" 
-            name="fullName"
-            placeholder="e.g. Juan dela Cruz" 
-            value={formData.fullName}
-            onChange={handleInputChange}
-            required 
-            />
-        </div>
+      <h3 className="form-header-title">Contact & Inquiry Details</h3>
+      
+      {/* Full Name */}
+      <div className="form-group">
+        <label>FULL NAME</label>
+        <input 
+          type="text" 
+          name="fullName"
+          placeholder="e.g. Juan dela Cruz" 
+          value={formData.fullName}
+          onChange={handleInputChange}
+          required 
+        />
+      </div>
 
-        {/* Email Address */}
-        <div className="form-group">
-            <label>EMAIL ADDRESS</label>
-            <input 
-            type="email" 
-            name="email"
-            placeholder="name@email.com" 
-            value={formData.email}
-            onChange={handleInputChange}
-            required 
-            />
-        </div>
+      {/* Email Address */}
+      <div className="form-group">
+        <label>EMAIL ADDRESS</label>
+        <input 
+          type="email" 
+          name="email"
+          placeholder="name@email.com" 
+          value={formData.email}
+          onChange={handleInputChange}
+          required 
+        />
+      </div>
 
-        {/* Message/Specific Inquiry Field */}
-        <div className="form-group">
-            <label>MESSAGE (SPECIFY REQUEST FOR {pkgTitle.toUpperCase()})</label>
-            <textarea 
-            name="message"
-            placeholder={`e.g. I need assistance with my ${pkgTitle} for three people and my target date is October 15, 2026. (Include all details from the requirements checklist)`}
-            rows="5"
-            value={formData.message}
-            onChange={handleInputChange}
-            required 
-            ></textarea>
-        </div>
+      {/* Message/Specific Inquiry Field */}
+      <div className="form-group">
+        <label>MESSAGE (SPECIFY REQUEST FOR {pkgTitle.toUpperCase()})</label>
+        <textarea 
+          name="message"
+          placeholder={`e.g. I need assistance with my ${pkgTitle} for three people and my target date is October 15, 2026. (Include all details from the requirements checklist)`}
+          rows="5"
+          value={formData.message}
+          onChange={handleInputChange}
+          required 
+        ></textarea>
+      </div>
 
-        <button type="submit" className="modal-submit-btn">
-            Send Inquiry Request
-        </button>
-        <p className="modal-form-note">We will contact you via email within 24 hours.</p>
+      <button type="submit" className="modal-submit-btn">
+        Send Inquiry Request
+      </button>
+      <p className="modal-form-note">We will contact you via email within 24 hours.</p>
     </form>
   );
 };
@@ -76,16 +75,15 @@ const OtherServices = ({ setAuthPage }) => {
     message: '',
   });
 
-
-  // --- Mock/Placeholder Data and Logic for Modal Content ---
+  // Mock data for modal
   const currentMonth = new Date();
   const selectedDate = 15;
-  const totalAmount = 3599.99; // Mock price
+  const totalAmount = 3599.99;
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
   
-  // Requirements logic (remains the same as the previous step)
+  // Requirements logic
   const getRequirements = (title) => {
     switch (title) {
       case "Airline Booking":
@@ -163,7 +161,6 @@ const OtherServices = ({ setAuthPage }) => {
         ];
     }
   };
-  // ----------------------------------------------
 
   // Travel Themed Background
   const backgroundImage = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop';
@@ -186,7 +183,7 @@ const OtherServices = ({ setAuthPage }) => {
   const scroll = (direction) => {
     if (sliderRef.current) {
       const { current } = sliderRef;
-      const scrollAmount = 350; 
+      const scrollAmount = 400; // Adjusted for larger cards
       
       if (direction === 'left') {
         current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
@@ -202,9 +199,10 @@ const OtherServices = ({ setAuthPage }) => {
       desc: item.desc,
       requirements: getRequirements(item.title)
     });
-    // Reset formData state when modal opens
     setFormData({
-        fullName: '', email: '', message: '',
+      fullName: '', 
+      email: '', 
+      message: '',
     });
     setShowModal(true);
   };
@@ -217,21 +215,17 @@ const OtherServices = ({ setAuthPage }) => {
     }));
   };
 
-   const handleInquirySubmit = (e) => {
+  const handleInquirySubmit = (e) => {
     e.preventDefault();
     console.log('Inquiry Submitted for:', selectedPackage.title);
     console.log('Form Data:', formData);
     
-    // Using simple alert as per constraint
     alert(`✅ Inquiry for "${selectedPackage.title}" sent successfully! We will contact you via email within 24 hours.`);
     
     setShowModal(false);
     
-    // Ito ang magre-redirect sa Login Page.
     if (setAuthPage) {
-        setAuthPage('login'); 
-    } else {
-        console.error("setAuthPage is undefined. Cannot redirect to login.");
+      setAuthPage('login'); 
     }
   };
 
@@ -291,16 +285,16 @@ const OtherServices = ({ setAuthPage }) => {
         <div className="modal-overlay">
           <div className="modal-card modal-two-column">
             
-            {/* SUPER LARGE CLOSE BUTTON */}
+            {/* Close Button */}
             <button 
               className="modal-close-btn" 
               onClick={() => setShowModal(false)}
               aria-label="Close Modal"
             >
-              <X size={44} strokeWidth={3} />
+              <X size={36} strokeWidth={2.5} />
             </button>
             
-            {/* 1. LEFT COLUMN: REQUIREMENTS (Scrollable content) */}
+            {/* LEFT COLUMN: REQUIREMENTS */}
             <div className="modal-requirements-col">
               <div className="modal-header-small">
                 <img 
@@ -341,7 +335,7 @@ const OtherServices = ({ setAuthPage }) => {
               </div>
             </div>
 
-            {/* 2. RIGHT COLUMN: UNIVERSAL FORM (Fixed/Sticky position) */}
+            {/* RIGHT COLUMN: FORM */}
             <div className="modal-form-col">
               <UniversalInquiryForm
                 pkgTitle={selectedPackage.title}
