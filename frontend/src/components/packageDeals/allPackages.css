@@ -6,9 +6,8 @@
 /* --- LAYOUT GRID --- */
 .all-packages-layout {
   display: grid;
-  grid-template-columns: 280px 1fr; /* Sidebar | Content */
+  grid-template-columns: 280px 1fr;
   gap: 32px;
-  /* CRITICAL: Start alignment ensures Sidebar Header and Content Header align */
   align-items: start; 
   width: 100%;
   margin-top: 24px;
@@ -21,11 +20,9 @@
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
-  
-  /* Sticky */
   position: sticky;
   top: 100px;
-  margin-top: 0; /* No top margin */
+  margin-top: 0;
   z-index: 20;
   transition: all 0.3s ease;
 }
@@ -89,7 +86,6 @@
   letter-spacing: 0.8px;
 }
 
-/* Inputs */
 .side-search-wrapper, .filter-select, .price-input {
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -124,7 +120,9 @@
   color: var(--gray-800);
 }
 
-.side-search-icon { color: var(--gray-400); }
+.side-search-icon { 
+  color: var(--gray-400); 
+}
 
 .price-inputs-container {
   display: flex;
@@ -137,7 +135,6 @@
   font-weight: 600;
 }
 
-/* Checkboxes */
 .checkbox-list {
   display: flex;
   flex-direction: column;
@@ -149,8 +146,14 @@
   scrollbar-color: #cbd5e1 transparent;
 }
 
-.checkbox-list::-webkit-scrollbar { width: 4px; }
-.checkbox-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+.checkbox-list::-webkit-scrollbar { 
+  width: 4px; 
+}
+
+.checkbox-list::-webkit-scrollbar-thumb { 
+  background-color: #cbd5e1; 
+  border-radius: 4px; 
+}
 
 .checkbox-item {
   display: flex;
@@ -164,8 +167,13 @@
   transition: color 0.2s;
 }
 
-.checkbox-item:hover { color: var(--primary-navy); }
-.checkbox-item input { display: none; }
+.checkbox-item:hover { 
+  color: var(--primary-navy); 
+}
+
+.checkbox-item input { 
+  display: none; 
+}
 
 .custom-checkbox {
   width: 20px;
@@ -200,29 +208,23 @@
   transform: rotate(45deg) scale(1);
 }
 
-.mobile-filter-toggle { display: none; }
-
+.mobile-filter-toggle { 
+  display: none; 
+}
 
 /* --- MAIN CONTENT AREA --- */
 .main-content { 
   width: 100%; 
 }
 
-/* Header Row (Pills + Count) */
 .section-title-wrapper {
   display: flex;
   justify-content: space-between;
-  
-  /* IMPORTANT: Align items to center vertically with each other */
   align-items: center;
-  
-  /* Ensure no margins push it down relative to Sidebar */
   margin-top: 0; 
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--gray-200);
-  
-  /* Allow wrapping on small screens */
   flex-wrap: wrap;
   gap: 16px;
 }
@@ -234,48 +236,52 @@
   flex-wrap: wrap;
 }
 
-/* Pills Container */
-.filter-bar-container {
+/* UNIQUE CLASS NAMES - NO MORE CONFLICT */
+.packages-filter-bar-container {
   margin-bottom: 16px;
   position: relative;
 }
 
-.scope-filter-container {
+/* Desktop only - align with sidebar */
+@media (min-width: 1025px) {
+  .packages-filter-bar-container {
+    margin-top: -125px; /* Adjust this value: -60px to -75px */
+  }
+}
+
+.packages-scope-filter-container {
   display: flex;
   gap: 10px;
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 8px;
   align-items: center;
-  /* Smooth scrolling */
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  
-  /* Custom scrollbar for desktop */
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
 
-.scope-filter-container::-webkit-scrollbar {
+.packages-scope-filter-container::-webkit-scrollbar {
   height: 6px;
 }
 
-.scope-filter-container::-webkit-scrollbar-track {
+.packages-scope-filter-container::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 10px;
 }
 
-.scope-filter-container::-webkit-scrollbar-thumb {
+.packages-scope-filter-container::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;
   border-radius: 10px;
   transition: background-color 0.2s;
 }
 
-.scope-filter-container::-webkit-scrollbar-thumb:hover {
+.packages-scope-filter-container::-webkit-scrollbar-thumb:hover {
   background-color: #94a3b8;
 }
 
-.scope-filter-btn {
+.packages-scope-filter-btn {
   background: var(--white);
   border: 1px solid var(--gray-200);
   border-radius: 100px;
@@ -289,17 +295,17 @@
   align-items: center;
   gap: 8px;
   white-space: nowrap;
-  flex-shrink: 0; /* Prevent buttons from shrinking */
+  flex-shrink: 0;
 }
 
-.scope-filter-btn:hover {
+.packages-scope-filter-btn:hover {
   border-color: var(--primary-navy);
   color: var(--primary-navy);
   background: #f8fafc;
   transform: translateY(-1px);
 }
 
-.scope-filter-btn.active {
+.packages-scope-filter-btn.active {
   background-color: var(--primary-navy);
   color: var(--white);
   border-color: var(--primary-navy);
@@ -327,7 +333,6 @@
   margin-left: auto; 
 }
 
-/* Grid */
 .packages-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -348,20 +353,13 @@
 
 /* ================= RESPONSIVE STYLES ================= */
 
-/* Desktop only - align pills with sidebar top */
-@media (min-width: 1025px) {
-  .filter-bar-container {
-    margin-top: -70px;
-  }
-}
-
 @media (max-width: 1024px) {
   .section-title-wrapper {
     flex-direction: row;
     align-items: center;
     gap: 12px;
     padding-bottom: 12px;
-    margin-bottom: 12px; /* Reduced from default */
+    margin-bottom: 12px;
   }
 
   .title-left-group {
@@ -375,42 +373,34 @@
     padding: 6px 12px;
   }
 
-  /* Make filter bar container full width with better mobile scrolling */
-  .filter-bar-container {
+  .packages-filter-bar-container {
     width: 100%;
-    margin-bottom: 5px; /* Reduced from 16px */
-    margin-top: 0; /* Reset for mobile */
+    margin-bottom: 5px;
+    margin-top: 0 !important;
     position: relative;
   }
 
-  /* Enhanced mobile scrolling for pills - HIDE SCROLLBAR */
-  .scope-filter-container {
+  .packages-scope-filter-container {
     width: 100%;
     padding-bottom: 4px;
     gap: 8px;
-    
-    /* HIDE scrollbar on mobile */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-    
-    /* Add slight padding on sides for better UX */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     padding-left: 2px;
     padding-right: 2px;
   }
 
-  /* HIDE scrollbar for Chrome/Safari/Edge */
-  .scope-filter-container::-webkit-scrollbar {
+  .packages-scope-filter-container::-webkit-scrollbar {
     display: none;
   }
 
-  /* Adjust button sizes for mobile */
-  .scope-filter-btn { 
-    padding: 7px 14px; /* Reduced from 8px 16px */
+  .packages-scope-filter-btn { 
+    padding: 7px 14px;
     font-size: 0.85rem;
     gap: 6px;
   }
 
-  .scope-filter-btn svg {
+  .packages-scope-filter-btn svg {
     width: 14px;
     height: 14px;
   }
@@ -419,7 +409,6 @@
     font-size: 0.8rem;
   }
 
-  /* Reorder Layout via display: contents */
   .all-packages-layout {
     display: flex;
     flex-direction: column;
@@ -430,18 +419,15 @@
     display: contents; 
   }
   
-  /* ORDER 1: Title */
   .section-title-wrapper {
     order: 1;
     width: 100%;
   }
 
-  /* ORDER 2: Filter Pills */
-  .filter-bar-container {
+  .packages-filter-bar-container {
     order: 2;
   }
 
-  /* ORDER 3: Toggle Button */
   .side-filter {
     order: 3;
     position: static;
@@ -455,13 +441,11 @@
     width: 100%;
   }
 
-  /* ORDER 4: Grid */
   .packages-grid {
     order: 4;
     grid-template-columns: 1fr; 
   }
 
-  /* Mobile Toggle Button */
   .mobile-filter-toggle {
     display: flex;
     align-items: center;
@@ -481,7 +465,9 @@
     pointer-events: auto;
   }
   
-  .mobile-filter-toggle:active { transform: scale(0.98); }
+  .mobile-filter-toggle:active { 
+    transform: scale(0.98); 
+  }
 
   .mobile-filter-toggle.active {
     background-color: var(--primary-navy);
@@ -506,7 +492,9 @@
     animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .side-filter-header { display: none; }
+  .side-filter-header { 
+    display: none; 
+  }
   
   .packages-grid { 
     grid-template-columns: 1fr;
@@ -515,7 +503,7 @@
 }
 
 @media (max-width: 480px) {
-  .scope-filter-btn {
+  .packages-scope-filter-btn {
     padding: 7px 14px;
     font-size: 0.8rem;
   }
@@ -527,6 +515,14 @@
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); max-height: 0; }
-  to { opacity: 1; transform: translateY(0); max-height: 800px; }
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px); 
+    max-height: 0; 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+    max-height: 800px; 
+  }
 }
