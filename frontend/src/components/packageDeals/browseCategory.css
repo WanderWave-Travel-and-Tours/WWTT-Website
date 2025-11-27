@@ -3,31 +3,30 @@
 /* --- MAIN CONTAINER --- */
 .browse-category-section {
   display: flex;
-  flex-direction: column; /* Stack vertically */
+  flex-direction: column;
   margin-bottom: 48px;
   position: relative;
   width: 100%;
 }
 
-/* --- 1. TITLE (ORDER 1 - PINAKATAAS) --- */
+/* --- 1. TITLE --- */
 .category-section-title {
-  order: 1; /* Force to Top */
-  
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: var(--primary-navy, #333); 
-  text-shadow: none;
+  order: 1;
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #FF8C00; /* Wanderwave Orange */
+  text-transform: uppercase;
+  text-shadow: 4px 4px 0 #001b3e; /* Navy Shadow */
   margin-bottom: 16px; 
   margin-top: 0;
   width: 100%;
   display: block;
+  letter-spacing: 1px;
 }
 
-/* --- 2. FILTER BUTTONS (ORDER 2 - GITNA) --- */
-/* Specific selector to ensure it targets the right container */
+/* --- 2. FILTER BUTTONS --- */
 .browse-category-section .scope-filter-container {
-  order: 2; /* Force to Middle */
-  
+  order: 2;
   display: flex;
   gap: 12px;
   margin-top: 0; 
@@ -45,36 +44,40 @@
   display: none;
 }
 
-/* Button Styles */
 .browse-category-section .scope-filter-btn {
-  background: var(--white);
-  border: 1px solid var(--gray-300);
+  /* Glassy Button Style */
+  background: rgba(241, 245, 249, 0.75); 
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  
   border-radius: 8px;
   padding: 10px 24px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--gray-700);
+  color: #1e293b; /* Dark Text */
   cursor: pointer;
   transition: all 0.2s;
   margin: 0; 
   flex-shrink: 0; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .browse-category-section .scope-filter-btn:hover {
-  background-color: var(--gray-100);
-  border-color: var(--gray-500);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .browse-category-section .scope-filter-btn.active {
-  background-color: var(--primary-navy);
+  background-color: #001b3e; /* Navy Active */
   color: var(--white);
-  border-color: var(--primary-navy);
-  box-shadow: var(--shadow-sm);
+  border-color: #001b3e;
+  box-shadow: 0 4px 10px rgba(0, 27, 62, 0.2);
 }
 
-/* --- 3. SLIDER CONTAINER (ORDER 3 - BABA) --- */
+/* --- 3. SLIDER CONTAINER --- */
 .category-slider-container {
-  order: 3; /* Force to Bottom */
+  order: 3;
   position: relative;
   width: 100%;
 }
@@ -93,16 +96,21 @@
   display: none;
 }
 
-/* --- CARD UI --- */
+/* --- CARD UI (THE GLASSY UPDATE) --- */
 .category-card {
   display: flex;
   flex-direction: column; 
   align-items: stretch;
   flex: 0 0 250px;
   scroll-snap-align: start;
-  background: #ffffff;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  
+  /* --- SOFT GRAY GLASS EFFECT --- */
+  background: rgba(241, 245, 249, 0.75); /* Off-white Tint */
+  backdrop-filter: blur(16px);           /* Glass Blur */
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6); /* Subtle Border */
+  
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   padding: 0;
   cursor: pointer;
@@ -114,14 +122,15 @@
 
 .category-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  border-color: #e0e0e0;
+  background: rgba(255, 255, 255, 0.85); /* More solid on hover */
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  border-color: #ffffff;
 }
 
 .category-card.active {
-  background: #fff;
-  border-color: #FF8C00;
-  box-shadow: 0 0 10px rgba(255, 140, 0, 0.3);
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #FF8C00; /* Orange Border for Active */
+  box-shadow: 0 0 15px rgba(255, 140, 0, 0.25);
 }
 
 .category-image-wrapper {
@@ -133,12 +142,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .category-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.category-card:hover .category-image {
+  transform: scale(1.1);
 }
 
 .category-info {
@@ -146,21 +161,22 @@
   flex-direction: column;
   justify-content: center;
   width: 100%;
-  padding: 12px 16px;
+  padding: 16px;
   gap: 4px;
 }
 
 .category-label {
   font-size: 1rem;
-  font-weight: 700;
-  color: #333;
+  font-weight: 800;
+  color: #1e293b; /* Dark Slate Text */
   text-shadow: none;
   padding: 0;
 }
 
 .category-subtitle {
   font-size: 0.85rem;
-  color: #777;
+  color: #64748b; /* Slate Gray Text */
+  font-weight: 500;
   text-shadow: none;
 }
 
@@ -170,10 +186,13 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  background: #ffffff;
-  border: 1px solid #e0e0e0;
-  color: #333;
-  backdrop-filter: none;
+  
+  /* Glassy Arrows */
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  
+  color: #1e293b;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -181,14 +200,15 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
 }
 
 .scroll-arrow-btn:hover {
   transform: translateY(-50%) scale(1.1);
-  background: #fdfdfd;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  color: #FF8C00;
 }
 
 .scroll-arrow-btn:active {
@@ -211,7 +231,8 @@
     display: none;
   }
   .category-section-title {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+    text-shadow: 3px 3px 0 #001b3e;
   }
   .category-card {
     flex-basis: 220px;
@@ -219,8 +240,6 @@
   .category-image-wrapper {
     height: 130px;
   }
-  
-  /* Tablet Spacing */
   .browse-category-section .scope-filter-container {
     margin-bottom: 20px;
     gap: 10px;
@@ -229,7 +248,7 @@
 
 @media (max-width: 480px) {
   .category-section-title {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
   }
   .category-scroller {
     gap: 12px;
@@ -241,10 +260,8 @@
     height: 110px;
   }
   .category-info {
-    padding: 10px 12px;
+    padding: 12px;
   }
-  
-  /* Mobile Spacing */
   .browse-category-section .scope-filter-container {
     margin-bottom: 16px;
     gap: 8px;
