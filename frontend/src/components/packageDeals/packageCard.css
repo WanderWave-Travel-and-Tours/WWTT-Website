@@ -1,18 +1,30 @@
-/* Package Card Component Styles */
+/* Package Card Component Styles - SOFT GRAY GLASS THEME */
 
 .package-card {
-  background: var(--white);
+  /* --- SOFT GRAY GLASS EFFECT (Darker ng konti sa pure white) --- */
+  background: rgba(241, 245, 249, 0.75); /* Light Slate/Gray Tint */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  
+  /* Mas subtle na border para hindi mukhang "cut-out" masyado */
+  border: 1px solid rgba(255, 255, 255, 0.6); 
+  
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Mas defined na shadow */
+  transition: all 0.3s ease;
   position: relative;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 
 .package-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  /* Pag hover, nagiging mas solid ng konti at mas puti */
+  background: rgba(255, 255, 255, 0.85); 
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  border-color: #ffffff;
 }
 
 /* Badges */
@@ -22,92 +34,93 @@
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   z-index: 2;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  letter-spacing: 0.5px;
 }
 
 .badge-featured {
   left: 12px;
   background-color: #ff6b35;
-  color: var(--white);
+  color: #fff;
 }
 
 .badge-discount {
-  right: 68px; /* Adjusted margin to not overlap with larger heart button */
+  right: 68px;
   background-color: #10b981;
-  color: var(--white);
+  color: #fff;
 }
 
-/* --- FAVORITE BUTTON (Container) --- */
+/* --- FAVORITE BUTTON --- */
 .favorite-button {
   position: absolute;
   top: 12px;
   right: 12px;
-  
-  /* UPDATED: Increased container size */
   width: 48px;
   height: 48px;
   
-  background: var(--white);
-  border: none;
-  border-radius: 50%;
+  /* Ginaya ko yung background ng card pero mas light ng konti */
+  background: rgba(255, 255, 255, 0.7); 
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  color: #64748b; /* Slate icon */
   
-  /* Force Flex Center */
+  border-radius: 50%;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 0 !important;
-  
   cursor: pointer;
   z-index: 3;
-  box-shadow: var(--shadow);
   transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
 .favorite-button:hover {
   transform: scale(1.1);
+  background: #fff;
+  color: #e91e63;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .favorite-button.active {
   color: #e91e63;
+  background: #fff;
+  border-color: #fff;
 }
 
-/* --- FORCE FIX FOR HEART ICON SIZE --- */
-/* This ensures the SVG is never tiny */
 .favorite-button svg {
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  min-height: 28px !important;
-  transform: none !important;
+  width: 24px !important;
+  height: 24px !important;
 }
 
 /* Card Image */
 .card-image {
   width: 100%;
-  height: 200px;
-  background: linear-gradient(135deg, var(--primary-orange) 0%, #fdb44b 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 220px;
+  position: relative;
   overflow: hidden;
+  /* Line separator para sa glass effect */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5); 
 }
 
 .image-content {
   width: 100%;
   height: 100%;
   object-fit: cover; 
-  transition: transform 0.3s ease; 
+  transition: transform 0.5s ease; 
 }
 
 .package-card:hover .image-content {
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 /* Card Body */
 .card-body {
-  padding: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 .card-header {
@@ -116,8 +129,8 @@
 
 .card-title {
   font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--primary-navy);
+  font-weight: 800;
+  color: #1e293b; /* Slate 800 - Dark Blue/Gray text */
   margin-bottom: 8px;
   line-height: 1.4;
 }
@@ -129,71 +142,42 @@
 }
 
 .star-icon {
-  color: #fbbf24;
+  color: #f59e0b; /* Amber 500 - Mas malalim na gold */
 }
 
 .rating-value {
   font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--gray-900);
+  font-weight: 700;
+  color: #334155; /* Slate 700 */
 }
 
 .rating-count {
   font-size: 0.875rem;
-  color: var(--gray-500);
+  color: #64748b; /* Slate 500 */
 }
 
 /* Card Details */
 .card-details {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .detail-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .detail-icon {
-  color: var(--primary-orange);
+  color: #ea580c; /* Darker Orange for better contrast on light gray */
   flex-shrink: 0;
 }
 
 .detail-text {
-  font-size: 0.875rem;
-  color: var(--gray-600);
-}
-
-/* Includes Section */
-.includes-section {
-  margin-bottom: 20px;
-}
-
-.includes-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--gray-500);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.includes-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.include-item {
-  background-color: var(--gray-100);
-  color: var(--gray-700);
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
+  color: #475569; /* Slate 600 - Solid gray for readability */
   font-weight: 500;
 }
 
@@ -202,20 +186,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 16px;
-  border-top: 1px solid var(--gray-200);
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06); /* Subtle divider */
+  margin-top: auto;
 }
 
 .price-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .price-label {
   font-size: 0.75rem;
-  color: var(--gray-500);
+  color: #64748b;
   text-transform: uppercase;
+  font-weight: 600;
   letter-spacing: 0.5px;
 }
 
@@ -228,38 +214,39 @@
 .currency {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--gray-900);
+  color: #1e293b;
 }
 
 .price-value {
   font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary-orange);
+  font-weight: 800;
+  color: #ea580c; /* Darker Orange Price */
 }
 
 .book-button {
-  background-color: var(--primary-orange);
-  color: var(--white);
+  background-color: #ea580c; /* Darker Orange Button */
+  color: #fff;
   border: none;
-  padding: 10px 20px;
+  padding: 10px 24px;
   border-radius: 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
+  gap: 8px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25);
 }
 
 .book-button:hover {
-  background-color: #e68a0f;
-  transform: translateX(2px);
-  box-shadow: var(--shadow-md);
+  background-color: #c2410c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(234, 88, 12, 0.35);
 }
 
 @media (max-width: 480px) {
-  .card-title {
-    font-size: 1.125rem;
-  }
+  .card-body { padding: 16px; }
+  .card-title { font-size: 1.125rem; }
+  .price-value { font-size: 1.25rem; }
 }

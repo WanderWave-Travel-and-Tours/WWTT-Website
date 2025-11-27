@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PackageCard from './packageCard';
-import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, DollarSign } from 'lucide-react'; // Added Info, DollarSign
 import './AllPackages.css';
 
 function AllPackages({ 
@@ -25,6 +25,41 @@ function AllPackages({
 }) {
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  
+  // --- NEW: CURRENCY STATE ---
+  const [currency, setCurrency] = useState('PHP'); // 'PHP' or 'USD'
+  const EXCHANGE_RATE = 58; // 1 USD = 58 PHP (Fixed rate for demo)
+
+  // --- PAGINATION STATE ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; 
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [packages, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations]);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPackages = packages.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(packages.length / itemsPerPage);
+
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    if (packagesRef.current) {
+        const yOffset = -120; 
+        const element = packagesRef.current;
+        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({top: y, behavior: 'smooth'});
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) paginate(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) paginate(currentPage - 1);
+  };
 
   const handleDestinationChange = (location) => {
     if (selectedDestinations.includes(location)) {
@@ -55,6 +90,36 @@ function AllPackages({
         <h2 className="packages-main-title">{categoryName}</h2>
         <span className="packages-count-badge">{packages.length} packages</span>
       </div>
+
+      {/* --- NEW: CURRENCY REMINDER & TOGGLE BANNER --- */}
+      <div className="currency-banner">
+        <div className="currency-info">
+          <Info className="info-icon" size={20} />
+          <div className="info-text">
+            <strong>International Booking Notice:</strong> Prices may vary due to currency exchange rates and bank transaction fees. 
+            Displayed USD prices are estimates based on the current exchange rate (₱{EXCHANGE_RATE} = $1).
+          </div>
+        </div>
+        
+        <div className="currency-toggle-container">
+          <span className="toggle-label">View in:</span>
+          <div className="currency-switch">
+            <button 
+              className={`currency-btn ${currency === 'PHP' ? 'active' : ''}`}
+              onClick={() => setCurrency('PHP')}
+            >
+              PHP ₱
+            </button>
+            <button 
+              className={`currency-btn ${currency === 'USD' ? 'active' : ''}`}
+              onClick={() => setCurrency('USD')}
+            >
+              USD $
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* --- END BANNER --- */}
 
       <div className="all-packages-layout">
         
@@ -97,7 +162,7 @@ function AllPackages({
             </div>
 
             <div className="filter-group">
-              <label className="filter-label">Price Range</label>
+              <label className="filter-label">Price Range ({currency})</label>
               <div className="price-inputs-container">
                 <input 
                   type="number" 
@@ -203,14 +268,17 @@ function AllPackages({
           </div>
 
           <div className="packages-grid">
-            {packages.length > 0 ? (
-              packages.map(pkg => (
+            {currentPackages.length > 0 ? (
+              currentPackages.map(pkg => (
                 <PackageCard
                   key={pkg.id}
                   package={pkg}
                   isFavorite={favorites.includes(pkg.id)}
                   onToggleFavorite={onToggleFavorite}
                   onBookNow={onBookNow}
+                  // --- PASS CURRENCY PROPS ---
+                  currency={currency}
+                  exchangeRate={EXCHANGE_RATE}
                 />
               ))
             ) : (
@@ -229,6 +297,38 @@ function AllPackages({
               </div>
             )}
           </div>
+
+          {/* Pagination */}
+          {packages.length > itemsPerPage && (
+            <div className="pagination-container">
+              <button 
+                className="pagination-btn" 
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i + 1}
+                  className={`pagination-btn ${currentPage === i + 1 ? 'active' : ''}`}
+                  onClick={() => paginate(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button 
+                className="pagination-btn" 
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
+          
         </div>
       </div>
     </section>

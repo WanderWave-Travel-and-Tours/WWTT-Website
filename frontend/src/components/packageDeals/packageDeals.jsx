@@ -4,6 +4,7 @@ import AllPackages from './allPackages';
 import PackageBooking from './packageBooking';
 import './packageDeals.css';
 import PromoSection from './promoSection';
+import CurrencyModal from './currencyModal';
 
 function PackageDeals() {
   const [selectedFilter, setSelectedFilter] = useState('all');
@@ -22,10 +23,41 @@ function PackageDeals() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // --- MODAL STATE ---
+  const [showModal, setShowModal] = useState(false);
+  const [hasShownModal, setHasShownModal] = useState(false);
+  
+  // NOTE: Tinanggal ko na yung 'allPackagesSectionRef' kasi di na kailangan.
+
+  // --- SCROLL DETECTION LOGIC (UPDATED: 1 SCROLL TRIGGER) ---
+  useEffect(() => {
+    // Function na tatakbo tuwing mag-i-scroll si user
+    const handleScroll = () => {
+      // Kung naipakita na ang modal, wag na gawin ito
+      if (hasShownModal) return;
+
+      // Check kung naka-scroll na ng higit sa 150 pixels (Tantsa ng 1 scroll)
+      if (window.scrollY > 150) {
+        console.log("User scrolled down! Opening Modal...");
+        setShowModal(true);
+        setHasShownModal(true); // Stop na, wag na ulitin
+      }
+    };
+
+    // Ikabit ang event listener sa window
+    window.addEventListener('scroll', handleScroll);
+
+    // Linisin pag-alis sa page
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [hasShownModal]); // Depend lang sa hasShownModal
+
+  // --- DATA FETCHING (Walang pagbabago) ---
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
 
-    const handleBookNow = (pkg) => {
+  const handleBookNow = (pkg) => {
     setSelectedPackageForBooking(pkg);
     setCurrentView('booking');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -152,7 +184,6 @@ function PackageDeals() {
             description: pkg.title,
             includes: pkg.inclusions || [],
           }));
-          
           setPackages(formattedPackages);
         } else {
           setError(result.error || 'Failed to fetch packages.');
@@ -248,45 +279,61 @@ function PackageDeals() {
   else if (scopeFilter === 'best-deals') headerTitle = 'Best Deals';
   else if (selectedFilter !== 'all') headerTitle = currentCategoryName;
 
-  if (currentView === 'booking' && selectedPackageForBooking) {
-    return <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} />;
-  }
 
+  // --- RETURN JSX ---
   return (
     <div className="package-deals-page">
-      <div className="content-container">
-        
-        <PromoSection onBookNow={scrollToPackages} />
+      
+      {/* MODAL COMPONENT */}
+      <CurrencyModal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+      />
 
-        <BrowseCategory 
-          title="Most Visited Destination"
-          categories={mostVisitedCategories}
-          selectedFilter={selectedFilter}
-          onFilterChange={setSelectedFilter}
-          onCategoryClick={scrollToPackages}
-        />
+      {/* TOP SECTION */}
+      <section className="top-section-bg">
+        <div className="content-container">
+          <PromoSection onBookNow={scrollToPackages} />
+          <BrowseCategory 
+            title="Most Visited Destination"
+            categories={mostVisitedCategories}
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+            onCategoryClick={scrollToPackages}
+          />
+        </div>
+      </section>
 
-        <AllPackages 
-          packages={filteredPackages}
-          categoryName={headerTitle} 
-          favorites={favorites}
-          onToggleFavorite={toggleFavorite}
-          onBookNow={handleBookNow}
-          packagesRef={packagesRef}
-          scopeFilter={scopeFilter}
-          onScopeChange={setScopeFilter}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery} 
-          priceRange={priceRange}
-          setPriceRange={setPriceRange}
-          selectedDuration={selectedDuration}
-          setSelectedDuration={setSelectedDuration}
-          allDurations={allDurations}
-          selectedDestinations={selectedDestinations}
-          setSelectedDestinations={setSelectedDestinations}
-          allLocations={allLocations}
-        />
-      </div>
+      {/* DIVIDER */}
+      <div className="section-divider-orange"></div>
+
+      {/* BOTTOM SECTION */}
+      {/* Wala nang REF dito kasi WINDOW SCROLL na ang gamit natin */}
+      <section className="bottom-section-bg">
+        <div className="content-container">
+          <AllPackages 
+            packages={filteredPackages}
+            categoryName={headerTitle} 
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
+            onBookNow={handleBookNow}
+            packagesRef={packagesRef}
+            scopeFilter={scopeFilter}
+            onScopeChange={setScopeFilter}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery} 
+            priceRange={priceRange}
+            setPriceRange={setPriceRange}
+            selectedDuration={selectedDuration}
+            setSelectedDuration={setSelectedDuration}
+            allDurations={allDurations}
+            selectedDestinations={selectedDestinations}
+            setSelectedDestinations={setSelectedDestinations}
+            allLocations={allLocations}
+          />
+        </div>
+      </section>
+
     </div>
   );
 }

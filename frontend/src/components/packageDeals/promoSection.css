@@ -1,10 +1,10 @@
 .promo-section {
   margin-bottom: 48px;
-  margin-top: 50px; /* Added space from navbar */
+  margin-top: 50px;
   position: relative;
 }
 
-/* --- HEADER STYLES --- */
+/* --- HEADER STYLES (UPDATED TO MATCH IMAGE) --- */
 .promo-header {
   display: flex;
   align-items: center;
@@ -15,11 +15,15 @@
 }
 
 .promo-section-title {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: var(--primary-navy, #001b3e);
+  font-size: 2.5rem; /* Increased size */
+  font-weight: 900; /* Extra Bold */
+  color: #FF8C00; /* Wanderwave Orange */
   text-transform: uppercase;
   margin: 0;
+  /* The Hard Navy Shadow Effect */
+  text-shadow: 4px 4px 0 #001b3e; 
+  letter-spacing: 1px;
+  line-height: 1.1;
 }
 
 .promo-filters {
@@ -57,9 +61,8 @@
   overflow: hidden;
   border-radius: 16px;
   position: relative;
-  /* REMOVED SHADOW to fix top border issue */
   box-shadow: none; 
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); /* Alternative bottom-only shadow */
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
 }
 
 .promo-slider-track {
@@ -158,10 +161,14 @@
 }
 
 /* --- RESPONSIVE --- */
-
 @media (max-width: 768px) {
   .promo-section {
     margin-top: 60px;
+  }
+
+  .promo-section-title {
+    font-size: 1.75rem; /* Adjusted for mobile */
+    text-shadow: 3px 3px 0 #001b3e;
   }
 
   .promo-header {
@@ -193,10 +200,9 @@
   }
   
   .slider-arrow {
-    display: none; /* Hide arrows on mobile */
+    display: none;
   }
   
-  /* Scrollable filters */
   .promo-filters {
     width: 100%;
     overflow-x: auto;
