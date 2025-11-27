@@ -25,8 +25,19 @@
 html {
   margin: 0;
   padding: 0;
-  background-color: transparent; /* CHANGED */
+  background-color: transparent;
   min-height: 100%;
+}
+
+/* Force English as default language */
+html:not([lang]),
+html[lang=""] {
+  lang: en !important;
+}
+
+/* Prevent translation of specific elements if needed */
+.notranslate {
+  translate: no;
 }
 
 body {
@@ -35,7 +46,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: transparent; /* CHANGED */
+  background-color: transparent;
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -46,14 +57,130 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: transparent; /* CHANGED */
+  background-color: transparent;
 }
 
 .app-container {
-  min-height: 100vh; /* CHANGED */
-  background-color: transparent; /* CHANGED */
+  min-height: 100vh;
+  background-color: transparent;
   margin: 0;
   padding: 0;
+}
+
+/* ===== GOOGLE TRANSLATE HIDING STYLES - ENHANCED ===== */
+/* Hide the Google Translate element completely */
+#google_translate_element {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Hide Google Translate banner at the top */
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide the iframe that Google Translate creates */
+.skiptranslate iframe,
+iframe.skiptranslate,
+iframe.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+}
+
+/* Fix body position - remove top padding added by Google */
+body {
+  top: 0 !important;
+  position: static !important;
+}
+
+/* Force remove any top positioning */
+body.translated-ltr,
+body.translated-rtl {
+  top: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Hide all Google Translate UI elements */
+.goog-te-gadget-icon {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.goog-te-gadget-simple {
+  display: none !important;
+  visibility: hidden !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.goog-logo-link {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.goog-te-gadget {
+  display: none !important;
+  visibility: hidden !important;
+  color: transparent !important;
+  font-size: 0 !important;
+}
+
+/* Hide the dropdown that Google creates */
+.goog-te-combo {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Hide any Google Translate related spans */
+.goog-te-menu-value {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide balloon/tooltip */
+.goog-te-balloon-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Additional hiding for any remaining Google elements */
+[id^="goog-gt-"],
+[class^="goog-te-"],
+.goog-text-highlight {
+  display: none !important;
+  visibility: hidden !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Ensure translated content renders properly */
+.translated-ltr,
+.translated-rtl {
+  background-color: transparent !important;
+}
+
+/* Remove any Google Translate spacing */
+#goog-gt-tt,
+.goog-te-spinner-pos {
+  display: none !important;
 }
 
 /* ===== TOP BAR ===== */
@@ -243,6 +370,11 @@ body {
 
 .translate-button.active {
   background-color: var(--primary-orange);
+}
+
+.translate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .translate-button-icon {
@@ -491,12 +623,11 @@ body {
   font-weight: 400;
 }
 
-/* ===== MAIN CONTENT - FIXED ===== */
+/* ===== MAIN CONTENT ===== */
 .main-content {
   margin-top: var(--total-header-height);
-  background-color: transparent; /* CHANGED */
+  background-color: transparent;
   min-height: calc(100vh - var(--total-header-height));
-  padding: 0; /* ADDED */
 }
 
 .page-container {
@@ -525,17 +656,7 @@ body {
   line-height: 1.6;
 }
 
-/* ===== ANIMATIONS ===== */
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* ===== USER PROFILE BUTTON ===== */
 .user-profile-btn {
   padding: 0.5rem 1.5rem;
   background: white;
@@ -559,21 +680,22 @@ body {
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
 }
 
-@media (max-width: 768px) {
-  .user-profile-btn {
-    width: 100%;
-    margin-top: 1rem;
-    padding: 0.75rem 1.5rem;
-    max-width: none;
-  }
-}
-
 .main-content:has(.user-dashboard) {
   padding: 0;
   max-width: none;
 }
 
-
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 @keyframes fadeIn {
   from {
@@ -636,7 +758,9 @@ body {
     min-height: calc(100vh - var(--navbar-height));
   }
 
-  .nav-right { display: none; }
+  .nav-right { 
+    display: none; 
+  }
   
   .mobile-menu-btn { 
     display: flex; 
@@ -653,6 +777,15 @@ body {
   
   .mobile-nav-menu {
     display: flex;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-profile-btn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    max-width: none;
   }
 }
 
