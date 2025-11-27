@@ -1,7 +1,7 @@
 .site-footer {
   background-color: var(--primary-navy);
   color: rgba(255, 255, 255, 0.8);
-  padding-top: 70px;
+  padding-top: 60px;
   padding-bottom: 5px;
   font-size: 1rem;
   width: 100%;
@@ -22,7 +22,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 70px;
-  margin-bottom: 50px;
+  margin-bottom: 80px;
 }
 
 /* Column 1: About */
@@ -96,7 +96,7 @@
 /* Bottom Bar */
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px 0;
+  padding: 35px 0;
   margin-top: 30px;
 }
 
