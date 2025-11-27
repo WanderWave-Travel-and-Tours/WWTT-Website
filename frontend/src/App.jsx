@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Globe } from 'lucide-react'; 
-import './App.css';
+import './App.css'; // Make sure imported ang CSS dito
 import FlightSearch from './components/flightSearch/flightSearch.jsx';
-import PackageDeals from './components/packagedeals/packageDeals.jsx';
+import PackageDeals from './components/packageDeals/packageDeals.jsx';
 import Footer from './components/footer/footer.jsx';
 import OtherServices from './components/otherservices/otherservices.jsx';
 import UserAuth from './components/userLogin/userLogin.jsx'; 
@@ -57,8 +57,9 @@ function MainLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authPage, setAuthPage] = useState(null);
   const [isTranslateOpen, setIsTranslateOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState('TL');
+  const [currentLang, setCurrentLang] = useState('en');
   const [currentUser, setCurrentUser] = useState(null);
+  const [isTranslateReady, setIsTranslateReady] = useState(false);
 
   const logoNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
@@ -69,11 +70,12 @@ function MainLayout() {
     otherservices: { name: 'Other Services', path: '/other-services' },
   };
 
+  // Expanded Language List
   const languages = [
     { code: 'en', name: 'English', flag: '🇬🇧', shortCode: 'EN' },
     { code: 'tl', name: 'Tagalog', flag: '🇵🇭', shortCode: 'TL' },
-    { code: 'zh-CN', name: 'Chinese (Simplified)', flag: '🇨🇳', shortCode: 'CN' },
-    { code: 'zh-TW', name: 'Chinese (Traditional)', flag: '🇹🇼', shortCode: 'TW' },
+    { code: 'zh-CN', name: 'Chinese (Simp)', flag: '🇨🇳', shortCode: 'CN' },
+    { code: 'zh-TW', name: 'Chinese (Trad)', flag: '🇹🇼', shortCode: 'TW' },
     { code: 'ja', name: 'Japanese', flag: '🇯🇵', shortCode: 'JA' },
     { code: 'ko', name: 'Korean', flag: '🇰🇷', shortCode: 'KO' },
     { code: 'es', name: 'Spanish', flag: '🇪🇸', shortCode: 'ES' },
@@ -86,7 +88,96 @@ function MainLayout() {
     { code: 'hi', name: 'Hindi', flag: '🇮🇳', shortCode: 'HI' },
     { code: 'th', name: 'Thai', flag: '🇹🇭', shortCode: 'TH' },
     { code: 'vi', name: 'Vietnamese', flag: '🇻🇳', shortCode: 'VI' },
+    { code: 'id', name: 'Indonesian', flag: '🇮🇩', shortCode: 'ID' },
+    { code: 'ms', name: 'Malay', flag: '🇲🇾', shortCode: 'MS' },
+    { code: 'nl', name: 'Dutch', flag: '🇳🇱', shortCode: 'NL' },
+    { code: 'pl', name: 'Polish', flag: '🇵🇱', shortCode: 'PL' },
+    { code: 'tr', name: 'Turkish', flag: '🇹🇷', shortCode: 'TR' },
+    { code: 'bn', name: 'Bengali', flag: '🇧🇩', shortCode: 'BN' },
   ];
+
+  // Optimized Google Translate initialization
+  useEffect(() => {
+    // Check if already loaded
+    if (window.google?.translate) {
+      setIsTranslateReady(true);
+      return;
+    }
+
+    // Define the initialization function
+    window.googleTranslateElementInit = function() {
+      try {
+        new window.google.translate.TranslateElement(
+          { 
+            pageLanguage: 'en',
+            // Added new codes: id,ms,nl,pl,tr,bn
+            includedLanguages: 'en,tl,zh-CN,zh-TW,ja,ko,es,fr,de,it,pt,ru,ar,hi,th,vi,id,ms,nl,pl,tr,bn',
+            autoDisplay: false
+          },
+          'google_translate_element'
+        );
+        setIsTranslateReady(true);
+      } catch (error) {
+        console.error('Translation initialization error:', error);
+      }
+    };
+
+    // Add the Google Translate script with optimization
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+    script.async = true;
+    script.defer = true;
+    
+    script.onerror = () => {
+      console.error('Failed to load Google Translate');
+    };
+
+    document.body.appendChild(script);
+
+    // Add CSS to hide Google Translate UI
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .goog-te-banner-frame.skiptranslate {
+        display: none !important;
+      }
+      body {
+        top: 0 !important;
+        position: static !important;
+      }
+      #google_translate_element {
+        display: none !important;
+      }
+      .goog-te-gadget-icon {
+        display: none !important;
+      }
+      .goog-te-gadget-simple {
+        background-color: transparent !important;
+        border: none !important;
+      }
+      .goog-logo-link {
+        display: none !important;
+      }
+      .goog-te-gadget {
+        color: transparent !important;
+        font-size: 0 !important;
+      }
+      .goog-text-highlight {
+        background-color: transparent !important;
+        box-shadow: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+      if (style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
+    };
+  }, []);
 
   const getCurrentPage = () => {
     const currentPath = location.pathname;
@@ -114,8 +205,48 @@ function MainLayout() {
   };
 
   const handleLanguageSelect = (lang) => {
-    setCurrentLang(lang.shortCode);
+    setCurrentLang(lang.code);
     setIsTranslateOpen(false);
+
+    // Optimized translation trigger
+    const triggerTranslation = () => {
+      const selectElement = document.querySelector('.goog-te-combo');
+      if (selectElement) {
+        // Set value
+        selectElement.value = lang.code;
+        
+        // Trigger multiple events for better compatibility
+        const events = ['change', 'click', 'input'];
+        events.forEach(eventType => {
+          const event = new Event(eventType, { bubbles: true });
+          selectElement.dispatchEvent(event);
+        });
+
+        // Force trigger if standard events don't work
+        if (selectElement.onchange) {
+          selectElement.onchange();
+        }
+      } else if (isTranslateReady) {
+        // Retry if element not found but translate is ready
+        setTimeout(triggerTranslation, 100);
+      }
+    };
+
+    // Wait for translate to be ready
+    if (isTranslateReady) {
+      triggerTranslation();
+    } else {
+      // Wait and retry
+      const checkInterval = setInterval(() => {
+        if (isTranslateReady) {
+          clearInterval(checkInterval);
+          triggerTranslation();
+        }
+      }, 100);
+
+      // Clear interval after 5 seconds
+      setTimeout(() => clearInterval(checkInterval), 5000);
+    }
   };
 
   // Show UserAuth component if user clicks BOOK NOW
@@ -134,8 +265,16 @@ function MainLayout() {
   const isPaymentSuccessPage = location.pathname === '/payment/success';
   const isDashboardPage = location.pathname === '/dashboard';
 
+  const getCurrentShortCode = () => {
+    const lang = languages.find(l => l.code === currentLang);
+    return lang ? lang.shortCode : 'EN';
+  };
+
   return (
     <div className="app-container">
+      {/* Google Translate Element - Hidden */}
+      <div id="google_translate_element"></div>
+
       {/* Only show top bar and navbar if NOT on dashboard */}
       {!isDashboardPage && (
         <>
@@ -191,9 +330,10 @@ function MainLayout() {
                     <button 
                       className={`translate-button ${isTranslateOpen ? 'active' : ''}`}
                       onClick={() => setIsTranslateOpen(!isTranslateOpen)}
+                      disabled={!isTranslateReady}
                     >
                       <Globe size={16} className="translate-button-icon" />
-                      <span className="translate-button-text">{currentLang}</span>
+                      <span className="translate-button-text">{getCurrentShortCode()}</span>
                     </button>
                     
                     {isTranslateOpen && (
@@ -201,7 +341,7 @@ function MainLayout() {
                         {languages.map((lang) => (
                           <div
                             key={lang.code}
-                            className={`translate-option ${currentLang === lang.shortCode ? 'active' : ''}`}
+                            className={`translate-option ${currentLang === lang.code ? 'active' : ''}`}
                             onClick={() => handleLanguageSelect(lang)}
                           >
                             <span className="translate-flag">{lang.flag}</span>
@@ -261,9 +401,10 @@ function MainLayout() {
               <button 
                 className={`translate-button ${isTranslateOpen ? 'active' : ''}`}
                 onClick={() => setIsTranslateOpen(!isTranslateOpen)}
+                disabled={!isTranslateReady}
               >
                 <Globe size={16} className="translate-button-icon" />
-                <span className="translate-button-text">{currentLang}</span>
+                <span className="translate-button-text">{getCurrentShortCode()}</span>
               </button>
               
               {isTranslateOpen && (
@@ -271,7 +412,7 @@ function MainLayout() {
                   {languages.map((lang) => (
                     <div
                       key={lang.code}
-                      className={`translate-option ${currentLang === lang.shortCode ? 'active' : ''}`}
+                      className={`translate-option ${currentLang === lang.code ? 'active' : ''}`}
                       onClick={() => handleLanguageSelect(lang)}
                     >
                       <span className="translate-flag">{lang.flag}</span>

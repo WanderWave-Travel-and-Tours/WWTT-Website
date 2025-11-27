@@ -8,7 +8,7 @@ function AllPackages({
   categoryName, 
   favorites, 
   onToggleFavorite,
-  onBookNow, // ✅ ADD THIS PROP
+  onBookNow,
   packagesRef,
   scopeFilter,
   onScopeChange,
@@ -162,23 +162,23 @@ function AllPackages({
 
         <div className="main-content">
           
-          <div className="filter-bar-container">
-            <div className="scope-filter-container">
+          <div className="packages-filter-bar-container">
+            <div className="packages-scope-filter-container">
               <button 
-                className={`scope-filter-btn ${scopeFilter === 'all' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn ${scopeFilter === 'all' ? 'active' : ''}`}
                 onClick={() => onScopeChange('all')}
               >
                 All
               </button>
               <button 
-                className={`scope-filter-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
                 onClick={() => onScopeChange('best-deals')}
               >
                 <Sparkles size={16} />
                 <span>Best Deals</span>
               </button>
               <button 
-                className={`scope-filter-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
                 onClick={() => onScopeChange('favorites')}
               >
                 <Heart size={16} fill={scopeFilter === 'favorites' ? 'currentColor' : 'none'} />
@@ -186,14 +186,14 @@ function AllPackages({
                 {favorites.length > 0 && <span className="fav-count">({favorites.length})</span>}
               </button>
               <button 
-                className={`scope-filter-btn ${scopeFilter === 'local' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn ${scopeFilter === 'local' ? 'active' : ''}`}
                 onClick={() => onScopeChange('local')}
               >
                 <MapPin size={16} />
                 <span>Local</span>
               </button>
               <button 
-                className={`scope-filter-btn ${scopeFilter === 'international' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn ${scopeFilter === 'international' ? 'active' : ''}`}
                 onClick={() => onScopeChange('international')}
               >
                 <Globe size={16} />
@@ -210,7 +210,7 @@ function AllPackages({
                   package={pkg}
                   isFavorite={favorites.includes(pkg.id)}
                   onToggleFavorite={onToggleFavorite}
-                  onBookNow={onBookNow} // ✅ ADD THIS PROP
+                  onBookNow={onBookNow}
                 />
               ))
             ) : (
