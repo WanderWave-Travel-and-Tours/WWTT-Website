@@ -28,8 +28,8 @@ import {
   Images,
   PenTool,
   Newspaper,
-  UploadCloud, // New Icon for Upload Image
-  Grid // New Icon for Gallery/View Images
+  UploadCloud, 
+  Grid 
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -171,7 +171,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <MenuItem path="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <MenuItem path="/booking" icon={Calendar} label="Booking" />
             
-            {/* ADD DROPDOWN */}
             <DropdownMenu 
               title="Add" 
               icon={PlusCircle} 
@@ -181,13 +180,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
                 { name: 'Add Promo Poster', path: '/add-poster', icon: Image },
                 { name: 'Create Blog', path: '/add-blog', icon: PenTool },
-                { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, // <-- NEW ITEM
+                { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, 
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
                 { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
               ]}
             />
 
-            {/* LIST DROPDOWN */}
             <DropdownMenu 
               title="List" 
               icon={List} 
@@ -197,7 +195,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
                 { name: 'Poster List', path: '/view-posters', icon: Images },
                 { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
-                { name: 'Image Gallery', path: '/view-images', icon: Grid }, // <-- NEW ITEM
+                { name: 'Image Gallery', path: '/view-images', icon: Grid }, 
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
                 { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
               ]}

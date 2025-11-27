@@ -12,35 +12,46 @@ function FlightSearch() {
     preferredAirline: ''
   });
 
-  // One-way fields
   const [oneWayData, setOneWayData] = useState({
     origin: 'MNL',
     destination: '',
-    departureDate: '2025-11-17'
+    departureDate: getTomorrowDate()
   });
 
-  // Round-trip fields
   const [roundTripData, setRoundTripData] = useState({
     origin: 'MNL',
     destination: '',
-    departureDate: '2025-11-17',
-    returnDate: '2025-11-24'
+    departureDate: getTomorrowDate(),
+    returnDate: getNextWeekDate()
   });
 
-  // Multi-city fields
   const [multiCityLegs, setMultiCityLegs] = useState([
-    { origin: 'MNL', destination: '', departureDate: '2025-11-17' },
-    { origin: '', destination: 'MNL', departureDate: '2025-11-20' }
+    { origin: 'MNL', destination: '', departureDate: getTomorrowDate() },
+    { origin: '', destination: 'MNL', departureDate: getNextWeekDate() }
   ]);
 
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchInfo, setSearchInfo] = useState(null);
+
+  function getTomorrowDate() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  }
+
+  function getNextWeekDate() {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    return nextWeek.toISOString().split('T')[0];
+  }
 
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSearchInfo(null);
 
     let searchData = {};
     if (searchParams.journeyType === 'one-way') {
@@ -83,7 +94,7 @@ function FlightSearch() {
     }
 
     try {
-      const response = await axios.get('http://localhost:5000/api/flights/search', {
+      const response = await axios.get('http://localhost:5000/api/flights/search-prices', {
         params: {
           ...searchData,
           adults: searchParams.adults
@@ -94,14 +105,31 @@ function FlightSearch() {
 
       if (response.data.success) {
         setFlights(response.data.data);
+        setSearchInfo({
+          count: response.data.count,
+          source: response.data.source,
+          disclaimer: response.data.priceDisclaimer,
+          routeInfo: response.data.routeInfo,
+          pricingInfo: response.data.pricingInfo
+        });
+        
         if (response.data.data.length === 0) {
-          setError('No flights found for this route. Try MNL → NRT or MNL → SIN');
+          setError(response.data.message || 'No flights found');
+        }
+      } else {
+        setError(response.data.message || 'Search failed');
+        if (response.data.suggestions) {
+          console.log('Suggestions:', response.data.suggestions);
         }
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to search flights. Please try again.';
       setError(errorMessage);
       console.error('Search error:', err);
+      
+      if (err.response?.data?.fallback) {
+        console.log('Fallback options:', err.response.data.fallback);
+      }
     } finally {
       setLoading(false);
     }
@@ -132,7 +160,7 @@ function FlightSearch() {
   };
 
   const addMultiCityLeg = () => {
-    setMultiCityLegs([...multiCityLegs, { origin: '', destination: '', departureDate: '2025-11-17' }]);
+    setMultiCityLegs([...multiCityLegs, { origin: '', destination: '', departureDate: getTomorrowDate() }]);
   };
 
   const removeMultiCityLeg = (index) => {
@@ -161,7 +189,10 @@ function FlightSearch() {
   return (
     <div className="flight-search-container">
       <div className="header">
-        <h1>✈️ Search for flights here:</h1>
+        <h1>✈️ Search Real-Time Flight Prices</h1>
+        <p style={{ fontSize: '14px', color: '#666', marginTop: '8px' }}>
+          Powered by Amadeus GDS - Get accurate, bookable prices for future flights
+        </p>
       </div>
 
       <div className="search-container">
@@ -178,17 +209,17 @@ function FlightSearch() {
 
             <div className="form-group">
               <label>Adults (12+ yo)</label>
-              <input type="number" name="adults" value={searchParams.adults} onChange={handleInputChange} min="1" />
+              <input type="number" name="adults" value={searchParams.adults} onChange={handleInputChange} min="1" max="9" />
             </div>
 
             <div className="form-group">
               <label>Children (2-11 yo)</label>
-              <input type="number" name="children" value={searchParams.children} onChange={handleInputChange} min="0" />
+              <input type="number" name="children" value={searchParams.children} onChange={handleInputChange} min="0" max="9" />
             </div>
 
             <div className="form-group">
               <label>Infants (below 2 yo)</label>
-              <input type="number" name="infants" value={searchParams.infants} onChange={handleInputChange} min="0" />
+              <input type="number" name="infants" value={searchParams.infants} onChange={handleInputChange} min="0" max="9" />
             </div>
 
             <div className="form-group">
@@ -211,13 +242,15 @@ function FlightSearch() {
                   name="origin"
                   value={oneWayData.origin}
                   onChange={handleOneWayChange}
-                  placeholder="Manila (MNL)"
+                  placeholder="MNL"
                   maxLength="3"
+                  required
                 />
-                <small style={{ color: '#666', fontSize: '12px', marginTop: '4px' }}>3-letter code</small>
               </div>
 
-              <button type="button" onClick={swapCities} className="swap-button">⇄</button>
+              <button type="button" onClick={swapCities} className="swap-button">
+                ⇄
+              </button>
 
               <div className="form-group">
                 <label>Destination City</label>
@@ -226,21 +259,28 @@ function FlightSearch() {
                   name="destination"
                   value={oneWayData.destination}
                   onChange={handleOneWayChange}
-                  placeholder="Tokyo (TYO)"
+                  placeholder="CEB"
                   maxLength="3"
+                  required
                 />
-                <small style={{ color: '#666', fontSize: '12px', marginTop: '4px' }}>3-letter code</small>
               </div>
 
               <div className="form-group">
-                <label>Departure</label>
-                <input type="date" name="departureDate" value={oneWayData.departureDate} onChange={handleOneWayChange} />
+                <label>Departure Date</label>
+                <input
+                  type="date"
+                  name="departureDate"
+                  value={oneWayData.departureDate}
+                  onChange={handleOneWayChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
               </div>
             </div>
           )}
 
           {searchParams.journeyType === 'round-trip' && (
-            <div className="form-row form-row-7" style={{ gridTemplateColumns: '2fr 0.5fr 2fr 1.5fr 1.5fr' }}>
+            <div className="form-row form-row-7">
               <div className="form-group">
                 <label>Origin City</label>
                 <input
@@ -248,13 +288,15 @@ function FlightSearch() {
                   name="origin"
                   value={roundTripData.origin}
                   onChange={handleRoundTripChange}
-                  placeholder="Manila (MNL)"
+                  placeholder="MNL"
                   maxLength="3"
+                  required
                 />
-                <small style={{ color: '#666', fontSize: '12px' }}>3-letter code</small>
               </div>
 
-              <button type="button" onClick={swapCities} className="swap-button">⇄</button>
+              <button type="button" onClick={swapCities} className="swap-button">
+                ⇄
+              </button>
 
               <div className="form-group">
                 <label>Destination City</label>
@@ -263,58 +305,76 @@ function FlightSearch() {
                   name="destination"
                   value={roundTripData.destination}
                   onChange={handleRoundTripChange}
-                  placeholder="Tokyo (TYO)"
+                  placeholder="CEB"
                   maxLength="3"
+                  required
                 />
-                <small style={{ color: '#666', fontSize: '12px' }}>3-letter code</small>
               </div>
 
               <div className="form-group">
-                <label>Departure</label>
-                <input type="date" name="departureDate" value={roundTripData.departureDate} onChange={handleRoundTripChange} />
+                <label>Departure Date</label>
+                <input
+                  type="date"
+                  name="departureDate"
+                  value={roundTripData.departureDate}
+                  onChange={handleRoundTripChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
               </div>
 
               <div className="form-group">
-                <label>Return</label>
-                <input type="date" name="returnDate" value={roundTripData.returnDate} onChange={handleRoundTripChange} />
+                <label>Return Date</label>
+                <input
+                  type="date"
+                  name="returnDate"
+                  value={roundTripData.returnDate}
+                  onChange={handleRoundTripChange}
+                  min={roundTripData.departureDate}
+                  required
+                />
               </div>
             </div>
           )}
 
-          {/* MULTI-CITY FORM */}
           {searchParams.journeyType === 'multi-city' && (
-            <div style={{ marginBottom: '20px' }}>
+            <div>
               {multiCityLegs.map((leg, index) => (
-                <div key={index} style={{ position: 'relative', marginBottom: '16px' }}>
-                  <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 2fr 60px', gap: '16px', alignItems: 'end' }}>
+                <div key={index} style={{ marginBottom: '16px' }}>
+                  <h4 style={{ marginBottom: '8px', color: '#1e1b4b' }}>Flight {index + 1}</h4>
+                  <div className="form-row form-row-7" style={{ alignItems: 'flex-end' }}>
                     <div className="form-group">
-                      <label>Origin City</label>
+                      <label>Origin</label>
                       <input
                         type="text"
                         value={leg.origin}
                         onChange={(e) => handleMultiCityChange(index, 'origin', e.target.value)}
                         placeholder="MNL"
                         maxLength="3"
+                        required
                       />
                     </div>
 
                     <div className="form-group">
-                      <label>Destination City</label>
+                      <label>Destination</label>
                       <input
                         type="text"
                         value={leg.destination}
                         onChange={(e) => handleMultiCityChange(index, 'destination', e.target.value)}
-                        placeholder="TYO"
+                        placeholder="CEB"
                         maxLength="3"
+                        required
                       />
                     </div>
 
                     <div className="form-group">
-                      <label>Onward</label>
+                      <label>Date</label>
                       <input
                         type="date"
                         value={leg.departureDate}
                         onChange={(e) => handleMultiCityChange(index, 'departureDate', e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        required
                       />
                     </div>
 
@@ -357,64 +417,76 @@ function FlightSearch() {
                   marginTop: '12px'
                 }}
               >
-                + Add Trip
+                + Add Flight
               </button>
             </div>
           )}
 
-          <div className="form-row">
-            <div className="form-group form-full-width">
-              <label>Select Preferred Airlines</label>
-              <input
-                type="text"
-                name="preferredAirline"
-                value={searchParams.preferredAirline}
-                onChange={handleInputChange}
-                placeholder="Type Airline name or code"
-              />
-            </div>
-          </div>
-
           <div className="search-button-container">
             <button type="submit" disabled={loading} className="search-button">
-              🔍 {loading ? 'SEARCHING...' : 'SEARCH FLIGHTS'}
+              🔍 {loading ? 'SEARCHING REAL-TIME PRICES...' : 'SEARCH FLIGHTS'}
             </button>
           </div>
         </form>
 
-        {/* Filters */}
-        {flights.length > 0 && (
-          <div className="filter-container">
-            <div className="filter-buttons">
-              <button className="filter-button">🔧 All filters</button>
-              <button className="filter-button">Stops</button>
-              <button className="filter-button">Airlines</button>
-              <button className="filter-button">Bags</button>
-              <button className="filter-button">Price</button>
-              <button className="filter-button">Duration</button>
+        {searchInfo && flights.length > 0 && (
+          <div style={{
+            background: '#dcfce7',
+            border: '1px solid #16a34a',
+            borderRadius: '8px',
+            padding: '16px',
+            marginTop: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '20px' }}>✅</span>
+              <strong style={{ color: '#15803d' }}>{searchInfo.disclaimer}</strong>
+            </div>
+            <div style={{ fontSize: '13px', color: '#166534', marginTop: '8px' }}>
+              <div>📊 Found {searchInfo.count} real-time {searchInfo.count === 1 ? 'flight' : 'flights'}</div>
+              <div>🛫 Route: {searchInfo.routeInfo?.origin} → {searchInfo.routeInfo?.destination} ({searchInfo.routeInfo?.type})</div>
+              {searchInfo.pricingInfo && (
+                <div>💰 Starting from ₱{searchInfo.pricingInfo.pricePerAdult?.toLocaleString()} per adult</div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Error */}
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div style={{
+            background: '#fee2e2',
+            border: '1px solid #dc2626',
+            borderRadius: '8px',
+            padding: '16px',
+            marginTop: '16px',
+            color: '#991b1b'
+          }}>
+            <strong>❌ {error}</strong>
+          </div>
+        )}
 
-        {/* Results */}
         <div className="flight-results">
           {loading && (
             <div className="loading-container">
               <div className="spinner"></div>
-              <p className="loading-text">Searching for flights...</p>
+              <p className="loading-text">Fetching real-time prices from airlines...</p>
             </div>
           )}
 
-          {/* Flight Cards */}
           {flights.map((flight, index) => (
-            <div key={index} className="flight-card">
+            <div key={flight.id || index} className="flight-card">
               <div className="flight-content">
                 <div className="flight-info">
                   <div className="airline-info">
-                    <div className="airline-logo">{flight.airline?.code || 'N/A'}</div>
+                    {flight.airline?.logo ? (
+                      <img 
+                        src={flight.airline.logo} 
+                        alt={flight.airline.name}
+                        style={{ width: '50px', height: '50px', objectFit: 'contain', borderRadius: '8px' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="airline-logo">{flight.airline?.code || '✈️'}</div>
+                    )}
                     <div className="airline-details">
                       <h3>{flight.airline?.name || 'Unknown Airline'}</h3>
                       <p>Flight {flight.airline?.flightNumber || 'N/A'}</p>
@@ -423,14 +495,11 @@ function FlightSearch() {
 
                   <div className="flight-route">
                     <div className="flight-time">
-                      <div className="time">
-                        {new Date(flight.departure?.scheduledTime).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </div>
+                      <div className="time">{flight.departure?.displayTime}</div>
                       <div className="code">{flight.departure?.iataCode}</div>
+                      <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                        {flight.departure?.displayDate}
+                      </div>
                     </div>
 
                     <div className="flight-path">
@@ -438,75 +507,80 @@ function FlightSearch() {
                       <div className="line"></div>
                       <div className="stops">
                         <span style={{
-                          color: flight.status === 'active' ? 'green' :
-                                flight.status === 'landed' ? 'blue' :
-                                flight.status === 'cancelled' ? 'red' : 'orange',
+                          color: flight.stops === 0 ? '#16a34a' : '#ea580c',
                           fontWeight: 'bold',
                           fontSize: '11px'
                         }}>
-                          {flight.status?.toUpperCase()}
+                          {flight.stops === 0 ? '✓ NON-STOP' : `${flight.stops} STOP${flight.stops > 1 ? 'S' : ''}`}
                         </span>
                       </div>
                     </div>
 
                     <div className="flight-time">
-                      <div className="time">
-                        {new Date(flight.arrival?.scheduledTime).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </div>
+                      <div className="time">{flight.arrival?.displayTime}</div>
                       <div className="code">{flight.arrival?.iataCode}</div>
+                      <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                        {flight.arrival?.displayDate}
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '16px', fontSize: '12px', color: '#666' }}>
-                    <div><strong>Aircraft:</strong> {flight.aircraft}</div>
-                    {flight.departure?.delay && (
-                      <div style={{ color: 'red', marginTop: '4px' }}>
-                        <strong>⚠️ Delay:</strong> {flight.departure.delay} minutes
-                      </div>
-                    )}
-                  </div>
+                  {flight.quality && (
+                    <div style={{ marginTop: '12px', fontSize: '12px', color: '#666' }}>
+                      ⭐ Quality Score: <strong>{flight.quality}/10</strong>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flight-price">
-                  <div className="class">Class: {searchParams.cabinType}</div>
-                  <div className="amount" style={{ fontSize: '18px', color: '#1e1b4b' }}>
-                    Real-Time Tracking
+                  <div className="class" style={{ fontSize: '12px', color: '#666' }}>
+                    {searchParams.cabinType} Class
                   </div>
-                  <div className="currency" style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>
-                    Contact airline for pricing
+                  <div className="amount" style={{ 
+                    fontSize: '32px', 
+                    color: '#1e1b4b', 
+                    fontWeight: 'bold', 
+                    marginTop: '8px' 
+                  }}>
+                    {flight.price.formatted}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', marginTop: '4px' }}>
+                    ✅ Real-time price
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                    per adult • Total: ₱{Math.round(flight.price.amount).toLocaleString()}
                   </div>
                   <button
                     style={{
                       marginTop: '16px',
-                      padding: '8px 20px',
+                      padding: '12px 24px',
                       background: '#1e1b4b',
                       color: 'white',
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: '600'
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      width: '100%',
+                      transition: 'background 0.3s'
                     }}
-                    onClick={() => window.open(`https://www.google.com/flights?q=${flight.departure?.iataCode}+to+${flight.arrival?.iataCode}`, '_blank')}
+                    onMouseOver={(e) => e.target.style.background = '#312e81'}
+                    onMouseOut={(e) => e.target.style.background = '#1e1b4b'}
+                    onClick={() => window.open(flight.bookingUrl, '_blank')}
                   >
-                    Check Prices
+                    Book Now →
                   </button>
                 </div>
               </div>
             </div>
           ))}
 
-          {/* No Results */}
-          {!loading && flights.length === 0 && searchParams.journeyType && (
+          {!loading && flights.length === 0 && !error && (
             <div className="no-results">
               <div className="no-results-icon">✈️</div>
               <p className="no-results-text">
-                No flights found. Try these routes:<br />
-                <strong>MNL → NRT</strong> (Tokyo) | <strong>MNL → SIN</strong> (Singapore) | <strong>MNL → HKG</strong> (Hong Kong)
+                Start searching for real-time flight prices!<br />
+                <strong>Popular routes:</strong> MNL → CEB | MNL → DVO | MNL → SIN
               </p>
             </div>
           )}
