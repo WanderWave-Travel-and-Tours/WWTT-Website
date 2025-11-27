@@ -160,7 +160,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             type="button"
             style={{ zIndex: 1002 }}
         >
-           {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+            {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
 
@@ -182,7 +182,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Create Blog', path: '/add-blog', icon: PenTool },
                 { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, 
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
-                { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
+                // { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
               ]}
             />
 
@@ -197,7 +197,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
                 { name: 'Image Gallery', path: '/view-images', icon: Grid }, 
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
-                { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
+                // { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
               ]}
             />
           </ul>
