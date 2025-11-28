@@ -1,13 +1,10 @@
 const axios = require('axios');
 
-// Search Flights using Aviationstack
 exports.searchFlights = async (req, res) => {
   try {
     const { origin, destination, departureDate } = req.query;
-
     console.log('Aviationstack search params:', { origin, destination, departureDate });
 
-    // Validate inputs
     if (!origin || !destination) {
       return res.status(400).json({
         success: false,
@@ -15,7 +12,6 @@ exports.searchFlights = async (req, res) => {
       });
     }
 
-    // Aviationstack API endpoint
     const apiUrl = 'http://api.aviationstack.com/v1/flights';
     
     const params = {
@@ -25,13 +21,9 @@ exports.searchFlights = async (req, res) => {
       limit: 50
     };
 
-    console.log('Calling Aviationstack API...');
-    
     const response = await axios.get(apiUrl, { params });
 
-    console.log('Aviationstack response:', response.data.data?.length || 0, 'flights found');
 
-    // Check if API returned data
     if (!response.data.data || response.data.data.length === 0) {
       return res.json({
         success: true,
@@ -41,7 +33,6 @@ exports.searchFlights = async (req, res) => {
       });
     }
 
-    // Format response for frontend
     const flights = response.data.data.map(flight => ({
       id: flight.flight.iata,
       airline: {
@@ -83,7 +74,6 @@ exports.searchFlights = async (req, res) => {
   } catch (error) {
     console.error('Aviationstack error:', error.response?.data || error.message);
     
-    // Handle specific errors
     if (error.response?.status === 401) {
       return res.status(401).json({
         success: false,
@@ -106,7 +96,6 @@ exports.searchFlights = async (req, res) => {
   }
 };
 
-// Helper function to calculate flight duration
 function calculateDuration(departureTime, arrivalTime) {
   try {
     const dept = new Date(departureTime);
@@ -120,7 +109,6 @@ function calculateDuration(departureTime, arrivalTime) {
   }
 }
 
-// Get airline information
 exports.getAirlines = async (req, res) => {
   try {
     const apiUrl = 'http://api.aviationstack.com/v1/airlines';
@@ -146,7 +134,6 @@ exports.getAirlines = async (req, res) => {
   }
 };
 
-// Get airport information
 exports.getAirports = async (req, res) => {
   try {
     const { search } = req.query;

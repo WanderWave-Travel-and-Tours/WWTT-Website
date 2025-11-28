@@ -7,8 +7,6 @@ function CurrencyModal({ isOpen, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      
-      {/* Airplane Animation */}
       <div className="airplane-container">
         <Plane className="airplane-icon" size={40} />
         <div className="airplane-trail"></div>
@@ -16,17 +14,13 @@ function CurrencyModal({ isOpen, onClose }) {
         <div className="cloud cloud-2">☁️</div>
       </div>
 
-      {/* Receipt Modal */}
       <div className="receipt-modal" onClick={(e) => e.stopPropagation()}>
-        
-        {/* Perforated Top Edge */}
         <div className="receipt-perforation-top"></div>
 
         <button className="modal-close-btn" onClick={onClose} aria-label="Close">
           <X size={20} />
         </button>
 
-        {/* Receipt Header */}
         <div className="receipt-header">
           <div className="receipt-logo">
             <img 
@@ -39,13 +33,8 @@ function CurrencyModal({ isOpen, onClose }) {
           <div className="receipt-subtitle">International Bookings Advisory</div>
         </div>
 
-        {/* Dotted Line Divider */}
         <div className="receipt-divider"></div>
-
-        {/* Receipt Body */}
         <div className="receipt-body">
-          
-          {/* Main Notice */}
           <div className="receipt-section main-notice">
             <div className="notice-icon">
             </div>
@@ -60,10 +49,7 @@ function CurrencyModal({ isOpen, onClose }) {
 
         </div>
 
-        {/* Dotted Line Divider */}
         <div className="receipt-divider"></div>
-
-        {/* Receipt Footer */}
         <div className="receipt-footer">
           <div className="receipt-stamp">
             <div className="stamp-circle">
@@ -80,11 +66,7 @@ function CurrencyModal({ isOpen, onClose }) {
             Thank you for choosing WANDERWAVE Travel & Tours
           </div>
         </div>
-
-        {/* Perforated Bottom Edge */}
         <div className="receipt-perforation-bottom"></div>
-
-        {/* Receipt Tear Effect */}
         <div className="receipt-tear"></div>
 
       </div>

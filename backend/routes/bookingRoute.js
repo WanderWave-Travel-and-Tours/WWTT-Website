@@ -154,8 +154,6 @@ router.put('/:id/cancel', async (req, res) => {
 
     await booking.save();
 
-    console.log('❌ Booking cancelled:', id);
-
     res.json({
       success: true,
       message: 'Booking cancelled successfully',

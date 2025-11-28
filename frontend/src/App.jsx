@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Globe } from 'lucide-react'; 
-import './App.css'; // Make sure imported ang CSS dito
+import './App.css'; 
 import FlightSearch from './components/flightSearch/flightSearch.jsx';
 import PackageDeals from './components/packageDeals/packageDeals.jsx';
 import Footer from './components/footer/footer.jsx';
@@ -29,7 +29,6 @@ const Help = () => (
   </div>
 );
 
-// Solid Icon Components for Top Bar
 const MailIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -50,7 +49,6 @@ const MapPinIcon = () => (
   </svg>
 );
 
-// Main App Layout Component
 function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -70,7 +68,6 @@ function MainLayout() {
     otherservices: { name: 'Other Services', path: '/other-services' },
   };
 
-  // Expanded Language List
   const languages = [
     { code: 'en', name: 'English', flag: '🇬🇧', shortCode: 'EN' },
     { code: 'tl', name: 'Tagalog', flag: '🇵🇭', shortCode: 'TL' },
@@ -96,21 +93,17 @@ function MainLayout() {
     { code: 'bn', name: 'Bengali', flag: '🇧🇩', shortCode: 'BN' },
   ];
 
-  // Optimized Google Translate initialization
   useEffect(() => {
-    // Check if already loaded
     if (window.google?.translate) {
       setIsTranslateReady(true);
       return;
     }
 
-    // Define the initialization function
     window.googleTranslateElementInit = function() {
       try {
         new window.google.translate.TranslateElement(
           { 
             pageLanguage: 'en',
-            // Added new codes: id,ms,nl,pl,tr,bn
             includedLanguages: 'en,tl,zh-CN,zh-TW,ja,ko,es,fr,de,it,pt,ru,ar,hi,th,vi,id,ms,nl,pl,tr,bn',
             autoDisplay: false
           },
@@ -122,7 +115,6 @@ function MainLayout() {
       }
     };
 
-    // Add the Google Translate script with optimization
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
@@ -135,7 +127,6 @@ function MainLayout() {
 
     document.body.appendChild(script);
 
-    // Add CSS to hide Google Translate UI
     const style = document.createElement('style');
     style.innerHTML = `
       .goog-te-banner-frame.skiptranslate {
@@ -207,36 +198,27 @@ function MainLayout() {
   const handleLanguageSelect = (lang) => {
     setCurrentLang(lang.code);
     setIsTranslateOpen(false);
-
-    // Optimized translation trigger
     const triggerTranslation = () => {
       const selectElement = document.querySelector('.goog-te-combo');
       if (selectElement) {
-        // Set value
         selectElement.value = lang.code;
-        
-        // Trigger multiple events for better compatibility
         const events = ['change', 'click', 'input'];
         events.forEach(eventType => {
           const event = new Event(eventType, { bubbles: true });
           selectElement.dispatchEvent(event);
         });
 
-        // Force trigger if standard events don't work
         if (selectElement.onchange) {
           selectElement.onchange();
         }
       } else if (isTranslateReady) {
-        // Retry if element not found but translate is ready
         setTimeout(triggerTranslation, 100);
       }
     };
 
-    // Wait for translate to be ready
     if (isTranslateReady) {
       triggerTranslation();
     } else {
-      // Wait and retry
       const checkInterval = setInterval(() => {
         if (isTranslateReady) {
           clearInterval(checkInterval);
@@ -244,12 +226,10 @@ function MainLayout() {
         }
       }, 100);
 
-      // Clear interval after 5 seconds
       setTimeout(() => clearInterval(checkInterval), 5000);
     }
   };
 
-  // Show UserAuth component if user clicks BOOK NOW
   if (authPage === 'login' || authPage === 'signup') {
     return <UserAuth setAuthPage={handleAuthPageChange} onLoginSuccess={handleLoginSuccess} />;
   }
@@ -272,13 +252,9 @@ function MainLayout() {
 
   return (
     <div className="app-container">
-      {/* Google Translate Element - Hidden */}
       <div id="google_translate_element"></div>
-
-      {/* Only show top bar and navbar if NOT on dashboard */}
       {!isDashboardPage && (
         <>
-          {/* Top Bar */}
           <div className="top-bar">
             <div className="top-bar-content">
               <div className="top-bar-item">
@@ -296,7 +272,6 @@ function MainLayout() {
             </div>
           </div>
 
-          {/* Navigation bar */}
           <nav className="navbar">
             <div className="navbar-content">
               <div className="brand" onClick={() => handleNavigation('packages')}>
@@ -376,7 +351,6 @@ function MainLayout() {
             </div>
           </nav>
 
-          {/* Mobile Menu */}
           <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
             <div className="mobile-menu-header">
               <img src={logoBlueHeader} alt="Wanderwave Travel & Tours" className="brand-logo brand-logo-mobile" />

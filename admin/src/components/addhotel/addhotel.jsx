@@ -156,7 +156,6 @@ const AddHotel = () => {
               </div>
             </div>
 
-            {/* Preview Section */}
             <aside className="hotel-right">
               <div className="preview-card">
                 <span className="preview-label">PREVIEW</span>

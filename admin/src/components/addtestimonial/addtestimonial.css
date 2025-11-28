@@ -1,15 +1,9 @@
-/* ========================================
-   ADD TESTIMONIAL PAGE STYLES
-   Scoped to .testi-main only - Sidebar SAFE
-======================================== */
-
 .testi-page {
     display: flex;
     min-height: 100vh;
     background: #f8fafc;
 }
 
-/* ========== MAIN CONTENT ONLY ========== */
 .testi-main {
     flex: 1;
     margin-left: 280px;
@@ -30,7 +24,6 @@
     margin: 0 auto;
 }
 
-/* ========== HEADER ========== */
 .testi-header {
     margin-bottom: 32px;
 }
@@ -49,7 +42,6 @@
     color: #64748b;
 }
 
-/* ========== GRID LAYOUT ========== */
 .testi-grid {
     display: grid;
     grid-template-columns: 1fr 340px;
@@ -63,7 +55,6 @@
     gap: 24px;
 }
 
-/* ========== SECTIONS ========== */
 .testi-section {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -80,7 +71,6 @@
     margin-bottom: 20px;
 }
 
-/* ========== UPLOAD ========== */
 .testi-upload {
     display: block;
     cursor: pointer;
@@ -161,7 +151,6 @@
     text-align: center;
 }
 
-/* ========== FORM FIELDS ========== */
 .testi-fields {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -217,7 +206,6 @@
     min-height: 120px;
 }
 
-/* ========== ACTIONS ========== */
 .testi-actions {
     display: flex;
     gap: 12px;
@@ -254,7 +242,6 @@
     background: #e57a35;
 }
 
-/* ========== SIDEBAR PREVIEW ========== */
 .testi-right {
     position: sticky;
     top: 40px;
@@ -276,7 +263,6 @@
     margin-bottom: 20px;
 }
 
-/* ========== TESTIMONIAL CARD ========== */
 .testi-card {
     background: #fff;
     border-radius: 8px;
@@ -353,7 +339,6 @@
     color: #64748b;
 }
 
-/* ========== STATS ========== */
 .testi-stats {
     display: flex;
     gap: 12px;
@@ -383,7 +368,6 @@
     letter-spacing: 0.5px;
 }
 
-/* ========== RESPONSIVE ========== */
 @media (max-width: 1024px) {
     .testi-grid {
         grid-template-columns: 1fr;

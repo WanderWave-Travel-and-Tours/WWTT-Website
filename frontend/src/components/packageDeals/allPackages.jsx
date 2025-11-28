@@ -25,12 +25,8 @@ function AllPackages({
 }) {
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  
-  // --- NEW: CURRENCY STATE ---
-  const [currency, setCurrency] = useState('PHP'); // 'PHP' or 'USD'
-  const EXCHANGE_RATE = 58; // 1 USD = 58 PHP (Fixed rate for demo)
-
-  // --- PAGINATION STATE ---
+  const [currency, setCurrency] = useState('PHP'); 
+  const EXCHANGE_RATE = 58; 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; 
 
@@ -91,7 +87,6 @@ function AllPackages({
         <span className="packages-count-badge">{packages.length} packages</span>
       </div>
 
-      {/* --- NEW: CURRENCY REMINDER & TOGGLE BANNER --- */}
       <div className="currency-banner">
         <div className="currency-info">
           <Info className="info-icon" size={20} />
@@ -119,12 +114,9 @@ function AllPackages({
           </div>
         </div>
       </div>
-      {/* --- END BANNER --- */}
 
       <div className="all-packages-layout">
-        
         <aside className={`side-filter ${isMobileFilterOpen ? 'mobile-open' : ''}`}>
-          
           <button 
             className={`mobile-filter-toggle ${isMobileFilterOpen ? 'active' : ''}`}
             onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
@@ -276,7 +268,6 @@ function AllPackages({
                   isFavorite={favorites.includes(pkg.id)}
                   onToggleFavorite={onToggleFavorite}
                   onBookNow={onBookNow}
-                  // --- PASS CURRENCY PROPS ---
                   currency={currency}
                   exchangeRate={EXCHANGE_RATE}
                 />
@@ -298,7 +289,6 @@ function AllPackages({
             )}
           </div>
 
-          {/* Pagination */}
           {packages.length > itemsPerPage && (
             <div className="pagination-container">
               <button 

@@ -16,7 +16,6 @@ const AddPoster = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Cleanup URL object para iwas memory leak
     useEffect(() => {
         return () => {
             if (imagePreview) {
@@ -36,7 +35,6 @@ const AddPoster = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Check file type
             if (!file.type.startsWith('image/')) {
                 alert('Please upload a valid image file (JPG, PNG).');
                 return;
@@ -61,7 +59,6 @@ const AddPoster = () => {
 
         setIsSubmitting(true);
 
-        // Use FormData for File Uploads
         const formData = new FormData();
         formData.append('image', imageFile);
         formData.append('title', posterDetails.title);
@@ -71,8 +68,6 @@ const AddPoster = () => {
         formData.append('status', posterDetails.status);
 
         try {
-            // DITO ANG API CALL MO
-            // Note: Do not set 'Content-Type' header manually when using FormData
             const response = await fetch('http://localhost:5000/api/posters/add', {
                 method: 'POST',
                 body: formData,
@@ -108,24 +103,20 @@ const AddPoster = () => {
 
     return (
         <div className="poster-page">
-            <Sidebar /> {/* Sidebar Component */}
+            <Sidebar /> 
             
             <main className="poster-main">
                 <div className="poster-container">
-                    {/* Header */}
                     <header className="poster-header">
                         <h1 className="poster-title">ADD PROMO POSTER</h1>
                         <p className="poster-subtitle">Upload marketing banners for your website or app</p>
                     </header>
 
                     <div className="poster-grid">
-                        {/* Left Column - Upload Form */}
                         <div className="poster-left">
                             <section className="poster-section">
                                 <h2 className="poster-section-title">POSTER DETAILS</h2>
-                                
                                 <div className="poster-fields">
-                                    {/* Image Upload Area */}
                                     <div className="poster-field poster-field--full">
                                         <label>Upload Image</label>
                                         
@@ -233,19 +224,16 @@ const AddPoster = () => {
                             </div>
                         </div>
 
-                        {/* Right Column - Preview */}
                         <aside className="poster-right">
                             <div className="poster-preview-card">
                                 <span className="poster-preview-label">LIVE PREVIEW</span>
                                 
                                 <div className="phone-mockup">
                                     <div className="phone-screen">
-                                        {/* Fake Header */}
                                         <div className="phone-header">
                                             <div className="phone-brand">Wanderwave</div>
                                         </div>
 
-                                        {/* The Content */}
                                         <div className="phone-content">
                                             {imagePreview ? (
                                                 <div className="preview-hero">
@@ -260,8 +248,7 @@ const AddPoster = () => {
                                                     <p>Upload an image to see preview</p>
                                                 </div>
                                             )}
-
-                                            {/* Fake List Items to simulate app */}
+                                            
                                             <div className="fake-item" style={{width: '80%'}}></div>
                                             <div className="fake-item" style={{width: '90%'}}></div>
                                             <div className="fake-item" style={{width: '60%'}}></div>

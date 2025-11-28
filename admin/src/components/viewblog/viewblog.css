@@ -1,7 +1,3 @@
-/* ========================================
-   VIEW BLOG STYLES
-======================================== */
-
 .vb-page {
     display: flex;
     min-height: 100vh;
@@ -20,7 +16,6 @@
     margin: 0 auto;
 }
 
-/* Header */
 .vb-header {
     display: flex;
     justify-content: space-between;
@@ -39,8 +34,6 @@
 }
 
 .vb-subtitle { font-size: 14px; color: #64748b; }
-
-/* Search Box */
 .vb-search-box { position: relative; width: 300px; }
 
 .vb-search-icon {
@@ -64,14 +57,12 @@
     box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
 
-/* Grid */
 .vb-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
 }
 
-/* Card */
 .vb-card {
     background: #fff;
     border-radius: 12px;
@@ -89,7 +80,6 @@
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Status Badge */
 .vb-status {
     position: absolute;
     top: 12px; right: 12px;
@@ -105,7 +95,6 @@
 .vb-status.published { background: #10b981; }
 .vb-status.draft { background: #64748b; }
 
-/* Image */
 .vb-image-wrapper {
     width: 100%;
     height: 180px;
@@ -127,7 +116,6 @@
     font-weight: 600;
 }
 
-/* Content */
 .vb-content { padding: 20px; flex: 1; }
 
 .vb-card-title {
@@ -158,7 +146,6 @@
     overflow: hidden;
 }
 
-/* Actions */
 .vb-actions {
     padding: 12px 20px;
     background: #f8fafc;
@@ -195,7 +182,6 @@
 
 .vb-btn-delete:hover { background: #fee2e2; }
 
-/* Empty & Loading States */
 .vb-empty, .vb-loading {
     grid-column: 1 / -1;
     text-align: center;
@@ -217,7 +203,6 @@
     to { transform: rotate(360deg); }
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
     .vb-main { margin-left: 70px; padding: 24px; }
 }

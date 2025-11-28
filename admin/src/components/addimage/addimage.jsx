@@ -41,7 +41,6 @@ const AddImage = () => {
 
         const formData = new FormData();
         formData.append('image', imageFile);
-        // Default title to filename if needed
         formData.append('title', imageFile.name);
 
         try {
@@ -54,7 +53,7 @@ const AddImage = () => {
 
             if (response.ok) {
                 alert('Image uploaded successfully!');
-                removeImage(); // Clear form
+                removeImage(); 
             } else {
                 alert(`Error: ${data.message || 'Failed to upload'}`);
             }

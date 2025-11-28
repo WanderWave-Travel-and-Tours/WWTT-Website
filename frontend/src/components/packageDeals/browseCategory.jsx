@@ -6,9 +6,7 @@ function BrowseCategory({ title, categories, selectedFilter, onFilterChange, onC
   const scrollerRef = useRef(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [atEnd, setAtEnd] = useState(false);
-
   const [categoryScope, setCategoryScope] = useState('all'); 
-
   const handleScrollPrev = () => {
     if (scrollerRef.current) {
       scrollerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
@@ -46,7 +44,6 @@ function BrowseCategory({ title, categories, selectedFilter, onFilterChange, onC
   return (
     <section className="browse-category-section">
       <h2 className="category-section-title">{title}</h2>
-      
       <div className="scope-filter-container">
         <button 
           className={`scope-filter-btn ${categoryScope === 'all' ? 'active' : ''}`}
@@ -75,7 +72,6 @@ function BrowseCategory({ title, categories, selectedFilter, onFilterChange, onC
           ref={scrollerRef} 
           onScroll={handleScroll}
         >
-          {/* Manual 'All Packages' Button */}
           <button
               key="all"
               className={`category-card ${selectedFilter === 'all' ? 'active' : ''}`}
@@ -99,7 +95,6 @@ function BrowseCategory({ title, categories, selectedFilter, onFilterChange, onC
               </div>
             </button>
           
-          {/* Mapped Categories */}
           {filteredCategories.map(category => (
             <button
               key={category.id}

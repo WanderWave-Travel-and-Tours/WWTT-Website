@@ -9,7 +9,6 @@ function PackageBooking({ pkg, onGoBack }) {
 
   return (
     <div className="booking-page">
-      {/* Navigation Header */}
       <div className="booking-header">
         <div className="booking-header-content">
           <button onClick={onGoBack} className="go-back-btn">
@@ -20,15 +19,11 @@ function PackageBooking({ pkg, onGoBack }) {
       </div>
 
       <div className="booking-container">
-        {/* Unified Card Wrapper */}
         <div className="unified-booking-card">
-          
-          {/* Left Side: Visuals & Info */}
           <div className="unified-left-panel">
             <BookingLeftColumn pkg={pkg} />
           </div>
 
-          {/* Right Side: Form & Logic */}
           <div className="unified-right-panel">
             <BookingRightForm pkg={pkg} />
           </div>

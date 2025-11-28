@@ -1,11 +1,9 @@
-/* Reset and Base Styles */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* Main Wrapper */
 .user-login-wrapper {
     min-height: 100vh;
     width: 100%;
@@ -23,7 +21,6 @@
     overflow-x: hidden;
 }
 
-/* Dark Overlay */
 .user-login-wrapper::before {
     content: '';
     position: fixed;
@@ -35,7 +32,6 @@
     z-index: 1;
 }
 
-/* Main Container */
 .user-login-container {
     position: relative;
     z-index: 2;
@@ -50,7 +46,6 @@
     background-color: white;
 }
 
-/* ===== SLIDESHOW PANEL ===== */
 .slideshow-panel {
     position: relative;
     overflow: hidden;
@@ -85,7 +80,6 @@
     z-index: 2;
 }
 
-/* Slide Content Overlay */
 .slide-content-overlay {
     position: absolute;
     bottom: 0;
@@ -113,7 +107,6 @@
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
 }
 
-/* Slide Indicators */
 .slide-indicators {
     position: absolute;
     bottom: 24px;
@@ -147,7 +140,6 @@
     background-color: #ff9800;
 }
 
-/* ===== LOGIN PANEL ===== */
 .login-panel {
     display: flex;
     align-items: center;
@@ -161,7 +153,6 @@
     max-width: 380px;
 }
 
-/* Logo Section */
 .logo-section {
     text-align: center;
     margin-bottom: 40px;
@@ -190,7 +181,6 @@
     font-size: 0.95rem;
 }
 
-/* Form Styles */
 .login-form {
     width: 100%;
 }
@@ -229,7 +219,6 @@
     color: #999;
 }
 
-/* Login Button */
 .login-button {
     width: 100%;
     padding: 16px;
@@ -260,7 +249,6 @@
     cursor: not-allowed;
 }
 
-/* Switch Page Text */
 .switch-page-text {
     text-align: center;
     margin-top: 24px;
@@ -281,7 +269,6 @@
     text-decoration: underline;
 }
 
-/* Footer Text */
 .footer-text {
     text-align: center;
     margin-top: 28px;
@@ -289,9 +276,6 @@
     font-size: 0.85rem;
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
-
-/* Tablets and below (900px) */
 @media (max-width: 900px) {
     .user-login-container {
         grid-template-columns: 1fr;
@@ -321,7 +305,6 @@
     }
 }
 
-/* Mobile devices (600px) */
 @media (max-width: 600px) {
     .user-login-wrapper {
         padding: 15px;
@@ -381,7 +364,6 @@
     }
 }
 
-/* Small mobile devices (400px) */
 @media (max-width: 400px) {
     .user-login-wrapper {
         padding: 10px;

@@ -56,7 +56,6 @@ const ViewPromos = () => {
         }
     };
 
-    // FIXED: Renamed this variable to match what you use in the JSX below
     const activePromos = promos.filter(p => getStatus(p.validUntil) === 'Active').length;
 
     return (
@@ -64,8 +63,6 @@ const ViewPromos = () => {
             <Sidebar />
             <main className="vpromos-main">
                 <div className="vpromos-container">
-                    
-                    {/* Header Section */}
                     <header className="vpromos-header">
                         <div className="vpromos-header-left">
                             <h1 className="vpromos-title">PROMO CODES</h1>
@@ -78,7 +75,6 @@ const ViewPromos = () => {
                         </button>
                     </header>
 
-                    {/* Conditional Rendering: Empty State vs Table */}
                     {promos.length === 0 ? (
                         <div className="vpromos-empty">
                             <span className="vpromos-empty-icon">🏷️</span>
@@ -158,7 +154,6 @@ const ViewPromos = () => {
                         </div>
                     )}
 
-                    {/* Stats Footer */}
                     {promos.length > 0 && (
                         <div className="vpromos-stats">
                             <div className="vpromos-stat">

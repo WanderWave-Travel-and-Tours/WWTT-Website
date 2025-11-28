@@ -9,18 +9,16 @@ const {
     updateBlog 
 } = require('../controller/blogController');
 
-// Multer Config (Reuse logic)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'uploads/'),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 const upload = multer({ storage: storage });
 
-// Routes
 router.post('/add', upload.single('image'), addBlog);
 router.get('/', getAllBlogs);
 router.get('/:id', getBlogById);
 router.delete('/:id', deleteBlog);
-router.put('/:id', upload.single('image'), updateBlog); // Support image update
+router.put('/:id', upload.single('image'), updateBlog); 
 
 module.exports = router;

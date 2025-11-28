@@ -5,7 +5,6 @@ const signup = async (req, res) => {
   const { fullName, email, password, confirmPassword } = req.body;
 
   try {
-    // Validation
     if (!fullName || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: 'Please fill in all fields' });
     }

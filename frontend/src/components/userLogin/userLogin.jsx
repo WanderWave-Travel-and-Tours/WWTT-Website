@@ -50,14 +50,12 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
             if (res.ok) {
                 if (isSignup) {
-                    // After successful signup, switch to login
                     alert(data.message || 'Account created successfully! Please log in.');
                     setIsSignup(false);
                     setFullName('');
                     setPassword('');
                     setConfirmPassword('');
                 } else {
-                    // After successful login, call onLoginSuccess
                     alert(data.message || 'Welcome back!');
                     if (data.user && onLoginSuccess) {
                         onLoginSuccess(data.user);
