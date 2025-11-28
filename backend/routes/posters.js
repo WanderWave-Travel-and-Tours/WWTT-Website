@@ -7,9 +7,8 @@ const {
     getActivePosters, 
     deletePoster, 
     updatePosterStatus 
-} = require('../controller/posterController'); // Siguraduhing tama ang path na 'controllers'
+} = require('../controller/posterController');
 
-// Multer Config for Images
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
@@ -20,7 +19,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Routes
 router.post('/add', upload.single('image'), addPoster);
 router.get('/', getAllPosters);
 router.get('/active', getActivePosters);

@@ -8,10 +8,8 @@ const ViewBlog = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     
-    // CHANGE THIS: Palitan mo ito ng port ng iyong backend server
     const API_BASE_URL = 'http://localhost:5000'; 
 
-    // Fetch Blogs from API
     const fetchBlogs = async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/blogs`);
@@ -31,7 +29,6 @@ const ViewBlog = () => {
         fetchBlogs();
     }, []);
 
-    // Delete Blog Logic
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this blog post?')) {
             try {
@@ -40,7 +37,6 @@ const ViewBlog = () => {
                 });
 
                 if (response.ok) {
-                    // Remove from UI immediately
                     setBlogs(blogs.filter(blog => blog._id !== id));
                     alert('Blog deleted successfully');
                 } else {
@@ -53,25 +49,21 @@ const ViewBlog = () => {
         }
     };
 
-    // Filter Logic
     const filteredBlogs = blogs.filter(blog => 
         blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         blog.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Helper to format date
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric', month: 'short', day: 'numeric'
         });
     };
 
-    // Helper for Image URL
     const getImageUrl = (imagePath) => {
         if (!imagePath) return 'https://via.placeholder.com/400x250';
-        // Kung relative path (uploads/file.jpg), lagyan ng base URL
         if (!imagePath.startsWith('http')) {
-            return `${API_BASE_URL}/${imagePath.replace(/\\/g, '/')}`; // Handles Windows paths too
+            return `${API_BASE_URL}/${imagePath.replace(/\\/g, '/')}`;
         }
         return imagePath;
     };
@@ -107,12 +99,10 @@ const ViewBlog = () => {
                             {filteredBlogs.length > 0 ? (
                                 filteredBlogs.map((blog) => (
                                     <div key={blog._id} className="vb-card">
-                                        {/* Status Badge */}
                                         <div className={`vb-status ${blog.status ? blog.status.toLowerCase() : 'published'}`}>
                                             {blog.status || 'Published'}
                                         </div>
 
-                                        {/* Image */}
                                         <div className="vb-image-wrapper">
                                             <img 
                                                 src={getImageUrl(blog.imageUrl)} 
@@ -122,7 +112,6 @@ const ViewBlog = () => {
                                             <div className="vb-category">{blog.category}</div>
                                         </div>
 
-                                        {/* Content */}
                                         <div className="vb-content">
                                             <h3 className="vb-card-title">{blog.title}</h3>
                                             
@@ -140,7 +129,6 @@ const ViewBlog = () => {
                                             </p>
                                         </div>
 
-                                        {/* Actions */}
                                         <div className="vb-actions">
                                             <button className="vb-btn-edit" title="Edit Blog">
                                                 <Edit size={16} /> Edit

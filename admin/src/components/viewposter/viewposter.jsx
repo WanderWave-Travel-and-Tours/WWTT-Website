@@ -4,12 +4,9 @@ import Sidebar from '../sidebar/sidebar';
 import './viewposter.css';
 
 const ViewPoster = () => {
-    // 1. Gawing empty array ang initial state (Wala nang mock data)
     const [posters, setPosters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-
-    // 2. Fetch Data from Database pag-load ng page
     useEffect(() => {
         fetchPosters();
     }, []);
@@ -28,7 +25,6 @@ const ViewPoster = () => {
         }
     };
 
-    // 3. Delete Logic connected to Backend
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this poster?')) {
             try {
@@ -49,7 +45,6 @@ const ViewPoster = () => {
         }
     };
 
-    // 4. Toggle Status Logic connected to Backend
     const toggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         
@@ -61,7 +56,6 @@ const ViewPoster = () => {
             });
 
             if (response.ok) {
-                // Update local state agad para mabilis ang UI
                 setPosters(posters.map(p => 
                     p._id === id ? { ...p, status: newStatus } : p
                 ));
@@ -73,7 +67,6 @@ const ViewPoster = () => {
         }
     };
 
-    // Filter Logic
     const filteredPosters = posters.filter(poster => 
         poster.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -83,7 +76,6 @@ const ViewPoster = () => {
             <Sidebar />
             <main className="vp-main">
                 <div className="vp-container">
-                    {/* Header */}
                     <header className="vp-header">
                         <div>
                             <h1 className="vp-title">POSTER LIST</h1>
@@ -100,7 +92,6 @@ const ViewPoster = () => {
                         </div>
                     </header>
 
-                    {/* Content */}
                     {loading ? (
                         <div className="vp-loading">Loading posters from database...</div>
                     ) : (
@@ -109,18 +100,15 @@ const ViewPoster = () => {
                                 filteredPosters.map((poster) => (
                                     <div key={poster._id} className={`vp-card ${poster.status === 'Inactive' ? 'inactive' : ''}`}>
                                         
-                                        {/* Status Badge */}
                                         <div className={`vp-badge ${poster.status.toLowerCase()}`}>
                                             {poster.status === 'Active' ? <Eye size={12} /> : <EyeOff size={12} />}
                                             {poster.status}
                                         </div>
 
-                                        {/* Image Area */}
                                         <div className="vp-image-wrapper">
                                             <img src={`http://localhost:5000/${poster.imageUrl}`} alt={poster.title} />
                                         </div>
 
-                                        {/* Details */}
                                         <div className="vp-content">
                                             <h3 className="vp-card-title">{poster.title}</h3>
                                             <p className="vp-card-desc">{poster.description || 'No description provided.'}</p>
@@ -128,7 +116,6 @@ const ViewPoster = () => {
                                             <div className="vp-meta">
                                                 <div className="vp-date">
                                                     <Calendar size={14} />
-                                                    {/* Format date to be readable */}
                                                     <span>Start: {poster.startDate ? new Date(poster.startDate).toLocaleDateString() : '--'}</span>
                                                 </div>
                                                 <div className="vp-date">
@@ -138,7 +125,6 @@ const ViewPoster = () => {
                                             </div>
                                         </div>
 
-                                        {/* Actions Footer */}
                                         <div className="vp-actions">
                                             <button 
                                                 className="vp-btn-toggle"

@@ -3,7 +3,6 @@ import './PackageCard.css';
 
 function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, currency = 'PHP', exchangeRate = 58 }) { 
   
-  // --- PRICE CONVERSION LOGIC ---
   const displayPrice = currency === 'PHP' 
     ? pkg.price 
     : (pkg.price / exchangeRate);
@@ -16,7 +15,6 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
 
   return (
     <div className="package-card">
-      {/* Badges */}
       {pkg.featured && (
         <span className="badge badge-featured">🔥 Featured</span>
       )}
@@ -71,7 +69,6 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
             <span className="price-label">Starting from</span>
             <div className="price-amount">
               <span className="currency">{currencySymbol}</span>
-              {/* Kung USD, nagpapakita ng 2 decimal places, kung PHP, buo lang */}
               <span className="price-value">
                 {displayPrice.toLocaleString(undefined, { 
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,

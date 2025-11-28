@@ -1,15 +1,9 @@
-/* ========================================
-   SERVICE MANAGEMENT PAGE STYLES
-   Scoped to .svc-main only - Sidebar SAFE
-======================================== */
-
 .svc-page {
     display: flex;
     min-height: 100vh;
     background: #f8fafc;
 }
 
-/* ========== MAIN CONTENT ONLY ========== */
 .svc-main {
     flex: 1;
     margin-left: 280px;
@@ -30,7 +24,6 @@
     margin: 0 auto;
 }
 
-/* ========== HEADER ========== */
 .svc-header {
     display: flex;
     justify-content: space-between;
@@ -52,7 +45,6 @@
     color: #64748b;
 }
 
-/* ========== BUTTONS ========== */
 .svc-btn {
     padding: 14px 28px;
     font-size: 14px;
@@ -73,7 +65,6 @@
     background: #e57a35;
 }
 
-/* ========== STATS CARDS ========== */
 .svc-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -139,7 +130,6 @@
     color: #3b82f6 !important;
 }
 
-/* ========== TABLE SECTION ========== */
 .svc-table-section {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -210,7 +200,6 @@
     background: #f8fafc;
 }
 
-/* Table Cell Styles */
 .svc-id {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
     font-size: 13px;
@@ -246,7 +235,6 @@
     color: #94a3b8;
 }
 
-/* Status Badges */
 .svc-status {
     display: inline-block;
     padding: 6px 12px;
@@ -275,7 +263,6 @@
     border: 1px solid #bfdbfe;
 }
 
-/* Actions */
 .svc-actions {
     display: flex;
     gap: 8px;
@@ -313,7 +300,6 @@
     border-color: #FF8C42;
 }
 
-/* ========== RESPONSIVE ========== */
 @media (max-width: 1024px) {
     .svc-header {
         flex-direction: column;

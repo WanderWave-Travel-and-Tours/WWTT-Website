@@ -1,54 +1,38 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 
 :root {
-  /* --- INCREASED CARD SIZES --- */
-  --os-card-width-desktop: 360px; /* Bigger width */
+  --os-card-width-desktop: 360px; 
   --os-card-width-mobile: 300px;
-  
   --os-gap: 2rem;
-  
-  /* Glass Theme */
   --os-glass-bg: rgba(255, 255, 255, 0.08);
   --os-glass-border: rgba(255, 255, 255, 0.2);
   
-  /* Brand Colors */
-  --os-accent: #fc9c1b; /* Official Orange */
+  --os-accent: #fc9c1b; 
   --os-dark-blue: #0a203b;
   --os-light-blue: #2196F3;
 
-  /* Header Height Reference */
   --header-height-desktop: 130px; 
   --header-height-mobile: 90px;   
 }
 
-/* ==========================================
-   MAIN SECTION
-   ========================================== */
 .os-section {
   position: relative;
   width: 100%;
-  
-  /* Full Screen minus Header */
   min-height: calc(100vh - var(--header-height-desktop));
   height: auto;
-  
-  /* FIXED BACKGROUND */
   background-size: cover;
   background-position: center center;
   background-attachment: fixed !important; 
   background-repeat: no-repeat;
-  
   display: flex;
   align-items: center;     
   justify-content: center;
-  
   overflow: hidden;
   padding: 0;
   font-family: 'Inter', sans-serif;
   margin: 0;
 }
 
-/* Elegant Dark Overlay */
 .os-overlay {
   position: absolute;
   inset: 0;
@@ -58,7 +42,6 @@
   pointer-events: none;
 }
 
-/* Content Wrapper */
 .os-content-wrapper {
   position: relative;
   z-index: 2;
@@ -72,25 +55,20 @@
   padding: 1rem 0;
 }
 
-/* ==========================================
-   HEADER
-   ========================================== */
 .os-header {
   text-align: center;
-  margin-bottom: 2rem; /* Increased spacing */
+  margin-bottom: 2rem; 
   padding: 0 1rem;
 }
 
-/* UPDATED TITLE STYLE */
 .os-title {
   font-family: 'Inter', sans-serif;
-  font-size: 3rem; /* Larger font */
-  font-weight: 900; /* Extra Bold */
-  color: var(--os-accent); /* Orange */
+  font-size: 3rem; 
+  font-weight: 900; 
+  color: var(--os-accent); 
   margin: 0;
   letter-spacing: -1px;
   text-transform: uppercase;
-  /* 3D Dark Shadow Effect */
   text-shadow: 3px 3px 0px #00132b, 4px 4px 10px rgba(0, 0, 0, 0.5);
   line-height: 1;
 }
@@ -103,9 +81,6 @@
   letter-spacing: 0.5px;
 }
 
-/* ==========================================
-   CAROUSEL WRAPPER
-   ========================================== */
 .os-carousel-wrapper {
   position: relative;
   width: 100%;
@@ -122,7 +97,6 @@
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  /* Adjusted padding for bigger cards */
   padding: 1rem calc((100% - var(--os-card-width-desktop)) / 2) 2rem;
   width: 100%;
   scrollbar-width: none;
@@ -133,22 +107,16 @@
   display: none;
 }
 
-/* ==========================================
-   GLASS CARDS (UPDATED SIZE)
-   ========================================== */
 .os-glass-card {
   flex: 0 0 var(--os-card-width-desktop);
-  height: 420px; /* Increased Height */
+  height: 420px; 
   scroll-snap-align: center;
-  
   background: var(--os-glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  
   border: 1px solid var(--os-glass-border);
   border-top: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 24px;
-  
   display: flex;
   flex-direction: column;
   overflow: visible;
@@ -165,7 +133,7 @@
 }
 
 .os-card-img-box {
-  height: 50%; /* Image takes up half the card now */
+  height: 50%;
   width: 100%;
   position: relative;
   border-radius: 24px 24px 0 0;
@@ -185,9 +153,9 @@
 
 .os-floating-icon {
   position: absolute;
-  bottom: -25px; /* Adjusted */
+  bottom: -25px; 
   left: 25px;
-  width: 50px; /* Bigger Icon Box */
+  width: 50px; 
   height: 50px;
   background: linear-gradient(135deg, var(--os-dark-blue), #1a3a5f);
   color: white;
@@ -214,14 +182,14 @@
 
 .os-card-body {
   flex: 1;
-  padding: 35px 20px 20px; /* Increased Top padding to clear icon */
+  padding: 35px 20px 20px; 
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
 .os-card-title {
-  font-size: 1.25rem; /* Bigger Title */
+  font-size: 1.25rem; 
   font-weight: 800;
   color: #fff;
   margin: 0 0 0.5rem;
@@ -229,7 +197,7 @@
 }
 
 .os-card-desc {
-  font-size: 0.95rem; /* Bigger Text */
+  font-size: 0.95rem;
   color: rgba(255, 255, 255, 0.75);
   line-height: 1.5;
   margin: 0;
@@ -302,9 +270,6 @@
   50% { opacity: 1; }
 }
 
-/* ==========================================
-   MODAL STYLES
-   ========================================== */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -600,11 +565,6 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* ==========================================
-   RESPONSIVE DESIGN
-   ========================================== */
-
-/* Tablet */
 @media (max-width: 1024px) {
   .os-section {
     min-height: calc(100vh - var(--header-height-mobile));
@@ -637,7 +597,6 @@
   }
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   .os-section {
     min-height: calc(100vh - var(--header-height-mobile));
@@ -671,7 +630,7 @@
 
   .os-glass-card {
     flex: 0 0 var(--os-card-width-mobile);
-    height: 380px; /* Slightly smaller height on mobile but still big */
+    height: 380px;
   }
 
   .os-card-body {
@@ -686,7 +645,6 @@
     font-size: 0.85rem;
   }
 
-  /* Modal Mobile */
   .modal-overlay {
     padding: 0.5rem;
   }
@@ -733,7 +691,6 @@
   }
 }
 
-/* Small Mobile */
 @media (max-width: 480px) {
   .os-section {
     padding: 0;

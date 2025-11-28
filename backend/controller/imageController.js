@@ -8,9 +8,7 @@ const addImage = async (req, res) => {
             return res.status(400).json({ message: 'Please upload an image.' });
         }
 
-        // Simplified: Image URL lang ang kailangan
         const imageUrl = `uploads/${req.file.filename}`;
-        // Optional title, defaults to filename if empty
         const title = req.body.title || req.file.originalname; 
 
         const newImage = new Image({

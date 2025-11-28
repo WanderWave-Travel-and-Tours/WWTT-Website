@@ -1,17 +1,11 @@
-/* Package Card Component Styles - SOFT GRAY GLASS THEME */
-
 .package-card {
-  /* --- SOFT GRAY GLASS EFFECT (Darker ng konti sa pure white) --- */
-  background: rgba(241, 245, 249, 0.75); /* Light Slate/Gray Tint */
+  background: rgba(241, 245, 249, 0.75); 
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  
-  /* Mas subtle na border para hindi mukhang "cut-out" masyado */
   border: 1px solid rgba(255, 255, 255, 0.6); 
-  
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Mas defined na shadow */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); 
   transition: all 0.3s ease;
   position: relative;
   cursor: pointer;
@@ -21,13 +15,11 @@
 
 .package-card:hover {
   transform: translateY(-4px);
-  /* Pag hover, nagiging mas solid ng konti at mas puti */
   background: rgba(255, 255, 255, 0.85); 
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
   border-color: #ffffff;
 }
 
-/* Badges */
 .badge {
   position: absolute;
   top: 12px;
@@ -52,19 +44,15 @@
   color: #fff;
 }
 
-/* --- FAVORITE BUTTON --- */
 .favorite-button {
   position: absolute;
   top: 12px;
   right: 12px;
   width: 48px;
   height: 48px;
-  
-  /* Ginaya ko yung background ng card pero mas light ng konti */
   background: rgba(255, 255, 255, 0.7); 
   border: 1px solid rgba(255, 255, 255, 0.8);
-  color: #64748b; /* Slate icon */
-  
+  color: #64748b;
   border-radius: 50%;
   display: flex !important;
   align-items: center !important;
@@ -94,13 +82,11 @@
   height: 24px !important;
 }
 
-/* Card Image */
 .card-image {
   width: 100%;
   height: 220px;
   position: relative;
   overflow: hidden;
-  /* Line separator para sa glass effect */
   border-bottom: 1px solid rgba(255, 255, 255, 0.5); 
 }
 
@@ -115,7 +101,6 @@
   transform: scale(1.1);
 }
 
-/* Card Body */
 .card-body {
   padding: 24px;
   display: flex;
@@ -130,7 +115,7 @@
 .card-title {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #1e293b; /* Slate 800 - Dark Blue/Gray text */
+  color: #1e293b;
   margin-bottom: 8px;
   line-height: 1.4;
 }
@@ -142,21 +127,20 @@
 }
 
 .star-icon {
-  color: #f59e0b; /* Amber 500 - Mas malalim na gold */
+  color: #f59e0b;
 }
 
 .rating-value {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #334155; /* Slate 700 */
+  color: #334155;
 }
 
 .rating-count {
   font-size: 0.875rem;
-  color: #64748b; /* Slate 500 */
+  color: #64748b; 
 }
 
-/* Card Details */
 .card-details {
   display: flex;
   flex-direction: column;
@@ -171,23 +155,22 @@
 }
 
 .detail-icon {
-  color: #ea580c; /* Darker Orange for better contrast on light gray */
+  color: #ea580c;
   flex-shrink: 0;
 }
 
 .detail-text {
   font-size: 0.9rem;
-  color: #475569; /* Slate 600 - Solid gray for readability */
+  color: #475569; 
   font-weight: 500;
 }
 
-/* Card Footer */
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-top: 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06); /* Subtle divider */
+  border-top: 1px solid rgba(0, 0, 0, 0.06); 
   margin-top: auto;
 }
 

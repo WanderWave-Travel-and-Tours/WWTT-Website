@@ -3,18 +3,16 @@
   position: relative;
 }
 
-/* --- TITLE STYLING (UPDATED) --- */
 .packages-main-title {
-  font-size: 2.5rem; /* Big size */
-  font-weight: 900; /* Extra bold */
-  color: #FF8C00; /* Orange */
+  font-size: 2.5rem; 
+  font-weight: 900; 
+  color: #FF8C00; 
   text-transform: uppercase;
-  text-shadow: 4px 4px 0 #001b3e; /* Navy Shadow */
+  text-shadow: 4px 4px 0 #001b3e;
   margin: 0;
   letter-spacing: 1px;
 }
 
-/* --- LAYOUT GRID --- */
 .all-packages-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
@@ -24,7 +22,6 @@
   margin-top: 24px;
 }
 
-/* --- SIDEBAR FILTER --- */
 .side-filter {
   background: var(--white);
   border-radius: 16px;
@@ -223,7 +220,6 @@
   display: none; 
 }
 
-/* --- MAIN CONTENT AREA --- */
 .main-content { 
   width: 100%; 
 }
@@ -252,7 +248,6 @@
   position: relative;
 }
 
-/* Desktop only - align with sidebar */
 @media (min-width: 1025px) {
   .packages-filter-bar-container {
     margin-top: -125px; 
@@ -361,92 +356,72 @@
   border: 1px dashed var(--gray-300);
 }
 
-/* ... (Keep all styles above unchanged) ... */
-
-/* --- PAGINATION STYLES (NEW DESIGN: FLOATING CIRCLES) --- */
 .pagination-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px; /* Mas maluwag na spacing */
+  gap: 12px; 
   margin-top: 50px;
   padding-top: 30px;
-  border-top: 1px solid rgba(0,0,0,0.06); /* Subtle separator line */
+  border-top: 1px solid rgba(0,0,0,0.06); 
   width: 100%;
 }
 
 .pagination-btn {
-  width: 46px; /* Ginawang bilog at mas malaki ng konti */
+  width: 46px;
   height: 46px;
-  border-radius: 50%; /* Circle shape */
-  
+  border-radius: 50%; 
   background: #ffffff;
-  border: none; /* Tinanggal ang border para mas malinis */
-  
-  /* Text & Icon Color - Dark Navy para kitang kita ang arrows */
+  border: none; 
   color: #1e293b; 
-  
   font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* Soft Shadow para umangat (Floating effect) */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
 }
 
-/* Hover State */
 .pagination-btn:hover:not(:disabled) {
   background: #ffffff;
-  color: #FF8C00; /* Magiging orange ang number/arrow pag tinapatan */
-  transform: translateY(-4px); /* Aangat ng konti */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12); /* Mas malalim na shadow */
+  color: #FF8C00; 
+  transform: translateY(-4px); 
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* Active State (Selected Page) */
 .pagination-btn.active {
-  background: #FF8C00; /* Solid Orange Background */
-  color: #ffffff; /* White Text */
-  transform: scale(1.1); /* Slightly bigger */
-  box-shadow: 0 8px 20px rgba(255, 140, 0, 0.4); /* Glowing Orange Shadow */
+  background: #FF8C00; 
+  color: #ffffff; 
+  transform: scale(1.1); 
+  box-shadow: 0 8px 20px rgba(255, 140, 0, 0.4); 
 }
 
-/* Disabled State (First/Last page arrows) */
 .pagination-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   box-shadow: none;
   background: #f1f5f9;
-  color: #94a3b8; /* Grayed out arrow */
+  color: #94a3b8; 
   transform: none;
 }
 
-/* --- FORCE ARROW VISIBILITY --- */
 .pagination-btn svg {
   width: 22px;
   height: 22px;
-  stroke-width: 2.5px; /* Mas makapal na arrow lines */
+  stroke-width: 2.5px; 
 }
 
-/* ... (Keep existing styles) ... */
-
-/* --- CURRENCY REMINDER BANNER --- */
 .currency-banner {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  
-  /* Glassy Orange/White Look */
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
-  border-left: 5px solid #FF8C00; /* Orange Accent */
+  border-left: 5px solid #FF8C00;
   border-radius: 8px;
-  
   padding: 16px 24px;
   margin-bottom: 24px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
@@ -524,8 +499,6 @@
   }
 }
 
-/* ================= RESPONSIVE STYLES ================= */
-
 @media (max-width: 1024px) {
   .section-title-wrapper {
     flex-direction: row;
@@ -535,7 +508,6 @@
     margin-bottom: 12px;
   }
 
-  /* Make sure title looks good on tablet/mobile */
   .packages-main-title {
     font-size: 1.75rem;
     text-shadow: 3px 3px 0 #001b3e;
@@ -625,7 +597,6 @@
     grid-template-columns: 1fr; 
   }
 
-  /* --- ENSURE PAGINATION IS AT THE BOTTOM ON MOBILE --- */
   .pagination-container {
     order: 5;
   }

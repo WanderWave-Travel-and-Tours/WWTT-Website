@@ -83,22 +83,17 @@ const Settings = () => {
             
             <main className="settings-main">
                 <div className="settings-container">
-                    
-                    {/* Header */}
                     <header className="settings-header">
                         <h1 className="settings-title">BUSINESS PROFILE</h1>
                         <p className="settings-subtitle">Manage your agency's public information and branding</p>
                     </header>
 
                     <form onSubmit={handleSubmit} className="settings-grid">
-                        
-                        {/* Section 1: General Info */}
                         <section className="settings-section">
                             <div className="settings-section-header">
                                 <h2 className="settings-section-title">General Information</h2>
                             </div>
 
-                            {/* Logo Area */}
                             <div className="logo-upload-wrapper">
                                 <div className="logo-preview-box">
                                     {previewUrl ? (
@@ -137,7 +132,6 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            {/* Inputs Grid */}
                             <div className="settings-fields-grid">
                                 <div className="settings-field">
                                     <label>Friendly Business Name</label>
@@ -161,7 +155,6 @@ const Settings = () => {
                             </div>
                         </section>
 
-                        {/* Section 2: Address */}
                         <section className="settings-section">
                             <div className="settings-section-header">
                                 <h2 className="settings-section-title">Location Details</h2>
@@ -202,8 +195,7 @@ const Settings = () => {
                                     </select>
                                 </div>
                             </div>
-
-                            {/* Submit Button Action */}
+                            
                             <div className="settings-actions">
                                 <button type="submit" className="btn-save-settings">
                                     Update Information

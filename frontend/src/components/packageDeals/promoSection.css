@@ -4,7 +4,6 @@
   position: relative;
 }
 
-/* --- HEADER STYLES (UPDATED TO MATCH IMAGE) --- */
 .promo-header {
   display: flex;
   align-items: center;
@@ -15,12 +14,11 @@
 }
 
 .promo-section-title {
-  font-size: 2.5rem; /* Increased size */
-  font-weight: 900; /* Extra Bold */
-  color: #FF8C00; /* Wanderwave Orange */
+  font-size: 2.5rem; 
+  font-weight: 900;
+  color: #FF8C00; 
   text-transform: uppercase;
   margin: 0;
-  /* The Hard Navy Shadow Effect */
   text-shadow: 4px 4px 0 #001b3e; 
   letter-spacing: 1px;
   line-height: 1.1;
@@ -56,7 +54,6 @@
   box-shadow: 0 2px 4px rgba(0, 27, 62, 0.1);
 }
 
-/* --- SLIDER CONTAINER --- */
 .promo-slider-container {
   overflow: hidden;
   border-radius: 16px;
@@ -76,7 +73,6 @@
   flex-shrink: 0;
 }
 
-/* --- BANNER CONTENT --- */
 .promo-banner {
   padding: 32px;
   display: flex;
@@ -128,7 +124,6 @@
   animation: float 3s ease-in-out infinite;
 }
 
-/* --- ARROWS --- */
 .slider-arrow {
   position: absolute;
   top: 50%;
@@ -160,14 +155,13 @@
   50% { transform: translateY(-10px); }
 }
 
-/* --- RESPONSIVE --- */
 @media (max-width: 768px) {
   .promo-section {
     margin-top: 60px;
   }
 
   .promo-section-title {
-    font-size: 1.75rem; /* Adjusted for mobile */
+    font-size: 1.75rem; 
     text-shadow: 3px 3px 0 #001b3e;
   }
 

@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 
-// Import controllers
 const { searchFlights } = require('../controller/flightController');
 const { 
   searchFlightPrices, 

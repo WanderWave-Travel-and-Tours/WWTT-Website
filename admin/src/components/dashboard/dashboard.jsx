@@ -533,32 +533,6 @@ const Dashboard = () => {
                                 </ResponsiveContainer>
                             </div>
                         </section>
-                        
-                        {/*
-                        <section className="dash-section dash-section--wide">
-                            <div className="dash-section-header">
-                                <h2 className="dash-section-title">OTHER SERVICES</h2>
-                                <span className="dash-section-badge">4 Services</span>
-                            </div>
-                            <div className="dash-services-grid">
-                                {servicesData.map((svc, i) => (
-                                    <div key={i} className={`dash-service-card dash-service-card--${svc.color}`} onClick={() => navigate(svc.path)}>
-                                        <div className="dash-service-icon">
-                                            <svc.icon size={24} />
-                                        </div>
-                                        <div className="dash-service-info">
-                                            <span className="dash-service-name">{svc.name}</span>
-                                            <div className="dash-service-stats">
-                                                <span className="dash-service-pending">{svc.pending} pending</span>
-                                                <span className="dash-service-completed">{svc.completed} completed</span>
-                                            </div>
-                                        </div>
-                                        <span className="dash-service-arrow">→</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                        */}
 
                         <section className="dash-section dash-section--wide">
                             <div className="dash-section-header">

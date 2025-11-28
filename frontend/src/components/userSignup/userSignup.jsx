@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import './userSignup.css';  // Create a CSS file or reuse UserLogin.css
-
+import './userSignup.css';
 const UserSignup = ({ setAuthPage }) => {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
@@ -9,13 +8,12 @@ const UserSignup = ({ setAuthPage }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
-    const destinations = [  // Same as login for consistency
+    const destinations = [  
         { 
             image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eb2c3a1eaa1cc1c2ab8.jpg', 
             name: 'Boracay', 
             description: 'White Sand Paradise' 
         },
-        // ... (add all other destinations from your login code)
     ];
 
     useEffect(() => {
@@ -37,7 +35,7 @@ const UserSignup = ({ setAuthPage }) => {
                     return;
                 }
                 alert(`✅ Account created for ${email}!`);
-                setAuthPage('main');  // Redirect to main after success
+                setAuthPage('main');  
             } else {
                 alert('❌ Please fill in all fields.');
             }

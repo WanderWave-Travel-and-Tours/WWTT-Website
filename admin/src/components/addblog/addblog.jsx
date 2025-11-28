@@ -19,10 +19,8 @@ const AddBlog = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // CHANGE THIS: Match your server port
     const API_BASE_URL = 'http://localhost:5000'; 
 
-    // Cleanup URL object
     useEffect(() => {
         return () => {
             if (imagePreview) {
@@ -124,13 +122,11 @@ const AddBlog = () => {
                     </header>
 
                     <div className="blog-grid">
-                        {/* Left: Form */}
                         <div className="blog-left">
                             <section className="blog-section">
                                 <h2 className="blog-section-title">BLOG CONTENT</h2>
                                 
                                 <div className="blog-fields">
-                                    {/* Image Upload */}
                                     <div className="blog-field blog-field--full">
                                         <label>Cover Image *</label>
                                         {!imagePreview ? (
@@ -193,7 +189,6 @@ const AddBlog = () => {
                                             <option value="Trending Stories">Trending Stories</option>
                                             <option value="Travel Guide">Travel Guide</option>
                                             <option value="News & Updates">News & Updates</option>
-                                            {/* Values mapped to match GHL Script expectations */}
                                             <option value="Promos">Latest Promos</option>
                                             <option value="Tips">Travel Tips</option>
                                             <option value="Editor's Pick">Editor's Picks</option>
@@ -247,7 +242,6 @@ const AddBlog = () => {
                             </div>
                         </div>
 
-                        {/* Right: Preview */}
                         <aside className="blog-right">
                             <div className="blog-preview-card">
                                 <span className="blog-preview-label">BLOG PREVIEW</span>
