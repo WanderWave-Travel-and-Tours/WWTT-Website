@@ -1,6 +1,5 @@
-/* Payment Page Styles */
 .payment-page {
-  min-height: calc(100vh - 80px); /* Adjust based on navbar height */
+  min-height: calc(100vh - 80px); 
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 60px 20px 40px;
 }
@@ -55,7 +54,6 @@
   }
 }
 
-/* Header Section */
 .payment-header {
   text-align: center;
   margin-bottom: 40px;
@@ -83,7 +81,6 @@
   line-height: 1.5;
 }
 
-/* Booking Summary Card */
 .booking-summary-card {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -148,7 +145,6 @@
   font-weight: 700 !important;
 }
 
-/* Payment Method Section */
 .payment-method-section {
   margin-bottom: 28px;
 }
@@ -204,7 +200,6 @@
   object-fit: contain;
 }
 
-/* Security Info */
 .security-info {
   display: flex;
   align-items: center;
@@ -220,7 +215,6 @@
   font-weight: 500;
 }
 
-/* Pay Now Button */
 .pay-now-btn {
   width: 100%;
   display: flex;
@@ -255,7 +249,6 @@
   transform: none;
 }
 
-/* Spinner Animation */
 .spinner {
   width: 22px;
   height: 22px;
@@ -271,7 +264,6 @@
   }
 }
 
-/* Payment Note */
 .payment-note {
   text-align: center;
   font-size: 0.85rem;
@@ -280,7 +272,6 @@
   line-height: 1.5;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .payment-page {
     padding: 40px 16px 40px;
@@ -372,12 +363,10 @@
   }
 }
 
-/* Smooth Transitions */
 * {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Print Styles */
 @media print {
   .payment-page {
     background: white;

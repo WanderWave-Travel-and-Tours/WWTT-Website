@@ -15,8 +15,6 @@ exports.searchFlightPrices = async (req, res) => {
   try {
     const { origin, destination, departureDate, returnDate, adults = 1 } = req.query;
 
-    console.log('🔍 Flight search request:', { origin, destination, departureDate, returnDate, adults });
-
     if (!origin || !destination) {
       return res.status(400).json({
         success: false,
@@ -25,7 +23,6 @@ exports.searchFlightPrices = async (req, res) => {
     }
 
     const isDomestic = isDomesticPhilippineFlight(origin, destination);
-    console.log(`🔍 Route type: ${isDomestic ? 'DOMESTIC Philippine' : 'INTERNATIONAL'}`);
     return await searchKiwiWithFallback(req, res, origin, destination, departureDate, returnDate, adults, isDomestic);
 
   } catch (error) {
@@ -98,12 +95,7 @@ async function searchKiwiWithFallback(req, res, origin, destination, departureDa
       options.params.return_to = returnTo.toISOString().split('T')[0];
     }
 
-    console.log('📡 Calling Kiwi API with params:', options.params);
-
     const response = await axios.request(options);
-    
-    console.log('📥 API Response status:', response.status);
-    console.log('📥 API Response data structure:', Object.keys(response.data || {}));
 
     let flights = [];
     

@@ -1,12 +1,5 @@
 const Amadeus = require('amadeus');
 
-if (!process.env.AMADEUS_API_KEY || !process.env.AMADEUS_API_SECRET) {
-  console.error('❌ ERROR: Amadeus credentials not found in .env file!');
-  console.error('Please add:');
-  console.error('AMADEUS_API_KEY=your_key_here');
-  console.error('AMADEUS_API_SECRET=your_secret_here');
-}
-
 let amadeus;
 try {
   const config = {
@@ -19,14 +12,6 @@ try {
   }
 
   amadeus = new Amadeus(config);
-
-  console.log('✅ Amadeus SDK initialized');
-  console.log('📋 Config:', {
-    clientId: process.env.AMADEUS_API_KEY?.substring(0, 10) + '...',
-    secretLength: process.env.AMADEUS_API_SECRET?.length || 0,
-    environment: process.env.AMADEUS_HOSTNAME || 'production (default)',
-    hostname: config.hostname || 'api.amadeus.com (production)'
-  });
 } catch (error) {
   console.error('❌ Failed to initialize Amadeus SDK:', error.message);
 }
@@ -134,12 +119,7 @@ exports.searchFlightOffers = async (req, res) => {
       'First': 'FIRST'
     };
     searchParams.travelClass = travelClassMap[cabinType] || 'ECONOMY';
-
-    console.log('📡 Calling Amadeus API with params:', searchParams);
-
     const response = await amadeus.shopping.flightOffersSearch.get(searchParams);
-
-    console.log(`✅ Amadeus returned ${response.data.length} flight offers`);
 
     if (!response.data || response.data.length === 0) {
       return res.json({

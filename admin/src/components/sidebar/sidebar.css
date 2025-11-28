@@ -1,5 +1,4 @@
 :root {
-  /* Theme Colors - YOUR ORIGINAL THEME */
   --sidebar-bg: #FFFFFF;
   --header-bg: #001F3F;
   --text-default: #4b5563;
@@ -8,12 +7,10 @@
   --text-active: #001F3F;
   --border-color: #e5e7eb;
   
-  /* Sidebar Widths */
   --sidebar-width-full: 300px;
   --sidebar-width-mini: 90px;
 }
 
-/* Sidebar Container */
 .sidebar-container {
   width: var(--sidebar-width-full);
   height: 100vh;
@@ -32,12 +29,10 @@
   white-space: nowrap;
 }
 
-/* --- COLLAPSED STATE --- */
 .sidebar-container.collapsed {
   width: var(--sidebar-width-mini);
 }
 
-/* Header & Logo */
 .sidebar-header {
   background-color: var(--header-bg);
   padding: 1.5rem 1rem;
@@ -48,7 +43,6 @@
   position: relative;
 }
 
-/* Adjust header layout when collapsed */
 .sidebar-container.collapsed .sidebar-header {
   justify-content: center;
   flex-direction: column;
@@ -100,7 +94,6 @@
   font-weight: 600;
 }
 
-/* Toggle Button (Arrow Key) */
 .toggle-btn {
   background: rgba(255, 255, 255, 0.1);
   border: none;
@@ -126,7 +119,6 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Hide Brand Info and Extra elements when collapsed */
 .sidebar-container.collapsed .brand-info,
 .sidebar-container.collapsed .btn-label,
 .sidebar-container.collapsed .menu-title,
@@ -138,7 +130,6 @@
   pointer-events: none;
 }
 
-/* Navigation Area */
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
@@ -175,7 +166,6 @@
   margin-bottom: 0.5rem;
 }
 
-/* Menu Buttons (Parent) */
 .menu-btn {
   width: 100%;
   display: flex;
@@ -238,14 +228,13 @@
   color: var(--text-active);
 }
 
-/* Submenu Styles */
 .submenu-wrapper {
   overflow: hidden;
   transition: all 0.3s ease-in-out;
 }
 
 .submenu-wrapper.open {
-  max-height: 800px; /* Increased to ensure all items show */
+  max-height: 800px; 
   opacity: 1;
   padding-bottom: 0.5rem;
 }
@@ -261,7 +250,6 @@
   margin-top: 0.25rem;
 }
 
-/* Submenu Button (Child items) */
 .submenu-btn {
   width: 100%;
   display: flex;
@@ -294,7 +282,6 @@
   opacity: 0.7;
 }
 
-/* Footer */
 .sidebar-footer {
   padding: 1rem;
   margin-top: auto;
@@ -371,7 +358,6 @@
   background-color: rgba(239, 68, 68, 0.1);
 }
 
-/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }

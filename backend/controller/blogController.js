@@ -2,7 +2,6 @@ const Blog = require('../models/blog');
 const fs = require('fs');
 const path = require('path');
 
-// 1. ADD BLOG
 const addBlog = async (req, res) => {
     try {
         const { title, author, category, content, status } = req.body;
@@ -11,7 +10,6 @@ const addBlog = async (req, res) => {
             return res.status(400).json({ message: 'Please upload a cover image.' });
         }
 
-        // Save relative path (consistent with posters)
         const imageUrl = `uploads/${req.file.filename}`;
 
         const newBlog = new Blog({
@@ -32,7 +30,6 @@ const addBlog = async (req, res) => {
     }
 };
 
-// 2. GET ALL BLOGS
 const getAllBlogs = async (req, res) => {
     try {
         const blogs = await Blog.find().sort({ createdAt: -1 });
@@ -42,7 +39,6 @@ const getAllBlogs = async (req, res) => {
     }
 };
 
-// 3. GET SINGLE BLOG
 const getBlogById = async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
@@ -53,13 +49,11 @@ const getBlogById = async (req, res) => {
     }
 };
 
-// 4. DELETE BLOG
 const deleteBlog = async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
         if (!blog) return res.status(404).json({ message: 'Blog not found' });
 
-        // Delete image file
         if (blog.imageUrl) {
             const filename = blog.imageUrl.replace('uploads/', '');
             const filePath = path.join(__dirname, '../uploads', filename);
@@ -73,22 +67,18 @@ const deleteBlog = async (req, res) => {
     }
 };
 
-// 5. UPDATE BLOG
 const updateBlog = async (req, res) => {
     try {
         const { title, author, category, content, status } = req.body;
         let updateData = { title, author, category, content, status };
 
-        // If new image is uploaded, replace old one
         if (req.file) {
             const blog = await Blog.findById(req.params.id);
-            // Delete old image
             if (blog && blog.imageUrl) {
                 const oldFilename = blog.imageUrl.replace('uploads/', '');
                 const oldPath = path.join(__dirname, '../uploads', oldFilename);
                 if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
             }
-            // Set new image
             updateData.imageUrl = `uploads/${req.file.filename}`;
         }
 

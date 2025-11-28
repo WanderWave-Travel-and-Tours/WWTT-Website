@@ -12,10 +12,8 @@ function PackageDeals() {
   const [searchQuery, setSearchQuery] = useState('');
   const [scopeFilter, setScopeFilter] = useState('all'); 
   const packagesRef = useRef(null);
-
   const [currentView, setCurrentView] = useState('list'); 
   const [selectedPackageForBooking, setSelectedPackageForBooking] = useState(null);
-
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [selectedDuration, setSelectedDuration] = useState('');
   const [selectedDestinations, setSelectedDestinations] = useState([]);
@@ -23,37 +21,26 @@ function PackageDeals() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- MODAL STATE ---
   const [showModal, setShowModal] = useState(false);
   const [hasShownModal, setHasShownModal] = useState(false);
-  
-  // NOTE: Tinanggal ko na yung 'allPackagesSectionRef' kasi di na kailangan.
 
-  // --- SCROLL DETECTION LOGIC (UPDATED: 1 SCROLL TRIGGER) ---
   useEffect(() => {
-    // Function na tatakbo tuwing mag-i-scroll si user
     const handleScroll = () => {
-      // Kung naipakita na ang modal, wag na gawin ito
       if (hasShownModal) return;
-
-      // Check kung naka-scroll na ng higit sa 150 pixels (Tantsa ng 1 scroll)
       if (window.scrollY > 150) {
         console.log("User scrolled down! Opening Modal...");
         setShowModal(true);
-        setHasShownModal(true); // Stop na, wag na ulitin
+        setHasShownModal(true);
       }
     };
 
-    // Ikabit ang event listener sa window
     window.addEventListener('scroll', handleScroll);
 
-    // Linisin pag-alis sa page
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [hasShownModal]); // Depend lang sa hasShownModal
+  }, [hasShownModal]); 
 
-  // --- DATA FETCHING (Walang pagbabago) ---
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
 
@@ -279,18 +266,13 @@ function PackageDeals() {
   else if (scopeFilter === 'best-deals') headerTitle = 'Best Deals';
   else if (selectedFilter !== 'all') headerTitle = currentCategoryName;
 
-
-  // --- RETURN JSX ---
   return (
     <div className="package-deals-page">
-      
-      {/* MODAL COMPONENT */}
       <CurrencyModal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)} 
       />
 
-      {/* TOP SECTION */}
       <section className="top-section-bg">
         <div className="content-container">
           <PromoSection onBookNow={scrollToPackages} />
@@ -304,11 +286,7 @@ function PackageDeals() {
         </div>
       </section>
 
-      {/* DIVIDER */}
       <div className="section-divider-orange"></div>
-
-      {/* BOTTOM SECTION */}
-      {/* Wala nang REF dito kasi WINDOW SCROLL na ang gamit natin */}
       <section className="bottom-section-bg">
         <div className="content-container">
           <AllPackages 

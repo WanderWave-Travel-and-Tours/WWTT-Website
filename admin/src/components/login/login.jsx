@@ -92,7 +92,6 @@ const Login = () => {
     return (
         <div className="login-wrapper">
             <div className="login-container">
-                {/* Slideshow Panel */}
                 <div className="slideshow-panel">
                     <div className="slideshow-container">
                         {destinations.map((dest, index) => {
@@ -124,7 +123,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* Login Panel */}
                 <div className="login-panel">
                     <div className="login-form-wrapper">
                         <div className="logo-section">

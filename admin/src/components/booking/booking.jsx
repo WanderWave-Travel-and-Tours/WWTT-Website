@@ -101,7 +101,6 @@ const Booking = () => {
 
       if (!res.ok) throw new Error('Failed to confirm booking');
 
-      // Refresh bookings
       await fetchBookings();
       alert('✅ Booking confirmed successfully!');
     } catch (error) {
@@ -126,7 +125,6 @@ const Booking = () => {
 
       if (!res.ok) throw new Error('Failed to cancel booking');
 
-      // Refresh bookings
       await fetchBookings();
       alert('✅ Booking cancelled successfully!');
     } catch (error) {
@@ -161,7 +159,6 @@ const Booking = () => {
           <p>View and manage all customer bookings</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-card-content">
@@ -224,7 +221,6 @@ const Booking = () => {
           </div>
         </div>
 
-        {/* Search and Filter */}
         <div className="search-filter-card">
           <div className="search-filter-wrapper">
             <div className="search-box">
@@ -267,7 +263,6 @@ const Booking = () => {
           </div>
         </div>
 
-        {/* Bookings Table */}
         <div className="table-card">
           {loading ? (
             <div className="loading-container">
@@ -418,7 +413,6 @@ const Booking = () => {
         </div>
       </div>
 
-      {/* View Details Modal */}
       {showModal && selectedBooking && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

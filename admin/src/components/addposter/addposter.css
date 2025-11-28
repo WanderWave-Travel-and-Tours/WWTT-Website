@@ -1,18 +1,12 @@
-/* ========================================
-   ADD POSTER PAGE STYLES
-   Based on Add Promo Design
-======================================== */
-
 .poster-page {
     display: flex;
     min-height: 100vh;
     background: #f8fafc;
 }
 
-/* ========== MAIN CONTENT ========== */
 .poster-main {
     flex: 1;
-    margin-left: 280px; /* Matches Sidebar width */
+    margin-left: 280px;
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
 }
@@ -28,7 +22,6 @@
     margin: 0 auto;
 }
 
-/* ========== HEADER ========== */
 .poster-header {
     margin-bottom: 32px;
 }
@@ -37,7 +30,7 @@
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
     font-size: 2rem;
     font-weight: 900;
-    color: #001F3F; /* Navy Blue */
+    color: #001F3F; 
     letter-spacing: 1px;
     margin-bottom: 6px;
 }
@@ -47,7 +40,6 @@
     color: #64748b;
 }
 
-/* ========== GRID LAYOUT ========== */
 .poster-grid {
     display: grid;
     grid-template-columns: 1fr 380px;
@@ -61,7 +53,6 @@
     gap: 24px;
 }
 
-/* ========== SECTIONS ========== */
 .poster-section {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -79,7 +70,6 @@
     margin-bottom: 24px;
 }
 
-/* ========== FORM FIELDS ========== */
 .poster-fields {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -122,12 +112,11 @@
 .poster-field textarea:focus,
 .poster-field select:focus {
     outline: none;
-    border-color: #FF8C42; /* Orange Theme */
+    border-color: #FF8C42; 
     background: #fff;
     box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
 
-/* ========== UPLOAD ZONE STYLES (NEW) ========== */
 .upload-zone {
     width: 100%;
 }
@@ -173,7 +162,6 @@
     margin-top: 4px;
 }
 
-/* ========== IMAGE PREVIEW INSIDE FORM ========== */
 .image-preview-container {
     position: relative;
     width: 100%;
@@ -195,7 +183,7 @@
     right: 10px;
     background: rgba(255, 255, 255, 0.9);
     border: none;
-    color: #ef4444; /* Red */
+    color: #ef4444;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -214,7 +202,6 @@
     color: #dc2626;
 }
 
-/* ========== ACTIONS ========== */
 .poster-actions {
     display: flex;
     gap: 12px;
@@ -255,7 +242,6 @@
     transform: translateY(-1px);
 }
 
-/* ========== RIGHT PREVIEW SIDEBAR ========== */
 .poster-right {
     position: sticky;
     top: 40px;
@@ -280,7 +266,6 @@
     text-align: center;
 }
 
-/* Phone Mockup */
 .phone-mockup {
     background: #1e293b;
     border-radius: 24px;
@@ -376,7 +361,6 @@
     border-radius: 4px;
 }
 
-/* Stats */
 .poster-stats {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -407,10 +391,9 @@
     margin-top: 4px;
 }
 
-/* ========== RESPONSIVE (Copied and adapted from AddPromo) ========== */
 @media (max-width: 1024px) {
     .poster-main {
-        margin-left: 70px; /* Collapsed sidebar width */
+        margin-left: 70px;
         padding: 20px;
     }
     .poster-grid {

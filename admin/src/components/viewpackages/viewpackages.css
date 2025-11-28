@@ -1,15 +1,9 @@
-/* ========================================
-   VIEW PACKAGES PAGE STYLES
-   Scoped to .packages-main only - Sidebar SAFE
-======================================== */
-
 .packages-page {
     display: flex;
     min-height: 100vh;
     background: #f8fafc;
 }
 
-/* ========== MAIN CONTENT ONLY ========== */
 .packages-main {
     flex: 1;
     margin-left: 280px;
@@ -30,7 +24,6 @@
     margin: 0 auto;
 }
 
-/* ========== HEADER ========== */
 .packages-header {
     display: flex;
     justify-content: space-between;
@@ -52,7 +45,6 @@
     color: #64748b;
 }
 
-/* ========== BUTTONS ========== */
 .packages-btn {
     padding: 14px 28px;
     font-size: 14px;
@@ -73,7 +65,6 @@
     background: #e57a35;
 }
 
-/* ========== LOADING STATE ========== */
 .packages-loader {
     display: flex;
     flex-direction: column;
@@ -101,7 +92,6 @@
     font-size: 14px;
 }
 
-/* ========== ERROR STATE ========== */
 .packages-error {
     display: flex;
     flex-direction: column;
@@ -124,7 +114,6 @@
     font-size: 14px;
 }
 
-/* ========== EMPTY STATE ========== */
 .packages-empty {
     display: flex;
     flex-direction: column;
@@ -156,14 +145,12 @@
     margin-bottom: 16px;
 }
 
-/* ========== CARDS GRID ========== */
 .packages-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
 }
 
-/* ========== PACKAGE CARD ========== */
 .pkg-card {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -176,7 +163,6 @@
     box-shadow: 0 8px 24px rgba(0, 31, 63, 0.1);
 }
 
-/* Card Image */
 .pkg-card-image {
     position: relative;
     height: 180px;
@@ -203,7 +189,6 @@
     letter-spacing: 0.5px;
 }
 
-/* Card Body */
 .pkg-card-body {
     padding: 20px;
 }
@@ -217,7 +202,6 @@
     line-height: 1.4;
 }
 
-/* Card Info */
 .pkg-card-info {
     display: flex;
     flex-direction: column;
@@ -241,7 +225,6 @@
     color: #94a3b8;
 }
 
-/* Card Footer */
 .pkg-card-footer {
     display: flex;
     justify-content: space-between;
@@ -269,7 +252,6 @@
     color: #FF8C42;
 }
 
-/* Action Buttons */
 .pkg-actions {
     display: flex;
     gap: 8px;
@@ -307,7 +289,6 @@
     border-color: #dc2626;
 }
 
-/* ========== RESPONSIVE ========== */
 @media (max-width: 1024px) {
     .packages-header {
         flex-direction: column;

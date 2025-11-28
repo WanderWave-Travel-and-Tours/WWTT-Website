@@ -9,7 +9,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Ito ang endpoint: /api/images/add
 router.post('/add', upload.single('image'), addImage);
 router.get('/', getAllImages);
 router.delete('/:id', deleteImage);

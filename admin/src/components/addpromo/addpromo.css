@@ -1,15 +1,9 @@
-/* ========================================
-   ADD PROMO PAGE STYLES
-   Clean and Modern Design
-======================================== */
-
 .promo-page {
     display: flex;
     min-height: 100vh;
     background: #f8fafc;
 }
 
-/* ========== MAIN CONTENT ========== */
 .promo-main {
     flex: 1;
     margin-left: 280px;
@@ -28,7 +22,6 @@
     margin: 0 auto;
 }
 
-/* ========== HEADER ========== */
 .promo-header {
     margin-bottom: 32px;
 }
@@ -47,7 +40,6 @@
     color: #64748b;
 }
 
-/* ========== GRID LAYOUT ========== */
 .promo-grid {
     display: grid;
     grid-template-columns: 1fr 380px;
@@ -61,7 +53,6 @@
     gap: 24px;
 }
 
-/* ========== SECTIONS ========== */
 .promo-section {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -79,7 +70,6 @@
     margin-bottom: 24px;
 }
 
-/* ========== FORM FIELDS ========== */
 .promo-fields {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -141,7 +131,6 @@
     cursor: pointer;
 }
 
-/* Added style for the custom input that appears when 'Other' is selected */
 .promo-input-custom {
     margin-top: 12px;
     border-left: 3px solid #FF8C42 !important;
@@ -159,7 +148,6 @@
     }
 }
 
-/* ========== ACTIONS ========== */
 .promo-actions {
     display: flex;
     gap: 12px;
@@ -205,7 +193,6 @@
     transform: translateY(0);
 }
 
-/* ========== SIDEBAR PREVIEW ========== */
 .promo-right {
     position: sticky;
     top: 40px;
@@ -228,7 +215,6 @@
     margin-bottom: 20px;
 }
 
-/* ========== PROMO CARD ========== */
 .promo-card {
     background: #fff;
     border-radius: 12px;
@@ -323,7 +309,6 @@
     flex-shrink: 0;
 }
 
-/* ========== STATS ========== */
 .promo-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -361,9 +346,6 @@
     letter-spacing: 0.5px;
 }
 
-/* ========== RESPONSIVE ========== */
-
-/* Large Desktop - 1440px+ */
 @media (min-width: 1440px) {
     .promo-container {
         max-width: 1400px;
@@ -375,14 +357,12 @@
     }
 }
 
-/* Desktop - 1200px to 1439px */
 @media (max-width: 1439px) and (min-width: 1200px) {
     .promo-container {
         max-width: 1100px;
     }
 }
 
-/* Laptop - 1024px to 1199px */
 @media (max-width: 1199px) and (min-width: 1025px) {
     .promo-main {
         padding: 32px 40px;
@@ -398,7 +378,6 @@
     }
 }
 
-/* Tablet Landscape - 900px to 1024px */
 @media (max-width: 1024px) and (min-width: 901px) {
     .promo-main {
         margin-left: 280px;
@@ -422,7 +401,6 @@
     }
 }
 
-/* Tablet Portrait - 768px to 900px */
 @media (max-width: 900px) and (min-width: 769px) {
     .promo-main {
         margin-left: 70px;
@@ -450,7 +428,6 @@
     }
 }
 
-/* Mobile Landscape - 640px to 768px */
 @media (max-width: 768px) and (min-width: 641px) {
     .promo-main {
         margin-left: 70px;
@@ -528,7 +505,6 @@
     }
 }
 
-/* Mobile Portrait - 480px to 640px */
 @media (max-width: 640px) and (min-width: 481px) {
     .promo-main {
         margin-left: 0;
@@ -673,7 +649,6 @@
     }
 }
 
-/* Mobile Small - 375px to 480px */
 @media (max-width: 480px) and (min-width: 376px) {
     .promo-main {
         margin-left: 0;
@@ -817,7 +792,6 @@
     }
 }
 
-/* Mobile Extra Small - 320px to 375px */
 @media (max-width: 375px) {
     .promo-main {
         margin-left: 0;
@@ -974,7 +948,6 @@
     }
 }
 
-/* Landscape Orientation - All Mobile Devices */
 @media (max-height: 500px) and (orientation: landscape) {
     .promo-main {
         padding: 12px;

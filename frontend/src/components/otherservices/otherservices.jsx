@@ -221,16 +221,13 @@ const OtherServices = ({ setAuthPage }) => {
   return (
     <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <div className="os-overlay"></div>
-
       <div className="os-content-wrapper">
-        
         <div className="os-header">
           <h2 className="os-title">WANDERWAVE SERVICES</h2>
           <p className="os-subtitle">Your One-Stop Travel & Documentation Solution</p>
         </div>
 
         <div className="os-carousel-wrapper">
-          
           <button className="os-nav-btn os-prev" onClick={() => scroll('left')} aria-label="Scroll Left">
             <ChevronLeft size={28} />
           </button>
@@ -238,7 +235,6 @@ const OtherServices = ({ setAuthPage }) => {
           <div className="os-scroll-container" ref={sliderRef}>
             {services.map((item, idx) => (
               <div key={idx} className="os-glass-card">
-                
                 <div className="os-card-img-box">
                   <img src={item.img} alt={item.title} loading="lazy" />
                   <div className="os-floating-icon">
@@ -253,7 +249,6 @@ const OtherServices = ({ setAuthPage }) => {
                     Inquire Now <ArrowRight size={16} />
                   </button>
                 </div>
-                
               </div>
             ))}
           </div>

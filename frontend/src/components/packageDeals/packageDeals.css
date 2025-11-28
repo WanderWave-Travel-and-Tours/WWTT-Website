@@ -1,4 +1,3 @@
-/* Page Container */
 .package-deals-page {
   min-height: 100vh;
   width: 100%;
@@ -8,7 +7,6 @@
   background-color: #f1f5f9; 
 }
 
-/* --- TOP SECTION (Promo + Categories) --- */
 .top-section-bg {
   width: 100%;
   background: 
@@ -17,17 +15,12 @@
   background-size: cover;      
   background-position: center; 
   background-repeat: no-repeat;
-  
-  /* OPTIONAL: Kung gusto mo ring naka-fix yung beach background sa taas, uncomment mo ito: */
-  /* background-attachment: fixed; */
-  
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-bottom: 60px; 
 }
 
-/* --- ORANGE DIVIDER --- */
 .section-divider-orange {
   width: 100%;
   height: 60px; 
@@ -37,20 +30,13 @@
   z-index: 5;
 }
 
-/* --- BOTTOM SECTION (All Packages) - FIXED BG --- */
 .bottom-section-bg {
   width: 100%;
-  
-  /* Updated Background Image with Dark Blue Overlay */
   background: linear-gradient(to bottom, rgba(15, 23, 42, 0.60), rgba(15, 23, 42, 0.80)),
               url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69118551d4d7797a4f8ddd64.jpg');
   background-size: cover;      
   background-position: center; 
   background-repeat: no-repeat;
-  
-  /* OPTIONAL: Kung gusto mo ring naka-fix yung beach background sa taas, uncomment mo ito: */
-  /* background-attachment: fixed; */
-  
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -60,7 +46,6 @@
   min-height: 800px;
 }
 
-/* Content Container */
 .content-container {
   width: 100%;
   max-width: 1400px; 
@@ -69,7 +54,6 @@
   box-sizing: border-box;
 }
 
-/* --- RESPONSIVE BREAKPOINTS --- */
 @media (max-width: 1024px) {
   .content-container {
     padding: 0 20px;
@@ -91,9 +75,5 @@
   
   .bottom-section-bg {
     padding-top: 40px;
-    
-    /* NOTE: Sa ilang mobile browsers (tulad ng iOS Safari), minsan 
-       ayaw gumana ng 'fixed' background. Kung mangyari yun, 
-       kusang magiging 'scroll' yan. Pero sa desktop, perfect yan. */
   }
 }

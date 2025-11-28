@@ -85,7 +85,6 @@ const ViewDeals = () => {
                             {filteredDeals.map((deal) => (
                                 <div key={deal.id} className="travel-card" style={{ backgroundImage: `url(${deal.image})` }}>
                                     
-                                    {/* Admin Controls */}
                                     <div className="card-admin-controls">
                                         <button className="ctrl-btn edit" title="Edit">
                                             <Edit size={14} />
@@ -95,7 +94,6 @@ const ViewDeals = () => {
                                         </button>
                                     </div>
 
-                                    {/* Content Overlay */}
                                     <div className="card-overlay">
                                         <div className="card-top">
                                             <h2 className="card-dest-title">{deal.title}</h2>
