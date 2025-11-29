@@ -15,20 +15,20 @@ import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
 import Booking from './components/booking/booking.jsx';
 
-// Poster Imports
 import AddPoster from './components/addposter/addposter.jsx';
 import ViewPoster from './components/viewposter/viewposter.jsx';
 
-// Blog Imports (NEW)
 import AddBlog from './components/addblog/addblog.jsx';
 import ViewBlog from './components/viewblog/viewblog.jsx';
 
 import AddImage from './components/addimage/addimage.jsx';
 import ViewImage from './components/viewimage/viewimage.jsx';
 
-// Deal Imports
 import AddDeal from './components/adddeals/adddeals.jsx';
 import ViewDeal from './components/viewdeals/viewdeals.jsx';
+
+import AddTour from './components/addtours/addtours.jsx';
+import ViewTours from './components/viewtours/viewtours.jsx';
 
 
 function App() {
@@ -45,13 +45,17 @@ function App() {
         <Route path="/view-packages" element={<ViewPackages />} />
         <Route path="/edit-package" element={<EditPackage />} />
         
+        {/* Tours (NEW) */}
+        <Route path="/add-tour" element={<AddTour />} />
+        <Route path="/view-tours" element={<ViewTours />} />
+
         {/* Promos & Posters */}
         <Route path="/add-promo" element={<AddPromo />} />
         <Route path="/view-promos" element={<ViewPromos />} />
         <Route path="/add-poster" element={<AddPoster />} />      
         <Route path="/view-posters" element={<ViewPoster />} /> 
 
-        {/* Blogs (NEW) */}
+        {/* Blogs */}
         <Route path="/add-blog" element={<AddBlog />} />
         <Route path="/view-blogs" element={<ViewBlog />} />
 
@@ -59,7 +63,7 @@ function App() {
         <Route path="/add-image" element={<AddImage />} />
         <Route path="/view-images" element={<ViewImage />} />
 
-        {/* Deals (New) */}
+        {/* Deals */}
         <Route path="/add-deals" element={<AddDeal />} />
         <Route path="/view-deals" element={<ViewDeal />} />
         

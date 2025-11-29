@@ -29,7 +29,8 @@ import {
   PenTool,
   Newspaper,
   UploadCloud, 
-  Grid 
+  Grid,
+  MapPin 
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -160,7 +161,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             type="button"
             style={{ zIndex: 1002 }}
         >
-           {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+            {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
 
@@ -177,12 +178,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               menuKey="add"
               childrenItems={[
                 { name: 'Create Package', path: '/add-package', icon: FilePlus },
+                { name: 'Create Tour', path: '/add-tour', icon: MapPin }, // <--- Added
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
                 { name: 'Add Promo Poster', path: '/add-poster', icon: Image },
                 { name: 'Create Blog', path: '/add-blog', icon: PenTool },
                 { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, 
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
-                { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
               ]}
             />
 
@@ -192,12 +193,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               menuKey="list"
               childrenItems={[
                 { name: 'Manage Packages', path: '/view-packages', icon: Package },
+                { name: 'Manage Tours', path: '/view-tours', icon: MapPin }, // <--- Added
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
                 { name: 'Poster List', path: '/view-posters', icon: Images },
                 { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
                 { name: 'Image Gallery', path: '/view-images', icon: Grid }, 
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
-                { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
               ]}
             />
           </ul>
