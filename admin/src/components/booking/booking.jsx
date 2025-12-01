@@ -3,17 +3,17 @@ import {
   Calendar, 
   Users, 
   Search, 
-  Download,
+  TrendingUp,
   Eye,
   CheckCircle,
   XCircle,
   AlertCircle,
   Mail,
-  Phone,
   Check,
-  X
+  X,
+  ChevronLeft
 } from 'lucide-react';
-import './booking.css';
+import './Booking.css';
 import Sidebar from '../sidebar/sidebar';
 
 const Booking = () => {
@@ -152,11 +152,20 @@ const Booking = () => {
 
   return (
     <div className="booking-page">
-      <Sidebar/>
+      <Sidebar />
+      
       <div className="booking-container">
+        {/* Header with Back Button */}
         <div className="booking-header">
-          <h1>Booking Management</h1>
-          <p>View and manage all customer bookings</p>
+          <button className="back-button">
+            <ChevronLeft size={18} />
+            <span>Back</span>
+          </button>
+          
+          <div className="booking-header-content">
+            <h1>Booking Management</h1>
+            <p>View and manage all customer bookings</p>
+          </div>
         </div>
 
         <div className="stats-grid">
@@ -167,7 +176,7 @@ const Booking = () => {
                 <p>{stats.total}</p>
               </div>
               <div className="stat-icon">
-                <Calendar size={28} color="#667eea" />
+                <Calendar size={24} color="#3b82f6" />
               </div>
             </div>
           </div>
@@ -176,10 +185,10 @@ const Booking = () => {
             <div className="stat-card-content">
               <div className="stat-info">
                 <h3>Confirmed</h3>
-                <p style={{ color: '#48bb78' }}>{stats.confirmed}</p>
+                <p style={{ color: '#10b981' }}>{stats.confirmed}</p>
               </div>
               <div className="stat-icon">
-                <CheckCircle size={28} color="#48bb78" />
+                <CheckCircle size={24} color="#10b981" />
               </div>
             </div>
           </div>
@@ -188,10 +197,10 @@ const Booking = () => {
             <div className="stat-card-content">
               <div className="stat-info">
                 <h3>Pending</h3>
-                <p style={{ color: '#ecc94b' }}>{stats.pending}</p>
+                <p style={{ color: '#f59e0b' }}>{stats.pending}</p>
               </div>
               <div className="stat-icon">
-                <AlertCircle size={28} color="#ecc94b" />
+                <AlertCircle size={24} color="#f59e0b" />
               </div>
             </div>
           </div>
@@ -200,10 +209,10 @@ const Booking = () => {
             <div className="stat-card-content">
               <div className="stat-info">
                 <h3>Cancelled</h3>
-                <p style={{ color: '#f56565' }}>{stats.cancelled}</p>
+                <p style={{ color: '#ef4444' }}>{stats.cancelled}</p>
               </div>
               <div className="stat-icon">
-                <XCircle size={28} color="#f56565" />
+                <XCircle size={24} color="#ef4444" />
               </div>
             </div>
           </div>
@@ -211,11 +220,11 @@ const Booking = () => {
           <div className="stat-card revenue-card">
             <div className="stat-card-content">
               <div className="stat-info">
-                <h3>Revenue</h3>
+                <h3>Total Revenue</h3>
                 <p>₱{stats.revenue.toLocaleString()}</p>
               </div>
               <div className="stat-icon">
-                <Download size={28} color="white" />
+                <TrendingUp size={24} color="white" />
               </div>
             </div>
           </div>
@@ -224,10 +233,10 @@ const Booking = () => {
         <div className="search-filter-card">
           <div className="search-filter-wrapper">
             <div className="search-box">
-              <Search className="search-icon" size={20} />
+              <Search className="search-icon" size={18} />
               <input
                 type="text"
-                placeholder="Search by name, booking ID, reference number, or package..."
+                placeholder="Search by name, booking ID, reference, or package..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -239,7 +248,7 @@ const Booking = () => {
                 onClick={() => setFilterStatus('all')}
                 className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
               >
-                All
+                All Bookings
               </button>
               <button
                 onClick={() => setFilterStatus('confirmed')}
@@ -271,9 +280,9 @@ const Booking = () => {
             </div>
           ) : filteredBookings.length === 0 ? (
             <div className="empty-state">
-              <Calendar size={56} className="empty-icon" />
+              <Calendar size={64} className="empty-icon" />
               <h3>No bookings found</h3>
-              <p>Try adjusting your search or filters</p>
+              <p>Try adjusting your search or filter criteria</p>
             </div>
           ) : (
             <div className="table-wrapper">
@@ -281,7 +290,7 @@ const Booking = () => {
                 <thead>
                   <tr>
                     <th>Booking ID</th>
-                    <th>Customer</th>
+                    <th>Customer Details</th>
                     <th>Package</th>
                     <th>Travel Date</th>
                     <th>Guests</th>
@@ -293,73 +302,77 @@ const Booking = () => {
                 <tbody>
                   {filteredBookings.map((booking) => (
                     <tr key={booking.id}>
+                      {/* Booking ID Column */}
                       <td>
                         <div className="booking-id">{booking.id}</div>
-                        <div className="booking-date-small">{booking.bookingDate}</div>
+                        <div className="booking-date-small">
+                          Booked: {booking.bookingDate}
+                        </div>
                         {booking.referenceNumber !== 'N/A' && (
-                          <div className="reference-number" style={{
-                            fontSize: '0.75rem',
-                            color: '#6b7280',
-                            fontFamily: 'monospace',
-                            marginTop: '4px'
-                          }}>
+                          <div className="reference-number">
                             Ref: {booking.referenceNumber}
                           </div>
                         )}
                       </td>
+
+                      {/* Customer Column */}
                       <td>
                         <div className="customer-name">{booking.customerName}</div>
                         <div className="customer-contact">
-                          <Mail size={12} />
+                          <Mail size={13} />
                           <span>{booking.email}</span>
                         </div>
                       </td>
+
+                      {/* Package Column */}
                       <td>
                         <div className="package-name">{booking.packageName}</div>
                         {booking.duration && (
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: '#6b7280',
-                            marginTop: '4px'
-                          }}>
-                            {booking.duration}
+                          <div className="booking-date-small">
+                            Duration: {booking.duration}
                           </div>
                         )}
                       </td>
+
+                      {/* Travel Date Column */}
                       <td>
                         <div className="date-cell">
-                          <Calendar size={16} />
+                          <Calendar size={15} />
                           <span>{booking.travelDate}</span>
                         </div>
                         {booking.endDate && (
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: '#6b7280',
-                            marginTop: '4px'
-                          }}>
+                          <div className="booking-date-small">
                             to {booking.endDate}
                           </div>
                         )}
                       </td>
+
+                      {/* Guests Column */}
                       <td>
                         <div className="guests-cell">
-                          <Users size={16} />
-                          <span>{booking.guests}</span>
+                          <Users size={15} />
+                          <span>{booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}</span>
                         </div>
                       </td>
+
+                      {/* Amount Column */}
                       <td>
                         <div className="amount-cell">
                           ₱{booking.totalAmount.toLocaleString()}
                         </div>
                       </td>
+
+                      {/* Status Column */}
                       <td>
                         <span className={`status-badge ${booking.status}`}>
-                          {booking.status === 'confirmed' && <CheckCircle size={14} />}
-                          {booking.status === 'pending' && <AlertCircle size={14} />}
-                          {booking.status === 'cancelled' && <XCircle size={14} />}
+                          {booking.status === 'confirmed' && <CheckCircle size={13} />}
+                          {booking.status === 'pending' && <AlertCircle size={13} />}
+                          {booking.status === 'cancelled' && <XCircle size={13} />}
                           {booking.status}
                         </span>
                       </td>
+
+                      {/* Actions Column */}
                       <td>
                         <div className="action-buttons-group">
                           <button 
@@ -367,7 +380,7 @@ const Booking = () => {
                             onClick={() => handleViewDetails(booking)}
                             title="View Details"
                           >
-                            <Eye size={18} />
+                            <Eye size={16} />
                           </button>
                           
                           {booking.status === 'pending' && (
@@ -378,7 +391,7 @@ const Booking = () => {
                                 disabled={actionLoading}
                                 title="Confirm Booking"
                               >
-                                <Check size={18} />
+                                <Check size={16} />
                               </button>
                               
                               <button 
@@ -387,7 +400,7 @@ const Booking = () => {
                                 disabled={actionLoading}
                                 title="Cancel Booking"
                               >
-                                <X size={18} />
+                                <X size={16} />
                               </button>
                             </>
                           )}
@@ -399,7 +412,7 @@ const Booking = () => {
                               disabled={actionLoading}
                               title="Cancel Booking"
                             >
-                              <X size={18} />
+                              <X size={16} />
                             </button>
                           )}
                         </div>
@@ -419,81 +432,91 @@ const Booking = () => {
             <div className="modal-header">
               <h2>Booking Details</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>
-                <X size={24} />
+                <X size={22} />
               </button>
             </div>
             
             <div className="modal-body">
+              {/* Booking Information */}
               <div className="detail-section">
                 <h3>Booking Information</h3>
                 <div className="detail-row">
-                  <span className="detail-label">Booking ID:</span>
+                  <span className="detail-label">Booking ID</span>
                   <span className="detail-value">{selectedBooking.id}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Reference Number:</span>
+                  <span className="detail-label">Reference Number</span>
                   <span className="detail-value">{selectedBooking.referenceNumber}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Booking Date:</span>
+                  <span className="detail-label">Booking Date</span>
                   <span className="detail-value">{selectedBooking.bookingDate}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Status:</span>
+                  <span className="detail-label">Status</span>
                   <span className={`status-badge ${selectedBooking.status}`}>
+                    {selectedBooking.status === 'confirmed' && <CheckCircle size={13} />}
+                    {selectedBooking.status === 'pending' && <AlertCircle size={13} />}
+                    {selectedBooking.status === 'cancelled' && <XCircle size={13} />}
                     {selectedBooking.status}
                   </span>
                 </div>
               </div>
 
+              {/* Customer Information */}
               <div className="detail-section">
                 <h3>Customer Information</h3>
                 <div className="detail-row">
-                  <span className="detail-label">Name:</span>
+                  <span className="detail-label">Full Name</span>
                   <span className="detail-value">{selectedBooking.customerName}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Email:</span>
+                  <span className="detail-label">Email Address</span>
                   <span className="detail-value">{selectedBooking.email}</span>
                 </div>
               </div>
 
+              {/* Package Information */}
               <div className="detail-section">
                 <h3>Package Information</h3>
                 <div className="detail-row">
-                  <span className="detail-label">Package:</span>
+                  <span className="detail-label">Package Name</span>
                   <span className="detail-value">{selectedBooking.packageName}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Duration:</span>
+                  <span className="detail-label">Duration</span>
                   <span className="detail-value">{selectedBooking.duration}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Travel Date:</span>
+                  <span className="detail-label">Travel Period</span>
                   <span className="detail-value">
-                    {selectedBooking.startDate} to {selectedBooking.endDate}
+                    {selectedBooking.startDate} - {selectedBooking.endDate}
                   </span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Number of Guests:</span>
-                  <span className="detail-value">{selectedBooking.guests} person(s)</span>
+                  <span className="detail-label">Number of Guests</span>
+                  <span className="detail-value">
+                    {selectedBooking.guests} {selectedBooking.guests === 1 ? 'person' : 'persons'}
+                  </span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Total Amount:</span>
-                  <span className="detail-value" style={{ color: '#10b981', fontWeight: 'bold' }}>
+                  <span className="detail-label">Total Amount</span>
+                  <span className="detail-value" style={{ color: '#10b981', fontSize: '1.125rem' }}>
                     ₱{selectedBooking.totalAmount.toLocaleString()}
                   </span>
                 </div>
               </div>
 
+              {/* Special Requests */}
               {selectedBooking.message && (
                 <div className="detail-section">
-                  <h3>Special Requests</h3>
+                  <h3>Special Requests / Notes</h3>
                   <p className="detail-message">{selectedBooking.message}</p>
                 </div>
               )}
             </div>
 
+            {/* Modal Footer with Actions */}
             <div className="modal-footer">
               {selectedBooking.status === 'pending' && (
                 <>
@@ -505,7 +528,7 @@ const Booking = () => {
                     }}
                     disabled={actionLoading}
                   >
-                    <Check size={18} />
+                    <Check size={16} />
                     Confirm Booking
                   </button>
                   <button 
@@ -516,7 +539,7 @@ const Booking = () => {
                     }}
                     disabled={actionLoading}
                   >
-                    <X size={18} />
+                    <X size={16} />
                     Cancel Booking
                   </button>
                 </>
@@ -530,7 +553,7 @@ const Booking = () => {
                   }}
                   disabled={actionLoading}
                 >
-                  <X size={18} />
+                  <X size={16} />
                   Cancel Booking
                 </button>
               )}

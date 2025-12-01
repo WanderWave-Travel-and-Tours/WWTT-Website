@@ -7,7 +7,6 @@ const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -34,6 +33,7 @@ const blogRoutes = require('./routes/blogs');
 const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
 const authRoute = require('./routes/authRoute');
+const tourRoutes = require('./routes/tourRoutes'); 
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -44,7 +44,7 @@ app.use('/api/blogs', blogRoutes);
 app.use('/api/payment', paymentRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/auth', authRoute);
-
+app.use('/api/tours', tourRoutes); 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
@@ -63,7 +63,6 @@ const upload = multer({ storage: storage });
 const PackageModel = require('./models/package');
 const Booking = require('./models/booking');
 const Blog = require('./models/blog');
-
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {
     try {
         const { 
