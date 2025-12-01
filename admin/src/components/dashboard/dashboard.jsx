@@ -726,13 +726,6 @@ const exportToPDF = () => {
               >
                 <Download size={18} />
               </button>
-              <button
-                className="dash-icon-btn"
-                onClick={exportToPDF}
-                title="Export to PDF"
-              >
-                <Download size={18} />
-              </button>
               <button className="dash-icon-btn">
                 <Search size={18} />
               </button>
