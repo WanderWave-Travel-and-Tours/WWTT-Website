@@ -2,16 +2,18 @@ const Amadeus = require('amadeus');
 
 let amadeus;
 try {
+  const isProd = process.env.AMADEUS_HOSTNAME !== 'test';
+  
   const config = {
     clientId: process.env.AMADEUS_API_KEY,
-    clientSecret: process.env.AMADEUS_API_SECRET
+    clientSecret: process.env.AMADEUS_API_SECRET,
+    hostname: isProd ? 'production' : 'test'
   };
 
-  if (process.env.AMADEUS_HOSTNAME === 'test') {
-    config.hostname = 'test';
-  }
-
   amadeus = new Amadeus(config);
+  
+  console.log(`✈️ AMADEUS INITIALIZED IN: ${isProd ? '🔴 PRODUCTION' : '🟡 TEST/SANDBOX'} MODE`);
+  
 } catch (error) {
   console.error('❌ Failed to initialize Amadeus SDK:', error.message);
 }
@@ -90,14 +92,15 @@ exports.searchFlightOffers = async (req, res) => {
       });
     }
 
+    // IMPROVED SEARCH PARAMETERS for more airline diversity
     const searchParams = {
       originLocationCode: origin.toUpperCase(),
       destinationLocationCode: destination.toUpperCase(),
       departureDate: departureDate,
       adults: parseInt(adults),
       currencyCode: 'PHP',
-      max: 50,
-      nonStop: false 
+      max: 250, // ✅ INCREASED from 50 to 250 for MORE airline options
+      nonStop: false // ✅ Include connecting flights for MORE variety
     };
 
     if (children && parseInt(children) > 0) {
@@ -119,7 +122,12 @@ exports.searchFlightOffers = async (req, res) => {
       'First': 'FIRST'
     };
     searchParams.travelClass = travelClassMap[cabinType] || 'ECONOMY';
+
+    console.log('📤 Sending request to Amadeus with params:', searchParams);
+    
     const response = await amadeus.shopping.flightOffersSearch.get(searchParams);
+
+    console.log(`✅ Amadeus returned ${response.data?.length || 0} flight offers`);
 
     if (!response.data || response.data.length === 0) {
       return res.json({
@@ -137,6 +145,9 @@ exports.searchFlightOffers = async (req, res) => {
       });
     }
 
+    // ✅ Track unique airlines to show diversity
+    const uniqueAirlines = new Set();
+
     const flights = response.data.map((offer, index) => {
       const itinerary = offer.itineraries[0]; 
       const firstSegment = itinerary.segments[0];
@@ -149,6 +160,9 @@ exports.searchFlightOffers = async (req, res) => {
       const numberOfStops = itinerary.segments.length - 1;
       const carrierCode = firstSegment.carrierCode;
       const flightNumber = firstSegment.number;
+
+      // Track airline diversity
+      uniqueAirlines.add(carrierCode);
 
       return {
         id: offer.id || `amadeus-${index}`,
@@ -212,6 +226,8 @@ exports.searchFlightOffers = async (req, res) => {
 
     flights.sort((a, b) => a.price.amount - b.price.amount);
 
+    console.log(`✈️ Found ${uniqueAirlines.size} unique airlines:`, Array.from(uniqueAirlines).join(', '));
+
     return res.json({
       success: true,
       count: flights.length,
@@ -235,7 +251,15 @@ exports.searchFlightOffers = async (req, res) => {
         highestPrice: flights.length > 0 ? flights[flights.length - 1].price.amount : 0,
         averagePrice: flights.length > 0 
           ? Math.round(flights.reduce((sum, f) => sum + f.price.amount, 0) / flights.length)
-          : 0
+          : 0,
+        pricePerAdult: flights.length > 0 ? Math.round(flights[0].price.amount / parseInt(adults)) : 0
+      },
+      airlineStats: {
+        uniqueAirlines: uniqueAirlines.size,
+        airlines: Array.from(uniqueAirlines).map(code => ({
+          code,
+          name: getAirlineName(code)
+        }))
       }
     });
 
@@ -336,38 +360,150 @@ function formatDate(isoDateTime) {
   });
 }
 
+// ✅ EXPANDED AIRLINE DATABASE - 100+ airlines
 function getAirlineName(code) {
   const airlines = {
+    // Philippine Airlines
     'PR': 'Philippine Airlines',
     '5J': 'Cebu Pacific',
     'Z2': 'AirAsia Philippines',
     'DG': 'Cebgo',
+    'RW': 'Royal Air Philippines',
+    
+    // Southeast Asia
     'SQ': 'Singapore Airlines',
     'TR': 'Scoot',
-    'CX': 'Cathay Pacific',
+    'MI': 'SilkAir',
+    '3K': 'Jetstar Asia',
+    'FD': 'Thai AirAsia',
+    'SL': 'Thai Lion Air',
+    'DD': 'Nok Air',
     'TG': 'Thai Airways',
+    'WE': 'Thai Smile',
     'MH': 'Malaysia Airlines',
+    'AK': 'AirAsia',
+    'OD': 'Batik Air Malaysia',
+    'D7': 'AirAsia X',
+    'VN': 'Vietnam Airlines',
+    'VJ': 'VietJet Air',
+    'BL': 'Jetstar Pacific',
+    'QG': 'Citilink',
+    'GA': 'Garuda Indonesia',
+    'ID': 'Batik Air',
+    'JT': 'Lion Air',
+    'QZ': 'Indonesia AirAsia',
+    'IW': 'Wings Air',
+    'BI': 'Royal Brunei',
+    'PG': 'Bangkok Airways',
+    'QV': 'Lao Airlines',
+    'K6': 'Cambodia Angkor Air',
+    
+    // Northeast Asia
+    'CX': 'Cathay Pacific',
+    'KA': 'Cathay Dragon',
+    'HX': 'Hong Kong Airlines',
+    'UO': 'Hong Kong Express',
     'KE': 'Korean Air',
     'OZ': 'Asiana Airlines',
-    'NH': 'ANA',
+    '7C': 'Jeju Air',
+    'TW': 'T\'way Air',
+    'LJ': 'Jin Air',
+    'NH': 'ANA (All Nippon Airways)',
     'JL': 'Japan Airlines',
+    'MM': 'Peach Aviation',
+    'GK': 'Jetstar Japan',
+    'BC': 'Skymark Airlines',
+    'CA': 'Air China',
+    'MU': 'China Eastern',
+    'CZ': 'China Southern',
+    'HU': 'Hainan Airlines',
+    'CI': 'China Airlines',
+    'BR': 'EVA Air',
+    'JX': 'Starlux Airlines',
+    'IT': 'Tigerair Taiwan',
+    
+    // Middle East
     'QR': 'Qatar Airways',
     'EK': 'Emirates',
+    'EY': 'Etihad Airways',
+    'FZ': 'flydubai',
+    'WY': 'Oman Air',
+    'SV': 'Saudi Arabian Airlines',
+    'GF': 'Gulf Air',
+    'KU': 'Kuwait Airways',
+    'RJ': 'Royal Jordanian',
+    'MS': 'EgyptAir',
+    
+    // European Airlines
     'TK': 'Turkish Airlines',
     'BA': 'British Airways',
     'AF': 'Air France',
     'LH': 'Lufthansa',
     'KL': 'KLM',
-    'QF': 'Qantas',
+    'AZ': 'ITA Airways',
+    'IB': 'Iberia',
+    'SK': 'SAS Scandinavian',
+    'LX': 'Swiss International',
+    'OS': 'Austrian Airlines',
+    'SN': 'Brussels Airlines',
+    'TP': 'TAP Air Portugal',
+    'AY': 'Finnair',
+    'FR': 'Ryanair',
+    'U2': 'easyJet',
+    'VY': 'Vueling',
+    'W6': 'Wizz Air',
+    
+    // North American Airlines
     'UA': 'United Airlines',
     'DL': 'Delta Air Lines',
     'AA': 'American Airlines',
-    'CA': 'Air China',
-    'CI': 'China Airlines',
-    'BR': 'EVA Air'
+    'AC': 'Air Canada',
+    'WS': 'WestJet',
+    'AS': 'Alaska Airlines',
+    'B6': 'JetBlue',
+    'WN': 'Southwest Airlines',
+    'F9': 'Frontier Airlines',
+    'NK': 'Spirit Airlines',
+    'G4': 'Allegiant Air',
+    
+    // Oceania
+    'QF': 'Qantas',
+    'VA': 'Virgin Australia',
+    'JQ': 'Jetstar Airways',
+    'NZ': 'Air New Zealand',
+    'FJ': 'Fiji Airways',
+    
+    // Indian Subcontinent
+    'AI': 'Air India',
+    '6E': 'IndiGo',
+    'SG': 'SpiceJet',
+    'I5': 'AirAsia India',
+    'G8': 'Go First',
+    'UK': 'Vistara',
+    'PK': 'Pakistan International',
+    'UL': 'SriLankan Airlines',
+    'BS': 'US-Bangla Airlines',
+    
+    // African Airlines
+    'SA': 'South African Airways',
+    'ET': 'Ethiopian Airlines',
+    'KQ': 'Kenya Airways',
+    
+    // Latin American
+    'LA': 'LATAM Airlines',
+    'CM': 'Copa Airlines',
+    'AM': 'Aeroméxico',
+    'AR': 'Aerolíneas Argentinas',
+    'AV': 'Avianca',
+    
+    // Consolidators & Charter (these often appear in Amadeus results)
+    'X1': 'X1 Air',
+    'W1': 'World Ticket Solutions',
+    '1A': 'Amadeus IT Group',
+    'XT': 'XT Airways'
   };
   
-  return airlines[code] || code;
+  return airlines[code] || `${code} Airlines`;
 }
 
 exports.getFlightPriceCalendar = async (req, res) => {
