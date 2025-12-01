@@ -34,6 +34,8 @@ function FlightSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchInfo, setSearchInfo] = useState(null);
+  const [showPassengers, setShowPassengers] = useState(false);
+  const [showCabin, setShowCabin] = useState(false);
 
   function getTomorrowDate() {
     const tomorrow = new Date();
@@ -94,7 +96,7 @@ function FlightSearch() {
     }
 
     try {
-      const response = await axios.get('http://localhost:5000/api/flights/search-prices', {
+      const response = await axios.get('http://localhost:5000/api/flights/search-prices-amadeus-only', {
         params: {
           ...searchData,
           adults: searchParams.adults
@@ -186,404 +188,630 @@ function FlightSearch() {
     }
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const getTotalPassengers = () => {
+    return parseInt(searchParams.adults) + parseInt(searchParams.children) + parseInt(searchParams.infants);
+  };
+
   return (
     <div className="flight-search-container">
-      <div className="header">
-        <h1>✈️ Search Real-Time Flight Prices</h1>
-        <p style={{ fontSize: '14px', color: '#666', marginTop: '8px' }}>
-          Powered by Amadeus GDS - Get accurate, bookable prices for future flights
-        </p>
-      </div>
-
-      <div className="search-container">
-        <form onSubmit={handleSearch} className="search-form">
-          <div className="form-row form-row-5">
-            <div className="form-group">
-              <label>Journey Type</label>
-              <select name="journeyType" value={searchParams.journeyType} onChange={handleInputChange}>
-                <option value="one-way">One-way</option>
-                <option value="round-trip">Round trip</option>
-                <option value="multi-city">Multi-city</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Adults (12+ yo)</label>
-              <input type="number" name="adults" value={searchParams.adults} onChange={handleInputChange} min="1" max="9" />
-            </div>
-
-            <div className="form-group">
-              <label>Children (2-11 yo)</label>
-              <input type="number" name="children" value={searchParams.children} onChange={handleInputChange} min="0" max="9" />
-            </div>
-
-            <div className="form-group">
-              <label>Infants (below 2 yo)</label>
-              <input type="number" name="infants" value={searchParams.infants} onChange={handleInputChange} min="0" max="9" />
-            </div>
-
-            <div className="form-group">
-              <label>Cabin Type</label>
-              <select name="cabinType" value={searchParams.cabinType} onChange={handleInputChange}>
-                <option value="Economy">Economy</option>
-                <option value="Premium Economy">Premium Economy</option>
-                <option value="Business">Business</option>
-                <option value="First">First Class</option>
-              </select>
-            </div>
-          </div>
-
-          {searchParams.journeyType === 'one-way' && (
-            <div className="form-row form-row-7">
-              <div className="form-group">
-                <label>Origin City</label>
-                <input
-                  type="text"
-                  name="origin"
-                  value={oneWayData.origin}
-                  onChange={handleOneWayChange}
-                  placeholder="MNL"
-                  maxLength="3"
-                  required
-                />
-              </div>
-
-              <button type="button" onClick={swapCities} className="swap-button">
-                ⇄
-              </button>
-
-              <div className="form-group">
-                <label>Destination City</label>
-                <input
-                  type="text"
-                  name="destination"
-                  value={oneWayData.destination}
-                  onChange={handleOneWayChange}
-                  placeholder="CEB"
-                  maxLength="3"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Departure Date</label>
-                <input
-                  type="date"
-                  name="departureDate"
-                  value={oneWayData.departureDate}
-                  onChange={handleOneWayChange}
-                  min={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-            </div>
-          )}
-
-          {searchParams.journeyType === 'round-trip' && (
-            <div className="form-row form-row-7">
-              <div className="form-group">
-                <label>Origin City</label>
-                <input
-                  type="text"
-                  name="origin"
-                  value={roundTripData.origin}
-                  onChange={handleRoundTripChange}
-                  placeholder="MNL"
-                  maxLength="3"
-                  required
-                />
-              </div>
-
-              <button type="button" onClick={swapCities} className="swap-button">
-                ⇄
-              </button>
-
-              <div className="form-group">
-                <label>Destination City</label>
-                <input
-                  type="text"
-                  name="destination"
-                  value={roundTripData.destination}
-                  onChange={handleRoundTripChange}
-                  placeholder="CEB"
-                  maxLength="3"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Departure Date</label>
-                <input
-                  type="date"
-                  name="departureDate"
-                  value={roundTripData.departureDate}
-                  onChange={handleRoundTripChange}
-                  min={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Return Date</label>
-                <input
-                  type="date"
-                  name="returnDate"
-                  value={roundTripData.returnDate}
-                  onChange={handleRoundTripChange}
-                  min={roundTripData.departureDate}
-                  required
-                />
-              </div>
-            </div>
-          )}
-
-          {searchParams.journeyType === 'multi-city' && (
-            <div>
-              {multiCityLegs.map((leg, index) => (
-                <div key={index} style={{ marginBottom: '16px' }}>
-                  <h4 style={{ marginBottom: '8px', color: '#1e1b4b' }}>Flight {index + 1}</h4>
-                  <div className="form-row form-row-7" style={{ alignItems: 'flex-end' }}>
-                    <div className="form-group">
-                      <label>Origin</label>
-                      <input
-                        type="text"
-                        value={leg.origin}
-                        onChange={(e) => handleMultiCityChange(index, 'origin', e.target.value)}
-                        placeholder="MNL"
-                        maxLength="3"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Destination</label>
-                      <input
-                        type="text"
-                        value={leg.destination}
-                        onChange={(e) => handleMultiCityChange(index, 'destination', e.target.value)}
-                        placeholder="CEB"
-                        maxLength="3"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Date</label>
-                      <input
-                        type="date"
-                        value={leg.departureDate}
-                        onChange={(e) => handleMultiCityChange(index, 'departureDate', e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                        required
-                      />
-                    </div>
-
-                    {index >= 2 && (
-                      <button
-                        type="button"
-                        onClick={() => removeMultiCityLeg(index)}
-                        style={{
-                          padding: '12px',
-                          background: '#fee2e2',
-                          border: 'none',
-                          borderRadius: '50%',
-                          cursor: 'pointer',
-                          color: '#dc2626',
-                          fontSize: '20px',
-                          width: '45px',
-                          height: '45px'
-                        }}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-
+      <div className="search-wrapper">
+        <div className="search-card">
+          <div className="journey-type-row">
+            <div className="button-group">
               <button
                 type="button"
-                onClick={addMultiCityLeg}
-                style={{
-                  padding: '10px 24px',
-                  background: 'white',
-                  border: '2px dashed #1e1b4b',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: '#1e1b4b',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  width: '100%',
-                  marginTop: '12px'
-                }}
+                className={`journey-btn ${searchParams.journeyType === 'one-way' ? 'active' : ''}`}
+                onClick={() => setSearchParams({ ...searchParams, journeyType: 'one-way' })}
               >
-                + Add Flight
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                One way
+              </button>
+              <button
+                type="button"
+                className={`journey-btn ${searchParams.journeyType === 'round-trip' ? 'active' : ''}`}
+                onClick={() => setSearchParams({ ...searchParams, journeyType: 'round-trip' })}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 7h18M3 17h18M7 3l-4 4 4 4M17 13l4 4-4 4"/>
+                </svg>
+                Round trip
+              </button>
+              <button
+                type="button"
+                className={`journey-btn ${searchParams.journeyType === 'multi-city' ? 'active' : ''}`}
+                onClick={() => setSearchParams({ ...searchParams, journeyType: 'multi-city' })}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m6.36 6.36l4.24 4.24"/>
+                </svg>
+                Multi-city
               </button>
             </div>
+
+            <div className="options-row">
+              <div className="dropdown-wrapper">
+                <button
+                  type="button"
+                  className="dropdown-btn"
+                  onClick={() => setShowPassengers(!showPassengers)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  {getTotalPassengers()}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+
+                {showPassengers && (
+                  <div className="dropdown-menu">
+                    <div className="dropdown-item">
+                      <div>
+                        <div className="dropdown-label">Adults</div>
+                        <div className="dropdown-sublabel">Aged 12+</div>
+                      </div>
+                      <div className="counter">
+                        <button
+                          type="button"
+                          className="counter-btn"
+                          onClick={() => setSearchParams({ 
+                            ...searchParams, 
+                            adults: Math.max(1, parseInt(searchParams.adults) - 1).toString() 
+                          })}
+                          disabled={parseInt(searchParams.adults) <= 1}
+                        >
+                          −
+                        </button>
+                        <span className="counter-value">{searchParams.adults}</span>
+                        <button
+                          type="button"
+                          className="counter-btn"
+                          onClick={() => setSearchParams({ 
+                            ...searchParams, 
+                            adults: Math.min(9, parseInt(searchParams.adults) + 1).toString() 
+                          })}
+                          disabled={parseInt(searchParams.adults) >= 9}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="dropdown-item">
+                      <div>
+                        <div className="dropdown-label">Children</div>
+                        <div className="dropdown-sublabel">Aged 2-11</div>
+                      </div>
+                      <div className="counter">
+                        <button
+                          type="button"
+                          className="counter-btn"
+                          onClick={() => setSearchParams({ 
+                            ...searchParams, 
+                            children: Math.max(0, parseInt(searchParams.children) - 1).toString() 
+                          })}
+                          disabled={parseInt(searchParams.children) <= 0}
+                        >
+                          −
+                        </button>
+                        <span className="counter-value">{searchParams.children}</span>
+                        <button
+                          type="button"
+                          className="counter-btn"
+                          onClick={() => setSearchParams({ 
+                            ...searchParams, 
+                            children: (parseInt(searchParams.children) + 1).toString() 
+                          })}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="dropdown-item">
+                      <div>
+                        <div className="dropdown-label">Infants</div>
+                        <div className="dropdown-sublabel">In seat</div>
+                      </div>
+                      <div className="counter">
+                        <button
+                          type="button"
+                          className="counter-btn"
+                          onClick={() => setSearchParams({ 
+                            ...searchParams, 
+                            infants: Math.max(0, parseInt(searchParams.infants) - 1).toString() 
+                          })}
+                          disabled={parseInt(searchParams.infants) <= 0}
+                        >
+                          −
+                        </button>
+                        <span className="counter-value">{searchParams.infants}</span>
+                        <button
+                          type="button"
+                          className="counter-btn"
+                          onClick={() => setSearchParams({ 
+                            ...searchParams, 
+                            infants: (parseInt(searchParams.infants) + 1).toString() 
+                          })}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="dropdown-footer">
+                      <button
+                        type="button"
+                        className="dropdown-cancel"
+                        onClick={() => setShowPassengers(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="dropdown-done"
+                        onClick={() => setShowPassengers(false)}
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="dropdown-wrapper">
+                <button
+                  type="button"
+                  className="dropdown-btn"
+                  onClick={() => setShowCabin(!showCabin)}
+                >
+                  {searchParams.cabinType}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+
+                {showCabin && (
+                  <div className="dropdown-menu cabin-menu">
+                    <button
+                      type="button"
+                      className={`cabin-option ${searchParams.cabinType === 'Economy' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSearchParams({ ...searchParams, cabinType: 'Economy' });
+                        setShowCabin(false);
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 13l4 4L19 7"/>
+                      </svg>
+                      Economy
+                    </button>
+                    <button
+                      type="button"
+                      className={`cabin-option ${searchParams.cabinType === 'Premium economy' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSearchParams({ ...searchParams, cabinType: 'Premium economy' });
+                        setShowCabin(false);
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 13l4 4L19 7"/>
+                      </svg>
+                      Premium economy
+                    </button>
+                    <button
+                      type="button"
+                      className={`cabin-option ${searchParams.cabinType === 'Business' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSearchParams({ ...searchParams, cabinType: 'Business' });
+                        setShowCabin(false);
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 13l4 4L19 7"/>
+                      </svg>
+                      Business
+                    </button>
+                    <button
+                      type="button"
+                      className={`cabin-option ${searchParams.cabinType === 'First' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSearchParams({ ...searchParams, cabinType: 'First' });
+                        setShowCabin(false);
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 13l4 4L19 7"/>
+                      </svg>
+                      First
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSearch}>
+            {/* One-way Search */}
+            {searchParams.journeyType === 'one-way' && (
+              <div className="search-fields">
+                <div className="field-row">
+                  <div className="input-group origin-group">
+                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <input
+                      type="text"
+                      name="origin"
+                      value={oneWayData.origin}
+                      onChange={handleOneWayChange}
+                      placeholder="Where from?"
+                      className="location-input"
+                      maxLength="3"
+                    />
+                  </div>
+
+                  <button type="button" className="swap-btn" onClick={swapCities}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="17 1 21 5 17 9"/>
+                      <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                      <polyline points="7 23 3 19 7 15"/>
+                      <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                    </svg>
+                  </button>
+
+                  <div className="input-group destination-group">
+                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <input
+                      type="text"
+                      name="destination"
+                      value={oneWayData.destination}
+                      onChange={handleOneWayChange}
+                      placeholder="Where to?"
+                      className="location-input"
+                      maxLength="3"
+                    />
+                  </div>
+
+                  <div className="input-group date-group">
+                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <input
+                      type="date"
+                      name="departureDate"
+                      value={oneWayData.departureDate}
+                      onChange={handleOneWayChange}
+                      className="date-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="search-btn-container">
+                  <button type="submit" disabled={loading} className="search-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    Explore
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Round-trip Search */}
+            {searchParams.journeyType === 'round-trip' && (
+              <div className="search-fields">
+                <div className="field-row">
+                  <div className="input-group origin-group">
+                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <input
+                      type="text"
+                      name="origin"
+                      value={roundTripData.origin}
+                      onChange={handleRoundTripChange}
+                      placeholder="Where from?"
+                      className="location-input"
+                      maxLength="3"
+                    />
+                  </div>
+
+                  <button type="button" className="swap-btn" onClick={swapCities}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="17 1 21 5 17 9"/>
+                      <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                      <polyline points="7 23 3 19 7 15"/>
+                      <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                    </svg>
+                  </button>
+
+                  <div className="input-group destination-group">
+                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <input
+                      type="text"
+                      name="destination"
+                      value={roundTripData.destination}
+                      onChange={handleRoundTripChange}
+                      placeholder="Where to?"
+                      className="location-input"
+                      maxLength="3"
+                    />
+                  </div>
+
+                  <div className="input-group date-group">
+                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <input
+                      type="date"
+                      name="departureDate"
+                      value={roundTripData.departureDate}
+                      onChange={handleRoundTripChange}
+                      className="date-input"
+                    />
+                    <div className="date-nav">
+                      <button type="button" className="date-nav-btn">‹</button>
+                      <button type="button" className="date-nav-btn">›</button>
+                    </div>
+                  </div>
+
+                  <div className="input-group date-group return-date">
+                    <span className="return-label">Return</span>
+                    <input
+                      type="date"
+                      name="returnDate"
+                      value={roundTripData.returnDate}
+                      onChange={handleRoundTripChange}
+                      className="date-input"
+                    />
+                    <div className="date-nav">
+                      <button type="button" className="date-nav-btn">‹</button>
+                      <button type="button" className="date-nav-btn">›</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="search-btn-container">
+                  <button type="submit" disabled={loading} className="search-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    Explore
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Multi-city Search */}
+            {searchParams.journeyType === 'multi-city' && (
+              <div className="search-fields multi-city-fields">
+                {multiCityLegs.map((leg, index) => (
+                  <div key={index} className="multi-city-leg">
+                    <div className="field-row">
+                      <div className="input-group origin-group">
+                        <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <input
+                          type="text"
+                          value={leg.origin}
+                          onChange={(e) => handleMultiCityChange(index, 'origin', e.target.value)}
+                          placeholder="Where from?"
+                          className="location-input"
+                          maxLength="3"
+                        />
+                      </div>
+
+                      <button type="button" className="swap-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="17 1 21 5 17 9"/>
+                          <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                          <polyline points="7 23 3 19 7 15"/>
+                          <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                        </svg>
+                      </button>
+
+                      <div className="input-group destination-group">
+                        <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                          <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <input
+                          type="text"
+                          value={leg.destination}
+                          onChange={(e) => handleMultiCityChange(index, 'destination', e.target.value)}
+                          placeholder="Where to?"
+                          className="location-input"
+                          maxLength="3"
+                        />
+                      </div>
+
+                      <div className="input-group date-group">
+                        <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                          <line x1="16" y1="2" x2="16" y2="6"/>
+                          <line x1="8" y1="2" x2="8" y2="6"/>
+                          <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <input
+                          type="date"
+                          value={leg.departureDate}
+                          onChange={(e) => handleMultiCityChange(index, 'departureDate', e.target.value)}
+                          className="date-input"
+                        />
+                        <div className="date-nav">
+                          <button type="button" className="date-nav-btn">‹</button>
+                          <button type="button" className="date-nav-btn">›</button>
+                        </div>
+                      </div>
+
+                      {index >= 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeMultiCityLeg(index)}
+                          className="remove-leg-btn"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addMultiCityLeg}
+                  className="add-flight-btn"
+                >
+                  Add flight
+                </button>
+
+                <div className="search-btn-container">
+                  <button type="submit" disabled={loading} className="search-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    Explore
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Search Results */}
+        <div className="results-container">
+          {searchInfo && flights.length > 0 && (
+            <div className="search-success-banner">
+              <div className="success-icon">✓</div>
+              <div className="success-content">
+                <strong>{searchInfo.disclaimer}</strong>
+                <div className="success-details">
+                  Found {searchInfo.count} real-time {searchInfo.count === 1 ? 'flight' : 'flights'} • 
+                  {searchInfo.routeInfo?.origin} → {searchInfo.routeInfo?.destination} • 
+                  From ₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString()} per adult
+                </div>
+              </div>
+            </div>
           )}
 
-          <div className="search-button-container">
-            <button type="submit" disabled={loading} className="search-button">
-              🔍 {loading ? 'SEARCHING REAL-TIME PRICES...' : 'SEARCH FLIGHTS'}
-            </button>
-          </div>
-        </form>
-
-        {searchInfo && flights.length > 0 && (
-          <div style={{
-            background: '#dcfce7',
-            border: '1px solid #16a34a',
-            borderRadius: '8px',
-            padding: '16px',
-            marginTop: '16px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '20px' }}>✅</span>
-              <strong style={{ color: '#15803d' }}>{searchInfo.disclaimer}</strong>
+          {error && (
+            <div className="error-banner">
+              <div className="error-icon">✕</div>
+              <strong>{error}</strong>
             </div>
-            <div style={{ fontSize: '13px', color: '#166534', marginTop: '8px' }}>
-              <div>📊 Found {searchInfo.count} real-time {searchInfo.count === 1 ? 'flight' : 'flights'}</div>
-              <div>🛫 Route: {searchInfo.routeInfo?.origin} → {searchInfo.routeInfo?.destination} ({searchInfo.routeInfo?.type})</div>
-              {searchInfo.pricingInfo && (
-                <div>💰 Starting from ₱{searchInfo.pricingInfo.pricePerAdult?.toLocaleString()} per adult</div>
-              )}
-            </div>
-          </div>
-        )}
+          )}
 
-        {error && (
-          <div style={{
-            background: '#fee2e2',
-            border: '1px solid #dc2626',
-            borderRadius: '8px',
-            padding: '16px',
-            marginTop: '16px',
-            color: '#991b1b'
-          }}>
-            <strong>❌ {error}</strong>
-          </div>
-        )}
-
-        <div className="flight-results">
           {loading && (
-            <div className="loading-container">
-              <div className="spinner"></div>
-              <p className="loading-text">Fetching real-time prices from airlines...</p>
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Fetching real-time prices from airlines...</p>
             </div>
           )}
 
-          {flights.map((flight, index) => (
-            <div key={flight.id || index} className="flight-card">
-              <div className="flight-content">
-                <div className="flight-info">
-                  <div className="airline-info">
+          <div className="flight-results">
+            {flights.map((flight, index) => (
+              <div key={flight.id || index} className="flight-card">
+                <div className="flight-main">
+                  <div className="airline-section">
                     {flight.airline?.logo ? (
                       <img 
                         src={flight.airline.logo} 
                         alt={flight.airline.name}
-                        style={{ width: '50px', height: '50px', objectFit: 'contain', borderRadius: '8px' }}
+                        className="airline-logo-img"
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     ) : (
-                      <div className="airline-logo">{flight.airline?.code || '✈️'}</div>
+                      <div className="airline-logo-placeholder">
+                        {flight.airline?.code || '✈'}
+                      </div>
                     )}
-                    <div className="airline-details">
-                      <h3>{flight.airline?.name || 'Unknown Airline'}</h3>
-                      <p>Flight {flight.airline?.flightNumber || 'N/A'}</p>
+                    <div className="airline-name">
+                      {flight.airline?.name || 'Unknown Airline'}
                     </div>
                   </div>
 
-                  <div className="flight-route">
-                    <div className="flight-time">
-                      <div className="time">{flight.departure?.displayTime}</div>
-                      <div className="code">{flight.departure?.iataCode}</div>
-                      <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                        {flight.departure?.displayDate}
+                  <div className="flight-details">
+                    <div className="flight-time-info">
+                      <div className="time-large">{flight.departure?.displayTime}</div>
+                      <div className="airport-code">{flight.departure?.iataCode}</div>
+                    </div>
+
+                    <div className="flight-duration-info">
+                      <div className="duration-text">{flight.duration}</div>
+                      <div className="flight-line">
+                        <div className="line-bar"></div>
+                      </div>
+                      <div className={`stops-text ${flight.stops === 0 ? 'nonstop' : ''}`}>
+                        {flight.stops === 0 ? 'Nonstop' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`}
                       </div>
                     </div>
 
-                    <div className="flight-path">
-                      <div className="duration">{flight.duration}</div>
-                      <div className="line"></div>
-                      <div className="stops">
-                        <span style={{
-                          color: flight.stops === 0 ? '#16a34a' : '#ea580c',
-                          fontWeight: 'bold',
-                          fontSize: '11px'
-                        }}>
-                          {flight.stops === 0 ? '✓ NON-STOP' : `${flight.stops} STOP${flight.stops > 1 ? 'S' : ''}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flight-time">
-                      <div className="time">{flight.arrival?.displayTime}</div>
-                      <div className="code">{flight.arrival?.iataCode}</div>
-                      <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                        {flight.arrival?.displayDate}
-                      </div>
+                    <div className="flight-time-info">
+                      <div className="time-large">{flight.arrival?.displayTime}</div>
+                      <div className="airport-code">{flight.arrival?.iataCode}</div>
                     </div>
                   </div>
 
-                  {flight.quality && (
-                    <div style={{ marginTop: '12px', fontSize: '12px', color: '#666' }}>
-                      ⭐ Quality Score: <strong>{flight.quality}/10</strong>
-                    </div>
-                  )}
+                  <div className="flight-pricing">
+                    <div className="price-amount">{flight.price.formatted}</div>
+                    <div className="price-label">{searchParams.cabinType}</div>
+                  </div>
                 </div>
 
-                <div className="flight-price">
-                  <div className="class" style={{ fontSize: '12px', color: '#666' }}>
-                    {searchParams.cabinType} Class
+                {flight.quality && (
+                  <div className="flight-footer">
+                    <div className="quality-badge">
+                      ⭐ Quality Score: {flight.quality}/10
+                    </div>
+                    <button
+                      className="book-btn"
+                      onClick={() => window.open(flight.bookingUrl, '_blank')}
+                    >
+                      Book Now
+                    </button>
                   </div>
-                  <div className="amount" style={{ 
-                    fontSize: '32px', 
-                    color: '#1e1b4b', 
-                    fontWeight: 'bold', 
-                    marginTop: '8px' 
-                  }}>
-                    {flight.price.formatted}
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', marginTop: '4px' }}>
-                    ✅ Real-time price
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                    per adult • Total: ₱{Math.round(flight.price.amount).toLocaleString()}
-                  </div>
-                  <button
-                    style={{
-                      marginTop: '16px',
-                      padding: '12px 24px',
-                      background: '#1e1b4b',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      width: '100%',
-                      transition: 'background 0.3s'
-                    }}
-                    onMouseOver={(e) => e.target.style.background = '#312e81'}
-                    onMouseOut={(e) => e.target.style.background = '#1e1b4b'}
-                    onClick={() => window.open(flight.bookingUrl, '_blank')}
-                  >
-                    Book Now →
-                  </button>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
+            ))}
 
-          {!loading && flights.length === 0 && !error && (
-            <div className="no-results">
-              <div className="no-results-icon">✈️</div>
-              <p className="no-results-text">
-                Start searching for real-time flight prices!<br />
-                <strong>Popular routes:</strong> MNL → CEB | MNL → DVO | MNL → SIN
-              </p>
-            </div>
-          )}
+            {!loading && flights.length === 0 && !error && (
+              <div className="no-flights">
+                <div className="no-flights-icon">✈</div>
+                <h3>Start searching for flights</h3>
+                <p>Popular routes: MNL → CEB • MNL → DVO • MNL → SIN</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
