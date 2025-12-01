@@ -336,6 +336,11 @@
   border-right: none;
 }
 
+.origin-group,
+.destination-group {
+  position: relative !important;
+}
+
 .date-group {
   border-radius: 0 8px 8px 0;
   border-left: 1px solid #dadce0;
@@ -824,6 +829,138 @@
   color: #5f6368;
 }
 
+.airport-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+  animation: slideDown 0.2s ease-out;
+}
+
+.airport-suggestion-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.airport-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.airport-suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.airport-suggestion-item:active {
+  background-color: #e8eaed;
+}
+
+.airport-suggestion-item .airport-code {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a73e8;
+  min-width: 55px;
+  margin-right: 14px;
+  background: #e8f0fe;
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.airport-suggestion-item .airport-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.airport-suggestion-item .airport-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #202124;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.airport-suggestion-item .airport-location {
+  font-size: 12px;
+  color: #5f6368;
+  line-height: 1.3;
+}
+
+.no-airports-message {
+  padding: 20px;
+  text-align: center;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.airport-search-loading {
+  padding: 12px 16px;
+  text-align: center;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.airport-suggestions::-webkit-scrollbar {
+  width: 8px;
+}
+
+.airport-suggestions::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0 12px 12px 0;
+}
+
+.airport-suggestions::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 8px;
+  border: 2px solid #f5f5f5;
+}
+
+.airport-suggestions::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.location-input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+}
+
+@media (max-width: 768px) {
+  .airport-suggestions {
+    max-height: 250px;
+  }
+
+  .airport-suggestion-item {
+    padding: 10px 12px;
+  }
+
+  .airport-suggestion-item .airport-code {
+    font-size: 14px;
+    min-width: 45px;
+  }
+
+  .airport-suggestion-item .airport-name {
+    font-size: 13px;
+  }
+
+  .airport-suggestion-item .airport-location {
+    font-size: 11px;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .flight-main {
@@ -893,3 +1030,5 @@
     order: 3;
   }
 }
+
+

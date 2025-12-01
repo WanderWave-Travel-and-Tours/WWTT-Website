@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './FlightSearch.css';
 
@@ -13,21 +13,21 @@ function FlightSearch() {
   });
 
   const [oneWayData, setOneWayData] = useState({
-    origin: 'MNL',
+    origin: '',
     destination: '',
     departureDate: getTomorrowDate()
   });
 
   const [roundTripData, setRoundTripData] = useState({
-    origin: 'MNL',
+    origin: '',
     destination: '',
     departureDate: getTomorrowDate(),
     returnDate: getNextWeekDate()
   });
 
   const [multiCityLegs, setMultiCityLegs] = useState([
-    { origin: 'MNL', destination: '', departureDate: getTomorrowDate() },
-    { origin: '', destination: 'MNL', departureDate: getNextWeekDate() }
+    { origin: '', destination: '', departureDate: getTomorrowDate() },
+    { origin: '', destination: '', departureDate: getNextWeekDate() }
   ]);
 
   const [flights, setFlights] = useState([]);
@@ -36,6 +36,20 @@ function FlightSearch() {
   const [searchInfo, setSearchInfo] = useState(null);
   const [showPassengers, setShowPassengers] = useState(false);
   const [showCabin, setShowCabin] = useState(false);
+
+  // Airport search states
+  const [originSuggestions, setOriginSuggestions] = useState([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [airportSearchLoading, setAirportSearchLoading] = useState(false);
+  const [originSearchTerm, setOriginSearchTerm] = useState('');
+  const [destinationSearchTerm, setDestinationSearchTerm] = useState('');
+  
+  const originRef = useRef(null);
+  const destinationRef = useRef(null);
+  const suggestionsRef = useRef(null);
+  const searchTimerRef = useRef(null);
 
   function getTomorrowDate() {
     const tomorrow = new Date();
@@ -49,12 +63,165 @@ function FlightSearch() {
     return nextWeek.toISOString().split('T')[0];
   }
 
+  // Search airports from Aviationstack API
+  const searchAirportsFromAPI = async (searchTerm, field) => {
+    if (!searchTerm || searchTerm.length < 1) {
+      // If empty, load default airports (you can customize this)
+      searchTerm = ''; // Will get general list
+    }
+
+    setAirportSearchLoading(true);
+    
+    try {
+      const response = await axios.get('http://localhost:5000/api/flights/airports', {
+        params: { search: searchTerm }
+      });
+
+      if (response.data.success && response.data.data) {
+        const airports = response.data.data
+          .filter(airport => airport.iata_code) // Only airports with IATA codes
+          .map(airport => ({
+            iataCode: airport.iata_code,
+            name: airport.airport_name,
+            city: airport.city_name,
+            country: airport.country_name,
+            countryCode: airport.country_iso2
+          }))
+          .slice(0, 50); // Show up to 50 results
+
+        // Set to appropriate state based on field
+        if (field === 'origin') {
+          setOriginSuggestions(airports);
+        } else {
+          setDestinationSuggestions(airports);
+        }
+      }
+    } catch (error) {
+      console.error('Airport search error:', error);
+      if (field === 'origin') {
+        setOriginSuggestions([]);
+      } else {
+        setDestinationSuggestions([]);
+      }
+    } finally {
+      setAirportSearchLoading(false);
+    }
+  };
+
+  // Debounced search - wait 500ms after user stops typing
+  const debouncedSearch = (searchTerm, field) => {
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+
+    searchTimerRef.current = setTimeout(() => {
+      searchAirportsFromAPI(searchTerm, field);
+    }, 500); // 500ms delay
+  };
+
+  // Handle focus - load initial airports
+  const handleAirportFocus = async (field) => {
+    const currentValue = field === 'origin' ? originSearchTerm : destinationSearchTerm;
+    
+    if (field === 'origin') {
+      setShowOriginSuggestions(true);
+      setShowDestinationSuggestions(false);
+      
+      // If no suggestions yet, load some
+      if (originSuggestions.length === 0) {
+        await searchAirportsFromAPI(currentValue, 'origin');
+      }
+    } else {
+      setShowDestinationSuggestions(true);
+      setShowOriginSuggestions(false);
+      
+      // If no suggestions yet, load some
+      if (destinationSuggestions.length === 0) {
+        await searchAirportsFromAPI(currentValue, 'destination');
+      }
+    }
+  };
+
+  // Handle input change with live search
+  const handleAirportInputChange = (field, value) => {
+    // Update search term
+    if (field === 'origin') {
+      setOriginSearchTerm(value);
+      setShowOriginSuggestions(true);
+      setShowDestinationSuggestions(false);
+    } else {
+      setDestinationSearchTerm(value);
+      setShowDestinationSuggestions(true);
+      setShowOriginSuggestions(false);
+    }
+
+    // Update the actual form value (uppercase for IATA codes)
+    if (searchParams.journeyType === 'one-way') {
+      setOneWayData({ ...oneWayData, [field]: value.toUpperCase() });
+    } else if (searchParams.journeyType === 'round-trip') {
+      setRoundTripData({ ...roundTripData, [field]: value.toUpperCase() });
+    }
+
+    // Debounced API search
+    debouncedSearch(value, field);
+  };
+
+  // Handle airport selection
+  const selectAirport = (airport, field) => {
+    const iataCode = airport.iataCode;
+
+    if (searchParams.journeyType === 'one-way') {
+      setOneWayData({ ...oneWayData, [field]: iataCode });
+    } else if (searchParams.journeyType === 'round-trip') {
+      setRoundTripData({ ...roundTripData, [field]: iataCode });
+    }
+
+    // Update search term to show selected airport
+    if (field === 'origin') {
+      setOriginSearchTerm(iataCode);
+    } else {
+      setDestinationSearchTerm(iataCode);
+    }
+
+    // Close suggestions
+    setShowOriginSuggestions(false);
+    setShowDestinationSuggestions(false);
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current && !suggestionsRef.current.contains(event.target) &&
+        originRef.current && !originRef.current.contains(event.target) && 
+        destinationRef.current && !destinationRef.current.contains(event.target)
+      ) {
+        setShowOriginSuggestions(false);
+        setShowDestinationSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Ipalit ito sa existing handleSearch function sa flightSearch.jsx
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSearchInfo(null);
 
+    // 1. Prepare Search Data
     let searchData = {};
     if (searchParams.journeyType === 'one-way') {
       if (!oneWayData.origin || !oneWayData.destination) {
@@ -84,54 +251,71 @@ function FlightSearch() {
         departureDate: roundTripData.departureDate,
         returnDate: roundTripData.returnDate
       };
-    } else if (searchParams.journeyType === 'multi-city') {
-      for (let leg of multiCityLegs) {
-        if (!leg.origin || !leg.destination) {
-          setError('Please complete all flight legs');
-          setLoading(false);
-          return;
-        }
-      }
-      searchData = { legs: multiCityLegs };
     }
 
     try {
-      const response = await axios.get('http://localhost:5000/api/flights/search-prices-amadeus-only', {
-        params: {
-          ...searchData,
-          adults: searchParams.adults
-        }
+      console.log('🚀 Starting Dual Search (Amadeus + Kiwi)...');
+      
+      // 2. RUN BOTH SEARCHES IN PARALLEL (Sabay silang tatakbo)
+      const amadeusRequest = axios.get('http://localhost:5000/api/flights/search-prices-amadeus-only', {
+        params: { ...searchData, adults: searchParams.adults }
       });
 
-      console.log('API Response:', response.data);
+      const kiwiRequest = axios.get('http://localhost:5000/api/flights/search-prices-kiwi', {
+        params: { ...searchData }
+      });
 
-      if (response.data.success) {
-        setFlights(response.data.data);
-        setSearchInfo({
-          count: response.data.count,
-          source: response.data.source,
-          disclaimer: response.data.priceDisclaimer,
-          routeInfo: response.data.routeInfo,
-          pricingInfo: response.data.pricingInfo
-        });
+      // Wait for both to finish (kahit mag-fail ang isa, tuloy pa rin)
+      const [amadeusRes, kiwiRes] = await Promise.allSettled([amadeusRequest, kiwiRequest]);
+
+      let allFlights = [];
+      let combinedInfo = {};
+
+      // 3. Process Amadeus Results
+      if (amadeusRes.status === 'fulfilled' && amadeusRes.value.data.success) {
+        console.log('✅ Amadeus Data Received:', amadeusRes.value.data.count);
+        allFlights = [...allFlights, ...amadeusRes.value.data.data];
         
-        if (response.data.data.length === 0) {
-          setError(response.data.message || 'No flights found');
-        }
+        // Use Amadeus metadata as base
+        combinedInfo = {
+            count: amadeusRes.value.data.count,
+            source: 'Mixed (Amadeus + Kiwi)',
+            routeInfo: amadeusRes.value.data.routeInfo,
+            pricingInfo: amadeusRes.value.data.pricingInfo
+        };
+      }
+
+      // 4. Process Kiwi Results (LCC / Cheap Flights)
+      if (kiwiRes.status === 'fulfilled' && kiwiRes.value.data.success) {
+        console.log('✅ Kiwi Data Received:', kiwiRes.value.data.count);
+        // I-merge ang Kiwi flights
+        allFlights = [...allFlights, ...kiwiRes.value.data.data];
       } else {
-        setError(response.data.message || 'Search failed');
-        if (response.data.suggestions) {
-          console.log('Suggestions:', response.data.suggestions);
-        }
+        console.warn('⚠️ Kiwi Search Failed or Empty:', kiwiRes.reason);
       }
+
+      // 5. SORT BY PRICE (Cheapest First) - Ito ang magic ng Google Flights
+      allFlights.sort((a, b) => {
+        const priceA = a.price?.amount || 0;
+        const priceB = b.price?.amount || 0;
+        return priceA - priceB;
+      });
+
+      // 6. Update State
+      if (allFlights.length > 0) {
+        setFlights(allFlights);
+        setSearchInfo({
+          ...combinedInfo,
+          count: allFlights.length,
+          disclaimer: '✅ Showing combined results from GDS (Amadeus) and Low-Cost Carriers (Kiwi).'
+        });
+      } else {
+        setError('No flights found from any provider.');
+      }
+
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to search flights. Please try again.';
-      setError(errorMessage);
-      console.error('Search error:', err);
-      
-      if (err.response?.data?.fallback) {
-        console.log('Fallback options:', err.response.data.fallback);
-      }
+      console.error('Major Search Error:', err);
+      setError('Failed to search flights. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -140,18 +324,6 @@ function FlightSearch() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setSearchParams({ ...searchParams, [name]: value });
-  };
-
-  const handleOneWayChange = (e) => {
-    const { name, value } = e.target;
-    const newValue = (name === 'origin' || name === 'destination') ? value.toUpperCase() : value;
-    setOneWayData({ ...oneWayData, [name]: newValue });
-  };
-
-  const handleRoundTripChange = (e) => {
-    const { name, value } = e.target;
-    const newValue = (name === 'origin' || name === 'destination') ? value.toUpperCase() : value;
-    setRoundTripData({ ...roundTripData, [name]: newValue });
   };
 
   const handleMultiCityChange = (index, field, value) => {
@@ -174,23 +346,30 @@ function FlightSearch() {
 
   const swapCities = () => {
     if (searchParams.journeyType === 'one-way') {
+      const tempOrigin = oneWayData.origin;
+      const tempOriginTerm = originSearchTerm;
+      
       setOneWayData({
         ...oneWayData,
         origin: oneWayData.destination,
-        destination: oneWayData.origin
+        destination: tempOrigin
       });
+      
+      setOriginSearchTerm(destinationSearchTerm);
+      setDestinationSearchTerm(tempOriginTerm);
     } else if (searchParams.journeyType === 'round-trip') {
+      const tempOrigin = roundTripData.origin;
+      const tempOriginTerm = originSearchTerm;
+      
       setRoundTripData({
         ...roundTripData,
         origin: roundTripData.destination,
-        destination: roundTripData.origin
+        destination: tempOrigin
       });
+      
+      setOriginSearchTerm(destinationSearchTerm);
+      setDestinationSearchTerm(tempOriginTerm);
     }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
   const getTotalPassengers = () => {
@@ -208,19 +387,13 @@ function FlightSearch() {
                 className={`journey-btn ${searchParams.journeyType === 'one-way' ? 'active' : ''}`}
                 onClick={() => setSearchParams({ ...searchParams, journeyType: 'one-way' })}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-                One way
+                One-way
               </button>
               <button
                 type="button"
                 className={`journey-btn ${searchParams.journeyType === 'round-trip' ? 'active' : ''}`}
                 onClick={() => setSearchParams({ ...searchParams, journeyType: 'round-trip' })}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 7h18M3 17h18M7 3l-4 4 4 4M17 13l4 4-4 4"/>
-                </svg>
                 Round trip
               </button>
               <button
@@ -228,225 +401,17 @@ function FlightSearch() {
                 className={`journey-btn ${searchParams.journeyType === 'multi-city' ? 'active' : ''}`}
                 onClick={() => setSearchParams({ ...searchParams, journeyType: 'multi-city' })}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m6.36 6.36l4.24 4.24"/>
-                </svg>
                 Multi-city
               </button>
-            </div>
-
-            <div className="options-row">
-              <div className="dropdown-wrapper">
-                <button
-                  type="button"
-                  className="dropdown-btn"
-                  onClick={() => setShowPassengers(!showPassengers)}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                  {getTotalPassengers()}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </button>
-
-                {showPassengers && (
-                  <div className="dropdown-menu">
-                    <div className="dropdown-item">
-                      <div>
-                        <div className="dropdown-label">Adults</div>
-                        <div className="dropdown-sublabel">Aged 12+</div>
-                      </div>
-                      <div className="counter">
-                        <button
-                          type="button"
-                          className="counter-btn"
-                          onClick={() => setSearchParams({ 
-                            ...searchParams, 
-                            adults: Math.max(1, parseInt(searchParams.adults) - 1).toString() 
-                          })}
-                          disabled={parseInt(searchParams.adults) <= 1}
-                        >
-                          −
-                        </button>
-                        <span className="counter-value">{searchParams.adults}</span>
-                        <button
-                          type="button"
-                          className="counter-btn"
-                          onClick={() => setSearchParams({ 
-                            ...searchParams, 
-                            adults: Math.min(9, parseInt(searchParams.adults) + 1).toString() 
-                          })}
-                          disabled={parseInt(searchParams.adults) >= 9}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="dropdown-item">
-                      <div>
-                        <div className="dropdown-label">Children</div>
-                        <div className="dropdown-sublabel">Aged 2-11</div>
-                      </div>
-                      <div className="counter">
-                        <button
-                          type="button"
-                          className="counter-btn"
-                          onClick={() => setSearchParams({ 
-                            ...searchParams, 
-                            children: Math.max(0, parseInt(searchParams.children) - 1).toString() 
-                          })}
-                          disabled={parseInt(searchParams.children) <= 0}
-                        >
-                          −
-                        </button>
-                        <span className="counter-value">{searchParams.children}</span>
-                        <button
-                          type="button"
-                          className="counter-btn"
-                          onClick={() => setSearchParams({ 
-                            ...searchParams, 
-                            children: (parseInt(searchParams.children) + 1).toString() 
-                          })}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="dropdown-item">
-                      <div>
-                        <div className="dropdown-label">Infants</div>
-                        <div className="dropdown-sublabel">In seat</div>
-                      </div>
-                      <div className="counter">
-                        <button
-                          type="button"
-                          className="counter-btn"
-                          onClick={() => setSearchParams({ 
-                            ...searchParams, 
-                            infants: Math.max(0, parseInt(searchParams.infants) - 1).toString() 
-                          })}
-                          disabled={parseInt(searchParams.infants) <= 0}
-                        >
-                          −
-                        </button>
-                        <span className="counter-value">{searchParams.infants}</span>
-                        <button
-                          type="button"
-                          className="counter-btn"
-                          onClick={() => setSearchParams({ 
-                            ...searchParams, 
-                            infants: (parseInt(searchParams.infants) + 1).toString() 
-                          })}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="dropdown-footer">
-                      <button
-                        type="button"
-                        className="dropdown-cancel"
-                        onClick={() => setShowPassengers(false)}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        className="dropdown-done"
-                        onClick={() => setShowPassengers(false)}
-                      >
-                        Done
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="dropdown-wrapper">
-                <button
-                  type="button"
-                  className="dropdown-btn"
-                  onClick={() => setShowCabin(!showCabin)}
-                >
-                  {searchParams.cabinType}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </button>
-
-                {showCabin && (
-                  <div className="dropdown-menu cabin-menu">
-                    <button
-                      type="button"
-                      className={`cabin-option ${searchParams.cabinType === 'Economy' ? 'active' : ''}`}
-                      onClick={() => {
-                        setSearchParams({ ...searchParams, cabinType: 'Economy' });
-                        setShowCabin(false);
-                      }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                      Economy
-                    </button>
-                    <button
-                      type="button"
-                      className={`cabin-option ${searchParams.cabinType === 'Premium economy' ? 'active' : ''}`}
-                      onClick={() => {
-                        setSearchParams({ ...searchParams, cabinType: 'Premium economy' });
-                        setShowCabin(false);
-                      }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                      Premium economy
-                    </button>
-                    <button
-                      type="button"
-                      className={`cabin-option ${searchParams.cabinType === 'Business' ? 'active' : ''}`}
-                      onClick={() => {
-                        setSearchParams({ ...searchParams, cabinType: 'Business' });
-                        setShowCabin(false);
-                      }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                      Business
-                    </button>
-                    <button
-                      type="button"
-                      className={`cabin-option ${searchParams.cabinType === 'First' ? 'active' : ''}`}
-                      onClick={() => {
-                        setSearchParams({ ...searchParams, cabinType: 'First' });
-                        setShowCabin(false);
-                      }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                      First
-                    </button>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
           <form onSubmit={handleSearch}>
-            {/* One-way Search */}
-            {searchParams.journeyType === 'one-way' && (
-              <div className="search-fields">
+            {(searchParams.journeyType === 'one-way' || searchParams.journeyType === 'round-trip') && (
+              <div className="form-section">
                 <div className="field-row">
-                  <div className="input-group origin-group">
+                  {/* ORIGIN INPUT WITH API DROPDOWN */}
+                  <div className="input-group origin-group" ref={originRef} style={{ position: 'relative' }}>
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"/>
                       <circle cx="12" cy="12" r="3"/>
@@ -454,15 +419,47 @@ function FlightSearch() {
                     <input
                       type="text"
                       name="origin"
-                      value={oneWayData.origin}
-                      onChange={handleOneWayChange}
+                      value={originSearchTerm}
+                      onChange={(e) => handleAirportInputChange('origin', e.target.value)}
+                      onFocus={() => handleAirportFocus('origin')}
                       placeholder="Where from?"
                       className="location-input"
-                      maxLength="3"
+                      autoComplete="off"
                     />
+                    
+                    {/* ORIGIN DROPDOWN */}
+                    {showOriginSuggestions && (
+                      <div className="airport-suggestions" ref={suggestionsRef}>
+                        {airportSearchLoading ? (
+                          <div className="airport-search-loading">
+                            Searching airports...
+                          </div>
+                        ) : originSuggestions.length > 0 ? (
+                          originSuggestions.map((airport, idx) => (
+                            <div
+                              key={idx}
+                              className="airport-suggestion-item"
+                              onClick={() => selectAirport(airport, 'origin')}
+                            >
+                              <div className="airport-code">{airport.iataCode}</div>
+                              <div className="airport-details">
+                                <div className="airport-name">{airport.name}</div>
+                                <div className="airport-location">
+                                  {airport.city}, {airport.country}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-airports-message">
+                            {originSearchTerm ? 'No airports found. Try a different search.' : 'Start typing to search airports worldwide...'}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  <button type="button" className="swap-btn" onClick={swapCities}>
+                  <button type="button" onClick={swapCities} className="swap-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="17 1 21 5 17 9"/>
                       <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
@@ -471,7 +468,8 @@ function FlightSearch() {
                     </svg>
                   </button>
 
-                  <div className="input-group destination-group">
+                  {/* DESTINATION INPUT WITH API DROPDOWN */}
+                  <div className="input-group destination-group" ref={destinationRef} style={{ position: 'relative' }}>
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                       <circle cx="12" cy="10" r="3"/>
@@ -479,14 +477,47 @@ function FlightSearch() {
                     <input
                       type="text"
                       name="destination"
-                      value={oneWayData.destination}
-                      onChange={handleOneWayChange}
+                      value={destinationSearchTerm}
+                      onChange={(e) => handleAirportInputChange('destination', e.target.value)}
+                      onFocus={() => handleAirportFocus('destination')}
                       placeholder="Where to?"
                       className="location-input"
-                      maxLength="3"
+                      autoComplete="off"
                     />
+
+                    {/* DESTINATION DROPDOWN */}
+                    {showDestinationSuggestions && (
+                      <div className="airport-suggestions" ref={suggestionsRef}>
+                        {airportSearchLoading ? (
+                          <div className="airport-search-loading">
+                            Searching airports...
+                          </div>
+                        ) : destinationSuggestions.length > 0 ? (
+                          destinationSuggestions.map((airport, idx) => (
+                            <div
+                              key={idx}
+                              className="airport-suggestion-item"
+                              onClick={() => selectAirport(airport, 'destination')}
+                            >
+                              <div className="airport-code">{airport.iataCode}</div>
+                              <div className="airport-details">
+                                <div className="airport-name">{airport.name}</div>
+                                <div className="airport-location">
+                                  {airport.city}, {airport.country}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-airports-message">
+                            {destinationSearchTerm ? 'No airports found. Try a different search.' : 'Start typing to search airports worldwide...'}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
+                  {/* DATE INPUTS */}
                   <div className="input-group date-group">
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -497,12 +528,116 @@ function FlightSearch() {
                     <input
                       type="date"
                       name="departureDate"
-                      value={oneWayData.departureDate}
-                      onChange={handleOneWayChange}
+                      value={searchParams.journeyType === 'one-way' ? oneWayData.departureDate : roundTripData.departureDate}
+                      onChange={(e) => {
+                        if (searchParams.journeyType === 'one-way') {
+                          setOneWayData({ ...oneWayData, departureDate: e.target.value });
+                        } else {
+                          setRoundTripData({ ...roundTripData, departureDate: e.target.value });
+                        }
+                      }}
                       className="date-input"
+                      min={getTomorrowDate()}
                     />
                   </div>
+
+                  {searchParams.journeyType === 'round-trip' && (
+                    <div className="input-group date-group">
+                      <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      <input
+                        type="date"
+                        name="returnDate"
+                        value={roundTripData.returnDate}
+                        onChange={(e) => setRoundTripData({ ...roundTripData, returnDate: e.target.value })}
+                        className="date-input"
+                        min={roundTripData.departureDate}
+                      />
+                    </div>
+                  )}
                 </div>
+
+                {/* PASSENGERS AND CABIN */}
+                <div className="field-row">
+                  <div className="input-group passengers-group" onClick={() => setShowPassengers(!showPassengers)}>
+                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <div className="passengers-display">
+                      {getTotalPassengers()} passenger{getTotalPassengers() > 1 ? 's' : ''}
+                    </div>
+                  </div>
+
+                  <div className="input-group cabin-group" onClick={() => setShowCabin(!showCabin)}>
+                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+                    </svg>
+                    <div className="cabin-display">{searchParams.cabinType}</div>
+                  </div>
+                </div>
+
+                {/* Passengers Dropdown */}
+                {showPassengers && (
+                  <div className="passengers-dropdown">
+                    <div className="passenger-row">
+                      <div className="passenger-label">
+                        <strong>Adults</strong>
+                        <span>12+ years</span>
+                      </div>
+                      <div className="passenger-controls">
+                        <button type="button" onClick={() => setSearchParams({ ...searchParams, adults: Math.max(1, parseInt(searchParams.adults) - 1).toString() })}>−</button>
+                        <span>{searchParams.adults}</span>
+                        <button type="button" onClick={() => setSearchParams({ ...searchParams, adults: (parseInt(searchParams.adults) + 1).toString() })}>+</button>
+                      </div>
+                    </div>
+                    <div className="passenger-row">
+                      <div className="passenger-label">
+                        <strong>Children</strong>
+                        <span>2-11 years</span>
+                      </div>
+                      <div className="passenger-controls">
+                        <button type="button" onClick={() => setSearchParams({ ...searchParams, children: Math.max(0, parseInt(searchParams.children) - 1).toString() })}>−</button>
+                        <span>{searchParams.children}</span>
+                        <button type="button" onClick={() => setSearchParams({ ...searchParams, children: (parseInt(searchParams.children) + 1).toString() })}>+</button>
+                      </div>
+                    </div>
+                    <div className="passenger-row">
+                      <div className="passenger-label">
+                        <strong>Infants</strong>
+                        <span>Under 2 years</span>
+                      </div>
+                      <div className="passenger-controls">
+                        <button type="button" onClick={() => setSearchParams({ ...searchParams, infants: Math.max(0, parseInt(searchParams.infants) - 1).toString() })}>−</button>
+                        <span>{searchParams.infants}</span>
+                        <button type="button" onClick={() => setSearchParams({ ...searchParams, infants: (parseInt(searchParams.infants) + 1).toString() })}>+</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cabin Dropdown */}
+                {showCabin && (
+                  <div className="cabin-dropdown">
+                    {['Economy', 'Premium Economy', 'Business', 'First'].map(cabin => (
+                      <div
+                        key={cabin}
+                        className={`cabin-option ${searchParams.cabinType === cabin ? 'selected' : ''}`}
+                        onClick={() => {
+                          setSearchParams({ ...searchParams, cabinType: cabin });
+                          setShowCabin(false);
+                        }}
+                      >
+                        {cabin}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="search-btn-container">
                   <button type="submit" disabled={loading} className="search-btn">
@@ -516,102 +651,9 @@ function FlightSearch() {
               </div>
             )}
 
-            {/* Round-trip Search */}
-            {searchParams.journeyType === 'round-trip' && (
-              <div className="search-fields">
-                <div className="field-row">
-                  <div className="input-group origin-group">
-                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    <input
-                      type="text"
-                      name="origin"
-                      value={roundTripData.origin}
-                      onChange={handleRoundTripChange}
-                      placeholder="Where from?"
-                      className="location-input"
-                      maxLength="3"
-                    />
-                  </div>
-
-                  <button type="button" className="swap-btn" onClick={swapCities}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="17 1 21 5 17 9"/>
-                      <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-                      <polyline points="7 23 3 19 7 15"/>
-                      <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-                    </svg>
-                  </button>
-
-                  <div className="input-group destination-group">
-                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                      <circle cx="12" cy="10" r="3"/>
-                    </svg>
-                    <input
-                      type="text"
-                      name="destination"
-                      value={roundTripData.destination}
-                      onChange={handleRoundTripChange}
-                      placeholder="Where to?"
-                      className="location-input"
-                      maxLength="3"
-                    />
-                  </div>
-
-                  <div className="input-group date-group">
-                    <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                      <line x1="16" y1="2" x2="16" y2="6"/>
-                      <line x1="8" y1="2" x2="8" y2="6"/>
-                      <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                    <input
-                      type="date"
-                      name="departureDate"
-                      value={roundTripData.departureDate}
-                      onChange={handleRoundTripChange}
-                      className="date-input"
-                    />
-                    <div className="date-nav">
-                      <button type="button" className="date-nav-btn">‹</button>
-                      <button type="button" className="date-nav-btn">›</button>
-                    </div>
-                  </div>
-
-                  <div className="input-group date-group return-date">
-                    <span className="return-label">Return</span>
-                    <input
-                      type="date"
-                      name="returnDate"
-                      value={roundTripData.returnDate}
-                      onChange={handleRoundTripChange}
-                      className="date-input"
-                    />
-                    <div className="date-nav">
-                      <button type="button" className="date-nav-btn">‹</button>
-                      <button type="button" className="date-nav-btn">›</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="search-btn-container">
-                  <button type="submit" disabled={loading} className="search-btn">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="8"/>
-                      <path d="M21 21l-4.35-4.35"/>
-                    </svg>
-                    Explore
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Multi-city Search */}
+            {/* MULTI-CITY SECTION */}
             {searchParams.journeyType === 'multi-city' && (
-              <div className="search-fields multi-city-fields">
+              <div className="form-section">
                 {multiCityLegs.map((leg, index) => (
                   <div key={index} className="multi-city-leg">
                     <div className="field-row">
@@ -626,7 +668,6 @@ function FlightSearch() {
                           onChange={(e) => handleMultiCityChange(index, 'origin', e.target.value)}
                           placeholder="Where from?"
                           className="location-input"
-                          maxLength="3"
                         />
                       </div>
 
@@ -650,7 +691,6 @@ function FlightSearch() {
                           onChange={(e) => handleMultiCityChange(index, 'destination', e.target.value)}
                           placeholder="Where to?"
                           className="location-input"
-                          maxLength="3"
                         />
                       </div>
 
@@ -667,10 +707,6 @@ function FlightSearch() {
                           onChange={(e) => handleMultiCityChange(index, 'departureDate', e.target.value)}
                           className="date-input"
                         />
-                        <div className="date-nav">
-                          <button type="button" className="date-nav-btn">‹</button>
-                          <button type="button" className="date-nav-btn">›</button>
-                        </div>
                       </div>
 
                       {index >= 2 && (
@@ -717,8 +753,8 @@ function FlightSearch() {
                 <strong>{searchInfo.disclaimer}</strong>
                 <div className="success-details">
                   Found {searchInfo.count} real-time {searchInfo.count === 1 ? 'flight' : 'flights'} • 
-                  {searchInfo.routeInfo?.origin} → {searchInfo.routeInfo?.destination} • 
-                  From ₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString()} per adult
+                  {searchInfo.routeInfo?.origin?.iataCode || searchInfo.routeInfo?.origin} → {searchInfo.routeInfo?.destination?.iataCode || searchInfo.routeInfo?.destination} • 
+                  From ₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString() || '0'} per adult
                 </div>
               </div>
             </div>
@@ -808,7 +844,7 @@ function FlightSearch() {
               <div className="no-flights">
                 <div className="no-flights-icon">✈</div>
                 <h3>Start searching for flights</h3>
-                <p>Popular routes: MNL → CEB • MNL → DVO • MNL → SIN</p>
+                <p>Search airports worldwide - Philippines, USA, Europe, Asia, and more!</p>
               </div>
             )}
           </div>
