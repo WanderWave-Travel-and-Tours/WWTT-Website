@@ -203,8 +203,9 @@ function FlightSearch() {
     setLoading(true);
     setError(null);
     setSearchInfo(null);
-
+    setFlights([]); 
     let searchData = {};
+    
     if (searchParams.journeyType === 'one-way') {
       if (!oneWayData.origin || !oneWayData.destination) {
         setError('Please enter origin and destination');
@@ -236,86 +237,58 @@ function FlightSearch() {
     }
 
     try {
-      console.log('🚀 Starting Triple Search (SerpApi + Amadeus + Kiwi)...');
+      console.log('🚀 SEARCHING via SERPAPI (Google Flights) ONLY...');
       
-      const amadeusRequest = axios.get('http://localhost:5000/api/flights/search-prices-amadeus-only', {
-        params: { ...searchData, adults: searchParams.adults }
-      });
-
-      const kiwiRequest = axios.get('http://localhost:5000/api/flights/search-prices-kiwi', {
+      const response = await axios.get('http://localhost:5000/api/flights/search-domestic', {
         params: { ...searchData }
       });
 
-      const serpApiRequest = axios.get('http://localhost:5000/api/flights/search-domestic', {
-        params: { ...searchData }
-      });
-
-      const [amadeusRes, kiwiRes, serpApiRes] = await Promise.allSettled([
-        amadeusRequest, 
-        kiwiRequest, 
-        serpApiRequest
-      ]);
+      console.log('✅ Response:', response.data);
 
       let allFlights = [];
-      let combinedInfo = {
-        source: 'Combined Sources',
-        count: 0
-      };
 
-      if (serpApiRes.status === 'fulfilled' && serpApiRes.value.data.success) {
-        console.log('✅ Google Flights Data Received:', serpApiRes.value.data.count);
-        
-        const googleFlights = serpApiRes.value.data.data.map(f => ({
-          ...f,
+      if (response.data.success && response.data.data.length > 0) {
+        allFlights = response.data.data.map((flight, index) => ({
+          ...flight,
+          id: flight.id || `google-${index}`,
           departure: {
-            ...f.departure,
-            displayTime: f.departure.time 
+            ...flight.departure,
+            displayTime: flight.departure.time 
           },
           arrival: {
-            ...f.arrival,
-            displayTime: f.arrival.time
+            ...flight.arrival,
+            displayTime: flight.arrival.time 
+          },
+          airline: {
+            ...flight.airline,
+            logo: flight.airline.logo || 'https://images.kiwi.com/airlines/64/5J.png' 
           },
           source: 'Google Flights'
         }));
-
-        allFlights = [...allFlights, ...googleFlights];
       }
-
-      if (amadeusRes.status === 'fulfilled' && amadeusRes.value.data.success) {
-        console.log('✅ Amadeus Data Received:', amadeusRes.value.data.count);
-        allFlights = [...allFlights, ...amadeusRes.value.data.data];
-        
-        if (!combinedInfo.routeInfo) {
-          combinedInfo.routeInfo = amadeusRes.value.data.routeInfo;
-          combinedInfo.pricingInfo = amadeusRes.value.data.pricingInfo;
-        }
-      }
-
-      if (kiwiRes.status === 'fulfilled' && kiwiRes.value.data.success) {
-        console.log('✅ Kiwi Data Received:', kiwiRes.value.data.count);
-        allFlights = [...allFlights, ...kiwiRes.value.data.data];
-      }
-
-      allFlights.sort((a, b) => {
-        const priceA = a.price?.amount || 0;
-        const priceB = b.price?.amount || 0;
-        return priceA - priceB;
-      });
 
       if (allFlights.length > 0) {
         setFlights(allFlights);
         setSearchInfo({
-          ...combinedInfo,
+          source: 'Google Flights',
           count: allFlights.length,
-          disclaimer: '✅ Results from Google Flights (Domestic), Amadeus & Kiwi.'
+          disclaimer: '✅ Results exclusively from Google Flights (Domestic Data)',
+          routeInfo: {
+            origin: searchData.origin,
+            destination: searchData.destination
+          },
+          pricingInfo: {
+             pricePerAdult: allFlights[0].price.amount 
+          }
         });
       } else {
-        setError('No flights found from any provider.');
+        setError('No flights found via Google Flights for this date.');
       }
 
     } catch (err) {
-      console.error('Major Search Error:', err);
-      setError('Failed to search flights. Please try again.');
+      console.error('❌ Search Error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to connect to Flight API';
+      setError(`Search Failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

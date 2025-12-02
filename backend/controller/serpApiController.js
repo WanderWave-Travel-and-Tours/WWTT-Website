@@ -53,7 +53,16 @@ exports.searchDomesticFlights = (req, res) => {
 
       const formattedFlights = allFlights.map((flight, index) => {
         const flightSegment = flight.flights[0]; 
-        
+        const totalMinutes = flight.total_duration || 0;
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        const formattedDuration = `${hours}h ${mins}m`;
+        const numberOfStops = (flight.flights || []).length - 1;
+        const departureTimeRaw = flightSegment.departure_airport.time || '';
+        const arrivalTimeRaw = flightSegment.arrival_airport.time || '';
+        const cleanDepartureTime = departureTimeRaw.split(' ').pop(); 
+        const cleanArrivalTime = arrivalTimeRaw.split(' ').pop();   
+
         return {
           id: `google-${index}`,
           airline: {
@@ -69,14 +78,15 @@ exports.searchDomesticFlights = (req, res) => {
           departure: {
             airport: flightSegment.departure_airport.name,
             iataCode: flightSegment.departure_airport.id,
-            time: flightSegment.departure_airport.time
+            time: cleanDepartureTime 
           },
           arrival: {
             airport: flightSegment.arrival_airport.name,
             iataCode: flightSegment.arrival_airport.id,
-            time: flightSegment.arrival_airport.time
+            time: cleanArrivalTime
           },
-          duration: flight.total_duration ? `${flight.total_duration} min` : 'N/A',
+          duration: formattedDuration,
+          stops: numberOfStops,
           type: flight.type || 'Direct', 
           link: json.search_metadata?.google_flights_url 
         };
