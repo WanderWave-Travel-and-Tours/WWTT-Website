@@ -189,12 +189,15 @@ function FlightSearch() {
 
   const selectMultiCityAirport = (airport, legIndex, field) => {
     const iataCode = airport.iataCode;
+    const displayName = `${airport.city} (${iataCode})`;
+
     const newSearchTerms = [...multiCitySearchTerms];
     if (!newSearchTerms[legIndex]) {
       newSearchTerms[legIndex] = { origin: '', destination: '' };
     }
-    newSearchTerms[legIndex][field] = iataCode;
+    newSearchTerms[legIndex][field] = displayName;
     setMultiCitySearchTerms(newSearchTerms);
+
     const newLegs = [...multiCityLegs];
     newLegs[legIndex][field] = iataCode;
     setMultiCityLegs(newLegs);
@@ -203,6 +206,7 @@ function FlightSearch() {
 
   const selectAirport = (airport, field) => {
     const iataCode = airport.iataCode;
+    const displayName = `${airport.city} (${iataCode})`;
 
     if (searchParams.journeyType === 'one-way') {
       setOneWayData({ ...oneWayData, [field]: iataCode });
@@ -211,9 +215,9 @@ function FlightSearch() {
     }
 
     if (field === 'origin') {
-      setOriginSearchTerm(iataCode);
+      setOriginSearchTerm(displayName);
     } else {
-      setDestinationSearchTerm(iataCode);
+      setDestinationSearchTerm(displayName);
     }
 
     setShowOriginSuggestions(false);

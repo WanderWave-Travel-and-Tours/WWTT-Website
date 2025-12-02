@@ -55,8 +55,6 @@ exports.searchDomesticFlights = (req, res) => {
           arrival_id: leg.destination,
           date: leg.departureDate
         })));
-
-        console.log('🌍 Searching Multi-City:', params.multi_city_json);
       } catch (e) {
         console.error('Error parsing multiCityLegs:', e);
         return res.status(400).json({ success: false, message: 'Invalid Multi-City Data' });
@@ -146,8 +144,6 @@ exports.searchDomesticFlights = (req, res) => {
           link: json.search_metadata?.google_flights_url 
         };
       });
-
-      console.log(`✅ Found ${formattedFlights.length} flights`);
 
       res.json({
         success: true,
