@@ -236,7 +236,7 @@ function FlightSearch() {
     }
 
     try {
-      console.log('🚀 Starting Dual Search (Amadeus + Kiwi)...');
+      console.log('🚀 Starting Triple Search (SerpApi + Amadeus + Kiwi)...');
       
       const amadeusRequest = axios.get('http://localhost:5000/api/flights/search-prices-amadeus-only', {
         params: { ...searchData, adults: searchParams.adults }
@@ -246,28 +246,54 @@ function FlightSearch() {
         params: { ...searchData }
       });
 
-      const [amadeusRes, kiwiRes] = await Promise.allSettled([amadeusRequest, kiwiRequest]);
+      const serpApiRequest = axios.get('http://localhost:5000/api/flights/search-domestic', {
+        params: { ...searchData }
+      });
+
+      const [amadeusRes, kiwiRes, serpApiRes] = await Promise.allSettled([
+        amadeusRequest, 
+        kiwiRequest, 
+        serpApiRequest
+      ]);
 
       let allFlights = [];
-      let combinedInfo = {};
+      let combinedInfo = {
+        source: 'Combined Sources',
+        count: 0
+      };
+
+      if (serpApiRes.status === 'fulfilled' && serpApiRes.value.data.success) {
+        console.log('✅ Google Flights Data Received:', serpApiRes.value.data.count);
+        
+        const googleFlights = serpApiRes.value.data.data.map(f => ({
+          ...f,
+          departure: {
+            ...f.departure,
+            displayTime: f.departure.time 
+          },
+          arrival: {
+            ...f.arrival,
+            displayTime: f.arrival.time
+          },
+          source: 'Google Flights'
+        }));
+
+        allFlights = [...allFlights, ...googleFlights];
+      }
 
       if (amadeusRes.status === 'fulfilled' && amadeusRes.value.data.success) {
         console.log('✅ Amadeus Data Received:', amadeusRes.value.data.count);
         allFlights = [...allFlights, ...amadeusRes.value.data.data];
         
-        combinedInfo = {
-            count: amadeusRes.value.data.count,
-            source: 'Mixed (Amadeus + Kiwi)',
-            routeInfo: amadeusRes.value.data.routeInfo,
-            pricingInfo: amadeusRes.value.data.pricingInfo
-        };
+        if (!combinedInfo.routeInfo) {
+          combinedInfo.routeInfo = amadeusRes.value.data.routeInfo;
+          combinedInfo.pricingInfo = amadeusRes.value.data.pricingInfo;
+        }
       }
 
       if (kiwiRes.status === 'fulfilled' && kiwiRes.value.data.success) {
         console.log('✅ Kiwi Data Received:', kiwiRes.value.data.count);
         allFlights = [...allFlights, ...kiwiRes.value.data.data];
-      } else {
-        console.warn('⚠️ Kiwi Search Failed or Empty:', kiwiRes.reason);
       }
 
       allFlights.sort((a, b) => {
@@ -281,7 +307,7 @@ function FlightSearch() {
         setSearchInfo({
           ...combinedInfo,
           count: allFlights.length,
-          disclaimer: '✅ Showing combined results from GDS (Amadeus) and Low-Cost Carriers (Kiwi).'
+          disclaimer: '✅ Results from Google Flights (Domestic), Amadeus & Kiwi.'
         });
       } else {
         setError('No flights found from any provider.');
