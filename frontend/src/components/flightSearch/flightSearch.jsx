@@ -237,13 +237,9 @@ function FlightSearch() {
     }
 
     try {
-      console.log('🚀 SEARCHING via SERPAPI (Google Flights) ONLY...');
-      
       const response = await axios.get('http://localhost:5000/api/flights/search-domestic', {
         params: { ...searchData }
       });
-
-      console.log('✅ Response:', response.data);
 
       let allFlights = [];
 
@@ -292,11 +288,6 @@ function FlightSearch() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setSearchParams({ ...searchParams, [name]: value });
   };
 
   const handleMultiCityChange = (index, field, value) => {
@@ -529,7 +520,8 @@ function FlightSearch() {
                   )}
                 </div>
 
-                <div className="field-row">
+
+                <div className="passengers-cabin-row">
                   <div className="input-group passengers-group" onClick={() => setShowPassengers(!showPassengers)}>
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -538,6 +530,44 @@ function FlightSearch() {
                     <div className="passengers-display">
                       {getTotalPassengers()} passenger{getTotalPassengers() > 1 ? 's' : ''}
                     </div>
+
+                    {showPassengers && (
+                      <div className="passengers-dropdown">
+                        <div className="passenger-row">
+                          <div className="passenger-label">
+                            <strong>Adults</strong>
+                            <span>12+ years</span>
+                          </div>
+                          <div className="passenger-controls">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, adults: Math.max(1, parseInt(searchParams.adults) - 1).toString() }); }}>−</button>
+                            <span>{searchParams.adults}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, adults: (parseInt(searchParams.adults) + 1).toString() }); }}>+</button>
+                          </div>
+                        </div>
+                        <div className="passenger-row">
+                          <div className="passenger-label">
+                            <strong>Children</strong>
+                            <span>2-11 years</span>
+                          </div>
+                          <div className="passenger-controls">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, children: Math.max(0, parseInt(searchParams.children) - 1).toString() }); }}>−</button>
+                            <span>{searchParams.children}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, children: (parseInt(searchParams.children) + 1).toString() }); }}>+</button>
+                          </div>
+                        </div>
+                        <div className="passenger-row">
+                          <div className="passenger-label">
+                            <strong>Infants</strong>
+                            <span>Under 2 years</span>
+                          </div>
+                          <div className="passenger-controls">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, infants: Math.max(0, parseInt(searchParams.infants) - 1).toString() }); }}>−</button>
+                            <span>{searchParams.infants}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, infants: (parseInt(searchParams.infants) + 1).toString() }); }}>+</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="input-group cabin-group" onClick={() => setShowCabin(!showCabin)}>
@@ -546,63 +576,31 @@ function FlightSearch() {
                       <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
                     </svg>
                     <div className="cabin-display">{searchParams.cabinType}</div>
+
+                    {showCabin && (
+                      <div className="cabin-dropdown">
+                        {['Economy', 'Premium Economy', 'Business', 'First'].map(cabin => (
+                          <button
+                            key={cabin}
+                            type="button"
+                            className={`cabin-option-item ${searchParams.cabinType === cabin ? 'active' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSearchParams({ ...searchParams, cabinType: cabin });
+                              setShowCabin(false);
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                            </svg>
+                            <span>{cabin}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {showPassengers && (
-                  <div className="passengers-dropdown">
-                    <div className="passenger-row">
-                      <div className="passenger-label">
-                        <strong>Adults</strong>
-                        <span>12+ years</span>
-                      </div>
-                      <div className="passenger-controls">
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, adults: Math.max(1, parseInt(searchParams.adults) - 1).toString() })}>−</button>
-                        <span>{searchParams.adults}</span>
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, adults: (parseInt(searchParams.adults) + 1).toString() })}>+</button>
-                      </div>
-                    </div>
-                    <div className="passenger-row">
-                      <div className="passenger-label">
-                        <strong>Children</strong>
-                        <span>2-11 years</span>
-                      </div>
-                      <div className="passenger-controls">
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, children: Math.max(0, parseInt(searchParams.children) - 1).toString() })}>−</button>
-                        <span>{searchParams.children}</span>
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, children: (parseInt(searchParams.children) + 1).toString() })}>+</button>
-                      </div>
-                    </div>
-                    <div className="passenger-row">
-                      <div className="passenger-label">
-                        <strong>Infants</strong>
-                        <span>Under 2 years</span>
-                      </div>
-                      <div className="passenger-controls">
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, infants: Math.max(0, parseInt(searchParams.infants) - 1).toString() })}>−</button>
-                        <span>{searchParams.infants}</span>
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, infants: (parseInt(searchParams.infants) + 1).toString() })}>+</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {showCabin && (
-                  <div className="cabin-dropdown">
-                    {['Economy', 'Premium Economy', 'Business', 'First'].map(cabin => (
-                      <div
-                        key={cabin}
-                        className={`cabin-option ${searchParams.cabinType === cabin ? 'selected' : ''}`}
-                        onClick={() => {
-                          setSearchParams({ ...searchParams, cabinType: cabin });
-                          setShowCabin(false);
-                        }}
-                      >
-                        {cabin}
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 <div className="search-btn-container">
                   <button type="submit" disabled={loading} className="search-btn">
