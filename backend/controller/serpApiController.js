@@ -2,7 +2,16 @@ const { getJson } = require("serpapi");
 
 exports.searchDomesticFlights = (req, res) => {
   try {
-    const { origin, destination, departureDate, returnDate } = req.query;
+    const { 
+      origin, 
+      destination, 
+      departureDate, 
+      returnDate,
+      adults = '1',
+      children = '0', 
+      infants = '0',
+      cabinType = 'Economy'
+    } = req.query;
 
     if (!origin || !destination || !departureDate) {
       return res.status(400).json({
@@ -11,7 +20,22 @@ exports.searchDomesticFlights = (req, res) => {
       });
     }
 
+    const totalAdults = parseInt(adults) || 1;
+    const totalChildren = parseInt(children) || 0;
+    const totalInfants = parseInt(infants) || 0;
+    const totalPassengers = totalAdults + totalChildren + totalInfants;
+
     console.log(`🔎 Searching Google Flights (SerpApi): ${origin} -> ${destination} on ${departureDate}`);
+    console.log(`👥 Passengers: ${totalAdults} adults, ${totalChildren} children, ${totalInfants} infants (Total: ${totalPassengers})`);
+    console.log(`🎫 Cabin: ${cabinType}`);
+
+    // Map cabin types to Google Flights travel_class codes
+    const cabinClassMap = {
+      'Economy': '1',
+      'Premium Economy': '2', 
+      'Business': '3',
+      'First': '4'
+    };
 
     const params = {
       engine: "google_flights",
@@ -21,14 +45,17 @@ exports.searchDomesticFlights = (req, res) => {
       outbound_date: departureDate,
       currency: "PHP",
       hl: "en", 
-      gl: "ph", 
-      stops: "0", 
-      type: "2" 
+      gl: "ph",
+      adults: totalAdults.toString(),
+      children: totalChildren.toString(),
+      infants_in_seat: totalInfants.toString(),
+      travel_class: cabinClassMap[cabinType] || '1', // Default to Economy
+      type: "2" // One-way by default
     };
 
     if (returnDate) {
       params.return_date = returnDate;
-      params.type = "1";
+      params.type = "1"; // Round trip
     }
 
     getJson(params, (json) => {
@@ -61,7 +88,11 @@ exports.searchDomesticFlights = (req, res) => {
         const departureTimeRaw = flightSegment.departure_airport.time || '';
         const arrivalTimeRaw = flightSegment.arrival_airport.time || '';
         const cleanDepartureTime = departureTimeRaw.split(' ').pop(); 
-        const cleanArrivalTime = arrivalTimeRaw.split(' ').pop();   
+        const cleanArrivalTime = arrivalTimeRaw.split(' ').pop();
+
+        // Google Flights already returns total price for all passengers
+        const totalPrice = flight.price;
+        const pricePerPerson = Math.round(totalPrice / totalPassengers);
 
         return {
           id: `google-${index}`,
@@ -71,9 +102,11 @@ exports.searchDomesticFlights = (req, res) => {
             logo: flightSegment.airline_logo
           },
           price: {
-            amount: flight.price,
+            amount: totalPrice, // Already total for all passengers from Google
             currency: 'PHP',
-            formatted: `₱${flight.price.toLocaleString()}`
+            formatted: `₱${totalPrice.toLocaleString()}`,
+            perPerson: pricePerPerson,
+            totalPassengers: totalPassengers
           },
           departure: {
             airport: flightSegment.departure_airport.name,
@@ -87,17 +120,25 @@ exports.searchDomesticFlights = (req, res) => {
           },
           duration: formattedDuration,
           stops: numberOfStops,
+          cabinClass: cabinType,
           type: flight.type || 'Direct', 
           link: json.search_metadata?.google_flights_url 
         };
       });
 
-      console.log(`✅ Found ${formattedFlights.length} domestic flights via Google.`);
+      console.log(`✅ Found ${formattedFlights.length} flights in ${cabinType} class for ${totalPassengers} passenger(s)`);
 
       res.json({
         success: true,
         count: formattedFlights.length,
         source: 'google_flights (serpapi)',
+        passengers: {
+          adults: totalAdults,
+          children: totalChildren,
+          infants: totalInfants,
+          total: totalPassengers
+        },
+        cabinClass: cabinType,
         data: formattedFlights
       });
     });

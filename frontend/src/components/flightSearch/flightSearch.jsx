@@ -237,13 +237,23 @@ function FlightSearch() {
     }
 
     try {
+      const totalPassengers = getTotalPassengers();
+      
       const response = await axios.get('http://localhost:5000/api/flights/search-domestic', {
-        params: { ...searchData }
+        params: { 
+          ...searchData,
+          adults: searchParams.adults,
+          children: searchParams.children,
+          infants: searchParams.infants,
+          cabinType: searchParams.cabinType
+        }
       });
 
       let allFlights = [];
 
       if (response.data.success && response.data.data.length > 0) {
+        // Google Flights API already returns total price for all passengers
+        // We just need to format and display it
         allFlights = response.data.data.map((flight, index) => ({
           ...flight,
           id: flight.id || `google-${index}`,
@@ -268,13 +278,15 @@ function FlightSearch() {
         setSearchInfo({
           source: 'Google Flights',
           count: allFlights.length,
-          disclaimer: '✅ Results exclusively from Google Flights (Domestic Data)',
+          disclaimer: `✅ ${allFlights.length} ${searchParams.cabinType} flight${allFlights.length > 1 ? 's' : ''} for ${totalPassengers} passenger${totalPassengers > 1 ? 's' : ''}`,
           routeInfo: {
             origin: searchData.origin,
             destination: searchData.destination
           },
           pricingInfo: {
-             pricePerAdult: allFlights[0].price.amount 
+             pricePerAdult: allFlights[0].price.perPerson,
+             totalPrice: allFlights[0].price.amount,
+             passengers: totalPassengers
           }
         });
       } else {
@@ -520,7 +532,6 @@ function FlightSearch() {
                   )}
                 </div>
 
-
                 <div className="passengers-cabin-row">
                   <div className="input-group passengers-group" onClick={() => setShowPassengers(!showPassengers)}>
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -600,7 +611,6 @@ function FlightSearch() {
                     )}
                   </div>
                 </div>
-
 
                 <div className="search-btn-container">
                   <button type="submit" disabled={loading} className="search-btn">
@@ -715,7 +725,7 @@ function FlightSearch() {
                 <div className="success-details">
                   Found {searchInfo.count} real-time {searchInfo.count === 1 ? 'flight' : 'flights'} • 
                   {searchInfo.routeInfo?.origin?.iataCode || searchInfo.routeInfo?.origin} → {searchInfo.routeInfo?.destination?.iataCode || searchInfo.routeInfo?.destination} • 
-                  From ₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString() || '0'} per adult
+                  Total from ₱{searchInfo.pricingInfo?.totalPrice?.toLocaleString() || '0'} (₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString() || '0'} per person)
                 </div>
               </div>
             </div>
@@ -781,7 +791,9 @@ function FlightSearch() {
 
                   <div className="flight-pricing">
                     <div className="price-amount">{flight.price.formatted}</div>
-                    <div className="price-label">{searchParams.cabinType}</div>
+                    <div className="price-label">
+                      {flight.price.totalPassengers} {flight.price.totalPassengers > 1 ? 'passengers' : 'passenger'} • {searchParams.cabinType}
+                    </div>
                   </div>
                 </div>
 
