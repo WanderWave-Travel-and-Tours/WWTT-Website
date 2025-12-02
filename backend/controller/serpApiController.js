@@ -7,16 +7,17 @@ exports.searchDomesticFlights = (req, res) => {
       destination, 
       departureDate, 
       returnDate,
+      multiCityLegs,
       adults = '1',
       children = '0', 
       infants = '0',
       cabinType = 'Economy'
     } = req.query;
 
-    if (!origin || !destination || !departureDate) {
+    if ((!origin || !destination || !departureDate) && !multiCityLegs) {
       return res.status(400).json({
         success: false,
-        message: 'Required: origin, destination, departureDate (YYYY-MM-DD)'
+        message: 'Required: origin, destination, departureDate OR multiCityLegs'
       });
     }
 
@@ -25,11 +26,6 @@ exports.searchDomesticFlights = (req, res) => {
     const totalInfants = parseInt(infants) || 0;
     const totalPassengers = totalAdults + totalChildren + totalInfants;
 
-    console.log(`🔎 Searching Google Flights (SerpApi): ${origin} -> ${destination} on ${departureDate}`);
-    console.log(`👥 Passengers: ${totalAdults} adults, ${totalChildren} children, ${totalInfants} infants (Total: ${totalPassengers})`);
-    console.log(`🎫 Cabin: ${cabinType}`);
-
-    // Map cabin types to Google Flights travel_class codes
     const cabinClassMap = {
       'Economy': '1',
       'Premium Economy': '2', 
@@ -37,25 +33,44 @@ exports.searchDomesticFlights = (req, res) => {
       'First': '4'
     };
 
-    const params = {
+    let params = {
       engine: "google_flights",
       api_key: process.env.SERPAPI_KEY,
-      departure_id: origin.toUpperCase(),
-      arrival_id: destination.toUpperCase(),
-      outbound_date: departureDate,
       currency: "PHP",
       hl: "en", 
       gl: "ph",
       adults: totalAdults.toString(),
       children: totalChildren.toString(),
       infants_in_seat: totalInfants.toString(),
-      travel_class: cabinClassMap[cabinType] || '1', // Default to Economy
-      type: "2" // One-way by default
+      travel_class: cabinClassMap[cabinType] || '1',
+      type: "2"
     };
 
-    if (returnDate) {
-      params.return_date = returnDate;
-      params.type = "1"; // Round trip
+    if (multiCityLegs) {
+      try {
+        const legs = JSON.parse(multiCityLegs);
+        params.type = "3"; 
+        params.multi_city_json = JSON.stringify(legs.map(leg => ({
+          departure_id: leg.origin,
+          arrival_id: leg.destination,
+          date: leg.departureDate
+        })));
+
+        console.log('🌍 Searching Multi-City:', params.multi_city_json);
+      } catch (e) {
+        console.error('Error parsing multiCityLegs:', e);
+        return res.status(400).json({ success: false, message: 'Invalid Multi-City Data' });
+      }
+
+    } else {
+      params.departure_id = origin.toUpperCase();
+      params.arrival_id = destination.toUpperCase();
+      params.outbound_date = departureDate;
+
+      if (returnDate) {
+        params.return_date = returnDate;
+        params.type = "1"; 
+      }
     }
 
     getJson(params, (json) => {
@@ -69,7 +84,7 @@ exports.searchDomesticFlights = (req, res) => {
           success: true,
           count: 0,
           data: [],
-          message: 'No domestic flights found for this schedule.'
+          message: 'No flights found for this schedule.'
         });
       }
 
@@ -79,65 +94,66 @@ exports.searchDomesticFlights = (req, res) => {
       ];
 
       const formattedFlights = allFlights.map((flight, index) => {
-        const flightSegment = flight.flights[0]; 
+        const flightSegments = flight.flights || [];
+        const firstSegment = flightSegments[0];
+        const lastSegment = flightSegments[flightSegments.length - 1];
         const totalMinutes = flight.total_duration || 0;
         const hours = Math.floor(totalMinutes / 60);
         const mins = totalMinutes % 60;
         const formattedDuration = `${hours}h ${mins}m`;
-        const numberOfStops = (flight.flights || []).length - 1;
-        const departureTimeRaw = flightSegment.departure_airport.time || '';
-        const arrivalTimeRaw = flightSegment.arrival_airport.time || '';
+        const numberOfStops = flightSegments.length - 1; 
+        const departureTimeRaw = firstSegment.departure_airport.time || '';
+        const arrivalTimeRaw = lastSegment.arrival_airport.time || '';
         const cleanDepartureTime = departureTimeRaw.split(' ').pop(); 
         const cleanArrivalTime = arrivalTimeRaw.split(' ').pop();
-
-        // Google Flights already returns total price for all passengers
         const totalPrice = flight.price;
         const pricePerPerson = Math.round(totalPrice / totalPassengers);
 
         return {
           id: `google-${index}`,
           airline: {
-            name: flightSegment.airline,
-            code: flightSegment.airline_logo, 
-            logo: flightSegment.airline_logo
+            name: firstSegment.airline, 
+            code: firstSegment.airline_logo, 
+            logo: firstSegment.airline_logo
           },
           price: {
-            amount: totalPrice, // Already total for all passengers from Google
+            amount: totalPrice,
             currency: 'PHP',
             formatted: `₱${totalPrice.toLocaleString()}`,
             perPerson: pricePerPerson,
             totalPassengers: totalPassengers
           },
           departure: {
-            airport: flightSegment.departure_airport.name,
-            iataCode: flightSegment.departure_airport.id,
+            airport: firstSegment.departure_airport.name,
+            iataCode: firstSegment.departure_airport.id,
             time: cleanDepartureTime 
           },
           arrival: {
-            airport: flightSegment.arrival_airport.name,
-            iataCode: flightSegment.arrival_airport.id,
+            airport: lastSegment.arrival_airport.name,
+            iataCode: lastSegment.arrival_airport.id,
             time: cleanArrivalTime
           },
           duration: formattedDuration,
           stops: numberOfStops,
           cabinClass: cabinType,
-          type: flight.type || 'Direct', 
+          type: multiCityLegs ? 'Multi-City' : (flight.type || 'Direct'),
+          itinerary: flightSegments.map(seg => ({
+            dep: seg.departure_airport.id,
+            arr: seg.arrival_airport.id,
+            time: seg.departure_airport.time.split(' ').pop(),
+            airline: seg.airline
+          })),
           link: json.search_metadata?.google_flights_url 
         };
       });
 
-      console.log(`✅ Found ${formattedFlights.length} flights in ${cabinType} class for ${totalPassengers} passenger(s)`);
+      console.log(`✅ Found ${formattedFlights.length} flights`);
 
       res.json({
         success: true,
         count: formattedFlights.length,
         source: 'google_flights (serpapi)',
-        passengers: {
-          adults: totalAdults,
-          children: totalChildren,
-          infants: totalInfants,
-          total: totalPassengers
-        },
+        passengers: { total: totalPassengers },
         cabinClass: cabinType,
         data: formattedFlights
       });
