@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import './UserLogin.css';
 
 const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
@@ -9,6 +10,9 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const [recaptchaToken, setRecaptchaToken] = useState(null);
+    const recaptchaRef = useRef(null);
+    const RECAPTCHA_SITE_KEY = "6Le-qx0sAAAAAJX4nGcaXMjdL6gMU2GdmD9NJi0J";
 
     const destinations = [
         { image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eb2c3a1eaa1cc1c2ab8.jpg', name: 'Boracay', description: 'White Sand Paradise' },
@@ -28,14 +32,24 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         return () => clearInterval(timer);
     }, []);
 
+    const handleRecaptchaChange = (token) => {
+        setRecaptchaToken(token);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!recaptchaToken) {
+            alert('Please complete the reCAPTCHA verification');
+            return;
+        }
+
         setIsLoading(true);
 
         const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/login';
         const body = isSignup
-            ? { fullName, email, password, confirmPassword }
-            : { email, password };
+            ? { fullName, email, password, confirmPassword, recaptchaToken }
+            : { email, password, recaptchaToken };
 
         try {
             const res = await fetch(`http://localhost:5000${endpoint}`, {
@@ -61,12 +75,25 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                         onLoginSuccess(data.user);
                     }
                 }
+
+                if (recaptchaRef.current) {
+                    recaptchaRef.current.reset();
+                    setRecaptchaToken(null);
+                }
             } else {
                 alert(data.message || 'Something went wrong');
+                if (recaptchaRef.current) {
+                    recaptchaRef.current.reset();
+                    setRecaptchaToken(null);
+                }
             }
         } catch (err) {
             console.error(err);
             alert('Cannot connect to server. Please try again.');
+            if (recaptchaRef.current) {
+                recaptchaRef.current.reset();
+                setRecaptchaToken(null);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -180,6 +207,19 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                 </div>
                             )}
 
+                            <div className="recaptcha-container" style={{ 
+                                marginTop: '20px', 
+                                marginBottom: '20px',
+                                display: 'flex',
+                                justifyContent: 'center'
+                            }}>
+                                <ReCAPTCHA
+                                    ref={recaptchaRef}
+                                    sitekey={RECAPTCHA_SITE_KEY}
+                                    onChange={handleRecaptchaChange}
+                                />
+                            </div>
+
                             <button 
                                 type="submit" 
                                 className="login-button"
@@ -199,6 +239,10 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                     setEmail(''); 
                                     setPassword(''); 
                                     setConfirmPassword('');
+                                    if (recaptchaRef.current) {
+                                        recaptchaRef.current.reset();
+                                        setRecaptchaToken(null);
+                                    }
                                 }}
                                 style={{ cursor: 'pointer', fontWeight: '600' }}
                             >

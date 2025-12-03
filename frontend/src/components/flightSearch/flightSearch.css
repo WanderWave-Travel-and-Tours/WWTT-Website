@@ -303,6 +303,14 @@
   grid-template-columns: 2fr 48px 2fr 1.5fr 1.5fr;
 }
 
+/* NEW: Passengers and Cabin Row */
+.passengers-cabin-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
 /* Input Group */
 .input-group {
   position: relative;
@@ -349,6 +357,165 @@
 
 .return-date {
   border-radius: 0;
+}
+
+/* Passengers and Cabin Groups - NEW STYLES */
+.passengers-group,
+.cabin-group {
+  position: relative;
+  flex: 1;
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.passengers-group:hover,
+.cabin-group:hover {
+  background: #f8f9fa;
+}
+
+.passengers-display,
+.cabin-display {
+  font-size: 14px;
+  color: #3c4043;
+  font-weight: 500;
+  user-select: none;
+}
+
+/* Passengers Dropdown - FIXED POSITIONING */
+.passengers-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e8eaed;
+  min-width: 320px;
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+  padding: 16px 0;
+}
+
+.passenger-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.passenger-row:last-of-type {
+  border-bottom: none;
+}
+
+.passenger-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.passenger-label strong {
+  font-size: 14px;
+  font-weight: 500;
+  color: #3c4043;
+}
+
+.passenger-label span {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.passenger-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.passenger-controls button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #dadce0;
+  background: #ffffff;
+  color: #3c4043;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.passenger-controls button:hover:not(:disabled) {
+  background: #f1f3f4;
+  border-color: #1a73e8;
+}
+
+.passenger-controls button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.passenger-controls span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #3c4043;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Cabin Dropdown - FIXED POSITIONING */
+.cabin-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e8eaed;
+  min-width: 240px;
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+  overflow: hidden;
+}
+
+.cabin-option-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.cabin-option-item:hover {
+  background: #f1f3f4;
+}
+
+.cabin-option-item.active {
+  background: rgba(26, 115, 232, 0.08);
+  color: #1a73e8;
+}
+
+.cabin-option-item svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0;
+  color: #1a73e8;
+}
+
+.cabin-option-item.active svg {
+  opacity: 1;
+}
+
+.cabin-option-item span {
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .input-icon {
@@ -468,39 +635,44 @@
 }
 
 .remove-leg-btn:hover {
-  background: #fef2f2;
-  border-color: #ef4444;
-  color: #ef4444;
+  background: #ffebee;
+  border-color: #f44336;
+  color: #f44336;
 }
 
+/* Add Flight Button */
 .add-flight-btn {
-  padding: 12px 24px;
-  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px dashed #dadce0;
   background: transparent;
   color: #1a73e8;
   font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s ease;
-  text-align: left;
+  transition: all 0.2s ease;
+  margin-top: 12px;
 }
 
 .add-flight-btn:hover {
-  background: rgba(26, 115, 232, 0.08);
+  background: rgba(26, 115, 232, 0.04);
+  border-color: #1a73e8;
 }
 
-/* Search Button Container */
+/* Search Button */
 .search-btn-container {
   display: flex;
   justify-content: center;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 .search-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 14px 48px;
   border: none;
   background: #1a73e8;
@@ -510,33 +682,33 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 4px rgba(26, 115, 232, 0.2);
 }
 
 .search-btn:hover:not(:disabled) {
   background: #1765cc;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(26, 115, 232, 0.3);
+  transform: translateY(-1px);
 }
 
 .search-btn:disabled {
-  background: #dadce0;
-  color: #80868b;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* Results Container */
-.results-container {
-  max-width: 1080px;
-  margin: 0 auto;
+.search-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
-/* Success Banner */
+/* Search Success Banner */
 .search-success-banner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
   background: #e8f5e9;
-  border: 1px solid #81c784;
+  border: 1px solid #66bb6a;
   border-radius: 8px;
   padding: 16px 20px;
   margin-bottom: 24px;
@@ -959,6 +1131,15 @@
   .airport-suggestion-item .airport-location {
     font-size: 11px;
   }
+  
+  .passengers-cabin-row {
+    flex-direction: column;
+  }
+  
+  .passengers-group,
+  .cabin-group {
+    min-width: 100%;
+  }
 }
 
 /* Responsive Design */
@@ -1030,5 +1211,3 @@
     order: 3;
   }
 }
-
-

@@ -1,19 +1,43 @@
 const axios = require('axios');
 
-// Comprehensive airport list as fallback (major airports worldwide)
 const FALLBACK_AIRPORTS = [
-  // PHILIPPINES
+// --- MAJOR PHILIPPINE HUBS ---
   { iata_code: 'MNL', airport_name: 'Ninoy Aquino International Airport', city_name: 'Manila', country_name: 'Philippines', country_iso2: 'PH' },
   { iata_code: 'CEB', airport_name: 'Mactan-Cebu International Airport', city_name: 'Cebu', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'CRK', airport_name: 'Clark International Airport', city_name: 'Angeles (Clark)', country_name: 'Philippines', country_iso2: 'PH' },
   { iata_code: 'DVO', airport_name: 'Francisco Bangoy International Airport', city_name: 'Davao', country_name: 'Philippines', country_iso2: 'PH' },
-  { iata_code: 'CRK', airport_name: 'Clark International Airport', city_name: 'Angeles', country_name: 'Philippines', country_iso2: 'PH' },
+
+  // --- POPULAR TOURIST DESTINATIONS (PH) ---
+  { iata_code: 'IAO', airport_name: 'Sayak Airport', city_name: 'Siargao (Del Carmen)', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'MPH', airport_name: 'Godofredo P. Ramos Airport', city_name: 'Boracay (Caticlan)', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'KLO', airport_name: 'Kalibo International Airport', city_name: 'Boracay (Kalibo)', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'USU', airport_name: 'Francisco B. Reyes Airport', city_name: 'Coron (Busuanga)', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'ENI', airport_name: 'El Nido Airport', city_name: 'El Nido (Palawan)', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'PPS', airport_name: 'Puerto Princesa International Airport', city_name: 'Puerto Princesa', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'TAG', airport_name: 'Bohol-Panglao International Airport', city_name: 'Bohol (Panglao)', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'DGT', airport_name: 'Sibulan Airport', city_name: 'Dumaguete', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'LGP', airport_name: 'Bicol International Airport', city_name: 'Legazpi (Albay)', country_name: 'Philippines', country_iso2: 'PH' },
+
+  // --- OTHER KEY DOMESTIC AIRPORTS ---
   { iata_code: 'ILO', airport_name: 'Iloilo International Airport', city_name: 'Iloilo', country_name: 'Philippines', country_iso2: 'PH' },
   { iata_code: 'BCD', airport_name: 'Bacolod-Silay Airport', city_name: 'Bacolod', country_name: 'Philippines', country_iso2: 'PH' },
-  { iata_code: 'KLO', airport_name: 'Kalibo International Airport', city_name: 'Kalibo', country_name: 'Philippines', country_iso2: 'PH' },
-  { iata_code: 'TAG', airport_name: 'Tagbilaran Airport', city_name: 'Tagbilaran', country_name: 'Philippines', country_iso2: 'PH' },
-  { iata_code: 'PPS', airport_name: 'Puerto Princesa Airport', city_name: 'Puerto Princesa', country_name: 'Philippines', country_iso2: 'PH' },
-  { iata_code: 'MPH', airport_name: 'Godofredo P. Ramos Airport', city_name: 'Caticlan', country_name: 'Philippines', country_iso2: 'PH' },
-  
+  { iata_code: 'TAC', airport_name: 'Daniel Z. Romualdez Airport', city_name: 'Tacloban', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'ZAM', airport_name: 'Zamboanga International Airport', city_name: 'Zamboanga', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'GES', airport_name: 'General Santos International Airport', city_name: 'General Santos', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'LAO', airport_name: 'Laoag International Airport', city_name: 'Laoag', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'BSO', airport_name: 'Basco Airport', city_name: 'Batanes (Basco)', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'SUG', airport_name: 'Surigao Airport', city_name: 'Surigao', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'OZC', airport_name: 'Labo Airport', city_name: 'Ozamiz', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'CGY', airport_name: 'Laguindingan Airport', city_name: 'Cagayan de Oro', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'BUT', airport_name: 'Bancasi Airport', city_name: 'Butuan', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'CBO', airport_name: 'Awang Airport', city_name: 'Cotabato', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'DPL', airport_name: 'Dipolog Airport', city_name: 'Dipolog', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'PAG', airport_name: 'Pagadian Airport', city_name: 'Pagadian', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'RXS', airport_name: 'Roxas Airport', city_name: 'Roxas', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'TUG', airport_name: 'Tuguegarao Airport', city_name: 'Tuguegarao', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'VRC', airport_name: 'Virac Airport', city_name: 'Virac (Catanduanes)', country_name: 'Philippines', country_iso2: 'PH' },
+  { iata_code: 'SJI', airport_name: 'San Jose Airport', city_name: 'San Jose (Mindoro)', country_name: 'Philippines', country_iso2: 'PH' },
+
   // ASIA
   { iata_code: 'SIN', airport_name: 'Singapore Changi Airport', city_name: 'Singapore', country_name: 'Singapore', country_iso2: 'SG' },
   { iata_code: 'HKG', airport_name: 'Hong Kong International Airport', city_name: 'Hong Kong', country_name: 'Hong Kong', country_iso2: 'HK' },
@@ -80,10 +104,9 @@ const FALLBACK_AIRPORTS = [
   { iata_code: 'LIM', airport_name: 'Jorge Chávez International Airport', city_name: 'Lima', country_name: 'Peru', country_iso2: 'PE' },
 ];
 
-// Cache for API results
 let apiAirportsCache = null;
 let cacheTimestamp = null;
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_DURATION = 24 * 60 * 60 * 1000; 
 
 exports.searchFlights = async (req, res) => {
   try {
@@ -218,18 +241,12 @@ exports.getAirlines = async (req, res) => {
   }
 };
 
-// IMPROVED: Airport search with fallback system
 exports.getAirports = async (req, res) => {
   try {
     const { search } = req.query;
     const searchTerm = (search || '').toLowerCase().trim();
-
     console.log(`🔍 Airport search: "${searchTerm}"`);
-
-    // Combine fallback airports with cached API data
     let allAirports = [...FALLBACK_AIRPORTS];
-
-    // Try to fetch from API and cache (only once every 24 hours)
     const now = Date.now();
     const cacheIsValid = apiAirportsCache && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION);
 
@@ -248,8 +265,6 @@ exports.getAirports = async (req, res) => {
           apiAirportsCache = response.data.data.filter(airport => airport.iata_code);
           cacheTimestamp = now;
           console.log(`✅ Fetched ${apiAirportsCache.length} airports from API`);
-          
-          // Merge with fallback (avoid duplicates)
           apiAirportsCache.forEach(airport => {
             if (!allAirports.find(a => a.iata_code === airport.iata_code)) {
               allAirports.push(airport);
@@ -261,7 +276,6 @@ exports.getAirports = async (req, res) => {
       }
     } else if (apiAirportsCache) {
       console.log('✅ Using cached API airports');
-      // Merge cached data
       apiAirportsCache.forEach(airport => {
         if (!allAirports.find(a => a.iata_code === airport.iata_code)) {
           allAirports.push(airport);
@@ -269,7 +283,6 @@ exports.getAirports = async (req, res) => {
       });
     }
 
-    // Filter based on search term
     let filteredAirports = allAirports;
 
     if (searchTerm) {
@@ -283,20 +296,14 @@ exports.getAirports = async (req, res) => {
       });
     }
 
-    // Sort by relevance
     filteredAirports.sort((a, b) => {
       const aIata = a.iata_code?.toLowerCase() || '';
       const bIata = b.iata_code?.toLowerCase() || '';
       
-      // Exact match first
       if (aIata === searchTerm) return -1;
       if (bIata === searchTerm) return 1;
-      
-      // Starts with search term
       if (aIata.startsWith(searchTerm) && !bIata.startsWith(searchTerm)) return -1;
       if (bIata.startsWith(searchTerm) && !aIata.startsWith(searchTerm)) return 1;
-      
-      // Alphabetical
       return aIata.localeCompare(bIata);
     });
 
@@ -304,15 +311,13 @@ exports.getAirports = async (req, res) => {
 
     res.json({
       success: true,
-      data: filteredAirports.slice(0, 50), // Limit to 50 results
+      data: filteredAirports.slice(0, 50), 
       source: apiAirportsCache ? 'api+fallback' : 'fallback',
       totalAvailable: allAirports.length
     });
 
   } catch (error) {
     console.error('Airports error:', error);
-    
-    // If everything fails, return fallback airports
     console.log('⚠️ Returning fallback airports only due to error');
     const searchTerm = (req.query.search || '').toLowerCase().trim();
     
@@ -336,7 +341,6 @@ exports.getAirports = async (req, res) => {
   }
 };
 
-// NEW: Endpoint to manually refresh cache
 exports.refreshAirportsCache = async (req, res) => {
   try {
     console.log('🔄 Manually refreshing airports cache...');
@@ -375,7 +379,6 @@ exports.refreshAirportsCache = async (req, res) => {
   }
 };
 
-// NEW: Get cache status
 exports.getCacheStatus = (req, res) => {
   const now = Date.now();
   const cacheAge = cacheTimestamp ? now - cacheTimestamp : null;

@@ -36,8 +36,6 @@ function FlightSearch() {
   const [searchInfo, setSearchInfo] = useState(null);
   const [showPassengers, setShowPassengers] = useState(false);
   const [showCabin, setShowCabin] = useState(false);
-
-  // Airport search states
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
@@ -45,11 +43,17 @@ function FlightSearch() {
   const [airportSearchLoading, setAirportSearchLoading] = useState(false);
   const [originSearchTerm, setOriginSearchTerm] = useState('');
   const [destinationSearchTerm, setDestinationSearchTerm] = useState('');
-  
+  const [multiCitySearchTerms, setMultiCitySearchTerms] = useState([
+    { origin: '', destination: '' },
+    { origin: '', destination: '' }
+  ]);
+  const [multiCitySuggestions, setMultiCitySuggestions] = useState([]);
+  const [activeMultiCityField, setActiveMultiCityField] = useState(null);
   const originRef = useRef(null);
   const destinationRef = useRef(null);
   const suggestionsRef = useRef(null);
   const searchTimerRef = useRef(null);
+  const multiCityRefs = useRef([]);
 
   function getTomorrowDate() {
     const tomorrow = new Date();
@@ -63,11 +67,9 @@ function FlightSearch() {
     return nextWeek.toISOString().split('T')[0];
   }
 
-  // Search airports from Aviationstack API
   const searchAirportsFromAPI = async (searchTerm, field) => {
     if (!searchTerm || searchTerm.length < 1) {
-      // If empty, load default airports (you can customize this)
-      searchTerm = ''; // Will get general list
+      searchTerm = '';
     }
 
     setAirportSearchLoading(true);
@@ -79,7 +81,7 @@ function FlightSearch() {
 
       if (response.data.success && response.data.data) {
         const airports = response.data.data
-          .filter(airport => airport.iata_code) // Only airports with IATA codes
+          .filter(airport => airport.iata_code) 
           .map(airport => ({
             iataCode: airport.iata_code,
             name: airport.airport_name,
@@ -87,28 +89,30 @@ function FlightSearch() {
             country: airport.country_name,
             countryCode: airport.country_iso2
           }))
-          .slice(0, 50); // Show up to 50 results
+          .slice(0, 50);
 
-        // Set to appropriate state based on field
         if (field === 'origin') {
           setOriginSuggestions(airports);
-        } else {
+        } else if (field === 'destination') {
           setDestinationSuggestions(airports);
+        } else if (field === 'multi-city') {
+          setMultiCitySuggestions(airports);
         }
       }
     } catch (error) {
       console.error('Airport search error:', error);
       if (field === 'origin') {
         setOriginSuggestions([]);
-      } else {
+      } else if (field === 'destination') {
         setDestinationSuggestions([]);
+      } else if (field === 'multi-city') {
+        setMultiCitySuggestions([]);
       }
     } finally {
       setAirportSearchLoading(false);
     }
   };
 
-  // Debounced search - wait 500ms after user stops typing
   const debouncedSearch = (searchTerm, field) => {
     if (searchTimerRef.current) {
       clearTimeout(searchTimerRef.current);
@@ -116,10 +120,9 @@ function FlightSearch() {
 
     searchTimerRef.current = setTimeout(() => {
       searchAirportsFromAPI(searchTerm, field);
-    }, 500); // 500ms delay
+    }, 500);
   };
 
-  // Handle focus - load initial airports
   const handleAirportFocus = async (field) => {
     const currentValue = field === 'origin' ? originSearchTerm : destinationSearchTerm;
     
@@ -127,7 +130,6 @@ function FlightSearch() {
       setShowOriginSuggestions(true);
       setShowDestinationSuggestions(false);
       
-      // If no suggestions yet, load some
       if (originSuggestions.length === 0) {
         await searchAirportsFromAPI(currentValue, 'origin');
       }
@@ -135,16 +137,13 @@ function FlightSearch() {
       setShowDestinationSuggestions(true);
       setShowOriginSuggestions(false);
       
-      // If no suggestions yet, load some
       if (destinationSuggestions.length === 0) {
         await searchAirportsFromAPI(currentValue, 'destination');
       }
     }
   };
 
-  // Handle input change with live search
   const handleAirportInputChange = (field, value) => {
-    // Update search term
     if (field === 'origin') {
       setOriginSearchTerm(value);
       setShowOriginSuggestions(true);
@@ -155,20 +154,59 @@ function FlightSearch() {
       setShowOriginSuggestions(false);
     }
 
-    // Update the actual form value (uppercase for IATA codes)
     if (searchParams.journeyType === 'one-way') {
       setOneWayData({ ...oneWayData, [field]: value.toUpperCase() });
     } else if (searchParams.journeyType === 'round-trip') {
       setRoundTripData({ ...roundTripData, [field]: value.toUpperCase() });
     }
 
-    // Debounced API search
     debouncedSearch(value, field);
   };
 
-  // Handle airport selection
+  const handleMultiCityAirportFocus = async (legIndex, field) => {
+    setActiveMultiCityField({ legIndex, field });
+    const currentValue = multiCitySearchTerms[legIndex]?.[field] || '';
+    
+    if (multiCitySuggestions.length === 0 || currentValue) {
+      await searchAirportsFromAPI(currentValue, 'multi-city');
+    }
+  };
+
+  const handleMultiCityAirportInputChange = (legIndex, field, value) => {
+    const newSearchTerms = [...multiCitySearchTerms];
+    if (!newSearchTerms[legIndex]) {
+      newSearchTerms[legIndex] = { origin: '', destination: '' };
+    }
+    newSearchTerms[legIndex][field] = value;
+    setMultiCitySearchTerms(newSearchTerms);
+
+    const newLegs = [...multiCityLegs];
+    newLegs[legIndex][field] = value.toUpperCase();
+    setMultiCityLegs(newLegs);
+    setActiveMultiCityField({ legIndex, field });
+    debouncedSearch(value, 'multi-city');
+  };
+
+  const selectMultiCityAirport = (airport, legIndex, field) => {
+    const iataCode = airport.iataCode;
+    const displayName = `${airport.city} (${iataCode})`;
+
+    const newSearchTerms = [...multiCitySearchTerms];
+    if (!newSearchTerms[legIndex]) {
+      newSearchTerms[legIndex] = { origin: '', destination: '' };
+    }
+    newSearchTerms[legIndex][field] = displayName;
+    setMultiCitySearchTerms(newSearchTerms);
+
+    const newLegs = [...multiCityLegs];
+    newLegs[legIndex][field] = iataCode;
+    setMultiCityLegs(newLegs);
+    setActiveMultiCityField(null);
+  };
+
   const selectAirport = (airport, field) => {
     const iataCode = airport.iataCode;
+    const displayName = `${airport.city} (${iataCode})`;
 
     if (searchParams.journeyType === 'one-way') {
       setOneWayData({ ...oneWayData, [field]: iataCode });
@@ -176,19 +214,16 @@ function FlightSearch() {
       setRoundTripData({ ...roundTripData, [field]: iataCode });
     }
 
-    // Update search term to show selected airport
     if (field === 'origin') {
-      setOriginSearchTerm(iataCode);
+      setOriginSearchTerm(displayName);
     } else {
-      setDestinationSearchTerm(iataCode);
+      setDestinationSearchTerm(displayName);
     }
 
-    // Close suggestions
     setShowOriginSuggestions(false);
     setShowDestinationSuggestions(false);
   };
 
-  // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -199,13 +234,16 @@ function FlightSearch() {
         setShowOriginSuggestions(false);
         setShowDestinationSuggestions(false);
       }
+      const clickedInMultiCity = multiCityRefs.current.some(ref => ref && ref.contains(event.target));
+      if (!clickedInMultiCity && suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setActiveMultiCityField(null);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (searchTimerRef.current) {
@@ -214,15 +252,14 @@ function FlightSearch() {
     };
   }, []);
 
-  // Ipalit ito sa existing handleSearch function sa flightSearch.jsx
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSearchInfo(null);
-
-    // 1. Prepare Search Data
+    setFlights([]); 
     let searchData = {};
+    
     if (searchParams.journeyType === 'one-way') {
       if (!oneWayData.origin || !oneWayData.destination) {
         setError('Please enter origin and destination');
@@ -251,79 +288,88 @@ function FlightSearch() {
         departureDate: roundTripData.departureDate,
         returnDate: roundTripData.returnDate
       };
+    } else if (searchParams.journeyType === 'multi-city') {
+      for (let i = 0; i < multiCityLegs.length; i++) {
+        const leg = multiCityLegs[i];
+        if (!leg.origin || !leg.destination) {
+          setError(`Please fill in origin and destination for flight ${i + 1}`);
+          setLoading(false);
+          return;
+        }
+        if (!leg.departureDate) {
+          setError(`Please select departure date for flight ${i + 1}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      searchData = {
+        multiCityLegs: JSON.stringify(multiCityLegs)
+      };
     }
 
     try {
-      console.log('🚀 Starting Dual Search (Amadeus + Kiwi)...');
+      const totalPassengers = getTotalPassengers();
       
-      // 2. RUN BOTH SEARCHES IN PARALLEL (Sabay silang tatakbo)
-      const amadeusRequest = axios.get('http://localhost:5000/api/flights/search-prices-amadeus-only', {
-        params: { ...searchData, adults: searchParams.adults }
+      const response = await axios.get('http://localhost:5000/api/flights/search-domestic', {
+        params: { 
+          ...searchData,
+          adults: searchParams.adults,
+          children: searchParams.children,
+          infants: searchParams.infants,
+          cabinType: searchParams.cabinType
+        }
       });
-
-      const kiwiRequest = axios.get('http://localhost:5000/api/flights/search-prices-kiwi', {
-        params: { ...searchData }
-      });
-
-      // Wait for both to finish (kahit mag-fail ang isa, tuloy pa rin)
-      const [amadeusRes, kiwiRes] = await Promise.allSettled([amadeusRequest, kiwiRequest]);
 
       let allFlights = [];
-      let combinedInfo = {};
 
-      // 3. Process Amadeus Results
-      if (amadeusRes.status === 'fulfilled' && amadeusRes.value.data.success) {
-        console.log('✅ Amadeus Data Received:', amadeusRes.value.data.count);
-        allFlights = [...allFlights, ...amadeusRes.value.data.data];
-        
-        // Use Amadeus metadata as base
-        combinedInfo = {
-            count: amadeusRes.value.data.count,
-            source: 'Mixed (Amadeus + Kiwi)',
-            routeInfo: amadeusRes.value.data.routeInfo,
-            pricingInfo: amadeusRes.value.data.pricingInfo
-        };
+      if (response.data.success && response.data.data.length > 0) {
+        allFlights = response.data.data.map((flight, index) => ({
+          ...flight,
+          id: flight.id || `google-${index}`,
+          departure: {
+            ...flight.departure,
+            displayTime: flight.departure.time 
+          },
+          arrival: {
+            ...flight.arrival,
+            displayTime: flight.arrival.time 
+          },
+          airline: {
+            ...flight.airline,
+            logo: flight.airline.logo || 'https://images.kiwi.com/airlines/64/5J.png' 
+          },
+          source: 'Google Flights'
+        }));
       }
 
-      // 4. Process Kiwi Results (LCC / Cheap Flights)
-      if (kiwiRes.status === 'fulfilled' && kiwiRes.value.data.success) {
-        console.log('✅ Kiwi Data Received:', kiwiRes.value.data.count);
-        // I-merge ang Kiwi flights
-        allFlights = [...allFlights, ...kiwiRes.value.data.data];
-      } else {
-        console.warn('⚠️ Kiwi Search Failed or Empty:', kiwiRes.reason);
-      }
-
-      // 5. SORT BY PRICE (Cheapest First) - Ito ang magic ng Google Flights
-      allFlights.sort((a, b) => {
-        const priceA = a.price?.amount || 0;
-        const priceB = b.price?.amount || 0;
-        return priceA - priceB;
-      });
-
-      // 6. Update State
       if (allFlights.length > 0) {
         setFlights(allFlights);
         setSearchInfo({
-          ...combinedInfo,
+          source: 'Google Flights',
           count: allFlights.length,
-          disclaimer: '✅ Showing combined results from GDS (Amadeus) and Low-Cost Carriers (Kiwi).'
+          disclaimer: `✅ ${allFlights.length} ${searchParams.cabinType} flight${allFlights.length > 1 ? 's' : ''} for ${totalPassengers} passenger${totalPassengers > 1 ? 's' : ''}`,
+          routeInfo: {
+            origin: searchData.origin,
+            destination: searchData.destination
+          },
+          pricingInfo: {
+             pricePerAdult: allFlights[0].price.perPerson,
+             totalPrice: allFlights[0].price.amount,
+             passengers: totalPassengers
+          }
         });
       } else {
-        setError('No flights found from any provider.');
+        setError('No flights found via Google Flights for this date.');
       }
 
     } catch (err) {
-      console.error('Major Search Error:', err);
-      setError('Failed to search flights. Please try again.');
+      console.error('❌ Search Error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to connect to Flight API';
+      setError(`Search Failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setSearchParams({ ...searchParams, [name]: value });
   };
 
   const handleMultiCityChange = (index, field, value) => {
@@ -335,12 +381,15 @@ function FlightSearch() {
 
   const addMultiCityLeg = () => {
     setMultiCityLegs([...multiCityLegs, { origin: '', destination: '', departureDate: getTomorrowDate() }]);
+    setMultiCitySearchTerms([...multiCitySearchTerms, { origin: '', destination: '' }]);
   };
 
   const removeMultiCityLeg = (index) => {
     if (multiCityLegs.length > 2) {
       const newLegs = multiCityLegs.filter((_, i) => i !== index);
+      const newSearchTerms = multiCitySearchTerms.filter((_, i) => i !== index);
       setMultiCityLegs(newLegs);
+      setMultiCitySearchTerms(newSearchTerms);
     }
   };
 
@@ -410,7 +459,6 @@ function FlightSearch() {
             {(searchParams.journeyType === 'one-way' || searchParams.journeyType === 'round-trip') && (
               <div className="form-section">
                 <div className="field-row">
-                  {/* ORIGIN INPUT WITH API DROPDOWN */}
                   <div className="input-group origin-group" ref={originRef} style={{ position: 'relative' }}>
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"/>
@@ -427,7 +475,6 @@ function FlightSearch() {
                       autoComplete="off"
                     />
                     
-                    {/* ORIGIN DROPDOWN */}
                     {showOriginSuggestions && (
                       <div className="airport-suggestions" ref={suggestionsRef}>
                         {airportSearchLoading ? (
@@ -468,7 +515,6 @@ function FlightSearch() {
                     </svg>
                   </button>
 
-                  {/* DESTINATION INPUT WITH API DROPDOWN */}
                   <div className="input-group destination-group" ref={destinationRef} style={{ position: 'relative' }}>
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
@@ -485,7 +531,6 @@ function FlightSearch() {
                       autoComplete="off"
                     />
 
-                    {/* DESTINATION DROPDOWN */}
                     {showDestinationSuggestions && (
                       <div className="airport-suggestions" ref={suggestionsRef}>
                         {airportSearchLoading ? (
@@ -517,7 +562,6 @@ function FlightSearch() {
                     )}
                   </div>
 
-                  {/* DATE INPUTS */}
                   <div className="input-group date-group">
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -561,8 +605,7 @@ function FlightSearch() {
                   )}
                 </div>
 
-                {/* PASSENGERS AND CABIN */}
-                <div className="field-row">
+                <div className="passengers-cabin-row">
                   <div className="input-group passengers-group" onClick={() => setShowPassengers(!showPassengers)}>
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -571,6 +614,44 @@ function FlightSearch() {
                     <div className="passengers-display">
                       {getTotalPassengers()} passenger{getTotalPassengers() > 1 ? 's' : ''}
                     </div>
+
+                    {showPassengers && (
+                      <div className="passengers-dropdown">
+                        <div className="passenger-row">
+                          <div className="passenger-label">
+                            <strong>Adults</strong>
+                            <span>12+ years</span>
+                          </div>
+                          <div className="passenger-controls">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, adults: Math.max(1, parseInt(searchParams.adults) - 1).toString() }); }}>−</button>
+                            <span>{searchParams.adults}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, adults: (parseInt(searchParams.adults) + 1).toString() }); }}>+</button>
+                          </div>
+                        </div>
+                        <div className="passenger-row">
+                          <div className="passenger-label">
+                            <strong>Children</strong>
+                            <span>2-11 years</span>
+                          </div>
+                          <div className="passenger-controls">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, children: Math.max(0, parseInt(searchParams.children) - 1).toString() }); }}>−</button>
+                            <span>{searchParams.children}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, children: (parseInt(searchParams.children) + 1).toString() }); }}>+</button>
+                          </div>
+                        </div>
+                        <div className="passenger-row">
+                          <div className="passenger-label">
+                            <strong>Infants</strong>
+                            <span>Under 2 years</span>
+                          </div>
+                          <div className="passenger-controls">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, infants: Math.max(0, parseInt(searchParams.infants) - 1).toString() }); }}>−</button>
+                            <span>{searchParams.infants}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setSearchParams({ ...searchParams, infants: (parseInt(searchParams.infants) + 1).toString() }); }}>+</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="input-group cabin-group" onClick={() => setShowCabin(!showCabin)}>
@@ -579,65 +660,30 @@ function FlightSearch() {
                       <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
                     </svg>
                     <div className="cabin-display">{searchParams.cabinType}</div>
+
+                    {showCabin && (
+                      <div className="cabin-dropdown">
+                        {['Economy', 'Premium Economy', 'Business', 'First'].map(cabin => (
+                          <button
+                            key={cabin}
+                            type="button"
+                            className={`cabin-option-item ${searchParams.cabinType === cabin ? 'active' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSearchParams({ ...searchParams, cabinType: cabin });
+                              setShowCabin(false);
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                            </svg>
+                            <span>{cabin}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Passengers Dropdown */}
-                {showPassengers && (
-                  <div className="passengers-dropdown">
-                    <div className="passenger-row">
-                      <div className="passenger-label">
-                        <strong>Adults</strong>
-                        <span>12+ years</span>
-                      </div>
-                      <div className="passenger-controls">
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, adults: Math.max(1, parseInt(searchParams.adults) - 1).toString() })}>−</button>
-                        <span>{searchParams.adults}</span>
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, adults: (parseInt(searchParams.adults) + 1).toString() })}>+</button>
-                      </div>
-                    </div>
-                    <div className="passenger-row">
-                      <div className="passenger-label">
-                        <strong>Children</strong>
-                        <span>2-11 years</span>
-                      </div>
-                      <div className="passenger-controls">
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, children: Math.max(0, parseInt(searchParams.children) - 1).toString() })}>−</button>
-                        <span>{searchParams.children}</span>
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, children: (parseInt(searchParams.children) + 1).toString() })}>+</button>
-                      </div>
-                    </div>
-                    <div className="passenger-row">
-                      <div className="passenger-label">
-                        <strong>Infants</strong>
-                        <span>Under 2 years</span>
-                      </div>
-                      <div className="passenger-controls">
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, infants: Math.max(0, parseInt(searchParams.infants) - 1).toString() })}>−</button>
-                        <span>{searchParams.infants}</span>
-                        <button type="button" onClick={() => setSearchParams({ ...searchParams, infants: (parseInt(searchParams.infants) + 1).toString() })}>+</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Cabin Dropdown */}
-                {showCabin && (
-                  <div className="cabin-dropdown">
-                    {['Economy', 'Premium Economy', 'Business', 'First'].map(cabin => (
-                      <div
-                        key={cabin}
-                        className={`cabin-option ${searchParams.cabinType === cabin ? 'selected' : ''}`}
-                        onClick={() => {
-                          setSearchParams({ ...searchParams, cabinType: cabin });
-                          setShowCabin(false);
-                        }}
-                      >
-                        {cabin}
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 <div className="search-btn-container">
                   <button type="submit" disabled={loading} className="search-btn">
@@ -651,24 +697,59 @@ function FlightSearch() {
               </div>
             )}
 
-            {/* MULTI-CITY SECTION */}
             {searchParams.journeyType === 'multi-city' && (
               <div className="form-section">
                 {multiCityLegs.map((leg, index) => (
                   <div key={index} className="multi-city-leg">
                     <div className="field-row">
-                      <div className="input-group origin-group">
+                      <div 
+                        className="input-group origin-group" 
+                        ref={el => multiCityRefs.current[index * 2] = el}
+                        style={{ position: 'relative' }}
+                      >
                         <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="12" r="10"/>
                           <circle cx="12" cy="12" r="3"/>
                         </svg>
                         <input
                           type="text"
-                          value={leg.origin}
-                          onChange={(e) => handleMultiCityChange(index, 'origin', e.target.value)}
+                          value={multiCitySearchTerms[index]?.origin || ''}
+                          onChange={(e) => handleMultiCityAirportInputChange(index, 'origin', e.target.value)}
+                          onFocus={() => handleMultiCityAirportFocus(index, 'origin')}
                           placeholder="Where from?"
                           className="location-input"
+                          autoComplete="off"
                         />
+                        
+                        {activeMultiCityField?.legIndex === index && activeMultiCityField?.field === 'origin' && (
+                          <div className="airport-suggestions" ref={suggestionsRef}>
+                            {airportSearchLoading ? (
+                              <div className="airport-search-loading">
+                                Searching airports...
+                              </div>
+                            ) : multiCitySuggestions.length > 0 ? (
+                              multiCitySuggestions.map((airport, idx) => (
+                                <div
+                                  key={idx}
+                                  className="airport-suggestion-item"
+                                  onClick={() => selectMultiCityAirport(airport, index, 'origin')}
+                                >
+                                  <div className="airport-code">{airport.iataCode}</div>
+                                  <div className="airport-details">
+                                    <div className="airport-name">{airport.name}</div>
+                                    <div className="airport-location">
+                                      {airport.city}, {airport.country}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-airports-message">
+                                {multiCitySearchTerms[index]?.origin ? 'No airports found. Try a different search.' : 'Start typing to search airports worldwide...'}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <button type="button" className="swap-btn">
@@ -680,18 +761,54 @@ function FlightSearch() {
                         </svg>
                       </button>
 
-                      <div className="input-group destination-group">
+                      <div 
+                        className="input-group destination-group"
+                        ref={el => multiCityRefs.current[index * 2 + 1] = el}
+                        style={{ position: 'relative' }}
+                      >
                         <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                           <circle cx="12" cy="10" r="3"/>
                         </svg>
                         <input
                           type="text"
-                          value={leg.destination}
-                          onChange={(e) => handleMultiCityChange(index, 'destination', e.target.value)}
+                          value={multiCitySearchTerms[index]?.destination || ''}
+                          onChange={(e) => handleMultiCityAirportInputChange(index, 'destination', e.target.value)}
+                          onFocus={() => handleMultiCityAirportFocus(index, 'destination')}
                           placeholder="Where to?"
                           className="location-input"
+                          autoComplete="off"
                         />
+                        
+                        {activeMultiCityField?.legIndex === index && activeMultiCityField?.field === 'destination' && (
+                          <div className="airport-suggestions" ref={suggestionsRef}>
+                            {airportSearchLoading ? (
+                              <div className="airport-search-loading">
+                                Searching airports...
+                              </div>
+                            ) : multiCitySuggestions.length > 0 ? (
+                              multiCitySuggestions.map((airport, idx) => (
+                                <div
+                                  key={idx}
+                                  className="airport-suggestion-item"
+                                  onClick={() => selectMultiCityAirport(airport, index, 'destination')}
+                                >
+                                  <div className="airport-code">{airport.iataCode}</div>
+                                  <div className="airport-details">
+                                    <div className="airport-name">{airport.name}</div>
+                                    <div className="airport-location">
+                                      {airport.city}, {airport.country}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-airports-message">
+                                {multiCitySearchTerms[index]?.destination ? 'No airports found. Try a different search.' : 'Start typing to search airports worldwide...'}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="input-group date-group">
@@ -744,7 +861,6 @@ function FlightSearch() {
           </form>
         </div>
 
-        {/* Search Results */}
         <div className="results-container">
           {searchInfo && flights.length > 0 && (
             <div className="search-success-banner">
@@ -754,7 +870,7 @@ function FlightSearch() {
                 <div className="success-details">
                   Found {searchInfo.count} real-time {searchInfo.count === 1 ? 'flight' : 'flights'} • 
                   {searchInfo.routeInfo?.origin?.iataCode || searchInfo.routeInfo?.origin} → {searchInfo.routeInfo?.destination?.iataCode || searchInfo.routeInfo?.destination} • 
-                  From ₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString() || '0'} per adult
+                  Total from ₱{searchInfo.pricingInfo?.totalPrice?.toLocaleString() || '0'} (₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString() || '0'} per person)
                 </div>
               </div>
             </div>
@@ -820,7 +936,9 @@ function FlightSearch() {
 
                   <div className="flight-pricing">
                     <div className="price-amount">{flight.price.formatted}</div>
-                    <div className="price-label">{searchParams.cabinType}</div>
+                    <div className="price-label">
+                      {flight.price.totalPassengers} {flight.price.totalPassengers > 1 ? 'passengers' : 'passenger'} • {searchParams.cabinType}
+                    </div>
                   </div>
                 </div>
 
