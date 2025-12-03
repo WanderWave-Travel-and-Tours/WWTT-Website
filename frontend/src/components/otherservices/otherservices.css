@@ -6,13 +6,21 @@
   --os-gap: 2rem;
   --os-glass-bg: rgba(255, 255, 255, 0.08);
   --os-glass-border: rgba(255, 255, 255, 0.2);
-  
   --os-accent: #fc9c1b; 
   --os-dark-blue: #0a203b;
   --os-light-blue: #2196F3;
-
   --header-height-desktop: 130px; 
   --header-height-mobile: 90px;   
+}
+
+html, body {
+  width: 100%;
+  height: 100%; /* Gamitin ang 100% para fit sa screen */
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden; /* Bawal horizontal scroll */
+  overflow-y: auto; /* Kusa mag-scroll lang pag kailangan */
+  background-color: #0a203b;
 }
 
 .os-section {

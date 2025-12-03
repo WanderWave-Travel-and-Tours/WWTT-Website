@@ -531,3 +531,264 @@
     font-size: 0.8rem;
   }
 }
+
+/* ========================================
+   ACCORDION STYLES FOR VISA TABLE
+   ======================================== */
+
+.visa-accordion-section {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.visa-accordion-header {
+  width: 100%;
+  background: linear-gradient(135deg, #001b3e 0%, #000d1f 100%);
+  color: white;
+  border: none;
+  padding: 18px 24px;
+  border-radius: 0;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.visa-accordion-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #fc9c1b 0%, #e88a0a 100%);
+  transition: width 0.3s ease;
+}
+
+.visa-accordion-header:hover::before {
+  width: 8px;
+}
+
+.visa-accordion-header:hover {
+  background: linear-gradient(135deg, #002a5c 0%, #001b3e 100%);
+}
+
+.visa-accordion-header.active {
+  background: linear-gradient(135deg, #000d1f 0%, #000000 100%);
+  border-bottom: 2px solid #fc9c1b;
+}
+
+.visa-accordion-header.active::before {
+  width: 100%;
+  height: 2px;
+  bottom: 0;
+  top: auto;
+}
+
+.visa-accordion-title {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.visa-accordion-icon {
+  color: #fc9c1b;
+  display: flex;
+  align-items: center;
+}
+
+.visa-accordion-chevron {
+  transition: transform 0.3s ease;
+  color: #94a3b8;
+}
+
+.visa-accordion-chevron.rotate {
+  transform: rotate(180deg);
+  color: #fc9c1b;
+}
+
+.visa-accordion-count {
+  background: rgba(252, 156, 27, 0.2);
+  color: #fc9c1b;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.visa-accordion-content {
+  padding: 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  animation: visaSlideDown 0.3s ease;
+}
+
+@keyframes visaSlideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+}
+
+/* Download Forms List */
+.visa-download-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.visa-download-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.6;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.visa-download-item:hover {
+  border-color: #fc9c1b;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.15);
+}
+
+.download-icon {
+  flex-shrink: 0;
+  font-size: 1.2rem;
+}
+
+/* Steps List */
+.visa-steps-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  counter-reset: step-counter;
+}
+
+.visa-step-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.6;
+  padding: 14px 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.visa-step-item:hover {
+  border-color: #fc9c1b;
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.15);
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #fc9c1b 0%, #e88a0a 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* Mobile Responsive for Accordions */
+@media (max-width: 768px) {
+  .visa-accordion-header {
+    padding: 14px 16px;
+    font-size: 12px;
+  }
+
+  .visa-accordion-title {
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .visa-accordion-count {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .visa-accordion-content {
+    padding: 16px;
+  }
+
+  .visa-download-item,
+  .visa-step-item {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .step-number {
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .visa-accordion-header {
+    padding: 12px 14px;
+    font-size: 11px;
+  }
+
+  .visa-accordion-title {
+    font-size: 11px;
+  }
+
+  .visa-accordion-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Download Link Style */
+.download-link {
+    color: #001b3e;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.download-link:hover {
+    color: #fc9c1b;
+    text-decoration: underline;
+}

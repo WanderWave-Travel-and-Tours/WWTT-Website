@@ -21,7 +21,7 @@ import {
   Mail,
 } from "lucide-react";
 import "./OtherServices.css";
-import VisaTable from "./VisaTable";
+import VisaTable from "./VisaTable"; // Ensure this path is correct
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -94,7 +94,7 @@ const OtherServices = ({ setAuthPage }) => {
   const [showModal, setShowModal] = useState(false);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const [showVisaCountries, setShowVisaCountries] = useState(false);
-  const [selectedVisa, setSelectedVisa] = useState(null);
+  // unused state 'selectedVisa' removed for cleanup
   const [isVisaService, setIsVisaService] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState({
     title: "",
@@ -110,7 +110,7 @@ const OtherServices = ({ setAuthPage }) => {
 
   const currentMonth = new Date();
   const selectedDate = 15;
-  const totalAmount = 3599.99;
+  const totalAmount = 3599.99; // Default placeholder price
   const monthNames = [
     "January",
     "February",
@@ -126,6 +126,7 @@ const OtherServices = ({ setAuthPage }) => {
     "December",
   ];
 
+  // Hardcoded requirements for non-visa services
   const getRequirements = (title) => {
     switch (title) {
       case "Airline Booking":
@@ -289,6 +290,7 @@ const OtherServices = ({ setAuthPage }) => {
   const handleInquireClick = (item) => {
     if (item.title === "Visa Assistance") {
       setIsVisaService(true);
+      // We clear package info initially until they pick a country
       setSelectedPackage({
         title: item.title,
         desc: item.desc,
@@ -304,6 +306,7 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
+    // Handle normal services
     setIsVisaService(false);
     setSelectedPackage({
       title: item.title,
@@ -321,28 +324,42 @@ const OtherServices = ({ setAuthPage }) => {
 
   const handleViewRequirements = () => {
     if (isVisaService) {
+      // If currently on a specific visa modal, go back to list
       setShowModal(false);
       setShowVisaCountries(true);
     } else {
+      // Normal service requirements
       setShowRequirementsModal(true);
     }
   };
 
+  // --- UPDATED HANDLER TO MATCH MONGODB DATA ---
   const handleSelectVisa = (visa) => {
     setShowVisaCountries(false);
-    
+
+    // FIX 1: Map MongoDB 'description' (or fallback to 'country')
+    // This fixes the issue where title/desc were undefined
+    const packageTitle = visa.description || visa.country || "Visa Assistance";
+
+    // FIX 2: Flatten the nested requirements array from MongoDB
+    // MongoDB format is [{ title: "...", items: [...] }]
+    // We flatten this to a simple array of strings for the modal
+    const packageRequirements = visa.requirements
+      ? visa.requirements.flatMap((section) => section.items || [])
+      : [];
+
     setSelectedPackage({
-      title: visa.subtitle || visa.title,
+      title: packageTitle,
       desc: `Visa assistance for ${visa.country}`,
-      requirements: visa.requirements.flatMap(section => section.items),
+      requirements: packageRequirements,
     });
-    
+
     setFormData({
       fullName: "",
       email: "",
-      message: `I would like to inquire about ${visa.subtitle || visa.title}. `,
+      message: `I would like to inquire about ${packageTitle}. `,
     });
-    
+
     setIsVisaService(true);
     setShowModal(true);
   };
@@ -358,14 +375,15 @@ const OtherServices = ({ setAuthPage }) => {
   const handleInquirySubmit = (e) => {
     e.preventDefault();
     console.log("Inquiry submitted:", formData);
+    // Add your API call to submit inquiry here
 
     setFormData({ fullName: "", email: "", message: "" });
     setShowModal(false);
     setIsVisaService(false);
+    
+    // Optional: Redirect to login or show success message
     if (setAuthPage) {
       setAuthPage("login");
-    } else {
-      console.error("setAuthPage is still undefined.");
     }
   };
 
@@ -546,12 +564,18 @@ const OtherServices = ({ setAuthPage }) => {
             </div>
 
             <ul className="requirements-modal-list">
-              {selectedPackage.requirements.map((req, index) => (
-                <li key={index} className="requirement-modal-item">
-                  <span className="req-number">{index + 1}</span>
-                  <span className="req-text">{req}</span>
+              {selectedPackage.requirements.length > 0 ? (
+                selectedPackage.requirements.map((req, index) => (
+                  <li key={index} className="requirement-modal-item">
+                    <span className="req-number">{index + 1}</span>
+                    <span className="req-text">{req}</span>
+                  </li>
+                ))
+              ) : (
+                <li className="requirement-modal-item">
+                   <span className="req-text">No specific requirements listed.</span>
                 </li>
-              ))}
+              )}
             </ul>
           </div>
         </div>
