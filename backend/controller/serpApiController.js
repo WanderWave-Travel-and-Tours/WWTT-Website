@@ -77,6 +77,7 @@ exports.searchDomesticFlights = (req, res) => {
         return res.status(500).json({ success: false, message: json.error });
       }
 
+      // Check if raw data exists
       if (!json.best_flights && !json.other_flights) {
         return res.json({
           success: true,
@@ -91,44 +92,87 @@ exports.searchDomesticFlights = (req, res) => {
         ...(json.other_flights || [])
       ];
 
+      // 🔍 DEBUG: Log first flight to see price structure
+      if (allFlights.length > 0) {
+        console.log('🔍 Sample Flight Data:', JSON.stringify(allFlights[0], null, 2));
+      }
+
       const formattedFlights = allFlights.map((flight, index) => {
         const flightSegments = flight.flights || [];
+        if (flightSegments.length === 0) return null;
+
         const firstSegment = flightSegments[0];
         const lastSegment = flightSegments[flightSegments.length - 1];
+        
         const totalMinutes = flight.total_duration || 0;
         const hours = Math.floor(totalMinutes / 60);
         const mins = totalMinutes % 60;
         const formattedDuration = `${hours}h ${mins}m`;
+        
         const numberOfStops = flightSegments.length - 1; 
-        const departureTimeRaw = firstSegment.departure_airport.time || '';
-        const arrivalTimeRaw = lastSegment.arrival_airport.time || '';
+        
+        const departureTimeRaw = firstSegment.departure_airport?.time || '';
+        const arrivalTimeRaw = lastSegment.arrival_airport?.time || '';
         const cleanDepartureTime = departureTimeRaw.split(' ').pop(); 
         const cleanArrivalTime = arrivalTimeRaw.split(' ').pop();
-        const totalPrice = flight.price;
-        const pricePerPerson = Math.round(totalPrice / totalPassengers);
+
+        // 🛡️ IMPROVED PRICE EXTRACTION
+        let totalPrice = 0;
+        let isPriceAvailable = false;
+        
+        // Try multiple locations where price might be
+        const priceValue = flight.price || flight.rate || flight.total_price;
+        
+        if (priceValue !== undefined && priceValue !== null) {
+            if (typeof priceValue === 'number') {
+                totalPrice = priceValue;
+                isPriceAvailable = true;
+            } else if (typeof priceValue === 'string') {
+                // Remove currency symbols and non-numeric chars
+                const cleanString = priceValue.replace(/[₱,\s]/g, '');
+                totalPrice = parseFloat(cleanString) || 0;
+                isPriceAvailable = totalPrice > 0;
+            } else if (typeof priceValue === 'object' && priceValue.amount) {
+                // Sometimes price is an object with amount property
+                totalPrice = parseFloat(priceValue.amount) || 0;
+                isPriceAvailable = totalPrice > 0;
+            }
+        }
+
+        // 🔍 DEBUG: Log price extraction for each flight
+        console.log(`Flight ${index} - Airline: ${firstSegment.airline}, Raw Price:`, flight.price, 'Extracted:', totalPrice);
+
+        const safePassengers = totalPassengers > 0 ? totalPassengers : 1;
+        const pricePerPerson = Math.round(totalPrice / safePassengers);
+
+        // If no price, show "Check Price"
+        const formattedPrice = isPriceAvailable 
+          ? `₱${totalPrice.toLocaleString()}` 
+          : 'Check Price';
 
         return {
           id: `google-${index}`,
           airline: {
-            name: firstSegment.airline, 
-            code: firstSegment.airline_logo, 
-            logo: firstSegment.airline_logo
+            name: firstSegment.airline || 'Unknown Airline', 
+            code: firstSegment.airline_logo || '', 
+            logo: firstSegment.airline_logo || ''
           },
           price: {
             amount: totalPrice,
             currency: 'PHP',
-            formatted: `₱${totalPrice.toLocaleString()}`,
+            formatted: formattedPrice,
             perPerson: pricePerPerson,
-            totalPassengers: totalPassengers
+            totalPassengers: totalPassengers,
+            unavailable: !isPriceAvailable
           },
           departure: {
-            airport: firstSegment.departure_airport.name,
-            iataCode: firstSegment.departure_airport.id,
+            airport: firstSegment.departure_airport?.name || 'Unknown Airport',
+            iataCode: firstSegment.departure_airport?.id || '',
             time: cleanDepartureTime 
           },
           arrival: {
-            airport: lastSegment.arrival_airport.name,
-            iataCode: lastSegment.arrival_airport.id,
+            airport: lastSegment.arrival_airport?.name || 'Unknown Airport',
+            iataCode: lastSegment.arrival_airport?.id || '',
             time: cleanArrivalTime
           },
           duration: formattedDuration,
@@ -136,14 +180,14 @@ exports.searchDomesticFlights = (req, res) => {
           cabinClass: cabinType,
           type: multiCityLegs ? 'Multi-City' : (flight.type || 'Direct'),
           itinerary: flightSegments.map(seg => ({
-            dep: seg.departure_airport.id,
-            arr: seg.arrival_airport.id,
-            time: seg.departure_airport.time.split(' ').pop(),
+            dep: seg.departure_airport?.id,
+            arr: seg.arrival_airport?.id,
+            time: seg.departure_airport?.time?.split(' ').pop(),
             airline: seg.airline
           })),
           link: json.search_metadata?.google_flights_url 
         };
-      });
+      }).filter(flight => flight !== null); 
 
       res.json({
         success: true,
