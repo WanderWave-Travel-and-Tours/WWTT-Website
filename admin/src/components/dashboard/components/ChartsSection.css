@@ -1,0 +1,191 @@
+/* Container Layout */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 24px;
+  padding: 24px 0;
+  width: 100%;
+}
+
+/* Responsive: 2 columns on wider screens */
+@media (min-width: 1024px) {
+  .dash-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Trend chart spans full width on top */
+  .dash-section--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Card Styling */
+.dash-section {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+              0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
+}
+
+.dash-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 
+              0 4px 6px -2px rgba(0, 0, 0, 0.025);
+}
+
+/* Header Styling */
+.dash-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.dash-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dash-section-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+
+/* Icon Wrappers */
+.icon-wrapper {
+  background: #eff6ff;
+  color: #3b82f6;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-wrapper.warning {
+  background: #fff7ed;
+  color: #f97316;
+}
+
+.icon-wrapper.info {
+  background: #eef2ff;
+  color: #6366f1;
+}
+
+/* Chart Container */
+.dash-chart-container {
+  flex-grow: 1;
+  position: relative; /* For Pie chart centering */
+}
+
+/* Pie Chart Specifics */
+.pie-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.pie-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -65%); /* Adjusted slightly up */
+  text-align: center;
+  pointer-events: none;
+}
+
+.pie-total {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.pie-label {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* Status Summary (Legend below pie) */
+.dash-status-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+
+.status-name {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.status-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Custom Tooltip Styling */
+.custom-tooltip {
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.tooltip-label {
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.tooltip-item {
+  font-size: 0.85rem;
+  margin: 2px 0;
+  font-weight: 500;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+  .dash-section {
+    padding: 16px;
+  }
+  
+  .dash-section-title {
+    font-size: 1rem;
+  }
+  
+  .dash-status-summary {
+    gap: 12px;
+  }
+}
