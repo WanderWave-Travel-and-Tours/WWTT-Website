@@ -38,6 +38,8 @@ const visaRoutes = require('./routes/visaRoute');
 const serviceRoutes = require('./routes/serviceRoute');
 const psaRoutes = require('./routes/psaRoute');
 const passportRoutes = require('./routes/passportRoute');
+const inquiryRoutes = require('./routes/inquiryRoute');
+
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -53,6 +55,8 @@ app.use('/api/visas', visaRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/psa', psaRoutes);
 app.use('/api/passports', passportRoutes);
+app.use('/api/inquiries', inquiryRoutes);
+
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);

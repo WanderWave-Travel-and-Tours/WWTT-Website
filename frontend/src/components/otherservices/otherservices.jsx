@@ -90,10 +90,10 @@ const UniversalInquiryForm = ({
 const OtherServices = ({ setAuthPage }) => {
   const sliderRef = useRef(null);
 
-  // NEW: Add services state and loading
+  // NEW: Fetch services from database
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [showModal, setShowModal] = useState(false);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const [showVisaCountries, setShowVisaCountries] = useState(false);
@@ -103,6 +103,8 @@ const OtherServices = ({ setAuthPage }) => {
     desc: "",
     requirements: [],
     price: 3599.99,
+    visaCountry: null,
+    serviceId: null,
   });
 
   const [formData, setFormData] = useState({
@@ -111,7 +113,6 @@ const OtherServices = ({ setAuthPage }) => {
     message: "",
   });
 
-  // Icon mapping - Match database icon names to React components
   const iconMap = {
     Plane: <Plane size={24} />,
     Hotel: <Hotel size={24} />,
@@ -136,7 +137,6 @@ const OtherServices = ({ setAuthPage }) => {
   const backgroundImage =
     "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop";
 
-  // NEW: Fetch services from database
   useEffect(() => {
     fetchServices();
   }, []);
@@ -147,19 +147,19 @@ const OtherServices = ({ setAuthPage }) => {
       const data = await response.json();
       
       if (data.success) {
-        // Transform data to include icon components
         const transformedServices = data.data.map(service => ({
-          ...service,
+          _id: service._id, 
           icon: iconMap[service.icon] || <Globe size={24} />,
+          title: service.title,
+          desc: service.description,
           img: service.image,
-          desc: service.description
+          price: service.price,
+          requirements: service.requirements || []
         }));
         setServices(transformedServices);
       }
     } catch (error) {
       console.error('Error fetching services:', error);
-      // Fallback to empty array on error
-      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -185,7 +185,9 @@ const OtherServices = ({ setAuthPage }) => {
         title: item.title,
         desc: item.desc,
         requirements: [],
-        price: item.price || 3599.99,
+        price: item.price || 4999.99,
+        visaCountry: null,
+        serviceId: item._id, 
       });
       setFormData({
         fullName: "",
@@ -197,13 +199,14 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Handle normal services - use requirements from database
     setIsVisaService(false);
     setSelectedPackage({
       title: item.title,
       desc: item.desc,
       requirements: item.requirements || [],
       price: item.price || 3599.99,
+      visaCountry: null,
+      serviceId: item._id, 
     });
     setFormData({
       fullName: "",
@@ -231,11 +234,15 @@ const OtherServices = ({ setAuthPage }) => {
       ? visa.requirements.flatMap((section) => section.items || [])
       : [];
 
+    const visaService = services.find(s => s.title === "Visa Assistance");
+
     setSelectedPackage({
       title: packageTitle,
       desc: `Visa assistance for ${visa.country}`,
       requirements: packageRequirements,
       price: visa.price || 3749.00,
+      visaCountry: visa.country,
+      serviceId: visaService?._id,
     });
 
     setFormData({
@@ -256,20 +263,51 @@ const OtherServices = ({ setAuthPage }) => {
     }));
   };
 
-  const handleInquirySubmit = (e) => {
+  const handleInquirySubmit = async (e) => {
     e.preventDefault();
-    console.log("Inquiry submitted:", formData);
-
-    setFormData({ fullName: "", email: "", message: "" });
-    setShowModal(false);
-    setIsVisaService(false);
     
-    if (setAuthPage) {
-      setAuthPage("login");
+    try {
+      const inquiryData = {
+        serviceId: selectedPackage.serviceId, 
+        serviceName: selectedPackage.title,
+        fullName: formData.fullName,
+        email: formData.email,
+        message: formData.message,
+        estimatedPrice: selectedPackage.price || 3599.99
+      };
+
+      if (isVisaService && selectedPackage.visaCountry) {
+        inquiryData.visaCountry = selectedPackage.visaCountry;
+      }
+
+      console.log('Submitting inquiry:', inquiryData);
+
+      const response = await fetch('http://localhost:5000/api/inquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(inquiryData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.message || 'Inquiry submitted successfully! We will contact you within 24 hours.');
+        
+        setFormData({ fullName: "", email: "", message: "" });
+        setShowModal(false);
+        setIsVisaService(false);
+      } else {
+        alert(data.message || 'Failed to submit inquiry. Please try again.');
+      }
+
+    } catch (error) {
+      console.error('Submit inquiry error:', error);
+      alert('Cannot connect to server. Please try again.');
     }
   };
 
-  // Show loading state
   if (loading) {
     return (
       <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
@@ -340,7 +378,6 @@ const OtherServices = ({ setAuthPage }) => {
         <div className="os-swipe-hint">Swipe to explore services</div>
       </div>
 
-      {/* Main Inquiry Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card modal-two-column">
@@ -389,7 +426,7 @@ const OtherServices = ({ setAuthPage }) => {
                   <div className="summary-item">
                     <span className="summary-label">Estimated Price</span>
                     <strong className="summary-value price">
-                      ₱{selectedPackage.price.toLocaleString("en-US", {
+                      ₱{(selectedPackage.price || 3599.99).toLocaleString("en-US", {
                         minimumFractionDigits: 2,
                       })}
                     </strong>
@@ -431,7 +468,6 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
-      {/* Regular Service Requirements Modal */}
       {showRequirementsModal && !isVisaService && (
         <div
           className="modal-overlay"
@@ -476,7 +512,6 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
-      {/* Visa Countries Grid Modal */}
       {showVisaCountries && (
         <div
           className="modal-overlay"
