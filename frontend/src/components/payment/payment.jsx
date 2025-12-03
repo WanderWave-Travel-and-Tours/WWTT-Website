@@ -25,12 +25,11 @@ const Payment = () => {
     setIsProcessing(true);
 
     try {
-      // Step 1: Create Payment Intent
       const response = await fetch('http://localhost:5000/api/payment/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: bookingData.totalAmount * 100, // Convert to centavos
+          amount: bookingData.totalAmount * 100, 
           description: `Booking for ${bookingData.packageName}`,
           bookingData: bookingData
         })
@@ -39,7 +38,6 @@ const Payment = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Step 2: Redirect to PayMongo checkout
         window.location.href = data.checkoutUrl;
       } else {
         throw new Error(data.message || 'Payment creation failed');
@@ -55,9 +53,7 @@ const Payment = () => {
   return (
     <div className="payment-page">
       <Toaster position="top-center" reverseOrder={false} />
-      
       <div className="payment-container">
-        {/* Back Button */}
         <button 
           className="back-button"
           onClick={() => navigate(-1)}
@@ -67,10 +63,7 @@ const Payment = () => {
           Back to Booking
         </button>
 
-        {/* Payment Card */}
         <div className="payment-card">
-          
-          {/* Header */}
           <div className="payment-header">
             <div className="payment-logo">
               <img 
@@ -82,10 +75,8 @@ const Payment = () => {
             <p className="payment-subtitle">You're almost there! Secure your booking now.</p>
           </div>
 
-          {/* Booking Summary */}
           <div className="booking-summary-card">
             <h3 className="summary-title">Booking Summary</h3>
-            
             <div className="summary-details">
               <div className="summary-row">
                 <span className="summary-label">Package</span>
@@ -113,7 +104,6 @@ const Payment = () => {
               </div>
 
               <div className="summary-divider"></div>
-              
               <div className="summary-row total-row">
                 <span className="summary-label">Total Amount</span>
                 <strong className="total-amount">₱{bookingData.totalAmount.toLocaleString()}</strong>
@@ -121,10 +111,8 @@ const Payment = () => {
             </div>
           </div>
 
-          {/* Payment Method Selection */}
           <div className="payment-method-section">
             <h3 className="section-title">Select Payment Method</h3>
-            
             <div className="payment-methods">
               <button 
                 className={`payment-method-btn ${paymentMethod === 'card' ? 'active' : ''}`}
@@ -157,14 +145,10 @@ const Payment = () => {
               </button>
             </div>
           </div>
-
-          {/* Security Info */}
           <div className="security-info">
             <Shield size={20} color="#10b981" />
             <span>Your payment is secured with PayMongo SSL encryption</span>
           </div>
-
-          {/* Pay Button */}
           <button 
             className="pay-now-btn"
             onClick={handlePayment}

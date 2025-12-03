@@ -36,8 +36,6 @@ function FlightSearch() {
   const [searchInfo, setSearchInfo] = useState(null);
   const [showPassengers, setShowPassengers] = useState(false);
   const [showCabin, setShowCabin] = useState(false);
-
-  // Airport search states
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
@@ -45,11 +43,17 @@ function FlightSearch() {
   const [airportSearchLoading, setAirportSearchLoading] = useState(false);
   const [originSearchTerm, setOriginSearchTerm] = useState('');
   const [destinationSearchTerm, setDestinationSearchTerm] = useState('');
-  
+  const [multiCitySearchTerms, setMultiCitySearchTerms] = useState([
+    { origin: '', destination: '' },
+    { origin: '', destination: '' }
+  ]);
+  const [multiCitySuggestions, setMultiCitySuggestions] = useState([]);
+  const [activeMultiCityField, setActiveMultiCityField] = useState(null);
   const originRef = useRef(null);
   const destinationRef = useRef(null);
   const suggestionsRef = useRef(null);
   const searchTimerRef = useRef(null);
+  const multiCityRefs = useRef([]);
 
   function getTomorrowDate() {
     const tomorrow = new Date();
@@ -89,16 +93,20 @@ function FlightSearch() {
 
         if (field === 'origin') {
           setOriginSuggestions(airports);
-        } else {
+        } else if (field === 'destination') {
           setDestinationSuggestions(airports);
+        } else if (field === 'multi-city') {
+          setMultiCitySuggestions(airports);
         }
       }
     } catch (error) {
       console.error('Airport search error:', error);
       if (field === 'origin') {
         setOriginSuggestions([]);
-      } else {
+      } else if (field === 'destination') {
         setDestinationSuggestions([]);
+      } else if (field === 'multi-city') {
+        setMultiCitySuggestions([]);
       }
     } finally {
       setAirportSearchLoading(false);
@@ -155,8 +163,50 @@ function FlightSearch() {
     debouncedSearch(value, field);
   };
 
+  const handleMultiCityAirportFocus = async (legIndex, field) => {
+    setActiveMultiCityField({ legIndex, field });
+    const currentValue = multiCitySearchTerms[legIndex]?.[field] || '';
+    
+    if (multiCitySuggestions.length === 0 || currentValue) {
+      await searchAirportsFromAPI(currentValue, 'multi-city');
+    }
+  };
+
+  const handleMultiCityAirportInputChange = (legIndex, field, value) => {
+    const newSearchTerms = [...multiCitySearchTerms];
+    if (!newSearchTerms[legIndex]) {
+      newSearchTerms[legIndex] = { origin: '', destination: '' };
+    }
+    newSearchTerms[legIndex][field] = value;
+    setMultiCitySearchTerms(newSearchTerms);
+
+    const newLegs = [...multiCityLegs];
+    newLegs[legIndex][field] = value.toUpperCase();
+    setMultiCityLegs(newLegs);
+    setActiveMultiCityField({ legIndex, field });
+    debouncedSearch(value, 'multi-city');
+  };
+
+  const selectMultiCityAirport = (airport, legIndex, field) => {
+    const iataCode = airport.iataCode;
+    const displayName = `${airport.city} (${iataCode})`;
+
+    const newSearchTerms = [...multiCitySearchTerms];
+    if (!newSearchTerms[legIndex]) {
+      newSearchTerms[legIndex] = { origin: '', destination: '' };
+    }
+    newSearchTerms[legIndex][field] = displayName;
+    setMultiCitySearchTerms(newSearchTerms);
+
+    const newLegs = [...multiCityLegs];
+    newLegs[legIndex][field] = iataCode;
+    setMultiCityLegs(newLegs);
+    setActiveMultiCityField(null);
+  };
+
   const selectAirport = (airport, field) => {
     const iataCode = airport.iataCode;
+    const displayName = `${airport.city} (${iataCode})`;
 
     if (searchParams.journeyType === 'one-way') {
       setOneWayData({ ...oneWayData, [field]: iataCode });
@@ -165,9 +215,9 @@ function FlightSearch() {
     }
 
     if (field === 'origin') {
-      setOriginSearchTerm(iataCode);
+      setOriginSearchTerm(displayName);
     } else {
-      setDestinationSearchTerm(iataCode);
+      setDestinationSearchTerm(displayName);
     }
 
     setShowOriginSuggestions(false);
@@ -183,6 +233,10 @@ function FlightSearch() {
       ) {
         setShowOriginSuggestions(false);
         setShowDestinationSuggestions(false);
+      }
+      const clickedInMultiCity = multiCityRefs.current.some(ref => ref && ref.contains(event.target));
+      if (!clickedInMultiCity && suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setActiveMultiCityField(null);
       }
     };
 
@@ -234,11 +288,37 @@ function FlightSearch() {
         departureDate: roundTripData.departureDate,
         returnDate: roundTripData.returnDate
       };
+    } else if (searchParams.journeyType === 'multi-city') {
+      for (let i = 0; i < multiCityLegs.length; i++) {
+        const leg = multiCityLegs[i];
+        if (!leg.origin || !leg.destination) {
+          setError(`Please fill in origin and destination for flight ${i + 1}`);
+          setLoading(false);
+          return;
+        }
+        if (!leg.departureDate) {
+          setError(`Please select departure date for flight ${i + 1}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      searchData = {
+        multiCityLegs: JSON.stringify(multiCityLegs)
+      };
     }
 
     try {
+      const totalPassengers = getTotalPassengers();
+      
       const response = await axios.get('http://localhost:5000/api/flights/search-domestic', {
-        params: { ...searchData }
+        params: { 
+          ...searchData,
+          adults: searchParams.adults,
+          children: searchParams.children,
+          infants: searchParams.infants,
+          cabinType: searchParams.cabinType
+        }
       });
 
       let allFlights = [];
@@ -268,13 +348,15 @@ function FlightSearch() {
         setSearchInfo({
           source: 'Google Flights',
           count: allFlights.length,
-          disclaimer: '✅ Results exclusively from Google Flights (Domestic Data)',
+          disclaimer: `✅ ${allFlights.length} ${searchParams.cabinType} flight${allFlights.length > 1 ? 's' : ''} for ${totalPassengers} passenger${totalPassengers > 1 ? 's' : ''}`,
           routeInfo: {
             origin: searchData.origin,
             destination: searchData.destination
           },
           pricingInfo: {
-             pricePerAdult: allFlights[0].price.amount 
+             pricePerAdult: allFlights[0].price.perPerson,
+             totalPrice: allFlights[0].price.amount,
+             passengers: totalPassengers
           }
         });
       } else {
@@ -299,12 +381,15 @@ function FlightSearch() {
 
   const addMultiCityLeg = () => {
     setMultiCityLegs([...multiCityLegs, { origin: '', destination: '', departureDate: getTomorrowDate() }]);
+    setMultiCitySearchTerms([...multiCitySearchTerms, { origin: '', destination: '' }]);
   };
 
   const removeMultiCityLeg = (index) => {
     if (multiCityLegs.length > 2) {
       const newLegs = multiCityLegs.filter((_, i) => i !== index);
+      const newSearchTerms = multiCitySearchTerms.filter((_, i) => i !== index);
       setMultiCityLegs(newLegs);
+      setMultiCitySearchTerms(newSearchTerms);
     }
   };
 
@@ -520,7 +605,6 @@ function FlightSearch() {
                   )}
                 </div>
 
-
                 <div className="passengers-cabin-row">
                   <div className="input-group passengers-group" onClick={() => setShowPassengers(!showPassengers)}>
                     <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -601,7 +685,6 @@ function FlightSearch() {
                   </div>
                 </div>
 
-
                 <div className="search-btn-container">
                   <button type="submit" disabled={loading} className="search-btn">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -619,18 +702,54 @@ function FlightSearch() {
                 {multiCityLegs.map((leg, index) => (
                   <div key={index} className="multi-city-leg">
                     <div className="field-row">
-                      <div className="input-group origin-group">
+                      <div 
+                        className="input-group origin-group" 
+                        ref={el => multiCityRefs.current[index * 2] = el}
+                        style={{ position: 'relative' }}
+                      >
                         <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="12" r="10"/>
                           <circle cx="12" cy="12" r="3"/>
                         </svg>
                         <input
                           type="text"
-                          value={leg.origin}
-                          onChange={(e) => handleMultiCityChange(index, 'origin', e.target.value)}
+                          value={multiCitySearchTerms[index]?.origin || ''}
+                          onChange={(e) => handleMultiCityAirportInputChange(index, 'origin', e.target.value)}
+                          onFocus={() => handleMultiCityAirportFocus(index, 'origin')}
                           placeholder="Where from?"
                           className="location-input"
+                          autoComplete="off"
                         />
+                        
+                        {activeMultiCityField?.legIndex === index && activeMultiCityField?.field === 'origin' && (
+                          <div className="airport-suggestions" ref={suggestionsRef}>
+                            {airportSearchLoading ? (
+                              <div className="airport-search-loading">
+                                Searching airports...
+                              </div>
+                            ) : multiCitySuggestions.length > 0 ? (
+                              multiCitySuggestions.map((airport, idx) => (
+                                <div
+                                  key={idx}
+                                  className="airport-suggestion-item"
+                                  onClick={() => selectMultiCityAirport(airport, index, 'origin')}
+                                >
+                                  <div className="airport-code">{airport.iataCode}</div>
+                                  <div className="airport-details">
+                                    <div className="airport-name">{airport.name}</div>
+                                    <div className="airport-location">
+                                      {airport.city}, {airport.country}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-airports-message">
+                                {multiCitySearchTerms[index]?.origin ? 'No airports found. Try a different search.' : 'Start typing to search airports worldwide...'}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <button type="button" className="swap-btn">
@@ -642,18 +761,54 @@ function FlightSearch() {
                         </svg>
                       </button>
 
-                      <div className="input-group destination-group">
+                      <div 
+                        className="input-group destination-group"
+                        ref={el => multiCityRefs.current[index * 2 + 1] = el}
+                        style={{ position: 'relative' }}
+                      >
                         <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                           <circle cx="12" cy="10" r="3"/>
                         </svg>
                         <input
                           type="text"
-                          value={leg.destination}
-                          onChange={(e) => handleMultiCityChange(index, 'destination', e.target.value)}
+                          value={multiCitySearchTerms[index]?.destination || ''}
+                          onChange={(e) => handleMultiCityAirportInputChange(index, 'destination', e.target.value)}
+                          onFocus={() => handleMultiCityAirportFocus(index, 'destination')}
                           placeholder="Where to?"
                           className="location-input"
+                          autoComplete="off"
                         />
+                        
+                        {activeMultiCityField?.legIndex === index && activeMultiCityField?.field === 'destination' && (
+                          <div className="airport-suggestions" ref={suggestionsRef}>
+                            {airportSearchLoading ? (
+                              <div className="airport-search-loading">
+                                Searching airports...
+                              </div>
+                            ) : multiCitySuggestions.length > 0 ? (
+                              multiCitySuggestions.map((airport, idx) => (
+                                <div
+                                  key={idx}
+                                  className="airport-suggestion-item"
+                                  onClick={() => selectMultiCityAirport(airport, index, 'destination')}
+                                >
+                                  <div className="airport-code">{airport.iataCode}</div>
+                                  <div className="airport-details">
+                                    <div className="airport-name">{airport.name}</div>
+                                    <div className="airport-location">
+                                      {airport.city}, {airport.country}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-airports-message">
+                                {multiCitySearchTerms[index]?.destination ? 'No airports found. Try a different search.' : 'Start typing to search airports worldwide...'}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="input-group date-group">
@@ -715,7 +870,7 @@ function FlightSearch() {
                 <div className="success-details">
                   Found {searchInfo.count} real-time {searchInfo.count === 1 ? 'flight' : 'flights'} • 
                   {searchInfo.routeInfo?.origin?.iataCode || searchInfo.routeInfo?.origin} → {searchInfo.routeInfo?.destination?.iataCode || searchInfo.routeInfo?.destination} • 
-                  From ₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString() || '0'} per adult
+                  Total from ₱{searchInfo.pricingInfo?.totalPrice?.toLocaleString() || '0'} (₱{searchInfo.pricingInfo?.pricePerAdult?.toLocaleString() || '0'} per person)
                 </div>
               </div>
             </div>
@@ -781,7 +936,9 @@ function FlightSearch() {
 
                   <div className="flight-pricing">
                     <div className="price-amount">{flight.price.formatted}</div>
-                    <div className="price-label">{searchParams.cabinType}</div>
+                    <div className="price-label">
+                      {flight.price.totalPassengers} {flight.price.totalPassengers > 1 ? 'passengers' : 'passenger'} • {searchParams.cabinType}
+                    </div>
                   </div>
                 </div>
 
