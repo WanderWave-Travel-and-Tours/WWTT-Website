@@ -34,6 +34,7 @@ const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
 const authRoute = require('./routes/authRoute');
 const tourRoutes = require('./routes/tourRoutes'); 
+const visaRoutes = require('./routes/visaRoute');
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -45,6 +46,7 @@ app.use('/api/payment', paymentRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/tours', tourRoutes); 
+app.use('/api/visas', visaRoutes);
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
@@ -59,6 +61,39 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+
+// File Upload for Visa Forms - ADD THIS NEW ROUTE
+app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'No file uploaded' 
+            });
+        }
+
+        const fileUrl = `/uploads/${req.file.filename}`;
+        const fileName = req.file.originalname;
+
+        console.log('✅ Visa file uploaded:', fileName);
+
+        res.status(200).json({
+            success: true,
+            message: 'File uploaded successfully',
+            data: {
+                fileName: fileName,
+                fileUrl: fileUrl
+            }
+        });
+    } catch (error) {
+        console.error('❌ Upload error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'File upload failed', 
+            error: error.message 
+        });
+    }
+});
 
 const PackageModel = require('./models/package');
 const Booking = require('./models/booking');

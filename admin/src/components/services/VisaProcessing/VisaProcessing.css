@@ -21,23 +21,16 @@ body {
 
 /* MAIN CONTENT AREA */
 .visa-main {
-    /* Space for Sidebar */
     margin-left: 260px; 
     width: calc(100% - 260px);
-    
-    /* LARGE SCREEN: Increased side padding to 60px */
     padding: 40px 120px; 
-    
     min-height: 100vh;
     transition: all 0.3s ease;
 }
 
-/* COLLAPSED SIDEBAR STATE */
 .visa-main.expanded { 
     margin-left: 80px !important; 
     width: calc(100% - 80px) !important;
-    
-    /* Consistent padding with main view */
     padding: 30px 60px; 
 }
 
@@ -74,6 +67,11 @@ body {
     margin: 4px 0 0 0;
 }
 
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
 .visa-btn-add {
     background-color: #f97316;
     color: white;
@@ -89,6 +87,21 @@ body {
     box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
 }
 .visa-btn-add:hover { background-color: #ea580c; transform: translateY(-1px); }
+
+.visa-btn-edit-req {
+    background-color: white;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.visa-btn-edit-req:hover { background-color: #f1f5f9; border-color: #cbd5e1; }
 
 /* --- STATS CARDS --- */
 .visa-stats-grid {
@@ -194,35 +207,957 @@ body {
 .visa-view-btn { color: #0f172a; margin-right: 8px; }
 .visa-view-btn:hover { background: #f1f5f9; border-color: #0f172a; color: #0f172a; }
 
-/* =========================================
-   RESPONSIVE BREAKPOINTS (PRESERVED)
-   ========================================= */
+/* --- MODAL CSS --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    animation: fadeIn 0.2s forwards;
+}
 
-/* Tablet / Smaller Screens */
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.95);
+    animation: scaleIn 0.2s 0.1s forwards;
+}
+
+.modal-content-large {
+    max-width: 900px; 
+}
+
+.modal-header {
+    padding: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background-color: #fff;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+.modal-close-btn:hover { background-color: #e2e8f0; color: #0f172a; }
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.bg-gray {
+    background-color: #f8fafc;
+}
+
+/* --- VISA FORMS LIST STYLES --- */
+.visa-forms-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.visa-form-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow 0.2s;
+}
+.visa-form-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.visa-form-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Flag Circle for Modal List */
+.visa-flag-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Small Flag Circle for Table */
+.visa-flag-circle-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* The Image itself */
+.visa-flag-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.visa-form-info h3 {
+    margin: 0 0 4px 0;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.visa-desc {
+    margin: 0 0 4px 0;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.visa-price {
+    margin: 0;
+    color: #f59e0b; 
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.visa-form-edit-btn {
+    background-color: #0f172a;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+.visa-form-edit-btn:hover {
+    background-color: #1e293b;
+}
+
+/* --- CHECKLIST EDITOR STYLES --- */
+.req-category { 
+    margin-bottom: 24px; 
+    background: #f8fafc; 
+    border-radius: 8px; 
+    border: 1px solid #e2e8f0; 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+/* Header Bar - Now a Flex container for Title + Delete Btn */
+.req-category-header { 
+    background-color: #f1f5f9; 
+    padding: 12px 20px; 
+    border-bottom: 1px solid #e2e8f0; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Input for Editable Title */
+.req-header-input {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 100%;
+    padding: 4px 8px;
+    margin-left: -8px; /* Alignment fix */
+    transition: all 0.2s;
+}
+.req-header-input:focus {
+    background: white;
+    border-color: #cbd5e1;
+    outline: none;
+}
+.req-header-input:hover {
+    background: #e2e8f0;
+}
+
+/* Delete Button for Category Header */
+.req-header-delete-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+.req-header-delete-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.req-list { 
+    padding: 16px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+}
+
+/* List Item Row */
+.req-item-editable { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+}
+
+.req-input-text { 
+    flex: 1; 
+    padding: 12px 16px; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 6px; 
+    font-size: 14px; 
+    color: #334155; 
+    font-family: inherit; 
+    background-color: white;
+    transition: border-color 0.2s; 
+}
+.req-input-text:focus { 
+    outline: none; 
+    border-color: #f97316; 
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1); 
+}
+
+/* Trash Icon Style for Items */
+.req-delete-btn { 
+    background: transparent; 
+    border: none; 
+    color: #94a3b8; 
+    cursor: pointer; 
+    padding: 8px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: color 0.2s; 
+}
+.req-delete-btn:hover { 
+    color: #ef4444; 
+}
+
+/* Add Item Button (Dashed Style - Inside Category) */
+.req-category-footer { 
+    padding: 0 16px 16px 16px; 
+    background-color: transparent; 
+    border: none;
+}
+
+.req-add-btn { 
+    background: white; 
+    border: 2px dashed #cbd5e1; 
+    color: #64748b; 
+    padding: 12px; 
+    border-radius: 6px; 
+    font-size: 14px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    width: 100%; 
+    justify-content: center; 
+    transition: all 0.2s; 
+}
+.req-add-btn:hover { 
+    border-color: #94a3b8; 
+    color: #475569; 
+    background-color: #f8fafc;
+}
+
+/* Add Group Button (Bottom of Modal - New Style) */
+.req-add-group-btn {
+    background-color: #f8fafc;
+    border: 2px dashed #94a3b8;
+    color: #475569;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 8px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.req-add-group-btn:hover {
+    background-color: #f1f5f9;
+    border-color: #64748b;
+    color: #0f172a;
+}
+
+.modal-save-btn {
+    background-color: #0f172a;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.modal-save-btn:hover { background-color: #1e293b; }
+
+.modal-cancel-btn {
+    background-color: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.modal-cancel-btn:hover { background-color: #f8fafc; color: #0f172a; }
+
+.modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background-color: white;
+    border-radius: 0 0 16px 16px;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* RESPONSIVE */
 @media (max-width: 1024px) {
-    .visa-main {
-        /* Kept smaller padding for tablets as requested */
-        padding: 30px; 
-    }
-    /* Ensure expanded state matches tablet padding */
-    .visa-main.expanded {
-        padding: 30px;
-    }
+    .visa-main { padding: 30px; }
+    .visa-main.expanded { padding: 30px; }
+    .visa-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
 
-    .visa-stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+@media (max-width: 640px) {
+    .visa-main { margin-left: 0 !important; width: 100% !important; padding: 20px; }
+    .visa-stats-grid { grid-template-columns: 1fr; }
+    .visa-header { flex-direction: column; align-items: flex-start; }
+    .header-actions { width: 100%; flex-direction: column; }
+    .visa-btn-add, .visa-btn-edit-req { width: 100%; justify-content: center; }
+    .modal-content { height: 100vh; max-height: 100vh; border-radius: 0; }
+    .visa-form-card { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .visa-form-edit-btn { width: 100%; justify-content: center; }
+}
+
+/* ADD NEW VISA FORM STYLES */
+.add-visa-toggle-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+.add-visa-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
+}
+
+.add-visa-form-container {
+    background: white;
+    border: 2px solid #f97316;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.1);
+}
+
+.add-visa-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.add-visa-form-header h3 {
+    margin: 0;
+    color: #f97316;
+    font-size: 18px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-close-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+.form-close-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.add-visa-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group-full {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Flag Code Dropdown Styles */
+.form-group select {
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #334155;
+    font-family: inherit;
+    background-color: #f8fafc;
+    transition: all 0.2s;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+.form-group select:focus {
+    outline: none;
+    border-color: #f97316;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.add-visa-form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.form-cancel-btn {
+    padding: 10px 20px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.form-cancel-btn:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.form-save-btn {
+    padding: 10px 20px;
+    background: #f97316;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+.form-save-btn:hover {
+    background: #ea580c;
+}
+
+/* UPDATE VISA FORM CARD */
+.visa-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.visa-form-delete-btn {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #94a3b8;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+.visa-form-delete-btn:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+    .add-visa-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .add-visa-form-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .form-cancel-btn, .form-save-btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 
-/* Mobile Screens */
-@media (max-width: 640px) {
-    .visa-main { 
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 20px; 
+/* Flag Dropdown Styles */
+.flag-dropdown-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+}
+
+.flag-dropdown-flag {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.flag-dropdown-flag img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.flag-dropdown-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.flag-dropdown-country {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.flag-dropdown-code {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+select.form-group-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+.form-helper-text {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* ACCORDION STYLES - MODERN PREMIUM DESIGN */
+.accordion-section {
+    margin-bottom: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.accordion-header {
+    width: 100%;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white;
+    border: none;
+    padding: 20px 28px;
+    border-radius: 0;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.accordion-header::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+    transition: width 0.3s ease;
+}
+
+.accordion-header:hover::before {
+    width: 8px;
+}
+
+.accordion-header:hover {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+.accordion-header.active {
+    background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+    border-bottom: 2px solid #f97316;
+}
+
+.accordion-header.active::before {
+    width: 100%;
+    height: 2px;
+    bottom: 0;
+    top: auto;
+}
+
+.accordion-title {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.accordion-icon {
+    color: #f97316;
+    display: flex;
+    align-items: center;
+}
+
+.accordion-chevron {
+    transition: transform 0.3s ease;
+    color: #94a3b8;
+}
+
+.accordion-chevron.rotate {
+    transform: rotate(180deg);
+    color: #f97316;
+}
+
+.accordion-content {
+    padding: 28px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-top: none;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
     }
-    
-    .visa-stats-grid { grid-template-columns: 1fr; }
-    .visa-header { flex-direction: column; align-items: flex-start; }
-    .visa-btn-add { width: 100%; justify-content: center; }
+    to {
+        opacity: 1;
+        max-height: 2000px;
+        padding-top: 28px;
+        padding-bottom: 28px;
+    }
+}
+
+/* Simple List Styles (for Download Forms & Steps) */
+.simple-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.simple-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.simple-list-item input {
+    background: white !important;
+}
+
+/* Enhanced Button Styles for Accordion Content */
+.accordion-content .req-add-btn,
+.accordion-content .req-add-group-btn {
+    background: white;
+    border: 2px solid #cbd5e1;
+    color: #475569;
+    font-weight: 700;
+    transition: all 0.3s;
+}
+
+.accordion-content .req-add-btn:hover,
+.accordion-content .req-add-group-btn:hover {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border-color: #f97316;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+/* Section Counter Badge */
+.accordion-count {
+    background: rgba(249, 115, 22, 0.2);
+    color: #f97316;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+/* DOWNLOAD FORMS WITH FILE UPLOAD */
+.download-form-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.download-form-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.file-upload-btn {
+    background: linear-gradient(135deg, #001b3e 0%, #000d1f 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.file-upload-btn:hover {
+    background: linear-gradient(135deg, #002a5c 0%, #001b3e 100%);
+    transform: translateY(-1px);
+}
+
+.uploaded-file-info {
+    font-size: 12px;
+    color: #64748b;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    margin-left: 4px;
+}
+
+/* STEPS WITH NUMBERING */
+.step-item-editable {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.step-number-badge {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+/* UPLOADED FORMS LIST */
+.uploaded-forms-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.uploaded-form-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.uploaded-form-card:hover {
+    border-color: #001b3e;
+    box-shadow: 0 2px 8px rgba(0, 27, 62, 0.1);
+}
+
+.uploaded-form-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.uploaded-form-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.uploaded-form-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* UPLOAD DOWNLOAD FORM BUTTON */
+.upload-download-form-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #001b3e 0%, #000d1f 100%);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0, 27, 62, 0.3);
+}
+
+.upload-download-form-btn:hover {
+    background: linear-gradient(135deg, #002a5c 0%, #001b3e 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 27, 62, 0.4);
 }
