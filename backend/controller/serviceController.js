@@ -3,7 +3,7 @@ const Service = require('../models/service');
 // Get all services
 const getAllServices = async (req, res) => {
   try {
-    const services = await Service.find({ isActive: true }).sort({ category: 1, name: 1 });
+    const services = await Service.find({ isActive: true }).sort({ order: 1, title: 1 });
     res.json({
       success: true,
       count: services.length,
@@ -22,7 +22,7 @@ const getServicesByCategory = async (req, res) => {
     const services = await Service.find({ 
       category: category.toUpperCase(), 
       isActive: true 
-    });
+    }).sort({ order: 1, title: 1 });
     
     res.json({
       success: true,

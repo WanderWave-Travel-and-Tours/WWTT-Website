@@ -1,24 +1,40 @@
 const mongoose = require('mongoose');
 
 const serviceSchema = new mongoose.Schema({
-  name: {
+  title: {
     type: String,
     required: true,
+    unique: true,
     trim: true
-  },
-  category: {
-    type: String,
-    required: true,
-    enum: ['LOCAL', 'INTERNATIONAL', 'DOCUMENTATION', 'OTHERS']
   },
   description: {
     type: String,
     required: true
   },
   icon: {
-    type: String, // Icon name or URL
-    default: 'service'
+    type: String,
+    required: true
   },
+  image: {
+    type: String,
+    required: true
+  },
+  category: {
+    type: String,
+    enum: ['TRAVEL', 'DOCUMENTATION', 'FINANCIAL', 'OTHER'],
+    required: true
+  },
+  hasSubCollection: {
+    type: Boolean,
+    default: false
+  },
+  subCollectionName: {
+    type: String,
+    default: null
+  },
+  requirements: [{
+    type: String
+  }],
   price: {
     type: Number,
     default: 0
@@ -27,9 +43,9 @@ const serviceSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  featured: {
-    type: Boolean,
-    default: false
+  order: {
+    type: Number,
+    default: 0
   },
   createdAt: {
     type: Date,
