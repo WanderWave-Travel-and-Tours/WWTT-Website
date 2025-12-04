@@ -11,6 +11,7 @@ const UserDashboard = ({ user, onLogout }) => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [visaDetails, setVisaDetails] = useState(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // For responsive menu
 
     useEffect(() => {
         const fetchInquiries = async () => {
@@ -22,6 +23,10 @@ const UserDashboard = ({ user, onLogout }) => {
                 if (data.success) {
                     console.log('✅ Inquiries loaded:', data.data);
                     setInquiries(data.data);
+                    // Select first inquiry by default if available
+                    if (data.data.length > 0 && !selectedInquiry) {
+                        setSelectedInquiry(data.data[0]);
+                    }
                 } else {
                     console.error('Failed to fetch inquiries:', data.message);
                 }
@@ -35,7 +40,7 @@ const UserDashboard = ({ user, onLogout }) => {
         if (user?.email) {
             fetchInquiries();
         }
-    }, [user]);
+    }, [user, selectedInquiry]);
 
     useEffect(() => {
         const fetchVisaDetails = async () => {
@@ -43,7 +48,6 @@ const UserDashboard = ({ user, onLogout }) => {
                 try {
                     const response = await axios.get(`http://localhost:5000/api/visas/${selectedInquiry.visaId}`);
                     if (response.data) {
-                        console.log('✅ Visa details loaded:', response.data);
                         setVisaDetails(response.data);
                     }
                 } catch (error) {
@@ -92,8 +96,8 @@ const UserDashboard = ({ user, onLogout }) => {
     const handleFiles = async (files, section) => {
         setIsUploading(true);
         
-        for (let i = 0; i <= 100; i += 10) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+        for (let i = 0; i <= 100; i += 20) {
+            await new Promise(resolve => setTimeout(resolve, 50));
             setUploadProgress(i);
         }
 
@@ -104,7 +108,7 @@ const UserDashboard = ({ user, onLogout }) => {
             type: file.type,
             uploadDate: new Date().toLocaleDateString(),
             file: file,
-            section: section // ✅ Track which section this file belongs to
+            section: section 
         }));
 
         setUploadedFiles(prev => ({
@@ -179,101 +183,123 @@ const UserDashboard = ({ user, onLogout }) => {
 
     const getStatusClass = (status) => {
         switch (status?.toUpperCase()) {
-            case 'PENDING': return 'status-pending';
-            case 'CONTACTED': return 'status-contacted';
-            case 'PAYMENT_PENDING': return 'status-contacted'; // Same orange/warning color or create new css class
-            case 'PAID': return 'status-completed'; // Green
-            case 'COMPLETED': return 'status-completed';
-            case 'CANCELLED': return 'status-cancelled';
-            default: return 'status-pending';
+            case 'PENDING': return 'badge-pending';
+            case 'CONTACTED': return 'badge-contacted';
+            case 'PAYMENT_PENDING': return 'badge-payment'; 
+            case 'PAID': return 'badge-paid'; 
+            case 'COMPLETED': return 'badge-completed';
+            case 'CANCELLED': return 'badge-cancelled';
+            default: return 'badge-default';
         }
     };
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
-            month: 'long',
+            month: 'short',
             day: 'numeric',
             year: 'numeric'
         });
     };
 
-    // ✅ Get required document sections based on service type
     const getRequiredDocumentSections = () => {
-        // If it's a visa inquiry and we have visa details
         if (visaDetails && visaDetails.requirements) {
             return visaDetails.requirements.map(req => ({
                 title: req.title,
                 items: req.items || []
             }));
         }
-        
-        // Default sections for non-visa services
         return [
             {
-                title: 'Required Documents',
-                items: ['Valid ID', 'Passport Photo', 'Proof of Address']
+                title: 'General Requirements',
+                items: ['Valid ID (Passport/Driver\'s License)', 'Recent Photo', 'Proof of Address']
             }
         ];
     };
 
-    return (
-        <div className="user-dashboard">
-            <header className="dashboard-header">
-                <div className="header-content">
-                    <div className="logo-section">
-                        <img
-                            src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
-                            alt="WanderWave Logo"
-                            className="header-logo"
-                        />
-                        <span className="header-title">WanderWave</span>
-                    </div>
-                    <div className="user-section">
-                        <div className="user-info">
-                            <span className="user-name">{user?.fullName}</span>
-                            <span className="user-email">{user?.email}</span>
-                        </div>
-                        <button onClick={onLogout} className="logout-btn">
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </header>
+    // SVG Icons
+    const Icons = {
+        Dashboard: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
+        Upload: () => <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>,
+        File: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>,
+        Image: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
+        Check: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
+        Close: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+        Menu: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>,
+        User: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+    };
 
-            <div className="dashboard-container">
-                <aside className="sidebar">
-                    <h2 className="sidebar-title">My Travel Inquiries</h2>
-                    <div className="inquiries-list">
+    return (
+        <div className="dashboard-wrapper">
+            {/* Header / Navbar */}
+            <nav className="dashboard-navbar">
+                <div className="navbar-brand">
+                    <img
+                        src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
+                        alt="WanderWave"
+                        className="navbar-logo"
+                    />
+                    <span className="navbar-title">WanderWave</span>
+                </div>
+                
+                <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                    <Icons.Menu />
+                </button>
+
+                <div className={`navbar-actions ${mobileMenuOpen ? 'show' : ''}`}>
+                    <div className="user-profile">
+                        <div className="avatar">
+                            {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div className="user-details">
+                            <span className="name">{user?.fullName || 'User'}</span>
+                            <span className="email">{user?.email || 'guest@example.com'}</span>
+                        </div>
+                    </div>
+                    <button onClick={onLogout} className="btn-logout">
+                        Sign Out
+                    </button>
+                </div>
+            </nav>
+
+            <div className="dashboard-layout">
+                {/* Sidebar - Inquiries List */}
+                <aside className={`dashboard-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
+                    <div className="sidebar-header">
+                        <h3><Icons.Dashboard /> My Applications</h3>
+                    </div>
+                    
+                    <div className="inquiries-list-container">
                         {isLoading ? (
-                            <div className="loading-state">
-                                <p>Loading your inquiries...</p>
+                            <div className="sidebar-loading">
+                                <div className="spinner"></div>
+                                <p>Loading applications...</p>
                             </div>
                         ) : inquiries.length === 0 ? (
-                            <div className="empty-state">
-                                <p>No inquiries yet</p>
-                                <p className="empty-hint">
-                                    Submit an inquiry on our website to get started!
-                                </p>
+                            <div className="sidebar-empty">
+                                <p>No active applications found.</p>
+                                <button className="btn-link">Start a New Inquiry</button>
                             </div>
                         ) : (
                             inquiries.map(inquiry => (
                                 <div
                                     key={inquiry._id}
-                                    className={`inquiry-card ${selectedInquiry?._id === inquiry._id ? 'selected' : ''}`}
-                                    onClick={() => setSelectedInquiry(inquiry)}
+                                    className={`inquiry-item ${selectedInquiry?._id === inquiry._id ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setSelectedInquiry(inquiry);
+                                        setMobileMenuOpen(false); // Close mobile menu on select
+                                    }}
                                 >
-                                    <h3 className="inquiry-destination">{inquiry.serviceName}</h3>
-                                    {inquiry.visaCountry && (
-                                        <p className="inquiry-country">
-                                            📍 {inquiry.visaCountry}
-                                        </p>
-                                    )}
-                                    <p className="inquiry-date">
-                                        📅 {formatDate(inquiry.createdAt)}
-                                    </p>
-                                    <span className={`inquiry-status ${getStatusClass(inquiry.status)}`}>
-                                        {inquiry.status || 'PENDING'}
+                                    <div className="inquiry-item-header">
+                                        <span className="service-name">{inquiry.serviceName}</span>
+                                        <span className={`status-dot ${getStatusClass(inquiry.status)}`}></span>
+                                    </div>
+                                    <div className="inquiry-item-meta">
+                                        <span className="meta-location">{inquiry.visaCountry || 'General'}</span>
+                                        <span className="meta-date">{formatDate(inquiry.createdAt)}</span>
+                                    </div>
+                                    <span className={`status-badge ${getStatusClass(inquiry.status)}`}>
+                                        {inquiry.status?.replace('_', ' ') || 'PENDING'}
                                     </span>
                                 </div>
                             ))
@@ -281,255 +307,166 @@ const UserDashboard = ({ user, onLogout }) => {
                     </div>
                 </aside>
 
-                <main className="main-content">
+                {/* Main Content Area */}
+                <main className="dashboard-main">
                     {selectedInquiry ? (
-                        <>
-                            <div className="content-header">
-                                <h1 className="content-title">Inquiry Details</h1>
-                                <p className="content-subtitle">
-                                    Service: {selectedInquiry.serviceName}
-                                </p>
-                            </div>
+                        <div className="content-container">
+                            {/* Header Section */}
+                            <header className="content-header">
+                                <div>
+                                    <h1 className="content-title">{selectedInquiry.serviceName}</h1>
+                                    <p className="content-id">Application ID: {selectedInquiry._id.slice(-8).toUpperCase()}</p>
+                                </div>
+                                <div className={`header-status ${getStatusClass(selectedInquiry.status)}`}>
+                                    {selectedInquiry.status?.replace('_', ' ') || 'PENDING'}
+                                </div>
+                            </header>
 
-                            <div className="inquiry-details-card">
-                                <div className="detail-row">
-                                    <span className="detail-label">Service:</span>
-                                    <span className="detail-value">{selectedInquiry.serviceName}</span>
-                                </div>
-                                {selectedInquiry.visaCountry && (
-                                    <div className="detail-row">
-                                        <span className="detail-label">Country:</span>
-                                        <span className="detail-value">{selectedInquiry.visaCountry}</span>
+                            {/* Details Grid */}
+                            <div className="details-grid">
+                                <div className="info-card">
+                                    <h3>Application Details</h3>
+                                    <div className="info-row">
+                                        <span className="label">Destination</span>
+                                        <span className="value">{selectedInquiry.visaCountry || 'N/A'}</span>
                                     </div>
-                                )}
-                                {selectedInquiry.estimatedPrice > 0 && (
-                                    <div className="detail-row">
-                                        <span className="detail-label">Estimated Price:</span>
-                                        <span className="detail-value">₱{selectedInquiry.estimatedPrice.toLocaleString()}</span>
+                                    <div className="info-row">
+                                        <span className="label">Submission Date</span>
+                                        <span className="value">{formatDate(selectedInquiry.createdAt)}</span>
                                     </div>
-                                )}
-                                <div className="detail-row">
-                                    <span className="detail-label">Status:</span>
-                                    <span className={`detail-value ${getStatusClass(selectedInquiry.status)}`}>
-                                        {selectedInquiry.status || 'PENDING'}
-                                    </span>
+                                    {selectedInquiry.estimatedPrice > 0 && (
+                                        <div className="info-row highlight">
+                                            <span className="label">Total Amount</span>
+                                            <span className="value price">₱{selectedInquiry.estimatedPrice.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    <div className="info-row message-row">
+                                        <span className="label">Your Message</span>
+                                        <p className="value message">{selectedInquiry.message || 'No additional notes provided.'}</p>
+                                    </div>
                                 </div>
-                                {selectedInquiry.status === 'PAYMENT_PENDING' && (
-                                    <div style={{
-                                        marginTop: '20px',
-                                        padding: '20px',
-                                        background: '#ecfdf5',
-                                        border: '1px solid #10b981',
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '12px'
-                                    }}>
-                                        <h4 style={{ margin: 0, color: '#047857', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            💳 Payment Required
-                                        </h4>
-                                        <p style={{ margin: 0, fontSize: '14px', color: '#065f46' }}>
-                                            Your documents have been approved! Please settle the payment to proceed with the visa application.
-                                        </p>
-                                        
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                                            <span style={{ fontWeight: 'bold', fontSize: '18px', color: '#0f172a' }}>
-                                                Total: ₱{selectedInquiry.estimatedPrice?.toLocaleString()}
-                                            </span>
-                                            <button 
-                                                onClick={handlePayment}
-                                                style={{
-                                                    background: '#059669',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    padding: '12px 24px',
-                                                    borderRadius: '6px',
-                                                    fontWeight: 'bold',
-                                                    cursor: 'pointer',
-                                                    fontSize: '14px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '8px',
-                                                    transition: 'background 0.2s'
-                                                }}
-                                                onMouseOver={(e) => e.target.style.background = '#047857'}
-                                                onMouseOut={(e) => e.target.style.background = '#059669'}
-                                            >
-                                                Pay Now via PayMongo
+
+                                {/* Action / Remarks Card */}
+                                <div className="info-card action-card">
+                                    <h3>Status & Actions</h3>
+                                    
+                                    {selectedInquiry.remarks && (
+                                        <div className="remarks-box">
+                                            <h4><span className="icon">💬</span> Admin Remarks</h4>
+                                            <p>{selectedInquiry.remarks}</p>
+                                            {selectedInquiry.evidenceUrl && (
+                                                <a href={`http://localhost:5000${selectedInquiry.evidenceUrl}`} target="_blank" rel="noopener noreferrer" className="evidence-link">
+                                                    View Attached Evidence ↗
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {selectedInquiry.status === 'PAYMENT_PENDING' && (
+                                        <div className="payment-alert">
+                                            <div className="alert-content">
+                                                <h4>Payment Required</h4>
+                                                <p>Your application has been approved. Please settle the payment to proceed.</p>
+                                            </div>
+                                            <button onClick={handlePayment} className="btn-primary btn-pay">
+                                                Pay Now (₱{selectedInquiry.estimatedPrice?.toLocaleString()})
                                             </button>
                                         </div>
-                                    </div>
-                                )}
-                                {selectedInquiry.remarks && 
-                                selectedInquiry.status !== 'PAYMENT_PENDING' && 
-                                selectedInquiry.status !== 'PAID' && 
-                                selectedInquiry.status !== 'COMPLETED' && (
-                                    <div className="remarks-section" style={{ 
-                                        marginTop: '20px', 
-                                        padding: '15px', 
-                                        backgroundColor: '#fff1f2', 
-                                        border: '1px solid #fda4af',
-                                        borderRadius: '8px'
-                                    }}>
-                                        <h4 style={{ color: '#be123c', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            ⚠️ Action Required / Admin Remarks
-                                        </h4>
-                                        <p style={{ color: '#881337', fontSize: '14px', whiteSpace: 'pre-wrap' }}>
-                                            {selectedInquiry.remarks}
-                                        </p>
-                                        
-                                        {selectedInquiry.evidenceUrl && (
-                                            <div style={{ marginTop: '10px' }}>
-                                                <p style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '5px' }}>Evidence/Screenshot:</p>
-                                                <a 
-                                                    href={`http://localhost:5000${selectedInquiry.evidenceUrl}`} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer"
-                                                    style={{ 
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '5px',
-                                                        color: '#be123c',
-                                                        textDecoration: 'underline',
-                                                        fontSize: '13px'
-                                                    }}
-                                                >
-                                                    📄 View Evidence ({selectedInquiry.evidenceName || 'File'})
-                                                </a>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                <div className="detail-row">
-                                    <span className="detail-label">Submitted:</span>
-                                    <span className="detail-value">{formatDate(selectedInquiry.createdAt)}</span>
-                                </div>
-                                <div className="detail-row detail-message">
-                                    <span className="detail-label">Your Message:</span>
-                                    <span className="detail-value">{selectedInquiry.message}</span>
-                                </div>
-                            </div>
+                                    )}
 
-                            {/* ✅ DYNAMIC DOCUMENT UPLOAD SECTIONS */}
-                            <div className="content-header" style={{ marginTop: '30px' }}>
-                                <h2 className="content-title">Upload Required Documents</h2>
-                                <p className="content-subtitle">
-                                    Please upload all required documents for your {selectedInquiry.serviceName} application
-                                </p>
-                            </div>
-
-                            {/* ✅ RENDER SECTIONS DYNAMICALLY */}
-                            {getRequiredDocumentSections().map((section, sectionIndex) => (
-                                <div key={sectionIndex} className="document-section">
-                                    <div className="document-section-header">
-                                        <h3 className="document-section-title">
-                                            📁 {section.title}
-                                        </h3>
-                                        <span className="document-section-count">
-                                            {section.items.length} items required
-                                        </span>
-                                    </div>
-
-                                    {/* Required Items List */}
-                                    <div className="required-items-list">
-                                        {section.items.map((item, itemIndex) => (
-                                            <div key={itemIndex} className="required-item">
-                                                <span className="required-item-icon">✓</span>
-                                                <span className="required-item-text">{item}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Upload Area for this Section */}
-                                    <div
-                                        className={`upload-area ${isDragging ? 'dragging' : ''}`}
-                                        onDragOver={handleDragOver}
-                                        onDragLeave={handleDragLeave}
-                                        onDrop={(e) => handleDrop(e, section.title)}
-                                    >
-                                        <div className="upload-content">
-                                            <div className="upload-icon">📁</div>
-                                            <h3>Drag & Drop Files Here</h3>
-                                            <p>or</p>
-                                            <label className="browse-btn">
-                                                Browse Files
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    accept="image/*,.pdf,.doc,.docx"
-                                                    onChange={(e) => handleFileSelect(e, section.title)}
-                                                    style={{ display: 'none' }}
-                                                />
-                                            </label>
-                                            <p className="upload-hint">
-                                                Supported: JPG, PNG, PDF, DOC (Max 10MB each)
-                                            </p>
+                                    {selectedInquiry.status === 'PENDING' && !selectedInquiry.remarks && (
+                                        <div className="empty-action">
+                                            <p>Your application is currently under review. We will notify you once an update is available.</p>
                                         </div>
-                                    </div>
+                                    )}
+                                </div>
+                            </div>
 
-                                    {/* Show uploaded files for this section */}
-                                    {uploadedFiles[section.title] && uploadedFiles[section.title].length > 0 && (
-                                        <div className="section-uploaded-files">
-                                            <h4 className="section-files-title">
-                                                Uploaded Files ({uploadedFiles[section.title].length})
-                                            </h4>
-                                            <div className="files-grid-section">
+                            {/* Document Upload Section */}
+                            <section className="documents-section">
+                                <div className="section-header">
+                                    <h2>Required Documents</h2>
+                                    <p>Please upload clear copies of the following documents.</p>
+                                </div>
+
+                                {getRequiredDocumentSections().map((section, idx) => (
+                                    <div key={idx} className="document-group">
+                                        <div className="group-header">
+                                            <h3>{section.title}</h3>
+                                            <span className="badge-count">{section.items.length} items</span>
+                                        </div>
+
+                                        <div className="requirements-list">
+                                            {section.items.map((item, i) => (
+                                                <div key={i} className="req-item">
+                                                    <span className="check-icon"><Icons.Check /></span>
+                                                    <span>{item}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Upload Area */}
+                                        <div 
+                                            className={`dropzone ${isDragging ? 'active' : ''}`}
+                                            onDragOver={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={(e) => handleDrop(e, section.title)}
+                                        >
+                                            <div className="dropzone-content">
+                                                <div className="icon-wrapper"><Icons.Upload /></div>
+                                                <div className="text-wrapper">
+                                                    <h4>Drag & drop files here</h4>
+                                                    <p>or <label className="browse-trigger">browse files<input type="file" multiple onChange={(e) => handleFileSelect(e, section.title)} hidden /></label></p>
+                                                    <span className="support-text">Supported: PDF, JPG, PNG (Max 10MB)</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Uploaded Files List */}
+                                        {uploadedFiles[section.title] && uploadedFiles[section.title].length > 0 && (
+                                            <div className="uploaded-files-list">
                                                 {uploadedFiles[section.title].map(file => (
-                                                    <div key={file.id} className="file-card">
-                                                        <div className="file-icon">
-                                                            {file.type.includes('image') ? '🖼️' : '📄'}
+                                                    <div key={file.id} className="file-item">
+                                                        <div className="file-icon-wrapper">
+                                                            {file.type.includes('image') ? <Icons.Image /> : <Icons.File />}
                                                         </div>
-                                                        <div className="file-info">
-                                                            <p className="file-name">{file.name}</p>
-                                                            <p className="file-meta">
-                                                                {file.size} • {file.uploadDate}
-                                                            </p>
+                                                        <div className="file-details">
+                                                            <span className="file-name">{file.name}</span>
+                                                            <span className="file-size">{file.size}</span>
                                                         </div>
-                                                        <button
-                                                            className="remove-file-btn"
-                                                            onClick={() => removeFile(section.title, file.id)}
-                                                        >
-                                                            ×
+                                                        <button className="btn-remove" onClick={() => removeFile(section.title, file.id)}>
+                                                            <Icons.Close />
                                                         </button>
                                                     </div>
                                                 ))}
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-
-                            {isUploading && (
-                                <div className="upload-progress">
-                                    <div className="progress-bar">
-                                        <div 
-                                            className="progress-fill" 
-                                            style={{ width: `${uploadProgress}%` }}
-                                        />
+                                        )}
                                     </div>
-                                    <p className="progress-text">Uploading... {uploadProgress}%</p>
-                                </div>
-                            )}
+                                ))}
 
-                            {/* Submit All Documents Button */}
-                            {Object.values(uploadedFiles).flat().length > 0 && (
-                                <div className="submit-section">
-                                    <div className="submit-summary">
-                                        <span className="submit-summary-text">
-                                            Total files to submit: {Object.values(uploadedFiles).flat().length}
-                                        </span>
+                                {isUploading && (
+                                    <div className="progress-container">
+                                        <div className="progress-bar" style={{ width: `${uploadProgress}%` }}></div>
                                     </div>
-                                    <button className="submit-docs-btn" onClick={submitDocuments}>
-                                        Submit All Documents
-                                    </button>
-                                </div>
-                            )}
-                        </>
+                                )}
+
+                                {Object.values(uploadedFiles).flat().length > 0 && (
+                                    <div className="submit-area">
+                                        <button className="btn-primary btn-submit" onClick={submitDocuments}>
+                                            Submit All Documents
+                                        </button>
+                                        <p className="submit-hint">Make sure all documents are clear before submitting.</p>
+                                    </div>
+                                )}
+                            </section>
+                        </div>
                     ) : (
-                        <div className="no-selection">
-                            <div className="no-selection-icon">📋</div>
-                            <h2>Select an Inquiry</h2>
-                            <p>Choose an inquiry from the left to view details and upload documents</p>
+                        <div className="empty-dashboard">
+                            <div className="empty-content">
+                                <div className="empty-icon">👋</div>
+                                <h2>Welcome, {user?.fullName?.split(' ')[0]}!</h2>
+                                <p>Select an application from the sidebar to view details, track status, and upload documents.</p>
+                            </div>
                         </div>
                     )}
                 </main>
