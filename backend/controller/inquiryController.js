@@ -1,5 +1,20 @@
 const Inquiry = require('../models/inquiry');
 const Service = require('../models/service');
+const User = require('../models/user');
+const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
+
+// ✅ CUSTOM PASSWORD GENERATOR: WANDER_XXXXXX! format
+const generateTempPassword = () => {
+  // Generate 6 random numbers
+  const numbers = Math.floor(100000 + Math.random() * 900000); // Generates 6-digit number (100000-999999)
+  
+  // Array of special characters
+  const specialChars = '!@#$%^&*';
+  const randomSpecialChar = specialChars.charAt(Math.floor(Math.random() * specialChars.length));
+  
+  // Format: WANDER_123456!
+  return `WANDER_${numbers}${randomSpecialChar}`;
+};
 
 // Create new inquiry
 const createInquiry = async (req, res) => {
@@ -15,6 +30,13 @@ const createInquiry = async (req, res) => {
       estimatedPrice 
     } = req.body;
 
+    console.log('📥 Received inquiry request:', {
+      serviceName,
+      fullName,
+      email,
+      hasMessage: !!message
+    });
+
     // Validate required fields
     if (!serviceName || !fullName || !email || !message) {
       return res.status(400).json({ 
@@ -23,7 +45,104 @@ const createInquiry = async (req, res) => {
       });
     }
 
-    // Create inquiry
+    // Check if user already exists
+    let existingUser = await User.findOne({ email });
+    let isNewUser = false;
+    let tempPassword = null;
+
+    // If user doesn't exist, create new user account
+    if (!existingUser) {
+      isNewUser = true;
+      tempPassword = generateTempPassword();
+
+      console.log('👤 Creating new user account...');
+      console.log('🔐 Generated password format:', tempPassword);
+
+      // ✅ Generate unique username with better uniqueness guarantee
+      const baseUsername = email.split('@')[0].toLowerCase();
+      const timestamp = Date.now();
+      const randomSuffix = Math.floor(Math.random() * 1000); // Extra randomness
+      const username = `${baseUsername}${timestamp}${randomSuffix}`;
+
+      // ✅ Try to create user with retry logic for username conflicts
+      try {
+        existingUser = await User.create({
+          fullName,
+          email,
+          username,
+          password: tempPassword
+        });
+
+        console.log('✅ New user created:', email);
+        console.log('✅ Username assigned:', username);
+      } catch (createError) {
+        // If username conflict, try one more time with different timestamp
+        if (createError.code === 11000 && createError.keyPattern?.username) {
+          console.log('⚠️ Username conflict, retrying with new username...');
+          
+          const retryUsername = `${baseUsername}${Date.now()}${Math.floor(Math.random() * 10000)}`;
+          
+          existingUser = await User.create({
+            fullName,
+            email,
+            username: retryUsername,
+            password: tempPassword
+          });
+
+          console.log('✅ New user created on retry:', email);
+          console.log('✅ Username assigned:', retryUsername);
+        } else {
+          throw createError; // Re-throw if it's a different error
+        }
+      }
+
+      // ✅ SEND TO GHL FOR NEW USER WORKFLOW
+      try {
+        console.log('📧 Triggering GHL New User Email...');
+        
+        const ghlResult = await sendNewUserToGHL(
+          email, 
+          fullName, 
+          tempPassword, 
+          serviceName
+        );
+        
+        if (ghlResult.success) {
+          console.log('✅ GHL New User workflow triggered successfully');
+        } else {
+          console.error('⚠️ GHL webhook failed:', ghlResult.error);
+          // Don't fail the whole request, just log the error
+        }
+      } catch (ghlError) {
+        console.error('⚠️ GHL integration error:', ghlError.message);
+        // Continue even if GHL fails
+      }
+
+    } else {
+      console.log('✅ Existing user found:', email);
+
+      // ✅ SEND TO GHL FOR INQUIRY CONFIRMATION
+      try {
+        console.log('📧 Triggering GHL Inquiry Confirmation...');
+        
+        const ghlResult = await sendInquiryToGHL(
+          email, 
+          fullName, 
+          serviceName, 
+          message
+        );
+        
+        if (ghlResult.success) {
+          console.log('✅ GHL Inquiry workflow triggered successfully');
+        } else {
+          console.error('⚠️ GHL webhook failed:', ghlResult.error);
+        }
+      } catch (ghlError) {
+        console.error('⚠️ GHL integration error:', ghlError.message);
+      }
+    }
+
+    // Create inquiry in database
     const inquiry = await Inquiry.create({
       serviceId: serviceId || null,
       serviceName,
@@ -35,14 +154,25 @@ const createInquiry = async (req, res) => {
       estimatedPrice: estimatedPrice || 0
     });
 
+    console.log('✅ Inquiry saved to database:', inquiry._id);
+
+    // Prepare response message
+    let responseMessage = 'Inquiry submitted successfully! We will contact you within 24 hours.';
+    if (isNewUser) {
+      responseMessage += ' Check your email for login credentials.';
+    } else {
+      responseMessage += ' A confirmation email has been sent to your email.';
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Inquiry submitted successfully! We will contact you within 24 hours.',
+      message: responseMessage,
+      isNewUser: isNewUser,
       data: inquiry
     });
 
   } catch (error) {
-    console.error('Create inquiry error:', error);
+    console.error('❌ Create inquiry error:', error);
     res.status(500).json({ 
       success: false,
       message: 'Server error. Please try again.' 
@@ -50,7 +180,6 @@ const createInquiry = async (req, res) => {
   }
 };
 
-// Get all inquiries (Admin)
 const getAllInquiries = async (req, res) => {
   try {
     const { status, serviceName, page = 1, limit = 20 } = req.query;
