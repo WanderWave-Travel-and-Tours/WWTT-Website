@@ -1,6 +1,7 @@
 const Inquiry = require('../models/inquiry');
 const Service = require('../models/service');
 const User = require('../models/user');
+const Payment = require('../models/payment'); 
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
 
 const generateTempPassword = () => {
@@ -368,24 +369,29 @@ const getInquiryStats = async (req, res) => {
 
 const markAsPaid = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // Inquiry ID
 
-    // Update status to PAID
+    // 1. Update Inquiry Status
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       { 
         status: 'PAID',
         updatedAt: Date.now()
       },
-      { new: true } // Return the updated document
+      { new: true }
     );
 
     if (!inquiry) {
-      return res.status(404).json({
-        success: false,
-        message: 'Inquiry not found'
-      });
+      return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
+
+    await Payment.findOneAndUpdate(
+      { inquiryId: id }, 
+      { 
+        status: 'PAID', 
+        paidAt: Date.now() 
+      }
+    );
 
     res.json({
       success: true,

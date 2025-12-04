@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Download, Mail, ArrowRight } from 'lucide-react';
+import { CheckCircle, Download, Mail, ArrowRight, Home, LayoutDashboard } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import './paymentSuccess.css'
+import './paymentSuccess.css'; 
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [bookingDetails, setBookingDetails] = useState(null);
+  const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [type, setType] = useState(null); // 'booking' or 'inquiry'
 
   useEffect(() => {
+    // 1. Confetti Effect (Manatiling pareho)
     const duration = 3 * 1000;
     const end = Date.now() + duration;
 
@@ -36,28 +38,77 @@ const PaymentSuccess = () => {
     };
     frame();
 
+    // 2. Identify Transaction Type based on URL Params
     const bookingId = searchParams.get('booking_id');
-      if (bookingId) {
-        fetchBookingDetails(bookingId);
-      } else {
-        setLoading(false);
-      }
-    }, [searchParams]);
+    const inquiryId = searchParams.get('inquiryId');
 
-  const fetchBookingDetails = async (bookingId) => {
+    if (bookingId) {
+      setType('booking');
+      fetchBookingDetails(bookingId);
+    } else if (inquiryId) {
+      setType('inquiry');
+      fetchInquiryDetails(inquiryId);
+    } else {
+      setLoading(false);
+    }
+    
+    // Auto-update status to PAID logic is handled by backend webhook or separate call, 
+    // but we fetch details here to display them.
+
+  }, [searchParams]);
+
+  // Fetch Booking Data
+  const fetchBookingDetails = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}`);
+      const response = await fetch(`http://localhost:5000/api/bookings/${id}`);
       const data = await response.json();
       if (data.success) {
-        setBookingDetails(data.booking);
-        if (data.booking.status !== 'confirmed') {
-          console.warn('Booking not yet confirmed');
-        }
+        // Normalize data structure for the UI
+        setDetails({
+          reference: data.booking.referenceNumber,
+          title: data.booking.packageName,
+          subTitle: `${data.booking.duration} • ${data.booking.pax?.adult || 1} Pax`,
+          amount: data.booking.totalAmount,
+          email: data.booking.email,
+          dateLabel: "Travel Dates",
+          dateValue: `${data.booking.startDate} - ${data.booking.endDate}`,
+          status: data.booking.status
+        });
       }
     } catch (error) {
       console.error('Error fetching booking:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch Inquiry Data
+  const fetchInquiryDetails = async (id) => {
+    try {
+        // First, call the endpoint to mark as paid (optional, depends if you rely on webhook)
+        // await fetch(`http://localhost:5000/api/inquiries/${id}/pay`, { method: 'PUT' });
+
+        const response = await fetch(`http://localhost:5000/api/inquiries/${id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const inquiry = data.data;
+            // Normalize data structure for the UI
+            setDetails({
+                reference: inquiry._id.slice(-8).toUpperCase(), // Inquiry often uses ID as ref
+                title: inquiry.serviceName,
+                subTitle: inquiry.visaCountry ? `Visa Assistance for ${inquiry.visaCountry}` : 'Custom Service',
+                amount: inquiry.estimatedPrice,
+                email: inquiry.email,
+                dateLabel: "Date Submitted",
+                dateValue: new Date(inquiry.createdAt).toLocaleDateString(),
+                status: 'PAID' // Assuming success page means paid
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching inquiry:', error);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -69,7 +120,7 @@ const PaymentSuccess = () => {
     return (
       <div className="loading-container">
         <div className="spinner-large"></div>
-        <p>Loading your booking details...</p>
+        <p>Verifying your payment...</p>
       </div>
     );
   }
@@ -84,46 +135,48 @@ const PaymentSuccess = () => {
 
           <h1 className="success-title">Payment Successful! 🎉</h1>
           <p className="success-subtitle">
-            Your booking has been confirmed. Get ready for an amazing adventure!
+            {type === 'booking' 
+              ? 'Your adventure has been secured. Pack your bags!' 
+              : 'Your transaction is complete. We will process your documents shortly.'}
           </p>
 
-          {bookingDetails && (
+          {details && (
             <div className="booking-info-card">
-              <h3 className="info-title">Booking Details</h3>
+              <h3 className="info-title">Transaction Details</h3>
               
               <div className="info-grid">
+                {/* Reference Number */}
                 <div className="info-item">
-                  <span className="info-label">Booking ID</span>
-                  <strong className="info-value">#{bookingDetails._id?.slice(-8).toUpperCase()}</strong>
+                  <span className="info-label">Reference ID</span>
+                  <strong className="info-value" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
+                    {details.reference || 'N/A'}
+                  </strong>
                 </div>
 
+                {/* Service / Package Name */}
                 <div className="info-item">
-                  <span className="info-label">Reference Number</span>
-                  <strong className="info-value" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
-                    {bookingDetails.referenceNumber}
-                  </strong>
+                  <span className="info-label">{type === 'booking' ? 'Package' : 'Service'}</span>
+                  <strong className="info-value">{details.title}</strong>
                 </div>
                 
+                {/* Dates */}
                 <div className="info-item">
-                  <span className="info-label">Package</span>
-                  <strong className="info-value">{bookingDetails.packageName}</strong>
-                </div>
-                
-                <div className="info-item">
-                  <span className="info-label">Travel Dates</span>
+                  <span className="info-label">{details.dateLabel}</span>
                   <strong className="info-value">
-                    {bookingDetails.startDate} - {bookingDetails.endDate}
+                    {details.dateValue}
                   </strong>
                 </div>
                 
+                {/* Additional Info (Pax or Country) */}
                 <div className="info-item">
-                  <span className="info-label">Number of Pax</span>
-                  <strong className="info-value">{bookingDetails.pax?.adult || 0} person(s)</strong>
+                  <span className="info-label">Details</span>
+                  <strong className="info-value">{details.subTitle}</strong>
                 </div>
                 
+                {/* Total Amount */}
                 <div className="info-item">
-                  <span className="info-label">Total Paid</span>
-                  <strong className="info-value amount">₱{bookingDetails.totalAmount?.toLocaleString()}</strong>
+                  <span className="info-label">Amount Paid</span>
+                  <strong className="info-value amount">₱{details.amount?.toLocaleString()}</strong>
                 </div>
               </div>
             </div>
@@ -132,14 +185,14 @@ const PaymentSuccess = () => {
           <div className="email-notice">
             <Mail size={20} color="#3b82f6" />
             <p>
-              A confirmation email has been sent to <strong>{bookingDetails?.email}</strong>
+              A confirmation email has been sent to <strong>{details?.email}</strong>
             </p>
           </div>
 
           <div className="action-buttons">
-            <button className="btn-primary" onClick={() => navigate('/my-bookings')}>
-              <ArrowRight size={20} />
-              View My Bookings
+            <button className="btn-primary" onClick={() => navigate('/dashboard')}>
+              <LayoutDashboard size={20} />
+              Go to Dashboard
             </button>
             
             <button className="btn-secondary" onClick={handleDownloadReceipt}>
@@ -151,6 +204,7 @@ const PaymentSuccess = () => {
           <div className="success-footer">
             <p>Need help? Contact us at <a href="mailto:support@wanderwave.com">support@wanderwave.com</a></p>
             <button className="btn-link" onClick={() => navigate('/')}>
+              <Home size={16} style={{marginRight: '4px', display:'inline-block', verticalAlign:'text-bottom'}}/>
               Back to Home
             </button>
           </div>
