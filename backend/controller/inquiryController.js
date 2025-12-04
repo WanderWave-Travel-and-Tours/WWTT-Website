@@ -3,20 +3,15 @@ const Service = require('../models/service');
 const User = require('../models/user');
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
 
-// ✅ CUSTOM PASSWORD GENERATOR: WANDER_XXXXXX! format
 const generateTempPassword = () => {
-  // Generate 6 random numbers
-  const numbers = Math.floor(100000 + Math.random() * 900000); // Generates 6-digit number (100000-999999)
+  const numbers = Math.floor(100000 + Math.random() * 900000); 
   
-  // Array of special characters
   const specialChars = '!@#$%^&*';
   const randomSpecialChar = specialChars.charAt(Math.floor(Math.random() * specialChars.length));
-  
-  // Format: WANDER_123456!
-  return `WANDER_${numbers}${randomSpecialChar}`;
+
+  return `Wander_${numbers}${randomSpecialChar}`;
 };
 
-// Create new inquiry
 const createInquiry = async (req, res) => {
   try {
     const { 
@@ -37,7 +32,6 @@ const createInquiry = async (req, res) => {
       hasMessage: !!message
     });
 
-    // Validate required fields
     if (!serviceName || !fullName || !email || !message) {
       return res.status(400).json({ 
         success: false,
@@ -45,26 +39,19 @@ const createInquiry = async (req, res) => {
       });
     }
 
-    // Check if user already exists
     let existingUser = await User.findOne({ email });
     let isNewUser = false;
     let tempPassword = null;
 
-    // If user doesn't exist, create new user account
     if (!existingUser) {
       isNewUser = true;
       tempPassword = generateTempPassword();
 
-      console.log('👤 Creating new user account...');
-      console.log('🔐 Generated password format:', tempPassword);
-
-      // ✅ Generate unique username with better uniqueness guarantee
       const baseUsername = email.split('@')[0].toLowerCase();
       const timestamp = Date.now();
-      const randomSuffix = Math.floor(Math.random() * 1000); // Extra randomness
+      const randomSuffix = Math.floor(Math.random() * 1000); 
       const username = `${baseUsername}${timestamp}${randomSuffix}`;
 
-      // ✅ Try to create user with retry logic for username conflicts
       try {
         existingUser = await User.create({
           fullName,
@@ -72,11 +59,7 @@ const createInquiry = async (req, res) => {
           username,
           password: tempPassword
         });
-
-        console.log('✅ New user created:', email);
-        console.log('✅ Username assigned:', username);
       } catch (createError) {
-        // If username conflict, try one more time with different timestamp
         if (createError.code === 11000 && createError.keyPattern?.username) {
           console.log('⚠️ Username conflict, retrying with new username...');
           
@@ -92,11 +75,10 @@ const createInquiry = async (req, res) => {
           console.log('✅ New user created on retry:', email);
           console.log('✅ Username assigned:', retryUsername);
         } else {
-          throw createError; // Re-throw if it's a different error
+          throw createError; 
         }
       }
 
-      // ✅ SEND TO GHL FOR NEW USER WORKFLOW
       try {
         console.log('📧 Triggering GHL New User Email...');
         
@@ -111,20 +93,13 @@ const createInquiry = async (req, res) => {
           console.log('✅ GHL New User workflow triggered successfully');
         } else {
           console.error('⚠️ GHL webhook failed:', ghlResult.error);
-          // Don't fail the whole request, just log the error
         }
       } catch (ghlError) {
         console.error('⚠️ GHL integration error:', ghlError.message);
-        // Continue even if GHL fails
       }
 
     } else {
-      console.log('✅ Existing user found:', email);
-
-      // ✅ SEND TO GHL FOR INQUIRY CONFIRMATION
       try {
-        console.log('📧 Triggering GHL Inquiry Confirmation...');
-        
         const ghlResult = await sendInquiryToGHL(
           email, 
           fullName, 
@@ -142,7 +117,6 @@ const createInquiry = async (req, res) => {
       }
     }
 
-    // Create inquiry in database
     const inquiry = await Inquiry.create({
       serviceId: serviceId || null,
       serviceName,
@@ -154,9 +128,6 @@ const createInquiry = async (req, res) => {
       estimatedPrice: estimatedPrice || 0
     });
 
-    console.log('✅ Inquiry saved to database:', inquiry._id);
-
-    // Prepare response message
     let responseMessage = 'Inquiry submitted successfully! We will contact you within 24 hours.';
     if (isNewUser) {
       responseMessage += ' Check your email for login credentials.';
@@ -213,7 +184,6 @@ const getAllInquiries = async (req, res) => {
   }
 };
 
-// Get single inquiry (Admin)
 const getInquiry = async (req, res) => {
   try {
     const inquiry = await Inquiry.findById(req.params.id)
@@ -241,7 +211,6 @@ const getInquiry = async (req, res) => {
   }
 };
 
-// Update inquiry status (Admin)
 const updateInquiryStatus = async (req, res) => {
   try {
     const { status, adminNotes, contactedBy } = req.body;
@@ -287,7 +256,6 @@ const updateInquiryStatus = async (req, res) => {
   }
 };
 
-// Delete inquiry (Admin)
 const deleteInquiry = async (req, res) => {
   try {
     const inquiry = await Inquiry.findByIdAndDelete(req.params.id);
@@ -313,7 +281,6 @@ const deleteInquiry = async (req, res) => {
   }
 };
 
-// Get inquiries by email (for user to check their inquiries)
 const getInquiriesByEmail = async (req, res) => {
   try {
     const { email } = req.params;
@@ -337,14 +304,12 @@ const getInquiriesByEmail = async (req, res) => {
   }
 };
 
-// Get inquiry statistics (Admin Dashboard)
 const getInquiryStats = async (req, res) => {
   try {
     const totalInquiries = await Inquiry.countDocuments();
     const pendingInquiries = await Inquiry.countDocuments({ status: 'PENDING' });
     const completedInquiries = await Inquiry.countDocuments({ status: 'COMPLETED' });
     
-    // Inquiries by service
     const byService = await Inquiry.aggregate([
       {
         $group: {
@@ -355,7 +320,6 @@ const getInquiryStats = async (req, res) => {
       { $sort: { count: -1 } }
     ]);
 
-    // Inquiries by status
     const byStatus = await Inquiry.aggregate([
       {
         $group: {
@@ -365,7 +329,6 @@ const getInquiryStats = async (req, res) => {
       }
     ]);
 
-    // Recent inquiries (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const recentInquiries = await Inquiry.countDocuments({
