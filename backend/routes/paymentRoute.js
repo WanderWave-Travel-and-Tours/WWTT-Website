@@ -3,11 +3,14 @@ const router = express.Router();
 const axios = require('axios');
 const Booking = require('../models/booking');
 const PackageModel = require('../models/package'); 
+const paymentController = require('../controller/paymentController');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API = 'https://api.paymongo.com/v1';
 
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
+
+router.post('/create-inquiry-checkout', paymentController.createInquiryCheckoutSession);
 
 router.post('/create-intent', async (req, res) => {
   try {
