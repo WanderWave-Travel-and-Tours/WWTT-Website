@@ -37,7 +37,9 @@
     z-index: 2;
     width: 100%;
     max-width: 1100px;
+    max-height: 650px;
     min-height: 600px;
+    height: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
     border-radius: 24px;
@@ -51,6 +53,7 @@
     overflow: hidden;
     background: #000;
     min-height: 600px;
+    max-height: 650px;
 }
 
 .slideshow-container {
@@ -146,6 +149,7 @@
     justify-content: center;
     background-color: #ffffff;
     padding: 40px 50px;
+    overflow-y: auto;
 }
 
 .login-form-wrapper {
@@ -260,11 +264,13 @@
     .login-container {
         grid-template-columns: 1fr;
         max-width: 500px;
+        max-height: none;
         min-height: auto;
     }
     
     .slideshow-panel {
         min-height: 320px;
+        max-height: 320px;
         height: 320px;
     }
     
@@ -293,10 +299,12 @@
     .login-container {
         border-radius: 18px;
         max-width: 100%;
+        max-height: none;
     }
     
     .slideshow-panel {
         min-height: 280px;
+        max-height: 280px;
         height: 280px;
     }
     
@@ -351,10 +359,12 @@
 
     .login-container {
         border-radius: 16px;
+        max-height: none;
     }
 
     .slideshow-panel {
         min-height: 240px;
+        max-height: 240px;
         height: 240px;
     }
 
@@ -422,5 +432,81 @@
     .footer-text {
         font-size: 0.8rem;
         margin-top: 24px;
+    }
+
+    .logo-section {
+        margin-bottom: 25px;
+    }
+
+    .input-group {
+        margin-bottom: 16px;
+    }
+}
+
+/* Additional height constraints for very small screens */
+@media (max-height: 700px) {
+    .login-container {
+        max-height: 90vh;
+    }
+    
+    .slideshow-panel {
+        max-height: 45vh;
+    }
+    
+    .login-panel {
+        padding: 30px 40px;
+    }
+    
+    .logo-section {
+        margin-bottom: 30px;
+    }
+    
+    .input-group {
+        margin-bottom: 18px;
+    }
+}
+
+@media (max-height: 600px) {
+    .login-container {
+        max-height: 95vh;
+    }
+    
+    .slideshow-panel {
+        min-height: 200px;
+        max-height: 200px;
+    }
+    
+    .login-panel {
+        padding: 25px 35px;
+    }
+    
+    .logo-section {
+        margin-bottom: 25px;
+    }
+    
+    .logo-img {
+        height: 38px !important;
+        max-height: 38px;
+    }
+    
+    .admin-title {
+        font-size: 1.6rem;
+    }
+    
+    .input-group {
+        margin-bottom: 16px;
+    }
+    
+    .input-field {
+        padding: 12px 14px;
+    }
+    
+    .login-button {
+        padding: 14px;
+    }
+    
+    .footer-text {
+        margin-top: 20px;
+        font-size: 0.8rem;
     }
 }
