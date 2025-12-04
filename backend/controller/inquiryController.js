@@ -213,7 +213,11 @@ const getInquiry = async (req, res) => {
 
 const updateInquiryStatus = async (req, res) => {
   try {
-    const { status, adminNotes, contactedBy } = req.body;
+    // 👇 UPDATED DESTRUCTURING to include remarks
+    const { status, adminNotes, contactedBy, remarks } = req.body;
+    
+    // Check if there is an uploaded file (Evidence)
+    const evidenceFile = req.file; 
 
     const inquiry = await Inquiry.findById(req.params.id);
 
@@ -229,6 +233,17 @@ const updateInquiryStatus = async (req, res) => {
       adminNotes,
       updatedAt: Date.now()
     };
+
+    if (remarks) {
+      updateData.remarks = remarks;
+    }
+
+    if (evidenceFile) {
+      const fileUrl = `/uploads/${evidenceFile.filename}`; 
+      updateData.evidenceUrl = fileUrl;
+      updateData.evidenceName = evidenceFile.originalname;
+    }
+    // 👆 END NEW LOGIC
 
     if (status === 'CONTACTED' && !inquiry.contactedAt) {
       updateData.contactedAt = Date.now();

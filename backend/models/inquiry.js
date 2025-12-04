@@ -44,6 +44,18 @@ const inquirySchema = new mongoose.Schema({
     enum: ['PENDING', 'CONTACTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
     default: 'PENDING'
   },
+  remarks: {
+    type: String,
+    default: ''
+  },
+  evidenceUrl: {
+    type: String,
+    default: '' 
+  },
+  evidenceName: {
+    type: String,
+    default: ''
+  },
   
   // Price Information
   estimatedPrice: {

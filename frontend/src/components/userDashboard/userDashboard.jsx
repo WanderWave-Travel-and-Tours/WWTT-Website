@@ -293,6 +293,43 @@ const UserDashboard = ({ user, onLogout }) => {
                                         {selectedInquiry.status || 'PENDING'}
                                     </span>
                                 </div>
+                                {selectedInquiry.remarks && (
+                                    <div className="remarks-section" style={{ 
+                                        marginTop: '20px', 
+                                        padding: '15px', 
+                                        backgroundColor: '#fff1f2', // Reddish tint for alert
+                                        border: '1px solid #fda4af',
+                                        borderRadius: '8px'
+                                    }}>
+                                        <h4 style={{ color: '#be123c', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            ⚠️ Action Required / Admin Remarks
+                                        </h4>
+                                        <p style={{ color: '#881337', fontSize: '14px', whiteSpace: 'pre-wrap' }}>
+                                            {selectedInquiry.remarks}
+                                        </p>
+                                        
+                                        {selectedInquiry.evidenceUrl && (
+                                            <div style={{ marginTop: '10px' }}>
+                                                <p style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '5px' }}>Evidence/Screenshot:</p>
+                                                <a 
+                                                    href={`http://localhost:5000${selectedInquiry.evidenceUrl}`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    style={{ 
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '5px',
+                                                        color: '#be123c',
+                                                        textDecoration: 'underline',
+                                                        fontSize: '13px'
+                                                    }}
+                                                >
+                                                    📄 View Evidence ({selectedInquiry.evidenceName || 'File'})
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="detail-row">
                                     <span className="detail-label">Submitted:</span>
                                     <span className="detail-value">{formatDate(selectedInquiry.createdAt)}</span>

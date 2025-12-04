@@ -35,7 +35,9 @@ const VisaProcessing = () => {
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
-
+  const [showContactRemarks, setShowContactRemarks] = useState(false);
+  const [contactRemarks, setContactRemarks] = useState("");
+  const [contactEvidence, setContactEvidence] = useState(null);
   const [accordionState, setAccordionState] = useState({
     requirements: false,
     downloadForms: false,
@@ -127,6 +129,50 @@ const VisaProcessing = () => {
     { code: "ZA", name: "South Africa" },
   ].sort((a, b) => a.name.localeCompare(b.name));
 
+  const initiateContactStatus = () => {
+      setShowContactRemarks(true); // Open the specific modal for remarks
+  };
+
+  const submitContactWithRemarks = async () => {
+      if (!selectedInquiry) return;
+
+      try {
+          const formData = new FormData();
+          formData.append('status', 'CONTACTED');
+          formData.append('remarks', contactRemarks);
+          
+          if (contactEvidence) {
+              formData.append('evidence', contactEvidence);
+          }
+
+          const response = await axios.put(
+              `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`,
+              formData,
+              {
+                  headers: { 'Content-Type': 'multipart/form-data' }
+              }
+          );
+
+          if (response.data.success) {
+              alert('Status updated to CONTACTED with remarks!');
+              fetchInquiries();
+              // Update local state
+              setSelectedInquiry({ 
+                  ...selectedInquiry, 
+                  status: 'CONTACTED',
+                  remarks: contactRemarks,
+                  evidenceUrl: response.data.data.evidenceUrl 
+              });
+              setShowContactRemarks(false); // Close remarks modal
+              setContactRemarks("");
+              setContactEvidence(null);
+          }
+      } catch (error) {
+          console.error('Error updating status:', error);
+          alert('Failed to update status');
+      }
+  };
+
   const fetchInquiries = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/inquiries');
@@ -166,7 +212,7 @@ const VisaProcessing = () => {
 
   useEffect(() => {
     fetchVisas();
-    fetchInquiries(); // ✅ ADD THIS LINE
+    fetchInquiries();
   }, []);
 
   const fetchDocuments = async (inquiryId) => {
@@ -214,7 +260,6 @@ const VisaProcessing = () => {
     }
   };
 
-  // ✅ NEW: Format date helper
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -224,7 +269,6 @@ const VisaProcessing = () => {
     });
   };
 
-  // ✅ NEW: Format file size helper  
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
@@ -411,15 +455,15 @@ const VisaProcessing = () => {
   };
 
   const addDownloadForm = () => {
-  setDownloadForms((prev) => [
-    ...prev,
-    { id: `form-${Date.now()}`, label: "", fileUrl: null, fileName: null },
-  ]);
-};
+    setDownloadForms((prev) => [
+      ...prev,
+      { id: `form-${Date.now()}`, label: "", fileUrl: null, fileName: null },
+    ]);
+  };
 
   const removeDownloadForm = (formId) => {
-  setDownloadForms((prev) => prev.filter((f) => f.id !== formId));
-};
+    setDownloadForms((prev) => prev.filter((f) => f.id !== formId));
+  };
 
   const handleFormChange = (formId, newText) => {
     setDownloadForms((prev) =>
@@ -429,46 +473,46 @@ const VisaProcessing = () => {
 
   const handleDirectFileUpload = async (event) => {
   const file = event.target.files[0];
-  if (!file) return;
+    if (!file) return;
 
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    console.log('📤 Uploading file:', file.name);
+      console.log('📤 Uploading file:', file.name);
 
-    const uploadResponse = await axios.post(
-      'http://localhost:5000/api/visas/upload',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-
-    if (uploadResponse.data.success) {
-      const { fileName, fileUrl } = uploadResponse.data.data;
-
-      setDownloadForms((prev) => [
-        ...prev,
+      const uploadResponse = await axios.post(
+        'http://localhost:5000/api/visas/upload',
+        formData,
         {
-          id: `form-${Date.now()}`,
-          label: fileName,
-          fileUrl: fileUrl,
-          fileName: fileName,
-        },
-      ]);
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
 
-      console.log('✅ File uploaded successfully:', fileName);
+      if (uploadResponse.data.success) {
+        const { fileName, fileUrl } = uploadResponse.data.data;
+
+        setDownloadForms((prev) => [
+          ...prev,
+          {
+            id: `form-${Date.now()}`,
+            label: fileName,
+            fileUrl: fileUrl,
+            fileName: fileName,
+          },
+        ]);
+
+        console.log('✅ File uploaded successfully:', fileName);
+      }
+    } catch (error) {
+      console.error('❌ File upload error:', error);
+      alert('Failed to upload file. Please try again.');
     }
-  } catch (error) {
-    console.error('❌ File upload error:', error);
-    alert('Failed to upload file. Please try again.');
-  }
 
-  event.target.value = null;
-};
+    event.target.value = null;
+  };
 
   const addStep = () => {
     setStepsProcess((prev) => [
@@ -495,23 +539,23 @@ const VisaProcessing = () => {
     },
     { 
       label: "Pending Review", 
-      value: inquiries.filter(i => i.status === 'PENDING').length, // ✅ UPDATED
+      value: inquiries.filter(i => i.status === 'PENDING').length, 
       icon: <Clock size={28} /> 
     },
     {
       label: "Contacted",
-      value: inquiries.filter(i => i.status === 'CONTACTED').length, // ✅ UPDATED
+      value: inquiries.filter(i => i.status === 'CONTACTED').length, 
       icon: <CheckCircle size={28} />,
     },
     { 
       label: "Completed", 
-      value: inquiries.filter(i => i.status === 'COMPLETED').length, // ✅ UPDATED
+      value: inquiries.filter(i => i.status === 'COMPLETED').length,
       icon: <RefreshCw size={28} /> 
     },
   ];
 
   const applications = inquiries.map((inquiry) => ({
-    id: inquiry._id.slice(-8).toUpperCase(), // Last 8 chars as ID
+    id: inquiry._id.slice(-8).toUpperCase(),
     client: inquiry.fullName,
     country: inquiry.visaCountry || 'N/A',
     flagCode: inquiry.visaCountry ? getCountryCode(inquiry.visaCountry) : null,
@@ -519,7 +563,7 @@ const VisaProcessing = () => {
     type: inquiry.serviceName,
     date: formatDate(inquiry.createdAt),
     status: inquiry.status || 'PENDING',
-    _original: inquiry // Keep original data for modal
+    _original: inquiry 
   }));
 
   function getCountryCode(countryName) {
@@ -914,7 +958,6 @@ const VisaProcessing = () => {
                 </div>
 
                 <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                  {/* Customer Information */}
                   <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ 
                       fontSize: '16px', 
@@ -987,7 +1030,6 @@ const VisaProcessing = () => {
                     </div>
                   </div>
 
-                  {/* Customer Message */}
                   <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ 
                       fontSize: '16px', 
@@ -1009,7 +1051,6 @@ const VisaProcessing = () => {
                     </div>
                   </div>
 
-                  {/* Submitted Documents */}
                   <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ 
                       fontSize: '16px', 
@@ -1031,7 +1072,6 @@ const VisaProcessing = () => {
                       </p>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {/* Group documents by section */}
                         {Object.entries(
                           documents.reduce((acc, doc) => {
                             const section = doc.section || 'General Documents';
@@ -1117,7 +1157,6 @@ const VisaProcessing = () => {
                     )}
                   </div>
 
-                  {/* Update Status */}
                   <div>
                     <h3 style={{ 
                       fontSize: '16px', 
@@ -1140,15 +1179,15 @@ const VisaProcessing = () => {
                         Set Pending
                       </button>
                       <button
-                        className="visa-action-btn"
-                        onClick={() => handleUpdateInquiryStatus(selectedInquiry._id, 'CONTACTED')}
-                        disabled={selectedInquiry.status === 'CONTACTED'}
-                        style={{ 
-                          opacity: selectedInquiry.status === 'CONTACTED' ? 0.5 : 1,
-                          cursor: selectedInquiry.status === 'CONTACTED' ? 'not-allowed' : 'pointer'
-                        }}
+                          className="visa-action-btn"
+                          onClick={initiateContactStatus} // 👈 Call new function
+                          disabled={selectedInquiry.status === 'CONTACTED'}
+                          style={{ 
+                              opacity: selectedInquiry.status === 'CONTACTED' ? 0.5 : 1,
+                              cursor: selectedInquiry.status === 'CONTACTED' ? 'not-allowed' : 'pointer'
+                          }}
                       >
-                        Set Contacted
+                          Set Contacted (With Remarks)
                       </button>
                       <button
                         className="visa-action-btn visa-view-btn"
@@ -1189,6 +1228,49 @@ const VisaProcessing = () => {
               </div>
             </div>
           )}
+
+          {showContactRemarks && (
+            <div className="modal-overlay" style={{ zIndex: 1100 }}> {/* Higher z-index to sit on top */}
+                <div className="modal-content" style={{ maxWidth: '500px', height: 'auto' }}>
+                    <div className="modal-header">
+                        <h3>Add Remarks & Evidence</h3>
+                        <button className="modal-close-btn" onClick={() => setShowContactRemarks(false)}>
+                            <X size={24} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="form-group">
+                            <label>Remarks / Issues Found *</label>
+                            <textarea 
+                                rows="4"
+                                className="req-input-text"
+                                style={{ width: '100%', resize: 'none' }}
+                                value={contactRemarks}
+                                onChange={(e) => setContactRemarks(e.target.value)}
+                                placeholder="Explain the error in documents..."
+                            />
+                        </div>
+                        <div className="form-group" style={{ marginTop: '15px' }}>
+                            <label>Upload Evidence (Screenshot/Doc)</label>
+                            <input 
+                                type="file"
+                                accept="image/*,.pdf"
+                                onChange={(e) => setContactEvidence(e.target.files[0])}
+                                style={{ display: 'block', marginTop: '5px' }}
+                            />
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <button className="modal-cancel-btn" onClick={() => setShowContactRemarks(false)}>
+                            Cancel
+                        </button>
+                        <button className="modal-save-btn" onClick={submitContactWithRemarks}>
+                            Proceed & Set Contacted
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
           {isEditorOpen && (
             <div className="modal-overlay">
