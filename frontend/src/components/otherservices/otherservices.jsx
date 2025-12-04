@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Plane,
   Hotel,
@@ -11,7 +11,6 @@ import {
   Globe,
   ShieldCheck,
   Receipt,
-  PlusCircle,
   ArrowRight,
   ChevronLeft,
   ChevronRight,
@@ -21,7 +20,7 @@ import {
   Mail,
 } from "lucide-react";
 import "./OtherServices.css";
-import VisaTable from "./VisaTable"; // Ensure this path is correct
+import VisaTable from "./VisaTable";
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -91,15 +90,21 @@ const UniversalInquiryForm = ({
 const OtherServices = ({ setAuthPage }) => {
   const sliderRef = useRef(null);
 
+  // NEW: Fetch services from database
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [showModal, setShowModal] = useState(false);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const [showVisaCountries, setShowVisaCountries] = useState(false);
-  // unused state 'selectedVisa' removed for cleanup
   const [isVisaService, setIsVisaService] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState({
     title: "",
     desc: "",
     requirements: [],
+    price: 3599.99,
+    visaCountry: null,
+    serviceId: null,
   });
 
   const [formData, setFormData] = useState({
@@ -108,171 +113,57 @@ const OtherServices = ({ setAuthPage }) => {
     message: "",
   });
 
+  const iconMap = {
+    Plane: <Plane size={24} />,
+    Hotel: <Hotel size={24} />,
+    Map: <Map size={24} />,
+    Ship: <Ship size={24} />,
+    BookUser: <BookUser size={24} />,
+    Baby: <Baby size={24} />,
+    HeartHandshake: <HeartHandshake size={24} />,
+    FileCheck: <FileCheck size={24} />,
+    Globe: <Globe size={24} />,
+    ShieldCheck: <ShieldCheck size={24} />,
+    Receipt: <Receipt size={24} />
+  };
+
   const currentMonth = new Date();
   const selectedDate = 15;
-  const totalAmount = 3599.99; // Default placeholder price
   const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
   ];
-
-  // Hardcoded requirements for non-visa services
-  const getRequirements = (title) => {
-    switch (title) {
-      case "Airline Booking":
-        return [
-          "Valid ID (Passport for international; any acceptable Gov't ID for domestic).",
-          "Target travel dates and cities/airports.",
-          "Confirmation/Voucher from the airline (if booking assistance is for existing ticket).",
-        ];
-      case "Hotel Booking":
-        return [
-          "Valid ID of the primary guest (Passport or other Gov't ID).",
-          "Booking Confirmation/Voucher (if assistance is for an existing reservation).",
-        ];
-      case "Tour Arrangements":
-        return [
-          "Valid ID (often a copy of Passport for international tours).",
-          "Signed Booking Form or Agreement.",
-          "Confirmed Travel Dates/Itinerary.",
-        ];
-      case "Ferry Booking":
-        return [
-          "Valid ID of the passenger(s).",
-          "Booking Confirmation (if assistance is for an existing reservation).",
-        ];
-      case "Passport Assist":
-        return [
-          "Confirmed Online Appointment Slip (DFA).",
-          "Personal Appearance (Mandatory).",
-          "Original PSA-issued Birth Certificate (on security paper).",
-          "One (1) Acceptable Primary ID with 1 photocopy.",
-          "PSA-issued Marriage Certificate (Original & photocopy) if married female using spouse's surname.",
-        ];
-      case "PSA Birth Cert":
-        return [
-          "Requestor's Valid ID (to be presented upon receipt).",
-          "Complete Personal Details of Subject (Full name, DoB, Parents' names).",
-          "Authorization Letter and Valid IDs of both parties (if requested by a representative).",
-        ];
-      case "Marriage Cert":
-        return [
-          "Requestor's Valid ID.",
-          "Complete Personal Details of Couple (Full names, Date of Marriage, Location).",
-          "Authorization Letter and Valid IDs of both parties (if requested by a representative).",
-        ];
-      case "CENOMAR":
-        return [
-          "Requestor's Valid ID.",
-          "Complete Personal Details of Subject (Full name, Date of Birth, Place of Birth).",
-          "Authorization Letter and Valid IDs of both parties (if requested by a representative).",
-        ];
-      case "Visa Assistance":
-        return [
-          "Valid Passport (usually 6 months validity beyond travel date).",
-          "Duly Accomplished Visa Application Form.",
-          "Passport-size Photo(s) (specifications vary by embassy).",
-          "Proof of Financial Capacity (Bank Certificate/Statement, ITR).",
-          "Proof of Travel (Flight/Hotel Reservations, Itinerary).",
-          "Proof of Strong Ties to Home Country (Employment/Business/School docs).",
-        ];
-      case "Travel Insurance":
-        return ["Valid ID or Passport.", "Confirmed Travel Dates/Itinerary."];
-      case "Bills Payment":
-        return [
-          "Actual Billing Statement or Account Details.",
-          "Exact Payment Amount.",
-        ];
-      default:
-        return [
-          "Contact details (phone/email).",
-          "Detailed description of your needs.",
-          "Any relevant existing documents or references.",
-        ];
-    }
-  };
 
   const backgroundImage =
     "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop";
 
-  const services = [
-    {
-      icon: <Plane size={24} />,
-      title: "Airline Booking",
-      desc: "Domestic & International flights at the best rates.",
-      img: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <Hotel size={24} />,
-      title: "Hotel Booking",
-      desc: "Affordable stays and luxury accommodations worldwide.",
-      img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <Map size={24} />,
-      title: "Tour Arrangements",
-      desc: "Complete tour packages for solo or group travelers.",
-      img: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <Ship size={24} />,
-      title: "Ferry Booking",
-      desc: "Convenient sea travel ticket reservations.",
-      img: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <BookUser size={24} />,
-      title: "Passport Assist",
-      desc: "New application and renewal processing assistance.",
-      img: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <Baby size={24} />,
-      title: "PSA Birth Cert",
-      desc: "Hassle-free request for PSA authenticated documents.",
-      img: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <HeartHandshake size={24} />,
-      title: "Marriage Cert",
-      desc: "PSA Marriage Certificate processing support.",
-      img: "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <FileCheck size={24} />,
-      title: "CENOMAR",
-      desc: "Certificate of No Marriage (CENOMAR) requests.",
-      img: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <Globe size={24} />,
-      title: "Visa Assistance",
-      desc: "Expert guidance for tourist and travel visa applications.",
-      img: "https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <ShieldCheck size={24} />,
-      title: "Travel Insurance",
-      desc: "Comprehensive coverage for safe and worry-free trips.",
-      img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&auto=format&fit=crop&q=60",
-    },
-    {
-      icon: <Receipt size={24} />,
-      title: "Bills Payment",
-      desc: "One-stop shop for paying your utilities and bills.",
-      img: "https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=600&auto=format&fit=crop&q=60",
-    },
-  ];
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/services');
+      const data = await response.json();
+      
+      if (data.success) {
+        const transformedServices = data.data.map(service => ({
+          _id: service._id, 
+          icon: iconMap[service.icon] || <Globe size={24} />,
+          title: service.title,
+          desc: service.description,
+          img: service.image,
+          price: service.price,
+          requirements: service.requirements || []
+        }));
+        setServices(transformedServices);
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const scroll = (direction) => {
     if (sliderRef.current) {
@@ -290,11 +181,13 @@ const OtherServices = ({ setAuthPage }) => {
   const handleInquireClick = (item) => {
     if (item.title === "Visa Assistance") {
       setIsVisaService(true);
-      // We clear package info initially until they pick a country
       setSelectedPackage({
         title: item.title,
         desc: item.desc,
         requirements: [],
+        price: item.price || 4999.99,
+        visaCountry: null,
+        serviceId: item._id, 
       });
       setFormData({
         fullName: "",
@@ -306,12 +199,14 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Handle normal services
     setIsVisaService(false);
     setSelectedPackage({
       title: item.title,
       desc: item.desc,
-      requirements: getRequirements(item.title),
+      requirements: item.requirements || [],
+      price: item.price || 3599.99,
+      visaCountry: null,
+      serviceId: item._id, 
     });
     setFormData({
       fullName: "",
@@ -324,34 +219,30 @@ const OtherServices = ({ setAuthPage }) => {
 
   const handleViewRequirements = () => {
     if (isVisaService) {
-      // If currently on a specific visa modal, go back to list
       setShowModal(false);
       setShowVisaCountries(true);
     } else {
-      // Normal service requirements
       setShowRequirementsModal(true);
     }
   };
 
-  // --- UPDATED HANDLER TO MATCH MONGODB DATA ---
   const handleSelectVisa = (visa) => {
     setShowVisaCountries(false);
 
-    // FIX 1: Map MongoDB 'description' (or fallback to 'country')
-    // This fixes the issue where title/desc were undefined
     const packageTitle = visa.description || visa.country || "Visa Assistance";
-
-    // FIX 2: Flatten the nested requirements array from MongoDB
-    // MongoDB format is [{ title: "...", items: [...] }]
-    // We flatten this to a simple array of strings for the modal
     const packageRequirements = visa.requirements
       ? visa.requirements.flatMap((section) => section.items || [])
       : [];
+
+    const visaService = services.find(s => s.title === "Visa Assistance");
 
     setSelectedPackage({
       title: packageTitle,
       desc: `Visa assistance for ${visa.country}`,
       requirements: packageRequirements,
+      price: visa.price || 3749.00,
+      visaCountry: visa.country,
+      serviceId: visaService?._id,
     });
 
     setFormData({
@@ -372,20 +263,63 @@ const OtherServices = ({ setAuthPage }) => {
     }));
   };
 
-  const handleInquirySubmit = (e) => {
+  const handleInquirySubmit = async (e) => {
     e.preventDefault();
-    console.log("Inquiry submitted:", formData);
-    // Add your API call to submit inquiry here
-
-    setFormData({ fullName: "", email: "", message: "" });
-    setShowModal(false);
-    setIsVisaService(false);
     
-    // Optional: Redirect to login or show success message
-    if (setAuthPage) {
-      setAuthPage("login");
+    try {
+      const inquiryData = {
+        serviceId: selectedPackage.serviceId, 
+        serviceName: selectedPackage.title,
+        fullName: formData.fullName,
+        email: formData.email,
+        message: formData.message,
+        estimatedPrice: selectedPackage.price || 3599.99
+      };
+
+      if (isVisaService && selectedPackage.visaCountry) {
+        inquiryData.visaCountry = selectedPackage.visaCountry;
+      }
+
+      console.log('Submitting inquiry:', inquiryData);
+
+      const response = await fetch('http://localhost:5000/api/inquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(inquiryData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.message || 'Inquiry submitted successfully! We will contact you within 24 hours.');
+        
+        setFormData({ fullName: "", email: "", message: "" });
+        setShowModal(false);
+        setIsVisaService(false);
+      } else {
+        alert(data.message || 'Failed to submit inquiry. Please try again.');
+      }
+
+    } catch (error) {
+      console.error('Submit inquiry error:', error);
+      alert('Cannot connect to server. Please try again.');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
+        <div className="os-overlay"></div>
+        <div className="os-content-wrapper">
+          <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>
+            <h2>Loading services...</h2>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -411,8 +345,8 @@ const OtherServices = ({ setAuthPage }) => {
           </button>
 
           <div className="os-scroll-container" ref={sliderRef}>
-            {services.map((item, idx) => (
-              <div key={idx} className="os-glass-card">
+            {services.map((item) => (
+              <div key={item._id} className="os-glass-card">
                 <div className="os-card-img-box">
                   <img src={item.img} alt={item.title} loading="lazy" />
                   <div className="os-floating-icon">{item.icon}</div>
@@ -444,7 +378,6 @@ const OtherServices = ({ setAuthPage }) => {
         <div className="os-swipe-hint">Swipe to explore services</div>
       </div>
 
-      {/* Main Inquiry Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card modal-two-column">
@@ -493,8 +426,7 @@ const OtherServices = ({ setAuthPage }) => {
                   <div className="summary-item">
                     <span className="summary-label">Estimated Price</span>
                     <strong className="summary-value price">
-                      ₱
-                      {totalAmount.toLocaleString("en-US", {
+                      ₱{(selectedPackage.price || 3599.99).toLocaleString("en-US", {
                         minimumFractionDigits: 2,
                       })}
                     </strong>
@@ -536,7 +468,6 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
-      {/* Regular Service Requirements Modal */}
       {showRequirementsModal && !isVisaService && (
         <div
           className="modal-overlay"
@@ -581,7 +512,6 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
-      {/* Visa Countries Grid Modal */}
       {showVisaCountries && (
         <div
           className="modal-overlay"
