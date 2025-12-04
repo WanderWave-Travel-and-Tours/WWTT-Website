@@ -36,21 +36,25 @@
     position: relative;
     z-index: 2;
     width: 100%;
-    max-width: 1100px;
-    min-height: 600px;
+    max-width: 900px; 
+    min-height: 500px;
+    height: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    border-radius: 24px;
+    border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
     background-color: white;
+    transition: all 0.3s ease-in-out;
 }
 
+/* --- Slideshow Section --- */
 .slideshow-panel {
     position: relative;
     overflow: hidden;
     background: #000;
-    min-height: 600px;
+    min-height: 500px;
+    height: 100%;
 }
 
 .slideshow-container {
@@ -86,22 +90,22 @@
     left: 0;
     right: 0;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
-    padding: 60px 40px 40px;
+    padding: 60px 30px 40px;
     color: white;
     z-index: 5;
 }
 
 .slide-title {
-    margin: 0 0 8px 0;
-    font-size: 2.4rem;
+    margin: 0 0 6px 0;
+    font-size: 2rem;
     font-weight: 800;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
     line-height: 1.2;
 }
 
-.slide-description {
+.slide-desc {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1rem;
     opacity: 0.95;
     font-weight: 500;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
@@ -109,17 +113,17 @@
 
 .slide-indicators {
     position: absolute;
-    bottom: 24px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 10px;
+    gap: 8px;
     z-index: 10;
 }
 
 .indicator-dot {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background-color: white;
     opacity: 0.5;
@@ -134,75 +138,98 @@
 }
 
 .indicator-dot.active-dot {
-    width: 36px;
+    width: 30px;
     border-radius: 20px;
     opacity: 1;
     background-color: #ff9800;
 }
 
-.login-panel {
+/* --- Form Section --- */
+.signup-form-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #ffffff;
-    padding: 40px 50px;
+    padding: 30px 40px;
 }
 
-.login-form-wrapper {
+.form-content {
     width: 100%;
     max-width: 380px;
 }
 
 .logo-section {
-    text-align: center;
-    margin-bottom: 40px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    gap: 15px;
 }
 
 .logo-img {
-    height: 45px !important;
-    max-height: 45px;
+    height: 48px !important;
+    max-height: 48px;
     width: auto;
-    margin-bottom: 16px;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.1));
     object-fit: contain;
 }
 
-.admin-title {
-    margin: 0;
-    font-size: 1.8rem;
+.header-text-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.title-col {
+    align-items: flex-start;
+}
+
+.subtitle-col {
+    align-items: flex-start;
+    border-left: 1px solid #eee;
+    padding-left: 15px;
+}
+
+.title-line {
+    font-size: 1.4rem;
     font-weight: 800;
     color: #1a237e;
+    line-height: 1;
     letter-spacing: -0.5px;
+    text-transform: capitalize;
 }
 
-.admin-subtitle {
-    margin: 8px 0 0;
+.subtitle-line {
+    font-size: 0.75rem;
     color: #666;
-    font-size: 0.95rem;
+    line-height: 1.25;
+    white-space: nowrap;
 }
 
-.login-form {
+/* Inputs */
+.signup-form {
     width: 100%;
 }
 
 .input-group {
-    margin-bottom: 22px;
+    margin-bottom: 14px;
 }
 
 .input-label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     color: #333;
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: 0.85rem;
 }
 
 .input-field {
     width: 100%;
-    padding: 14px 16px;
-    border-radius: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
     border: 2px solid #e0e0e0;
-    font-size: 1rem;
+    font-size: 0.95rem;
     transition: all 0.3s ease;
     background-color: #f8f9fa;
     font-family: inherit;
@@ -215,51 +242,99 @@
     outline: none;
 }
 
-.input-field::placeholder {
-    color: #999;
+/* PASSWORD VISIBILITY STYLES */
+.password-wrapper {
+    position: relative;
+    width: 100%;
 }
 
-.login-button {
+/* Space for the eye icon */
+.password-input {
+    padding-right: 45px; 
+}
+
+.toggle-password-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+    opacity: 0.5;
+    color: #666;
+    outline: none;
+}
+
+.toggle-password-btn:hover {
+    opacity: 1;
+    color: #333;
+}
+
+/* Fade In Animation for Confirm Field */
+.fade-in-up {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Button */
+.signup-button {
     width: 100%;
-    padding: 16px;
+    padding: 14px;
     background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin-top: 10px;
     transition: all 0.3s ease;
     box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3);
     font-family: inherit;
 }
 
-.login-button:hover:not(:disabled) {
+.signup-button:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 10px 30px rgba(255, 152, 0, 0.4);
 }
 
-.login-button:active:not(:disabled) {
+.signup-button:active:not(:disabled) {
     transform: translateY(-1px);
 }
 
-.login-button:disabled {
+.signup-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
+/* Switch Link */
 .switch-page-text {
     text-align: center;
-    margin-top: 24px;
+    margin-top: 20px;
     color: #666;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .switch-page-link {
     color: #ff9800;
     font-weight: 600;
-    margin-left: 6px;
+    margin-left: 5px;
     cursor: pointer;
     transition: color 0.3s ease;
 }
@@ -269,183 +344,116 @@
     text-decoration: underline;
 }
 
-.footer-text {
-    text-align: center;
-    margin-top: 28px;
-    color: #999;
-    font-size: 0.85rem;
-}
+/* --- RESPONSIVE --- */
 
 @media (max-width: 900px) {
     .signup-container {
-        grid-template-columns: 1fr;
-        max-width: 500px;
+        grid-template-columns: 1fr; 
+        max-width: 480px; 
         min-height: auto;
     }
     
     .slideshow-panel {
-        min-height: 320px;
-        height: 320px;
+        height: 200px;
+        min-height: 200px;
     }
     
-    .login-panel {
-        padding: 40px 35px;
-    }
-    
-    .slide-title {
-        font-size: 2rem;
-    }
-
-    .slide-description {
-        font-size: 1.1rem;
-    }
-
     .slide-content-overlay {
-        padding: 40px 30px 30px;
-    }
-}
-
-@media (max-width: 600px) {
-    .signup-wrapper {
-        padding: 15px;
-    }
-
-    .signup-container {
-        border-radius: 18px;
-        max-width: 100%;
+        padding: 20px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
     }
     
-    .slideshow-panel {
-        min-height: 280px;
-        height: 280px;
-    }
-    
-    .login-panel {
-        padding: 35px 25px;
-    }
-
-    .login-form-wrapper {
-        max-width: 100%;
-    }
-    
-    .logo-img {
-        height: 40px !important;
-        max-height: 40px;
-    }
-    
-    .admin-title {
-        font-size: 1.6rem;
-    }
-
-    .admin-subtitle {
-        font-size: 0.9rem;
-    }
-
-    .slide-title {
-        font-size: 1.8rem;
-    }
-
-    .slide-description {
-        font-size: 1rem;
-    }
-
-    .slide-content-overlay {
-        padding: 30px 25px 25px;
-    }
-
-    .input-field {
-        padding: 13px 14px;
-        font-size: 0.95rem;
-    }
-
-    .login-button {
-        padding: 15px;
-        font-size: 1rem;
-    }
-}
-
-@media (max-width: 400px) {
-    .signup-wrapper {
-        padding: 10px;
-    }
-
-    .signup-container {
-        border-radius: 16px;
-    }
-
-    .slideshow-panel {
-        min-height: 240px;
-        height: 240px;
-    }
-
-    .login-panel {
-        padding: 30px 20px;
-    }
-
-    .logo-section {
-        margin-bottom: 30px;
-    }
-
-    .logo-img {
-        height: 38px !important;
-        max-height: 38px;
-    }
-
-    .admin-title {
-        font-size: 1.4rem;
-    }
-
-    .admin-subtitle {
-        font-size: 0.85rem;
-    }
-
     .slide-title {
         font-size: 1.5rem;
     }
 
-    .slide-description {
-        font-size: 0.9rem;
+    .slide-desc {
+        display: none;
     }
 
-    .slide-content-overlay {
-        padding: 25px 20px 20px;
+    .signup-form-wrapper {
+        padding: 30px 25px;
+    }
+    
+    .logo-img {
+        height: 40px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .signup-wrapper {
+        padding: 15px;
+        align-items: flex-start;
+        padding-top: 20px;
     }
 
-    .slide-indicators {
-        bottom: 18px;
-        gap: 8px;
+    .signup-container {
+        border-radius: 16px;
+        width: 100%;
     }
 
-    .indicator-dot {
-        width: 8px;
-        height: 8px;
+    .slideshow-panel {
+        height: 150px;
+        min-height: 150px;
     }
 
-    .indicator-dot.active-dot {
-        width: 28px;
+    .slide-title {
+        font-size: 1.2rem;
     }
 
-    .input-group {
-        margin-bottom: 18px;
+    .signup-form-wrapper {
+        padding: 25px 20px;
     }
 
     .input-field {
-        padding: 12px 14px;
-        font-size: 0.9rem;
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    .logo-section {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .subtitle-col {
+        border-left: none;
+        padding-left: 0;
+        align-items: center;
+        width: 100%;
+        text-align: center;
+    }
+    
+    .subtitle-line {
+        white-space: normal;
+    }
+}
+
+@media (max-height: 600px) {
+    .signup-wrapper {
+        padding: 10px;
+        align-items: center;
+    }
+    
+    .signup-container {
+        grid-template-columns: 1fr 1fr;
+        max-width: 800px;
+        min-height: 350px;
     }
 
-    .login-button {
-        padding: 14px;
-        font-size: 0.95rem;
+    .slideshow-panel {
+        height: auto;
+        min-height: 100%;
     }
 
-    .switch-page-text {
-        font-size: 0.9rem;
-        margin-top: 20px;
+    .signup-form-wrapper {
+        padding: 20px;
     }
 
-    .footer-text {
-        font-size: 0.8rem;
-        margin-top: 24px;
+    .logo-section {
+        margin-bottom: 15px;
+    }
+
+    .logo-img {
+        height: 35px !important;
     }
 }

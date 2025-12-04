@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PackageCard from './packageCard';
-import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, DollarSign } from 'lucide-react'; // Added Info, DollarSign
+import CurrencyModal from './CurrencyModal';
+import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import './AllPackages.css';
 
 function AllPackages({ 
@@ -29,6 +30,32 @@ function AllPackages({
   const EXCHANGE_RATE = 58; 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; 
+
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const hasTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (hasTriggeredRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShowCurrencyModal(true);
+          hasTriggeredRef.current = true;
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+
+    if (packagesRef.current) {
+      observer.observe(packagesRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [packagesRef]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -82,6 +109,11 @@ function AllPackages({
   return (
     <section className="all-packages-section" ref={packagesRef}>
       
+      <CurrencyModal 
+        isOpen={showCurrencyModal} 
+        onClose={() => setShowCurrencyModal(false)} 
+      />
+
       <div className="section-title-wrapper">
         <h2 className="packages-main-title">{categoryName}</h2>
         <span className="packages-count-badge">{packages.length} packages</span>

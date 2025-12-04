@@ -132,7 +132,7 @@ const Login = () => {
                                 className="logo-img"
                             />
                             <h1 className="admin-title">Admin Portal</h1>
-                            <p className="admin-subtitle">Sign in to manage your travel experiences</p>
+                            <p className="admin-subtitle">Sign in to manage travel experiences</p>
                         </div>
 
                         <form onSubmit={handleLogin} className="login-form">

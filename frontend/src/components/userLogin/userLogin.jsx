@@ -108,18 +108,21 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             <div className="user-login-container">
                 <div className="slideshow-panel">
                     <div className="slideshow-container">
-                        {destinations.map((dest, index) => (
-                            <div
-                                key={index}
-                                className={`slide-item ${currentSlide === index ? 'active' : ''}`}
-                                style={{ backgroundImage: `url(${dest.image})` }}
-                            >
-                                <div className="slide-content-overlay">
-                                    <h2 className="slide-title">{dest.name}</h2>
-                                    <p className="slide-description">{dest.description}</p>
+                        {destinations.map((dest, index) => {
+                            const isActive = index === currentSlide;
+                            return (
+                                <div
+                                    key={index}
+                                    className={`slide-item ${isActive ? 'active' : ''}`}
+                                    style={{ backgroundImage: `url(${dest.image})` }}
+                                >
+                                    <div className="slide-content-overlay">
+                                        <h2 className="slide-title">{dest.name}</h2>
+                                        <p className="slide-description">{dest.description}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                     <div className="slide-indicators">
                         {destinations.map((_, i) => (
@@ -134,20 +137,24 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
                 <div className="login-panel">
                     <div className="login-form-wrapper">
+                        {/* UPDATED LOGO SECTION: Horizontal 3-Column Layout */}
                         <div className="logo-section">
                             <img
                                 src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
                                 alt="WanderWave Logo"
                                 className="logo-img"
                             />
-                            <h1 className="admin-title">
-                                {isSignup ? 'Create Account' : 'Welcome Back!'} 
-                            </h1>
-                            <p className="admin-subtitle">
-                                {isSignup 
-                                    ? 'Join us for amazing travel deals!' 
-                                    : 'Sign in to continue your journey'}
-                            </p>
+                            
+                            <div className="header-text-col title-col">
+                                <span className="title-line">{isSignup ? 'Create' : 'Welcome'}</span>
+                                <span className="title-line">{isSignup ? 'Account' : 'Back'}</span>
+                            </div>
+
+                            <div className="header-text-col subtitle-col">
+                                <span className="subtitle-line">{isSignup ? 'Join us for' : 'Sign in to'}</span>
+                                <span className="subtitle-line">{isSignup ? 'amazing' : 'continue your'}</span>
+                                <span className="subtitle-line">{isSignup ? 'travel deals' : 'journey'}</span>
+                            </div>
                         </div>
 
                         <form className="login-form" onSubmit={handleSubmit}>
@@ -207,12 +214,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                 </div>
                             )}
 
-                            <div className="recaptcha-container" style={{ 
-                                marginTop: '20px', 
-                                marginBottom: '20px',
-                                display: 'flex',
-                                justifyContent: 'center'
-                            }}>
+                            <div className="recaptcha-wrapper">
                                 <ReCAPTCHA
                                     ref={recaptchaRef}
                                     sitekey={RECAPTCHA_SITE_KEY}
@@ -230,7 +232,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                         </form>
 
                         <p className="switch-page-text">
-                            {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+                            {isSignup ? 'Already have an account?' : "Don't have an account?"}
                             <span 
                                 className="switch-page-link"
                                 onClick={() => {
@@ -244,14 +246,9 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                         setRecaptchaToken(null);
                                     }
                                 }}
-                                style={{ cursor: 'pointer', fontWeight: '600' }}
                             >
                                 {isSignup ? 'Log In' : 'Sign Up'}
                             </span>
-                        </p>
-
-                        <p className="footer-text">
-                            © 2025 WanderWave Travel and Tours
                         </p>
                     </div>
                 </div>
