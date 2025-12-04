@@ -56,6 +56,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/psa', psaRoutes);
 app.use('/api/passports', passportRoutes);
 app.use('/api/inquiries', inquiryRoutes);
+app.use('/api/documents', require('./routes/documentRoute'));
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {

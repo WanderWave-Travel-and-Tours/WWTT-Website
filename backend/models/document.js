@@ -15,6 +15,14 @@ const documentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  originalName: {
+    type: String,
+    required: true
+  },
+  fileUrl: {
+    type: String,
+    required: true
+  },
   filePath: {
     type: String,
     required: true
@@ -30,6 +38,10 @@ const documentSchema = new mongoose.Schema({
   uploadDate: {
     type: Date,
     default: Date.now
+  },
+  section: {
+    type: String,
+    default: 'General Documents'
   },
   status: {
     type: String,
