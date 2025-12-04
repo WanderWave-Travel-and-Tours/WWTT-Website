@@ -172,6 +172,7 @@
   padding-top: 20px;
   border-top: 1px solid rgba(0, 0, 0, 0.06); 
   margin-top: auto;
+  gap: 12px;
 }
 
 .price-info {
@@ -203,11 +204,11 @@
 .price-value {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #ea580c; /* Darker Orange Price */
+  color: #ea580c;
 }
 
 .book-button {
-  background-color: #ea580c; /* Darker Orange Button */
+  background-color: #ea580c;
   color: #fff;
   border: none;
   padding: 10px 24px;
@@ -220,6 +221,8 @@
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .book-button:hover {
@@ -228,8 +231,324 @@
   box-shadow: 0 6px 15px rgba(234, 88, 12, 0.35);
 }
 
+.book-button:active {
+  transform: translateY(0);
+}
+
+/* Tablet styles */
+@media (max-width: 1024px) {
+  .card-body {
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 1.125rem;
+  }
+
+  .price-value {
+    font-size: 1.375rem;
+  }
+
+  .book-button {
+    padding: 9px 20px;
+    font-size: 0.85rem;
+  }
+
+  .card-image {
+    height: 200px;
+  }
+}
+
+/* Mobile landscape and smaller tablets */
+@media (max-width: 768px) {
+  .package-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .card-body {
+    padding: 18px;
+  }
+
+  .card-header {
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+
+  .rating-value,
+  .rating-count {
+    font-size: 0.8rem;
+  }
+
+  .card-details {
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .detail-text {
+    font-size: 0.85rem;
+  }
+
+  .detail-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .card-footer {
+    padding-top: 16px;
+    gap: 10px;
+  }
+
+  .price-label {
+    font-size: 0.7rem;
+  }
+
+  .currency {
+    font-size: 0.9rem;
+  }
+
+  .price-value {
+    font-size: 1.3rem;
+  }
+
+  .book-button {
+    padding: 8px 18px;
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+
+  .book-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .card-image {
+    height: 180px;
+  }
+
+  .badge {
+    padding: 5px 10px;
+    font-size: 0.7rem;
+  }
+
+  .badge-discount {
+    right: 60px;
+  }
+
+  .favorite-button {
+    width: 42px;
+    height: 42px;
+  }
+
+  .favorite-button svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+/* Mobile portrait */
 @media (max-width: 480px) {
-  .card-body { padding: 16px; }
-  .card-title { font-size: 1.125rem; }
-  .price-value { font-size: 1.25rem; }
+  .card-body {
+    padding: 16px;
+  }
+
+  .card-header {
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .rating-row {
+    gap: 5px;
+  }
+
+  .star-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .rating-value,
+  .rating-count {
+    font-size: 0.75rem;
+  }
+
+  .card-details {
+    gap: 9px;
+    margin-bottom: 18px;
+  }
+
+  .detail-row {
+    gap: 10px;
+  }
+
+  .detail-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .detail-text {
+    font-size: 0.8rem;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 14px;
+    gap: 12px;
+  }
+
+  .price-info {
+    width: 100%;
+  }
+
+  .price-label {
+    font-size: 0.65rem;
+  }
+
+  .currency {
+    font-size: 0.85rem;
+  }
+
+  .price-value {
+    font-size: 1.25rem;
+  }
+
+  .book-button {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 0.875rem;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .book-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .card-image {
+    height: 160px;
+  }
+
+  .badge {
+    padding: 4px 8px;
+    font-size: 0.65rem;
+    top: 10px;
+  }
+
+  .badge-featured {
+    left: 10px;
+  }
+
+  .badge-discount {
+    right: 52px;
+    max-width: 100px;
+    line-height: 1.2;
+  }
+
+  .favorite-button {
+    width: 40px;
+    height: 40px;
+    top: 10px;
+    right: 10px;
+  }
+
+  .favorite-button svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 360px) {
+  .card-body {
+    padding: 14px;
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+  }
+
+  .rating-value,
+  .rating-count {
+    font-size: 0.7rem;
+  }
+
+  .detail-text {
+    font-size: 0.75rem;
+  }
+
+  .price-value {
+    font-size: 1.15rem;
+  }
+
+  .book-button {
+    padding: 11px 18px;
+    font-size: 0.8rem;
+  }
+
+  .card-image {
+    height: 140px;
+  }
+
+  .badge {
+    font-size: 0.6rem;
+    padding: 3px 7px;
+  }
+
+  .badge-discount {
+    right: 48px;
+    max-width: 90px;
+  }
+
+  .favorite-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .favorite-button svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* Hover effects only on devices that support hover */
+@media (hover: hover) and (pointer: fine) {
+  .package-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .package-card:hover .image-content {
+    transform: scale(1.1);
+  }
+
+  .favorite-button:hover {
+    transform: scale(1.1);
+  }
+
+  .book-button:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .package-card:active {
+    transform: translateY(-2px);
+  }
+
+  .favorite-button:active {
+    transform: scale(0.95);
+  }
+
+  .book-button:active {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
 }
