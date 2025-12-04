@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../sidebar/sidebar";
-
+import { CreditCard } from "lucide-react";
 import {
   Plus,
   FolderOpen,
@@ -128,6 +128,12 @@ const VisaProcessing = () => {
     { code: "VN", name: "Vietnam" },
     { code: "ZA", name: "South Africa" },
   ].sort((a, b) => a.name.localeCompare(b.name));
+
+  const handleRequestPayment = async () => {
+      if (!window.confirm("Are documents correct? This will notify the user to pay.")) return;
+      
+      await handleUpdateInquiryStatus(selectedInquiry._id, 'PAYMENT_PENDING');
+  };
 
   const initiateContactStatus = () => {
       setShowContactRemarks(true); // Open the specific modal for remarks
@@ -1189,6 +1195,24 @@ const VisaProcessing = () => {
                       >
                           Set Contacted (With Remarks)
                       </button>
+                      <button
+                          className="visa-action-btn"
+                          onClick={handleRequestPayment}
+                          disabled={selectedInquiry.status === 'PAYMENT_PENDING' || selectedInquiry.status === 'PAID'}
+                          style={{ 
+                              background: '#059669', // Green color
+                              color: 'white',
+                              borderColor: '#059669',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              opacity: (selectedInquiry.status === 'PAYMENT_PENDING' || selectedInquiry.status === 'PAID') ? 0.5 : 1,
+                              cursor: (selectedInquiry.status === 'PAYMENT_PENDING' || selectedInquiry.status === 'PAID') ? 'not-allowed' : 'pointer'
+                          }}
+                      >
+                          <CreditCard size={16} />
+                          Approve & Request Payment
+                      </button>  
                       <button
                         className="visa-action-btn visa-view-btn"
                         onClick={() => handleUpdateInquiryStatus(selectedInquiry._id, 'COMPLETED')}

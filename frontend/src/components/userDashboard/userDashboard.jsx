@@ -12,7 +12,6 @@ const UserDashboard = ({ user, onLogout }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [visaDetails, setVisaDetails] = useState(null);
 
-    // ✅ Fetch real inquiries from database
     useEffect(() => {
         const fetchInquiries = async () => {
             try {
@@ -38,7 +37,6 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     }, [user]);
 
-    // ✅ Fetch visa details when inquiry is selected (if it's a visa inquiry)
     useEffect(() => {
         const fetchVisaDetails = async () => {
             if (selectedInquiry?.visaId) {
@@ -59,6 +57,32 @@ const UserDashboard = ({ user, onLogout }) => {
 
         fetchVisaDetails();
     }, [selectedInquiry]);
+
+    const handlePayment = async () => {
+        if (!selectedInquiry) return;
+
+        try {
+            setIsLoading(true);
+            const response = await fetch('http://localhost:5000/api/payment/create-inquiry-checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inquiryId: selectedInquiry._id })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.checkoutUrl) {
+                window.location.href = data.checkoutUrl;
+            } else {
+                alert('Failed to initiate payment. Please try again.');
+            }
+        } catch (error) {
+            console.error('Payment Error:', error);
+            alert('Payment system is currently unavailable.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleFileSelect = (e, section) => {
         const files = Array.from(e.target.files);
@@ -155,16 +179,13 @@ const UserDashboard = ({ user, onLogout }) => {
 
     const getStatusClass = (status) => {
         switch (status?.toUpperCase()) {
-            case 'PENDING':
-                return 'status-pending';
-            case 'CONTACTED':
-                return 'status-contacted';
-            case 'COMPLETED':
-                return 'status-completed';
-            case 'CANCELLED':
-                return 'status-cancelled';
-            default:
-                return 'status-pending';
+            case 'PENDING': return 'status-pending';
+            case 'CONTACTED': return 'status-contacted';
+            case 'PAYMENT_PENDING': return 'status-contacted'; // Same orange/warning color or create new css class
+            case 'PAID': return 'status-completed'; // Green
+            case 'COMPLETED': return 'status-completed';
+            case 'CANCELLED': return 'status-cancelled';
+            default: return 'status-pending';
         }
     };
 
@@ -293,11 +314,60 @@ const UserDashboard = ({ user, onLogout }) => {
                                         {selectedInquiry.status || 'PENDING'}
                                     </span>
                                 </div>
-                                {selectedInquiry.remarks && (
+                                {selectedInquiry.status === 'PAYMENT_PENDING' && (
+                                    <div style={{
+                                        marginTop: '20px',
+                                        padding: '20px',
+                                        background: '#ecfdf5',
+                                        border: '1px solid #10b981',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '12px'
+                                    }}>
+                                        <h4 style={{ margin: 0, color: '#047857', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            💳 Payment Required
+                                        </h4>
+                                        <p style={{ margin: 0, fontSize: '14px', color: '#065f46' }}>
+                                            Your documents have been approved! Please settle the payment to proceed with the visa application.
+                                        </p>
+                                        
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                                            <span style={{ fontWeight: 'bold', fontSize: '18px', color: '#0f172a' }}>
+                                                Total: ₱{selectedInquiry.estimatedPrice?.toLocaleString()}
+                                            </span>
+                                            <button 
+                                                onClick={handlePayment}
+                                                style={{
+                                                    background: '#059669',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    padding: '12px 24px',
+                                                    borderRadius: '6px',
+                                                    fontWeight: 'bold',
+                                                    cursor: 'pointer',
+                                                    fontSize: '14px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    transition: 'background 0.2s'
+                                                }}
+                                                onMouseOver={(e) => e.target.style.background = '#047857'}
+                                                onMouseOut={(e) => e.target.style.background = '#059669'}
+                                            >
+                                                Pay Now via PayMongo
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                {selectedInquiry.remarks && 
+                                selectedInquiry.status !== 'PAYMENT_PENDING' && 
+                                selectedInquiry.status !== 'PAID' && 
+                                selectedInquiry.status !== 'COMPLETED' && (
                                     <div className="remarks-section" style={{ 
                                         marginTop: '20px', 
                                         padding: '15px', 
-                                        backgroundColor: '#fff1f2', // Reddish tint for alert
+                                        backgroundColor: '#fff1f2', 
                                         border: '1px solid #fda4af',
                                         borderRadius: '8px'
                                     }}>

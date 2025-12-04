@@ -213,12 +213,8 @@ const getInquiry = async (req, res) => {
 
 const updateInquiryStatus = async (req, res) => {
   try {
-    // 👇 UPDATED DESTRUCTURING to include remarks
     const { status, adminNotes, contactedBy, remarks } = req.body;
-    
-    // Check if there is an uploaded file (Evidence)
     const evidenceFile = req.file; 
-
     const inquiry = await Inquiry.findById(req.params.id);
 
     if (!inquiry) {
@@ -243,7 +239,6 @@ const updateInquiryStatus = async (req, res) => {
       updateData.evidenceUrl = fileUrl;
       updateData.evidenceName = evidenceFile.originalname;
     }
-    // 👆 END NEW LOGIC
 
     if (status === 'CONTACTED' && !inquiry.contactedAt) {
       updateData.contactedAt = Date.now();
@@ -371,6 +366,42 @@ const getInquiryStats = async (req, res) => {
   }
 };
 
+const markAsPaid = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Update status to PAID
+    const inquiry = await Inquiry.findByIdAndUpdate(
+      id,
+      { 
+        status: 'PAID',
+        updatedAt: Date.now()
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!inquiry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Inquiry not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Payment status updated to PAID',
+      data: inquiry
+    });
+
+  } catch (error) {
+    console.error('Mark as paid error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating payment status'
+    });
+  }
+};
+
 module.exports = {
   createInquiry,
   getAllInquiries,
@@ -378,5 +409,6 @@ module.exports = {
   updateInquiryStatus,
   deleteInquiry,
   getInquiriesByEmail,
-  getInquiryStats
+  getInquiryStats,
+  markAsPaid
 };

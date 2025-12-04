@@ -41,7 +41,7 @@ const inquirySchema = new mongoose.Schema({
   // Status Tracking
   status: {
     type: String,
-    enum: ['PENDING', 'CONTACTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+    enum: ['PENDING', 'CONTACTED', 'IN_PROGRESS', 'PAYMENT_PENDING', 'PAID', 'COMPLETED', 'CANCELLED'],
     default: 'PENDING'
   },
   remarks: {
