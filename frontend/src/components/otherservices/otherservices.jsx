@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import "./OtherServices.css";
 import VisaTable from "./VisaTable";
+import PSATable from "./PsaTable"; 
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -89,21 +90,21 @@ const UniversalInquiryForm = ({
 
 const OtherServices = ({ setAuthPage }) => {
   const sliderRef = useRef(null);
-
-  // NEW: Fetch services from database
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [showModal, setShowModal] = useState(false);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const [showVisaCountries, setShowVisaCountries] = useState(false);
   const [isVisaService, setIsVisaService] = useState(false);
+  const [showPSADocuments, setShowPSADocuments] = useState(false); 
+  const [isPSAService, setIsPSAService] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState({
     title: "",
     desc: "",
     requirements: [],
     price: 3599.99,
     visaCountry: null,
+    psaDocument: null, 
     serviceId: null,
   });
 
@@ -179,14 +180,17 @@ const OtherServices = ({ setAuthPage }) => {
   };
 
   const handleInquireClick = (item) => {
+    // Handle Visa Assistance
     if (item.title === "Visa Assistance") {
       setIsVisaService(true);
+      setIsPSAService(false);
       setSelectedPackage({
         title: item.title,
         desc: item.desc,
         requirements: [],
         price: item.price || 4999.99,
         visaCountry: null,
+        psaDocument: null,
         serviceId: item._id, 
       });
       setFormData({
@@ -199,13 +203,39 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
+    // NEW: Handle PSA Assistance
+    if (item.title === "PSA Assistance" || item.title.includes("PSA")) {
+      setIsPSAService(true);
+      setIsVisaService(false);
+      setSelectedPackage({
+        title: item.title,
+        desc: item.desc,
+        requirements: [],
+        price: item.price || 350,
+        visaCountry: null,
+        psaDocument: null,
+        serviceId: item._id,
+      });
+      setFormData({
+        fullName: "",
+        email: "",
+        message: "",
+      });
+      setShowModal(false);
+      setShowPSADocuments(true);
+      return;
+    }
+
+    // Handle regular services
     setIsVisaService(false);
+    setIsPSAService(false);
     setSelectedPackage({
       title: item.title,
       desc: item.desc,
       requirements: item.requirements || [],
       price: item.price || 3599.99,
       visaCountry: null,
+      psaDocument: null,
       serviceId: item._id, 
     });
     setFormData({
@@ -221,6 +251,9 @@ const OtherServices = ({ setAuthPage }) => {
     if (isVisaService) {
       setShowModal(false);
       setShowVisaCountries(true);
+    } else if (isPSAService) {
+      setShowModal(false);
+      setShowPSADocuments(true);
     } else {
       setShowRequirementsModal(true);
     }
@@ -255,6 +288,37 @@ const OtherServices = ({ setAuthPage }) => {
     setShowModal(true);
   };
 
+  const handleSelectPSA = (psa) => {
+    setShowPSADocuments(false);
+
+    const packageTitle = psa.description || psa.documentType || "PSA Document";
+    const packageRequirements = psa.requirements
+      ? psa.requirements.flatMap((section) => section.items || [])
+      : [];
+
+    const psaService = services.find(s => s.title === "PSA Assistance" || s.title.includes("PSA"));
+
+    setSelectedPackage({
+      title: packageTitle,
+      desc: `PSA ${psa.documentType} processing`,
+      requirements: packageRequirements,
+      price: psa.price || 350,
+      visaCountry: null,
+      psaDocument: psa.documentType,
+      serviceId: psaService?._id,
+    });
+
+    setFormData({
+      fullName: "",
+      email: "",
+      message: `I would like to inquire about ${packageTitle}. Processing time: ${psa.processingTime || '3-5 business days'}. `,
+    });
+
+    setIsPSAService(true);
+    setIsVisaService(false);
+    setShowModal(true);
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -273,7 +337,9 @@ const OtherServices = ({ setAuthPage }) => {
         fullName: formData.fullName,
         email: formData.email,
         message: formData.message,
-        estimatedPrice: selectedPackage.price || 3599.99
+        estimatedPrice: selectedPackage.price || 3599.99,
+        visaCountry: selectedPackage.visaCountry || null,
+        psaDocument: selectedPackage.psaDocument || null, // NEW: PSA Document field
       };
 
       if (isVisaService && selectedPackage.visaCountry) {
@@ -468,7 +534,7 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
-      {showRequirementsModal && !isVisaService && (
+      {showRequirementsModal && !isVisaService && !isPSAService && (
         <div
           className="modal-overlay"
           onClick={() => setShowRequirementsModal(false)}
@@ -533,6 +599,32 @@ const OtherServices = ({ setAuthPage }) => {
               <X size={32} strokeWidth={3} />
             </button>
             <VisaTable onSelectVisa={handleSelectVisa} />
+          </div>
+        </div>
+      )}
+      
+      {/* NEW: PSA Documents Modal */}
+      {showPSADocuments && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowPSADocuments(false);
+          }}
+        >
+          <div
+            className="psa-documents-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close-btn"
+              onClick={() => {
+                setShowPSADocuments(false);
+              }}
+              aria-label="Close PSA Documents"
+            >
+              <X size={32} strokeWidth={3} />
+            </button>
+            <PSATable onSelectPSA={handleSelectPSA} />
           </div>
         </div>
       )}
