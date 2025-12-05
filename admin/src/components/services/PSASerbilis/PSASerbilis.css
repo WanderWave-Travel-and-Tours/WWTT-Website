@@ -676,6 +676,73 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     background: #b45309;
 }
 
+.visa-badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.badge-approved, .badge-paid { background: #dcfce7; color: #166534; } /* Green */
+.badge-pending { background: #ffedd5; color: #9a3412; } /* Orange */
+.badge-contacted { background: #dbeafe; color: #1e40af; } /* Blue */
+.badge-payment_pending { background: #fef9c3; color: #854d0e; } /* Yellow */
+.badge-completed { background: #d1fae5; color: #065f46; } /* Teal */
+.badge-cancelled { background: #fee2e2; color: #991b1b; } /* Red */
+
+.visa-action-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #475569; 
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.visa-action-btn:hover { background: #f1f5f9; border-color: #cbd5e1; color: #0f172a; }
+.visa-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* View Button specific style */
+.visa-view-btn { color: #0f172a; }
+.visa-view-btn:hover { background: #f1f5f9; border-color: #0f172a; }
+
+/* Payment Button specific style */
+.btn-approve-payment {
+    background: #059669 !important;
+    color: white !important;
+    border-color: #059669 !important;
+}
+.btn-approve-payment:hover { background: #047857 !important; }
+
+/* Cancel Button specific style */
+.btn-cancel {
+    background: #ef4444 !important;
+    color: white !important;
+    border-color: #ef4444 !important;
+}
+.btn-cancel:hover { background: #dc2626 !important; }
+
+.modal-content-large {
+    max-width: 900px; 
+    width: 95%;
+}
+
+.modal-body {
+    padding: 24px;
+    background-color: #fff;
+    overflow-y: auto;
+    max-height: 70vh;
+}
+
 @media (max-width: 1024px) { 
     .psa-main, .psa-main.expanded { padding: 30px; } 
     .psa-stats-grid { grid-template-columns: repeat(2, 1fr); }
