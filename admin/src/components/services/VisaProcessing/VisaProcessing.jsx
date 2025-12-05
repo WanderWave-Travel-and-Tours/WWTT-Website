@@ -183,8 +183,13 @@ const VisaProcessing = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/inquiries');
       if (response.data.success) {
-        setInquiries(response.data.data);
-        console.log('✅ Inquiries loaded:', response.data.data.length);
+        const visaRequests = response.data.data.filter(inq => 
+            (inq.serviceName && inq.serviceName.toUpperCase().includes('VISA')) ||
+            inq.visaCountry // Check kung may visa country field
+        );
+        
+        setInquiries(visaRequests);
+        console.log('✅ Visa Inquiries loaded:', visaRequests.length);
       }
     } catch (error) {
       console.error('Error fetching inquiries:', error);
