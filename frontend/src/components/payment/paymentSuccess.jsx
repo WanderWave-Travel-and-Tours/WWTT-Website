@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Download, Mail, ArrowRight, Home, LayoutDashboard } from 'lucide-react';
+import { CheckCircle, Download, Mail, Home, LayoutDashboard } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import './paymentSuccess.css'; 
 
@@ -12,7 +12,7 @@ const PaymentSuccess = () => {
   const [type, setType] = useState(null); // 'booking' or 'inquiry'
 
   useEffect(() => {
-    // 1. Confetti Effect (Manatiling pareho)
+    // 1. Confetti Effect
     const duration = 3 * 1000;
     const end = Date.now() + duration;
 
@@ -38,7 +38,7 @@ const PaymentSuccess = () => {
     };
     frame();
 
-    // 2. Identify Transaction Type based on URL Params
+    // 2. Identify Transaction Type
     const bookingId = searchParams.get('booking_id');
     const inquiryId = searchParams.get('inquiryId');
 
@@ -49,12 +49,9 @@ const PaymentSuccess = () => {
       setType('inquiry');
       fetchInquiryDetails(inquiryId);
     } else {
-      setLoading(false);
+      // Demo Data for testing if no ID is present (Optional: remove this else block in production)
+      setLoading(false); 
     }
-    
-    // Auto-update status to PAID logic is handled by backend webhook or separate call, 
-    // but we fetch details here to display them.
-
   }, [searchParams]);
 
   // Fetch Booking Data
@@ -63,7 +60,6 @@ const PaymentSuccess = () => {
       const response = await fetch(`http://localhost:5000/api/bookings/${id}`);
       const data = await response.json();
       if (data.success) {
-        // Normalize data structure for the UI
         setDetails({
           reference: data.booking.referenceNumber,
           title: data.booking.packageName,
@@ -85,24 +81,20 @@ const PaymentSuccess = () => {
   // Fetch Inquiry Data
   const fetchInquiryDetails = async (id) => {
     try {
-        // First, call the endpoint to mark as paid (optional, depends if you rely on webhook)
-        // await fetch(`http://localhost:5000/api/inquiries/${id}/pay`, { method: 'PUT' });
-
         const response = await fetch(`http://localhost:5000/api/inquiries/${id}`);
         const data = await response.json();
         
         if (data.success) {
             const inquiry = data.data;
-            // Normalize data structure for the UI
             setDetails({
-                reference: inquiry._id.slice(-8).toUpperCase(), // Inquiry often uses ID as ref
+                reference: inquiry._id.slice(-8).toUpperCase(),
                 title: inquiry.serviceName,
                 subTitle: inquiry.visaCountry ? `Visa Assistance for ${inquiry.visaCountry}` : 'Custom Service',
                 amount: inquiry.estimatedPrice,
                 email: inquiry.email,
                 dateLabel: "Date Submitted",
                 dateValue: new Date(inquiry.createdAt).toLocaleDateString(),
-                status: 'PAID' // Assuming success page means paid
+                status: 'PAID'
             });
         }
     } catch (error) {
@@ -130,7 +122,7 @@ const PaymentSuccess = () => {
       <div className="success-container">
         <div className="success-card">
           <div className="success-icon-wrapper">
-            <CheckCircle size={80} color="#22c55e" strokeWidth={2} />
+            <CheckCircle size={80} color="#22c55e" strokeWidth={3} />
           </div>
 
           <h1 className="success-title">Payment Successful! 🎉</h1>
@@ -183,10 +175,10 @@ const PaymentSuccess = () => {
           )}
 
           <div className="email-notice">
-            <Mail size={20} color="#3b82f6" />
-            <p>
+            <Mail size={20} className="shrink-0" /> {/* shrink-0 prevents icon squishing on mobile */}
+            <span>
               A confirmation email has been sent to <strong>{details?.email}</strong>
-            </p>
+            </span>
           </div>
 
           <div className="action-buttons">
