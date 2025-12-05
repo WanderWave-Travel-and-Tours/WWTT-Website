@@ -32,6 +32,20 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         return () => clearInterval(timer);
     }, []);
 
+    // Check if user is already logged in on component mount
+    useEffect(() => {
+        const savedUser = localStorage.getItem('wanderwave_user');
+        if (savedUser && onLoginSuccess) {
+            try {
+                const userData = JSON.parse(savedUser);
+                onLoginSuccess(userData);
+            } catch (error) {
+                console.error('Error parsing saved user data:', error);
+                localStorage.removeItem('wanderwave_user');
+            }
+        }
+    }, [onLoginSuccess]);
+
     const handleRecaptchaChange = (token) => {
         setRecaptchaToken(token);
     };
@@ -72,6 +86,8 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                 } else {
                     alert(data.message || 'Welcome back!');
                     if (data.user && onLoginSuccess) {
+                        // Save user data to localStorage
+                        localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
                         onLoginSuccess(data.user);
                     }
                 }
@@ -137,7 +153,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
                 <div className="login-panel">
                     <div className="login-form-wrapper">
-                        {/* UPDATED LOGO SECTION: Horizontal 3-Column Layout */}
                         <div className="logo-section">
                             <img
                                 src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
