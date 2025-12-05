@@ -209,7 +209,6 @@ const PSATable = ({ onSelectPSA }) => {
                                 const formLabel = typeof form === 'string' ? form : (form.fileName || form.label || 'Download Form');
                                 const formUrl = typeof form === 'object' ? form.fileUrl : null;
                                 
-                                // DAGDAG NA LOGIC: Check kung full URL na ba o hindi
                                 const finalUrl = formUrl && formUrl.startsWith('http') 
                                     ? formUrl 
                                     : `http://localhost:5000${formUrl}`;
@@ -219,7 +218,7 @@ const PSATable = ({ onSelectPSA }) => {
                                     <span className="download-icon">📄</span>
                                     {formUrl ? (
                                         <a 
-                                        href={finalUrl} // GAMITIN ANG FINAL URL
+                                        href={finalUrl}
                                         download={formLabel}
                                         target="_blank" 
                                         rel="noopener noreferrer"

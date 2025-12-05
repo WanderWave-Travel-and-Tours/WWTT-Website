@@ -23,6 +23,8 @@ const createInquiry = async (req, res) => {
       message,
       visaCountry,
       visaId,
+      psaDocument, // 👈 ADDED: Para sa PSA Document Type (e.g., Birth Certificate)
+      psaId,
       estimatedPrice 
     } = req.body;
 
@@ -126,6 +128,8 @@ const createInquiry = async (req, res) => {
       message,
       visaCountry: visaCountry || null,
       visaId: visaId || null,
+      psaDocument: psaDocument || null, 
+      psaId: psaId || null,
       estimatedPrice: estimatedPrice || 0
     });
 
