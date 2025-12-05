@@ -209,25 +209,30 @@ const PSATable = ({ onSelectPSA }) => {
                                 const formLabel = typeof form === 'string' ? form : (form.fileName || form.label || 'Download Form');
                                 const formUrl = typeof form === 'object' ? form.fileUrl : null;
                                 
+                                // DAGDAG NA LOGIC: Check kung full URL na ba o hindi
+                                const finalUrl = formUrl && formUrl.startsWith('http') 
+                                    ? formUrl 
+                                    : `http://localhost:5000${formUrl}`;
+
                                 return (
-                                  <li key={index} className="psa-download-item">
+                                    <li key={index} className="psa-download-item">
                                     <span className="download-icon">📄</span>
                                     {formUrl ? (
-                                      <a 
-                                        href={`http://localhost:5000${formUrl}`}
+                                        <a 
+                                        href={finalUrl} // GAMITIN ANG FINAL URL
                                         download={formLabel}
-                                        target="_blank"
+                                        target="_blank" 
                                         rel="noopener noreferrer"
                                         className="download-link"
-                                      >
+                                        >
                                         {formLabel}
-                                      </a>
+                                        </a>
                                     ) : (
-                                      <span>{formLabel}</span>
+                                        <span>{formLabel}</span>
                                     )}
-                                  </li>
+                                    </li>
                                 );
-                              })}
+                                })}
                             </ul>
                           ) : (
                             <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
