@@ -1,0 +1,237 @@
+/* SIDEBAR - Travel Ticket Theme */
+.ud-sidebar {
+    position: fixed; 
+    left: 0; 
+    top: 70px; 
+    bottom: 0; 
+    width: 360px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-right: 1px solid var(--ud-border-color);
+    display: flex; 
+    flex-direction: column; 
+    overflow-y: auto; 
+    transition: all 0.3s ease;
+    z-index: 50;
+}
+
+.ud-sidebar-header { 
+    padding: 24px; 
+    border-bottom: 2px solid var(--ud-border-color);
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    background: white;
+}
+
+.ud-sidebar-header h2 { 
+    font-size: 0.85rem; 
+    color: var(--ud-text-secondary);
+    font-weight: 700; 
+    letter-spacing: 1px;
+}
+
+.ud-sidebar-header svg { 
+    color: var(--ud-primary);
+}
+
+.ud-applications-list { 
+    padding: 16px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px;
+}
+
+/* Loading & Empty States */
+.ud-loading-state, 
+.ud-empty-state { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    padding: 60px 20px; 
+    text-align: center; 
+    color: var(--ud-text-secondary);
+}
+
+.ud-loader { 
+    width: 40px; 
+    height: 40px; 
+    border: 3px solid var(--ud-border-color);
+    border-top-color: var(--ud-primary);
+    border-radius: 50%; 
+    animation: ud-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes ud-spin { 
+    to { transform: rotate(360deg); } 
+}
+
+/* TICKET-STYLE CARDS */
+.ud-inquiry-card { 
+    background: white;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    padding: 0;
+    cursor: pointer; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ud-inquiry-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.ud-inquiry-card:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.ud-inquiry-card:hover::before {
+    opacity: 1;
+}
+
+/* ACTIVE STATE - Yellow Ticket */
+.ud-card-active { 
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3) !important;
+    transform: translateY(-2px);
+}
+
+.ud-card-active::before {
+    opacity: 0 !important;
+}
+
+.ud-card-active .ud-card-title,
+.ud-card-active .ud-card-middle,
+.ud-card-active .ud-card-destination,
+.ud-card-active .ud-card-date {
+    color: #0f172a !important;
+}
+
+.ud-card-active .ud-status-dot {
+    background: #0f172a !important;
+    border-color: #0f172a !important;
+}
+
+/* Card Content */
+.ud-card-content {
+    padding: 20px;
+}
+
+.ud-card-top { 
+    display: flex; 
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.ud-card-title { 
+    font-size: 1.05rem; 
+    font-weight: 700;
+    color: var(--ud-text-primary);
+    line-height: 1.3;
+    flex: 1;
+}
+
+/* Status Indicator */
+.ud-status-dot { 
+    width: 10px; 
+    height: 10px; 
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.ud-status-dot.ud-badge-pending { 
+    background: #f59e0b;
+}
+
+.ud-status-dot.ud-badge-payment { 
+    background: #8b5cf6;
+}
+
+.ud-status-dot.ud-badge-paid { 
+    background: #10b981;
+}
+
+.ud-status-dot.ud-badge-completed { 
+    background: #059669;
+}
+
+.ud-status-dot.ud-badge-cancelled { 
+    background: #ef4444;
+}
+
+.ud-card-middle { 
+    display: flex; 
+    justify-content: space-between;
+    align-items: center;
+    color: var(--ud-text-secondary);
+    font-size: 0.85rem;
+    padding-top: 12px;
+    border-top: 1px dashed var(--ud-border-color);
+}
+
+.ud-card-destination { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px;
+    font-weight: 600;
+}
+
+.ud-card-destination svg {
+    color: #f97316;
+}
+
+.ud-card-date {
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+/* Ticket Perforation Effect */
+.ud-inquiry-card::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: var(--ud-bg-main);
+    border-radius: 50%;
+    border: 1px solid var(--ud-border-color);
+    opacity: 0.5;
+}
+
+.ud-card-active::after {
+    background: #f8fafc;
+    border-color: #f59e0b;
+}
+
+/* Hide default badge */
+.ud-card-badge { 
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .ud-sidebar { 
+        transform: translateX(-100%);
+        width: 300px;
+    }
+    .ud-sidebar-open { 
+        transform: translateX(0);
+    }
+}
