@@ -60,7 +60,6 @@ function FlightSearch() {
   const destinationRef = useRef(null);
   const suggestionsRef = useRef(null);
   const searchTimerRef = useRef(null);
-  // Using a ref to track the container of multi-city inputs for click-outside logic
   const multiCityContainerRef = useRef(null); 
 
   // --- HELPERS ---
@@ -170,7 +169,6 @@ function FlightSearch() {
     if (currentValue.length >= 2) {
       await searchAirportsFromAPI(currentValue, "multi-city");
     } else {
-      // Clear suggestions if term is too short when focusing
       setMultiCitySuggestions([]);
     }
   };
@@ -181,7 +179,6 @@ function FlightSearch() {
     newSearchTerms[legIndex][field] = value;
     setMultiCitySearchTerms(newSearchTerms);
 
-    // Update leg data text temporarily (API needs IATA, but we handle that in select)
     const newLegs = [...multiCityLegs];
     newLegs[legIndex][field] = value;
     setMultiCityLegs(newLegs);
@@ -196,13 +193,11 @@ function FlightSearch() {
     const iataCode = airport.iataCode;
     const displayName = `${airport.city} (${iataCode})`;
 
-    // Update Visual Input Text
     const newSearchTerms = [...multiCitySearchTerms];
     if (!newSearchTerms[legIndex]) newSearchTerms[legIndex] = { origin: "", destination: "" };
     newSearchTerms[legIndex][field] = displayName;
     setMultiCitySearchTerms(newSearchTerms);
 
-    // Update Actual Data Logic
     const newLegs = [...multiCityLegs];
     newLegs[legIndex][field] = iataCode;
     setMultiCityLegs(newLegs);
@@ -232,7 +227,6 @@ function FlightSearch() {
   // --- GENERAL HANDLERS ---
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Logic to close dropdowns for Multi City if clicking outside the form area
       if (multiCityContainerRef.current && !multiCityContainerRef.current.contains(event.target)) {
         setActiveMultiCityField(null);
       }
@@ -268,35 +262,63 @@ function FlightSearch() {
     setFlights([]);
     
     let searchData = {};
+    
     if (searchParams.journeyType === "one-way") {
         if (!oneWayData.origin || !oneWayData.destination) {
-            setError("Please enter origin and destination"); setLoading(false); return;
+            setError("Please enter origin and destination"); 
+            setLoading(false); 
+            return;
         }
-        searchData = { origin: oneWayData.origin, destination: oneWayData.destination, departureDate: oneWayData.departureDate };
+        searchData = { 
+          origin: oneWayData.origin, 
+          destination: oneWayData.destination, 
+          departureDate: oneWayData.departureDate 
+        };
     } else if (searchParams.journeyType === "round-trip") {
         if (!roundTripData.origin || !roundTripData.destination) {
-            setError("Please enter origin and destination"); setLoading(false); return;
+            setError("Please enter origin and destination"); 
+            setLoading(false); 
+            return;
         }
         if (!roundTripData.returnDate) {
-            setError("Please select return date"); setLoading(false); return;
+            setError("Please select return date"); 
+            setLoading(false); 
+            return;
         }
-        searchData = { origin: roundTripData.origin, destination: roundTripData.destination, departureDate: roundTripData.departureDate, returnDate: roundTripData.returnDate };
-    } 
-    /* MULTI CITY LOGIC TEMPORARILY COMMENTED OUT
-    else if (searchParams.journeyType === "multi-city") {
-        // Validation for Multi City
+        searchData = { 
+          origin: roundTripData.origin, 
+          destination: roundTripData.destination, 
+          departureDate: roundTripData.departureDate, 
+          returnDate: roundTripData.returnDate 
+        };
+    } else if (searchParams.journeyType === "multi-city") {
+        // Validate Multi-City
         for (let i = 0; i < multiCityLegs.length; i++) {
             if (!multiCityLegs[i].origin || !multiCityLegs[i].destination) {
-                setError(`Please fill in origin and destination for flight ${i + 1}`); setLoading(false); return;
+                setError(`Please fill in origin and destination for flight ${i + 1}`); 
+                setLoading(false); 
+                return;
             }
         }
-        searchData = { multiCityLegs: JSON.stringify(multiCityLegs) };
+        
+        // Multi-city will search each leg as one-way
+        // For now, we'll just search the first leg (you can enhance this later)
+        searchData = {
+          origin: multiCityLegs[0].origin,
+          destination: multiCityLegs[0].destination,
+          departureDate: multiCityLegs[0].departureDate
+        };
     }
-    */
 
     try {
       const response = await axios.get("http://localhost:5000/api/flights/search-domestic", {
-          params: { ...searchData, adults: searchParams.adults, children: searchParams.children, infants: searchParams.infants, cabinType: searchParams.cabinType }
+          params: { 
+            ...searchData, 
+            adults: searchParams.adults, 
+            children: searchParams.children, 
+            infants: searchParams.infants, 
+            cabinType: searchParams.cabinType 
+          }
       });
 
       if (response.data.success && response.data.data.length > 0) {
@@ -308,6 +330,7 @@ function FlightSearch() {
           airline: { ...flight.airline, logo: flight.airline.logo || "https://images.kiwi.com/airlines/64/5J.png" },
           source: "Google Flights",
         }));
+        
         setFlights(allFlights);
         setSearchInfo({
           source: "Google Flights",
@@ -316,7 +339,11 @@ function FlightSearch() {
           routeInfo: searchParams.journeyType === "multi-city" 
             ? { origin: "Multi", destination: "City" }
             : { origin: searchData.origin, destination: searchData.destination },
-          pricingInfo: { pricePerAdult: allFlights[0].price.perPerson, totalPrice: allFlights[0].price.amount, passengers: getTotalPassengers() },
+          pricingInfo: { 
+            pricePerAdult: allFlights[0].price.perPerson, 
+            totalPrice: allFlights[0].price.amount, 
+            passengers: getTotalPassengers() 
+          },
         });
       } else {
         setError("No flights found for this date/route.");
@@ -368,7 +395,13 @@ function FlightSearch() {
       
       <div className="orange-divider"></div>
       
-      <FlightSearchResults searchInfo={searchInfo} flights={flights} error={error} loading={loading} searchParams={searchParams} />
+      <FlightSearchResults 
+        searchInfo={searchInfo} 
+        flights={flights} 
+        error={error} 
+        loading={loading} 
+        searchParams={searchParams} 
+      />
     </div>
   );
 }
