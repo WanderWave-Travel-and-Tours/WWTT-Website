@@ -1,7 +1,17 @@
 const express = require('express');
-const { getPSADocuments } = require('../controller/psaController');
 const router = express.Router();
+const {
+  getPSADocuments,
+  getPSADocument,
+  createPSA,
+  updatePSA,
+  deletePSA
+} = require('../controller/psaController');
 
-router.get('/service/:serviceId', getPSADocuments);
+router.get('/', getPSADocuments);
+router.get('/:id', getPSADocument);
+router.post('/', createPSA);
+router.put('/:id', updatePSA);
+router.delete('/:id', deletePSA);
 
 module.exports = router;

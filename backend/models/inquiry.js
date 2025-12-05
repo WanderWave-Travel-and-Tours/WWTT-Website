@@ -27,7 +27,7 @@ const inquirySchema = new mongoose.Schema({
     required: true
   },
   
-  // Additional Details (for visa inquiries)
+  // Additional Details (for VISA inquiries)
   visaCountry: {
     type: String,
     default: null
@@ -37,6 +37,18 @@ const inquirySchema = new mongoose.Schema({
     ref: 'Visa',
     default: null
   },
+
+  // 👇 DAGDAG MO ITO: Additional Details (for PSA inquiries)
+  psaDocument: {
+    type: String, // Dito papasok yung "Birth Certificate", "Cenomar", etc.
+    default: null
+  },
+  psaId: {
+    type: mongoose.Schema.Types.ObjectId, // Optional: kung gusto mo naka-link din sa PSA collection
+    ref: 'PSA',
+    default: null
+  },
+  // 👆 END NG DAGDAG
   
   // Status Tracking
   status: {
