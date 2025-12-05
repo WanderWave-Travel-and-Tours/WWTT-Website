@@ -215,7 +215,7 @@ const FlightSearchForm = ({
 
         <div className="journey-tabs-container">
           {/* COMMENTED OUT "multi-city" FROM TABS ARRAY */}
-          {["one-way", "round-trip" /*, "multi-city"*/].map((type) => (
+          {["one-way", "round-trip" , "multi-city"].map((type) => (
             <button
               key={type}
               type="button"
@@ -499,7 +499,6 @@ const FlightSearchForm = ({
           )}
 
           {/* Multi-City UI - COMMENTED OUT TEMPORARILY */}
-          {/*
           {searchParams.journeyType === "multi-city" && (
             <div className="multi-city-container" ref={multiCityContainerRef}>
                {multiCityLegs.map((leg, index) => (
@@ -612,7 +611,6 @@ const FlightSearchForm = ({
                </div>
             </div>
           )}
-          */}
         </form>
       </div>
 
