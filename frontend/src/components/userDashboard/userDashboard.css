@@ -228,7 +228,7 @@ body { background-color: var(--bg-body); font-family: 'Inter', -apple-system, Bl
     padding: 32px;
 }
 
-.content-container {
+.content-containers {
     max-width: 900px;
     margin: 0 auto;
 }

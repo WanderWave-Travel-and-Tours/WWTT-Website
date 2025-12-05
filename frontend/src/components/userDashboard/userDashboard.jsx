@@ -310,7 +310,7 @@ const UserDashboard = ({ user, onLogout }) => {
                 {/* Main Content Area */}
                 <main className="dashboard-main">
                     {selectedInquiry ? (
-                        <div className="content-container">
+                        <div className="content-containers">
                             {/* Header Section */}
                             <header className="content-header">
                                 <div>
