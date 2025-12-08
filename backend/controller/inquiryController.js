@@ -15,25 +15,32 @@ const generateTempPassword = () => {
 
 const createInquiry = async (req, res) => {
   try {
-    const { 
+    let { 
       serviceId, 
       serviceName, 
       fullName, 
       email, 
+      contactNumber,
+      address,       
       message,
       visaCountry,
       visaId,
-      psaDocument, // 👈 ADDED: Para sa PSA Document Type (e.g., Birth Certificate)
+      psaDocument, 
       psaId,
-      estimatedPrice 
+      estimatedPrice,
+      inquiryType,   
+      flightDetails, 
+      passengers    
     } = req.body;
 
-    console.log('📥 Received inquiry request:', {
-      serviceName,
-      fullName,
-      email,
-      hasMessage: !!message
-    });
+    console.log('📥 Received inquiry/booking:', { serviceName, fullName, inquiryType });
+
+    if (!message && inquiryType === 'FLIGHT_BOOKING') {
+      const origin = flightDetails?.origin || 'Unknown';
+      const dest = flightDetails?.destination || 'Unknown';
+      const date = flightDetails?.departureDate || '';
+      message = `Flight Booking Request: ${origin} ➝ ${dest} on ${date}`;
+    }
 
     if (!serviceName || !fullName || !email || !message) {
       return res.status(400).json({ 
@@ -125,12 +132,17 @@ const createInquiry = async (req, res) => {
       serviceName,
       fullName,
       email,
+      contactNumber,
+      address,
       message,
       visaCountry: visaCountry || null,
       visaId: visaId || null,
       psaDocument: psaDocument || null, 
       psaId: psaId || null,
-      estimatedPrice: estimatedPrice || 0
+      estimatedPrice: estimatedPrice || 0,
+      inquiryType: inquiryType || 'GENERAL',
+      flightDetails: flightDetails || {},
+      passengers: passengers || []
     });
 
     let responseMessage = 'Inquiry submitted successfully! We will contact you within 24 hours.';
@@ -373,9 +385,7 @@ const getInquiryStats = async (req, res) => {
 
 const markAsPaid = async (req, res) => {
   try {
-    const { id } = req.params; // Inquiry ID
-
-    // 1. Update Inquiry Status
+    const { id } = req.params; 
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       { 
