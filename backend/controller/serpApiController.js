@@ -1,4 +1,99 @@
 const { getJson } = require("serpapi");
+const airports = require("airport-codes");
+
+const CUSTOM_PH_AIRPORTS = [
+  { iata: 'MNL', country: 'Philippines', iso: 'PH' },
+  { iata: 'CEB', country: 'Philippines', iso: 'PH' },
+  { iata: 'CRK', country: 'Philippines', iso: 'PH' },
+  { iata: 'DVO', country: 'Philippines', iso: 'PH' },
+  { iata: 'IAO', country: 'Philippines', iso: 'PH' }, // Siargao
+  { iata: 'MPH', country: 'Philippines', iso: 'PH' }, // Caticlan
+  { iata: 'KLO', country: 'Philippines', iso: 'PH' }, // Kalibo
+  { iata: 'USU', country: 'Philippines', iso: 'PH' }, // Busuanga
+  { iata: 'ENI', country: 'Philippines', iso: 'PH' }, // El Nido
+  { iata: 'PPS', country: 'Philippines', iso: 'PH' }, // Puerto Princesa
+  { iata: 'TAG', country: 'Philippines', iso: 'PH' }, // Bohol
+  { iata: 'DGT', country: 'Philippines', iso: 'PH' }, // Dumaguete
+  { iata: 'LGP', country: 'Philippines', iso: 'PH' }, // Legazpi
+  { iata: 'ILO', country: 'Philippines', iso: 'PH' },
+  { iata: 'BCD', country: 'Philippines', iso: 'PH' },
+  { iata: 'TAC', country: 'Philippines', iso: 'PH' },
+  { iata: 'ZAM', country: 'Philippines', iso: 'PH' },
+  { iata: 'GES', country: 'Philippines', iso: 'PH' },
+  { iata: 'LAO', country: 'Philippines', iso: 'PH' },
+  { iata: 'BSO', country: 'Philippines', iso: 'PH' },
+  { iata: 'SUG', country: 'Philippines', iso: 'PH' },
+  { iata: 'OZC', country: 'Philippines', iso: 'PH' },
+  { iata: 'CGY', country: 'Philippines', iso: 'PH' },
+  { iata: 'BUT', country: 'Philippines', iso: 'PH' },
+  { iata: 'CBO', country: 'Philippines', iso: 'PH' },
+  { iata: 'DPL', country: 'Philippines', iso: 'PH' },
+  { iata: 'PAG', country: 'Philippines', iso: 'PH' },
+  { iata: 'RXS', country: 'Philippines', iso: 'PH' },
+  { iata: 'TUG', country: 'Philippines', iso: 'PH' },
+  { iata: 'VRC', country: 'Philippines', iso: 'PH' },
+  { iata: 'SJI', country: 'Philippines', iso: 'PH' }
+];
+
+function getAirportInfo(iataCode) {
+    if (!iataCode) return null;
+    const code = iataCode.toUpperCase();
+
+    const localMatch = CUSTOM_PH_AIRPORTS.find(a => a.iata === code);
+    if (localMatch) {
+        return { country: localMatch.country, iso: localMatch.iso };
+    }
+
+    const libMatch = airports.findWhere({ iata: code });
+    if (libMatch) {
+        return { country: libMatch.get('country'), iso: libMatch.get('iso') };
+    }
+
+    return null;
+}
+
+function getMarkupAmount(originIata, destinationIata) {
+  try {
+    const originInfo = getAirportInfo(originIata);
+    const destInfo = getAirportInfo(destinationIata);
+
+    if (!originInfo || !destInfo) {
+      console.log(`⚠️ Unknown Airport (${originIata} or ${destinationIata}). Defaulting to International Markup.`);
+      return 2500;
+    }
+
+    console.log(`✈️ Route: ${originIata} (${originInfo.country}) ➝ ${destinationIata} (${destInfo.country})`);
+
+    if (originInfo.country === 'Philippines' && destInfo.country === 'Philippines') {
+      console.log(`💰 Mark Up: DOMESTIC (₱1,000)`);
+      return 1000;
+    }
+
+    const isAsia = isAsianCountry(destInfo.country);
+    if (isAsia) {
+      console.log(`💰 Mark Up: INTERNATIONAL ASIA (₱2,000)`);
+      return 2000;
+    }
+
+    console.log(`💰 Mark Up: INTERNATIONAL OUTSIDE ASIA (₱2,500)`);
+    return 2500;
+
+  } catch (error) {
+    console.error('Markup Calculation Error:', error);
+    return 2500; 
+  }
+}
+
+function isAsianCountry(countryName) {
+  if (!countryName) return false;
+  const asianCountries = [
+    'Philippines', 'Japan', 'South Korea', 'China', 'Hong Kong', 'Taiwan', 'Thailand',
+    'Vietnam', 'Singapore', 'Malaysia', 'Indonesia', 'Cambodia', 'Laos', 'Myanmar',
+    'India', 'Nepal', 'Sri Lanka', 'Maldives', 'Bangladesh', 'Pakistan', 'United Arab Emirates',
+    'Qatar', 'Saudi Arabia', 'Kuwait', 'Bahrain', 'Oman', 'Israel', 'Jordan', 'Lebanon', 'Turkey'
+  ];
+  return asianCountries.some(asian => countryName.toLowerCase().includes(asian.toLowerCase()));
+}
 
 exports.searchDomesticFlights = (req, res) => {
   try {
@@ -21,16 +116,21 @@ exports.searchDomesticFlights = (req, res) => {
       });
     }
 
+    // --- CALCULATE MARKUP ---
+    let markupAmount = 0;
+    if (multiCityLegs) {
+      markupAmount = 2500; 
+    } else {
+      markupAmount = getMarkupAmount(origin, destination);
+    }
+
     const totalAdults = parseInt(adults) || 1;
     const totalChildren = parseInt(children) || 0;
     const totalInfants = parseInt(infants) || 0;
     const totalPassengers = totalAdults + totalChildren + totalInfants;
 
     const cabinClassMap = {
-      'Economy': '1',
-      'Premium Economy': '2', 
-      'Business': '3',
-      'First': '4'
+      'Economy': '1', 'Premium Economy': '2', 'Business': '3', 'First': '4'
     };
 
     let params = {
@@ -56,7 +156,6 @@ exports.searchDomesticFlights = (req, res) => {
           date: leg.departureDate
         })));
       } catch (e) {
-        console.error('Error parsing multiCityLegs:', e);
         return res.status(400).json({ success: false, message: 'Invalid Multi-City Data' });
       }
 
@@ -72,135 +171,76 @@ exports.searchDomesticFlights = (req, res) => {
     }
 
     getJson(params, (json) => {
-      if (json.error) {
-        console.error('❌ SerpApi Error:', json.error);
-        return res.status(500).json({ success: false, message: json.error });
-      }
+      if (json.error) return res.status(500).json({ success: false, message: json.error });
 
-      // Check if raw data exists
       if (!json.best_flights && !json.other_flights) {
-        return res.json({
-          success: true,
-          count: 0,
-          data: [],
-          message: 'No flights found for this schedule.'
-        });
+        return res.json({ success: true, count: 0, data: [], message: 'No flights found.' });
       }
 
-      const allFlights = [
-        ...(json.best_flights || []),
-        ...(json.other_flights || [])
-      ];
-
-      // 🔍 DEBUG: Log first flight to see price structure
-      if (allFlights.length > 0) {
-        console.log('🔍 Sample Flight Data:', JSON.stringify(allFlights[0], null, 2));
-      }
+      const allFlights = [...(json.best_flights || []), ...(json.other_flights || [])];
 
       const formattedFlights = allFlights.map((flight, index) => {
-        const flightSegments = flight.flights || [];
-        if (flightSegments.length === 0) return null;
-
-        const firstSegment = flightSegments[0];
-        const lastSegment = flightSegments[flightSegments.length - 1];
+        const firstSegment = flight.flights[0];
+        const lastSegment = flight.flights[flight.flights.length - 1];
         
-        const totalMinutes = flight.total_duration || 0;
-        const hours = Math.floor(totalMinutes / 60);
-        const mins = totalMinutes % 60;
-        const formattedDuration = `${hours}h ${mins}m`;
-        
-        const numberOfStops = flightSegments.length - 1; 
-        
-        const departureTimeRaw = firstSegment.departure_airport?.time || '';
-        const arrivalTimeRaw = lastSegment.arrival_airport?.time || '';
-        const cleanDepartureTime = departureTimeRaw.split(' ').pop(); 
-        const cleanArrivalTime = arrivalTimeRaw.split(' ').pop();
-
-        // 🛡️ IMPROVED PRICE EXTRACTION
-        let totalPrice = 0;
+        let originalPrice = 0;
         let isPriceAvailable = false;
-        
-        // Try multiple locations where price might be
         const priceValue = flight.price || flight.rate || flight.total_price;
         
-        if (priceValue !== undefined && priceValue !== null) {
-            if (typeof priceValue === 'number') {
-                totalPrice = priceValue;
-                isPriceAvailable = true;
-            } else if (typeof priceValue === 'string') {
-                // Remove currency symbols and non-numeric chars
-                const cleanString = priceValue.replace(/[₱,\s]/g, '');
-                totalPrice = parseFloat(cleanString) || 0;
-                isPriceAvailable = totalPrice > 0;
-            } else if (typeof priceValue === 'object' && priceValue.amount) {
-                // Sometimes price is an object with amount property
-                totalPrice = parseFloat(priceValue.amount) || 0;
-                isPriceAvailable = totalPrice > 0;
-            }
+        if (priceValue) {
+           if (typeof priceValue === 'number') { originalPrice = priceValue; isPriceAvailable = true; }
+           else if (typeof priceValue === 'string') { originalPrice = parseFloat(priceValue.replace(/[₱,\s]/g, '')) || 0; isPriceAvailable = originalPrice > 0; }
+           else if (priceValue.amount) { originalPrice = parseFloat(priceValue.amount) || 0; isPriceAvailable = originalPrice > 0; }
         }
 
-        // 🔍 DEBUG: Log price extraction for each flight
-        console.log(`Flight ${index} - Airline: ${firstSegment.airline}, Raw Price:`, flight.price, 'Extracted:', totalPrice);
-
-        const safePassengers = totalPassengers > 0 ? totalPassengers : 1;
-        const pricePerPerson = Math.round(totalPrice / safePassengers);
-
-        // If no price, show "Check Price"
-        const formattedPrice = isPriceAvailable 
-          ? `₱${totalPrice.toLocaleString()}` 
-          : 'Check Price';
+        let finalPrice = originalPrice;
+        if (isPriceAvailable) {
+            finalPrice = originalPrice + markupAmount;
+        }
 
         return {
           id: `google-${index}`,
           airline: {
             name: firstSegment.airline || 'Unknown Airline', 
-            code: firstSegment.airline_logo || '', 
             logo: firstSegment.airline_logo || ''
           },
           price: {
-            amount: totalPrice,
-            currency: 'PHP',
-            formatted: formattedPrice,
-            perPerson: pricePerPerson,
-            totalPassengers: totalPassengers,
-            unavailable: !isPriceAvailable
+            amount: finalPrice, 
+            originalAmount: originalPrice,
+            markupApplied: markupAmount,
+            formatted: isPriceAvailable ? `₱${finalPrice.toLocaleString()}` : 'Check Price',
+            perPerson: Math.round(finalPrice / (totalPassengers || 1)),
+            totalPassengers: totalPassengers
           },
           departure: {
-            airport: firstSegment.departure_airport?.name || 'Unknown Airport',
-            iataCode: firstSegment.departure_airport?.id || '',
-            time: cleanDepartureTime 
+            airport: firstSegment.departure_airport?.name,
+            iataCode: firstSegment.departure_airport?.id,
+            time: firstSegment.departure_airport?.time?.split(' ').pop() 
           },
           arrival: {
-            airport: lastSegment.arrival_airport?.name || 'Unknown Airport',
-            iataCode: lastSegment.arrival_airport?.id || '',
-            time: cleanArrivalTime
+            airport: lastSegment.arrival_airport?.name,
+            iataCode: lastSegment.arrival_airport?.id,
+            time: lastSegment.arrival_airport?.time?.split(' ').pop()
           },
-          duration: formattedDuration,
-          stops: numberOfStops,
+          duration: `${Math.floor((flight.total_duration || 0) / 60)}h ${(flight.total_duration || 0) % 60}m`,
+          stops: flight.flights.length - 1,
           cabinClass: cabinType,
-          type: multiCityLegs ? 'Multi-City' : (flight.type || 'Direct'),
-          itinerary: flightSegments.map(seg => ({
-            dep: seg.departure_airport?.id,
-            arr: seg.arrival_airport?.id,
-            time: seg.departure_airport?.time?.split(' ').pop(),
-            airline: seg.airline
-          })),
-          link: json.search_metadata?.google_flights_url 
+          type: multiCityLegs ? 'Multi-City' : 'Direct'
         };
-      }).filter(flight => flight !== null); 
+      });
 
       res.json({
         success: true,
         count: formattedFlights.length,
-        source: 'google_flights (serpapi)',
-        passengers: { total: totalPassengers },
-        cabinClass: cabinType,
+        markupConfig: {
+            type: markupAmount === 1000 ? 'Domestic' : (markupAmount === 2000 ? 'International (Asia)' : 'International (World)'),
+            amount: markupAmount
+        },
         data: formattedFlights
       });
     });
 
   } catch (error) {
-    console.error('Server Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -249,7 +249,14 @@ const Dashboard = () => {
   };
 
   const handleExportPDF = () => {
-    exportToPDF(stats, trendData, topPackages);
+    const pdfTopPackages = topPackages.map((pkg) => ({
+      ...pkg,
+      revenue: typeof pkg.revenue === 'string' 
+        ? pkg.revenue.replace('₱', 'PHP ') 
+        : pkg.revenue
+    }));
+
+    exportToPDF(stats, trendData, pdfTopPackages);
   };
 
   if (loading) {
