@@ -4,7 +4,6 @@ import Sidebar from "../../sidebar/sidebar";
 import {
   Plus,
   FileText,
-  Truck,
   AlertTriangle,
   FolderOpen,
   X,
@@ -19,7 +18,6 @@ import {
   Edit,
   CreditCard,
   CheckCircle,
-  RefreshCw
 } from "lucide-react";
 import "./PSASerbilis.css";
 
@@ -260,7 +258,34 @@ const PSASerbilis = () => {
   const addStep = () => setStepsProcess([...stepsProcess, { id: Date.now(), label: "" }]);
   const removeStep = (id) => setStepsProcess(stepsProcess.filter(s => s.id !== id));
   const handleStepChange = (id, v) => setStepsProcess(stepsProcess.map(s => s.id === id ? { ...s, label: v } : s));
-  const handleDirectFileUpload = async (e) => { /* Reuse your existing upload logic */ };
+  
+  const handleDirectFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/psa/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.data.success) {
+        const { fileName, fileUrl } = response.data.data;
+        setDownloadForms([...downloadForms, {
+          id: Date.now(),
+          label: fileName,
+          fileName: fileName,
+          fileUrl: fileUrl
+        }]);
+        alert('File uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload file');
+    }
+  };
 
   return (
     <div className="psa-page">
@@ -332,14 +357,14 @@ const PSASerbilis = () => {
                             </div>
                         </td>
                         <td>
-                        <span className={`visa-badge badge-${(row.status || 'PENDING').toLowerCase()}`}>
+                        <span className={`psa-badge badge-${(row.status || 'PENDING').toLowerCase()}`}>
                             {row.status || 'PENDING'}
                         </span>
                         </td>
                         <td style={{ textAlign: "right" }}>
                         <div style={{display:'flex', justifyContent: 'flex-end'}}>
                             <button 
-                                className="visa-action-btn visa-view-btn" 
+                                className="psa-action-btn psa-view-btn" 
                                 onClick={() => handleViewInquiry(row)}
                             >
                                 View
@@ -349,47 +374,44 @@ const PSASerbilis = () => {
                     </tr>
                     ))
                 )}
-                </tbody>
+              </tbody>
             </table>
           </div>
 
+          {/* Inquiry Modal */}
           {isInquiryModalOpen && selectedInquiry && (
-            <div className="modal-overlay" onClick={handleCloseInquiryModal}>
-              <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
+            <div className="psa-modal-overlay" onClick={handleCloseInquiryModal}>
+              <div className="psa-modal-content psa-modal-content-large" onClick={e => e.stopPropagation()}>
+                <div className="psa-modal-header">
                   <div>
-                    <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#0f172a", textTransform: "uppercase" }}>
-                      PSA Request Details
-                    </h2>
-                    <p style={{ margin: "4px 0 0 0", color: "#64748b", fontSize: "13px" }}>
-                      Review customer information and submitted documents
-                    </p>
+                    <h2>PSA Request Details</h2>
+                    <p>Review customer information and submitted documents</p>
                   </div>
-                  <button className="modal-close-btn" onClick={handleCloseInquiryModal}>
+                  <button className="psa-modal-close-btn" onClick={handleCloseInquiryModal}>
                     <X size={24} />
                   </button>
                 </div>
 
-                <div className="modal-body">
+                <div className="psa-modal-body">
                   <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#0f172a' }}>
                       Customer Information
                     </h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                       <div><p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 4px 0' }}>Full Name</p><p style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>{selectedInquiry.fullName}</p></div>
                       <div><p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 4px 0' }}>Email</p><p style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>{selectedInquiry.email}</p></div>
                       <div><p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 4px 0' }}>Document Type</p><p style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>{selectedInquiry.psaDocument || 'N/A'}</p></div>
                       <div><p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 4px 0' }}>Estimated Price</p><p style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>₱{(selectedInquiry.estimatedPrice || 0).toLocaleString()}</p></div>
                       <div>
                           <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 4px 0' }}>Status</p>
-                          <span className={`visa-badge badge-${(selectedInquiry.status || 'pending').toLowerCase()}`}>{selectedInquiry.status || 'PENDING'}</span>
+                          <span className={`psa-badge badge-${(selectedInquiry.status || 'pending').toLowerCase()}`}>{selectedInquiry.status || 'PENDING'}</span>
                       </div>
                     </div>
                   </div>
 
                   <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#0f172a' }}>Request Details</h3>
-                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', fontSize: '14px', lineHeight: '1.6' }}>
+                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', fontSize: '14px', lineHeight: '1.6', border: '1px solid #e2e8f0' }}>
                       {selectedInquiry.message}
                     </div>
                   </div>
@@ -410,7 +432,7 @@ const PSASerbilis = () => {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="visa-action-btn visa-view-btn" style={{padding:'6px 10px'}}>View</a>
+                                        <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="psa-action-btn psa-view-btn" style={{padding:'6px 10px'}}>View</a>
                                     </div>
                                 </div>
                             ))}
@@ -422,7 +444,7 @@ const PSASerbilis = () => {
                     <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#0f172a' }}>Update Status</h3>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button 
-                        className="visa-action-btn"
+                        className="psa-action-btn"
                         onClick={() => handleUpdateInquiryStatus(selectedInquiry._id, 'PENDING')}
                         disabled={selectedInquiry.status === 'PENDING'}
                       >
@@ -430,7 +452,7 @@ const PSASerbilis = () => {
                       </button>
                       
                       <button 
-                        className="visa-action-btn"
+                        className="psa-action-btn"
                         onClick={initiateContactStatus}
                         disabled={selectedInquiry.status === 'CONTACTED'}
                       >
@@ -438,7 +460,7 @@ const PSASerbilis = () => {
                       </button>
                       
                       <button 
-                        className="visa-action-btn btn-approve-payment"
+                        className="psa-action-btn psa-btn-approve-payment"
                         onClick={handleRequestPayment}
                         disabled={selectedInquiry.status === 'PAYMENT_PENDING' || selectedInquiry.status === 'PAID'}
                       >
@@ -446,7 +468,7 @@ const PSASerbilis = () => {
                       </button>
 
                       <button 
-                        className="visa-action-btn"
+                        className="psa-action-btn"
                         onClick={() => handleUpdateInquiryStatus(selectedInquiry._id, 'COMPLETED')}
                         disabled={selectedInquiry.status === 'COMPLETED'}
                         style={{background: '#0f172a', color: 'white', borderColor: '#0f172a'}}
@@ -455,7 +477,7 @@ const PSASerbilis = () => {
                       </button>
 
                       <button 
-                        className="visa-action-btn btn-cancel"
+                        className="psa-action-btn psa-btn-cancel"
                         onClick={() => handleUpdateInquiryStatus(selectedInquiry._id, 'CANCELLED')}
                         disabled={selectedInquiry.status === 'CANCELLED'}
                       >
@@ -465,106 +487,345 @@ const PSASerbilis = () => {
                   </div>
                 </div>
                 
-                <div className="modal-footer">
-                  <button className="visa-action-btn" onClick={handleCloseInquiryModal}>Close</button>
+                <div className="psa-modal-footer">
+                  <button className="psa-action-btn" onClick={handleCloseInquiryModal}>Close</button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Contact Remarks Modal */}
           {showContactRemarks && (
-            <div className="modal-overlay" style={{ zIndex: 10000 }}> 
-                <div className="modal-content" style={{ maxWidth: '500px', height: 'auto', padding: '24px', background: 'white', borderRadius: '16px' }}> {/* Nagdagdag din ako ng background at radius para sigurado */}
-                    <div className="modal-header" style={{padding: '0 0 20px 0'}}>
-                        <h3 style={{margin:0}}>Add Remarks & Evidence</h3>
-                        <button className="modal-close-btn" onClick={() => setShowContactRemarks(false)}>
+            <div className="psa-modal-overlay" style={{ zIndex: 10000 }}> 
+                <div className="psa-modal-content" style={{ maxWidth: '500px', height: 'auto', padding: '0', background: 'white', borderRadius: '12px' }}>
+                    <div className="psa-modal-header">
+                        <h2 style={{fontSize:'18px'}}>Add Remarks & Evidence</h2>
+                        <button className="psa-modal-close-btn" onClick={() => setShowContactRemarks(false)}>
                             <X size={24} />
                         </button>
                     </div>
-                    <div className="modal-body" style={{padding: '0'}}>
-                        <div className="form-group">
+                    <div className="psa-modal-body">
+                        <div className="psa-form-group">
                             <label>Remarks / Issues Found *</label>
                             <textarea 
                                 rows="4"
-                                style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
                                 value={contactRemarks}
                                 onChange={(e) => setContactRemarks(e.target.value)}
                                 placeholder="Explain the error in documents..."
                             />
                         </div>
-                        <div className="form-group" style={{ marginTop: '15px' }}>
+                        <div className="psa-form-group">
                             <label>Upload Evidence (Screenshot/Doc)</label>
                             <input 
                                 type="file"
                                 accept="image/*,.pdf"
                                 onChange={(e) => setContactEvidence(e.target.files[0])}
-                                style={{ display: 'block', marginTop: '5px' }}
                             />
                         </div>
                     </div>
-                    <div style={{display:'flex', gap:'10px', marginTop:'20px', justifyContent:'flex-end'}}>
-                        <button className="visa-action-btn" onClick={() => setShowContactRemarks(false)}>Cancel</button>
-                        <button className="visa-action-btn" style={{background:'#f97316', color:'white', borderColor:'#f97316'}} onClick={submitContactWithRemarks}>Proceed</button>
+                    <div className="psa-modal-footer">
+                        <button className="psa-modal-cancel-btn" onClick={() => setShowContactRemarks(false)}>Cancel</button>
+                        <button className="psa-modal-save-btn" onClick={submitContactWithRemarks}>Proceed</button>
                     </div>
                 </div>
             </div>
           )}
 
+          {/* PSA Forms Modal (Manage Service) */}
           {isPSAFormsOpen && (
-            <div className="modal-overlay" onClick={() => setIsPSAFormsOpen(false)}>
+            <div className="psa-modal-overlay" onClick={() => setIsPSAFormsOpen(false)}>
               <div className="psa-forms-modal" onClick={(e) => e.stopPropagation()}>
-                <button
-                  className="modal-close-btn"
-                  onClick={() => setIsPSAFormsOpen(false)}
-                >
-                  <X size={24} />
-                </button>
-
-                <div className="modal-header">
-                  <h2>Manage PSA Services</h2>
-                  <p>View and edit your offered PSA document services</p>
+                <div className="psa-modal-header">
+                  <div>
+                    <h2>Manage PSA Services</h2>
+                    <p>View and edit your offered PSA document services</p>
+                  </div>
+                  <button className="psa-modal-close-btn" onClick={() => setIsPSAFormsOpen(false)}>
+                    <X size={24} />
+                  </button>
                 </div>
 
-                <div className="psa-forms-grid">
-                  {isLoading ? (
-                    <p>Loading PSA services...</p>
-                  ) : psaDocs.length === 0 ? (
-                    <p>No PSA documents found. Add one to get started.</p>
-                  ) : (
-                    psaDocs.map((psa) => (
-                      <div key={psa.id} className="psa-form-card">
-                        <div className="psa-form-header">
-                          <div className="psa-form-icon">📄</div>
-                          <div className="psa-form-info">
-                            <h3>{psa.documentType}</h3>
-                            <p>{psa.desc}</p>
-                            <span className="psa-price-tag">₱{psa.price}</span>
-                          </div>
+                <div className="psa-modal-body">
+                    <div className="psa-forms-grid">
+                    {isLoading ? (
+                        <p>Loading PSA services...</p>
+                    ) : psaDocs.length === 0 ? (
+                        <p>No PSA documents found. Add one to get started.</p>
+                    ) : (
+                        psaDocs.map((psa) => (
+                        <div key={psa.id} className="psa-form-card">
+                            <div className="psa-form-header">
+                            <div className="psa-form-icon">📄</div>
+                            <div className="psa-form-info">
+                                <h3 style={{margin: '0 0 4px 0', fontSize:'16px', color: '#0f172a'}}>{psa.documentType}</h3>
+                                <p style={{margin: '0', fontSize:'13px', color: '#64748b'}}>{psa.desc}</p>
+                                <span className="psa-price-tag">₱{psa.price}</span>
+                            </div>
+                            </div>
+                            <div className="psa-form-actions">
+                            <button
+                                className="psa-edit-btn"
+                                onClick={() => handleEditPSA(psa)}
+                            >
+                                <Edit size={16} /> Edit
+                            </button>
+                            <button
+                                className="psa-delete-btn"
+                                onClick={() => handleDeletePSA(psa.id)}
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                            </div>
                         </div>
-                        <div className="psa-form-actions">
-                          <button
-                            className="psa-edit-btn"
-                            onClick={() => handleEditPSA(psa)}
-                          >
-                            <Edit size={16} />
-                            Edit
-                          </button>
-                          <button
-                            className="psa-delete-btn"
-                            onClick={() => handleDeletePSA(psa.id)}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
+                        ))
+                    )}
+                    </div>
+
+                    <button className="psa-req-add-btn" style={{marginTop: '20px'}} onClick={handleAddNewPSA}>
+                    <Plus size={18} />
+                    Add New PSA Document
+                    </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add New PSA Modal */}
+          {isAddFormOpen && (
+            <div className="psa-modal-overlay" onClick={() => setIsAddFormOpen(false)}>
+              <div className="add-psa-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="psa-modal-header">
+                  <div>
+                    <h2>Add New PSA Document</h2>
+                    <p>Create a new PSA service offering</p>
+                  </div>
+                  <button className="psa-modal-close-btn" onClick={() => setIsAddFormOpen(false)}>
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="psa-modal-body">
+                    <div className="psa-form-group">
+                    <label>Document Type *</label>
+                    <input
+                        type="text"
+                        placeholder="e.g. Birth Certificate"
+                        value={newPSAForm.documentType}
+                        onChange={(e) => setNewPSAForm({ ...newPSAForm, documentType: e.target.value })}
+                    />
+                    </div>
+
+                    <div className="psa-form-group">
+                    <label>Description *</label>
+                    <textarea
+                        placeholder="Describe the document service..."
+                        value={newPSAForm.desc}
+                        onChange={(e) => setNewPSAForm({ ...newPSAForm, desc: e.target.value })}
+                    />
+                    </div>
+
+                    <div className="psa-form-group">
+                    <label>Price *</label>
+                    <input
+                        type="number"
+                        placeholder="450"
+                        value={newPSAForm.price}
+                        onChange={(e) => setNewPSAForm({ ...newPSAForm, price: e.target.value })}
+                    />
+                    </div>
+                </div>
+
+                <div className="psa-modal-footer">
+                  <button className="psa-modal-cancel-btn" onClick={() => setIsAddFormOpen(false)}>
+                    Cancel
+                  </button>
+                  <button className="psa-modal-save-btn" onClick={handleCreatePSA}>
+                    <Save size={18} />
+                    Create Document
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Editor Modal (Dark Headers) */}
+          {isEditorOpen && selectedPSA && (
+            <div className="psa-modal-overlay" onClick={() => setIsEditorOpen(false)}>
+              <div className="psa-editor-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="psa-modal-header">
+                  <div style={{display:'flex', gap:'16px', alignItems:'center'}}>
+                    <div style={{fontSize:'32px', background:'#fff7ed', padding:'12px', borderRadius:'12px'}}>📄</div>
+                    <div>
+                      <h2>{selectedPSA.documentType}</h2>
+                      <p>{selectedPSA.desc} • <span style={{color:'#166534', fontWeight:'bold', background:'#dcfce7', padding:'2px 8px', borderRadius:'4px'}}>₱{selectedPSA.price}</span></p>
+                    </div>
+                  </div>
+                  <button className="psa-modal-close-btn" onClick={() => setIsEditorOpen(false)}>
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="psa-modal-body">
+                  {/* Requirements Accordion */}
+                  <div className="psa-accordion-section">
+                    <button
+                      className={`psa-accordion-header ${accordionState.requirements ? "active" : ""}`}
+                      onClick={() => toggleAccordion("requirements")}
+                    >
+                      <div className="psa-accordion-title">
+                        <FileText size={18} style={{color: '#f97316'}} />
+                        LIST OF REQUIREMENTS
+                        <span className="psa-accordion-count">{requirements.length}</span>
                       </div>
-                    ))
-                  )}
+                      <span className={`psa-accordion-chevron ${accordionState.requirements ? "rotate" : ""}`}>
+                        <ChevronDown size={20} />
+                      </span>
+                    </button>
+
+                    {accordionState.requirements && (
+                      <div className="psa-accordion-content">
+                        {requirements.map((cat) => (
+                          <div key={cat.id} className="psa-req-category-group">
+                            <div className="psa-req-category-header">
+                              <input
+                                type="text"
+                                className="psa-req-category-title-input"
+                                placeholder="Category Title"
+                                value={cat.title}
+                                onChange={(e) => handleCategoryTitleChange(cat.id, e.target.value)}
+                              />
+                              <button className="psa-req-delete-btn" onClick={() => removeCategory(cat.id)}>
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+
+                            <div className="psa-req-items-list">
+                              {cat.items.map((item) => (
+                                <div key={item.id} className="psa-req-item-row">
+                                  <input
+                                    type="text"
+                                    className="psa-req-input-text"
+                                    placeholder="Requirement item..."
+                                    value={item.label}
+                                    onChange={(e) => handleLabelChange(cat.id, item.id, e.target.value)}
+                                  />
+                                  <button className="psa-req-delete-btn" onClick={() => removeRequirement(cat.id, item.id)}>
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+
+                            <button className="psa-req-add-btn" onClick={() => addRequirement(cat.id)}>
+                              <PlusCircle size={16} />
+                              Add Item
+                            </button>
+                          </div>
+                        ))}
+
+                        <button className="psa-req-add-btn" style={{borderStyle:'solid', background:'#f1f5f9'}} onClick={addCategory}>
+                          <ListPlus size={18} />
+                          Add Category
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Download Forms Accordion */}
+                  <div className="psa-accordion-section">
+                    <button
+                      className={`psa-accordion-header ${accordionState.downloadForms ? "active" : ""}`}
+                      onClick={() => toggleAccordion("downloadForms")}
+                    >
+                      <div className="psa-accordion-title">
+                        <Download size={18} style={{color: '#f97316'}} />
+                        DOWNLOAD FORMS HERE
+                        <span className="psa-accordion-count">{downloadForms.length}</span>
+                      </div>
+                      <span className={`psa-accordion-chevron ${accordionState.downloadForms ? "rotate" : ""}`}>
+                        <ChevronDown size={20} />
+                      </span>
+                    </button>
+
+                    {accordionState.downloadForms && (
+                      <div className="psa-accordion-content">
+                        <div className="psa-uploaded-forms-list">
+                          {downloadForms.map((form) => (
+                            <div key={form.id} className="psa-uploaded-form-card">
+                              <span className="psa-uploaded-form-icon">📄</span>
+                              <div style={{flex:1}}>
+                                <span className="psa-uploaded-form-name">{form.label}</span>
+                              </div>
+                              <button className="psa-req-delete-btn" onClick={() => removeDownloadForm(form.id)}>
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <label className="psa-upload-download-form-btn">
+                          <Upload size={18} />
+                          Upload New Form
+                          <input type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={handleDirectFileUpload} />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Steps Accordion */}
+                  <div className="psa-accordion-section">
+                    <button
+                      className={`psa-accordion-header ${accordionState.stepsProcess ? "active" : ""}`}
+                      onClick={() => toggleAccordion("stepsProcess")}
+                    >
+                      <div className="psa-accordion-title">
+                        <ClipboardList size={18} style={{color: '#f97316'}} />
+                        STEPS AND OTHER PROCESS
+                        <span className="psa-accordion-count">{stepsProcess.length}</span>
+                      </div>
+                      <span className={`psa-accordion-chevron ${accordionState.stepsProcess ? "rotate" : ""}`}>
+                        <ChevronDown size={20} />
+                      </span>
+                    </button>
+
+                    {accordionState.stepsProcess && (
+                      <div className="psa-accordion-content">
+                        <div className="psa-simple-list">
+                          {stepsProcess.map((step, index) => (
+                            <div key={step.id} style={{display:'flex', gap:'12px', alignItems:'center'}}>
+                              <span style={{background:'#f97316', color:'white', width:'24px', height:'24px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'bold', flexShrink:0}}>{index + 1}</span>
+                              <input
+                                type="text"
+                                className="psa-req-input-text"
+                                placeholder="Step description..."
+                                value={step.label}
+                                onChange={(e) => handleStepChange(step.id, e.target.value)}
+                              />
+                              <button className="psa-req-delete-btn" onClick={() => removeStep(step.id)}>
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <button className="psa-req-add-btn" style={{ marginTop: '12px' }} onClick={addStep}>
+                          <PlusCircle size={16} />
+                          Add Step
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <button className="add-psa-btn" onClick={handleAddNewPSA}>
-                  <Plus size={18} />
-                  Add New PSA Document
-                </button>
+                <div className="psa-modal-footer">
+                  <button className="psa-modal-cancel-btn" onClick={() => setIsEditorOpen(false)}>
+                    Cancel
+                  </button>
+                  <button className="psa-modal-save-btn" onClick={handleSaveChanges}>
+                    <Save size={18} />
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </div>
           )}
