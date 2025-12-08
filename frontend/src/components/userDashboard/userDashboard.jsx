@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './userDashboard.css'; 
 import TopNavbar from './TopNavbar';
@@ -26,31 +26,72 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     }, [user]);
 
-    // --- Fetch User Inquiries ---
-    useEffect(() => {
-        const fetchInquiries = async () => {
-            try {
-                setIsLoading(true);
-                const response = await fetch(`http://localhost:5000/api/inquiries/email/${user.email}`);
-                const data = await response.json();
+    // --- HELPER: FETCH INQUIRIES ---
+    const fetchInquiries = async () => {
+        if (!user?.email) return;
+
+        try {
+            const response = await fetch(`http://localhost:5000/api/inquiries/email/${user.email}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                setInquiries(data.data);
                 
-                if (data.success) {
-                    setInquiries(data.data);
-                    if (data.data.length > 0 && !selectedInquiry) {
-                        setSelectedInquiry(data.data[0]);
-                    }
+                // Keep selected inquiry in sync
+                if (selectedInquiry) {
+                    const updatedSelected = data.data.find(i => i._id === selectedInquiry._id);
+                    if (updatedSelected) setSelectedInquiry(updatedSelected);
+                } else if (data.data.length > 0) {
+                    setSelectedInquiry(data.data[0]);
                 }
-            } catch (error) {
-                console.error('Error fetching inquiries:', error);
-            } finally {
-                setIsLoading(false);
             }
-        };
-        
+        } catch (error) {
+            console.error('Error fetching inquiries:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // --- INITIAL LOAD ---
+    useEffect(() => {
         if (user?.email) {
+            setIsLoading(true);
             fetchInquiries();
         }
     }, [user]);
+
+    // 👇 PAYMENT SUCCESS HANDLER (Detects redirect from PayMongo)
+    useEffect(() => {
+        const queryParams = new URLSearchParams(window.location.search);
+        const isSuccess = queryParams.get('success');
+        const inquiryId = queryParams.get('inquiryId');
+
+        if (isSuccess === 'true' && inquiryId) {
+            const verifyPayment = async () => {
+                try {
+                    setIsLoading(true);
+                    
+                    // Call backend to update status to PAID
+                    await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/pay`);
+                    
+                    alert('Payment successful! Status updated.');
+                    
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    // Refresh Data
+                    await fetchInquiries();
+
+                } catch (error) {
+                    console.error('Payment verification failed:', error);
+                    alert('Payment successful, but status update failed. Please contact support.');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            verifyPayment();
+        }
+    }, []);
 
     // --- Fetch Visa Details ---
     useEffect(() => {
@@ -80,7 +121,6 @@ const UserDashboard = ({ user, onLogout }) => {
     };
 
     const handleLogout = () => {
-        // Clear localStorage and call parent logout handler
         localStorage.removeItem('wanderwave_user');
         if (onLogout) {
             onLogout();
@@ -101,22 +141,21 @@ const UserDashboard = ({ user, onLogout }) => {
             const data = await response.json();
             
             if (data.success && data.checkoutUrl) {
+                // Redirect user to PayMongo
                 window.location.href = data.checkoutUrl;
             } else {
                 alert('Failed to initiate payment.');
+                setIsLoading(false);
             }
         } catch (error) {
             console.error('Payment error:', error);
             alert('Payment system unavailable.');
-        } finally {
             setIsLoading(false);
         }
     };
 
     const handleFiles = async (files, section) => {
         setIsUploading(true);
-        
-        // Simulate upload progress
         for (let i = 0; i <= 100; i += 20) {
             await new Promise(resolve => setTimeout(resolve, 50));
             setUploadProgress(i);
