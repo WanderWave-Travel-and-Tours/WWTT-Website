@@ -10,12 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "airport-codes": "^1.0.2",
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.4",
+    "date-fns": "^4.1.0",
+    "iso-country-currency": "^0.7.2",
     "lucide-react": "^0.553.0",
     "react": "^19.2.0",
+    "react-datepicker": "^8.10.0",
     "react-dom": "^19.2.0",
+    "react-google-recaptcha": "^3.1.0",
     "react-hot-toast": "^2.6.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.5"
   },
   "devDependencies": {

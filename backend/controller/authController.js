@@ -1,10 +1,41 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
+const axios = require('axios');
+
+// Helper function to verify reCAPTCHA
+const verifyRecaptcha = async (token) => {
+  try {
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      null,
+      {
+        params: {
+          secret: process.env.RECAPTCHA_SECRET_KEY,
+          response: token
+        }
+      }
+    );
+    return response.data.success;
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    return false;
+  }
+};
 
 const signup = async (req, res) => {
-  const { fullName, email, password, confirmPassword } = req.body;
+  const { fullName, email, password, confirmPassword, recaptchaToken } = req.body;
 
   try {
+    // Verify reCAPTCHA first
+    if (!recaptchaToken) {
+      return res.status(400).json({ message: 'Please complete the reCAPTCHA verification' });
+    }
+
+    const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+    if (!isValidRecaptcha) {
+      return res.status(400).json({ message: 'reCAPTCHA verification failed. Please try again.' });
+    }
+
     if (!fullName || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: 'Please fill in all fields' });
     }
@@ -48,9 +79,19 @@ const signup = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, recaptchaToken } = req.body;
 
   try {
+    // Verify reCAPTCHA first
+    if (!recaptchaToken) {
+      return res.status(400).json({ message: 'Please complete the reCAPTCHA verification' });
+    }
+
+    const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+    if (!isValidRecaptcha) {
+      return res.status(400).json({ message: 'reCAPTCHA verification failed. Please try again.' });
+    }
+
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }

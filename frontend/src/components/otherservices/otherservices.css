@@ -6,13 +6,21 @@
   --os-gap: 2rem;
   --os-glass-bg: rgba(255, 255, 255, 0.08);
   --os-glass-border: rgba(255, 255, 255, 0.2);
-  
   --os-accent: #fc9c1b; 
   --os-dark-blue: #0a203b;
   --os-light-blue: #2196F3;
-
   --header-height-desktop: 130px; 
   --header-height-mobile: 90px;   
+}
+
+html, body {
+  width: 100%;
+  height: 100%; /* Gamitin ang 100% para fit sa screen */
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden; /* Bawal horizontal scroll */
+  overflow-y: auto; /* Kusa mag-scroll lang pag kailangan */
+  background-color: #0a203b;
 }
 
 .os-section {
@@ -548,11 +556,7 @@
 }
 
 .modal-form-note {
-  font-size: 0.8rem;
-  color: #888;
-  text-align: center;
-  margin-top: 0.75rem;
-  font-style: italic;
+  display: none; 
 }
 
 @keyframes fadeIn {
@@ -563,6 +567,392 @@
 @keyframes slideUp {
   from { transform: translateY(50px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* Requirements Modal */
+.requirements-modal {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 650px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.requirements-modal-header {
+  background: linear-gradient(135deg, var(--os-dark-blue), #1a3a5f);
+  padding: 1.25rem 2rem; /* BINAWASAN pa lalo */
+  text-align: center;
+  border-radius: 20px 20px 0 0;
+  position: relative;
+}
+
+.requirements-modal-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 0.5rem;
+  line-height: 1.2;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.requirements-modal-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 400;
+}
+
+.requirements-modal-list {
+  list-style: none;
+  padding: 1.5rem 2rem 2rem; /* BINAWASAN top padding from 2rem */
+  margin: 0;
+  background: #f8f9fa;
+  border-radius: 0 0 20px 20px;
+}
+
+.requirement-modal-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  background: white;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--os-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.requirement-modal-item:last-child {
+  margin-bottom: 0;
+}
+
+.requirement-modal-item:hover {
+  transform: translateX(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-left-width: 6px;
+}
+
+.req-number {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--os-accent), #ff6b00);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.3);
+}
+
+.req-text {
+  flex: 1;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* Close button positioning for requirements modal */
+.requirements-modal .modal-close-btn {
+  position: absolute;
+  top: 12px; /* BINAWASAN from 15px */
+  right: 12px; /* BINAWASAN from 15px */
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  width: 34px; /* BINAWASAN from 36px */
+  height: 34px; /* BINAWASAN from 36px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1010;
+  backdrop-filter: blur(10px);
+}
+
+.requirements-modal .modal-close-btn:hover {
+  background: var(--os-accent);
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.4);
+}
+
+.requirements-modal .modal-close-btn svg {
+  width: 24px; /* BINAWASAN from 32px */
+  height: 24px; /* BINAWASAN from 32px */
+}
+
+/* Scrollbar styling for requirements modal */
+.requirements-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.requirements-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0 20px 20px 0;
+}
+
+.requirements-modal::-webkit-scrollbar-thumb {
+  background: var(--os-dark-blue);
+  border-radius: 10px;
+}
+
+.requirements-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--os-accent);
+}
+
+/* Mobile Responsive for Requirements Modal */
+@media (max-width: 768px) {
+  .requirements-modal {
+    width: 95%;
+    max-width: 95%;
+    max-height: 90vh;
+  }
+
+  .requirements-modal-header {
+    padding: 1.25rem 1.5rem; /* BINAWASAN */
+  }
+
+  .req-icon-large {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 0.4rem;
+  }
+
+  .requirements-modal-title {
+    font-size: 1.25rem; /* BINAWASAN */
+  }
+
+  .requirements-modal-subtitle {
+    font-size: 0.85rem; /* BINAWASAN */
+  }
+
+  .requirements-modal-list {
+    padding: 1.25rem 1.5rem 1.5rem; /* BINAWASAN */
+  }
+
+  .requirement-modal-item {
+    padding: 1rem 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .req-number {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .req-text {
+    font-size: 0.9rem;
+  }
+
+  .requirements-modal .modal-close-btn {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .requirements-modal .modal-close-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .requirements-modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .requirements-modal-title {
+    font-size: 1.1rem;
+  }
+
+  .requirements-modal-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .requirement-modal-item {
+    padding: 0.875rem 1rem;
+  }
+
+  .req-number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+
+  .req-text {
+    font-size: 0.85rem;
+  }
+}
+
+/* Header Image Banner - UPDATED HEIGHT */
+.modal-header-image {
+  width: calc(100% + 5rem);
+  height: 140px; /* BINAWASAN from 180px */
+  margin: -2.5rem -2.5rem 1.5rem -2.5rem;
+  border-radius: 20px 0 0 0;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.header-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(10, 32, 59, 0.7), rgba(10, 32, 59, 0.9));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-title-overlay {
+  font-size: 1.75rem; /* BINAWASAN from 2rem */
+  font-weight: 800;
+  color: white;
+  text-align: center;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+  padding: 0 1rem;
+  letter-spacing: -0.5px;
+}
+
+/* View Requirements Button - NEW STYLE */
+.requirements-button-container {
+  margin-top: .5rem;
+}
+
+.view-requirements-btn {
+  width: 100%;
+  padding: 14px 20px;
+  background: white;
+  color: var(--os-dark-blue);
+  border: 2px solid var(--os-dark-blue);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.view-requirements-btn svg {
+  color: var(--os-dark-blue);
+  transition: all 0.3s ease;
+}
+
+.view-requirements-btn:hover {
+  background: var(--os-dark-blue);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(10, 32, 59, 0.2);
+}
+
+.view-requirements-btn:hover svg {
+  color: white;
+}
+
+.view-requirements-btn:active {
+  transform: translateY(0);
+}
+
+/* Modal Footer Contact */
+.modal-footer-contact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--os-dark-blue), #1a3a5f);
+  border-radius: 0 0 20px 0;
+  margin: auto -2.5rem -2.5rem -2.5rem;
+}
+
+.footer-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.footer-contact-item svg {
+  color: var(--os-accent);
+  flex-shrink: 0;
+}
+
+.footer-contact-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+  .modal-header-image {
+    width: calc(100% + 4rem);
+    height: 120px; /* BINAWASAN */
+    margin: -2rem -2rem 1.5rem -2rem;
+  }
+
+  .header-title-overlay {
+    font-size: 1.5rem;
+  }
+
+  .modal-footer-contact {
+    margin: auto -2rem -2rem -2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-header-image {
+    width: calc(100% + 3rem);
+    height: 100px; /* BINAWASAN */
+    margin: -1.5rem -1.5rem 1rem -1.5rem;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .header-title-overlay {
+    font-size: 1.2rem;
+  }
+
+  .view-requirements-btn {
+    font-size: 0.95rem;
+    padding: 12px 16px;
+  }
+
+  .modal-footer-contact {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin: auto -1.5rem -1.5rem -1.5rem;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .footer-contact-divider {
+    display: none;
+  }
+
+  .footer-contact-item {
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -705,3 +1095,95 @@
     height: 360px;
   }
 }
+
+
+/* Visa Countries Modal */
+.visa-countries-modal {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 900px; /* BINAWASAN from 1200px */
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.visa-countries-modal .modal-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(10, 32, 59, 0.1);
+  border: none;
+  color: #0a203b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1010;
+}
+
+.visa-countries-modal .modal-close-btn:hover {
+  background: #fc9c1b;
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
+}
+
+@media (max-width: 768px) {
+  .visa-countries-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+}
+
+/* New Contact Note Style - Below View Requirements Button */
+.modal-contact-note {
+  font-size: 0.85rem;
+  color: #666;
+  text-align: center;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(252, 156, 27, 0.08);
+  border-radius: 8px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* New Inline Footer Contact - Below Submit Button */
+.modal-footer-contact-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 0 0 0;
+  margin-top: 1rem;
+  border-top: 2px solid #e0e0e0;
+}
+
+.modal-footer-contact-inline .footer-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0a203b;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.modal-footer-contact-inline .footer-contact-item svg {
+  color: var(--os-accent);
+  flex-shrink: 0;
+}
+
+.modal-footer-contact-inline .footer-contact-divider {
+  width: 1px;
+  height: 24px;
+  background: #d0d0d0;
+}
+

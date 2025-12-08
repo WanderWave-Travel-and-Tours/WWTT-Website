@@ -6,6 +6,7 @@ import './addblog.css';
 
 const AddBlog = () => {
     const navigate = useNavigate();
+     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     
     const [blogDetails, setBlogDetails] = useState({
         title: '',
@@ -112,7 +113,7 @@ const AddBlog = () => {
 
     return (
         <div className="blog-page">
-            <Sidebar />
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
             
             <main className="blog-main">
                 <div className="blog-container">

@@ -1,0 +1,181 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* Main Page Container */
+.ferry-page {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    position: relative;
+}
+
+/* Main Content Area */
+.ferry-main {
+    margin-left: 260px; 
+    width: calc(100% - 260px);
+    padding: 40px 120px; 
+    min-height: 100vh;
+    transition: all 0.3s ease;
+}
+
+/* Collapsed State */
+.ferry-main.expanded { 
+    margin-left: 80px !important; 
+    width: calc(100% - 80px) !important;
+    padding: 40px 60px; 
+}
+
+/* Header */
+.ferry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.ferry-title h1 {
+    font-family: 'Arial Black', 'Arial Bold', sans-serif;
+    font-size: 30px;
+    font-weight: 900; 
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ferry-title p {
+    color: #64748b;
+    font-size: 14px;
+    margin: 4px 0 0 0;
+}
+
+.ferry-btn-add {
+    background-color: #0ea5e9; /* Sky Blue for Ferry */
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
+}
+.ferry-btn-add:hover { background-color: #0284c7; transform: translateY(-1px); }
+
+/* Stats */
+.ferry-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.ferry-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.ferry-card h2 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+}
+
+.ferry-card span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ferry-card-icon { color: #0ea5e9; opacity: 0.8; }
+
+/* Table */
+.ferry-table-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    overflow-x: auto; 
+}
+
+.ferry-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    min-width: 900px;
+}
+
+.ferry-table th {
+    background-color: #0f172a;
+    color: white;
+    text-align: left;
+    padding: 18px 24px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.ferry-table td {
+    padding: 18px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 500;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.ferry-table tr:hover td { background-color: #f8fafc; }
+
+/* Status Badges */
+.status-pill { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.status-issued { background: #dcfce7; color: #166534; }
+.status-pending { background: #ffedd5; color: #9a3412; }
+
+/* Buttons */
+.ferry-action-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #0ea5e9; 
+    transition: all 0.2s;
+}
+.ferry-action-btn:hover { background: #e0f2fe; border-color: #0ea5e9; }
+
+/* Responsive */
+@media (max-width: 1366px) { .ferry-main { padding: 32px 40px; } }
+@media (max-width: 1024px) { 
+    .ferry-main { margin-left: 0 !important; width: 100% !important; padding: 32px 30px; }
+    .ferry-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+    .ferry-main { padding: 20px 16px; }
+    .ferry-stats-grid { grid-template-columns: 1fr; }
+    .ferry-header { flex-direction: column; align-items: flex-start; }
+    .ferry-btn-add { width: 100%; justify-content: center; }
+}

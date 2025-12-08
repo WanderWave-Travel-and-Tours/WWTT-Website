@@ -30,7 +30,9 @@ import {
   Newspaper,
   UploadCloud, 
   Grid,
-  MapPin 
+  MapPin,
+  Ship,       // Added for Ferry
+  ShieldCheck // Added for Insurance
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -178,9 +180,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               menuKey="add"
               childrenItems={[
                 { name: 'Create Package', path: '/add-package', icon: FilePlus },
-                { name: 'Create Tour', path: '/add-tour', icon: MapPin }, // <--- Added
+                { name: 'Create Tour', path: '/add-tour', icon: MapPin },
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
-                { name: 'Add Promo Poster', path: '/add-poster', icon: Image },
+                { name: 'Add Poster', path: '/add-poster', icon: Image },
                 { name: 'Create Blog', path: '/add-blog', icon: PenTool },
                 { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, 
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
@@ -193,7 +195,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               menuKey="list"
               childrenItems={[
                 { name: 'Manage Packages', path: '/view-packages', icon: Package },
-                { name: 'Manage Tours', path: '/view-tours', icon: MapPin }, // <--- Added
+                { name: 'Manage Tours', path: '/view-tours', icon: MapPin },
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
                 { name: 'Poster List', path: '/view-posters', icon: Images },
                 { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
@@ -215,14 +217,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'VISA Processing', path: '/services/visa', icon: BookOpen },
                 { name: 'PSA Serbilis', path: '/services/psa', icon: FileText },
                 { name: 'CENOMAR', path: '/services/cenomar', icon: HeartHandshake },
-                { name: 'Passport Appt', path: '/services/passport', icon: Plane },
+                { name: 'Passport Appt', path: '/services/passport', icon: BookOpen },
                 { name: 'Airline Booking', path: '/services/airlinebooking', icon: Plane },
                 { name: 'Hotel Booking', path: '/services/hotelbooking', icon: Hotel },
                 { name: 'Tour Arrangements', path: '/services/tourarrangements', icon: Calendar },
-                { name: 'Ferry Booking', path: '/services/ferrybooking', icon: Plane },
-                { name: 'Marriage Cert', path: '/services/marriagecert', icon: Plane },
-                { name: 'Travel Insurance', path: '/services/travelinsurance', icon: Plane },
-                { name: 'Bills Payment', path: '/services/billspayment', icon: Plane },
+                { name: 'Ferry Booking', path: '/services/ferrybooking', icon: Ship },
+                { name: 'Marriage Cert', path: '/services/marriagecert', icon: FileText },
+                { name: 'Travel Insurance', path: '/services/travelinsurance', icon: ShieldCheck },
+                { name: 'Bills Payment', path: '/services/billspayment', icon: FileText },
               ]}
             />
             <MenuItem path="/users" icon={Users} label="Users" />

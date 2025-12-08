@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CreditCard, Shield, Lock, ArrowLeft } from 'lucide-react';
+import { Shield, Lock, ArrowLeft, Calendar, Users, MapPin, Clock } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import './payment.css';
 
@@ -9,6 +9,7 @@ const Payment = () => {
   const navigate = useNavigate();
   const bookingData = location.state?.bookingData;
 
+  // UI State for selecting method (Visual purpose mostly, unless backend requires it)
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -21,25 +22,27 @@ const Payment = () => {
 
   if (!bookingData) return null;
 
+  // --- FUNCTIONAL LOGIC (Integrated from your working code) ---
   const handlePayment = async () => {
     setIsProcessing(true);
 
     try {
-      // Step 1: Create Payment Intent
       const response = await fetch('http://localhost:5000/api/payment/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: bookingData.totalAmount * 100, // Convert to centavos
+          amount: bookingData.totalAmount * 100, // PayMongo requires cents
           description: `Booking for ${bookingData.packageName}`,
-          bookingData: bookingData
+          bookingData: bookingData,
+          // Optional: You can pass paymentMethod if your backend filters based on this
+          selectedMethod: paymentMethod 
         })
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Step 2: Redirect to PayMongo checkout
+        // Redirect to PayMongo Checkout URL
         window.location.href = data.checkoutUrl;
       } else {
         throw new Error(data.message || 'Payment creation failed');
@@ -52,144 +55,187 @@ const Payment = () => {
     }
   };
 
+  const bgImage = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop'; 
+
   return (
-    <div className="payment-page">
+    <div 
+      className="payment-page-wrapper"
+      style={{ backgroundImage: `url(${bgImage})` }} 
+    >
       <Toaster position="top-center" reverseOrder={false} />
       
-      <div className="payment-container">
-        {/* Back Button */}
-        <button 
-          className="back-button"
-          onClick={() => navigate(-1)}
-          disabled={isProcessing}
-        >
-          <ArrowLeft size={20} />
-          Back to Booking
-        </button>
+      <div className="payment-card-container">
+        
+        {/* LEFT COLUMN - Summary */}
+        <div className="payment-summary-section">
+          <button className="back-link-modern" onClick={() => navigate(-1)} disabled={isProcessing}>
+            <ArrowLeft size={18} />
+            <span>Back</span>
+          </button>
 
-        {/* Payment Card */}
-        <div className="payment-card">
-          
-          {/* Header */}
-          <div className="payment-header">
-            <div className="payment-logo">
-              <img 
-                src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" 
-                alt="Wanderwave Logo"
-              />
+          <div className="summary-content">
+            <div className="pkg-header">
+                <span className="pkg-subtitle">BOOKING SUMMARY</span>
+                <h2 className="pkg-title">{bookingData.packageName}</h2>
             </div>
-            <h1 className="payment-title">Complete Your Payment</h1>
-            <p className="payment-subtitle">You're almost there! Secure your booking now.</p>
+
+            <div className="summary-card">
+              <div className="summary-row">
+                <div className="summary-icon"><Calendar size={18} /></div>
+                <div className="summary-text">
+                  <span className="s-label">Travel Dates</span>
+                  <span className="s-value">{bookingData.startDate} — {bookingData.endDate}</span>
+                </div>
+              </div>
+
+              <div className="summary-row">
+                <div className="summary-icon"><Clock size={18} /></div>
+                <div className="summary-text">
+                  <span className="s-label">Duration</span>
+                  <span className="s-value">{bookingData.duration}</span>
+                </div>
+              </div>
+
+              <div className="summary-row">
+                <div className="summary-icon"><Users size={18} /></div>
+                <div className="summary-text">
+                  <span className="s-label">Guests</span>
+                  <span className="s-value">{bookingData.pax.adult} Adult(s)</span>
+                </div>
+              </div>
+
+              <div className="summary-row">
+                <div className="summary-icon"><MapPin size={18} /></div>
+                <div className="summary-text">
+                  <span className="s-label">Guest Name</span>
+                  <span className="s-value">{bookingData.fullName}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="summary-footer">
+               <div className="total-row">
+                  <span className="total-label-lg">Total Amount</span>
+                  <span className="total-amount-lg">₱{bookingData.totalAmount.toLocaleString()}</span>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN - Payment Form */}
+        <div className="payment-form-section">
+          <div className="form-header-modern">
+            <h1 className="form-title-modern">Payment Details</h1>
+            <p className="form-subtitle-modern">Complete your purchase by providing your payment details.</p>
           </div>
 
-          {/* Booking Summary */}
-          <div className="booking-summary-card">
-            <h3 className="summary-title">Booking Summary</h3>
+          <div className="payment-methods-modern">
             
-            <div className="summary-details">
-              <div className="summary-row">
-                <span className="summary-label">Package</span>
-                <strong>{bookingData.packageName}</strong>
-              </div>
-              
-              <div className="summary-row">
-                <span className="summary-label">Travel Dates</span>
-                <strong>{bookingData.startDate} - {bookingData.endDate}</strong>
-              </div>
-              
-              <div className="summary-row">
-                <span className="summary-label">Duration</span>
-                <strong>{bookingData.duration}</strong>
-              </div>
-              
-              <div className="summary-row">
-                <span className="summary-label">Number of Pax</span>
-                <strong>{bookingData.pax.adult} person(s)</strong>
-              </div>
-
-              <div className="summary-row">
-                <span className="summary-label">Customer</span>
-                <strong>{bookingData.fullName}</strong>
-              </div>
-
-              <div className="summary-divider"></div>
-              
-              <div className="summary-row total-row">
-                <span className="summary-label">Total Amount</span>
-                <strong className="total-amount">₱{bookingData.totalAmount.toLocaleString()}</strong>
+            {/* Credit Card */}
+            <div 
+              className={`method-card ${paymentMethod === 'card' ? 'active' : ''}`}
+              onClick={() => setPaymentMethod('card')}
+            >
+              <div className="method-main-row">
+                 <div className="radio-container">
+                    <div className={`custom-radio ${paymentMethod === 'card' ? 'checked' : ''}`}></div>
+                 </div>
+                 <div className="method-info">
+                    <span className="m-name">Credit / Debit Card</span>
+                    <span className="m-desc">Visa, Mastercard, Amex</span>
+                 </div>
+                 <div className="method-logo-badge">
+                    <CardIconsBadge />
+                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Payment Method Selection */}
-          <div className="payment-method-section">
-            <h3 className="section-title">Select Payment Method</h3>
-            
-            <div className="payment-methods">
-              <button 
-                className={`payment-method-btn ${paymentMethod === 'card' ? 'active' : ''}`}
-                onClick={() => setPaymentMethod('card')}
-              >
-                <CreditCard size={24} />
-                <span>Credit/Debit Card</span>
-              </button>
-              
-              <button 
-                className={`payment-method-btn ${paymentMethod === 'gcash' ? 'active' : ''}`}
-                onClick={() => setPaymentMethod('gcash')}
-              >
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/GCash_logo.svg/320px-GCash_logo.svg.png" 
-                  alt="GCash"
-                />
-                <span>GCash</span>
-              </button>
-              
-              <button 
-                className={`payment-method-btn ${paymentMethod === 'paymaya' ? 'active' : ''}`}
-                onClick={() => setPaymentMethod('paymaya')}
-              >
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/PayMaya_Logo.svg/320px-PayMaya_Logo.svg.png" 
-                  alt="PayMaya"
-                />
-                <span>PayMaya</span>
-              </button>
+            {/* GCash - Blue Badge Style */}
+            <div 
+              className={`method-card ${paymentMethod === 'gcash' ? 'active' : ''}`}
+              onClick={() => setPaymentMethod('gcash')}
+            >
+              <div className="method-main-row">
+                 <div className="radio-container">
+                    <div className={`custom-radio ${paymentMethod === 'gcash' ? 'checked' : ''}`}></div>
+                 </div>
+                 <div className="method-info">
+                    <span className="m-name">GCash</span>
+                    <span className="m-desc">Pay with e-wallet</span>
+                 </div>
+                 <div className="method-logo-badge">
+                    <GCashBadge />
+                 </div>
+              </div>
             </div>
+
+            {/* PayMaya - White/Green Badge Style */}
+            <div 
+              className={`method-card ${paymentMethod === 'paymaya' ? 'active' : ''}`}
+              onClick={() => setPaymentMethod('paymaya')}
+            >
+              <div className="method-main-row">
+                 <div className="radio-container">
+                    <div className={`custom-radio ${paymentMethod === 'paymaya' ? 'checked' : ''}`}></div>
+                 </div>
+                 <div className="method-info">
+                    <span className="m-name">Maya</span>
+                    <span className="m-desc">Pay with e-wallet</span>
+                 </div>
+                 <div className="method-logo-badge">
+                    <MayaBadge />
+                 </div>
+              </div>
+            </div>
+
           </div>
 
-          {/* Security Info */}
-          <div className="security-info">
-            <Shield size={20} color="#10b981" />
-            <span>Your payment is secured with PayMongo SSL encryption</span>
+          <div className="security-banner">
+            <Shield size={16} />
+            <span>Secured by PayMongo SSL Encryption</span>
           </div>
 
-          {/* Pay Button */}
           <button 
-            className="pay-now-btn"
+            className="pay-button-modern"
             onClick={handlePayment}
             disabled={isProcessing}
           >
             {isProcessing ? (
-              <>
-                <div className="spinner"></div>
-                Processing...
-              </>
+               <span className="spinner-modern"></span> 
             ) : (
               <>
-                <Lock size={20} />
-                Pay ₱{bookingData.totalAmount.toLocaleString()} Now
+                <Lock size={18} /> 
+                CONFIRM ₱{bookingData.totalAmount.toLocaleString()}
               </>
             )}
           </button>
-
-          <p className="payment-note">
-            By proceeding, you agree to our Terms of Service and Privacy Policy
-          </p>
         </div>
       </div>
     </div>
   );
 };
+
+// --- BADGE COMPONENTS (Embedded for easier copy-paste) ---
+
+const CardIconsBadge = () => (
+  <svg width="36" height="24" viewBox="0 0 36 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" fill="#EB001B" fillOpacity="0.8"/>
+    <circle cx="24" cy="12" r="10" fill="#F79E1B" fillOpacity="0.8"/>
+  </svg>
+);
+
+const GCashBadge = () => (
+  <svg width="60" height="24" viewBox="0 0 60 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="60" height="24" rx="4" fill="#007DFE"/>
+    <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="12" fontWeight="700" fontFamily="'Arial', sans-serif">GCash</text>
+  </svg>
+);
+
+const MayaBadge = () => (
+  <svg width="60" height="24" viewBox="0 0 60 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0.5" y="0.5" width="59" height="23" rx="3.5" fill="white" stroke="#666" strokeOpacity="0.3"/>
+    <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="#58B947" fontSize="13" fontWeight="800" fontFamily="'Arial', sans-serif">Maya</text>
+  </svg>
+);
 
 export default Payment;

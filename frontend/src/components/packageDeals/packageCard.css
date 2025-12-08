@@ -1,25 +1,32 @@
+/* PackageCard.css */
+
 .package-card {
-  background: rgba(241, 245, 249, 0.75); 
+  background: rgba(241, 245, 249, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.6); 
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   position: relative;
   cursor: pointer;
+  
+  /* CRITICAL FOR UNIFORMITY */
   display: flex;
   flex-direction: column;
+  height: 100%; /* Fill the grid cell height */
+  width: 100%;
 }
 
 .package-card:hover {
   transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.85); 
+  background: rgba(255, 255, 255, 0.85);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
   border-color: #ffffff;
 }
 
+/* Badges */
 .badge {
   position: absolute;
   top: 12px;
@@ -44,13 +51,14 @@
   color: #fff;
 }
 
+/* Favorite Button */
 .favorite-button {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 48px;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.7); 
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.8);
   color: #64748b;
   border-radius: 50%;
@@ -78,38 +86,42 @@
 }
 
 .favorite-button svg {
-  width: 24px !important;
-  height: 24px !important;
+  width: 20px !important;
+  height: 20px !important;
 }
 
+/* Card Image */
 .card-image {
   width: 100%;
   height: 220px;
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5); 
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0; /* Prevents image from shrinking */
 }
 
 .image-content {
   width: 100%;
   height: 100%;
-  object-fit: cover; 
-  transition: transform 0.5s ease; 
+  object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
 .package-card:hover .image-content {
   transform: scale(1.1);
 }
 
+/* Card Body */
 .card-body {
   padding: 24px;
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
+  flex-grow: 1; /* Pushes footer to bottom */
+  justify-content: space-between; /* Distributes space */
 }
 
 .card-header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .card-title {
@@ -118,6 +130,14 @@
   color: #1e293b;
   margin-bottom: 8px;
   line-height: 1.4;
+  
+  /* CRITICAL: Limit lines to 2 to prevent uneven heights */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.8em; /* Reserve space for 2 lines even if text is short */
 }
 
 .rating-row {
@@ -138,13 +158,13 @@
 
 .rating-count {
   font-size: 0.875rem;
-  color: #64748b; 
+  color: #64748b;
 }
 
 .card-details {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 24px;
 }
 
@@ -157,21 +177,28 @@
 .detail-icon {
   color: #ea580c;
   flex-shrink: 0;
+  width: 18px;
+  height: 18px;
 }
 
 .detail-text {
   font-size: 0.9rem;
-  color: #475569; 
+  color: #475569;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Footer & Price */
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-top: 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06); 
-  margin-top: auto;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: auto; /* Ensures footer sticks to bottom */
+  gap: 12px;
 }
 
 .price-info {
@@ -203,11 +230,11 @@
 .price-value {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #ea580c; /* Darker Orange Price */
+  color: #ea580c;
 }
 
 .book-button {
-  background-color: #ea580c; /* Darker Orange Button */
+  background-color: #ea580c;
   color: #fff;
   border: none;
   padding: 10px 24px;
@@ -220,6 +247,8 @@
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .book-button:hover {
@@ -228,8 +257,49 @@
   box-shadow: 0 6px 15px rgba(234, 88, 12, 0.35);
 }
 
+.book-button:active {
+  transform: translateY(0);
+}
+
+/* --- RESPONSIVE MEDIA QUERIES --- */
+
+/* Tablet (Portrait) */
+@media (max-width: 1024px) {
+  .card-body { padding: 20px; }
+  .card-title { font-size: 1.125rem; min-height: 2.8em; }
+  .price-value { font-size: 1.35rem; }
+  .book-button { padding: 9px 20px; font-size: 0.85rem; }
+  .card-image { height: 200px; }
+}
+
+/* Mobile Landscape & Small Tablets */
+@media (max-width: 768px) {
+  .card-body { padding: 18px; }
+  .card-title { font-size: 1.1rem; margin-bottom: 6px; }
+  .rating-value, .rating-count { font-size: 0.8rem; }
+  .card-details { gap: 8px; margin-bottom: 16px; }
+  .detail-text { font-size: 0.85rem; }
+  .price-value { font-size: 1.25rem; }
+  .book-button { padding: 8px 16px; font-size: 0.8rem; }
+  .card-image { height: 180px; }
+}
+
+/* Mobile Portrait */
 @media (max-width: 480px) {
   .card-body { padding: 16px; }
-  .card-title { font-size: 1.125rem; }
-  .price-value { font-size: 1.25rem; }
+  .card-title { font-size: 1rem; min-height: auto; /* Allow auto height on very small screens */ }
+  .card-footer {
+    flex-direction: row; /* Keep row unless tiny */
+    align-items: center;
+    padding-top: 14px;
+  }
+  .book-button { width: auto; padding: 10px 16px; }
+  .card-image { height: 160px; }
+  .badge-discount { right: 55px; max-width: 100px; line-height: 1.2; }
+}
+
+/* Tiny Mobile */
+@media (max-width: 360px) {
+  .card-footer { flex-direction: column; align-items: flex-start; }
+  .book-button { width: 100%; justify-content: center; margin-top: 8px; }
 }

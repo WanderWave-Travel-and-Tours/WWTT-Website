@@ -4,7 +4,7 @@ import AllPackages from './allPackages';
 import PackageBooking from './packageBooking';
 import './packageDeals.css';
 import PromoSection from './promoSection';
-import CurrencyModal from './currencyModal';
+import CurrencyModal from './CurrencyModal';
 
 function PackageDeals() {
   const [selectedFilter, setSelectedFilter] = useState('all');

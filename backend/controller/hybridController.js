@@ -1,254 +1,61 @@
 const axios = require('axios');
+const Amadeus = require('amadeus');
 
-function calculateDistance(origin, destination) {
-  const distances = {
-    'MNL-CEB': 570, 'CEB-MNL': 570,
-    'MNL-DVO': 990, 'DVO-MNL': 990,
-    'MNL-ILO': 330, 'ILO-MNL': 330,
-    'MNL-BCD': 470, 'BCD-MNL': 470,
-    'MNL-CRK': 80, 'CRK-MNL': 80,
-    'MNL-KLO': 320, 'KLO-MNL': 320,
-    'MNL-TAG': 1050, 'TAG-MNL': 1050,
-    'CEB-DVO': 300, 'DVO-CEB': 300,
-  };
-  
-  const route = `${origin}-${destination}`;
-  return distances[route] || 500; 
-}
+// Initialize Amadeus
+const amadeus = new Amadeus({
+  clientId: process.env.AMADEUS_API_KEY,
+  clientSecret: process.env.AMADEUS_API_SECRET
+});
 
-function estimatePrice(distance, airline, departureTime) {
-  const basePricePerKm = 0.15; 
-  
-  const airlineMultipliers = {
-    'Cebu Pacific': 0.8,
-    'AirAsia': 0.85,
-    'Philippine Airlines': 1.2,
-    'PAL Express': 1.1,
-    'default': 1.0
-  };
-  
-  const hour = new Date(departureTime).getHours();
-  let timeMultiplier = 1.0;
-  if (hour >= 6 && hour <= 9) timeMultiplier = 1.2; 
-  else if (hour >= 17 && hour <= 20) timeMultiplier = 1.15; 
-  else if (hour >= 22 || hour <= 5) timeMultiplier = 0.9; 
-  
-  const airlineMultiplier = airlineMultipliers[airline] || airlineMultipliers['default'];
-  const basePrice = distance * basePricePerKm * airlineMultiplier * timeMultiplier;
-  const totalPrice = basePrice * 1.3;
-  const variation = 0.9 + (Math.random() * 0.2);
-  
-  return Math.round(totalPrice * variation);
-}
-
-exports.searchFlightPrices = async (req, res) => {
+exports.searchFlightsHybrid = async (req, res) => {
   try {
-    const { origin, destination, departureDate } = req.query;
+    const { origin, destination, departureDate, adults = 1 } = req.query;
+    console.log('🔄 Hybrid search params:', { origin, destination, departureDate, adults });
 
-    console.log('Hybrid search params:', { origin, destination, departureDate });
-
-    if (!origin || !destination) {
+    if (!origin || !destination || !departureDate) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: origin and destination'
+        message: 'Missing required fields: origin, destination, and departureDate'
       });
     }
 
-    const distance = calculateDistance(origin.toUpperCase(), destination.toUpperCase());
-    console.log(`Route distance: ${distance}km`);
-
-    let kiwiFlights = [];
-    try {
-      const date = new Date(departureDate || Date.now());
-      const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      
-      const kiwiOptions = {
-        method: 'GET',
-        url: 'https://kiwi-com-cheap-flights.p.rapidapi.com/one-way',
-        params: {
-          flyFrom: origin.toUpperCase(),
-          flyTo: destination.toUpperCase(),
-          dateFrom: formattedDate,
-          dateTo: formattedDate,
-          adults: '1',
-          curr: 'PHP',
-          limit: 10
-        },
-        headers: {
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-          'x-rapidapi-host': 'kiwi-com-cheap-flights.p.rapidapi.com'
-        },
-        timeout: 5000
-      };
-
-      const kiwiResponse = await axios.request(kiwiOptions);
-      if (kiwiResponse.data?.itineraries?.length > 0) {
-        console.log(`✅ Kiwi.com found ${kiwiResponse.data.itineraries.length} flights`);
-        kiwiFlights = kiwiResponse.data.itineraries;
-      }
-    } catch (kiwiError) {
-      console.log('⚠️ Kiwi.com not available, using Aviationstack with price estimation');
-    }
-
-    if (kiwiFlights.length > 0) {
-      const flights = kiwiFlights.map(itinerary => {
-        const sector = itinerary.sectors[0];
-        const segment = sector.segments[0];
-        
-        return {
-          id: itinerary.id,
-          price: {
-            amount: itinerary.price?.amount || 0,
-            currency: 'PHP',
-            formatted: `₱${Math.round(itinerary.price?.amount || 0).toLocaleString()}`,
-            isEstimated: false
-          },
-          airline: {
-            name: segment.carrier?.name || 'Unknown',
-            code: segment.carrier?.code || 'N/A',
-            flightNumber: segment.flightNumber || 'N/A',
-            logo: segment.carrier?.code 
-              ? `https://images.kiwi.com/airlines/64/${segment.carrier.code}.png`
-              : null
-          },
-          departure: {
-            airport: sector.source?.name || 'N/A',
-            iataCode: sector.source?.code || origin,
-            scheduledTime: sector.departure,
-            displayTime: new Date(sector.departure).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true
-            }),
-            displayDate: new Date(sector.departure).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })
-          },
-          arrival: {
-            airport: sector.destination?.name || 'N/A',
-            iataCode: sector.destination?.code || destination,
-            scheduledTime: sector.arrival,
-            displayTime: new Date(sector.arrival).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true
-            }),
-            displayDate: new Date(sector.arrival).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })
-          },
-          duration: formatDuration(sector.duration),
-          stops: sector.stopoverCount || 0,
-          bookingUrl: itinerary.shareableUrl || '#'
-        };
-      });
-
-      return res.json({
-        success: true,
-        count: flights.length,
-        data: flights,
-        source: 'kiwi'
-      });
-    }
-
-    const apiUrl = 'http://api.aviationstack.com/v1/flights';
+    // STEP 1: Get flight schedules from Aviationstack (maraming airlines)
+    console.log('📡 Fetching flights from Aviationstack...');
+    const aviationstackFlights = await getAviationstackFlights(origin, destination);
     
-    const params = {
-      access_key: process.env.AVIATIONSTACK_API_KEY,
-      dep_iata: origin.toUpperCase(),
-      arr_iata: destination.toUpperCase(),
-      limit: 20
-    };
-
-    console.log('Calling Aviationstack API...');
-    const response = await axios.get(apiUrl, { params });
-
-    if (!response.data.data || response.data.data.length === 0) {
-      return res.json({
-        success: true,
-        count: 0,
-        data: [],
-        message: 'No flights found for this route'
-      });
+    if (aviationstackFlights.length === 0) {
+      console.log('⚠️ No flights found in Aviationstack');
+    } else {
+      console.log(`✅ Found ${aviationstackFlights.length} flights from Aviationstack`);
     }
 
-    const flights = response.data.data.map(flight => {
-      const estimatedPrice = estimatePrice(
-        distance,
-        flight.airline.name,
-        flight.departure.scheduled
-      );
+    // STEP 2: Get flight offers with prices from Amadeus
+    console.log('💰 Fetching prices from Amadeus...');
+    const amadeusOffers = await getAmadeusFlightOffers(origin, destination, departureDate, adults);
+    
+    if (amadeusOffers.length === 0) {
+      console.log('⚠️ No offers found in Amadeus');
+    } else {
+      console.log(`✅ Found ${amadeusOffers.length} offers from Amadeus`);
+    }
 
-      return {
-        id: flight.flight.iata,
-        price: {
-          amount: estimatedPrice,
-          currency: 'PHP',
-          formatted: `₱${estimatedPrice.toLocaleString()}`,
-          isEstimated: true
-        },
-        airline: {
-          name: flight.airline.name,
-          code: flight.airline.iata || flight.airline.icao,
-          flightNumber: flight.flight.number,
-          logo: null
-        },
-        departure: {
-          airport: flight.departure.airport,
-          iataCode: flight.departure.iata,
-          terminal: flight.departure.terminal,
-          scheduledTime: flight.departure.scheduled,
-          displayTime: new Date(flight.departure.scheduled).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-          }),
-          displayDate: new Date(flight.departure.scheduled).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-          })
-        },
-        arrival: {
-          airport: flight.arrival.airport,
-          iataCode: flight.arrival.iata,
-          terminal: flight.arrival.terminal,
-          scheduledTime: flight.arrival.scheduled,
-          displayTime: new Date(flight.arrival.scheduled).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-          }),
-          displayDate: new Date(flight.arrival.scheduled).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-          })
-        },
-        duration: calculateDuration(flight.departure.scheduled, flight.arrival.scheduled),
-        status: flight.flight_status,
-        stops: 0,
-        bookingUrl: `https://www.google.com/flights?q=${origin}+to+${destination}`
-      };
-    });
+    // STEP 3: Merge both results - prioritize Amadeus (with price) then add Aviationstack
+    const mergedFlights = mergeFlightData(aviationstackFlights, amadeusOffers, departureDate);
 
-    console.log(`✅ Found ${flights.length} flights with estimated pricing`);
+    console.log(`🎯 Total merged flights: ${mergedFlights.length}`);
 
     res.json({
       success: true,
-      count: flights.length,
-      data: flights,
-      source: 'aviationstack',
-      priceDisclaimer: 'Prices are estimated based on distance, airline, and time of day. For exact prices, click "Book Now".'
+      count: mergedFlights.length,
+      data: mergedFlights,
+      sources: {
+        amadeus: amadeusOffers.length,
+        aviationstack: aviationstackFlights.length
+      }
     });
 
   } catch (error) {
-    console.error('Error:', error.response?.data || error.message);
-    
+    console.error('❌ Hybrid search error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error searching flights',
@@ -256,6 +63,189 @@ exports.searchFlightPrices = async (req, res) => {
     });
   }
 };
+
+// Fetch flights from Aviationstack
+async function getAviationstackFlights(origin, destination) {
+  try {
+    const apiUrl = 'http://api.aviationstack.com/v1/flights';
+    const params = {
+      access_key: process.env.AVIATIONSTACK_API_KEY,
+      dep_iata: origin.toUpperCase(),
+      arr_iata: destination.toUpperCase(),
+      limit: 100
+    };
+
+    const response = await axios.get(apiUrl, { params });
+
+    if (!response.data.data || response.data.data.length === 0) {
+      return [];
+    }
+
+    return response.data.data.map(flight => ({
+      source: 'aviationstack',
+      id: flight.flight.iata,
+      airline: {
+        name: flight.airline.name,
+        code: flight.airline.iata || flight.airline.icao,
+        flightNumber: flight.flight.number
+      },
+      departure: {
+        airport: flight.departure.airport,
+        iataCode: flight.departure.iata,
+        terminal: flight.departure.terminal,
+        gate: flight.departure.gate,
+        scheduledTime: flight.departure.scheduled,
+        estimatedTime: flight.departure.estimated,
+        actualTime: flight.departure.actual,
+        delay: flight.departure.delay
+      },
+      arrival: {
+        airport: flight.arrival.airport,
+        iataCode: flight.arrival.iata,
+        terminal: flight.arrival.terminal,
+        gate: flight.arrival.gate,
+        scheduledTime: flight.arrival.scheduled,
+        estimatedTime: flight.arrival.estimated,
+        actualTime: flight.arrival.actual,
+        delay: flight.arrival.delay
+      },
+      status: flight.flight_status,
+      aircraft: flight.aircraft?.registration || 'N/A',
+      duration: calculateDuration(flight.departure.scheduled, flight.arrival.scheduled),
+      price: null, // Will be enriched if found in Amadeus
+      priceEstimated: false
+    }));
+  } catch (error) {
+    console.error('Aviationstack fetch error:', error.message);
+    return [];
+  }
+}
+
+// Fetch flight offers from Amadeus
+async function getAmadeusFlightOffers(origin, destination, departureDate, adults) {
+  try {
+    const response = await amadeus.shopping.flightOffersSearch.get({
+      originLocationCode: origin.toUpperCase(),
+      destinationLocationCode: destination.toUpperCase(),
+      departureDate: departureDate,
+      adults: adults,
+      max: 50
+    });
+
+    if (!response.data || response.data.length === 0) {
+      return [];
+    }
+
+    return response.data.map(offer => {
+      const firstSegment = offer.itineraries[0].segments[0];
+      const lastSegment = offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1];
+      
+      return {
+        source: 'amadeus',
+        id: offer.id,
+        airline: {
+          name: firstSegment.carrierCode,
+          code: firstSegment.carrierCode,
+          flightNumber: firstSegment.number
+        },
+        departure: {
+          airport: firstSegment.departure.iataCode,
+          iataCode: firstSegment.departure.iataCode,
+          terminal: firstSegment.departure.terminal,
+          scheduledTime: firstSegment.departure.at
+        },
+        arrival: {
+          airport: lastSegment.arrival.iataCode,
+          iataCode: lastSegment.arrival.iataCode,
+          terminal: lastSegment.arrival.terminal,
+          scheduledTime: lastSegment.arrival.at
+        },
+        duration: offer.itineraries[0].duration,
+        price: {
+          amount: parseFloat(offer.price.total),
+          currency: offer.price.currency
+        },
+        priceEstimated: false,
+        stops: offer.itineraries[0].segments.length - 1,
+        bookingClass: firstSegment.cabin,
+        seatsAvailable: offer.numberOfBookableSeats || null
+      };
+    });
+  } catch (error) {
+    console.error('Amadeus fetch error:', error.message);
+    return [];
+  }
+}
+
+// Merge Aviationstack and Amadeus data
+function mergeFlightData(aviationstackFlights, amadeusOffers, requestedDate) {
+  const merged = [];
+  const addedFlightKeys = new Set();
+
+  // PRIORITY 1: Add all Amadeus offers (with real prices)
+  amadeusOffers.forEach(offer => {
+    const key = `${offer.airline.code}-${offer.airline.flightNumber}`;
+    merged.push(offer);
+    addedFlightKeys.add(key);
+  });
+
+  // PRIORITY 2: Add Aviationstack flights not in Amadeus
+  aviationstackFlights.forEach(flight => {
+    const key = `${flight.airline.code}-${flight.airline.flightNumber}`;
+    
+    // Skip if already added from Amadeus
+    if (addedFlightKeys.has(key)) {
+      return;
+    }
+
+    // Check if flight date matches requested date (within same day)
+    const flightDate = new Date(flight.departure.scheduledTime).toISOString().split('T')[0];
+    const reqDate = new Date(requestedDate).toISOString().split('T')[0];
+    
+    if (flightDate === reqDate) {
+      // Try to estimate price based on similar Amadeus routes
+      const estimatedPrice = estimatePrice(flight, amadeusOffers);
+      
+      merged.push({
+        ...flight,
+        price: estimatedPrice,
+        priceEstimated: estimatedPrice !== null
+      });
+      
+      addedFlightKeys.add(key);
+    }
+  });
+
+  // Sort by price (real prices first, then estimated, then no price)
+  return merged.sort((a, b) => {
+    if (a.price && b.price) {
+      if (!a.priceEstimated && b.priceEstimated) return -1;
+      if (a.priceEstimated && !b.priceEstimated) return 1;
+      return a.price.amount - b.price.amount;
+    }
+    if (a.price && !b.price) return -1;
+    if (!a.price && b.price) return 1;
+    return 0;
+  });
+}
+
+// Estimate price based on similar flights
+function estimatePrice(flight, amadeusOffers) {
+  if (amadeusOffers.length === 0) return null;
+
+  // Calculate average price from Amadeus offers
+  const totalPrice = amadeusOffers.reduce((sum, offer) => sum + offer.price.amount, 0);
+  const avgPrice = totalPrice / amadeusOffers.length;
+  
+  // Add some randomness (±20%) to make it look realistic
+  const variation = (Math.random() - 0.5) * 0.4; // -20% to +20%
+  const estimatedAmount = avgPrice * (1 + variation);
+
+  return {
+    amount: Math.round(estimatedAmount * 100) / 100,
+    currency: amadeusOffers[0].price.currency
+  };
+}
 
 function calculateDuration(departureTime, arrivalTime) {
   try {
@@ -268,11 +258,4 @@ function calculateDuration(departureTime, arrivalTime) {
   } catch (error) {
     return 'N/A';
   }
-}
-
-function formatDuration(seconds) {
-  if (!seconds) return 'N/A';
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours}h ${minutes}m`;
 }

@@ -42,11 +42,11 @@ const ViewTours = () => {
 
     if (loading) {
         return (
-            <div className="tours-page">
+            <div className="viewtours-page">
                 <Sidebar />
-                <main className="tours-main">
-                    <div className="tours-loader">
-                        <div className="tours-spinner"></div>
+                <main className="viewtours-main">
+                    <div className="viewtours-loader">
+                        <div className="viewtours-spinner"></div>
                         <p>Loading tours...</p>
                     </div>
                 </main>
@@ -56,11 +56,11 @@ const ViewTours = () => {
 
     if (error) {
         return (
-            <div className="tours-page">
+            <div className="viewtours-page">
                 <Sidebar />
-                <main className="tours-main">
-                    <div className="tours-error">
-                        <span className="tours-error-icon">⚠️</span>
+                <main className="viewtours-main">
+                    <div className="viewtours-error">
+                        <span className="viewtours-error-icon">⚠️</span>
                         <p>{error}</p>
                     </div>
                 </main>
@@ -69,64 +69,72 @@ const ViewTours = () => {
     }
 
     return (
-        <div className="tours-page">
+        <div className="viewtours-page">
             <Sidebar />
-            <main className="tours-main">
-                <div className="tours-container">
-                    <header className="tours-header">
-                        <div className="tours-header-left">
-                            <h1 className="tours-title">MANAGE TOURS</h1>
-                            <p className="tours-subtitle">Overview of your destination offers ({tours.length} total)</p>
+            <main className="viewtours-main">
+                <div className="viewtours-container">
+                    <header className="viewtours-header">
+                        <div className="viewtours-header-left">
+                            <h1 className="viewtours-title">TOUR LISTS</h1>
+                            <p className="viewtours-subtitle">Manage your travel packages ({tours.length} total)</p>
                         </div>
-                        <button className="tours-btn tours-btn--add" onClick={() => navigate('/add-tour')}>
-                            + Add New Tour
+                        <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
+                            + Add New Package
                         </button>
                     </header>
 
                     {tours.length === 0 ? (
-                        <div className="tours-empty">
-                            <span className="tours-empty-icon">📍</span>
+                        <div className="viewtours-empty">
+                            <span className="viewtours-empty-icon">📍</span>
                             <h3>No tours yet</h3>
                             <p>Start by creating your first tour destination</p>
-                            <button className="tours-btn tours-btn--add" onClick={() => navigate('/add-tour')}>
+                            <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
                                 + Add Tour
                             </button>
                         </div>
                     ) : (
-                        <div className="tours-grid">
+                        <div className="viewtours-grid">
                             {tours.map((tour) => (
-                                <div key={tour._id} className="tour-card">
-                                    <div className="tour-card-image">
+                                <div key={tour._id} className="viewtours-card">
+                                    <div className="viewtours-card-image">
                                         <img 
                                             src={`http://localhost:5000/uploads/${tour.image}`} 
                                             alt={tour.title} 
                                         />
-                                        <span className="tour-card-category">{tour.category}</span>
+                                        <span className="viewtours-card-category">{tour.category}</span>
                                     </div>
                                     
-                                    <div className="tour-card-body">
-                                        <h3 className="tour-card-title">{tour.title}</h3>
+                                    <div className="viewtours-card-body">
+                                        <h3 className="viewtours-card-title">{tour.title.toUpperCase()}</h3>
                                         
-                                        <div className="tour-card-info">
-                                            <div className="tour-info-row">
-                                                <span>Destination: {tour.destination}</span>
+                                        <div className="viewtours-card-info">
+                                            <div className="viewtours-info-row">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                                    <circle cx="12" cy="10" r="3"/>
+                                                </svg>
+                                                <span>{tour.destination.toUpperCase()}</span>
                                             </div>
-                                            <div className="tour-info-row">
-                                                <span>Duration: {tour.duration}</span>
+                                            <div className="viewtours-info-row">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <circle cx="12" cy="12" r="10"/>
+                                                    <polyline points="12 6 12 12 16 14"/>
+                                                </svg>
+                                                <span>{tour.duration.toUpperCase()}</span>
                                             </div>
                                         </div>
 
-                                        <div className="tour-card-footer">
-                                            <div className="tour-price">
-                                                <span className="tour-price-label">PRICE</span>
-                                                <span className="tour-price-value">₱{tour.price ? tour.price.toLocaleString() : "0"}</span>
+                                        <div className="viewtours-card-footer">
+                                            <div className="viewtours-price">
+                                                <span className="viewtours-price-label">PRICE</span>
+                                                <span className="viewtours-price-value">₱{tour.price ? tour.price.toLocaleString() : "0"}</span>
                                             </div>
                                             
-                                            <div className="tour-actions">
-                                                <button className="tour-btn tour-btn--edit">
+                                            <div className="viewtours-actions">
+                                                <button className="viewtours-btn-action viewtours-btn-action--edit">
                                                     Edit
                                                 </button>
-                                                <button className="tour-btn tour-btn--delete">
+                                                <button className="viewtours-btn-action viewtours-btn-action--delete">
                                                     Delete
                                                 </button>
                                             </div>

@@ -21,6 +21,7 @@
     overflow-x: hidden;
 }
 
+/* Dark overlay */
 .login-wrapper::before {
     content: '';
     position: fixed;
@@ -36,21 +37,26 @@
     position: relative;
     z-index: 2;
     width: 100%;
-    max-width: 1100px;
-    min-height: 600px;
+    /* Reduced size for compact look */
+    max-width: 900px; 
+    min-height: 500px; 
+    height: auto;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-radius: 24px;
+    grid-template-columns: 1fr 1fr; /* Side by side on desktop */
+    border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
     background-color: white;
+    transition: all 0.3s ease-in-out;
 }
 
+/* --- Slideshow Section --- */
 .slideshow-panel {
     position: relative;
     overflow: hidden;
     background: #000;
-    min-height: 600px;
+    height: 100%;
+    min-height: 500px; /* Match container min-height */
 }
 
 .slideshow-container {
@@ -86,14 +92,14 @@
     left: 0;
     right: 0;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
-    padding: 60px 40px 40px;
+    padding: 60px 30px 40px;
     color: white;
     z-index: 5;
 }
 
 .slide-title {
-    margin: 0 0 8px 0;
-    font-size: 2.4rem;
+    margin: 0 0 6px 0;
+    font-size: 2rem;
     font-weight: 800;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
     line-height: 1.2;
@@ -101,7 +107,7 @@
 
 .slide-description {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1rem;
     opacity: 0.95;
     font-weight: 500;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
@@ -109,17 +115,17 @@
 
 .slide-indicators {
     position: absolute;
-    bottom: 24px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 10px;
+    gap: 8px;
     z-index: 10;
 }
 
 .indicator-dot {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background-color: white;
     opacity: 0.5;
@@ -134,51 +140,52 @@
 }
 
 .indicator-dot.active-dot {
-    width: 36px;
+    width: 30px;
     border-radius: 20px;
     opacity: 1;
     background-color: #ff9800;
 }
 
+/* --- Login Form Section --- */
 .login-panel {
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #ffffff;
-    padding: 40px 50px;
+    padding: 30px 40px;
 }
 
 .login-form-wrapper {
     width: 100%;
-    max-width: 380px;
+    max-width: 350px;
 }
 
 .logo-section {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
 }
 
 .logo-img {
-    height: 45px !important;
-    max-height: 45px;
+    height: 40px !important;
+    max-height: 40px;
     width: auto;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
     object-fit: contain;
 }
 
 .admin-title {
     margin: 0;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 800;
     color: #1a237e;
     letter-spacing: -0.5px;
 }
 
 .admin-subtitle {
-    margin: 8px 0 0;
+    margin: 6px 0 0;
     color: #666;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .login-form {
@@ -186,23 +193,23 @@
 }
 
 .input-group {
-    margin-bottom: 22px;
+    margin-bottom: 18px;
 }
 
 .input-label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: #333;
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
 }
 
 .input-field {
     width: 100%;
-    padding: 14px 16px;
-    border-radius: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
     border: 2px solid #e0e0e0;
-    font-size: 1rem;
+    font-size: 0.95rem;
     transition: all 0.3s ease;
     background-color: #f8f9fa;
     font-family: inherit;
@@ -221,15 +228,15 @@
 
 .login-button {
     width: 100%;
-    padding: 16px;
+    padding: 14px;
     background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 1.1rem;
-    margin-top: 10px;
+    font-size: 1rem;
+    margin-top: 8px;
     transition: all 0.3s ease;
     box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3);
     font-family: inherit;
@@ -251,176 +258,124 @@
 
 .footer-text {
     text-align: center;
-    margin-top: 28px;
+    margin-top: 24px;
     color: #999;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
+/* --- RESPONSIVE ADJUSTMENTS --- */
+
+/* Tablet & Smaller Laptops (Below 900px) 
+   Switches to vertical layout earlier to avoid squished look */
 @media (max-width: 900px) {
     .login-container {
-        grid-template-columns: 1fr;
-        max-width: 500px;
-        min-height: auto;
+        grid-template-columns: 1fr; /* Stack vertically */
+        max-width: 480px; /* Limit width in single column mode */
+        min-height: auto; /* Remove fixed height constraint */
     }
     
     .slideshow-panel {
-        min-height: 320px;
-        height: 320px;
+        height: 220px; /* Reduced height for header-style image */
+        min-height: 220px;
     }
     
-    .login-panel {
-        padding: 40px 35px;
-    }
-    
-    .slide-title {
-        font-size: 2rem;
-    }
-
-    .slide-description {
-        font-size: 1.1rem;
-    }
-
     .slide-content-overlay {
-        padding: 40px 30px 30px;
-    }
-}
-
-@media (max-width: 600px) {
-    .login-wrapper {
-        padding: 15px;
-    }
-
-    .login-container {
-        border-radius: 18px;
-        max-width: 100%;
+        padding: 20px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
     }
     
-    .slideshow-panel {
-        min-height: 280px;
-        height: 280px;
-    }
-    
-    .login-panel {
-        padding: 35px 25px;
-    }
-
-    .login-form-wrapper {
-        max-width: 100%;
-    }
-    
-    .logo-img {
-        height: 40px !important;
-        max-height: 40px;
-    }
-    
-    .admin-title {
-        font-size: 1.6rem;
-    }
-
-    .admin-subtitle {
-        font-size: 0.9rem;
-    }
-
-    .slide-title {
-        font-size: 1.8rem;
-    }
-
-    .slide-description {
-        font-size: 1rem;
-    }
-
-    .slide-content-overlay {
-        padding: 30px 25px 25px;
-    }
-
-    .input-field {
-        padding: 13px 14px;
-        font-size: 0.95rem;
-    }
-
-    .login-button {
-        padding: 15px;
-        font-size: 1rem;
-    }
-}
-
-@media (max-width: 400px) {
-    .login-wrapper {
-        padding: 10px;
-    }
-
-    .login-container {
-        border-radius: 16px;
-    }
-
-    .slideshow-panel {
-        min-height: 240px;
-        height: 240px;
-    }
-
-    .login-panel {
-        padding: 30px 20px;
-    }
-
-    .logo-section {
-        margin-bottom: 30px;
-    }
-
-    .logo-img {
-        height: 38px !important;
-        max-height: 38px;
-    }
-
-    .admin-title {
-        font-size: 1.4rem;
-    }
-
-    .admin-subtitle {
-        font-size: 0.85rem;
-    }
-
     .slide-title {
         font-size: 1.5rem;
     }
 
     .slide-description {
         font-size: 0.9rem;
+        display: none; /* Hide description on small screens to save space */
     }
 
-    .slide-content-overlay {
-        padding: 25px 20px 20px;
+    .login-panel {
+        padding: 30px 25px;
+    }
+    
+    .logo-img {
+        height: 35px !important;
     }
 
-    .slide-indicators {
-        bottom: 18px;
-        gap: 8px;
+    .admin-title {
+        font-size: 1.5rem;
+    }
+}
+
+/* Mobile Screens (Below 480px) */
+@media (max-width: 480px) {
+    .login-wrapper {
+        padding: 15px;
+        align-items: flex-start; /* Move to top slightly on mobile */
+        padding-top: 40px;
     }
 
-    .indicator-dot {
-        width: 8px;
-        height: 8px;
+    .login-container {
+        border-radius: 16px;
+        width: 100%;
     }
 
-    .indicator-dot.active-dot {
-        width: 28px;
+    .slideshow-panel {
+        height: 180px; /* Even smaller image area */
+        min-height: 180px;
     }
 
-    .input-group {
-        margin-bottom: 18px;
+    .slide-title {
+        font-size: 1.3rem;
+    }
+
+    .login-panel {
+        padding: 25px 20px;
     }
 
     .input-field {
-        padding: 12px 14px;
-        font-size: 0.9rem;
-    }
-
-    .login-button {
-        padding: 14px;
-        font-size: 0.95rem;
+        padding: 12px;
+        font-size: 16px; /* Prevents zoom on iOS */
     }
 
     .footer-text {
-        font-size: 0.8rem;
-        margin-top: 24px;
+        margin-top: 20px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Very Small Height Screens (Landscape Mobile) */
+@media (max-height: 600px) {
+    .login-wrapper {
+        padding: 10px;
+        align-items: center;
+    }
+    
+    .login-container {
+        grid-template-columns: 1fr 1fr; /* Force side-by-side for landscape */
+        max-width: 750px;
+        min-height: 300px;
+    }
+
+    .slideshow-panel {
+        height: auto;
+        min-height: 100%;
+    }
+
+    /* Restore side-by-side logic specifically for short screens */
+    .login-panel {
+        padding: 20px;
+    }
+
+    .logo-section {
+        margin-bottom: 15px;
+    }
+
+    .logo-img {
+        height: 30px !important;
+        margin-bottom: 5px;
+    }
+
+    .input-group {
+        margin-bottom: 12px;
     }
 }
