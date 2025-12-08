@@ -1,0 +1,80 @@
+.dash-link-btn {
+    background: none;
+    border: none;
+    color: #FF8C42;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dash-link-btn:hover {
+    color: #e57a35;
+}
+
+.dash-table-wrapper {
+    overflow-x: auto;
+}
+
+.dash-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dash-table th {
+    padding: 14px 20px;
+    background: #001F3F;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 900;
+    color: #fff;
+    text-align: left;
+    letter-spacing: 1px;
+}
+
+.dash-table td {
+    padding: 14px 20px;
+    font-size: 13px;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dash-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.dash-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.dash-client {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.dash-amount {
+    font-weight: 700;
+    color: #FF8C42;
+}
+
+.dash-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.dash-status--confirmed { background: #ecfdf5; color: #059669; }
+.dash-status--pending { background: #fef3c7; color: #d97706; }
+.dash-status--cancelled { background: #fef2f2; color: #dc2626; }
+
+.dash-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #9ca3af;
+    gap: 12px;
+}

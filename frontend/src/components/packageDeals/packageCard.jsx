@@ -1,3 +1,4 @@
+import React from 'react';
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
 import './PackageCard.css';
 
@@ -40,27 +41,29 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
       </div>
 
       <div className="card-body">
-        <div className="card-header">
-          <h3 className="card-title">{pkg.name}</h3>
-          <div className="rating-row">
-            <Star className="star-icon" size={16} fill="currentColor" />
-            <span className="rating-value">{pkg.rating}</span>
-            <span className="rating-count">({pkg.reviews})</span>
+        <div>
+          <div className="card-header">
+            <h3 className="card-title">{pkg.name}</h3>
+            <div className="rating-row">
+              <Star className="star-icon" size={16} fill="currentColor" />
+              <span className="rating-value">{pkg.rating}</span>
+              <span className="rating-count">({pkg.reviews})</span>
+            </div>
           </div>
-        </div>
 
-        <div className="card-details">
-          <div className="detail-row">
-            <MapPin className="detail-icon" size={16} />
-            <span className="detail-text">{pkg.location}</span>
-          </div>
-          <div className="detail-row">
-            <Calendar className="detail-icon" size={16} />
-            <span className="detail-text">{pkg.duration}</span>
-          </div>
-          <div className="detail-row">
-            <Users className="detail-icon" size={16} />
-            <span className="detail-text">Up to {pkg.maxGuests} guests</span>
+          <div className="card-details">
+            <div className="detail-row">
+              <MapPin className="detail-icon" />
+              <span className="detail-text">{pkg.location}</span>
+            </div>
+            <div className="detail-row">
+              <Calendar className="detail-icon" />
+              <span className="detail-text">{pkg.duration}</span>
+            </div>
+            <div className="detail-row">
+              <Users className="detail-icon" />
+              <span className="detail-text">Up to {pkg.maxGuests} guests</span>
+            </div>
           </div>
         </div>
 

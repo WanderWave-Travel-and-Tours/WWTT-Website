@@ -1,0 +1,274 @@
+/* APPLICATION DETAILS - Premium Travel Theme */
+.ud-details-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    margin-bottom: 32px; 
+    gap: 20px; 
+    max-width: 1400px; 
+    margin-inline: auto;
+    padding: 28px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--ud-border-color);
+}
+
+.ud-header-title { 
+    font-size: 2.2rem; 
+    font-weight: 800; 
+    line-height: 1.2; 
+    margin-bottom: 6px; 
+    color: var(--ud-primary);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.ud-header-id { 
+    font-size: 0.9rem; 
+    color: var(--ud-text-secondary);
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    background: var(--ud-bg-main);
+    padding: 4px 12px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.ud-status-pill { 
+    padding: 10px 20px; 
+    border-radius: 12px;
+    font-weight: 700; 
+    text-transform: uppercase; 
+    white-space: nowrap; 
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.5px;
+}
+
+/* Info Grid */
+.ud-info-grid { 
+    display: grid; 
+    grid-template-columns: 1.5fr 1fr; 
+    gap: 24px; 
+    margin-bottom: 32px; 
+    max-width: 1400px; 
+    margin-inline: auto;
+}
+
+.ud-info-card { 
+    background: white;
+    border: 1px solid var(--ud-border-color);
+    border-radius: 20px;
+    padding: 32px; 
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.ud-info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+}
+
+.ud-card-headline { 
+    font-size: 1.2rem; 
+    font-weight: 700; 
+    margin-bottom: 24px; 
+    padding-bottom: 16px; 
+    border-bottom: 2px solid var(--ud-border-color);
+    color: var(--ud-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ud-card-headline::before {
+    content: '';
+    width: 4px;
+    height: 24px;
+    background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+    border-radius: 2px;
+}
+
+.ud-info-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 16px; 
+    padding-bottom: 12px; 
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.ud-label {
+    color: var(--ud-text-secondary);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.ud-value {
+    color: var(--ud-text-primary);
+    font-weight: 600;
+}
+
+/* Price Highlight - Travel Package Style */
+.ud-price-row { 
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    padding: 20px; 
+    border-radius: 12px;
+    border: 2px dashed #f97316 !important;
+    margin-top: 8px;
+}
+
+.ud-price-text { 
+    color: #f97316;
+    font-size: 1.8rem; 
+    font-weight: 800;
+    text-shadow: 0 2px 4px rgba(249, 115, 22, 0.1);
+} 
+
+.ud-info-message {
+    margin-top: 16px;
+}
+
+.ud-message-box { 
+    background: #f8fafc;
+    border: 1px solid var(--ud-border-color);
+    border-radius: 12px;
+    padding: 16px; 
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--ud-text-primary);
+    margin-top: 8px;
+}
+
+/* Remarks Box - Admin Message Style */
+.ud-remarks-box { 
+    background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+    border: 2px solid #fecdd3;
+    border-radius: 16px;
+    padding: 20px; 
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.ud-remarks-box::before {
+    content: '💬';
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: white;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+}
+
+.ud-remarks-title { 
+    color: #be123c;
+    margin-bottom: 10px; 
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.ud-remarks-text {
+    color: #881337;
+    line-height: 1.6;
+}
+
+.ud-evidence-link {
+    display: inline-block;
+    margin-top: 12px;
+    color: #be123c;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 8px 16px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #fecdd3;
+    transition: all 0.2s ease;
+}
+
+.ud-evidence-link:hover {
+    background: #ffe4e6;
+    transform: translateX(4px);
+}
+
+/* Payment Box - Premium Style */
+.ud-payment-box { 
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 2px solid #86efac;
+    border-radius: 16px;
+    padding: 28px; 
+    text-align: center;
+}
+
+.ud-payment-info h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #166534;
+    margin-bottom: 8px;
+}
+
+.ud-payment-info p {
+    color: #15803d;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+/* ORANGE BUTTON - Premium Travel Style */
+.ud-pay-btn { 
+    width: 100%; 
+    padding: 16px; 
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white; 
+    border: none; 
+    border-radius: 12px;
+    font-weight: 700; 
+    font-size: 1.05rem; 
+    cursor: pointer; 
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.3);
+    letter-spacing: 0.5px;
+}
+
+.ud-pay-btn:hover { 
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4);
+}
+
+.ud-pay-btn:active {
+    transform: translateY(0);
+}
+
+/* Pending Message */
+.ud-pending-msg {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 2px solid #93c5fd;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+}
+
+.ud-pending-msg p {
+    color: #1e40af;
+    font-weight: 600;
+    line-height: 1.6;
+    margin: 0;
+}
+
+@media (max-width: 1200px) {
+    .ud-info-grid { 
+        grid-template-columns: 1fr;
+    }
+    .ud-details-header { 
+        flex-direction: column;
+    }
+}

@@ -1,402 +1,256 @@
 const axios = require('axios');
 
-const PHILIPPINE_AIRPORTS = [
-  'MNL', 'CEB', 'DVO', 'ILO', 'BCD', 'CRK', 'KLO', 'TAG', 
-  'CBO', 'GES', 'USU', 'ZAM', 'BXU', 'DGT', 'MPH', 'PPS',
-  'SFS', 'TBH', 'TAC', 'TUG', 'WNP', 'IAO', 'CGY', 'BSO'
-];
+let cachedRate = 56.5; 
+let lastFetchTime = 0;
+const CACHE_DURATION = 3600000;
 
-function isDomesticPhilippineFlight(origin, destination) {
-  return PHILIPPINE_AIRPORTS.includes(origin.toUpperCase()) && 
-         PHILIPPINE_AIRPORTS.includes(destination.toUpperCase());
+async function getUsdToPhpRate() {
+  try {
+    const now = Date.now();
+    if (now - lastFetchTime < CACHE_DURATION) {
+      console.log(`💱 Using cached exchange rate: 1 USD = ₱${cachedRate}`);
+      return cachedRate;
+    }
+
+    console.log('💱 Fetching real-time exchange rate...');
+    try {
+      const response = await axios.get('https://api.exchangerate-api.com/v4/latest/USD', {
+        timeout: 3000
+      });
+      
+      if (response.data?.rates?.PHP) {
+        cachedRate = response.data.rates.PHP;
+        lastFetchTime = now;
+        console.log(`✅ Real-time rate: 1 USD = ₱${cachedRate}`);
+        return cachedRate;
+      }
+    } catch (error) {
+      console.log('⚠️ ExchangeRate-API failed, trying alternative...');
+    }
+
+    try {
+      const response = await axios.get('https://open.er-api.com/v6/latest/USD', {
+        timeout: 3000
+      });
+      
+      if (response.data?.rates?.PHP) {
+        cachedRate = response.data.rates.PHP;
+        lastFetchTime = now;
+        console.log(`✅ Real-time rate (backup): 1 USD = ₱${cachedRate}`);
+        return cachedRate;
+      }
+    } catch (error) {
+      console.log('⚠️ Backup API also failed');
+    }
+
+    console.log(`⚠️ Using fallback cached rate: 1 USD = ₱${cachedRate}`);
+    return cachedRate;
+
+  } catch (error) {
+    console.error('❌ Error fetching exchange rate:', error.message);
+    return cachedRate;
+  }
 }
 
 exports.searchFlightPrices = async (req, res) => {
   try {
-    const { origin, destination, departureDate, returnDate, adults = 1 } = req.query;
+    const { origin, destination, departureDate, returnDate } = req.query;
+    
+    const apiHost = process.env.RAPIDAPI_HOST;
+    const apiKey = process.env.RAPIDAPI_KEY;
 
-    if (!origin || !destination) {
-      return res.status(400).json({
-        success: false,
-        message: 'Origin and destination are required'
-      });
-    }
+    console.log(`🔵 Booking.com Flight Search:`, { origin, destination, departureDate });
 
-    const isDomestic = isDomesticPhilippineFlight(origin, destination);
-    return await searchKiwiWithFallback(req, res, origin, destination, departureDate, returnDate, adults, isDomestic);
+    const USD_TO_PHP = await getUsdToPhpRate();
 
-  } catch (error) {
-    console.error('❌ Search error:', error.message);
-    res.status(500).json({
-      success: false,
-      message: 'Error searching flights',
-      error: error.message
-    });
-  }
-};
-
-async function searchKiwiWithFallback(req, res, origin, destination, departureDate, returnDate, adults, isDomestic) {
-  try {
-    console.log('🌍 Attempting Kiwi API search...');
-
-    let searchDate;
-    if (departureDate) {
-      const inputDate = new Date(departureDate);
-      const today = new Date();
-      const daysAhead = Math.floor((inputDate - today) / (1000 * 60 * 60 * 24));
-      
-      if (daysAhead < 7) {
-        console.log('⚠️  Date too soon, adjusting to 30 days ahead for better results');
-        const betterDate = new Date();
-        betterDate.setDate(betterDate.getDate() + 30);
-        searchDate = betterDate.toISOString().split('T')[0];
-      } else {
-        searchDate = inputDate.toISOString().split('T')[0];
-      }
-    } else {
-      const nextMonth = new Date();
-      nextMonth.setDate(nextMonth.getDate() + 30);
-      searchDate = nextMonth.toISOString().split('T')[0];
-    }
-
-    const dateFrom = new Date(searchDate);
-    const dateTo = new Date(searchDate);
-    dateTo.setDate(dateTo.getDate() + 6); 
-
-    const options = {
-      method: 'GET',
-      url: 'https://kiwi-com-cheap-flights.p.rapidapi.com/search',
-      params: {
-        fly_from: origin.toUpperCase(),
-        fly_to: destination.toUpperCase(),
-        date_from: dateFrom.toISOString().split('T')[0],
-        date_to: dateTo.toISOString().split('T')[0],
-        adults: parseInt(adults),
-        curr: 'PHP',
-        locale: 'en',
-        limit: 50,
-        sort: 'price',
-        max_stopovers: isDomestic ? 0 : 2,
-        flight_type: returnDate ? 'round' : 'oneway'
-      },
-      headers: {
-        'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-        'x-rapidapi-host': 'kiwi-com-cheap-flights.p.rapidapi.com'
-      },
-      timeout: 20000
+    const searchParams = {
+      fromId: `${origin}.AIRPORT`,
+      toId: `${destination}.AIRPORT`,
+      departDate: departureDate,
+      adults: '1',
+      cabinClass: 'ECONOMY',
+      currency: 'PHP'
     };
 
     if (returnDate) {
-      const returnFrom = new Date(returnDate);
-      const returnTo = new Date(returnDate);
-      returnTo.setDate(returnTo.getDate() + 6);
-      
-      options.params.return_from = returnFrom.toISOString().split('T')[0];
-      options.params.return_to = returnTo.toISOString().split('T')[0];
+      searchParams.returnDate = returnDate;
     }
+
+    console.log(`🛫 Search params:`, searchParams);
+
+    const options = {
+      method: 'GET',
+      url: `https://${apiHost}/api/v1/flights/searchFlights`,
+      params: searchParams,
+      headers: {
+        'x-rapidapi-key': apiKey,
+        'x-rapidapi-host': apiHost
+      }
+    };
 
     const response = await axios.request(options);
 
-    let flights = [];
-    
-    if (response.data?.data) {
-      flights = response.data.data;
-      console.log(`📊 Found ${flights.length} flights in response.data.data`);
-    } else if (response.data?.itineraries) {
-      flights = response.data.itineraries;
-      console.log(`📊 Found ${flights.length} flights in response.data.itineraries`);
-    } else if (Array.isArray(response.data)) {
-      flights = response.data;
-      console.log(`📊 Found ${flights.length} flights in response.data array`);
+    console.log('✅ API Response received');
+    console.log('📦 Status:', response.status);
+
+    const flightData = response.data?.data?.flightOffers || [];
+
+    if (flightData.length === 0) {
+      return res.json({
+        success: true,
+        count: 0,
+        data: [],
+        message: 'No flights found'
+      });
     }
 
-    if (flights.length === 0) {
-      console.log('⚠️  No flights from API, using enhanced estimates...');
-      return await useEnhancedEstimates(req, res, origin, destination, searchDate, adults, isDomestic);
-    }
+    console.log(`✅ Found ${flightData.length} flights`);
 
-    const transformedFlights = flights.map((flight, index) => {
-      const route = flight.route || [flight];
-      const firstLeg = route[0] || flight;
-      const lastLeg = route[route.length - 1] || flight;
+    const flights = flightData.map((offer, index) => {
+      const segment = offer.segments?.[0];
+      const leg = segment?.legs?.[0];
+      const carrier = leg?.carriersData?.[0];
 
-      const deptTime = new Date(firstLeg.dTime || firstLeg.local_departure || firstLeg.utc_departure);
-      const arrTime = new Date(lastLeg.aTime || lastLeg.local_arrival || lastLeg.utc_arrival);
-      const durationSeconds = (arrTime - deptTime) / 1000;
+      let priceAmount = 0;
+      
+      if (offer.priceBreakdown?.total) {
+        const total = offer.priceBreakdown.total;
+        
+        if (typeof total.units === 'number') {
+          const units = total.units || 0;
+          const nanos = total.nanos || 0;
+          priceAmount = units + (nanos / 1000000000);
+        }
+        else if (typeof total.amount === 'string') {
+          priceAmount = parseFloat(total.amount) || 0;
+        }
+        else if (typeof total.amount === 'number') {
+          priceAmount = total.amount;
+        }
+        else if (typeof total.value === 'number') {
+          priceAmount = total.value;
+        }
+        else if (typeof total.price === 'number') {
+          priceAmount = total.price;
+        }
+      }
+      
+      if (priceAmount === 0 && offer.price) {
+        if (typeof offer.price === 'number') {
+          priceAmount = offer.price;
+        } else if (typeof offer.price.amount === 'string') {
+          priceAmount = parseFloat(offer.price.amount) || 0;
+        } else if (typeof offer.price.amount === 'number') {
+          priceAmount = offer.price.amount;
+        }
+      }
+      
+      if (priceAmount === 0 && offer.totalPrice) {
+        priceAmount = parseFloat(offer.totalPrice) || 0;
+      }
 
-      const price = flight.price || flight.conversion?.PHP || 0;
-      const airline = firstLeg.airline || firstLeg.airlines?.[0] || firstLeg.carrier?.name || 'Unknown';
-      const airlineCode = firstLeg.operating_carrier || firstLeg.carrier?.code || 'XX';
+      let finalPrice = priceAmount;
+      
+      if (priceAmount > 0 && priceAmount < 500) {
+        finalPrice = Math.round(priceAmount * USD_TO_PHP); 
+        
+        if (index < 3) { 
+          console.log(`💱 [${index+1}] $${priceAmount.toFixed(2)} USD × ₱${USD_TO_PHP.toFixed(2)} = ₱${finalPrice}`);
+          console.log(`   ${carrier?.name || 'Unknown'}`);
+        }
+      } else if (priceAmount >= 500) {
+        finalPrice = Math.round(priceAmount);
+        if (index < 3) {
+          console.log(`💰 [${index+1}] Already PHP: ₱${finalPrice} (${carrier?.name || 'Unknown'})`);
+        }
+      }
 
       return {
-        id: flight.id || `flight-${index}`,
-        price: {
-          amount: price,
-          currency: 'PHP',
-          formatted: `₱${Math.round(price).toLocaleString()}`,
-          isEstimated: false,
-          pricePerAdult: Math.round(price / parseInt(adults)),
-          lastUpdated: new Date().toISOString()
-        },
+        id: offer.token || `booking-${index}`,
         airline: {
-          name: airline,
-          code: airlineCode,
-          flightNumber: firstLeg.flight_no || firstLeg.flightNumber || 'N/A',
-          logo: `https://images.kiwi.com/airlines/64/${airlineCode}.png`
+          name: typeof carrier?.name === 'string' ? carrier.name : 'Unknown',
+          code: typeof carrier?.code === 'string' ? carrier.code : 'XX',
+          logo: typeof carrier?.logo === 'string' ? carrier.logo : ''
+        },
+        price: {
+          amount: finalPrice,
+          formatted: `₱${finalPrice.toLocaleString('en-PH')}`, 
+          currency: 'PHP'
         },
         departure: {
-          airport: firstLeg.cityFrom || origin,
-          iataCode: firstLeg.flyFrom || origin.toUpperCase(),
-          scheduledTime: deptTime.toISOString(),
-          displayTime: deptTime.toLocaleTimeString('en-US', {
-            hour: '2-digit', minute: '2-digit', hour12: true
-          }),
-          displayDate: deptTime.toLocaleDateString('en-US', {
-            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-          })
+          iataCode: String(leg?.departureAirport || origin),
+          displayTime: leg?.departureTime 
+            ? new Date(leg.departureTime).toLocaleTimeString('en-PH', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              })
+            : 'N/A',
+          airport: String(leg?.departureAirport || '')
         },
         arrival: {
-          airport: lastLeg.cityTo || destination,
-          iataCode: lastLeg.flyTo || destination.toUpperCase(),
-          scheduledTime: arrTime.toISOString(),
-          displayTime: arrTime.toLocaleTimeString('en-US', {
-            hour: '2-digit', minute: '2-digit', hour12: true
-          }),
-          displayDate: arrTime.toLocaleDateString('en-US', {
-            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-          })
+          iataCode: String(leg?.arrivalAirport || destination),
+          displayTime: leg?.arrivalTime
+            ? new Date(leg.arrivalTime).toLocaleTimeString('en-PH', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              })
+            : 'N/A',
+          airport: String(leg?.arrivalAirport || '')
         },
-        duration: formatDuration(durationSeconds),
-        stops: route.length - 1,
-        quality: flight.quality ? (flight.quality * 10).toFixed(1) : '7.5',
-        bookingUrl: flight.deep_link || `https://www.kiwi.com/deep?from=${origin}&to=${destination}&departure=${searchDate}`,
-        source: 'kiwi-api',
-        routeType: isDomestic ? 'domestic' : 'international'
+        duration: String(segment?.totalTime || 'N/A'),
+        stops: Number((segment?.legs?.length - 1) || 0),
+        source: 'booking.com'
       };
     });
 
-    transformedFlights.sort((a, b) => a.price.amount - b.price.amount);
+    flights.sort((a, b) => a.price.amount - b.price.amount);
 
-    return res.json({
+    console.log(`\n✅ Processed ${flights.length} flights`);
+    if (flights.length > 0) {
+      console.log(`💰 Cheapest: ₱${flights[0].price.amount.toLocaleString()} (${flights[0].airline.name})`);
+      console.log(`💰 Most expensive: ₱${flights[flights.length-1].price.amount.toLocaleString()} (${flights[flights.length-1].airline.name})`);
+    }
+
+    res.json({
       success: true,
-      count: transformedFlights.length,
-      data: transformedFlights,
-      source: 'kiwi.com (real-time)',
-      searchDate: searchDate,
-      priceDisclaimer: '✅ Real-time prices from airlines. Prices are current and bookable.',
-      routeInfo: {
-        type: isDomestic ? 'Domestic Philippine Flight' : 'International Flight',
-        origin: origin.toUpperCase(),
-        destination: destination.toUpperCase()
-      }
+      count: flights.length,
+      data: flights,
+      cheapest: flights[0] || null,
+      exchangeRate: USD_TO_PHP
     });
 
   } catch (error) {
-    console.error('❌ Kiwi API error:', error.response?.data || error.message);
-    console.log('🔄 Falling back to enhanced estimates...');
-    return await useEnhancedEstimates(req, res, origin, destination, departureDate, adults, isDomestic);
-  }
-}
+    console.error('❌ Error:', error.message);
 
-async function useEnhancedEstimates(req, res, origin, destination, departureDate, adults, isDomestic) {
-  console.log('📊 Generating enhanced price estimates...');
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Response:', JSON.stringify(error.response.data, null, 2));
+    }
 
-  const date = departureDate ? new Date(departureDate) : new Date();
-  date.setDate(date.getDate() + 30);
-  date.setHours(0, 0, 0, 0);
-
-  const routes = getRouteData(origin, destination, isDomestic);
-  const flights = generateEnhancedFlights(origin, destination, date, routes, adults);
-
-  return res.json({
-    success: true,
-    count: flights.length,
-    data: flights,
-    source: 'enhanced-estimates',
-    searchDate: date.toISOString().split('T')[0],
-    priceDisclaimer: '⚠️ These are estimated prices based on historical data. For exact prices, click "Book Now" to check airline websites.',
-    routeInfo: {
-      type: isDomestic ? 'Domestic Philippine Flight' : 'International Flight',
-      origin: origin.toUpperCase(),
-      destination: destination.toUpperCase()
-    },
-    bookingSites: [
-      { name: 'Cebu Pacific', url: 'https://www.cebupacificair.com' },
-      { name: 'Philippine Airlines', url: 'https://www.philippineairlines.com' },
-      { name: 'AirAsia', url: 'https://www.airasia.com' },
-      { name: 'Google Flights', url: `https://www.google.com/flights?q=${origin}+to+${destination}` }
-    ]
-  });
-}
-
-function getRouteData(origin, destination, isDomestic) {
-  const domesticRoutes = {
-    'MNL-CEB': { basePrice: 2500, duration: 85, airlines: ['5J', 'PR', 'Z2'] },
-    'MNL-DVO': { basePrice: 3200, duration: 120, airlines: ['5J', 'PR', 'Z2'] },
-    'MNL-ILO': { basePrice: 2200, duration: 60, airlines: ['5J', 'PR'] },
-    'MNL-BCD': { basePrice: 2400, duration: 65, airlines: ['5J', 'PR'] },
-    'MNL-KLO': { basePrice: 2300, duration: 55, airlines: ['5J', 'PR', 'Z2'] },
-    'CEB-DVO': { basePrice: 1800, duration: 55, airlines: ['5J', 'PR'] },
-    'MNL-CRK': { basePrice: 1500, duration: 45, airlines: ['5J'] }
-  };
-
-  const internationalRoutes = {
-    'MNL-SIN': { basePrice: 8500, duration: 210, airlines: ['5J', 'PR', 'SQ', 'TR'] },
-    'MNL-BKK': { basePrice: 7500, duration: 225, airlines: ['5J', 'PR', 'TG', 'FD'] },
-    'MNL-HKG': { basePrice: 6500, duration: 135, airlines: ['5J', 'PR', 'CX'] },
-    'MNL-KUL': { basePrice: 7000, duration: 240, airlines: ['5J', 'AK', 'MH'] },
-    'MNL-ICN': { basePrice: 12000, duration: 240, airlines: ['PR', 'KE', '7C'] },
-    'MNL-TPE': { basePrice: 6000, duration: 135, airlines: ['PR', 'CI', 'BR'] }
-  };
-
-  const routes = isDomestic ? domesticRoutes : internationalRoutes;
-  const routeKey = `${origin}-${destination}`;
-  const reverseKey = `${destination}-${origin}`;
-
-  return routes[routeKey] || routes[reverseKey] || {
-    basePrice: isDomestic ? 2500 : 8000,
-    duration: isDomestic ? 90 : 180,
-    airlines: isDomestic ? ['5J', 'PR'] : ['5J', 'PR']
-  };
-}
-
-function generateEnhancedFlights(origin, destination, date, routeData, adults) {
-  const airlineInfo = {
-    '5J': { name: 'Cebu Pacific', mult: 0.85 },
-    'PR': { name: 'Philippine Airlines', mult: 1.2 },
-    'Z2': { name: 'AirAsia Philippines', mult: 0.9 },
-    'SQ': { name: 'Singapore Airlines', mult: 1.5 },
-    'TR': { name: 'Scoot', mult: 0.95 },
-    'TG': { name: 'Thai Airways', mult: 1.3 },
-    'FD': { name: 'Thai AirAsia', mult: 0.88 },
-    'CX': { name: 'Cathay Pacific', mult: 1.4 },
-    'AK': { name: 'AirAsia', mult: 0.87 },
-    'MH': { name: 'Malaysia Airlines', mult: 1.25 },
-    'KE': { name: 'Korean Air', mult: 1.6 },
-    '7C': { name: 'Jeju Air', mult: 0.92 },
-    'CI': { name: 'China Airlines', mult: 1.3 },
-    'BR': { name: 'EVA Air', mult: 1.35 }
-  };
-
-  const flightTimes = [
-    { hour: 6, minute: 0 },
-    { hour: 9, minute: 30 },
-    { hour: 13, minute: 0 },
-    { hour: 16, minute: 30 },
-    { hour: 19, minute: 0 }
-  ];
-
-  const flights = [];
-
-  routeData.airlines.slice(0, 4).forEach((airlineCode, airlineIdx) => {
-    const airline = airlineInfo[airlineCode] || { name: 'Unknown', mult: 1 };
-    
-    flightTimes.slice(0, 2).forEach((time, timeIdx) => {
-      const deptTime = new Date(date);
-      deptTime.setHours(time.hour, time.minute, 0, 0);
-
-      const arrTime = new Date(deptTime.getTime() + routeData.duration * 60000);
-
-      const basePrice = routeData.basePrice * airline.mult;
-      const variation = 0.85 + Math.random() * 0.3;
-      const finalPrice = Math.round(basePrice * variation);
-
-      flights.push({
-        id: `${airlineCode}${100 + airlineIdx * 10 + timeIdx}`,
-        price: {
-          amount: finalPrice * parseInt(adults),
-          currency: 'PHP',
-          formatted: `₱${(finalPrice * parseInt(adults)).toLocaleString()}`,
-          isEstimated: true,
-          pricePerAdult: finalPrice
-        },
-        airline: {
-          name: airline.name,
-          code: airlineCode,
-          flightNumber: `${airlineCode}${100 + airlineIdx * 10 + timeIdx}`,
-          logo: `https://images.kiwi.com/airlines/64/${airlineCode}.png`
-        },
-        departure: {
-          airport: getAirportName(origin),
-          iataCode: origin.toUpperCase(),
-          scheduledTime: deptTime.toISOString(),
-          displayTime: deptTime.toLocaleTimeString('en-US', {
-            hour: '2-digit', minute: '2-digit', hour12: true
-          }),
-          displayDate: deptTime.toLocaleDateString('en-US', {
-            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-          })
-        },
-        arrival: {
-          airport: getAirportName(destination),
-          iataCode: destination.toUpperCase(),
-          scheduledTime: arrTime.toISOString(),
-          displayTime: arrTime.toLocaleTimeString('en-US', {
-            hour: '2-digit', minute: '2-digit', hour12: true
-          }),
-          displayDate: arrTime.toLocaleDateString('en-US', {
-            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-          })
-        },
-        duration: `${Math.floor(routeData.duration / 60)}h ${routeData.duration % 60}m`,
-        stops: 0,
-        quality: (7 + Math.random() * 2).toFixed(1),
-        bookingUrl: getAirlineBookingUrl(airline.name, origin, destination),
-        source: 'estimated'
-      });
+    res.status(500).json({
+      success: false,
+      message: 'Flight search failed',
+      error: error.message,
+      details: error.response?.data
     });
-  });
-
-  return flights.sort((a, b) => a.price.amount - b.price.amount);
-}
-
-function getAirportName(code) {
-  const airports = {
-    'MNL': 'Ninoy Aquino Intl',
-    'CEB': 'Mactan-Cebu Intl',
-    'DVO': 'Francisco Bangoy Intl',
-    'ILO': 'Iloilo Intl',
-    'BCD': 'Bacolod-Silay',
-    'CRK': 'Clark Intl',
-    'KLO': 'Kalibo Intl',
-    'SIN': 'Singapore Changi',
-    'BKK': 'Bangkok Suvarnabhumi',
-    'HKG': 'Hong Kong Intl',
-    'KUL': 'Kuala Lumpur Intl',
-    'ICN': 'Seoul Incheon',
-    'TPE': 'Taiwan Taoyuan'
-  };
-  return airports[code.toUpperCase()] || code;
-}
-
-function getAirlineBookingUrl(airlineName, origin, destination) {
-  const urls = {
-    'Cebu Pacific': 'https://www.cebupacificair.com',
-    'Philippine Airlines': 'https://www.philippineairlines.com',
-    'AirAsia Philippines': 'https://www.airasia.com',
-    'AirAsia': 'https://www.airasia.com'
-  };
-  return urls[airlineName] || `https://www.google.com/flights?q=${origin}+to+${destination}`;
-}
-
-function formatDuration(seconds) {
-  if (!seconds || isNaN(seconds)) return 'N/A';
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours}h ${minutes}m`;
-}
-
-exports.validateFlightPrice = async (req, res) => {
-  res.json({
-    success: true,
-    isValid: true,
-    message: 'Proceed to booking site for final price confirmation'
-  });
+  }
 };
 
-exports.getCheapestFlight = async (req, res) => {
-  res.json({
-    success: false,
-    message: 'Feature coming soon'
-  });
+exports.getCurrentExchangeRate = async (req, res) => {
+  try {
+    const rate = await getUsdToPhpRate();
+    res.json({
+      success: true,
+      rate: rate,
+      lastUpdated: new Date(lastFetchTime).toISOString(),
+      cacheAge: Math.floor((Date.now() - lastFetchTime) / 1000 / 60) + ' minutes ago'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 };

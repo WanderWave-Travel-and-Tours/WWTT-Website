@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, Globe, DollarSign, Calculator, Loader2, MapPin } from 'lucide-react';
-import Sidebar from '../sidebar/sidebar'; // Ensure path is correct
+import Sidebar from '../sidebar/sidebar';
 import './AddDeals.css';
 
 const AddDeals = () => {
-    // Current Forex Rate (Hardcoded for now, implies 1 USD = 58 PHP)
     const FOREX_RATE = 58;
 
     const [dealData, setDealData] = useState({
-        destination: '',      // Place of the place
-        tagline: '',          // Subtitle
+        destination: '',     
+        tagline: '',      
         description: '',
-        netCost: '',          // Base price (Puhunan)
-        markupPercent: 15,    // Default 15% markup
-        sellingPrice: 0,      // Final Promo Price per pax
+        netCost: '',       
+        markupPercent: 15,   
+        sellingPrice: 0,      
         status: 'Active'
     });
 
@@ -21,21 +20,16 @@ const AddDeals = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Automatic Calculation Effect
     useEffect(() => {
         const cost = parseFloat(dealData.netCost) || 0;
         const markup = parseFloat(dealData.markupPercent) || 0;
-        
-        // Formula: Cost + (Cost * Markup%)
         const calculatedPrice = cost + (cost * (markup / 100));
         
         setDealData(prev => ({
             ...prev,
-            sellingPrice: Math.round(calculatedPrice) // Round off to nearest integer
+            sellingPrice: Math.round(calculatedPrice) 
         }));
     }, [dealData.netCost, dealData.markupPercent]);
-
-    // Cleanup memory for image preview
     useEffect(() => {
         return () => {
             if (imagePreview) URL.revokeObjectURL(imagePreview);

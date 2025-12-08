@@ -58,6 +58,7 @@ function MainLayout() {
   const [currentLang, setCurrentLang] = useState('en');
   const [currentUser, setCurrentUser] = useState(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const logoNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
@@ -92,6 +93,21 @@ function MainLayout() {
     { code: 'tr', name: 'Turkish', flag: '🇹🇷', shortCode: 'TR' },
     { code: 'bn', name: 'Bengali', flag: '🇧🇩', shortCode: 'BN' },
   ];
+
+  // Check for saved user on initial load
+  useEffect(() => {
+    const savedUser = localStorage.getItem('wanderwave_user');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Error parsing saved user data:', error);
+        localStorage.removeItem('wanderwave_user');
+      }
+    }
+    setIsLoadingUser(false);
+  }, []);
 
   useEffect(() => {
     if (window.google?.translate) {
@@ -177,12 +193,14 @@ function MainLayout() {
   };
 
   const handleLoginSuccess = (user) => {
+    localStorage.setItem('wanderwave_user', JSON.stringify(user));
     setCurrentUser(user);
     setAuthPage(null);
     navigate('/dashboard');
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('wanderwave_user');
     setCurrentUser(null);
     navigate('/packages');
   };
@@ -229,6 +247,11 @@ function MainLayout() {
       setTimeout(() => clearInterval(checkInterval), 5000);
     }
   };
+
+  // Show loading while checking for saved user
+  if (isLoadingUser) {
+    return null; // or a loading spinner
+  }
 
   if (authPage === 'login' || authPage === 'signup') {
     return <UserAuth setAuthPage={handleAuthPageChange} onLoginSuccess={handleLoginSuccess} />;
