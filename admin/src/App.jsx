@@ -30,6 +30,7 @@ import ViewDeal from './components/viewdeals/viewdeals.jsx';
 import AddTour from './components/addtours/addtours.jsx';
 import ViewTours from './components/viewtours/viewtours.jsx';
 
+import Users from './components/users/users.jsx';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/users" element={<Users />} />
 
         {/* Packages */}
         <Route path="/add-package" element={<AddPackage />} />

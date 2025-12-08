@@ -7,7 +7,8 @@ const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+// CORS setup is crucial for cross-port communication (3000 to 5000)
+app.use(cors()); 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
 });
 
+// --- ROUTE IMPORTS ---
 const flightRoutes = require('./routes/flightRoute');
 const packageRoutes = require('./routes/packageRoute');
 const testimonialRoutes = require('./routes/testimonialRoute');
@@ -34,6 +36,9 @@ const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
 const authRoute = require('./routes/authRoute');
 const tourRoutes = require('./routes/tourRoutes'); 
+const userRoutes = require('./routes/usersRoute'); // 👈 User Route Import
+
+// --- ROUTE MOUNTING ---
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -45,6 +50,9 @@ app.use('/api/payment', paymentRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/tours', tourRoutes); 
+app.use('/api/users', userRoutes); // 👈 User Route Mounting
+
+// --- MULTER SETUP ---
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
@@ -63,6 +71,8 @@ const upload = multer({ storage: storage });
 const PackageModel = require('./models/package');
 const Booking = require('./models/booking');
 const Blog = require('./models/blog');
+
+// --- EXISTING ROUTES ---
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {
     try {
         const { 

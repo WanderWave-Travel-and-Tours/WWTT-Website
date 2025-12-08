@@ -13,6 +13,7 @@
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^0.553.0",
+    "multer": "^2.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
