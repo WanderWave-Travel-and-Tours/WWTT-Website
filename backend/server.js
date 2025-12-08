@@ -36,7 +36,7 @@ const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
 const authRoute = require('./routes/authRoute');
 const tourRoutes = require('./routes/tourRoutes'); 
-const userRoutes = require('./routes/usersRoute'); // 👈 User Route Import
+const userRoutes = require('./routes/usersRouter'); // 👈 User Route Import
 
 // --- ROUTE MOUNTING ---
 const visaRoutes = require('./routes/visaRoute');
@@ -57,6 +57,7 @@ app.use('/api/payment', paymentRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/tours', tourRoutes); 
+app.use('/api/users', userRoutes); // 👈 User Routes Mounted
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
