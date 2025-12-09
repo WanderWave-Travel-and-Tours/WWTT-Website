@@ -30,22 +30,26 @@ const createInquiry = async (req, res) => {
       flightDetails, 
       passengers,
       cenomarId,
-      cenomarDocument    
+      cenomarDocument,
+      passportDetails    
     } = req.body;
 
     console.log('📥 Received inquiry/booking:', { serviceName, fullName, inquiryType });
 
+    // Auto-generate message for FLIGHT_BOOKING
     if (!message && inquiryType === 'FLIGHT_BOOKING') {
       const origin = flightDetails?.origin || 'Unknown';
       const dest = flightDetails?.destination || 'Unknown';
       const date = flightDetails?.departureDate || '';
-      message = `Flight Booking Request: ${origin} ➝ ${dest} on ${date}`;
+      message = `Flight Booking Request: ${origin} ➜ ${dest} on ${date}`;
     }
-    /*const { 
-      serviceId, serviceName, fullName, email, message, 
-      visaCountry, visaId, psaDocument, psaId, 
-      cenomarDocument, cenomarId, estimatedPrice 
-    } = req.body;*/
+
+    // Auto-generate message for PASSPORT
+    if (!message && inquiryType === 'PASSPORT') {
+      const appType = passportDetails?.applicationType || 'NEW';
+      const procType = passportDetails?.processingType || 'REGULAR';
+      message = `Passport Appointment Request: ${appType} Application (${procType} Processing)`;
+    }
 
     console.log('📥 Received inquiry request:', { serviceName, fullName, email });
 
@@ -86,11 +90,12 @@ const createInquiry = async (req, res) => {
       visaId: visaId || null,
       psaDocument: psaDocument || null, 
       psaId: psaId || null,
-      //estimatedPrice: estimatedPrice || 0,
       inquiryType: inquiryType || 'GENERAL',
       flightDetails: flightDetails || {},
       passengers: passengers || [],
-      cenomarDocument: cenomarDocument || null, cenomarId: cenomarId || null,
+      passportDetails: passportDetails || {},
+      cenomarDocument: cenomarDocument || null, 
+      cenomarId: cenomarId || null,
       estimatedPrice: estimatedPrice || 0
     });
 
@@ -160,11 +165,10 @@ const getInquiryStats = async (req, res) => {
   } catch (error) { res.status(500).json({ success: false }); }
 };
 
-// 👇 UPDATED: MARK AS PAID FUNCTION (Critical for Database Update)
+// 💰 UPDATED: MARK AS PAID FUNCTION
 const markAsPaid = async (req, res) => {
   try {
     const { id } = req.params; 
-    //const { id } = req.params; // Inquiry ID
 
     console.log(`💰 Payment Update Requested for Inquiry: ${id}`);
 
@@ -183,17 +187,14 @@ const markAsPaid = async (req, res) => {
     }
 
     // 2. Update Payment Status (Safety Check: Upsert logic)
-    // Tinitingnan kung may existing Payment record para sa Inquiry na ito
     const paymentRecord = await Payment.findOne({ inquiryId: id });
 
     if (paymentRecord) {
-        // Kung meron, update lang
         paymentRecord.status = 'PAID';
         paymentRecord.paidAt = Date.now();
         await paymentRecord.save();
         console.log('✅ Existing Payment Record Updated to PAID');
     } else {
-        // Kung wala (baka nawala or direct update), gumawa ng bago para sa record keeping
         console.log('⚠️ No pending payment found. Creating PAID record as fallback.');
         await Payment.create({
             inquiryId: id,

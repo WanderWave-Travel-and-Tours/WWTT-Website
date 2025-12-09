@@ -21,6 +21,14 @@ const inquirySchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  contactNumber: {
+    type: String,
+    default: ''
+  },
+  address: {
+    type: String,
+    default: ''
+  },
   message: {
     type: String,
     required: true
@@ -46,10 +54,40 @@ const inquirySchema = new mongoose.Schema({
     default: null
   },
 
+  cenomarDocument: {
+    type: String,
+    default: null
+  },
+  cenomarId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Cenomar',
+    default: null
+  },
+
   inquiryType: { 
     type: String, 
-    enum: ['GENERAL', 'VISA', 'PSA', 'FLIGHT_BOOKING'], 
+    enum: ['GENERAL', 'VISA', 'PSA', 'FLIGHT_BOOKING', 'PASSPORT', 'CENOMAR'], 
     default: 'GENERAL' 
+  },
+
+  passportDetails: {
+    appointmentDate: String,
+    appointmentTime: String,
+    applicationType: { 
+      type: String, 
+      enum: ['NEW', 'RENEWAL', 'LOST', 'DAMAGED'],
+      default: 'NEW'
+    },
+    processingType: {
+      type: String,
+      enum: ['REGULAR', 'EXPEDITE'],
+      default: 'REGULAR'
+    },
+    dfaLocation: String,
+    hasMarriageCertificate: { type: Boolean, default: false },
+    hasBirthCertificate: { type: Boolean, default: false },
+    hasValidId: { type: Boolean, default: false },
+    specialCase: String
   },
 
   flightDetails: {
@@ -69,7 +107,7 @@ const inquirySchema = new mongoose.Schema({
     lastName: String,
     nationality: String,
     age: Number,
-    type: { String },
+    type: String,
     email: String,     
     contactNumber: String
   }],
