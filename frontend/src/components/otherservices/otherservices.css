@@ -1187,3 +1187,284 @@ html, body {
   background: #d0d0d0;
 }
 
+
+/* ========================================
+   PASSPORT MODAL STYLES
+   ======================================== */
+
+.passport-modal-expanded {
+  position: relative;
+  width: 95%;
+  max-width: 1100px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: modalSlideUp 0.4s ease-out;
+  padding: 0;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Scrollbar for passport modal */
+.passport-modal-expanded::-webkit-scrollbar {
+  width: 10px;
+}
+
+.passport-modal-expanded::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.passport-modal-expanded::-webkit-scrollbar-thumb {
+  background: #0a203b;
+  border-radius: 10px;
+}
+
+.passport-modal-expanded::-webkit-scrollbar-thumb:hover {
+  background: #fc9c1b;
+}
+
+/* Mobile responsive for passport modal */
+@media (max-width: 768px) {
+  .passport-modal-expanded {
+    width: 98%;
+    max-height: 85vh;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .passport-modal-expanded {
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+/* ========================================
+   PASSPORT SERVICE MODAL
+   (Same structure as visa-countries-modal)
+   ======================================== */
+
+.passport-service-modal {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.passport-service-modal .modal-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(10, 32, 59, 0.1);
+  border: none;
+  color: #0a203b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1010;
+}
+
+.passport-service-modal .modal-close-btn:hover {
+  background: #fc9c1b;
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
+}
+
+@media (max-width: 768px) {
+  .passport-service-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+}/* ========================================
+   OS-SLIDER AND OS-CARD STYLES
+   (Missing from current CSS)
+   ======================================== */
+
+.os-slider {
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 1rem 2rem 2rem 2rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.os-slider::-webkit-scrollbar {
+  display: none;
+}
+
+.os-card {
+  flex: 0 0 var(--os-card-width-desktop);
+  height: 420px;
+  scroll-snap-align: center;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+.os-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.os-card-img {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.os-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+.os-card-icon-wrapper {
+  position: absolute;
+  bottom: -25px;
+  left: 20px;
+  z-index: 10;
+}
+
+.os-card-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #0a203b, #1a3a5f);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.os-card:hover .os-card-icon {
+  background: linear-gradient(135deg, #fc9c1b, #ff6b00);
+  transform: scale(1.1) rotate(5deg);
+}
+
+.os-card-content {
+  flex: 1;
+  padding: 35px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.os-card-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0a203b;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.os-card-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+  flex: 1;
+}
+
+.os-card-btn {
+  background: #fc9c1b;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+}
+
+.os-card-btn:hover {
+  background: #e88a0a;
+  gap: 12px;
+  transform: translateX(4px);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .os-slider {
+    padding: 1rem;
+    gap: 1.5rem;
+  }
+
+  .os-card {
+    flex: 0 0 var(--os-card-width-mobile);
+    height: 380px;
+  }
+
+  .os-card-img {
+    height: 160px;
+  }
+
+  .os-card-content {
+    padding: 30px 16px 16px;
+  }
+
+  .os-card-title {
+    font-size: 1.1rem;
+  }
+
+  .os-card-description {
+    font-size: 0.85rem;
+  }
+
+  .os-card-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .os-card {
+    height: 360px;
+  }
+
+  .os-card-title {
+    font-size: 1rem;
+  }
+}
