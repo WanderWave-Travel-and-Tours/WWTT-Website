@@ -3,6 +3,14 @@ import Sidebar from '../sidebar/sidebar';
 import './viewtestimonials.css';
 
 const ViewTestimonials = () => {
+
+    // --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
+
     const [testimonials, setTestimonials] = useState([]);
 
     const fetchTestimonials = async () => {
@@ -40,7 +48,10 @@ const ViewTestimonials = () => {
 
     return (
         <div className="vtest-page">
-            <Sidebar />
+             <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
             <main className="vtest-main">
                 <div className="vtest-container">
                     <header className="vtest-header">

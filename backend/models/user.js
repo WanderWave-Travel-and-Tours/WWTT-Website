@@ -1,3 +1,5 @@
+// models/user.js (Mongoose Model)
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
@@ -25,7 +27,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 6,
-    select: false
+    select: false // Ensures password is NOT returned by default queries
+  },
+  role: { 
+    type: String,
+    default: 'user'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   },
   role: {
     type: String,
@@ -49,6 +59,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
+// Pre-save hook to hash the password before saving
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();

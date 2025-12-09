@@ -3,6 +3,13 @@ import './AddTestimonial.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddTestimonial = () => {
+    // --- SIDEBAR LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR LOGIC END ---
+    
     const [testimonialDetails, setTestimonialDetails] = useState({
         name: '',
         feedback: '',
@@ -64,8 +71,11 @@ const AddTestimonial = () => {
 
     return (
         <div className="testi-page">
-            <Sidebar />
-            <main className="testi-main">
+            {/* Sidebar component updated with props */}
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            
+            {/* Main content area updated with conditional class */}
+            <main className={`testi-main ${isSidebarCollapsed ? "testi-main--collapsed" : ""}`}>
                 <div className="testi-container">
                     <header className="testi-header">
                         <h1 className="testi-title">NEW TESTIMONIAL</h1>

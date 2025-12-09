@@ -4,6 +4,14 @@ import Sidebar from '../sidebar/sidebar';
 import './viewimage.css';
 
 const ViewImage = () => {
+
+    // --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
+
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [copiedId, setCopiedId] = useState(null);
@@ -51,7 +59,10 @@ const ViewImage = () => {
 
     return (
         <div className="vi-page">
-            <Sidebar />
+             <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
             <main className="vi-main">
                 <div className="vi-container">
                     <header className="vi-header">

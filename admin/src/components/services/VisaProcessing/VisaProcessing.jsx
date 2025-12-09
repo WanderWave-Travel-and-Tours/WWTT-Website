@@ -23,8 +23,79 @@ import {
 } from "lucide-react";
 import "./VisaProcessing.css";
 
+// =========================================================================
+// PAGINATION COMPONENT (New)
+// =========================================================================
+const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentPage }) => {
+  const pageNumbers = [];
+  const totalPages = Math.ceil(totalApplications / applicationsPerPage);
+
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
+
+  const handlePrev = () => {
+    if (currentPage > 1) {
+      paginate(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      paginate(currentPage + 1);
+    }
+  };
+
+  if (totalApplications <= applicationsPerPage) return null;
+
+  return (
+    <nav className="pagination-nav">
+      <ul className="pagination-list">
+        <li>
+          <button 
+            onClick={handlePrev} 
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            Previous
+          </button>
+        </li>
+        {pageNumbers.map(number => (
+          <li key={number} className="page-item">
+            <button 
+              onClick={() => paginate(number)} 
+              className={`pagination-btn ${number === currentPage ? 'active' : ''}`}
+            >
+              {number}
+            </button>
+          </li>
+        ))}
+        <li>
+          <button 
+            onClick={handleNext} 
+            disabled={currentPage === totalPages}
+            className="pagination-btn"
+          >
+            Next
+          </button>
+        </li>
+      </ul>
+    </nav>
+  );
+};
+// =========================================================================
+// END PAGINATION COMPONENT
+// =========================================================================
+
+
 const VisaProcessing = () => {
-  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    // --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
   const [visaForms, setVisaForms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isVisaFormsOpen, setIsVisaFormsOpen] = useState(false);
@@ -43,6 +114,10 @@ const VisaProcessing = () => {
     downloadForms: false,
     stepsProcess: false,
   });
+  
+  // PAGINATION STATES (New)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [applicationsPerPage] = useState(10); // Set to 10 data per page
 
   const [newVisaForm, setNewVisaForm] = useState({
     country: "",
@@ -565,7 +640,7 @@ const VisaProcessing = () => {
     },
   ];
 
-  const applications = inquiries.map((inquiry) => ({
+  const allApplications = inquiries.map((inquiry) => ({
     id: inquiry._id.slice(-8).toUpperCase(),
     client: inquiry.fullName,
     country: inquiry.visaCountry || 'N/A',
@@ -583,13 +658,22 @@ const VisaProcessing = () => {
     );
     return country ? country.code : null;
   }
+  
+  // PAGINATION LOGIC
+  const indexOfLastApplication = currentPage * applicationsPerPage;
+  const indexOfFirstApplication = indexOfLastApplication - applicationsPerPage;
+  const currentApplications = allApplications.slice(indexOfFirstApplication, indexOfLastApplication);
+
+  // Function to change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
 
   return (
     <div className="visa-page">
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!isSidebarCollapsed)}
-      />
+   <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
 
       <div className={`visa-main ${isSidebarCollapsed ? "expanded" : ""}`}>
         <div className="visa-container">
@@ -635,7 +719,7 @@ const VisaProcessing = () => {
                 </tr>
               </thead>
               <tbody>
-                {applications.map((app) => (
+                {currentApplications.map((app) => ( // Use currentApplications here
                   <tr key={app.id}>
                     <td>{app.id}</td>
                     <td>{app.client}</td>
@@ -676,7 +760,7 @@ const VisaProcessing = () => {
                     <td>
                       <button 
                         className="visa-action-btn visa-view-btn"
-                        onClick={() => handleViewInquiry(app._original)} // ✅ UPDATED
+                        onClick={() => handleViewInquiry(app._original)}
                       >
                         View
                       </button>
@@ -686,6 +770,14 @@ const VisaProcessing = () => {
                 ))}
               </tbody>
             </table>
+            
+            {/* PAGINATION CONTROL (New) */}
+            <Pagination 
+                applicationsPerPage={applicationsPerPage} 
+                totalApplications={allApplications.length} 
+                paginate={paginate} 
+                currentPage={currentPage}
+            />
           </div>
 
           {isVisaFormsOpen && (
@@ -1191,7 +1283,7 @@ const VisaProcessing = () => {
                       </button>
                       <button
                           className="visa-action-btn"
-                          onClick={initiateContactStatus} // 👈 Call new function
+                          onClick={initiateContactStatus} 
                           disabled={selectedInquiry.status === 'CONTACTED'}
                           style={{ 
                               opacity: selectedInquiry.status === 'CONTACTED' ? 0.5 : 1,

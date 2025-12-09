@@ -3,6 +3,13 @@ import './AddPromo.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddPromo = () => {
+    // --- SIDEBAR LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR LOGIC END ---
+
     const [promoDetails, setPromoDetails] = useState({
         code: '',
         discount: '',
@@ -131,8 +138,15 @@ const AddPromo = () => {
 
     return (
         <div className="promo-page">
-            <Sidebar />
-            <main className="promo-main">
+            {/* 1. Pass the state and toggle function to Sidebar */}
+            <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
+            {/* 2. Apply conditional class to the main content */}
+            <main className={`promo-main ${
+                isSidebarCollapsed ? "promo-main--collapsed" : ""
+            }`}>
                 <div className="promo-container">
                     <header className="promo-header">
                         <h1 className="promo-title">NEW PROMO CODE</h1>
