@@ -30,6 +30,7 @@ const ApplicationDetails = ({
         switch (status?.toUpperCase()) {
             case 'PAYMENT_PENDING': return 'ud-badge-payment';
             case 'PAID': return 'ud-badge-paid';
+            case 'CONFIRMED': return 'ud-badge-confirmed';
             case 'COMPLETED': return 'ud-badge-completed';
             case 'CANCELLED': return 'ud-badge-cancelled';
             default: return 'ud-badge-pending';
@@ -124,16 +125,79 @@ const ApplicationDetails = ({
                         </div>
                     )}
 
-                    {/* 👇 CONDITION: PAID (Show Waiting Message) - ITO ANG DAPAT MANGYARI */}
+                    {/* CONDITION: PAID - Waiting for Admin Confirmation */}
                     {inquiry.status === 'PAID' && (
                         <div className="ud-paid-box">
-                            <div className="ud-paid-info">
-                                <div style={{fontSize:'30px', marginBottom:'10px'}}>✅</div>
-                                <h4>Payment Submitted</h4>
-                                <p>
-                                    Your payment has been received. 
-                                    Please wait for the admin to confirm and process your documents.
-                                </p>
+                            <div className="ud-paid-icon">✅</div>
+                            <h4 className="ud-paid-title">Payment Submitted</h4>
+                            <p className="ud-paid-text">
+                                Your payment has been received. Please wait for the admin to confirm and process your documents.
+                            </p>
+                            <div className="ud-paid-note">
+                                <span className="ud-note-icon">⏳</span>
+                                <span>Confirmation typically takes 1-2 business days</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 🔥 NEW: CONDITION: CONFIRMED - Admin Confirmed Payment */}
+                    {inquiry.status === 'CONFIRMED' && (
+                        <div className="ud-confirmed-box">
+                            <div className="ud-confirmed-icon">🎉</div>
+                            <h4 className="ud-confirmed-title">Payment Confirmed!</h4>
+                            <p className="ud-confirmed-text">
+                                Great news! Admin has confirmed receipt of your payment on <strong>{formatDate(inquiry.paymentConfirmedAt)}</strong>.
+                            </p>
+                            <p className="ud-confirmed-subtext">
+                                Your documents are now being processed and will be ready soon.
+                            </p>
+                            <div className="ud-confirmed-note">
+                                <span className="ud-note-icon">📄</span>
+                                <span>We'll notify you when documents are ready for download</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 🔥 NEW: CONDITION: COMPLETED - Documents Ready for Download */}
+                    {inquiry.status === 'COMPLETED' && inquiry.deliveredDocuments && inquiry.deliveredDocuments.length > 0 && (
+                        <div className="ud-documents-ready-box">
+                            <div className="ud-ready-icon">🎊</div>
+                            <h4 className="ud-ready-title">Documents Ready!</h4>
+                            <p className="ud-ready-text">
+                                Your documents have been processed and are now available for download.
+                            </p>
+                            <p className="ud-ready-date">
+                                Delivered on: <strong>{formatDate(inquiry.documentsDeliveredAt)}</strong>
+                            </p>
+                            
+                            <div className="ud-download-section">
+                                <h5 className="ud-download-title">Available Documents ({inquiry.deliveredDocuments.length})</h5>
+                                <div className="ud-download-list">
+                                    {inquiry.deliveredDocuments.map((doc, idx) => (
+                                        <div key={idx} className="ud-download-item">
+                                            <div className="ud-doc-info">
+                                                <span className="ud-doc-icon">📄</span>
+                                                <div className="ud-doc-details">
+                                                    <span className="ud-doc-name">{doc.fileName}</span>
+                                                    <span className="ud-doc-date">Uploaded: {formatDate(doc.uploadedAt)}</span>
+                                                </div>
+                                            </div>
+                                            <a 
+                                                href={`http://localhost:5000${doc.fileUrl}`}
+                                                download={doc.fileName}
+                                                className="ud-download-btn"
+                                            >
+                                                <span>Download</span>
+                                                <span>↓</span>
+                                            </a>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="ud-completed-note">
+                                <span className="ud-note-icon">✅</span>
+                                <span>Thank you for choosing WanderWave!</span>
                             </div>
                         </div>
                     )}
@@ -141,6 +205,7 @@ const ApplicationDetails = ({
                     {/* Condition: Pending (Under Review) */}
                     {inquiry.status === 'PENDING' && !inquiry.remarks && (
                         <div className="ud-pending-msg">
+                            <div className="ud-pending-icon">🔍</div>
                             <p>
                                 Your application is under review. 
                                 We'll notify you with updates soon.
@@ -148,11 +213,12 @@ const ApplicationDetails = ({
                         </div>
                     )}
                     
-                    {/* Condition: Completed */}
-                    {inquiry.status === 'COMPLETED' && (
-                        <div className="ud-completed-msg">
-                            <h4>Application Complete!</h4>
-                            <p>Your documents are ready. Thank you for choosing WanderWave.</p>
+                    {/* Condition: Cancelled */}
+                    {inquiry.status === 'CANCELLED' && (
+                        <div className="ud-cancelled-msg">
+                            <div className="ud-cancelled-icon">❌</div>
+                            <h4>Application Cancelled</h4>
+                            <p>This request has been cancelled. Contact support for details.</p>
                         </div>
                     )}
                 </div>
