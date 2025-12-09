@@ -31,5 +31,8 @@ router.get('/stats', getInquiryStats);
 router.get('/:id', getInquiry);
 router.delete('/:id', deleteInquiry);
 router.put('/:id/status', upload.single('evidence'), updateInquiryStatus);
+
+// 👇 THIS IS THE KEY ROUTE FOR PAYMENT SUCCESS
 router.put('/:id/pay', markAsPaid);
+
 module.exports = router;

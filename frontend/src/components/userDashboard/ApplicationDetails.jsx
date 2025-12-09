@@ -1,6 +1,7 @@
 import React from 'react';
 import DocumentsSection from './DocumentsSection';
 import './ApplicationDetails.css';
+import * as Icons from './Icons'; 
 
 const ApplicationDetails = ({ 
     inquiry, 
@@ -57,8 +58,10 @@ const ApplicationDetails = ({
                     <h3 className="ud-card-headline">Application Details</h3>
                     
                     <div className="ud-info-row">
-                        <span className="ud-label">Destination</span>
-                        <span className="ud-value">{inquiry.visaCountry || 'N/A'}</span>
+                        <span className="ud-label">Destination / Type</span>
+                        <span className="ud-value">
+                            {inquiry.visaCountry || inquiry.cenomarDocument || inquiry.psaDocument || 'N/A'}
+                        </span>
                     </div>
                     
                     <div className="ud-info-row">
@@ -105,7 +108,7 @@ const ApplicationDetails = ({
                         </div>
                     )}
 
-                    {/* Payment Pending */}
+                    {/* CONDITION: Payment Pending (Show Pay Button) */}
                     {inquiry.status === 'PAYMENT_PENDING' && (
                         <div className="ud-payment-box">
                             <div className="ud-payment-info">
@@ -121,13 +124,35 @@ const ApplicationDetails = ({
                         </div>
                     )}
 
-                    {/* Pending Status */}
+                    {/* 👇 CONDITION: PAID (Show Waiting Message) - ITO ANG DAPAT MANGYARI */}
+                    {inquiry.status === 'PAID' && (
+                        <div className="ud-paid-box">
+                            <div className="ud-paid-info">
+                                <div style={{fontSize:'30px', marginBottom:'10px'}}>✅</div>
+                                <h4>Payment Submitted</h4>
+                                <p>
+                                    Your payment has been received. 
+                                    Please wait for the admin to confirm and process your documents.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Condition: Pending (Under Review) */}
                     {inquiry.status === 'PENDING' && !inquiry.remarks && (
                         <div className="ud-pending-msg">
                             <p>
                                 Your application is under review. 
                                 We'll notify you with updates soon.
                             </p>
+                        </div>
+                    )}
+                    
+                    {/* Condition: Completed */}
+                    {inquiry.status === 'COMPLETED' && (
+                        <div className="ud-completed-msg">
+                            <h4>Application Complete!</h4>
+                            <p>Your documents are ready. Thank you for choosing WanderWave.</p>
                         </div>
                     )}
                 </div>

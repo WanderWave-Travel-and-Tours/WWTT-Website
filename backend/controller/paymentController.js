@@ -1,16 +1,16 @@
 const axios = require('axios');
 const Inquiry = require('../models/inquiry');
 const Payment = require('../models/payment');
-const Booking = require('../models/booking');        // 👇 Import Booking
-const PackageModel = require('../models/package');   // 👇 Import Package
+const Booking = require('../models/booking');
+const PackageModel = require('../models/package');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
-const PAYMONGO_API = 'https://api.paymongo.com/v1';  // 👇 Added API Base URL
+const PAYMONGO_API = 'https://api.paymongo.com/v1';
 
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
 
 // ==========================================
-// FUNCTION 1: FOR INQUIRIES (Visa, Custom)
+// FUNCTION 1: FOR INQUIRIES (Visa, Cenomar, PSA)
 // Saves to: Inquiry Collection & Payment Collection
 // ==========================================
 const createInquiryCheckoutSession = async (req, res) => {
@@ -26,6 +26,9 @@ const createInquiryCheckoutSession = async (req, res) => {
        return res.status(400).json({ success: false, message: 'Invalid price amount' });
     }
 
+    // Convert to centavos (PHP 100.00 = 10000 centavos)
+    const amountInCentavos = Math.round(inquiry.estimatedPrice * 100);
+
     const options = {
       method: 'POST',
       url: `${PAYMONGO_API}/checkout_sessions`,
@@ -40,9 +43,9 @@ const createInquiryCheckoutSession = async (req, res) => {
             line_items: [
               {
                 currency: 'PHP',
-                amount: inquiry.estimatedPrice * 100,
-                description: `Visa Assistance: ${inquiry.serviceName} - ${inquiry.visaCountry}`,
-                name: inquiry.serviceName,
+                amount: amountInCentavos,
+                description: `Payment for: ${inquiry.serviceName}`,
+                name: 'WanderWave Services',
                 quantity: 1
               }
             ],
@@ -50,8 +53,12 @@ const createInquiryCheckoutSession = async (req, res) => {
             reference_number: inquiry._id.toString(),
             send_email_receipt: true,
             show_description: true,
-            description: `Payment for Inquiry #${inquiry._id}`,
-            success_url: `http://localhost:5173/payment/success?inquiryId=${inquiry._id}`,
+            description: `Inquiry Ref: ${inquiry._id}`,
+            
+            // 👇 CRITICAL FIX: Redirect to Dashboard with success flag & Inquiry ID
+            // Ito ang magtri-trigger sa Frontend na tawagin ang "markAsPaid" endpoint
+            success_url: `http://localhost:5173/dashboard?success=true&inquiryId=${inquiry._id}`,
+            
             cancel_url: `http://localhost:5173/dashboard`
           }
         }
@@ -59,9 +66,9 @@ const createInquiryCheckoutSession = async (req, res) => {
     };
 
     const response = await axios.request(options);
-    const checkoutSessionId = response.data.data.id; // ✅ FIXED: Defined variable
+    const checkoutSessionId = response.data.data.id;
 
-    // Save to Payment Collection (For Analytics)
+    // Create Initial Payment Record (Status: PENDING)
     await Payment.create({
       inquiryId: inquiry._id,
       transactionId: checkoutSessionId,
@@ -72,6 +79,8 @@ const createInquiryCheckoutSession = async (req, res) => {
       status: 'PENDING'
     });
     
+    console.log(`✅ PayMongo Session Created: ${checkoutSessionId} for Inquiry: ${inquiry._id}`);
+
     res.json({
       success: true,
       checkoutUrl: response.data.data.attributes.checkout_url
@@ -87,11 +96,10 @@ const createInquiryCheckoutSession = async (req, res) => {
 
 // ==========================================
 // FUNCTION 2: FOR BOOKINGS (Travel Packages)
-// Saves to: Booking Collection (Existing Logic)
+// Saves to: Booking Collection
 // ==========================================
 const createBookingPaymentLink = async (req, res) => {
   try {
-    // Kinopya ko ito mula sa paymentRoute.js mo para malinis
     const { amount, description, bookingData } = req.body;
 
     if (!amount || !bookingData) {
@@ -109,8 +117,6 @@ const createBookingPaymentLink = async (req, res) => {
         message: 'Package not found'
       });
     }
-
-    console.log('📦 Package found:', package.title);
 
     const newBooking = new Booking({
       packageName: bookingData.packageName,
@@ -146,9 +152,6 @@ const createBookingPaymentLink = async (req, res) => {
               customer_name: bookingData.fullName,
               customer_email: bookingData.email,
               package: bookingData.packageName,
-              travel_dates: `${bookingData.startDate} - ${bookingData.endDate}`,
-              duration: bookingData.duration,
-              pax: bookingData.pax.adult,
               total_amount: bookingData.totalAmount
             }
           }
@@ -164,7 +167,6 @@ const createBookingPaymentLink = async (req, res) => {
 
     const paymentLink = paymentLinkResponse.data.data;
     
-    // Update Booking with Link details
     newBooking.paymentLinkId = paymentLink.id;
     newBooking.referenceNumber = paymentLink.attributes.reference_number;
     await newBooking.save();
