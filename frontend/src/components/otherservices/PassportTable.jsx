@@ -75,6 +75,7 @@ const PassportTable = ({ onSelectPassport }) => {
           ? `Passport Appointment - ${activePassport.serviceType}` 
           : activePassport.serviceName,
         estimatedPrice: activePassport.price,
+        serviceType: activePassport.serviceType || 'NEW',
         inquiryType: 'PASSPORT'
       });
     }

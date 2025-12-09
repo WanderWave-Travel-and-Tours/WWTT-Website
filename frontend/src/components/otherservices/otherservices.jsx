@@ -351,6 +351,7 @@ const OtherServices = ({ setAuthPage }) => {
       requirements: [],
       price: passportData.estimatedPrice || 1500,
       serviceId: passportData.serviceId,
+      serviceType: passportData.serviceType
     }));
     setShowPassportService(false);
     setShowModal(true);
@@ -376,17 +377,26 @@ const OtherServices = ({ setAuthPage }) => {
 
   const handlePassportWizardSubmit = async (wizardData) => {
     try {
+      let appType = 'NEW';
+      // Kunin ang type galing sa selectedPackage na sinet natin sa Step 2
+      const selectedType = selectedPackage.serviceType ? selectedPackage.serviceType.toUpperCase() : 'NEW';
+
+      if (selectedType.includes('RENEWAL')) appType = 'RENEWAL';
+      else if (selectedType.includes('LOST')) appType = 'LOST';
+      else if (selectedType.includes('DAMAGED')) appType = 'DAMAGED';
+      else appType = 'NEW';
+
       const inquiryData = {
         serviceId: selectedPackage.serviceId,
         serviceName: selectedPackage.title,
         fullName: `${wizardData.applicants[0].firstName} ${wizardData.applicants[0].lastName}`,
         email: wizardData.applicants[0].email, 
-        message: `Passport Booking for ${wizardData.paxCount} pax. Type: ${wizardData.bookingType}.`,
+        message: `Passport Booking (${appType}) for ${wizardData.paxCount} pax. Type: ${wizardData.bookingType}.`,
         estimatedPrice: selectedPackage.price * wizardData.paxCount,
         inquiryType: 'PASSPORT',
         status: 'PENDING',
         passportDetails: {
-           applicationType: 'NEW', 
+           applicationType: appType, 
            processingType: 'REGULAR',
            dfaLocation: 'To be discussed', 
            appointmentDate: 'TBD',
