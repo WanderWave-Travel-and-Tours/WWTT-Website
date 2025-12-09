@@ -27,7 +27,11 @@ const inquirySchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    default: null
+    default: ''
+  },
+  address: {
+    type: String,
+    default: ''
   },
   message: {
     type: String,
@@ -69,8 +73,28 @@ const inquirySchema = new mongoose.Schema({
 
   inquiryType: { 
     type: String, 
-    enum: ['GENERAL', 'VISA', 'PSA', 'CENOMAR', 'FLIGHT_BOOKING'], 
+    enum: ['GENERAL', 'VISA', 'PSA', 'FLIGHT_BOOKING', 'PASSPORT', 'CENOMAR'], 
     default: 'GENERAL' 
+  },
+
+  passportDetails: {
+    appointmentDate: String,
+    appointmentTime: String,
+    applicationType: { 
+      type: String, 
+      enum: ['NEW', 'RENEWAL', 'LOST', 'DAMAGED'],
+      default: 'NEW'
+    },
+    processingType: {
+      type: String,
+      enum: ['REGULAR', 'EXPEDITE'],
+      default: 'REGULAR'
+    },
+    dfaLocation: String,
+    hasMarriageCertificate: { type: Boolean, default: false },
+    hasBirthCertificate: { type: Boolean, default: false },
+    hasValidId: { type: Boolean, default: false },
+    specialCase: String
   },
 
   flightDetails: {
