@@ -1,136 +1,262 @@
-/* SIDEBAR - Travel Ticket Theme */
+/* SIDEBAR - Modern Notification Theme */
 .ud-sidebar {
     position: fixed; 
     left: 0; 
     top: 70px; 
     bottom: 0; 
-    width: 360px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    width: 380px; /* Slightly wider for new card layout */
+    background: #f8fafc;
     border-right: 1px solid var(--ud-border-color);
     display: flex; 
     flex-direction: column; 
     overflow-y: auto; 
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease;
     z-index: 50;
+    padding-bottom: 20px;
 }
 
+/* Header */
 .ud-sidebar-header { 
     padding: 24px; 
-    border-bottom: 2px solid var(--ud-border-color);
+    background: white;
+    border-bottom: 1px solid var(--ud-border-color);
     display: flex; 
     align-items: center; 
-    gap: 10px; 
-    background: white;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .ud-sidebar-header h2 { 
-    font-size: 0.85rem; 
+    font-size: 0.8rem; 
     color: var(--ud-text-secondary);
-    font-weight: 700; 
-    letter-spacing: 1px;
+    font-weight: 800; 
+    letter-spacing: 0.5px;
 }
 
-.ud-sidebar-header svg { color: var(--ud-primary); }
-
+/* Sections */
 .ud-applications-list { 
-    padding: 16px; 
+    padding: 20px; 
     display: flex; 
     flex-direction: column; 
-    gap: 12px;
+    gap: 24px;
 }
 
-/* Loading & Empty States */
-.ud-loading-state, 
-.ud-empty-state { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    padding: 60px 20px; 
-    text-align: center; 
-    color: var(--ud-text-secondary);
+.ud-section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-left: 4px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.ud-loader { 
-    width: 40px; height: 40px; 
-    border: 3px solid var(--ud-border-color);
-    border-top-color: var(--ud-primary);
-    border-radius: 50%; 
-    animation: ud-spin 0.8s linear infinite;
-    margin-bottom: 16px;
+.ud-count-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-weight: 700;
 }
 
-@keyframes ud-spin { to { transform: rotate(360deg); } }
-
-/* TICKET-STYLE CARDS */
-.ud-inquiry-card { 
-    background: white;
-    border: 2px solid transparent;
+/* --- NOTIFICATION CARD STYLE (Inspired by Uploaded Image) --- */
+.ud-notify-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
     border-radius: 16px;
-    padding: 0;
-    cursor: pointer; 
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    margin-bottom: 12px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
 }
 
-.ud-inquiry-card::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
-    background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
-    opacity: 0; transition: opacity 0.3s ease;
-}
-
-.ud-inquiry-card:hover { 
+.ud-notify-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.06);
 }
 
-.ud-inquiry-card:hover::before { opacity: 1; }
-
-/* ACTIVE STATE */
-.ud-card-active { 
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
-    border-color: #f59e0b !important;
-    box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3) !important;
-    transform: translateY(-2px);
+/* ICON BOX */
+.ud-notify-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
-.ud-card-active::before { opacity: 0 !important; }
-
-.ud-card-active .ud-card-title,
-.ud-card-active .ud-card-middle,
-.ud-card-active .ud-card-destination,
-.ud-card-active .ud-card-date { color: #0f172a !important; }
-
-.ud-card-active .ud-status-dot { background: #0f172a !important; border-color: #0f172a !important; }
-
-/* Card Content */
-.ud-card-content { padding: 20px; }
-.ud-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 12px; }
-.ud-card-title { font-size: 1.05rem; font-weight: 700; color: var(--ud-text-primary); line-height: 1.3; flex: 1; }
-
-/* Status Indicator */
-.ud-status-dot { 
-    width: 10px; height: 10px; border-radius: 50%;
-    border: 2px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); flex-shrink: 0;
-}
-.ud-status-dot.ud-badge-pending { background: #f59e0b; }
-.ud-status-dot.ud-badge-payment { background: #8b5cf6; }
-.ud-status-dot.ud-badge-paid { background: #10b981; }
-.ud-status-dot.ud-badge-completed { background: #059669; }
-.ud-status-dot.ud-badge-cancelled { background: #ef4444; }
-
-.ud-card-middle { 
-    display: flex; justify-content: space-between; align-items: center;
-    color: var(--ud-text-secondary); font-size: 0.85rem;
-    padding-top: 12px; border-top: 1px dashed var(--ud-border-color);
+.ud-notify-icon-box svg {
+    width: 22px;
+    height: 22px;
 }
 
-.ud-card-destination { display: flex; align-items: center; gap: 6px; font-weight: 600; }
-.ud-card-destination svg { color: #f97316; }
-.ud-card-date { font-weight: 500; font-size: 0.8rem; }
+/* TEXT CONTENT */
+.ud-notify-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
 
+.ud-notify-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.ud-notify-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.ud-notify-time {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.ud-notify-desc {
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+.ud-notify-sub {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* --- COLOR VARIANTS (Matches Image) --- */
+
+/* 1. INFO (Blue) */
+.type-info {
+    background: linear-gradient(90deg, #eff6ff 0%, #ffffff 60%);
+    border: 1px solid #dbeafe;
+}
+.type-info .ud-notify-icon-box {
+    background: #dbeafe;
+    color: #2563eb; /* Blue Icon */
+}
+.type-info .ud-notify-title { color: #1e3a8a; }
+
+/* 2. SUCCESS (Green) */
+.type-success {
+    background: linear-gradient(90deg, #f0fdf4 0%, #ffffff 60%);
+    border: 1px solid #bbf7d0;
+}
+.type-success .ud-notify-icon-box {
+    background: #dcfce7;
+    color: #16a34a; /* Green Icon */
+}
+.type-success .ud-notify-title { color: #14532d; }
+
+/* 3. WARNING (Yellow/Orange) */
+.type-warning {
+    background: linear-gradient(90deg, #fffbeb 0%, #ffffff 60%);
+    border: 1px solid #fde68a;
+}
+.type-warning .ud-notify-icon-box {
+    background: #fef3c7;
+    color: #d97706; /* Orange Icon */
+}
+.type-warning .ud-notify-title { color: #78350f; }
+
+/* 4. ERROR (Red) */
+.type-error {
+    background: linear-gradient(90deg, #fef2f2 0%, #ffffff 60%);
+    border: 1px solid #fecaca;
+}
+.type-error .ud-notify-icon-box {
+    background: #fee2e2;
+    color: #dc2626; /* Red Icon */
+}
+.type-error .ud-notify-title { color: #7f1d1d; }
+
+
+/* --- HISTORY / READ STATE --- */
+/* Simple Clean White look for history to reduce noise */
+.type-history {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+.type-history .ud-notify-icon-box {
+    background: #f1f5f9;
+    color: #64748b;
+}
+.type-history .ud-notify-title { color: #334155; font-weight: 600; }
+.type-history:hover { border-color: #cbd5e1; }
+
+/* Active State in History */
+.type-history.card-active {
+    border-color: #f97316;
+    background: #fff7ed;
+}
+.type-history.card-active .ud-notify-icon-box {
+    background: #ffedd5;
+    color: #ea580c;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-    .ud-sidebar { transform: translateX(-100%); width: 300px; }
+    .ud-sidebar { transform: translateX(-100%); width: 100%; max-width: 320px; }
     .ud-sidebar-open { transform: translateX(0); }
+}
+
+/* Loading & Empty */
+.ud-loading-state, .ud-empty-state {
+    text-align: center; padding: 40px; color: #94a3b8;
+}
+.ud-loader {
+    width: 24px; height: 24px; 
+    border: 2px solid #e2e8f0; border-top-color: #f97316;
+    border-radius: 50%; margin: 0 auto 12px;
+    animation: ud-spin 1s infinite linear;
+}
+
+/* Dagdag sa existing CSS file mo */
+
+.ud-section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 800;
+    margin: 24px 0 12px; /* Mas malaking space sa taas para distinct ang sections */
+    padding-left: 4px;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px dashed #e2e8f0; /* Line separator per section */
+    padding-bottom: 8px;
+}
+
+/* First section shouldn't have huge top margin */
+.ud-sidebar-section:first-child .ud-section-title {
+    margin-top: 0;
+}
+
+.ud-notify-desc {
+    font-size: 0.8rem;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 0;
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
 }
