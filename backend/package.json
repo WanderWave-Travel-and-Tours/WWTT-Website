@@ -19,8 +19,10 @@
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
     "iso-country-currency": "^0.7.2",
+    "mime-types": "^3.0.2",
     "mongoose": "^8.9.3",
     "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.11",
     "serpapi": "^2.2.1"
   },
   "devDependencies": {

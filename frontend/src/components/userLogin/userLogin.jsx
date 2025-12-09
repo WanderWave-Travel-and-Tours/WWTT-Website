@@ -1,16 +1,104 @@
 import { useState, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import './UserLogin.css';
+// Import icons (assuming you have a dependency like lucide-react or similar)
+import { Mail, Key, User, Lock, CheckCircle, XCircle } from 'lucide-react'; 
+
+const API_BASE_URL = 'http://localhost:5000/api/auth'; 
+
+// --- OTP Verification Form Component (Modal) ---
+const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading, error }) => {
+    const [otpCode, setOtpCode] = useState('');
+    
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (otpCode.length === 6) {
+            onVerify(otpCode);
+        }
+    };
+
+    return (
+        <div className="otp-modal-overlay">
+            <div className="otp-modal">
+                <div className="otp-modal-header">
+                    <Mail size={24} color="#f57c00" />
+                    <h2>Verify Email</h2>
+                </div>
+                <p className="otp-modal-text">
+                    A 6-digit verification code has been sent to <strong>{email}</strong>.
+                    Please enter the code to complete registration.
+                </p>
+                <form onSubmit={handleSubmit} className="otp-form">
+                    <div className="input-group" style={{ marginBottom: '10px' }}>
+                        <label className="input-label">OTP Code</label>
+                        <input
+                            type="text"
+                            placeholder="6-digit code"
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                            maxLength="6"
+                            className="input-field"
+                            required
+                            disabled={isLoading}
+                            style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '1.2rem' }}
+                        />
+                    </div>
+                    
+                    {error && <p className="error-message otp-error"><XCircle size={16}/> {error}</p>}
+
+                    <div className="otp-actions">
+                        <button
+                            type="submit"
+                            className="login-button"
+                            disabled={isLoading || otpCode.length !== 6}
+                        >
+                            {isLoading ? 'Verifying...' : 'Verify Account'}
+                        </button>
+                        <button
+                            type="button"
+                            className="switch-page-link"
+                            onClick={onResend}
+                            disabled={isLoading}
+                            style={{marginTop: '10px', width: '100%', border: 'none', background: 'none', textDecoration: 'underline'}}
+                        >
+                            Resend OTP
+                        </button>
+                        <button
+                            type="button"
+                            className="login-button"
+                            onClick={() => onCancel()}
+                            disabled={isLoading}
+                            style={{marginTop: '10px', background: '#e0e0e0', color: '#333', boxShadow: 'none'}}
+                        >
+                            Cancel Signup
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+// --- END OTP Verification Form Component ---
+
 
 const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [isSignup, setIsSignup] = useState(false);
     const [email, setEmail] = useState('');
+    const [username, setUsername] = useState(''); 
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
+    const [errorMessage, setErrorMessage] = useState(''); 
+    
+    // NEW STATES for OTP flow
+    const [isOtpFormVisible, setIsOtpFormVisible] = useState(false);
+    const [tempEmailForVerification, setTempEmailForVerification] = useState('');
+    const [otpError, setOtpError] = useState('');
+
+
     const recaptchaRef = useRef(null);
     const RECAPTCHA_SITE_KEY = "6Le-qx0sAAAAAJX4nGcaXMjdL6gMU2GdmD9NJi0J";
 
@@ -32,7 +120,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         return () => clearInterval(timer);
     }, []);
 
-    // Check if user is already logged in on component mount
     useEffect(() => {
         const savedUser = localStorage.getItem('wanderwave_user');
         if (savedUser && onLoginSuccess) {
@@ -40,80 +127,224 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                 const userData = JSON.parse(savedUser);
                 onLoginSuccess(userData);
             } catch (error) {
-                console.error('Error parsing saved user data:', error);
                 localStorage.removeItem('wanderwave_user');
             }
         }
     }, [onLoginSuccess]);
 
+
+    const resetForm = () => {
+        setFullName('');
+        setEmail('');
+        setUsername('');
+        setPassword('');
+        setConfirmPassword('');
+        setErrorMessage('');
+        setRecaptchaToken(null);
+        if (recaptchaRef.current) {
+            recaptchaRef.current.reset();
+        }
+    }
+
+
     const handleRecaptchaChange = (token) => {
         setRecaptchaToken(token);
     };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!recaptchaToken) {
-            alert('Please complete the reCAPTCHA verification');
-            return;
-        }
-
+    
+    // New function for Resend OTP API call
+    const handleResendOtpFetch = async () => {
         setIsLoading(true);
-
-        const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/login';
-        const body = isSignup
-            ? { fullName, email, password, confirmPassword, recaptchaToken }
-            : { email, password, recaptchaToken };
-
+        setOtpError('');
+        
         try {
-            const res = await fetch(`http://localhost:5000${endpoint}`, {
+            const res = await fetch(`${API_BASE_URL}/resend-otp`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(body),
+                body: JSON.stringify({
+                    email: tempEmailForVerification, // Use the stored email
+                }),
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+                // Success: New OTP sent
+                alert(data.message || 'New verification code has been sent!');
+            } else {
+                // Error during resend request
+                setOtpError(data.message || 'Failed to resend code. Please try again.');
+            }
+
+        } catch (error) {
+            console.error('Resend OTP fetch error:', error);
+            setOtpError('Network error. Could not connect to the server.');
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+
+    // 1. Initial Signup Request (Send OTP) - Used when isSignup is true
+    const handleSignup = async (e) => {
+        e.preventDefault();
+        setErrorMessage('');
+
+        if (!recaptchaToken) {
+            setErrorMessage('Please complete the reCAPTCHA verification');
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            setErrorMessage('Passwords do not match');
+            return;
+        }
+
+        setIsLoading(true);
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/signup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    fullName,
+                    email,
+                    username, 
+                    password,
+                    confirmPassword,
+                    recaptchaToken,
+                }),
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+                // Success: OTP Sent. Show verification form.
+                alert(data.message);
+                setTempEmailForVerification(email);
+                setIsOtpFormVisible(true);
+                // Clear password fields on the main form for security
+                setPassword(''); 
+                setConfirmPassword('');
+
+            } else {
+                // Error during initial signup/OTP request
+                setErrorMessage(data.message || 'Signup request failed. Please try again.');
+            }
+
+        } catch (error) {
+            console.error('Signup fetch error:', error);
+            setErrorMessage('Network error. Could not connect to the server.');
+        } finally {
+            setIsLoading(false);
+            if (recaptchaRef.current) {
+                recaptchaRef.current.reset();
+                setRecaptchaToken(null);
+            }
+        }
+    };
+    
+    // 2. OTP Verification and Final Registration
+    const handleOtpVerification = async (otpCode) => {
+        setIsLoading(true);
+        setOtpError('');
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/verify-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: tempEmailForVerification,
+                    otp: otpCode,
+                }),
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+                // Success: Account registered. Reset and switch to login page.
+                alert(data.message || 'Account successfully created and verified!');
+                
+                setIsSignup(false); 
+                setIsOtpFormVisible(false);
+                setTempEmailForVerification('');
+                resetForm(); // Clear all fields
+
+            } else {
+                // Error during OTP verification/registration
+                setOtpError(data.message || 'OTP verification failed. Please try again.');
+            }
+
+        } catch (error) {
+            console.error('OTP verification fetch error:', error);
+            setOtpError('Network error. Could not connect to the server.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Resend OTP logic - calls the dedicated resend fetch function
+    const handleResendOtp = (e) => {
+         handleResendOtpFetch();
+    }
+    
+    // Existing Login Logic
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setErrorMessage('');
+        
+        if (!recaptchaToken) {
+            setErrorMessage('Please complete the reCAPTCHA verification');
+            return;
+        }
+
+        setIsLoading(true);
+        
+        try {
+            const res = await fetch(`http://localhost:5000/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password, recaptchaToken }),
             });
 
             const data = await res.json();
 
             if (res.ok) {
-                if (isSignup) {
-                    alert(data.message || 'Account created successfully! Please log in.');
-                    setIsSignup(false);
-                    setFullName('');
-                    setPassword('');
-                    setConfirmPassword('');
-                } else {
-                    alert(data.message || 'Welcome back!');
-                    if (data.user && onLoginSuccess) {
-                        // Save user data to localStorage
-                        localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
-                        onLoginSuccess(data.user);
-                    }
-                }
-
-                if (recaptchaRef.current) {
-                    recaptchaRef.current.reset();
-                    setRecaptchaToken(null);
+                alert(data.message || 'Welcome back!');
+                if (data.user && onLoginSuccess) {
+                    localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
+                    onLoginSuccess(data.user);
                 }
             } else {
-                alert(data.message || 'Something went wrong');
-                if (recaptchaRef.current) {
-                    recaptchaRef.current.reset();
-                    setRecaptchaToken(null);
-                }
+                setErrorMessage(data.message || 'Login failed. Please check your credentials.');
             }
         } catch (err) {
-            console.error(err);
-            alert('Cannot connect to server. Please try again.');
+            setErrorMessage('Cannot connect to server. Please try again.');
+        } finally {
+            setIsLoading(false);
             if (recaptchaRef.current) {
                 recaptchaRef.current.reset();
                 setRecaptchaToken(null);
             }
-        } finally {
-            setIsLoading(false);
         }
     };
+
+    // Replaced original handleSubmit with this branching function
+    const handleSubmit = (e) => {
+        if (isSignup) {
+            handleSignup(e);
+        } else {
+            handleLogin(e);
+        }
+    };
+
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !isLoading) handleSubmit(e);
@@ -121,7 +352,25 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
     return (
         <div className="user-login-wrapper">
-            <div className="user-login-container">
+            
+            {/* Conditional OTP Modal/Popup */}
+            {isOtpFormVisible && (
+                <OtpVerificationForm 
+                    email={tempEmailForVerification}
+                    onVerify={handleOtpVerification}
+                    onCancel={() => {
+                        setIsOtpFormVisible(false);
+                        setIsLoading(false);
+                        setOtpError('');
+                        resetForm(); 
+                    }}
+                    onResend={handleResendOtp}
+                    isLoading={isLoading}
+                    error={otpError}
+                />
+            )}
+            
+            <div className={`user-login-container ${isOtpFormVisible ? 'blur-background' : ''}`}>
                 <div className="slideshow-panel">
                     <div className="slideshow-container">
                         {destinations.map((dest, index) => {
@@ -172,7 +421,10 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                             </div>
                         </div>
 
+                        {errorMessage && <p className="error-message general-error"><XCircle size={16}/> {errorMessage}</p>}
+
                         <form className="login-form" onSubmit={handleSubmit}>
+                            {/* Full Name */}
                             {isSignup && (
                                 <div className="input-group">
                                     <label className="input-label">Full Name</label>
@@ -184,10 +436,12 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                         placeholder="Juan dela Cruz"
                                         className="input-field"
                                         required
+                                        disabled={isLoading}
                                     />
                                 </div>
                             )}
 
+                            {/* Email */}
                             <div className="input-group">
                                 <label className="input-label">Email</label>
                                 <input
@@ -198,9 +452,29 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                     placeholder="you@example.com"
                                     className="input-field"
                                     required
+                                    disabled={isLoading}
                                 />
                             </div>
+                            
+                            {/* Username */}
+                            {isSignup && (
+                                <div className="input-group">
+                                    <label className="input-label">Username</label>
+                                    <input
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="juandelacruz123"
+                                        className="input-field"
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                            )}
 
+
+                            {/* Password */}
                             <div className="input-group">
                                 <label className="input-label">Password</label>
                                 <input
@@ -211,9 +485,11 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                     placeholder="••••••••"
                                     className="input-field"
                                     required
+                                    disabled={isLoading}
                                 />
                             </div>
 
+                            {/* Confirm Password */}
                             {isSignup && (
                                 <div className="input-group">
                                     <label className="input-label">Confirm Password</label>
@@ -225,6 +501,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                         placeholder="••••••••"
                                         className="input-field"
                                         required
+                                        disabled={isLoading}
                                     />
                                 </div>
                             )}
@@ -240,7 +517,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                             <button 
                                 type="submit" 
                                 className="login-button"
-                                disabled={isLoading}
+                                disabled={isLoading || !recaptchaToken}
                             >
                                 {isLoading ? 'Please wait...' : (isSignup ? 'Create Account' : 'Log In')}
                             </button>
@@ -252,14 +529,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                 className="switch-page-link"
                                 onClick={() => {
                                     setIsSignup(!isSignup);
-                                    setFullName(''); 
-                                    setEmail(''); 
-                                    setPassword(''); 
-                                    setConfirmPassword('');
-                                    if (recaptchaRef.current) {
-                                        recaptchaRef.current.reset();
-                                        setRecaptchaToken(null);
-                                    }
+                                    resetForm();
                                 }}
                             >
                                 {isSignup ? 'Log In' : 'Sign Up'}

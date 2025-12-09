@@ -307,7 +307,96 @@
     text-decoration: underline;
 }
 
-/* --- RESPONSIVE --- */
+/* --- NEW OTP MODAL STYLES --- */
+
+.otp-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100; /* High z-index for modal */
+}
+
+.otp-modal {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.otp-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    color: #f57c00;
+}
+
+.otp-modal-header h2 {
+    font-size: 1.4rem;
+    margin: 0;
+    color: #333;
+}
+
+.otp-modal-text {
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.4;
+    font-size: 0.95rem;
+}
+
+.otp-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.user-login-container.blur-background {
+    filter: blur(4px);
+    pointer-events: none;
+    transition: filter 0.3s ease-out;
+}
+
+.error-message {
+    color: #d32f2f;
+    background-color: #ffebee;
+    border: 1px solid #ffcdd2;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.general-error {
+    margin-top: -15px; /* Adjust spacing for the main form error */
+}
+
+.otp-error {
+    margin-bottom: 20px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* --- RESPONSIVE (Kept existing styles below this line) --- */
 
 @media (max-width: 900px) {
     .user-login-container {

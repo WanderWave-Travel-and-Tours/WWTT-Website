@@ -23,6 +23,8 @@ import "./OtherServices.css";
 import VisaTable from "./VisaTable";
 import PSATable from "./PsaTable";
 import CenomarTable from "./CenomarTable";
+import PassportTable from "./PassportTable";
+import PassportWizard from "./PassportWizard";
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -82,7 +84,7 @@ const UniversalInquiryForm = ({
         <div className="footer-contact-divider"></div>
         <div className="footer-contact-item">
           <Mail size={18} />
-          <span>info@wanderwave.com</span>
+          <span>info@wanderwavetravelandtours.com</span>
         </div>
       </div>
     </form>
@@ -101,7 +103,9 @@ const OtherServices = ({ setAuthPage }) => {
   const [isPSAService, setIsPSAService] = useState(false);
   const [showCENOMARDocuments, setShowCENOMARDocuments] = useState(false);
   const [isCENOMARService, setIsCENOMARService] = useState(false);
-  
+  const [showPassportService, setShowPassportService] = useState(false);
+  const [isPassportService, setIsPassportService] = useState(false);
+
   const [selectedPackage, setSelectedPackage] = useState({
     title: "",
     desc: "",
@@ -185,11 +189,11 @@ const OtherServices = ({ setAuthPage }) => {
   };
 
   const handleInquireClick = (item) => {
-    // Handle Visa Assistance
     if (item.title === "Visa Assistance") {
       setIsVisaService(true);
       setIsPSAService(false);
       setIsCENOMARService(false);
+      setIsPassportService(false);
       setSelectedPackage({
         title: item.title,
         desc: item.desc,
@@ -210,11 +214,11 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Handle PSA Assistance
     if (item.title === "PSA Assistance" || item.title.includes("PSA")) {
       setIsPSAService(true);
       setIsVisaService(false);
       setIsCENOMARService(false);
+      setIsPassportService(false);
       setSelectedPackage({
         title: item.title,
         desc: item.desc,
@@ -235,11 +239,11 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Handle CENOMAR Assistance
     if (item.title === "CENOMAR Assistance" || item.title.includes("CENOMAR")) {
       setIsCENOMARService(true);
       setIsVisaService(false);
       setIsPSAService(false);
+      setIsPassportService(false);
       setSelectedPackage({
         title: item.title,
         desc: item.desc,
@@ -260,19 +264,44 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Handle regular services
+    if (item.title === "Passport Assistance" || item.title.includes("Passport")) {
+      setIsPassportService(true);
+      setIsVisaService(false);
+      setIsPSAService(false);
+      setIsCENOMARService(false);
+      setSelectedPackage({
+        title: item.title,
+        desc: item.desc,
+        requirements: [],
+        price: item.price || 1500,
+        visaCountry: null,
+        psaDocument: null,
+        cenomarDocument: null,
+        serviceId: item._id,
+      });
+      setFormData({
+        fullName: "",
+        email: "",
+        message: "",
+      });
+      setShowModal(false);
+      setShowPassportService(true);
+      return;
+    }
+
     setIsVisaService(false);
     setIsPSAService(false);
     setIsCENOMARService(false);
+    setIsPassportService(false);
     setSelectedPackage({
       title: item.title,
       desc: item.desc,
       requirements: item.requirements || [],
-      price: item.price || 3599.99,
+      price: item.price,
       visaCountry: null,
       psaDocument: null,
       cenomarDocument: null,
-      serviceId: item._id, 
+      serviceId: item._id,
     });
     setFormData({
       fullName: "",
@@ -280,7 +309,52 @@ const OtherServices = ({ setAuthPage }) => {
       message: "",
     });
     setShowModal(true);
-    setShowRequirementsModal(false);
+  };
+
+  const handleSelectVisa = (visaData) => {
+    setSelectedPackage((prev) => ({
+      ...prev,
+      visaCountry: visaData.country,
+      requirements: visaData.requirements,
+      price: visaData.estimatedPrice,
+    }));
+    setShowVisaCountries(false);
+    setShowModal(true);
+  };
+
+  const handleSelectPSA = (psaData) => {
+    setSelectedPackage(prev => ({
+      ...prev,
+      psaDocument: psaData.documentName,
+      requirements: psaData.requirements || [],
+      price: psaData.estimatedPrice,
+    }));
+    setShowPSADocuments(false);
+    setShowModal(true);
+  };
+
+  const handleSelectCENOMAR = (cenomarData) => {
+    setSelectedPackage(prev => ({
+      ...prev,
+      cenomarDocument: cenomarData.documentName,
+      requirements: cenomarData.requirements || [],
+      price: cenomarData.estimatedPrice,
+    }));
+    setShowCENOMARDocuments(false);
+    setShowModal(true);
+  };
+
+  const handlePassportSelect = (passportData) => {
+    setSelectedPackage(prev => ({
+      ...prev,
+      title: passportData.serviceName || 'Passport Appointment',
+      requirements: [],
+      price: passportData.estimatedPrice || 1500,
+      serviceId: passportData.serviceId,
+      serviceType: passportData.serviceType
+    }));
+    setShowPassportService(false);
+    setShowModal(true);
   };
 
   const handleViewRequirements = () => {
@@ -293,116 +367,67 @@ const OtherServices = ({ setAuthPage }) => {
     } else if (isCENOMARService) {
       setShowModal(false);
       setShowCENOMARDocuments(true);
+    } else if (isPassportService) {
+      setShowModal(false);
+      setShowPassportService(true);
     } else {
       setShowRequirementsModal(true);
     }
   };
 
-  const handleSelectVisa = (visa) => {
-    setShowVisaCountries(false);
+  const handlePassportWizardSubmit = async (wizardData) => {
+    try {
+      let appType = 'NEW';
+      // Kunin ang type galing sa selectedPackage na sinet natin sa Step 2
+      const selectedType = selectedPackage.serviceType ? selectedPackage.serviceType.toUpperCase() : 'NEW';
 
-    const packageTitle = visa.description || visa.country || "Visa Assistance";
-    const packageRequirements = visa.requirements
-      ? visa.requirements.flatMap((section) => section.items || [])
-      : [];
+      if (selectedType.includes('RENEWAL')) appType = 'RENEWAL';
+      else if (selectedType.includes('LOST')) appType = 'LOST';
+      else if (selectedType.includes('DAMAGED')) appType = 'DAMAGED';
+      else appType = 'NEW';
 
-    const visaService = services.find(s => s.title === "Visa Assistance");
+      const inquiryData = {
+        serviceId: selectedPackage.serviceId,
+        serviceName: selectedPackage.title,
+        fullName: `${wizardData.applicants[0].firstName} ${wizardData.applicants[0].lastName}`,
+        email: wizardData.applicants[0].email, 
+        message: `Passport Booking (${appType}) for ${wizardData.paxCount} pax. Type: ${wizardData.bookingType}.`,
+        estimatedPrice: selectedPackage.price * wizardData.paxCount,
+        inquiryType: 'PASSPORT',
+        status: 'PENDING',
+        passportDetails: {
+           applicationType: appType, 
+           processingType: 'REGULAR',
+           dfaLocation: 'To be discussed', 
+           appointmentDate: 'TBD',
+           isGroup: wizardData.bookingType === 'GROUP',
+           groupSize: wizardData.paxCount,
+           applicants: wizardData.applicants 
+        }
+      };
 
-    setSelectedPackage({
-      title: packageTitle,
-      desc: `Visa assistance for ${visa.country}`,
-      requirements: packageRequirements,
-      price: visa.price || 3749.00,
-      visaCountry: visa.country,
-      psaDocument: null,
-      cenomarDocument: null,
-      serviceId: visaService?._id,
-    });
+      const response = await fetch('http://localhost:5000/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inquiryData)
+      });
 
-    setFormData({
-      fullName: "",
-      email: "",
-      message: `I would like to inquire about ${packageTitle}. `,
-    });
+      const result = await response.json();
 
-    setIsVisaService(true);
-    setIsPSAService(false);
-    setIsCENOMARService(false);
-    setShowModal(true);
-  };
-
-  const handleSelectPSA = (psa) => {
-    setShowPSADocuments(false);
-
-    const packageTitle = psa.description || psa.documentType || "PSA Document";
-    const packageRequirements = psa.requirements
-      ? psa.requirements.flatMap((section) => section.items || [])
-      : [];
-
-    const psaService = services.find(s => s.title === "PSA Assistance" || s.title.includes("PSA"));
-
-    setSelectedPackage({
-      title: packageTitle,
-      desc: `PSA ${psa.documentType} processing`,
-      requirements: packageRequirements,
-      price: psa.price || 350,
-      visaCountry: null,
-      psaDocument: psa.documentType,
-      cenomarDocument: null,
-      serviceId: psaService?._id,
-    });
-
-    setFormData({
-      fullName: "",
-      email: "",
-      message: `I would like to inquire about ${packageTitle}. Processing time: ${psa.processingTime || '3-5 business days'}. `,
-    });
-
-    setIsPSAService(true);
-    setIsVisaService(false);
-    setIsCENOMARService(false);
-    setShowModal(true);
-  };
-
-  const handleSelectCENOMAR = (cenomar) => {
-    setShowCENOMARDocuments(false);
-
-    const packageTitle = cenomar.description || cenomar.documentType || "CENOMAR Document";
-    const packageRequirements = cenomar.requirements
-      ? cenomar.requirements.flatMap((section) => section.items || [])
-      : [];
-
-    const cenomarService = services.find(s => s.title === "CENOMAR Assistance" || s.title.includes("CENOMAR"));
-
-    setSelectedPackage({
-      title: packageTitle,
-      desc: `CENOMAR ${cenomar.documentType} processing`,
-      requirements: packageRequirements,
-      price: cenomar.price || 450,
-      visaCountry: null,
-      psaDocument: null,
-      cenomarDocument: cenomar.documentType,
-      serviceId: cenomarService?._id,
-    });
-
-    setFormData({
-      fullName: "",
-      email: "",
-      message: `I would like to inquire about ${packageTitle}. Processing time: ${cenomar.processingTime || '5-7 business days'}. `,
-    });
-
-    setIsCENOMARService(true);
-    setIsVisaService(false);
-    setIsPSAService(false);
-    setShowModal(true);
+      if (result.success) {
+        alert(`✅ Passport Applications Received! Ref: ${result.data._id}`);
+        setShowModal(false);
+        setIsPassportService(false);
+      }
+    } catch (error) {
+      console.error("Booking Error", error);
+      alert("Failed to submit booking.");
+    }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleInquirySubmit = async (e) => {
@@ -410,30 +435,31 @@ const OtherServices = ({ setAuthPage }) => {
     
     try {
       const inquiryData = {
-        serviceId: selectedPackage.serviceId, 
+        serviceId: selectedPackage.serviceId,
         serviceName: selectedPackage.title,
         fullName: formData.fullName,
         email: formData.email,
         message: formData.message,
-        estimatedPrice: selectedPackage.price || 3599.99,
-        visaCountry: selectedPackage.visaCountry || null,
-        psaDocument: selectedPackage.psaDocument || null,
-        cenomarDocument: selectedPackage.cenomarDocument || null,
+        estimatedPrice: selectedPackage.price,
+        inquiryType: isVisaService ? 'VISA' 
+          : isPSAService ? 'PSA' 
+          : isCENOMARService ? 'CENOMAR' 
+          : isPassportService ? 'PASSPORT'
+          : 'OTHER',
+        visaCountry: selectedPackage.visaCountry,
+        psaDocument: selectedPackage.psaDocument,
+        cenomarDocument: selectedPackage.cenomarDocument,
+        status: 'PENDING'
       };
 
-      if (isVisaService && selectedPackage.visaCountry) {
-        inquiryData.visaCountry = selectedPackage.visaCountry;
+      if (isPassportService) {
+        inquiryData.passportDetails = {
+           applicationType: 'NEW', 
+           processingType: 'REGULAR',
+           dfaLocation: 'To be discussed',
+           appointmentDate: 'TBD'
+        };
       }
-
-      if (isPSAService && selectedPackage.psaDocument) {
-        inquiryData.psaDocument = selectedPackage.psaDocument;
-      }
-
-      if (isCENOMARService && selectedPackage.cenomarDocument) {
-        inquiryData.cenomarDocument = selectedPackage.cenomarDocument;
-      }
-
-      console.log('Submitting inquiry:', inquiryData);
 
       const response = await fetch('http://localhost:5000/api/inquiries', {
         method: 'POST',
@@ -443,51 +469,47 @@ const OtherServices = ({ setAuthPage }) => {
         body: JSON.stringify(inquiryData)
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (data.success) {
-        alert(data.message || 'Inquiry submitted successfully! We will contact you within 24 hours.');
+      if (result.success) {
+        alert(`✅ Your inquiry for "${selectedPackage.title}" has been submitted successfully! We will contact you within 24 hours.`);
         
-        setFormData({ fullName: "", email: "", message: "" });
         setShowModal(false);
         setIsVisaService(false);
         setIsPSAService(false);
         setIsCENOMARService(false);
+        setIsPassportService(false);
+        setFormData({
+          fullName: "",
+          email: "",
+          message: "",
+        });
+        setSelectedPackage({
+          title: "",
+          desc: "",
+          requirements: [],
+          price: 3599.99,
+          visaCountry: null,
+          psaDocument: null,
+          cenomarDocument: null,
+          serviceId: null,
+        });
       } else {
-        alert(data.message || 'Failed to submit inquiry. Please try again.');
+        throw new Error(result.message || 'Failed to submit inquiry');
       }
-
     } catch (error) {
-      console.error('Submit inquiry error:', error);
-      alert('Cannot connect to server. Please try again.');
+      console.error('Error submitting inquiry:', error);
+      alert(`❌ Error: ${error.message}. Please try again or contact us directly.`);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
-        <div className="os-overlay"></div>
-        <div className="os-content-wrapper">
-          <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>
-            <h2>Loading services...</h2>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className="os-section"
-      style={{ backgroundImage: `url(${backgroundImage})` }}
-    >
+    <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <div className="os-overlay"></div>
       <div className="os-content-wrapper">
         <div className="os-header">
-          <h2 className="os-title">WANDERWAVE SERVICES</h2>
-          <p className="os-subtitle">
-            Your One-Stop Travel & Documentation Solution
-          </p>
+          <h1 className="os-title">WANDERWAVE SERVICES</h1>
+          <p className="os-subtitle">Your One-Stop Travel & Documentation Solution</p>
         </div>
 
         <div className="os-carousel-wrapper">
@@ -499,26 +521,36 @@ const OtherServices = ({ setAuthPage }) => {
             <ChevronLeft size={28} />
           </button>
 
-          <div className="os-scroll-container" ref={sliderRef}>
-            {services.map((item) => (
-              <div key={item._id} className="os-glass-card">
-                <div className="os-card-img-box">
-                  <img src={item.img} alt={item.title} loading="lazy" />
-                  <div className="os-floating-icon">{item.icon}</div>
+          <div className="os-slider" ref={sliderRef}>
+            {loading ? (
+              <div style={{ color: 'white', textAlign: 'center', width: '100%', padding: '2rem' }}>
+                Loading services...
+              </div>
+            ) : (
+              services.map((item, index) => (
+              <div className="os-card" key={index}>
+                <div
+                  className="os-card-img"
+                  style={{ backgroundImage: `url(${item.img})` }}
+                >
+                  <div className="os-card-overlay"></div>
+                  <div className="os-card-icon-wrapper">
+                    <div className="os-card-icon">{item.icon}</div>
+                  </div>
                 </div>
-
-                <div className="os-card-body">
+                <div className="os-card-content">
                   <h3 className="os-card-title">{item.title}</h3>
-                  <p className="os-card-desc">{item.desc}</p>
+                  <p className="os-card-description">{item.desc}</p>
                   <button
+                    className="os-card-btn"
                     onClick={() => handleInquireClick(item)}
-                    className="os-card-link"
                   >
                     Inquire Now <ArrowRight size={16} />
                   </button>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
 
           <button
@@ -535,6 +567,17 @@ const OtherServices = ({ setAuthPage }) => {
 
       {showModal && (
         <div className="modal-overlay">
+          {isPassportService ? (
+            <div className="modal-card" style={{ maxWidth: '900px', height: '90vh', padding: '0', overflow: 'hidden' }}>
+                <button className="modal-close-btn" onClick={() => { setShowModal(false); setIsPassportService(false); }} style={{zIndex: 999}}>
+                  <X size={24} />
+                </button>
+                <PassportWizard 
+                  onClose={() => setShowModal(false)}
+                  onSubmit={handlePassportWizardSubmit}
+                />
+            </div>
+          ) : (
           <div className="modal-card modal-two-column">
             <button
               className="modal-close-btn"
@@ -543,6 +586,7 @@ const OtherServices = ({ setAuthPage }) => {
                 setIsVisaService(false);
                 setIsPSAService(false);
                 setIsCENOMARService(false);
+                setIsPassportService(false);
               }}
               aria-label="Close Modal"
             >
@@ -622,10 +666,11 @@ const OtherServices = ({ setAuthPage }) => {
               />
             </div>
           </div>
+          )}
         </div>
       )}
 
-      {showRequirementsModal && !isVisaService && !isPSAService && !isCENOMARService && (
+      {showRequirementsModal && !isVisaService && !isPSAService && !isCENOMARService && !isPassportService && (
         <div
           className="modal-overlay"
           onClick={() => setShowRequirementsModal(false)}
@@ -746,6 +791,27 @@ const OtherServices = ({ setAuthPage }) => {
               onSelectCENOMAR={handleSelectCENOMAR}
               onClose={() => setShowCENOMARDocuments(false)}
             />
+          </div>
+        </div>
+      )}
+
+      {showPassportService && (
+        <div 
+          className="modal-overlay"
+          onClick={() => setShowPassportService(false)}
+        >
+          <div 
+            className="passport-service-modal" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              className="modal-close-btn" 
+              onClick={() => setShowPassportService(false)}
+              aria-label="Close Passport Service"
+            >
+              <X size={32} strokeWidth={3} />
+            </button>
+            <PassportTable onSelectPassport={handlePassportSelect} />
           </div>
         </div>
       )}

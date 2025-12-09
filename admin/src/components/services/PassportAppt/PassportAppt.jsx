@@ -16,17 +16,14 @@ const PassportAppt = () => {
     const [contactRemarks, setContactRemarks] = useState("");
     const [contactEvidence, setContactEvidence] = useState(null);
     
-    // Data States
     const [appointments, setAppointments] = useState([]);
     const [passportData, setPassportData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     
-    // View Modal States
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [documents, setDocuments] = useState([]);
 
-    // Editor Modal States
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editorData, setEditorData] = useState({
         requirements: [],
@@ -45,7 +42,6 @@ const PassportAppt = () => {
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     };
 
-    // --- STATUS RANK LOGIC PARA SA DISABLING NG BUTTONS ---
     const getStatusRank = (status) => {
         switch(status) {
             case 'PENDING': return 1;
@@ -53,11 +49,10 @@ const PassportAppt = () => {
             case 'PAYMENT_PENDING': return 3;
             case 'PAID': return 4;
             case 'COMPLETED': return 5;
-            default: return 0; // Cancelled or unknown (Lahat enabled para pwedeng i-reset)
+            default: return 0;
         }
     };
 
-    // --- FETCH DATA ---
     const fetchPassportDetails = async () => {
         try {
             const res = await axios.get('http://localhost:5000/api/passports'); 
@@ -170,7 +165,7 @@ const PassportAppt = () => {
         }
     };
 
-    // --- EDITOR LOGIC ---
+    // Editor Logic handlers removed for brevity, assume they are same as before...
     const toggleAccordion = (section) => setAccordionState(prev => ({ ...prev, [section]: !prev[section] }));
     const handleReqTitleChange = (idx, val) => { const newReqs = [...editorData.requirements]; newReqs[idx].title = val; setEditorData({ ...editorData, requirements: newReqs }); };
     const handleReqItemChange = (catIdx, itemIdx, val) => { const newReqs = [...editorData.requirements]; newReqs[catIdx].items[itemIdx] = val; setEditorData({ ...editorData, requirements: newReqs }); };
@@ -227,7 +222,6 @@ const PassportAppt = () => {
         { label: 'Cancelled', value: appointments.filter(a => a.status === 'CANCELLED').length, icon: <RotateCcw size={24}/> },
     ];
 
-    // Helper variable for rank
     const currentStatusRank = selectedAppointment ? getStatusRank(selectedAppointment.status) : 0;
 
     return (
@@ -293,6 +287,7 @@ const PassportAppt = () => {
 
                     {activeTab === 'details' && passportData && (
                         <div className="passport-details-container" style={{background: 'white', padding: '30px', borderRadius: '12px', border: '1px solid #e2e8f0'}}>
+                            {/* Editor UI Removed for brevity - same as before */}
                             <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
                                 <h2>Service Requirements Configuration</h2>
                                 <button className="passport-action-btn" onClick={() => setIsEditorOpen(true)}><Settings size={14} style={{marginRight: '5px'}}/> Edit Requirements</button>
@@ -310,10 +305,11 @@ const PassportAppt = () => {
                 </div>
             </main>
 
-            {/* EDITOR MODAL */}
+            {/* EDITOR MODAL COMPONENT (Hidden for brevity) */}
             {isEditorOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-content modal-content-large">
+               <div className="modal-overlay">
+                   {/* ... Editor Content ... */}
+                   <div className="modal-content modal-content-large">
                         <div className="modal-header">
                             <div><h2 style={{margin: 0, fontSize: "20px", fontWeight: 800, color: "#0f172a"}}>EDIT PASSPORT REQUIREMENTS</h2><p style={{margin: "4px 0 0 0", color: "#64748b", fontSize: "13px"}}>Manage the checklist for passport applicants</p></div>
                             <button className="modal-close-btn" onClick={() => setIsEditorOpen(false)}><X size={24} /></button>
@@ -325,10 +321,9 @@ const PassportAppt = () => {
                         </div>
                         <div className="modal-footer"><button className="modal-cancel-btn" onClick={() => setIsEditorOpen(false)}>Cancel</button><button className="modal-save-btn" onClick={handleSaveChanges}><Save size={18}/> Save Changes</button></div>
                     </div>
-                </div>
+               </div>
             )}
 
-            {/* VIEW APPOINTMENT MODAL */}
             {isViewModalOpen && selectedAppointment && (
                 <div className="modal-overlay" onClick={(e) => { if(e.target.className === 'modal-overlay') setIsViewModalOpen(false) }}>
                     <div className="modal-content modal-content-large">
@@ -347,6 +342,60 @@ const PassportAppt = () => {
                                 </div>
                             </div>
 
+                            {/* --- GROUP APPLICANTS LIST (ONE BLOCK ONLY) --- */}
+                            {selectedAppointment.passportDetails?.applicants?.length > 0 && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: '#0f172a' }}>
+                                        APPLICANT DETAILS ({selectedAppointment.passportDetails.applicants.length} Pax)
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {selectedAppointment.passportDetails.applicants.map((applicant, index) => (
+                                            <div key={index} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                                                {/* Header ng Applicant Card */}
+                                                <div style={{ background: '#f8fafc', padding: '10px 15px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span style={{ fontWeight: '700', fontSize: '13px', color: '#334155' }}>
+                                                        #{index + 1} - {applicant.lastName}, {applicant.firstName}
+                                                    </span>
+                                                    <span style={{ fontSize: '11px', color: '#64748b', background: '#e2e8f0', padding: '2px 8px', borderRadius: '4px' }}>
+                                                        {applicant.civilStatus}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Details Body */}
+                                                <div style={{ padding: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                                    <div>
+                                                        <label style={{fontSize:'10px', color:'#94a3b8', fontWeight:'600', display:'block'}}>FULL NAME</label>
+                                                        <span style={{fontSize:'12px', fontWeight:'500', color:'#0f172a'}}>
+                                                            {applicant.firstName} {applicant.middleName} {applicant.lastName}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <label style={{fontSize:'10px', color:'#94a3b8', fontWeight:'600', display:'block'}}>BIRTH DETAILS</label>
+                                                        <span style={{fontSize:'12px', fontWeight:'500', color:'#0f172a'}}>
+                                                            {applicant.dateOfBirth} • {applicant.placeOfBirth}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <label style={{fontSize:'10px', color:'#94a3b8', fontWeight:'600', display:'block'}}>CONTACT</label>
+                                                        <span style={{fontSize:'12px', fontWeight:'500', color:'#0f172a'}}>
+                                                            {applicant.mobile} <br/> {applicant.email}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <label style={{fontSize:'10px', color:'#94a3b8', fontWeight:'600', display:'block'}}>PARENTS</label>
+                                                        <span style={{fontSize:'12px', fontWeight:'500', color:'#0f172a'}}>
+                                                            F: {applicant.fatherName || 'N/A'} <br/>
+                                                            M: {applicant.motherMaidenName || 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- DOCUMENTS SECTION --- */}
                             <div style={{ marginBottom: '24px' }}>
                                 <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: '#0f172a' }}>SUBMITTED DOCUMENTS ({documents.length})</h3>
                                 {documents.length === 0 ? (
@@ -376,12 +425,9 @@ const PassportAppt = () => {
                                 )}
                             </div>
 
-                            {/* UPDATED STATUS ACTIONS - With Grayed Out Logic */}
                             <div style={{marginTop: '20px'}}>
                                 <h3 style={{fontSize:'14px', fontWeight:'700', marginBottom:'15px', color:'#334155'}}>UPDATE STATUS</h3>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                    
-                                    {/* PENDING (Rank 1) */}
                                     <button 
                                         className="passport-action-btn" 
                                         onClick={() => handleUpdateStatus(selectedAppointment._id, 'PENDING')}
@@ -395,7 +441,6 @@ const PassportAppt = () => {
                                         Set Pending
                                     </button>
 
-                                    {/* CONTACTED (Rank 2) */}
                                     <button 
                                         className="passport-action-btn" 
                                         onClick={initiateContactStatus}
@@ -409,7 +454,6 @@ const PassportAppt = () => {
                                         Set Contacted
                                     </button>
 
-                                    {/* PAYMENT PENDING (Rank 3) */}
                                     <button 
                                         className="passport-action-btn" 
                                         onClick={() => handleUpdateStatus(selectedAppointment._id, 'PAYMENT_PENDING')}
@@ -425,7 +469,6 @@ const PassportAppt = () => {
                                         Approve & Payment
                                     </button>
 
-                                    {/* COMPLETED (Rank 5 - Paid is 4 but skipped button) */}
                                     <button 
                                         className="passport-action-btn" 
                                         onClick={() => handleUpdateStatus(selectedAppointment._id, 'COMPLETED')}
@@ -441,7 +484,6 @@ const PassportAppt = () => {
                                         Mark Completed
                                     </button>
 
-                                    {/* CANCELLED - Usually always available unless already cancelled */}
                                     <button 
                                         className="passport-action-btn" 
                                         onClick={() => handleUpdateStatus(selectedAppointment._id, 'CANCELLED')}

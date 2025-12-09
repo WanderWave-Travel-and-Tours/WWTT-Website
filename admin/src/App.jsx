@@ -53,6 +53,7 @@ import FerryBooking from './components/services/FerryBooking/FerryBooking.jsx';
 import TravelInsurance from './components/services/TravelInsurance/TravelInsurance.jsx';
 import BillsPayment from './components/services/BillsPayment/BillsPayment.jsx';
 import MarriageCertificate from './components/services/MarriageCertificate/MarriageCertificate.jsx';
+import Users from './components/users/users.jsx';
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/users" element={<Users />} />
 
         {/* Packages */}
         <Route path="/add-package" element={<AddPackage />} />
