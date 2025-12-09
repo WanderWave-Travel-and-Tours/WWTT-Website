@@ -189,7 +189,6 @@ const OtherServices = ({ setAuthPage }) => {
   };
 
   const handleInquireClick = (item) => {
-    // Handle Visa Assistance
     if (item.title === "Visa Assistance") {
       setIsVisaService(true);
       setIsPSAService(false);
@@ -215,7 +214,6 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Handle PSA Assistance
     if (item.title === "PSA Assistance" || item.title.includes("PSA")) {
       setIsPSAService(true);
       setIsVisaService(false);
@@ -241,7 +239,6 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Handle CENOMAR Assistance
     if (item.title === "CENOMAR Assistance" || item.title.includes("CENOMAR")) {
       setIsCENOMARService(true);
       setIsVisaService(false);
@@ -267,7 +264,6 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Handle Passport Assistance
     if (item.title === "Passport Assistance" || item.title.includes("Passport")) {
       setIsPassportService(true);
       setIsVisaService(false);
@@ -293,7 +289,6 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // Default: Other services
     setIsVisaService(false);
     setIsPSAService(false);
     setIsCENOMARService(false);
@@ -384,23 +379,20 @@ const OtherServices = ({ setAuthPage }) => {
       const inquiryData = {
         serviceId: selectedPackage.serviceId,
         serviceName: selectedPackage.title,
-        // Kukunin natin ang details ng Applicant 1 bilang main contact
         fullName: `${wizardData.applicants[0].firstName} ${wizardData.applicants[0].lastName}`,
         email: wizardData.applicants[0].email, 
         message: `Passport Booking for ${wizardData.paxCount} pax. Type: ${wizardData.bookingType}.`,
         estimatedPrice: selectedPackage.price * wizardData.paxCount,
         inquiryType: 'PASSPORT',
         status: 'PENDING',
-        
-        // Dito natin ilalagay yung detalye ng lahat ng passengers
         passportDetails: {
            applicationType: 'NEW', 
            processingType: 'REGULAR',
-           dfaLocation: 'To be discussed', // Pwede mo rin idagdag sa Wizard kung gusto mo
+           dfaLocation: 'To be discussed', 
            appointmentDate: 'TBD',
            isGroup: wizardData.bookingType === 'GROUP',
            groupSize: wizardData.paxCount,
-           applicants: wizardData.applicants // IMPORTANT: Array of objects ito
+           applicants: wizardData.applicants 
         }
       };
 
@@ -570,8 +562,6 @@ const OtherServices = ({ setAuthPage }) => {
                 <button className="modal-close-btn" onClick={() => { setShowModal(false); setIsPassportService(false); }} style={{zIndex: 999}}>
                   <X size={24} />
                 </button>
-                
-                {/* TAWAGIN ANG WIZARD COMPONENT */}
                 <PassportWizard 
                   onClose={() => setShowModal(false)}
                   onSubmit={handlePassportWizardSubmit}
