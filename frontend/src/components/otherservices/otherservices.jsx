@@ -24,6 +24,7 @@ import VisaTable from "./VisaTable";
 import PSATable from "./PsaTable";
 import CenomarTable from "./CenomarTable";
 import PassportTable from "./PassportTable";
+import PassportWizard from "./PassportWizard";
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -83,7 +84,7 @@ const UniversalInquiryForm = ({
         <div className="footer-contact-divider"></div>
         <div className="footer-contact-item">
           <Mail size={18} />
-          <span>info@wanderwave.com</span>
+          <span>info@wanderwavetravelandtours.com</span>
         </div>
       </div>
     </form>
@@ -378,6 +379,50 @@ const OtherServices = ({ setAuthPage }) => {
     }
   };
 
+  const handlePassportWizardSubmit = async (wizardData) => {
+    try {
+      const inquiryData = {
+        serviceId: selectedPackage.serviceId,
+        serviceName: selectedPackage.title,
+        // Kukunin natin ang details ng Applicant 1 bilang main contact
+        fullName: `${wizardData.applicants[0].firstName} ${wizardData.applicants[0].lastName}`,
+        email: wizardData.applicants[0].email, 
+        message: `Passport Booking for ${wizardData.paxCount} pax. Type: ${wizardData.bookingType}.`,
+        estimatedPrice: selectedPackage.price * wizardData.paxCount,
+        inquiryType: 'PASSPORT',
+        status: 'PENDING',
+        
+        // Dito natin ilalagay yung detalye ng lahat ng passengers
+        passportDetails: {
+           applicationType: 'NEW', 
+           processingType: 'REGULAR',
+           dfaLocation: 'To be discussed', // Pwede mo rin idagdag sa Wizard kung gusto mo
+           appointmentDate: 'TBD',
+           isGroup: wizardData.bookingType === 'GROUP',
+           groupSize: wizardData.paxCount,
+           applicants: wizardData.applicants // IMPORTANT: Array of objects ito
+        }
+      };
+
+      const response = await fetch('http://localhost:5000/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inquiryData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ Passport Applications Received! Ref: ${result.data._id}`);
+        setShowModal(false);
+        setIsPassportService(false);
+      }
+    } catch (error) {
+      console.error("Booking Error", error);
+      alert("Failed to submit booking.");
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -520,6 +565,19 @@ const OtherServices = ({ setAuthPage }) => {
 
       {showModal && (
         <div className="modal-overlay">
+          {isPassportService ? (
+            <div className="modal-card" style={{ maxWidth: '900px', height: '90vh', padding: '0', overflow: 'hidden' }}>
+                <button className="modal-close-btn" onClick={() => { setShowModal(false); setIsPassportService(false); }} style={{zIndex: 999}}>
+                  <X size={24} />
+                </button>
+                
+                {/* TAWAGIN ANG WIZARD COMPONENT */}
+                <PassportWizard 
+                  onClose={() => setShowModal(false)}
+                  onSubmit={handlePassportWizardSubmit}
+                />
+            </div>
+          ) : (
           <div className="modal-card modal-two-column">
             <button
               className="modal-close-btn"
@@ -608,6 +666,7 @@ const OtherServices = ({ setAuthPage }) => {
               />
             </div>
           </div>
+          )}
         </div>
       )}
 

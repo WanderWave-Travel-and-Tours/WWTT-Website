@@ -1,5 +1,30 @@
 const mongoose = require('mongoose');
 
+const passportApplicantSchema = new mongoose.Schema({
+  lastName: String,
+  firstName: String,
+  middleName: String,
+  placeOfBirth: String,
+  gender: String,
+  dateOfBirth: String,
+  civilStatus: String,
+  address: String,
+  occupation: String,
+  mobile: String,
+  workAddress: String,
+  email: String,
+  spouseName: String,
+  spouseCitizenship: String,
+  fatherName: String,
+  fatherCitizenship: String,
+  motherMaidenName: String,
+  motherCitizenship: String,
+  citizenshipAcquisition: String,
+  foreignPassportHolder: String,
+  foreignPassportNo: String,
+  foreignPassportIssueDate: String
+}, { _id: false });
+
 const inquirySchema = new mongoose.Schema({
   serviceId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -24,10 +49,6 @@ const inquirySchema = new mongoose.Schema({
   contactNumber: {
     type: String,
     default: null
-  },
-  address: {
-    type: String,
-    default: ''
   },
   address: {
     type: String,
@@ -91,6 +112,9 @@ const inquirySchema = new mongoose.Schema({
       default: 'REGULAR'
     },
     dfaLocation: String,
+    isGroup: { type: Boolean, default: false },
+    groupSize: { type: Number, default: 1 },
+    applicants: [passportApplicantSchema],
     hasMarriageCertificate: { type: Boolean, default: false },
     hasBirthCertificate: { type: Boolean, default: false },
     hasValidId: { type: Boolean, default: false },

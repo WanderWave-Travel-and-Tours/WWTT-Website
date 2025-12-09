@@ -1,0 +1,186 @@
+.passport-wizard-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #f8fafc;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.wizard-header {
+    background: #0a203b;
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wizard-header h3 { margin: 0; font-size: 1.2rem; }
+.wizard-header p { margin: 0; font-size: 0.9rem; opacity: 0.8; }
+
+.wizard-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+/* Step 1 Styles */
+.type-cards {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.type-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 30px;
+    width: 200px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.type-card:hover, .type-card.active {
+    border-color: #fc9c1b;
+    background: #fff7ed;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(252, 156, 27, 0.15);
+}
+
+.type-card svg { color: #0a203b; margin-bottom: 10px; }
+.type-card.active svg { color: #fc9c1b; }
+
+.pax-input-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.pax-counter input {
+    font-size: 1.5rem;
+    padding: 10px;
+    width: 100px;
+    text-align: center;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+}
+
+/* Form Styles */
+.form-section-title {
+    background: #e2e8f0;
+    color: #475569;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: inline-block;
+}
+
+.section-header {
+    color: #0a203b;
+    border-bottom: 2px solid #cbd5e1;
+    padding-bottom: 5px;
+    margin-top: 20px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+.two-col > * { flex: 1; }
+.three-col > * { flex: 1; }
+
+.form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+.form-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 5px;
+}
+
+.form-group input, .form-group select {
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+.form-group input:focus, .form-group select:focus {
+    border-color: #fc9c1b;
+    outline: none;
+}
+
+/* Actions */
+.wizard-actions {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+.wizard-actions.space-between { justify-content: space-between; }
+
+.wizard-btn-primary {
+    background: #fc9c1b;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.wizard-btn-primary:hover { background: #e88a0a; transform: translateY(-2px); }
+.wizard-btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; }
+
+.wizard-btn-secondary {
+    background: white;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.wizard-btn-secondary:hover { background: #f1f5f9; color: #0f172a; }
+
+/* Summary */
+.step-summary { text-align: center; padding: 20px; }
+.success-icon { margin-bottom: 20px; }
+.summary-note { color: #64748b; font-size: 0.9rem; margin-bottom: 30px; }
+.applicant-list-preview {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    text-align: left;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+.preview-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+}
+.preview-item:last-child { border-bottom: none; }
+
+.fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .type-cards { flex-direction: column; align-items: center; }
+    .form-row { flex-direction: column; gap: 0; }
+    .wizard-header { padding: 1rem; }
+    .wizard-body { padding: 1rem; }
+}
