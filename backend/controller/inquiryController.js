@@ -13,11 +13,39 @@ const generateTempPassword = () => {
 
 const createInquiry = async (req, res) => {
   try {
-    const { 
+    let { 
+      serviceId, 
+      serviceName, 
+      fullName, 
+      email, 
+      contactNumber,
+      address,       
+      message,
+      visaCountry,
+      visaId,
+      psaDocument, 
+      psaId,
+      estimatedPrice,
+      inquiryType,   
+      flightDetails, 
+      passengers,
+      cenomarId,
+      cenomarDocument    
+    } = req.body;
+
+    console.log('📥 Received inquiry/booking:', { serviceName, fullName, inquiryType });
+
+    if (!message && inquiryType === 'FLIGHT_BOOKING') {
+      const origin = flightDetails?.origin || 'Unknown';
+      const dest = flightDetails?.destination || 'Unknown';
+      const date = flightDetails?.departureDate || '';
+      message = `Flight Booking Request: ${origin} ➝ ${dest} on ${date}`;
+    }
+    /*const { 
       serviceId, serviceName, fullName, email, message, 
       visaCountry, visaId, psaDocument, psaId, 
       cenomarDocument, cenomarId, estimatedPrice 
-    } = req.body;
+    } = req.body;*/
 
     console.log('📥 Received inquiry request:', { serviceName, fullName, email });
 
@@ -48,9 +76,20 @@ const createInquiry = async (req, res) => {
 
     const inquiry = await Inquiry.create({
       serviceId: serviceId || null,
-      serviceName, fullName, email, message,
-      visaCountry: visaCountry || null, visaId: visaId || null,
-      psaDocument: psaDocument || null, psaId: psaId || null,
+      serviceName,
+      fullName,
+      email,
+      contactNumber,
+      address,
+      message,
+      visaCountry: visaCountry || null,
+      visaId: visaId || null,
+      psaDocument: psaDocument || null, 
+      psaId: psaId || null,
+      //estimatedPrice: estimatedPrice || 0,
+      inquiryType: inquiryType || 'GENERAL',
+      flightDetails: flightDetails || {},
+      passengers: passengers || [],
       cenomarDocument: cenomarDocument || null, cenomarId: cenomarId || null,
       estimatedPrice: estimatedPrice || 0
     });
@@ -124,7 +163,8 @@ const getInquiryStats = async (req, res) => {
 // 👇 UPDATED: MARK AS PAID FUNCTION (Critical for Database Update)
 const markAsPaid = async (req, res) => {
   try {
-    const { id } = req.params; // Inquiry ID
+    const { id } = req.params; 
+    //const { id } = req.params; // Inquiry ID
 
     console.log(`💰 Payment Update Requested for Inquiry: ${id}`);
 
