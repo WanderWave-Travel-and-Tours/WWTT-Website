@@ -21,11 +21,24 @@ const inquirySchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  contactNumber: {
+    type: String,
+    default: null
+  },
+  address: {
+    type: String,
+    default: ''
+  },
+  address: {
+    type: String,
+    default: ''
+  },
   message: {
     type: String,
     required: true
   },
   
+  // VISA FIELDS
   visaCountry: {
     type: String,
     default: null
@@ -36,6 +49,7 @@ const inquirySchema = new mongoose.Schema({
     default: null
   },
 
+  // PSA FIELDS
   psaDocument: {
     type: String,
     default: null
@@ -46,10 +60,41 @@ const inquirySchema = new mongoose.Schema({
     default: null
   },
 
+  // CENOMAR FIELDS
+  cenomarDocument: {
+    type: String,
+    default: null
+  },
+  cenomarId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CENOMAR',
+    default: null
+  },
+
   inquiryType: { 
     type: String, 
-    enum: ['GENERAL', 'VISA', 'PSA', 'FLIGHT_BOOKING'], 
+    enum: ['GENERAL', 'VISA', 'PSA', 'FLIGHT_BOOKING', 'PASSPORT', 'CENOMAR'], 
     default: 'GENERAL' 
+  },
+
+  passportDetails: {
+    appointmentDate: String,
+    appointmentTime: String,
+    applicationType: { 
+      type: String, 
+      enum: ['NEW', 'RENEWAL', 'LOST', 'DAMAGED'],
+      default: 'NEW'
+    },
+    processingType: {
+      type: String,
+      enum: ['REGULAR', 'EXPEDITE'],
+      default: 'REGULAR'
+    },
+    dfaLocation: String,
+    hasMarriageCertificate: { type: Boolean, default: false },
+    hasBirthCertificate: { type: Boolean, default: false },
+    hasValidId: { type: Boolean, default: false },
+    specialCase: String
   },
 
   flightDetails: {
@@ -69,16 +114,28 @@ const inquirySchema = new mongoose.Schema({
     lastName: String,
     nationality: String,
     age: Number,
-    type: { String },
+    type: String,
     email: String,     
     contactNumber: String
   }],
 
   status: {
     type: String,
-    enum: ['PENDING', 'CONTACTED', 'IN_PROGRESS', 'PAYMENT_PENDING', 'PAID', 'COMPLETED', 'CANCELLED'],
+    enum: [
+      'PENDING', 
+      'CONTACTED', 
+      'IN_PROGRESS', 
+      'PAYMENT_PENDING', 
+      'PAID',
+      'CONFIRMED',
+      'PROCESSING',
+      'READY',
+      'COMPLETED', 
+      'CANCELLED'
+    ],
     default: 'PENDING'
   },
+  
   remarks: {
     type: String,
     default: ''
@@ -108,6 +165,30 @@ const inquirySchema = new mongoose.Schema({
   },
   contactedBy: {
     type: String,
+    default: null
+  },
+
+  // PAYMENT CONFIRMATION FIELDS
+  paymentConfirmedAt: {
+    type: Date,
+    default: null
+  },
+  paymentConfirmedBy: {
+    type: String,
+    default: null
+  },
+
+  // DOCUMENT DELIVERY FIELDS
+  deliveredDocuments: [{
+    fileName: String,
+    fileUrl: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  documentsDeliveredAt: {
+    type: Date,
     default: null
   },
   
