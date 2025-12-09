@@ -405,6 +405,15 @@ const OtherServices = ({ setAuthPage }) => {
         status: 'PENDING'
       };
 
+      if (isPassportService) {
+        inquiryData.passportDetails = {
+           applicationType: 'NEW', 
+           processingType: 'REGULAR',
+           dfaLocation: 'To be discussed',
+           appointmentDate: 'TBD'
+        };
+      }
+
       const response = await fetch('http://localhost:5000/api/inquiries', {
         method: 'POST',
         headers: {

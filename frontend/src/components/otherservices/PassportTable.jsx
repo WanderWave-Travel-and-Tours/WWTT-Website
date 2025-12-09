@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
-import { ChevronRight, ChevronDown, FileText, ClipboardList } from "lucide-react";
+import { ChevronRight, ChevronDown, FileText, ClipboardList, AlertCircle } from "lucide-react";
 import "./PassportTable.css";
 
 const PassportTable = ({ onSelectPassport }) => {
   const [passportData, setPassportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [expandedService, setExpandedService] = useState(false);
   const [accordionStates, setAccordionStates] = useState({
     requirements: false,
@@ -19,69 +20,25 @@ const PassportTable = ({ onSelectPassport }) => {
 
   const fetchPassportData = async () => {
     try {
+      // TATAWAG NA ITO SA BACKEND MO
       const res = await axios.get('http://localhost:5000/api/passports');
       
       if (res.data.success && res.data.data.length > 0) {
-        // Get the first active passport data
+        // Kukunin ang pinaka-latest na active passport service
         setPassportData(res.data.data[0]);
       } else {
-        console.error("No passport data found");
-        // Use fallback static data if no data in database
-        setPassportData(getDefaultPassportData());
+        setError("No active passport service found in the database.");
       }
-    } catch (error) {
-      console.error("Error fetching passport data:", error);
-      // Use fallback static data on error
-      setPassportData(getDefaultPassportData());
+    } catch (err) {
+      console.error("Error fetching passport data:", err);
+      setError("Failed to load passport information.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Fallback static data
-  const getDefaultPassportData = () => ({
-    _id: 'passport-default',
-    serviceName: 'Passport Appointment',
-    description: 'Book your Philippine Passport Appointment',
-    price: 1500,
-    icon: '🛂',
-    requirements: [
-      {
-        title: 'Primary Requirements',
-        items: [
-          'Original and photocopy of your PSA Birth Certificate',
-          'If the birth certificate is unclear, a transcribed copy from the Local Civil Registrar or the local copy of the birth certificate may be required',
-          'Valid government-issued ID: Bring an original and a photocopy of at least one valid ID',
-          'For married women: If using your spouse\'s surname, bring the original and a photocopy of your PSA Marriage Certificate'
-        ]
-      }
-    ],
-    additionalDocuments: [
-      {
-        title: 'Special Cases',
-        items: [
-          'For married women using their maiden name: A PSA Marriage Certificate is not required',
-          'For those born abroad: A Report of Birth from a Philippine embassy or consulate is needed',
-          'For lost or stolen passports: You may need a notarized affidavit of loss and/or a police report',
-          'Other supporting documents: The consular officer may require additional documents to verify your identity and/or citizenship'
-        ]
-      }
-    ],
-    stepsProcess: [
-      'Prepare all required documents (PSA Birth Certificate, valid ID, etc.)',
-      'Submit inquiry request through WanderWave',
-      'Receive appointment schedule confirmation',
-      'Pay the processing fee',
-      'Attend your scheduled appointment at DFA',
-      'Wait for passport processing (usually 10-15 working days)',
-      'Claim your passport or opt for delivery'
-    ]
-  });
-
   const toggleServiceExpansion = () => {
     setExpandedService(!expandedService);
-    
-    // Reset accordion states when collapsing
     if (expandedService) {
       setAccordionStates({
         requirements: false,
@@ -98,33 +55,34 @@ const PassportTable = ({ onSelectPassport }) => {
     }));
   };
 
+  // DITO IPAPASA ANG DATA SA MODAL FORM
   const handleSendInquiry = () => {
     if (onSelectPassport && passportData) {
       onSelectPassport({
-        serviceId: passportData._id || 'passport-appointment',
+        serviceId: passportData._id, // Importante: Ito ang ID galing sa MongoDB
         serviceName: passportData.serviceName,
         estimatedPrice: passportData.price,
         inquiryType: 'PASSPORT'
       });
-    } else {
-      alert(`Inquiry for Passport Appointment sent!`);
     }
   };
 
   if (loading) {
     return (
       <div className="passport-list-container">
-        <p style={{padding:'20px', textAlign:'center'}}>Loading Passport Information...</p>
+        <p style={{padding:'40px', textAlign:'center'}}>Loading Live Passport Information...</p>
       </div>
     );
   }
 
-  if (!passportData) {
+  if (error || !passportData) {
     return (
       <div className="passport-list-container">
-        <p style={{padding:'20px', textAlign:'center', color:'#888'}}>
-          No passport data available. Please contact administrator.
-        </p>
+        <div style={{textAlign:'center', padding:'40px', color:'#ef4444', background:'#fef2f2', borderRadius:'12px', border:'1px solid #fee2e2'}}>
+            <AlertCircle size={32} style={{marginBottom:'10px'}}/>
+            <h3>Service Unavailable</h3>
+            <p>{error || "Please initialize passport data in the admin panel first."}</p>
+        </div>
       </div>
     );
   }
@@ -148,19 +106,15 @@ const PassportTable = ({ onSelectPassport }) => {
                   <h3 className="passport-title">{passportData.serviceName}</h3>
                   <span className="passport-subtitle">{passportData.description}</span>
                   <span className="passport-price">
-                    Service Fee: ₱{passportData.price?.toLocaleString() || '1,500.00'}
+                    Service Fee: ₱{passportData.price?.toLocaleString()}
                   </span>
                 </div>
               </div>
 
               {!expandedService && (
                 <div className="passport-header-right">
-                  <button
-                    className="view-requirements-btn-passport"
-                    onClick={toggleServiceExpansion}
-                  >
-                    <ChevronRight size={18} />
-                    <span>View Requirements</span>
+                  <button className="view-requirements-btn-passport" onClick={toggleServiceExpansion}>
+                    <ChevronRight size={18} /> <span>View Requirements</span>
                   </button>
                 </div>
               )}
@@ -168,7 +122,7 @@ const PassportTable = ({ onSelectPassport }) => {
 
             {expandedService && (
               <div className="passport-requirements-expanded">
-                {/* ACCORDION 1: PRIMARY REQUIREMENTS */}
+                {/* Requirements Accordion */}
                 <div className="passport-accordion-section">
                   <button 
                     className={`passport-accordion-header ${accordionStates.requirements ? 'active' : ''}`}
@@ -177,42 +131,28 @@ const PassportTable = ({ onSelectPassport }) => {
                     <span className="passport-accordion-title">
                       <span className="passport-accordion-icon"><FileText size={18} /></span>
                       Primary Requirements
-                      {passportData.requirements && passportData.requirements[0] && (
-                        <span className="passport-accordion-count">
-                          {passportData.requirements[0].items.length} Items
-                        </span>
-                      )}
                     </span>
                     <span className={`passport-accordion-chevron ${accordionStates.requirements ? 'rotate' : ''}`}>
                       <ChevronDown size={20} />
                     </span>
                   </button>
-                  
                   {accordionStates.requirements && (
                     <div className="passport-accordion-content">
-                      {passportData.requirements && passportData.requirements.length > 0 ? (
-                        passportData.requirements.map((reqSection, sectionIndex) => (
-                          <div key={sectionIndex} className="requirements-section">
-                            <ul className="requirements-list-simple">
-                              {reqSection.items && reqSection.items.map((req, index) => (
-                                <li key={index} className="requirement-simple-item">
-                                  <span className="req-checkbox">☑️</span>
-                                  <span>{req}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))
-                      ) : (
-                        <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic'}}>
-                          No requirements listed.
-                        </p>
-                      )}
+                      {passportData.requirements?.map((reqSection, idx) => (
+                        <div key={idx}>
+                           <h5 style={{margin:'0 0 10px 0', color:'#0f172a'}}>{reqSection.title}</h5>
+                           <ul className="requirements-list-simple">
+                             {reqSection.items?.map((req, i) => (
+                               <li key={i} className="requirement-simple-item"><span className="req-checkbox">☑️</span>{req}</li>
+                             ))}
+                           </ul>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* ACCORDION 2: ADDITIONAL DOCUMENTS */}
+                {/* Additional Docs Accordion */}
                 <div className="passport-accordion-section">
                   <button 
                     className={`passport-accordion-header ${accordionStates.additionalDocs ? 'active' : ''}`}
@@ -220,43 +160,28 @@ const PassportTable = ({ onSelectPassport }) => {
                   >
                     <span className="passport-accordion-title">
                       <span className="passport-accordion-icon"><FileText size={18} /></span>
-                      Additional Documents (Special Cases)
-                      {passportData.additionalDocuments && passportData.additionalDocuments[0] && (
-                        <span className="passport-accordion-count">
-                          {passportData.additionalDocuments[0].items.length} Cases
-                        </span>
-                      )}
+                      Special Cases
                     </span>
                     <span className={`passport-accordion-chevron ${accordionStates.additionalDocs ? 'rotate' : ''}`}>
-                      <ChevronDown size={20} />
+                       <ChevronDown size={20} />
                     </span>
                   </button>
-                  
                   {accordionStates.additionalDocs && (
                     <div className="passport-accordion-content">
-                      {passportData.additionalDocuments && passportData.additionalDocuments.length > 0 ? (
-                        passportData.additionalDocuments.map((docSection, sectionIndex) => (
-                          <div key={sectionIndex} className="requirements-section">
-                            <ul className="requirements-list-simple">
-                              {docSection.items && docSection.items.map((doc, index) => (
-                                <li key={index} className="requirement-simple-item">
-                                  <span className="req-checkbox">⚠️</span>
-                                  <span>{doc}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))
-                      ) : (
-                        <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic'}}>
-                          No additional documents listed.
-                        </p>
-                      )}
+                      {passportData.additionalDocuments?.map((docSection, idx) => (
+                        <div key={idx}>
+                           <ul className="requirements-list-simple">
+                             {docSection.items?.map((doc, i) => (
+                               <li key={i} className="requirement-simple-item"><span className="req-checkbox">⚠️</span>{doc}</li>
+                             ))}
+                           </ul>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* ACCORDION 3: STEPS AND PROCESS */}
+                {/* Process Steps */}
                 <div className="passport-accordion-section">
                   <button 
                     className={`passport-accordion-header ${accordionStates.stepsProcess ? 'active' : ''}`}
@@ -265,49 +190,30 @@ const PassportTable = ({ onSelectPassport }) => {
                     <span className="passport-accordion-title">
                       <span className="passport-accordion-icon"><ClipboardList size={18} /></span>
                       Steps and Process
-                      {passportData.stepsProcess && (
-                        <span className="passport-accordion-count">
-                          {passportData.stepsProcess.length} Steps
-                        </span>
-                      )}
                     </span>
                     <span className={`passport-accordion-chevron ${accordionStates.stepsProcess ? 'rotate' : ''}`}>
                       <ChevronDown size={20} />
                     </span>
                   </button>
-                  
                   {accordionStates.stepsProcess && (
                     <div className="passport-accordion-content">
-                      {passportData.stepsProcess && passportData.stepsProcess.length > 0 ? (
                         <ol className="passport-steps-list">
-                          {passportData.stepsProcess.map((step, index) => (
+                          {passportData.stepsProcess?.map((step, index) => (
                             <li key={index} className="passport-step-item">
                               <span className="step-number">{index + 1}</span>
                               <span>{step}</span>
                             </li>
                           ))}
                         </ol>
-                      ) : (
-                        <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic'}}>
-                          No process steps listed.
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>
 
                 <div className="passport-actions-bottom">
-                  <button
-                    className="hide-requirements-btn"
-                    onClick={toggleServiceExpansion}
-                  >
-                    <ChevronDown size={18} />
-                    <span>Hide Requirements</span>
+                  <button className="hide-requirements-btn" onClick={toggleServiceExpansion}>
+                    <ChevronDown size={18} /> <span>Hide Requirements</span>
                   </button>
-                  <button
-                    className="send-inquiry-btn"
-                    onClick={handleSendInquiry}
-                  >
+                  <button className="send-inquiry-btn" onClick={handleSendInquiry}>
                     <span>Book Appointment</span>
                   </button>
                 </div>

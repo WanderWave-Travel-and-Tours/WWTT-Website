@@ -1,8 +1,5 @@
 const Passport = require('../models/passport');
 
-// @desc    Get all passport requirements
-// @route   GET /api/passports
-// @access  Public
 const getPassports = async (req, res) => {
   try {
     const passports = await Passport.find({ isActive: true }).sort({ createdAt: -1 });
@@ -13,9 +10,6 @@ const getPassports = async (req, res) => {
   }
 };
 
-// @desc    Get single passport by ID
-// @route   GET /api/passports/:id
-// @access  Public
 const getPassport = async (req, res) => {
   try {
     const passport = await Passport.findById(req.params.id);
@@ -136,9 +130,6 @@ const deletePassport = async (req, res) => {
   }
 };
 
-// @desc    Initialize default passport data (run once)
-// @route   POST /api/passports/initialize
-// @access  Private/Admin
 const initializePassport = async (req, res) => {
   try {
     // Check if passport data already exists
@@ -152,42 +143,42 @@ const initializePassport = async (req, res) => {
       });
     }
 
-    // Create default passport data
+    // Create default passport data with YOUR SPECIFIC REQUIREMENTS
     const defaultPassport = await Passport.create({
       serviceName: 'Passport Appointment',
       description: 'Book your Philippine Passport Appointment',
       price: 1500,
       icon: '🛂',
+      // Dito natin ilalagay ang requirements na binigay mo
       requirements: [
         {
-          title: 'Primary Requirements',
+          title: 'Passport Requirements',
           items: [
-            'Original and photocopy of your PSA Birth Certificate',
-            'If the birth certificate is unclear, a transcribed copy from the Local Civil Registrar or the local copy of the birth certificate may be required',
-            'Valid government-issued ID: Bring an original and a photocopy of at least one valid ID',
-            'For married women: If using your spouse\'s surname, bring the original and a photocopy of your PSA Marriage Certificate'
+            'Original and photocopy of your PSA Birth Certificate.',
+            'If the birth certificate is unclear, a transcribed copy from the Local Civil Registrar or the local copy of the birth certificate may be required.',
+            'Valid government-issued ID: Bring an original and a photocopy of at least one valid ID.',
+            'For married women: If using your spouse\'s surname, bring the original and a photocopy of your PSA Marriage Certificate.'
           ]
         }
       ],
+      // Dito naman ang Additional Documents
       additionalDocuments: [
         {
-          title: 'Special Cases',
+          title: 'Additional Documents',
           items: [
-            'For married women using their maiden name: A PSA Marriage Certificate is not required',
-            'For those born abroad: A Report of Birth from a Philippine embassy or consulate is needed',
-            'For lost or stolen passports: You may need a notarized affidavit of loss and/or a police report',
-            'Other supporting documents: The consular officer may require additional documents to verify your identity and/or citizenship'
+            'For married women using their maiden name: A PSA Marriage Certificate is not required.',
+            'For those born abroad: A Report of Birth from a Philippine embassy or consulate is needed.',
+            'For lost or stolen passports: You may need a notarized affidavit of loss and/or a police report.',
+            'Other supporting documents: The consular officer may require additional documents to verify your identity and/or citizenship.'
           ]
         }
       ],
       stepsProcess: [
-        'Prepare all required documents (PSA Birth Certificate, valid ID, etc.)',
+        'Prepare all required documents',
         'Submit inquiry request through WanderWave',
         'Receive appointment schedule confirmation',
         'Pay the processing fee',
-        'Attend your scheduled appointment at DFA',
-        'Wait for passport processing (usually 10-15 working days)',
-        'Claim your passport or opt for delivery'
+        'Attend your scheduled appointment at DFA'
       ],
       processingTypes: [
         {
@@ -212,7 +203,7 @@ const initializePassport = async (req, res) => {
 
     res.status(201).json({ 
       success: true, 
-      message: 'Default passport data initialized', 
+      message: 'Default passport data initialized with correct requirements', 
       data: defaultPassport 
     });
   } catch (error) {
