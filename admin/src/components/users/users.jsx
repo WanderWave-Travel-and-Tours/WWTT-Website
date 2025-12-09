@@ -5,6 +5,15 @@ import './users.css';
 const USERS_PER_PAGE = 10;
 
 const Users = () => {
+
+// --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
+
+
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -113,7 +122,10 @@ const Users = () => {
 
     return (
         <div className="vusers-page">
-            <Sidebar />
+                        <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
             <main className="vusers-main">
                 <div className="vusers-container">
                     <header className="vusers-header">

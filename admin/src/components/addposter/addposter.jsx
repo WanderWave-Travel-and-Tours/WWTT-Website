@@ -4,6 +4,13 @@ import './AddPoster.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddPoster = () => {
+    // --- SIDEBAR LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR LOGIC END ---
+
     const [posterDetails, setPosterDetails] = useState({
         title: '',
         description: '',
@@ -103,9 +110,16 @@ const AddPoster = () => {
 
     return (
         <div className="poster-page">
-            <Sidebar /> 
+            {/* 1. Pass the state and toggle function to Sidebar */}
+            <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            /> 
             
-            <main className="poster-main">
+            {/* 2. Apply conditional class to the main content */}
+            <main className={`poster-main ${
+                isSidebarCollapsed ? "poster-main--collapsed" : ""
+            }`}>
                 <div className="poster-container">
                     <header className="poster-header">
                         <h1 className="poster-title">ADD PROMO POSTER</h1>

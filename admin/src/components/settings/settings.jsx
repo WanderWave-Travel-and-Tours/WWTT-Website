@@ -3,6 +3,14 @@ import Sidebar from '../sidebar/sidebar';
 import './settings.css';
 
 const Settings = () => {
+
+    // --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
+
     const [settings, setSettings] = useState({
         username: 'admin', 
         businessName: '',
@@ -79,7 +87,10 @@ const Settings = () => {
 
     return (
         <div className="settings-page">
-            <Sidebar />
+              <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
             
             <main className="settings-main">
                 <div className="settings-container">

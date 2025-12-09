@@ -6,6 +6,13 @@ import { useNavigate } from 'react-router-dom';
 const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 const ViewTours = () => {
+    // --- SIDEBAR LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR LOGIC END ---
+
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -43,8 +50,10 @@ const ViewTours = () => {
     if (loading) {
         return (
             <div className="viewtours-page">
-                <Sidebar />
-                <main className="viewtours-main">
+                {/* Sidebar updated */}
+                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+                {/* main updated */}
+                <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-loader">
                         <div className="viewtours-spinner"></div>
                         <p>Loading tours...</p>
@@ -57,8 +66,10 @@ const ViewTours = () => {
     if (error) {
         return (
             <div className="viewtours-page">
-                <Sidebar />
-                <main className="viewtours-main">
+                {/* Sidebar updated */}
+                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+                {/* main updated */}
+                <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-error">
                         <span className="viewtours-error-icon">⚠️</span>
                         <p>{error}</p>
@@ -70,8 +81,10 @@ const ViewTours = () => {
 
     return (
         <div className="viewtours-page">
-            <Sidebar />
-            <main className="viewtours-main">
+            {/* Sidebar updated */}
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            {/* main updated */}
+            <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                 <div className="viewtours-container">
                     <header className="viewtours-header">
                         <div className="viewtours-header-left">

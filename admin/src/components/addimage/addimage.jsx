@@ -4,6 +4,13 @@ import Sidebar from '../sidebar/sidebar';
 import './addimage.css';
 
 const AddImage = () => {
+    // --- SIDEBAR LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR LOGIC END ---
+
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,8 +74,8 @@ const AddImage = () => {
 
     return (
         <div className="ai-page">
-            <Sidebar />
-            <main className="ai-main">
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            <main className={`ai-main ${isSidebarCollapsed ? "ai-main--collapsed" : ""}`}>
                 <div className="ai-container">
                     <header className="ai-header">
                         <h1 className="ai-title">UPLOAD IMAGE</h1>

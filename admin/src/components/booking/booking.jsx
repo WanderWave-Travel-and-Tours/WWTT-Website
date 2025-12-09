@@ -17,6 +17,10 @@ import './Booking.css';
 import Sidebar from '../sidebar/sidebar';
 
 const Booking = () => {
+  // 1. Sidebar State Management
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Existing states
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +29,11 @@ const Booking = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // 2. Sidebar Toggle Function
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
   useEffect(() => {
     fetchBookings();
@@ -88,7 +97,7 @@ const Booking = () => {
   }, [searchTerm, filterStatus, bookings]);
 
   const handleConfirm = async (booking) => {
-    if (!confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) {
+    if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) {
       return;
     }
 
@@ -112,7 +121,7 @@ const Booking = () => {
   };
 
   const handleCancel = async (booking) => {
-    if (!confirm(`Cancel booking ${booking.id} for ${booking.customerName}? This action cannot be undone.`)) {
+    if (!window.confirm(`Cancel booking ${booking.id} for ${booking.customerName}? This action cannot be undone.`)) {
       return;
     }
 
@@ -152,15 +161,21 @@ const Booking = () => {
 
   return (
     <div className="booking-page">
-      <Sidebar />
+      {/* 3. Pass props to Sidebar */}
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       
-      <div className="booking-container">
+      {/* 4. Apply conditional class to the main content container */}
+      <div 
+        className={`booking-container ${
+          isSidebarCollapsed ? "booking-container--collapsed" : ""
+        }`}
+      >
         {/* Header with Back Button */}
         <div className="booking-header">
-          <button className="back-button">
-            <ChevronLeft size={18} />
-            <span>Back</span>
-          </button>
+          {/* NOTE: You should likely pass toggleSidebar down to a Header component
+             in a real app, but for this example, we'll keep the back button
+             and assume the toggle button is inside the Sidebar component itself. */}
+          
           
           <div className="booking-header-content">
             <h1>Booking Management</h1>
@@ -180,7 +195,7 @@ const Booking = () => {
               </div>
             </div>
           </div>
-
+ 
           <div className="stat-card">
             <div className="stat-card-content">
               <div className="stat-info">
