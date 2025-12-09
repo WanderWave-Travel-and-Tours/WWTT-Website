@@ -1,7 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import "./FlightSearchResults.css";
+import FlightBookingModal from "./flightBookingModal"; 
 
 function FlightSearchResults({ searchInfo, flights, error, loading, searchParams }) {
+
+  const [selectedFlight, setSelectedFlight] = useState(null);
+
+  const handleBookClick = (flight) => {
+    setSelectedFlight(flight);
+  };
+
   return (
     <div className="results-section">
       <div className="results-content">
@@ -39,7 +47,6 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
                     <span className="stat-label">BEST PRICE</span>
                     <span className="stat-value highlight-price">₱{searchInfo.pricingInfo?.totalPrice?.toLocaleString() || "0"}</span>
                 </div>
-                {/* Removed Per Person section as requested */}
             </div>
           </div>
         )}
@@ -115,7 +122,6 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
                   </div>
                 </div>
 
-                {/* PRICING */}
                 <div className="flight-pricing">
                   <div className="price-amount">{flight.price.formatted}</div>
                   <div className="price-label">
@@ -124,27 +130,41 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
                 </div>
               </div>
 
-              {/* FOOTER (With Book Button) */}
-              {flight.quality && (
-                <div className="flight-footer">
+              {/* ✅ FIXED: BUTTON IS NOW ALWAYS VISIBLE */}
+              <div className="flight-footer">
+                {/* Only show quality badge IF quality exists (optional) */}
+                {flight.quality !== undefined ? (
                   <div className="quality-badge">
                     <span className="star">★</span> Quality Score: <strong>{flight.quality}/10</strong>
                   </div>
-                  <button className="book-btn" onClick={() => window.open(flight.bookingUrl, "_blank")}>
-                    Book Now
-                  </button>
-                </div>
-              )}
+                ) : (
+                  // Spacer para mapunta sa kanan ang button kung walang quality badge
+                  <div></div> 
+                )}
+                
+                <button className="book-btn" onClick={() => handleBookClick(flight)}>
+                  Book Now
+                </button>
+              </div>
+
             </div>
           ))}
 
-          {/* NO RESULTS */}
           {!loading && flights.length === 0 && !error && (
             <div className="no-flights">
               <div className="no-flights-icon">🌏</div>
               <h3>Start searching for flights</h3>
               <p>Search airports worldwide - Philippines, USA, Europe, Asia, and more!</p>
             </div>
+          )}
+          
+          {/* RENDER MODAL IF FLIGHT IS SELECTED */}
+          {selectedFlight && (
+            <FlightBookingModal 
+              flight={selectedFlight} 
+              searchParams={searchParams} 
+              onClose={() => setSelectedFlight(null)} 
+            />
           )}
         </div>
       </div>

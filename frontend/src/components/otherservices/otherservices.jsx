@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import "./OtherServices.css";
 import VisaTable from "./VisaTable";
-import PSATable from "./PsaTable"; 
+import PSATable from "./PsaTable";
+import CenomarTable from "./CenomarTable";
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -96,15 +97,19 @@ const OtherServices = ({ setAuthPage }) => {
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const [showVisaCountries, setShowVisaCountries] = useState(false);
   const [isVisaService, setIsVisaService] = useState(false);
-  const [showPSADocuments, setShowPSADocuments] = useState(false); 
+  const [showPSADocuments, setShowPSADocuments] = useState(false);
   const [isPSAService, setIsPSAService] = useState(false);
+  const [showCENOMARDocuments, setShowCENOMARDocuments] = useState(false);
+  const [isCENOMARService, setIsCENOMARService] = useState(false);
+  
   const [selectedPackage, setSelectedPackage] = useState({
     title: "",
     desc: "",
     requirements: [],
     price: 3599.99,
     visaCountry: null,
-    psaDocument: null, 
+    psaDocument: null,
+    cenomarDocument: null,
     serviceId: null,
   });
 
@@ -184,6 +189,7 @@ const OtherServices = ({ setAuthPage }) => {
     if (item.title === "Visa Assistance") {
       setIsVisaService(true);
       setIsPSAService(false);
+      setIsCENOMARService(false);
       setSelectedPackage({
         title: item.title,
         desc: item.desc,
@@ -191,6 +197,7 @@ const OtherServices = ({ setAuthPage }) => {
         price: item.price || 4999.99,
         visaCountry: null,
         psaDocument: null,
+        cenomarDocument: null,
         serviceId: item._id, 
       });
       setFormData({
@@ -203,10 +210,11 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
-    // NEW: Handle PSA Assistance
+    // Handle PSA Assistance
     if (item.title === "PSA Assistance" || item.title.includes("PSA")) {
       setIsPSAService(true);
       setIsVisaService(false);
+      setIsCENOMARService(false);
       setSelectedPackage({
         title: item.title,
         desc: item.desc,
@@ -214,6 +222,7 @@ const OtherServices = ({ setAuthPage }) => {
         price: item.price || 350,
         visaCountry: null,
         psaDocument: null,
+        cenomarDocument: null,
         serviceId: item._id,
       });
       setFormData({
@@ -226,9 +235,35 @@ const OtherServices = ({ setAuthPage }) => {
       return;
     }
 
+    // Handle CENOMAR Assistance
+    if (item.title === "CENOMAR Assistance" || item.title.includes("CENOMAR")) {
+      setIsCENOMARService(true);
+      setIsVisaService(false);
+      setIsPSAService(false);
+      setSelectedPackage({
+        title: item.title,
+        desc: item.desc,
+        requirements: [],
+        price: item.price || 450,
+        visaCountry: null,
+        psaDocument: null,
+        cenomarDocument: null,
+        serviceId: item._id,
+      });
+      setFormData({
+        fullName: "",
+        email: "",
+        message: "",
+      });
+      setShowModal(false);
+      setShowCENOMARDocuments(true);
+      return;
+    }
+
     // Handle regular services
     setIsVisaService(false);
     setIsPSAService(false);
+    setIsCENOMARService(false);
     setSelectedPackage({
       title: item.title,
       desc: item.desc,
@@ -236,6 +271,7 @@ const OtherServices = ({ setAuthPage }) => {
       price: item.price || 3599.99,
       visaCountry: null,
       psaDocument: null,
+      cenomarDocument: null,
       serviceId: item._id, 
     });
     setFormData({
@@ -254,6 +290,9 @@ const OtherServices = ({ setAuthPage }) => {
     } else if (isPSAService) {
       setShowModal(false);
       setShowPSADocuments(true);
+    } else if (isCENOMARService) {
+      setShowModal(false);
+      setShowCENOMARDocuments(true);
     } else {
       setShowRequirementsModal(true);
     }
@@ -275,6 +314,8 @@ const OtherServices = ({ setAuthPage }) => {
       requirements: packageRequirements,
       price: visa.price || 3749.00,
       visaCountry: visa.country,
+      psaDocument: null,
+      cenomarDocument: null,
       serviceId: visaService?._id,
     });
 
@@ -285,6 +326,8 @@ const OtherServices = ({ setAuthPage }) => {
     });
 
     setIsVisaService(true);
+    setIsPSAService(false);
+    setIsCENOMARService(false);
     setShowModal(true);
   };
 
@@ -305,6 +348,7 @@ const OtherServices = ({ setAuthPage }) => {
       price: psa.price || 350,
       visaCountry: null,
       psaDocument: psa.documentType,
+      cenomarDocument: null,
       serviceId: psaService?._id,
     });
 
@@ -316,6 +360,40 @@ const OtherServices = ({ setAuthPage }) => {
 
     setIsPSAService(true);
     setIsVisaService(false);
+    setIsCENOMARService(false);
+    setShowModal(true);
+  };
+
+  const handleSelectCENOMAR = (cenomar) => {
+    setShowCENOMARDocuments(false);
+
+    const packageTitle = cenomar.description || cenomar.documentType || "CENOMAR Document";
+    const packageRequirements = cenomar.requirements
+      ? cenomar.requirements.flatMap((section) => section.items || [])
+      : [];
+
+    const cenomarService = services.find(s => s.title === "CENOMAR Assistance" || s.title.includes("CENOMAR"));
+
+    setSelectedPackage({
+      title: packageTitle,
+      desc: `CENOMAR ${cenomar.documentType} processing`,
+      requirements: packageRequirements,
+      price: cenomar.price || 450,
+      visaCountry: null,
+      psaDocument: null,
+      cenomarDocument: cenomar.documentType,
+      serviceId: cenomarService?._id,
+    });
+
+    setFormData({
+      fullName: "",
+      email: "",
+      message: `I would like to inquire about ${packageTitle}. Processing time: ${cenomar.processingTime || '5-7 business days'}. `,
+    });
+
+    setIsCENOMARService(true);
+    setIsVisaService(false);
+    setIsPSAService(false);
     setShowModal(true);
   };
 
@@ -339,11 +417,20 @@ const OtherServices = ({ setAuthPage }) => {
         message: formData.message,
         estimatedPrice: selectedPackage.price || 3599.99,
         visaCountry: selectedPackage.visaCountry || null,
-        psaDocument: selectedPackage.psaDocument || null, // NEW: PSA Document field
+        psaDocument: selectedPackage.psaDocument || null,
+        cenomarDocument: selectedPackage.cenomarDocument || null,
       };
 
       if (isVisaService && selectedPackage.visaCountry) {
         inquiryData.visaCountry = selectedPackage.visaCountry;
+      }
+
+      if (isPSAService && selectedPackage.psaDocument) {
+        inquiryData.psaDocument = selectedPackage.psaDocument;
+      }
+
+      if (isCENOMARService && selectedPackage.cenomarDocument) {
+        inquiryData.cenomarDocument = selectedPackage.cenomarDocument;
       }
 
       console.log('Submitting inquiry:', inquiryData);
@@ -364,6 +451,8 @@ const OtherServices = ({ setAuthPage }) => {
         setFormData({ fullName: "", email: "", message: "" });
         setShowModal(false);
         setIsVisaService(false);
+        setIsPSAService(false);
+        setIsCENOMARService(false);
       } else {
         alert(data.message || 'Failed to submit inquiry. Please try again.');
       }
@@ -452,6 +541,8 @@ const OtherServices = ({ setAuthPage }) => {
               onClick={() => {
                 setShowModal(false);
                 setIsVisaService(false);
+                setIsPSAService(false);
+                setIsCENOMARService(false);
               }}
               aria-label="Close Modal"
             >
@@ -534,7 +625,7 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
-      {showRequirementsModal && !isVisaService && !isPSAService && (
+      {showRequirementsModal && !isVisaService && !isPSAService && !isCENOMARService && (
         <div
           className="modal-overlay"
           onClick={() => setShowRequirementsModal(false)}
@@ -603,7 +694,6 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
       
-      {/* NEW: PSA Documents Modal */}
       {showPSADocuments && (
         <div
           className="modal-overlay"
@@ -624,7 +714,38 @@ const OtherServices = ({ setAuthPage }) => {
             >
               <X size={32} strokeWidth={3} />
             </button>
-            <PSATable onSelectPSA={handleSelectPSA} />
+            <PSATable 
+              onSelectPSA={handleSelectPSA}
+              onClose={() => setShowPSADocuments(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {showCENOMARDocuments && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowCENOMARDocuments(false);
+          }}
+        >
+          <div
+            className="cenomar-documents-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close-btn"
+              onClick={() => {
+                setShowCENOMARDocuments(false);
+              }}
+              aria-label="Close CENOMAR Documents"
+            >
+              <X size={32} strokeWidth={3} />
+            </button>
+            <CenomarTable 
+              onSelectCENOMAR={handleSelectCENOMAR}
+              onClose={() => setShowCENOMARDocuments(false)}
+            />
           </div>
         </div>
       )}

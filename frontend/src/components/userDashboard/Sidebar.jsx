@@ -24,6 +24,14 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
         });
     };
 
+    // Helper para ipakita ang tamang label (Bansa o Document Name)
+    const getInquirySubtitle = (inquiry) => {
+        if (inquiry.visaCountry) return inquiry.visaCountry;
+        if (inquiry.cenomarDocument) return 'CENOMAR Request';
+        if (inquiry.psaDocument) return 'PSA Document';
+        return 'Travel Assistance';
+    };
+
     return (
         <aside className={`ud-sidebar ${mobileMenuOpen ? 'ud-sidebar-open' : ''}`}>
             <div className="ud-sidebar-header">
@@ -58,7 +66,7 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
                                 <div className="ud-card-middle">
                                     <span className="ud-card-destination">
                                         <Icons.Globe /> 
-                                        {inquiry.visaCountry || 'General'}
+                                        {getInquirySubtitle(inquiry)}
                                     </span>
                                     <span className="ud-card-date">{formatDate(inquiry.createdAt)}</span>
                                 </div>

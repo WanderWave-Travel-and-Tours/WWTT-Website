@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
-import { ChevronRight, ChevronDown, FileText, Download, ClipboardList, FileCheck } from "lucide-react";
+import { ChevronRight, ChevronDown, FileText, Download, ClipboardList, FileCheck, X } from "lucide-react";
 import "./PsaTable.css";
 
-const PSATable = ({ onSelectPSA }) => {
+const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
   const [psaDocs, setPsaDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedPSA, setExpandedPSA] = useState({});
@@ -65,27 +65,11 @@ const PSATable = ({ onSelectPSA }) => {
     }
   };
 
-  const getDocumentIcon = (docType) => {
-    const iconStyle = {
-      width: '48px',
-      height: '48px',
-      borderRadius: '12px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '24px',
-      fontWeight: 'bold',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      color: 'white',
-      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-    };
-
-    return (
-      <div style={iconStyle}>
-        <FileCheck size={24} />
-      </div>
-    );
-  };
+  const renderDocumentIcon = () => (
+    <div className="psa-icon-container">
+      <FileCheck size={20} color="#0a203b" />
+    </div>
+  );
 
   if (loading) {
     return (
@@ -98,10 +82,17 @@ const PSATable = ({ onSelectPSA }) => {
   return (
     <div className="psa-list-container">
       <div className="psa-list-header">
-        <h2 className="psa-list-title">PSA Document Services</h2>
-        <p className="psa-list-subtitle">
-          Request and process your PSA documents with ease
-        </p>
+        <div className="psa-header-text">
+          <h2 className="psa-list-title">PSA Document Services</h2>
+          <p className="psa-list-subtitle">
+            Request and process your PSA documents with ease
+          </p>
+        </div>
+        
+        {/* Close Button (X) */}
+        <button className="psa-close-modal-btn" onClick={onClose}>
+          <X size={24} />
+        </button>
       </div>
 
       <div className="psa-list-wrapper">
@@ -115,7 +106,7 @@ const PSATable = ({ onSelectPSA }) => {
               <div className="psa-item-content">
                 <div className="psa-item-header">
                   <div className="psa-header-left">
-                    {getDocumentIcon(psa.documentType)}
+                    {renderDocumentIcon()}
                     <div className="psa-info">
                       <h3 className="psa-title">{psa.documentType || "PSA Document"}</h3>
                       <span className="psa-subtitle">{psa.description || "Document Processing"}</span>
@@ -140,6 +131,8 @@ const PSATable = ({ onSelectPSA }) => {
 
                 {expandedPSA[psa._id] && (
                   <div className="psa-requirements-expanded">
+                    
+                    {/* ACCORDION 1 */}
                     <div className="psa-accordion-section">
                       <button 
                         className={`psa-accordion-header ${accordionStates[psa._id]?.requirements ? 'active' : ''}`}
@@ -184,6 +177,7 @@ const PSATable = ({ onSelectPSA }) => {
                       )}
                     </div>
 
+                    {/* ACCORDION 2 */}
                     <div className="psa-accordion-section">
                       <button 
                         className={`psa-accordion-header ${accordionStates[psa._id]?.downloadForms ? 'active' : ''}`}
@@ -208,30 +202,27 @@ const PSATable = ({ onSelectPSA }) => {
                               {psa.downloadForms.map((form, index) => {
                                 const formLabel = typeof form === 'string' ? form : (form.fileName || form.label || 'Download Form');
                                 const formUrl = typeof form === 'object' ? form.fileUrl : null;
-                                
-                                const finalUrl = formUrl && formUrl.startsWith('http') 
-                                    ? formUrl 
-                                    : `http://localhost:5000${formUrl}`;
+                                const finalUrl = formUrl && formUrl.startsWith('http') ? formUrl : `http://localhost:5000${formUrl}`;
 
                                 return (
-                                    <li key={index} className="psa-download-item">
+                                  <li key={index} className="psa-download-item">
                                     <span className="download-icon">📄</span>
                                     {formUrl ? (
-                                        <a 
+                                      <a 
                                         href={finalUrl}
                                         download={formLabel}
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="download-link"
-                                        >
+                                      >
                                         {formLabel}
-                                        </a>
+                                      </a>
                                     ) : (
-                                        <span>{formLabel}</span>
+                                      <span>{formLabel}</span>
                                     )}
-                                    </li>
+                                  </li>
                                 );
-                                })}
+                              })}
                             </ul>
                           ) : (
                             <p style={{fontSize: '14px', color: '#888', fontStyle: 'italic', margin: '10px 0'}}>
@@ -242,6 +233,7 @@ const PSATable = ({ onSelectPSA }) => {
                       )}
                     </div>
 
+                    {/* ACCORDION 3 */}
                     <div className="psa-accordion-section">
                       <button 
                         className={`psa-accordion-header ${accordionStates[psa._id]?.stepsProcess ? 'active' : ''}`}

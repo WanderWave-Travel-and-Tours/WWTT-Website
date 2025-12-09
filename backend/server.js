@@ -42,6 +42,7 @@ const userRoutes = require('./routes/usersRouter'); // 👈 User Route Import
 const visaRoutes = require('./routes/visaRoute');
 const serviceRoutes = require('./routes/serviceRoute');
 const psaRoutes = require('./routes/psaRoute');
+const cenomarRoutes = require('./routes/cenomarRoute'); // NEW
 const passportRoutes = require('./routes/passportRoute');
 const inquiryRoutes = require('./routes/inquiryRoute');
 const uploadRoutes = require('./routes/uploadRoute');
@@ -58,6 +59,15 @@ app.use('/api/bookings', bookingRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/tours', tourRoutes); 
 app.use('/api/users', userRoutes); // 👈 User Routes Mounted
+app.use('/api/visas', visaRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/psa', psaRoutes);
+app.use('/api/cenomar', cenomarRoutes); // NEW
+app.use('/api/passports', passportRoutes);
+app.use('/api/inquiries', inquiryRoutes);
+app.use('/api/documents', require('./routes/documentRoute'));
+app.use('/api/uploads', uploadRoutes);
+
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
@@ -73,7 +83,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// File Upload for Visa Forms - ADD THIS NEW ROUTE
+// File Upload for Visa Forms
 app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
@@ -87,6 +97,39 @@ app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
         const fileName = req.file.originalname;
 
         console.log('✅ Visa file uploaded:', fileName);
+
+        res.status(200).json({
+            success: true,
+            message: 'File uploaded successfully',
+            data: {
+                fileName: fileName,
+                fileUrl: fileUrl
+            }
+        });
+    } catch (error) {
+        console.error('❌ Upload error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'File upload failed', 
+            error: error.message 
+        });
+    }
+});
+
+// NEW: File Upload for CENOMAR Forms
+app.post('/api/cenomar/upload', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'No file uploaded' 
+            });
+        }
+
+        const fileUrl = `/uploads/${req.file.filename}`;
+        const fileName = req.file.originalname;
+
+        console.log('✅ CENOMAR file uploaded:', fileName);
 
         res.status(200).json({
             success: true,

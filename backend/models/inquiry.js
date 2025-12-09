@@ -10,7 +10,6 @@ const inquirySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // Customer Information
   fullName: {
     type: String,
     required: true,
@@ -27,7 +26,6 @@ const inquirySchema = new mongoose.Schema({
     required: true
   },
   
-  // Additional Details (for VISA inquiries)
   visaCountry: {
     type: String,
     default: null
@@ -38,19 +36,44 @@ const inquirySchema = new mongoose.Schema({
     default: null
   },
 
-  // 👇 DAGDAG MO ITO: Additional Details (for PSA inquiries)
   psaDocument: {
-    type: String, // Dito papasok yung "Birth Certificate", "Cenomar", etc.
+    type: String,
     default: null
   },
   psaId: {
-    type: mongoose.Schema.Types.ObjectId, // Optional: kung gusto mo naka-link din sa PSA collection
+    type: mongoose.Schema.Types.ObjectId, 
     ref: 'PSA',
     default: null
   },
-  // 👆 END NG DAGDAG
-  
-  // Status Tracking
+
+  inquiryType: { 
+    type: String, 
+    enum: ['GENERAL', 'VISA', 'PSA', 'FLIGHT_BOOKING'], 
+    default: 'GENERAL' 
+  },
+
+  flightDetails: {
+    origin: String,
+    destination: String,
+    departureDate: String,
+    arrivalDate: String,
+    airline: String,
+    flightNumber: String,
+    cabinClass: String,
+    duration: String,
+    stops: Number
+  },
+
+  passengers: [{
+    firstName: String,
+    lastName: String,
+    nationality: String,
+    age: Number,
+    type: { String },
+    email: String,     
+    contactNumber: String
+  }],
+
   status: {
     type: String,
     enum: ['PENDING', 'CONTACTED', 'IN_PROGRESS', 'PAYMENT_PENDING', 'PAID', 'COMPLETED', 'CANCELLED'],
@@ -69,19 +92,16 @@ const inquirySchema = new mongoose.Schema({
     default: ''
   },
   
-  // Price Information
   estimatedPrice: {
     type: Number,
     default: 0
   },
   
-  // Admin Notes
   adminNotes: {
     type: String,
     default: ''
   },
   
-  // Contact Tracking
   contactedAt: {
     type: Date,
     default: null
@@ -91,7 +111,6 @@ const inquirySchema = new mongoose.Schema({
     default: null
   },
   
-  // Timestamps
   createdAt: {
     type: Date,
     default: Date.now
@@ -102,7 +121,6 @@ const inquirySchema = new mongoose.Schema({
   }
 });
 
-// Index for faster queries
 inquirySchema.index({ email: 1, createdAt: -1 });
 inquirySchema.index({ status: 1, createdAt: -1 });
 inquirySchema.index({ serviceName: 1, createdAt: -1 });
