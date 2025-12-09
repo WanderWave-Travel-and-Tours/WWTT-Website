@@ -1,11 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* GLOBAL RESET */
 * { box-sizing: border-box; }
 
 body { margin: 0; padding: 0; overflow-x: hidden; }
 
-/* MAIN LAYOUT */
 .airline-page {
     font-family: 'Plus Jakarta Sans', sans-serif;
     background-color: #f8fafc;
@@ -15,7 +13,6 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     position: relative;
 }
 
-/* MAIN CONTENT AREA */
 .airline-main {
     margin-left: 260px; 
     width: calc(100% - 260px);
@@ -30,14 +27,12 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     padding: 40px 60px; 
 }
 
-/* INNER CONTAINER */
 .airline-container {
     max-width: 1600px;
     width: 100%;
     margin: 0 auto;
 }
 
-/* HEADER */
 .airline-header {
     display: flex;
     justify-content: space-between;
@@ -82,7 +77,6 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     transform: translateY(-1px); 
 }
 
-/* STATS CARDS */
 .airline-stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -121,7 +115,6 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     opacity: 0.8; 
 }
 
-/* TABLE SECTION */
 .airline-table-container {
     background: white;
     border-radius: 12px;
@@ -164,7 +157,6 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     background-color: #f8fafc; 
 }
 
-/* Badges & Actions */
 .status-pill {
     padding: 6px 12px;
     border-radius: 6px;
@@ -214,7 +206,6 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     border-color: #3b82f6; 
 }
 
-/* MODAL STYLES */
 .airline-modal-overlay {
     position: fixed;
     top: 0;
@@ -366,7 +357,6 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     background: #2563eb;
 }
 
-/* RESPONSIVE */
 @media (max-width: 1024px) {
     .airline-main { 
         padding: 30px; 

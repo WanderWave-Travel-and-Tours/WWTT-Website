@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../../sidebar/sidebar';
-import { Plus, Plane, Calendar, Tag, AlertCircle, X, Eye } from 'lucide-react';
+import { Plus, Plane, Calendar, Tag, AlertCircle, X, Eye, CreditCard } from 'lucide-react';
 import './AirlineBooking.css';
 
 const AirlineBooking = () => {
@@ -10,6 +10,9 @@ const AirlineBooking = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showContactRemarks, setShowContactRemarks] = useState(false);
+    const [contactRemarks, setContactRemarks] = useState('');
+    const [contactEvidence, setContactEvidence] = useState(null);
 
     // Fetch flight booking inquiries from database
     const fetchFlightBookings = async () => {
@@ -84,9 +87,99 @@ const AirlineBooking = () => {
             'CONTACTED': 'status-issued',
             'PROCESSING': 'status-processing',
             'COMPLETED': 'status-issued',
-            'CANCELLED': 'status-cancelled'
+            'CANCELLED': 'status-cancelled',
+            'PAYMENT_PENDING': 'status-processing',
+            'PAID': 'status-issued'
         };
         return statusMap[status] || 'status-pending';
+    };
+
+    // Handle status update
+    const handleUpdateBookingStatus = async (bookingId, newStatus) => {
+        try {
+            const response = await axios.put(
+                `http://localhost:5000/api/inquiries/${bookingId}/status`,
+                { status: newStatus }
+            );
+
+            if (response.data.success) {
+                alert('Status updated successfully!');
+                fetchFlightBookings();
+                if (selectedBooking && selectedBooking._id === bookingId) {
+                    setSelectedBooking({ ...selectedBooking, status: newStatus });
+                }
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            alert('Failed to update status');
+        }
+    };
+
+    // Initiate contact with remarks
+    const initiateContactStatus = () => {
+        setShowContactRemarks(true);
+    };
+
+    // Submit contact with remarks
+    const submitContactWithRemarks = async () => {
+        if (!selectedBooking) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('status', 'CONTACTED');
+            formData.append('remarks', contactRemarks);
+            
+            if (contactEvidence) {
+                formData.append('evidence', contactEvidence);
+            }
+
+            const response = await axios.put(
+                `http://localhost:5000/api/inquiries/${selectedBooking._id}/status`,
+                formData,
+                {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                }
+            );
+
+            if (response.data.success) {
+                alert('Status updated to CONTACTED with remarks!');
+                fetchFlightBookings();
+                setSelectedBooking({ 
+                    ...selectedBooking, 
+                    status: 'CONTACTED',
+                    remarks: contactRemarks,
+                    evidenceUrl: response.data.data.evidenceUrl 
+                });
+                setShowContactRemarks(false);
+                setContactRemarks('');
+                setContactEvidence(null);
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            alert('Failed to update status');
+        }
+    };
+
+    // Handle request payment
+    const handleRequestPayment = async () => {
+        if (!selectedBooking) return;
+        
+        if (window.confirm('Send payment request to client?')) {
+            try {
+                const response = await axios.post(
+                    `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`
+                );
+                
+                if (response.data.success) {
+                    alert('Payment request sent successfully!');
+                    fetchFlightBookings();
+                    setSelectedBooking({ ...selectedBooking, status: 'PAYMENT_PENDING' });
+                }
+            } catch (error) {
+                console.error('Error requesting payment:', error);
+                alert('Failed to send payment request');
+            }
+        }
     };
 
     return (
@@ -236,13 +329,166 @@ const AirlineBooking = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Update Status Section */}
+                            <div style={{ marginTop: '32px' }}>
+                                <h3 style={{ 
+                                    fontSize: '16px', 
+                                    fontWeight: 700, 
+                                    marginBottom: '12px',
+                                    color: '#0f172a'
+                                }}>
+                                    Update Status
+                                </h3>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    <button
+                                        className="airline-action-btn"
+                                        onClick={() => handleUpdateBookingStatus(selectedBooking._id, 'PENDING')}
+                                        disabled={selectedBooking.status === 'PENDING'}
+                                        style={{ 
+                                            opacity: selectedBooking.status === 'PENDING' ? 0.5 : 1,
+                                            cursor: selectedBooking.status === 'PENDING' ? 'not-allowed' : 'pointer'
+                                        }}
+                                    >
+                                        Set Pending
+                                    </button>
+                                    <button
+                                        className="airline-action-btn"
+                                        onClick={initiateContactStatus}
+                                        disabled={selectedBooking.status === 'CONTACTED'}
+                                        style={{ 
+                                            opacity: selectedBooking.status === 'CONTACTED' ? 0.5 : 1,
+                                            cursor: selectedBooking.status === 'CONTACTED' ? 'not-allowed' : 'pointer'
+                                        }}
+                                    >
+                                        Set Contacted (With Remarks)
+                                    </button>
+                                    <button
+                                        className="airline-action-btn"
+                                        onClick={handleRequestPayment}
+                                        disabled={selectedBooking.status === 'PAYMENT_PENDING' || selectedBooking.status === 'PAID'}
+                                        style={{ 
+                                            background: '#059669',
+                                            color: 'white',
+                                            borderColor: '#059669',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            opacity: (selectedBooking.status === 'PAYMENT_PENDING' || selectedBooking.status === 'PAID') ? 0.5 : 1,
+                                            cursor: (selectedBooking.status === 'PAYMENT_PENDING' || selectedBooking.status === 'PAID') ? 'not-allowed' : 'pointer'
+                                        }}
+                                    >
+                                        <CreditCard size={16} />
+                                        Approve & Request Payment
+                                    </button>
+                                    <button
+                                        className="airline-action-btn"
+                                        onClick={() => handleUpdateBookingStatus(selectedBooking._id, 'COMPLETED')}
+                                        disabled={selectedBooking.status === 'COMPLETED'}
+                                        style={{ 
+                                            opacity: selectedBooking.status === 'COMPLETED' ? 0.5 : 1,
+                                            cursor: selectedBooking.status === 'COMPLETED' ? 'not-allowed' : 'pointer'
+                                        }}
+                                    >
+                                        Set Completed
+                                    </button>
+                                    <button
+                                        className="airline-action-btn"
+                                        onClick={() => handleUpdateBookingStatus(selectedBooking._id, 'CANCELLED')}
+                                        disabled={selectedBooking.status === 'CANCELLED'}
+                                        style={{ 
+                                            opacity: selectedBooking.status === 'CANCELLED' ? 0.5 : 1,
+                                            cursor: selectedBooking.status === 'CANCELLED' ? 'not-allowed' : 'pointer',
+                                            background: '#ef4444',
+                                            color: 'white',
+                                            borderColor: '#ef4444'
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+
                         <div className="airline-modal-footer">
                             <button className="airline-btn-secondary" onClick={handleCloseModal}>
                                 Close
                             </button>
-                            <button className="airline-btn-primary">
-                                Update Status
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Contact with Remarks Modal */}
+            {showContactRemarks && (
+                <div className="airline-modal-overlay" style={{ zIndex: 1100 }}>
+                    <div className="airline-modal-content" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+                        <div className="airline-modal-header">
+                            <h3>Add Remarks & Evidence</h3>
+                            <button className="airline-modal-close" onClick={() => setShowContactRemarks(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="airline-modal-body">
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    color: '#64748b',
+                                    marginBottom: '8px',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Remarks / Issues Found *
+                                </label>
+                                <textarea 
+                                    rows="4"
+                                    style={{ 
+                                        width: '100%', 
+                                        resize: 'none',
+                                        padding: '12px',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        fontFamily: 'Plus Jakarta Sans, sans-serif'
+                                    }}
+                                    value={contactRemarks}
+                                    onChange={(e) => setContactRemarks(e.target.value)}
+                                    placeholder="Explain issues or notes about this booking..."
+                                />
+                            </div>
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    color: '#64748b',
+                                    marginBottom: '8px',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Upload Evidence (Screenshot/Doc)
+                                </label>
+                                <input 
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    onChange={(e) => setContactEvidence(e.target.files[0])}
+                                    style={{ 
+                                        display: 'block',
+                                        width: '100%',
+                                        padding: '10px',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        fontSize: '14px'
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className="airline-modal-footer">
+                            <button className="airline-btn-secondary" onClick={() => setShowContactRemarks(false)}>
+                                Cancel
+                            </button>
+                            <button className="airline-btn-primary" onClick={submitContactWithRemarks}>
+                                Proceed & Set Contacted
                             </button>
                         </div>
                     </div>
