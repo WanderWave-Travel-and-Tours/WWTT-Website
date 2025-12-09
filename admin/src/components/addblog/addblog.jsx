@@ -6,7 +6,13 @@ import './addblog.css';
 
 const AddBlog = () => {
     const navigate = useNavigate();
-     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+    
+    // --- SIDEBAR LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR LOGIC END ---
     
     const [blogDetails, setBlogDetails] = useState({
         title: '',
@@ -113,9 +119,13 @@ const AddBlog = () => {
 
     return (
         <div className="blog-page">
-            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
+            <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
             
-            <main className="blog-main">
+            {/* Conditional class applied here */}
+            <main className={`blog-main ${isSidebarCollapsed ? "blog-main--collapsed" : ""}`}>
                 <div className="blog-container">
                     <header className="blog-header">
                         <h1 className="blog-title">CREATE NEW BLOG</h1>

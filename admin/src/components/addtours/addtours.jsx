@@ -4,6 +4,13 @@ import Sidebar from "../sidebar/sidebar";
 import "./addtours.css";
 
 const AddTour = () => {
+  // --- SIDEBAR LOGIC START ---
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+  // --- SIDEBAR LOGIC END ---
+
   const [title, setTitle] = useState("");
   const [destination, setDestination] = useState("");
   const [supplierRate, setSupplierRate] = useState("");
@@ -182,16 +189,18 @@ const AddTour = () => {
 
   return (
     <div className="pkg-page">
-      <Sidebar />
-      <main className="pkg-main">
+      {/* 1. Pass the state and toggle function to Sidebar */}
+      <Sidebar 
+        isCollapsed={isSidebarCollapsed} 
+        toggleSidebar={toggleSidebar} 
+      />
+      
+      {/* 2. Apply conditional class to the main content */}
+      <main className={`pkg-main ${
+        isSidebarCollapsed ? "pkg-main--collapsed" : ""
+      }`}>
         <div className="pkg-container">
           <header className="pkg-header">
-            <button className="pkg-back" onClick={() => navigate(-1)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Back
-            </button>
             <h1 className="pkg-title">NEW TOUR</h1>
             <p className="pkg-subtitle">
               Add a new destination tour offer

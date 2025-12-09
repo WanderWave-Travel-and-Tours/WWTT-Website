@@ -4,6 +4,14 @@ import Sidebar from '../sidebar/sidebar';
 import './viewblog.css';
 
 const ViewBlog = () => {
+
+    // --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
+
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -70,7 +78,10 @@ const ViewBlog = () => {
 
     return (
         <div className="vb-page">
-            <Sidebar />
+                        <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
             <main className="vb-main">
                 <div className="vb-container">
                     <header className="vb-header">

@@ -4,6 +4,14 @@ import Sidebar from '../sidebar/sidebar';
 import './viewposter.css';
 
 const ViewPoster = () => {
+
+        // --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
+
     const [posters, setPosters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -73,7 +81,10 @@ const ViewPoster = () => {
 
     return (
         <div className="vp-page">
-            <Sidebar />
+                        <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
             <main className="vp-main">
                 <div className="vp-container">
                     <header className="vp-header">

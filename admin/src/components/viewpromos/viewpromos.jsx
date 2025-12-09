@@ -3,6 +3,13 @@ import Sidebar from '../sidebar/sidebar';
 import './ViewPromos.css';
 
 const ViewPromos = () => {
+    // --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
+
     const [promos, setPromos] = useState([]);
 
     const fetchPromos = async () => {
@@ -60,7 +67,10 @@ const ViewPromos = () => {
 
     return (
         <div className="vpromos-page">
-            <Sidebar />
+         <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
             <main className="vpromos-main">
                 <div className="vpromos-container">
                     <header className="vpromos-header">
