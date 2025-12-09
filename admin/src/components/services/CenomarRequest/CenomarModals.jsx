@@ -15,13 +15,14 @@ const formatDate = (dateString) => {
 };
 
 const formatFileSize = (bytes) => {
+  if (!bytes) return "";
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB";
   return (bytes / (1024 * 1024)).toFixed(2) + " MB";
 };
 
 // ==========================================
-// 1. INQUIRY DETAILS MODAL (Unique Style)
+// 1. INQUIRY DETAILS MODAL
 // ==========================================
 export const InquiryModal = ({
   inquiry, documents = [], onClose, onUpdateStatus, onRequestPayment,
@@ -50,6 +51,31 @@ export const InquiryModal = ({
 
   const statusConfig = getStatusConfig(inquiry.status);
   const StatusIcon = statusConfig.icon;
+
+  // --- [FIXED] FILTERING LOGIC ---
+  // 1. Check muna kung nasa 'deliveredDocuments' field ng inquiry (Style ng User Side)
+  // 2. Kung wala, fallback sa pag-filter ng documents list (Backup)
+  
+  let finalSentDocs = [];
+
+  if (inquiry.deliveredDocuments && inquiry.deliveredDocuments.length > 0) {
+    // Priority: Gamitin ang data na nasa inquiry object mismo (gaya ng User Side)
+    finalSentDocs = inquiry.deliveredDocuments;
+  } else {
+    // Fallback: Filter mula sa general documents list
+    finalSentDocs = documents.filter(doc => 
+      doc.uploader === 'ADMIN' || 
+      doc.category === 'DELIVERABLE' || 
+      doc.isAdminUpload === true
+    );
+  }
+
+  // Filter Client Documents (Exclude anything that looks like an Admin Doc)
+  // Note: Since we are prioritizing deliveredDocuments for admin view, 
+  // we strictly filter documents prop for client uploads.
+  const clientDocs = documents.filter(doc => 
+    !doc.uploader || doc.uploader === 'USER' || doc.category === 'REQUIREMENT'
+  );
 
   return (
     <div className="cnm-overlay" onClick={onClose}>
@@ -81,13 +107,14 @@ export const InquiryModal = ({
 
         {/* BODY */}
         <div className="cnm-body">
+          
           {/* ALERTS */}
           {inquiry.status === "PAID" && (
             <div className="cnm-alert cnm-alert-warning">
               <div className="cnm-alert-icon"><CreditCard size={22} /></div>
               <div className="cnm-alert-content">
                 <h4 className="cnm-alert-title">Payment Verification Required</h4>
-                <p className="cnm-alert-desc">The user has submitted payment proof. Please review and verify the transaction to proceed with document processing.</p>
+                <p className="cnm-alert-desc">The user has submitted payment proof. Please review.</p>
               </div>
               <button className="cnm-btn cnm-btn-success cnm-btn-sm" onClick={onConfirmPayment}>
                 <CheckCircle size={16} /><span>Confirm Payment</span>
@@ -95,48 +122,98 @@ export const InquiryModal = ({
             </div>
           )}
 
-          {inquiry.status === "CONFIRMED" && (
+          {inquiry.status === "CONFIRMED" && !showDeliverDocs && finalSentDocs.length === 0 && (
             <div className="cnm-alert cnm-alert-info">
               <div className="cnm-alert-icon"><Upload size={22} /></div>
               <div className="cnm-alert-content">
                 <h4 className="cnm-alert-title">Ready for Document Delivery</h4>
-                <p className="cnm-alert-desc">Payment has been confirmed. Upload the final CENOMAR documents to complete this request.</p>
+                <p className="cnm-alert-desc">Payment confirmed. Upload the final CENOMAR documents now.</p>
               </div>
-              {!showDeliverDocs && (
-                <button className="cnm-btn cnm-btn-primary cnm-btn-sm" onClick={() => setShowDeliverDocs(true)}>
-                  <Upload size={16} /><span>Upload Documents</span>
-                </button>
-              )}
+              <button className="cnm-btn cnm-btn-primary cnm-btn-sm" onClick={() => setShowDeliverDocs(true)}>
+                <Upload size={16} /><span>Upload Documents</span>
+              </button>
             </div>
           )}
 
-          {/* UPLOAD ZONE */}
-          {showDeliverDocs && (
-            <div className="cnm-upload-zone">
+          {/* === [UPDATED] DELIVERY / ADMIN UPLOAD ZONE === */}
+          {(showDeliverDocs || inquiry.status === 'COMPLETED' || finalSentDocs.length > 0) && (
+            <div className="cnm-upload-zone" style={{ 
+              borderColor: inquiry.status === 'COMPLETED' ? '#22c55e' : '#cbd5e1',
+              backgroundColor: inquiry.status === 'COMPLETED' ? '#f0fdf4' : undefined
+            }}>
               <div className="cnm-upload-header">
-                <div className="cnm-upload-icon"><Upload size={20} /></div>
+                <div className="cnm-upload-icon" style={{ background: inquiry.status === 'COMPLETED' ? '#22c55e' : undefined }}>
+                  {inquiry.status === 'COMPLETED' ? <CheckCircle size={20} color="white"/> : <Upload size={20} color="white"/>}
+                </div>
                 <div className="cnm-upload-text">
-                  <h4>Upload Final Documents</h4>
-                  <p>Select PDF, JPG, or PNG files (max 10MB each)</p>
+                  <h4>{inquiry.status === 'COMPLETED' ? 'Processing Complete' : 'Upload Final Documents'}</h4>
+                  <p>
+                    {inquiry.status === 'COMPLETED' 
+                      ? 'The following documents have been sent to the user:' 
+                      : 'If you have retrieved the documents, upload them here to complete the order.'}
+                  </p>
                 </div>
               </div>
 
+              {/* === [FIXED LIST] DISPLAY SENT FILES === */}
+              {finalSentDocs.length > 0 && (
+                <div className="cnm-file-list" style={{ marginBottom: '20px' }}>
+                  <div className="cnm-file-header" style={{ color: '#16a34a' }}><span>Sent to User (Stored)</span></div>
+                  {finalSentDocs.map((doc, idx) => (
+                    <div key={doc._id || idx} className="cnm-file-item" style={{ 
+                      borderColor: '#86efac', 
+                      background: 'white',
+                      boxShadow: '0 2px 5px rgba(22, 163, 74, 0.05)'
+                    }}>
+                      <div className="cnm-file-icon" style={{ color: '#16a34a', background: '#dcfce7' }}>
+                        <FileText size={18} />
+                      </div>
+                      <div className="cnm-file-info">
+                        {/* Support both fileName (from inquiry array) and originalName (from docs array) */}
+                        <span className="cnm-file-name" style={{fontWeight:'700', color: '#15803d'}}>
+                          {doc.fileName || doc.originalName}
+                        </span>
+                        <span className="cnm-file-size" style={{color:'#16a34a'}}>
+                           Sent • {formatDate(doc.uploadedAt)}
+                        </span>
+                      </div>
+                      <a 
+                        href={`http://localhost:5000${doc.fileUrl}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="cnm-btn cnm-btn-ghost cnm-btn-sm" 
+                        style={{color:'#16a34a'}}
+                      >
+                        <TrendingUp size={14} /> View
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* UPLOAD INPUT BOX */}
               <div className="cnm-upload-wrapper">
                 <input
                   type="file" multiple accept=".pdf,.jpg,.png,.jpeg"
                   onChange={(e) => setDeliveryFiles(Array.from(e.target.files))}
                   className="cnm-hidden-input" id="delivery-files"
                 />
-                <label htmlFor="delivery-files" className="cnm-upload-label">
-                  <Package size={24} /><span>Click to browse or drag files here</span>
+                <label htmlFor="delivery-files" className="cnm-upload-label" style={{ background: 'white', borderStyle: 'dashed' }}>
+                  <Package size={24} />
+                  <span>
+                    {inquiry.status === 'COMPLETED' 
+                      ? 'Click to send ADDITIONAL files' 
+                      : 'Click to browse or drag files here'}
+                  </span>
                 </label>
               </div>
 
+              {/* PENDING UPLOADS (Ready to Send) */}
               {deliveryFiles.length > 0 && (
                 <div className="cnm-file-list">
-                  <div className="cnm-file-header"><span>{deliveryFiles.length} file{deliveryFiles.length > 1 ? "s" : ""} selected</span></div>
+                  <div className="cnm-file-header"><span>Ready to Send ({deliveryFiles.length})</span></div>
                   {deliveryFiles.map((file, idx) => (
-                    <div key={idx} className="cnm-file-item">
+                    <div key={idx} className="cnm-file-item" style={{ borderStyle: 'dashed' }}>
                       <div className="cnm-file-icon"><FileText size={18} /></div>
                       <div className="cnm-file-info">
                         <span className="cnm-file-name">{file.name}</span>
@@ -150,16 +227,21 @@ export const InquiryModal = ({
                 </div>
               )}
 
-              <div className="cnm-upload-actions">
-                <button className="cnm-btn cnm-btn-ghost" onClick={() => setShowDeliverDocs(false)}>Cancel</button>
-                <button className="cnm-btn cnm-btn-primary" onClick={handleDeliverDocsSubmit} disabled={deliveryFiles.length === 0}>
-                  <Send size={16} /><span>Send to User</span>
-                </button>
-              </div>
+              {/* BUTTONS */}
+              {deliveryFiles.length > 0 && (
+                <div className="cnm-upload-actions">
+                  <button className="cnm-btn cnm-btn-ghost" onClick={() => { setDeliveryFiles([]); if(inquiry.status !== 'COMPLETED') setShowDeliverDocs(false); }}>
+                    Cancel
+                  </button>
+                  <button className="cnm-btn cnm-btn-primary" onClick={handleDeliverDocsSubmit}>
+                    <Send size={16} /><span>{inquiry.status === 'COMPLETED' ? 'Send Additional' : 'Send & Complete'}</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* CLIENT INFO CARD (2 Columns Grid) */}
+          {/* CLIENT INFORMATION */}
           <div className="cnm-card">
             <div className="cnm-card-header">
               <h3 className="cnm-card-title">Client Information</h3>
@@ -206,21 +288,21 @@ export const InquiryModal = ({
             </div>
           </div>
 
-          {/* SUBMITTED DOCUMENTS */}
+          {/* SUBMITTED DOCUMENTS (CLIENT) */}
           <div className="cnm-card">
             <div className="cnm-card-header">
-              <h3 className="cnm-card-title">Submitted Documents</h3>
-              <span className="cnm-badge cnm-badge-amber">{documents.length} {documents.length === 1 ? "file" : "files"}</span>
+              <h3 className="cnm-card-title">Submitted Documents (Requirements)</h3>
+              <span className="cnm-badge cnm-badge-amber">{clientDocs.length} file{clientDocs.length === 1 ? "" : "s"}</span>
             </div>
-            {documents.length === 0 ? (
+            {clientDocs.length === 0 ? (
               <div className="cnm-empty">
                 <div className="cnm-empty-icon"><FileText size={48} /></div>
-                <h4 className="cnm-empty-title">No Documents Yet</h4>
+                <h4 className="cnm-empty-title">No Requirements Yet</h4>
                 <p className="cnm-empty-desc">User hasn't uploaded any documents for this request.</p>
               </div>
             ) : (
               <div className="cnm-doc-list">
-                {documents.map((doc) => (
+                {clientDocs.map((doc) => (
                   <div key={doc._id} className="cnm-doc-item">
                     <div className="cnm-doc-icon"><FileText size={20} /></div>
                     <div className="cnm-doc-info">
@@ -283,15 +365,14 @@ export const InquiryModal = ({
               </button>
             </div>
           </div>
+
         </div>
       </div>
     </div>
   );
 };
 
-// ==========================================
-// 2. CONTACT REMARKS MODAL (Unique Style)
-// ==========================================
+// ... (Other components like ContactRemarksModal, etc. stay the same as before) ...
 export const ContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit, onClose }) => (
   <div className="cnm-overlay">
     <div className="cnm-modal cnm-modal-sm">
@@ -308,7 +389,6 @@ export const ContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit
           <X size={20} />
         </button>
       </div>
-
       <div className="cnm-body">
         <div className="cnm-form-group">
           <label className="cnm-form-label">Remarks for User <span className="cnm-label-req">*</span></label>
@@ -318,7 +398,6 @@ export const ContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit
           />
           <span className="cnm-hint">{remarks.length} / 500 characters</span>
         </div>
-
         <div className="cnm-form-group">
           <label className="cnm-form-label">Attach Evidence (Optional)</label>
           <div className="cnm-file-wrapper">
@@ -332,7 +411,6 @@ export const ContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit
           </div>
           <span className="cnm-hint">PDF, JPG, or PNG (max 5MB)</span>
         </div>
-
         <button className="cnm-btn cnm-btn-primary cnm-btn-block" onClick={onSubmit} disabled={!remarks.trim()}>
           <Send size={16} /><span>Send Report</span>
         </button>
@@ -341,9 +419,6 @@ export const ContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit
   </div>
 );
 
-// ==========================================
-// 3. SERVICE LIST MODAL (Unique Style)
-// ==========================================
 export const ServiceListModal = ({ services, onAdd, onEdit, onDelete, onClose }) => (
   <div className="cnm-overlay" onClick={onClose}>
     <div className="cnm-modal cnm-modal-xl" onClick={(e) => e.stopPropagation()}>
@@ -360,12 +435,10 @@ export const ServiceListModal = ({ services, onAdd, onEdit, onDelete, onClose })
           <X size={20} />
         </button>
       </div>
-
       <div className="cnm-body">
         <button className="cnm-btn cnm-btn-primary cnm-btn-block cnm-btn-add" onClick={onAdd}>
           <Plus size={20} /><span>Add New Service</span>
         </button>
-
         {services.length === 0 ? (
           <div className="cnm-empty">
             <div className="cnm-empty-icon"><FileText size={48} /></div>
@@ -401,9 +474,6 @@ export const ServiceListModal = ({ services, onAdd, onEdit, onDelete, onClose })
   </div>
 );
 
-// ==========================================
-// 4. SERVICE EDITOR MODAL (Unique Style)
-// ==========================================
 export const ServiceEditorModal = ({
   isEditorOpen, form, setForm, requirements, steps, downloads, accordionState,
   toggleAccordion, addCategory, removeCategory, handleCategoryTitleChange,
@@ -423,7 +493,6 @@ export const ServiceEditorModal = ({
           <X size={20} />
         </button>
       </div>
-
       <div className="cnm-body">
         {/* BASIC INFO */}
         <div className="cnm-form-section">
@@ -455,7 +524,6 @@ export const ServiceEditorModal = ({
             />
           </div>
         </div>
-
         {/* REQUIREMENTS */}
         <div className="cnm-accordion">
           <button className={`cnm-acc-header ${accordionState.requirements ? "active" : ""}`} onClick={() => toggleAccordion("requirements")}>
@@ -502,7 +570,6 @@ export const ServiceEditorModal = ({
             </div>
           )}
         </div>
-
         {/* STEPS */}
         <div className="cnm-accordion">
           <button className={`cnm-acc-header ${accordionState.stepsProcess ? "active" : ""}`} onClick={() => toggleAccordion("stepsProcess")}>
@@ -531,7 +598,6 @@ export const ServiceEditorModal = ({
             </div>
           )}
         </div>
-
         {/* DOWNLOADS */}
         <div className="cnm-accordion">
           <button className={`cnm-acc-header ${accordionState.downloadForms ? "active" : ""}`} onClick={() => toggleAccordion("downloadForms")}>
@@ -559,7 +625,6 @@ export const ServiceEditorModal = ({
           )}
         </div>
       </div>
-
       <div className="cnm-footer">
         <button className="cnm-btn cnm-btn-ghost" onClick={onClose}>Cancel</button>
         <button className="cnm-btn cnm-btn-primary" onClick={onSave}>
