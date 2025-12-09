@@ -144,20 +144,48 @@ const CenomarRequest = () => {
     } catch (error) { console.error(error); alert('Failed to confirm payment'); }
   };
 
-  const handleDeliverDocuments = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (deliveryFiles.length === 0) return alert('Select files first');
-    const formData = new FormData();
-    deliveryFiles.forEach(file => formData.append('documents', file));
-    try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      if (response.data.success) {
-        alert('Documents sent!'); fetchInquiries(); setShowDeliverDocs(false); setDeliveryFiles([]);
-        setSelectedInquiry({ ...selectedInquiry, status: 'COMPLETED' });
-      }
-    } catch (error) { console.error(error); alert('Failed to send documents'); }
-  };
+  // Sa loob ng CenomarRequest.js
 
+// Sa loob ng CenomarRequest.js
+
+const handleDeliverDocuments = async (e) => {
+  if (e && e.preventDefault) e.preventDefault();
+  if (deliveryFiles.length === 0) return alert('Select files first');
+
+  const formData = new FormData();
+  deliveryFiles.forEach(file => formData.append('documents', file));
+  
+  // NOTE: Siguraduhin sa backend na sine-save nito ang 'uploader': 'ADMIN'
+  // formData.append('uploader', 'ADMIN'); 
+
+  try {
+    const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
+      headers: { 'Content-Type': 'multipart/form-data' } 
+    });
+
+    if (response.data.success) {
+      alert('Documents sent successfully!');
+
+      // 1. Refresh ang main table
+      fetchInquiries(); 
+
+      // 2. Update local state para maging COMPLETED agad ang itsura
+      setSelectedInquiry({ ...selectedInquiry, status: 'COMPLETED' });
+
+      // 3. ITO ANG KULANG DATI: Fetch ulit ang documents para makuha yung kakasend mo lang
+      await fetchDocuments(selectedInquiry._id);
+
+      // 4. Clear ang input selection
+      setDeliveryFiles([]);
+      
+      // 5. Wag isara ang modal/section para makita mo yung result
+      setShowDeliverDocs(true); 
+    }
+  } catch (error) { 
+    console.error(error); 
+    alert('Failed to send documents'); 
+  }
+};
   // --- CMS HANDLERS ---
   const handleManageService = () => setIsCENOMARFormsOpen(true);
 
