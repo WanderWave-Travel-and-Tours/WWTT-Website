@@ -9,7 +9,6 @@ const Payment = () => {
   const navigate = useNavigate();
   const bookingData = location.state?.bookingData;
 
-  // UI State for selecting method (Visual purpose mostly, unless backend requires it)
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -22,26 +21,27 @@ const Payment = () => {
 
   if (!bookingData) return null;
 
-  // --- FUNCTIONAL LOGIC (Integrated from your working code) ---
+  // 🔥 FIXED: Send only bookingId, not the entire object
   const handlePayment = async () => {
     setIsProcessing(true);
 
     try {
+      console.log('💳 Creating payment for booking:', bookingData._id);
+      
       const response = await fetch('http://localhost:5000/api/payment/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: bookingData.totalAmount * 100, // PayMongo requires cents
-          description: `Booking for ${bookingData.packageName}`,
-          bookingData: bookingData,
-          // Optional: You can pass paymentMethod if your backend filters based on this
-          selectedMethod: paymentMethod 
+          bookingId: bookingData._id  // ✅ FIXED: Send just the ID
         })
       });
 
       const data = await response.json();
 
+      console.log('📥 Payment response:', data);
+
       if (data.success) {
+        console.log('✅ Redirecting to:', data.checkoutUrl);
         // Redirect to PayMongo Checkout URL
         window.location.href = data.checkoutUrl;
       } else {
@@ -49,8 +49,8 @@ const Payment = () => {
       }
 
     } catch (error) {
-      console.error('Payment error:', error);
-      toast.error("Failed to process payment. Please try again.");
+      console.error('❌ Payment error:', error);
+      toast.error(error.message || "Failed to process payment. Please try again.");
       setIsProcessing(false);
     }
   };

@@ -7,11 +7,9 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
   const [selectedFlight, setSelectedFlight] = useState(null);
 
   const handleBookClick = (flight) => {
-    // If onFlightSelect callback exists (for package integration), use it
     if (onFlightSelect) {
       onFlightSelect(flight);
     } else {
-      // Otherwise, show the regular booking modal
       setSelectedFlight(flight);
     }
   };
@@ -19,8 +17,6 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
   return (
     <div className="results-section">
       <div className="results-content">
-        
-        {/* SUCCESS BANNER */}
         {searchInfo && flights.length > 0 && (
           <div className="search-success-banner">
             <div className="banner-left">
@@ -39,7 +35,7 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
                 </div>
                 <div className="route-subtext">
                     <span className="check-icon">✓</span>
-                    Found {searchInfo.count} {searchInfo.count === 1 ? "flight" : "flights"} • {searchParams.cabinType} • 1 Passenger
+                    Found {searchInfo.count} {searchInfo.count === 1 ? "flight" : "flights"} • {searchParams.cabinType} • {searchInfo.pricingInfo?.passengers || 1} {searchInfo.pricingInfo?.passengers > 1 ? 'Passengers' : 'Passenger'}
                 </div>
             </div>
 
@@ -57,7 +53,6 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
           </div>
         )}
 
-        {/* ERROR BANNER */}
         {error && (
           <div className="error-banner">
             <div className="error-icon">✕</div>
@@ -65,7 +60,6 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
           </div>
         )}
 
-        {/* LOADING STATE */}
         {loading && (
           <div className="loading-state">
             <div className="loading-spinner"></div>
@@ -73,13 +67,10 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
           </div>
         )}
 
-        {/* FLIGHT CARDS */}
         <div className="flight-results">
           {flights.map((flight, index) => (
             <div key={flight.id || index} className="flight-card">
               <div className="flight-main">
-                
-                {/* AIRLINE SECTION */}
                 <div className="airline-section">
                   {flight.airline?.logo ? (
                     <div className="airline-logo-wrapper">
@@ -101,8 +92,6 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
                     {flight.airline?.name || "Unknown Airline"}
                   </div>
                 </div>
-
-                {/* FLIGHT DETAILS (Time & Path) */}
                 <div className="flight-details">
                   <div className="flight-time-info">
                     <div className="time-large">{flight.departure?.displayTime}</div>
@@ -160,8 +149,6 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
               <p>Search airports worldwide - Philippines, USA, Europe, Asia, and more!</p>
             </div>
           )}
-          
-          {/* RENDER MODAL IF FLIGHT IS SELECTED (only for standalone mode) */}
           {selectedFlight && !onFlightSelect && (
             <FlightBookingModal 
               flight={selectedFlight} 

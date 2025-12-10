@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   MapPin, Calendar, Plane, Hotel, Utensils, Bus, Camera, Briefcase, 
-  ChevronLeft, ChevronRight, Minus, Plus, X, MessageCircle 
+  ChevronLeft, ChevronRight, Minus, Plus, X, MessageCircle, Upload, CheckCircle 
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
-import FlightSearch from '../flightSearch/flightSearch'; // FIXED: Correct path
+import FlightSearch from '../flightSearch/flightSearch';
+import axios from 'axios';
 
 const BookingRightForm = ({ pkg }) => {
   const navigate = useNavigate();
@@ -20,26 +21,70 @@ const BookingRightForm = ({ pkg }) => {
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [bookingWithAirfare, setBookingWithAirfare] = useState(false);
   
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    message: ''
-  });
+  // MULTI-PASSENGER MODAL STATE
+  const [passengerStep, setPassengerStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  
+  const totalPassengers = quantities.adult || 1;
+  
+  // Check if international flight (if airfare is added)
+  const isInternationalFlight = selectedFlight && 
+    selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
+  const requiresPassport = isInternationalFlight;
+  const requiresID = selectedFlight && !isInternationalFlight;
 
-  const packageTypes = [
-    { id: 'adult', label: 'Standard Pax', description: '3+ years old', pricePerPax: pkg.price, discount: 'Best Value' }
-  ];
+  // Initialize passengers
+  const [passengers, setPassengers] = useState(
+    Array.from({ length: totalPassengers }, (_, idx) => ({
+      passengerNumber: idx + 1,
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      dateOfBirth: '',
+      age: '',
+      gender: '',
+      address: '',
+      nationality: 'Filipino',
+      idFile: null,
+      idFileName: '',
+      passportFile: null,
+      passportFileName: ''
+    }))
+  );
 
-  // PACKAGE TOTAL
+  // Update passengers when quantity changes
+  React.useEffect(() => {
+    const newTotal = quantities.adult || 1;
+    if (newTotal !== passengers.length) {
+      setPassengers(
+        Array.from({ length: newTotal }, (_, idx) => 
+          passengers[idx] || {
+            passengerNumber: idx + 1,
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            dateOfBirth: '',
+            age: '',
+            gender: '',
+            address: '',
+            nationality: 'Filipino',
+            idFile: null,
+            idFileName: '',
+            passportFile: null,
+            passportFileName: ''
+          }
+        )
+      );
+    }
+  }, [quantities.adult]);
+
   const packageTotal = Object.entries(quantities).reduce((sum, [type, qty]) => {
-    const pType = packageTypes.find(p => p.id === type);
-    return sum + (pType?.pricePerPax || 0) * qty;
+    return sum + (pkg.price * qty);
   }, 0);
 
-  // AIRFARE TOTAL (if selected)
   const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
-
-  // GRAND TOTAL (Package + Airfare)
   const totalAmount = packageTotal + airfareTotal;
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
@@ -69,7 +114,6 @@ const BookingRightForm = ({ pkg }) => {
     setCurrentMonth(new Date(newDate));
   };
 
-  // REGULAR BOOKING (Package Only)
   const handleBookClick = () => {
     if (!selectedDate) {
       toast.error("Please select a travel date first!", {
@@ -79,10 +123,10 @@ const BookingRightForm = ({ pkg }) => {
       return;
     }
     setBookingWithAirfare(false);
+    setPassengerStep(1);
     setShowModal(true);
   };
 
-  // BOOK WITH AIRFARE - Opens Flight Search
   const handleBookWithAirfare = () => {
     if (!selectedDate) {
       toast.error("Please select a travel date first!", {
@@ -94,7 +138,6 @@ const BookingRightForm = ({ pkg }) => {
     setShowFlightSearchModal(true);
   };
 
-  // CALLBACK: When user selects a flight from FlightSearchResults
   const handleFlightSelected = (flight) => {
     setSelectedFlight(flight);
     setShowFlightSearchModal(false);
@@ -105,28 +148,101 @@ const BookingRightForm = ({ pkg }) => {
       { duration: 3000 }
     );
     
-    // Auto-open booking modal after selecting flight
     setTimeout(() => {
+      setPassengerStep(1);
       setShowModal(true);
     }, 500);
   };
 
-  // REMOVE SELECTED FLIGHT
   const handleRemoveFlight = () => {
     setSelectedFlight(null);
     setBookingWithAirfare(false);
     toast.success("Flight removed from booking", { duration: 2000 });
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handlePassengerChange = (index, field, value) => {
+    const updated = [...passengers];
+    updated[index][field] = value;
+    setPassengers(updated);
+  };
+
+  const handleFileUpload = (index, fileType, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const updated = [...passengers];
+      if (fileType === 'id') {
+        updated[index].idFile = file;
+        updated[index].idFileName = file.name;
+      } else if (fileType === 'passport') {
+        updated[index].passportFile = file;
+        updated[index].passportFileName = file.name;
+      }
+      setPassengers(updated);
+    }
+  };
+
+  const removeFile = (index, fileType) => {
+    const updated = [...passengers];
+    if (fileType === 'id') {
+      updated[index].idFile = null;
+      updated[index].idFileName = '';
+    } else if (fileType === 'passport') {
+      updated[index].passportFile = null;
+      updated[index].passportFileName = '';
+    }
+    setPassengers(updated);
+  };
+
+  const validateCurrentPassenger = () => {
+    const p = passengers[passengerStep - 1];
+    if (!p.firstName || !p.lastName || !p.email || !p.phone || !p.dateOfBirth || 
+        !p.age || !p.gender || !p.address || !p.nationality) {
+      toast.error(`Please fill in all required fields for Passenger ${passengerStep}`);
+      return false;
+    }
+    
+    // Only check ID/Passport if booking with airfare
+    if (bookingWithAirfare) {
+      if (requiresID && !p.idFile) {
+        toast.error(`Please upload a valid ID for Passenger ${passengerStep}`);
+        return false;
+      }
+      if (requiresPassport && !p.passportFile) {
+        toast.error(`Please upload passport for Passenger ${passengerStep}`);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleNextPassenger = (e) => {
+    e.preventDefault();
+    if (validateCurrentPassenger()) {
+      if (passengerStep < totalPassengers) {
+        setPassengerStep(passengerStep + 1);
+      } else {
+        handleFinalSubmit(e);
+      }
+    }
+  };
+
+  const handleBackPassenger = () => {
+    if (passengerStep > 1) setPassengerStep(passengerStep - 1);
   };
 
   const handleFinalSubmit = async (e) => {
-    e.preventDefault();
+  if (e) e.preventDefault();
+  if (!validateCurrentPassenger()) return;
+  
+  setLoading(true);
+
+  try {
+    // Create FormData object
+    const formData = new FormData();
     
     const endDate = getEndDate();
+    
+    // Prepare booking data object
     const bookingData = {
       packageName: pkg.name,
       startDate: `${monthNames[currentMonth.getMonth()]} ${selectedDate}, ${currentMonth.getFullYear()}`,
@@ -134,8 +250,6 @@ const BookingRightForm = ({ pkg }) => {
       duration: pkg.duration,
       pax: quantities,
       packageTotal: packageTotal,
-      
-      // AIRFARE DATA (if applicable)
       includesAirfare: bookingWithAirfare,
       flightDetails: selectedFlight ? {
         airline: selectedFlight.airline.name,
@@ -144,32 +258,177 @@ const BookingRightForm = ({ pkg }) => {
         departureTime: selectedFlight.departure.time,
         arrivalTime: selectedFlight.arrival.time,
         price: selectedFlight.price.amount,
-        formatted: selectedFlight.price.formatted
+        formatted: selectedFlight.price.formatted,
+        isInternational: isInternationalFlight
       } : null,
       airfareTotal: airfareTotal,
-      
       totalAmount: totalAmount,
-      fullName: formData.fullName,
-      email: formData.email,
-      message: formData.message
+      primaryContact: {
+        fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
+        email: passengers[0].email,
+        phone: passengers[0].phone
+      }
     };
 
+    // Append booking data as JSON string
+    formData.append('bookingData', JSON.stringify(bookingData));
+
+    // 🔥 CRITICAL: Append passenger fields individually
+    console.log('📤 Appending', passengers.length, 'passengers to FormData');
+    
+    passengers.forEach((passenger, index) => {
+      // Log what we're sending
+      console.log(`  Passenger ${index + 1}:`, {
+        firstName: passenger.firstName,
+        lastName: passenger.lastName,
+        email: passenger.email
+      });
+      
+      // Append each field with proper key format
+      formData.append(`passengers[${index}][passengerNumber]`, (index + 1).toString());
+      formData.append(`passengers[${index}][firstName]`, passenger.firstName || '');
+      formData.append(`passengers[${index}][lastName]`, passenger.lastName || '');
+      formData.append(`passengers[${index}][email]`, passenger.email || '');
+      formData.append(`passengers[${index}][phone]`, passenger.phone || '');
+      formData.append(`passengers[${index}][dateOfBirth]`, passenger.dateOfBirth || '');
+      formData.append(`passengers[${index}][age]`, (passenger.age || 0).toString());
+      formData.append(`passengers[${index}][gender]`, passenger.gender || '');
+      formData.append(`passengers[${index}][address]`, passenger.address || '');
+      formData.append(`passengers[${index}][nationality]`, passenger.nationality || 'Filipino');
+      
+      // Append file if exists
+      if (passenger.idFile) {
+        formData.append(`passenger_${index}_id`, passenger.idFile);
+        console.log(`    ✅ ID file attached: ${passenger.idFile.name}`);
+      }
+      
+      if (passenger.passportFile) {
+        formData.append(`passenger_${index}_passport`, passenger.passportFile);
+        console.log(`    ✅ Passport file attached: ${passenger.passportFile.name}`);
+      }
+    });
+
+    // 🔥 DEBUG: Log all FormData entries
+    console.log('📋 Complete FormData contents:');
+    let fieldCount = 0;
+    for (let [key, value] of formData.entries()) {
+      fieldCount++;
+      if (value instanceof File) {
+        console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+    console.log(`Total fields in FormData: ${fieldCount}`);
+
+    // STEP 1: Create Booking
+    console.log('📝 Step 1: Sending booking request...');
+
+    console.log('🔍 === FORMDATA DEBUG ===');
+    console.log('Passengers array:', passengers);
+    let passengerFieldCount = 0;
+    for (let [key, value] of formData.entries()) {
+      if (key.startsWith('passengers[')) passengerFieldCount++;
+      console.log(`${key}:`, value instanceof File ? `[FILE: ${value.name}]` : value);
+    }
+    console.log(`Total passenger fields: ${passengerFieldCount}`);
+    console.log('🔍 ===================');
+    
+    const bookingRes = await axios.post(
+      'http://localhost:5000/api/bookings', 
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+
+    console.log('📥 Booking Response:', bookingRes.data);
+
+    if (!bookingRes.data.success) {
+      throw new Error(bookingRes.data.message || 'Booking creation failed');
+    }
+
+    if (!bookingRes.data.data || !bookingRes.data.data._id) {
+      console.error('❌ Invalid response structure');
+      throw new Error('Booking ID not found in response');
+    }
+
+    const createdBooking = bookingRes.data.data;
+    const bookingId = createdBooking._id;
+
+    console.log('✅ Booking created successfully!');
+    console.log('   ID:', bookingId);
+    console.log('   Passengers saved:', createdBooking.passengers?.length || 0);
+
+    // STEP 2: Create Payment Link
+    console.log('💳 Step 2: Creating payment link...');
+
+    const paymentRes = await axios.post(
+      'http://localhost:5000/api/payment/create-intent',
+      { bookingId: bookingId.toString() },
+      {
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+
+    console.log('📥 Payment Response:', paymentRes.data);
+
+    if (!paymentRes.data.success) {
+      throw new Error(paymentRes.data.message || 'Payment link creation failed');
+    }
+
+    if (!paymentRes.data.checkoutUrl) {
+      throw new Error('Checkout URL not found in response');
+    }
+
+    console.log('✅ Payment link created!');
+    console.log('   Link ID:', paymentRes.data.paymentLinkId);
+
+    // STEP 3: Redirect
+    toast.success('✅ Booking confirmed! Redirecting to payment...', { duration: 2000 });
     setShowModal(false);
-    toast.loading("Redirecting to payment...", { duration: 1500 });
+    
     setTimeout(() => {
-      navigate('/payment', { state: { bookingData } });
-    }, 1500);
-  };
+      console.log('🌐 Redirecting to PayMongo...');
+      window.location.href = paymentRes.data.checkoutUrl;
+    }, 2000);
+
+  } catch (error) {
+    console.error('❌ ERROR:', error);
+    console.error('❌ Error message:', error.message);
+    
+    if (error.response) {
+      console.error('❌ Response status:', error.response.status);
+      console.error('❌ Response data:', error.response.data);
+    }
+
+    const errorMsg = error.response?.data?.message || error.message || 'Booking failed. Please try again.';
+    
+    toast.error(`❌ ${errorMsg}`, {
+      duration: 5000,
+      style: {
+        background: '#fee2e2',
+        color: '#dc2626',
+        border: '1px solid #fca5a5'
+      }
+    });
+    
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleContactSales = () => {
     toast.loading("Connecting to sales representative...", {
       duration: 3000,
-      style: {
-        background: '#333',
-        color: '#fff',
-      }
+      style: { background: '#333', color: '#fff' }
     });
   };
+
+  const currentPassenger = passengers[passengerStep - 1];
+  const progressPercent = Math.round((passengerStep / totalPassengers) * 100);
 
   return (
     <div className="booking-form-content">
@@ -256,30 +515,27 @@ const BookingRightForm = ({ pkg }) => {
       </div>
 
       <div className="quantity-section">
-        {packageTypes.map((type) => (
-          <div key={type.id} className="quantity-item">
-            <div>
-              <div style={{display:'flex', alignItems:'center'}}>
-                <span className="quantity-label">{type.label}</span>
-                <span className="quantity-discount-badge">{type.discount}</span>
-              </div>
-              <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>{type.description}</div>
+        <div className="quantity-item">
+          <div>
+            <div style={{display:'flex', alignItems:'center'}}>
+              <span className="quantity-label">Standard Pax</span>
+              <span className="quantity-discount-badge">Best Value</span>
             </div>
-            
-            <div className="quantity-controls">
-              <button onClick={() => handleQuantity(type.id, -1)} className="quantity-btn">
-                <Minus size={16} />
-              </button>
-              <span className="quantity-value">{quantities[type.id]}</span>
-              <button onClick={() => handleQuantity(type.id, 1)} className="quantity-btn">
-                <Plus size={16} />
-              </button>
-            </div>
+            <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
           </div>
-        ))}
+          
+          <div className="quantity-controls">
+            <button onClick={() => handleQuantity('adult', -1)} className="quantity-btn">
+              <Minus size={16} />
+            </button>
+            <span className="quantity-value">{quantities.adult}</span>
+            <button onClick={() => handleQuantity('adult', 1)} className="quantity-btn">
+              <Plus size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* SELECTED FLIGHT DISPLAY */}
       {selectedFlight && (
         <div style={{
           background: '#fff7ed',
@@ -327,7 +583,6 @@ const BookingRightForm = ({ pkg }) => {
           <span className="total-amount">₱{packageTotal.toLocaleString()}</span>
         </div>
         
-        {/* Show Airfare + Grand Total if flight selected */}
         {selectedFlight && (
           <>
             <div className="total-row" style={{fontSize:'0.9rem', color:'#6b7280'}}>
@@ -367,7 +622,7 @@ const BookingRightForm = ({ pkg }) => {
         </p>
       </div>
 
-      {/* BOOKING CONFIRMATION MODAL */}
+      {/* UPDATED MULTI-PASSENGER BOOKING MODAL */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
@@ -394,7 +649,7 @@ const BookingRightForm = ({ pkg }) => {
               
               <div className="modal-trip-summary">
                 <div className="summary-item">
-                    <span className="summary-label">Travel Dates</span>
+                    <span className="summary-label">TRAVEL DATES</span>
                     <strong className="summary-value">
                       {monthNames[currentMonth.getMonth()]} {selectedDate} - {getEndDate()}, {currentMonth.getFullYear()}
                     </strong>
@@ -402,18 +657,17 @@ const BookingRightForm = ({ pkg }) => {
                 </div>
                 <div className="summary-divider"></div>
                 <div className="summary-item">
-                    <span className="summary-label">Package Price</span>
+                    <span className="summary-label">PACKAGE PRICE</span>
                     <strong className="summary-value price">₱{packageTotal.toLocaleString()}</strong>
                 </div>
                 
-                {/* SHOW AIRFARE IN MODAL */}
                 {selectedFlight && (
                   <>
                     <div className="summary-divider"></div>
                     <div className="summary-item">
                       <span className="summary-label">
                         <Plane size={14} style={{display:'inline', marginRight:'4px'}}/>
-                        Airfare ({selectedFlight.airline.name})
+                        AIRFARE ({selectedFlight.airline.name})
                       </span>
                       <strong className="summary-value" style={{color:'#fc9c1b'}}>
                         ₱{airfareTotal.toLocaleString()}
@@ -432,47 +686,313 @@ const BookingRightForm = ({ pkg }) => {
                   </>
                 )}
               </div>
+
+              {/* Document Requirement Notice (only if with airfare) */}
+              {bookingWithAirfare && (
+                <div style={{
+                  background: isInternationalFlight ? '#eff6ff' : '#fef3c7',
+                  border: `1px solid ${isInternationalFlight ? '#3b82f6' : '#f59e0b'}`,
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  marginTop: '16px',
+                  fontSize: '0.85rem',
+                  color: isInternationalFlight ? '#1e40af' : '#92400e',
+                  fontWeight: 500
+                }}>
+                  <strong>📋 Required Documents:</strong>
+                  {isInternationalFlight ? ' Passport for all passengers' : ' Valid ID for all passengers'}
+                </div>
+              )}
+
+              {/* Progress Indicator */}
+              <div style={{marginTop: '16px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                  <span style={{fontSize: '0.85rem', fontWeight: '600', color: '#64748b'}}>
+                    Passenger {passengerStep} of {totalPassengers}
+                    {passengerStep === 1 && <span style={{color:'#f97316', marginLeft:'6px'}}>(Primary)</span>}
+                  </span>
+                  <span style={{fontSize: '0.85rem', color: '#94a3b8'}}>
+                    {progressPercent}% Complete
+                  </span>
+                </div>
+                <div style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#e2e8f0',
+                  borderRadius: '3px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${progressPercent}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #f97316, #ea580c)',
+                    transition: 'width 0.3s ease'
+                  }} />
+                </div>
+              </div>
             </div>
 
-            <form className="modal-form" onSubmit={handleFinalSubmit}>
-              <div className="form-group">
-                <label>FULL NAME</label>
-                <input 
-                  type="text" 
-                  name="fullName"
-                  placeholder="e.g. Juan dela Cruz" 
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required 
-                />
+            <form className="modal-form" onSubmit={handleNextPassenger}>
+              <h3 style={{
+                color: '#334155',
+                fontSize: '1rem',
+                fontWeight: '700',
+                marginBottom: '20px',
+                paddingBottom: '10px',
+                borderBottom: '2px solid #e2e8f0'
+              }}>
+                Passenger {passengerStep}
+                {passengerStep === 1 && <span style={{fontSize:'0.85rem', color:'#f97316', marginLeft:'8px'}}>(Primary Contact)</span>}
+              </h3>
+
+              <div className="form-grid">
+                
+                <div className="form-group">
+                  <label>FIRST NAME <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="text" 
+                    value={currentPassenger.firstName}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'firstName', e.target.value)}
+                    placeholder="Juan"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>LAST NAME <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="text"
+                    value={currentPassenger.lastName}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'lastName', e.target.value)}
+                    placeholder="Dela Cruz"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>EMAIL ADDRESS <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="email"
+                    value={currentPassenger.email}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'email', e.target.value)}
+                    placeholder="juan@example.com"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>PHONE NUMBER <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="tel"
+                    value={currentPassenger.phone}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'phone', e.target.value)}
+                    placeholder="0917 123 4567"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>DATE OF BIRTH <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="date"
+                    value={currentPassenger.dateOfBirth}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'dateOfBirth', e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>AGE <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="number"
+                    value={currentPassenger.age}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'age', e.target.value)}
+                    placeholder="25"
+                    min="0"
+                    max="120"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>GENDER <span style={{color:'#ef4444'}}>*</span></label>
+                  <select
+                    required
+                    value={currentPassenger.gender}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'gender', e.target.value)}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>NATIONALITY <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="text"
+                    value={currentPassenger.nationality}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'nationality', e.target.value)}
+                    placeholder="Filipino"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>COMPLETE ADDRESS <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="text"
+                    value={currentPassenger.address}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'address', e.target.value)}
+                    placeholder="123 Main St, Makati City, Metro Manila"
+                  />
+                </div>
+
+                {/* ID Upload (Domestic - only if with airfare) */}
+                {bookingWithAirfare && requiresID && (
+                  <div className="form-group full-width">
+                    <label>
+                      UPLOAD VALID ID <span style={{color:'#ef4444'}}>*</span>
+                      <span style={{fontSize:'0.75rem', color:'#6b7280', marginLeft:'8px', fontWeight:400}}>
+                        (Driver's License, UMID, SSS, Postal ID, etc.)
+                      </span>
+                    </label>
+                    
+                    {currentPassenger.idFileName ? (
+                      <div className="file-uploaded">
+                        <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                          <CheckCircle size={18} color="#22c55e"/>
+                          <span>{currentPassenger.idFileName}</span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => removeFile(passengerStep - 1, 'id')}
+                          style={{
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fecaca',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="file-upload-box">
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => handleFileUpload(passengerStep - 1, 'id', e)}
+                          id={`id-upload-${passengerStep}`}
+                          style={{display: 'none'}}
+                        />
+                        <label htmlFor={`id-upload-${passengerStep}`} className="file-upload-label">
+                          <Upload size={32} color="#94a3b8"/>
+                          <span style={{fontWeight:600, color:'#475569'}}>Click to upload ID</span>
+                          <span style={{fontSize:'0.8rem', color:'#94a3b8'}}>PNG, JPG or PDF (Max 5MB)</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Passport Upload (International - only if with airfare) */}
+                {bookingWithAirfare && requiresPassport && (
+                  <div className="form-group full-width">
+                    <label>
+                      UPLOAD PASSPORT <span style={{color:'#ef4444'}}>*</span>
+                      <span style={{fontSize:'0.75rem', color:'#6b7280', marginLeft:'8px', fontWeight:400}}>
+                        (Bio-data page with photo)
+                      </span>
+                    </label>
+                    
+                    {currentPassenger.passportFileName ? (
+                      <div className="file-uploaded">
+                        <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                          <CheckCircle size={18} color="#22c55e"/>
+                          <span>{currentPassenger.passportFileName}</span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => removeFile(passengerStep - 1, 'passport')}
+                          style={{
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fecaca',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="file-upload-box">
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => handleFileUpload(passengerStep - 1, 'passport', e)}
+                          id={`passport-upload-${passengerStep}`}
+                          style={{display: 'none'}}
+                        />
+                        <label htmlFor={`passport-upload-${passengerStep}`} className="file-upload-label">
+                          <Upload size={32} color="#94a3b8"/>
+                          <span style={{fontWeight:600, color:'#475569'}}>Click to upload Passport</span>
+                          <span style={{fontSize:'0.8rem', color:'#94a3b8'}}>PNG, JPG or PDF (Max 5MB)</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
 
-              <div className="form-group">
-                <label>EMAIL ADDRESS</label>
-                <input 
-                  type="email" 
-                  name="email"
-                  placeholder="name@email.com" 
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required 
-                />
+              {/* Navigation Buttons */}
+              <div style={{display:'flex', gap:'12px', marginTop:'24px'}}>
+                {passengerStep > 1 && (
+                  <button 
+                    type="button" 
+                    onClick={handleBackPassenger}
+                    style={{
+                      flex: 1,
+                      padding: '16px',
+                      background: '#f1f5f9',
+                      color: '#64748b',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontWeight: 700,
+                      fontSize: '1rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ← BACK
+                  </button>
+                )}
+                
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="modal-submit-btn"
+                  style={{
+                    flex: passengerStep > 1 ? 2 : 1,
+                    width: passengerStep === 1 ? '100%' : 'auto'
+                  }}
+                >
+                  {loading ? 'PROCESSING...' : 
+                   passengerStep === totalPassengers ? 'CONFIRM BOOKING' : 
+                   `NEXT: PASSENGER ${passengerStep + 1}`}
+                </button>
               </div>
-
-              <div className="form-group">
-                <label>MESSAGE (OPTIONAL)</label>
-                <textarea 
-                  name="message"
-                  placeholder="Any special requests or questions?"
-                  rows="3"
-                  value={formData.message}
-                  onChange={handleInputChange}
-                ></textarea>
-              </div>
-
-              <button type="submit" className="modal-submit-btn">
-                {bookingWithAirfare ? `Confirm Booking (₱${totalAmount.toLocaleString()})` : 'Confirm Booking'}
-              </button>
 
             </form>
           </div>

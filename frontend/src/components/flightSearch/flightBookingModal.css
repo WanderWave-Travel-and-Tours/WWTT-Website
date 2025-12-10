@@ -1,22 +1,21 @@
-/* Full Screen Overlay na laging nasa ibabaw */
 .modal-overlay {
   position: fixed; 
   top: 0; 
   left: 0; 
   width: 100vw; 
   height: 100vh;
-  background: rgba(0, 0, 0, 0.75); /* Darker background para focus sa modal */
+  background: rgba(0, 0, 0, 0.75);
   display: flex; 
   justify-content: center; 
   align-items: center; 
-  z-index: 2147483647; /* Maximum possible Z-Index */
+  z-index: 2147483647; 
   backdrop-filter: blur(4px);
 }
 
 .booking-modal {
   background: white; 
   width: 95%; 
-  max-width: 550px; /* Mas malapad konti para hindi siksikan */
+  max-width: 550px;
   padding: 30px; 
   border-radius: 16px;
   position: relative; 
@@ -31,7 +30,6 @@
   to { transform: scale(1); opacity: 1; }
 }
 
-/* Close Button */
 .close-btn {
   position: absolute;
   top: 15px; 
@@ -64,9 +62,7 @@
     border: 1px solid #ffedd5;
 }
 
-/* Forms */
 .form-step h3 { color: #334155; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
-
 .form-group { margin-bottom: 18px; }
 .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
 .form-group input, .passenger-card input { 
@@ -83,7 +79,6 @@
     box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
-/* Passenger Card Styles */
 .passengers-scroll { 
     max-height: 400px; 
     overflow-y: auto; 
@@ -100,7 +95,6 @@
 .passenger-card .row { display: flex; gap: 15px; margin-bottom: 15px; }
 .passenger-card input { flex: 1; }
 
-/* Buttons */
 .next-btn, .submit-btn { 
     width: 100%; 
     padding: 15px; 
@@ -137,7 +131,6 @@
   overflow-y: auto;
 }
 
-/* Flight Modal Content Container */
 .flight-search-modal-content {
   background: white;
   width: 100%;
@@ -161,7 +154,6 @@
   }
 }
 
-/* Close Button for Flight Modal */
 .flight-modal-close-btn {
   position: absolute;
   top: 20px;
@@ -187,7 +179,6 @@
   transform: rotate(90deg) scale(1.1);
 }
 
-/* Flight Modal Header */
 .flight-modal-header {
   background: linear-gradient(135deg, #001b3e 0%, #003d7a 100%);
   color: white;
@@ -213,13 +204,11 @@
   font-weight: 700;
 }
 
-/* Flight Search Wrapper */
 .flight-search-wrapper {
   padding: 0;
   background: #f8f9fa;
 }
 
-/* Override flight search container for modal context */
 .flight-search-modal-content .flight-search-container {
   min-height: auto;
   padding: 0;
@@ -231,7 +220,6 @@
   padding: 20px 0;
 }
 
-/* Book with Airfare Button Styling */
 .book-with-airfare-btn {
   width: 100%;
   padding: 15px;
@@ -256,7 +244,6 @@
   box-shadow: 0 8px 20px rgba(252, 156, 27, 0.3);
 }
 
-/* Responsive Adjustments */
 @media (max-width: 768px) {
   .flight-search-modal-content {
     width: 100%;
