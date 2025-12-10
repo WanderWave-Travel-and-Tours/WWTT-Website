@@ -34,8 +34,6 @@ const createInquiry = async (req, res) => {
       passportDetails
     } = req.body;
 
-    console.log('📥 Received inquiry/booking:', { serviceName, fullName, inquiryType });
-
     // Auto-generate message for FLIGHT_BOOKING
     if (!message && inquiryType === 'FLIGHT_BOOKING') {
       const origin = flightDetails?.origin || 'Unknown';
@@ -50,8 +48,6 @@ const createInquiry = async (req, res) => {
       const procType = passportDetails?.processingType || 'REGULAR';
       message = `Passport Appointment Request: ${appType} Application (${procType} Processing)`;
     }
-
-    console.log('📥 Received inquiry request:', { serviceName, fullName, email });
 
     if (!serviceName || !fullName || !email || !message) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
@@ -104,6 +100,74 @@ const createInquiry = async (req, res) => {
     console.error('❌ Create inquiry error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
+};
+
+// --- NEW FUNCTION: Create Inquiry with Multi-File Uploads ---
+const createInquiryWithUploads = async (req, res) => {
+    try {
+        console.log("📥 Received Application Upload");
+        console.log("Body:", req.body);
+        console.log("Files:", req.files ? req.files.length : 0);
+
+        const {
+            serviceName, 
+            inquiryType,
+            fullName,
+            email,
+            contactNumber,
+            message,
+            visaCountry,
+            estimatedPrice
+        } = req.body;
+
+        if (!email || !fullName) {
+            return res.status(400).json({ success: false, message: 'Email and Name are required' });
+        }
+
+        // 1. Process Files
+        const uploadedDocs = (req.files || []).map(file => ({
+            fileName: `${file.fieldname} - ${file.originalname}`, 
+            fileUrl: `/uploads/documents/${file.filename}`,
+            uploadedAt: Date.now()
+        }));
+
+        // 2. Check or Create User
+        let existingUser = await User.findOne({ email });
+        
+        if (!existingUser) {
+             try {
+                const baseUsername = email.split('@')[0].toLowerCase();
+                const tempPassword = generateTempPassword();
+                existingUser = await User.create({
+                    fullName, email, username: `${baseUsername}${Date.now()}`, password: tempPassword
+                });
+             } catch(e) { console.error("User creation error", e); }
+        }
+
+        // 3. Create Inquiry Record
+        const newInquiry = await Inquiry.create({
+            serviceName: serviceName || 'Visa Application', 
+            inquiryType: inquiryType || 'VISA',
+            fullName,
+            email,
+            contactNumber,
+            message: message,
+            visaCountry: visaCountry || 'Japan',
+            estimatedPrice: estimatedPrice || 0,
+            status: 'PENDING',
+            deliveredDocuments: uploadedDocs 
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Application submitted successfully',
+            data: newInquiry
+        });
+
+    } catch (error) {
+        console.error('❌ Application Upload Error:', error);
+        res.status(500).json({ success: false, message: 'Server error processing application' });
+    }
 };
 
 const getAllInquiries = async (req, res) => {
@@ -176,14 +240,10 @@ const getInquiryStats = async (req, res) => {
   }
 };
 
-// 💰 FIXED: MARK AS PAID FUNCTION
 const markAsPaid = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log(`💰 Payment Update Requested for Inquiry: ${id}`);
-
-    // 1. Update Inquiry Status
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       {
@@ -197,16 +257,13 @@ const markAsPaid = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
 
-    // 2. Update Payment Status (Upsert logic)
     const paymentRecord = await Payment.findOne({ inquiryId: id });
 
     if (paymentRecord) {
       paymentRecord.status = 'PAID';
       paymentRecord.paidAt = Date.now();
       await paymentRecord.save();
-      console.log('✅ Existing Payment Record Updated to PAID');
     } else {
-      console.log('⚠️ No pending payment found. Creating PAID record as fallback.');
       await Payment.create({
         inquiryId: id,
         transactionId: `manual_verified_${Date.now()}`,
@@ -226,7 +283,6 @@ const markAsPaid = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Mark as paid error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error updating payment status'
@@ -234,13 +290,10 @@ const markAsPaid = async (req, res) => {
   }
 };
 
-// NEW: CONFIRM PAYMENT
 const confirmPayment = async (req, res) => {
   try {
     const { id } = req.params;
     const { adminName } = req.body;
-
-    console.log(`✅ Payment Confirmation Requested for Inquiry: ${id}`);
 
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
@@ -263,18 +316,14 @@ const confirmPayment = async (req, res) => {
       data: inquiry
     });
   } catch (error) {
-    console.error('Confirm payment error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
-// NEW: DELIVER DOCUMENTS
 const deliverDocuments = async (req, res) => {
   try {
     const { id } = req.params;
     const files = req.files;
-
-    console.log(`📄 Document Delivery Requested for Inquiry: ${id}`);
 
     if (!files || files.length === 0) {
       return res.status(400).json({ success: false, message: 'No files uploaded' });
@@ -307,13 +356,13 @@ const deliverDocuments = async (req, res) => {
       data: inquiry
     });
   } catch (error) {
-    console.error('Deliver documents error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
 module.exports = {
   createInquiry,
+  createInquiryWithUploads, 
   getAllInquiries,
   getInquiry,
   updateInquiryStatus,
