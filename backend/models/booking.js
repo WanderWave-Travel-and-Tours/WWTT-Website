@@ -1,5 +1,34 @@
 const mongoose = require('mongoose');
 
+const passengerSchema = new mongoose.Schema({
+  passengerNumber: { type: Number, required: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
+  dateOfBirth: { type: String, required: true },
+  age: { type: Number, required: true },
+  gender: { type: String, required: true },
+  address: { type: String, required: true },
+  nationality: { type: String, required: true },
+  
+  // ID Document (for domestic flights)
+  idDocument: {
+    filename: String,
+    originalName: String,
+    path: String,
+    size: Number
+  },
+  
+  // Passport Document (for international flights)
+  passportDocument: {
+    filename: String,
+    originalName: String,
+    path: String,
+    size: Number
+  }
+}, { _id: false });
+
 const bookingSchema = new mongoose.Schema({
   packageName: { type: String, required: true },
 
@@ -18,11 +47,32 @@ const bookingSchema = new mongoose.Schema({
     infants: { type: Number, default: 0 },
   },
 
+  // NEW: Package total (without airfare)
+  packageTotal: { type: Number },
+
+  // NEW: Airfare details (if booking includes flight)
+  includesAirfare: { type: Boolean, default: false },
+  flightDetails: {
+    airline: String,
+    flightNumber: String,
+    route: String,
+    departureTime: String,
+    arrivalTime: String,
+    price: Number,
+    formatted: String,
+    isInternational: Boolean
+  },
+  airfareTotal: { type: Number, default: 0 },
+
   totalAmount: { type: Number, required: true },
 
+  // Primary contact info
   fullName: { type: String, required: true },
   email:    { type: String, required: true },
   message:  { type: String },
+
+  // NEW: Array of all passengers with complete details
+  passengers: [passengerSchema],
 
   status: {
     type: String,

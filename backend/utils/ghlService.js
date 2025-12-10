@@ -16,7 +16,6 @@ const sendToGHLWebhook = async (webhookUrl, data) => {
       };
     }
 
-    // ✅ Clean the webhook URL (remove any trailing spaces or invalid characters)
     const cleanUrl = webhookUrl.trim();
 
     const response = await axios.post(cleanUrl, data, {
@@ -47,29 +46,21 @@ const sendToGHLWebhook = async (webhookUrl, data) => {
   }
 };
 
-// ✅ EXACT field mapping for NEW_USER workflow
 const sendNewUserToGHL = async (email, fullName, tempPassword, serviceName) => {
   const firstName = fullName.split(' ')[0] || '';
   const lastName = fullName.split(' ').slice(1).join(' ') || '';
 
   const data = {
-    // ✅ CRITICAL: This exact field must match your GHL workflow condition
     type: 'NEW_USER',
-    
-    // ✅ Contact fields (match exactly what GHL expects)
     email: email,
     fullName: fullName,
     name: fullName,
     first_name: firstName,
     last_name: lastName,
-    
-    // ✅ Custom fields for email template
     password: tempPassword,
     tempPassword: tempPassword,
     service: serviceName,
     serviceName: serviceName,
-    
-    // ✅ Metadata
     timestamp: new Date().toISOString(),
     created_at: new Date().toISOString(),
     source: 'WanderWave',
@@ -88,29 +79,21 @@ const sendNewUserToGHL = async (email, fullName, tempPassword, serviceName) => {
   return result;
 };
 
-// ✅ EXACT field mapping for INQUIRY workflow
 const sendInquiryToGHL = async (email, fullName, serviceName, message) => {
   const firstName = fullName.split(' ')[0] || '';
   const lastName = fullName.split(' ').slice(1).join(' ') || '';
 
   const data = {
-    // ✅ CRITICAL: This exact field must match your GHL workflow condition
     type: 'INQUIRY_CONFIRMATION',
-    
-    // ✅ Contact fields
     email: email,
     fullName: fullName,
     name: fullName,
     first_name: firstName,
     last_name: lastName,
-    
-    // ✅ Inquiry details
     service: serviceName,
     serviceName: serviceName,
     message: message,
     inquiry_message: message,
-    
-    // ✅ Metadata
     timestamp: new Date().toISOString(),
     created_at: new Date().toISOString(),
     source: 'WanderWave',
@@ -123,7 +106,66 @@ const sendInquiryToGHL = async (email, fullName, serviceName, message) => {
   return await sendToGHLWebhook(GHL_WEBHOOK_URL, data);
 };
 
+const sendBookingConfirmationToGHL = async (
+  email,
+  fullName,
+  packageName,
+  totalAmount,
+  startDate,
+  endDate,
+  passengerCount
+) => {
+  const firstName = fullName.split(' ')[0] || '';
+  const lastName = fullName.split(' ').slice(1).join(' ') || '';
+
+  const data = {
+    type: 'BOOKING_CONFIRMATION',
+    email: email,
+    fullName: fullName,
+    name: fullName,
+    first_name: firstName,
+    last_name: lastName,
+    packageName: packageName,
+    package_name: packageName,
+    service: packageName,
+    serviceName: packageName,
+    totalAmount: `₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+    total_amount: totalAmount,
+    amount: totalAmount,
+    startDate: startDate,
+    start_date: startDate,
+    travel_start: startDate,
+    endDate: endDate,
+    end_date: endDate,
+    travel_end: endDate,
+    passengerCount: passengerCount,
+    passenger_count: passengerCount,
+    passengers: passengerCount,
+    pax: passengerCount,
+    bookingDate: new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }),
+    booking_date: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    source: 'WanderWave',
+    event: 'booking_confirmation'
+  };
+  
+  const result = await sendToGHLWebhook(GHL_WEBHOOK_URL, data);
+  
+  if (!result.success) {
+    console.error('❌ Failed to send booking confirmation to GHL:', result.error);
+  }
+  
+  return result;
+};
+
+
 module.exports = {
   sendNewUserToGHL,
-  sendInquiryToGHL
+  sendInquiryToGHL,
+  sendBookingConfirmationToGHL  
 };

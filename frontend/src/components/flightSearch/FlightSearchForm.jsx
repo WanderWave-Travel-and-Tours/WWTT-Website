@@ -3,7 +3,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./FlightSearchForm.css";
 
-// --- HELPERS ---
 const getFlagUrl = (countryCode) => {
   if (!countryCode) return null;
   return `https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`;
@@ -54,15 +53,12 @@ const FlightSearchForm = ({
   const [activeDropdown, setActiveDropdown] = useState(null); 
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
-  
-  // Enhanced selectAirport that tracks full airport data locally for validation
   const [selectedOrigin, setSelectedOrigin] = useState(null);
   const [selectedDestination, setSelectedDestination] = useState(null);
 
   const formRef = useRef(null);
   const calendarRef = useRef(null);
 
-  // Load recent searches from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('recentFlightSearches');
     if (saved) {
@@ -102,25 +98,19 @@ const FlightSearchForm = ({
     localStorage.removeItem('recentFlightSearches');
   };
 
-  // --- UPDATED LOGIC FOR RECENT SEARCH CLICK ---
   const handleRecentSearchClick = (search) => {
-    // 1. Handle Origin
     if (search.origin) {
-      setSelectedOrigin(search.origin); // Update local object
-      selectAirport(search.origin, "origin"); // Update parent object
-      // Force update the text input visually
+      setSelectedOrigin(search.origin); 
+      selectAirport(search.origin, "origin");
       handleAirportInputChange("origin", `${search.origin.city} (${search.origin.iataCode})`);
     }
 
-    // 2. Handle Destination
     if (search.destination) {
-      setSelectedDestination(search.destination); // Update local object
-      selectAirport(search.destination, "destination"); // Update parent object
-      // Force update the text input visually
+      setSelectedDestination(search.destination); 
+      selectAirport(search.destination, "destination"); 
       handleAirportInputChange("destination", `${search.destination.city} (${search.destination.iataCode})`);
     }
 
-    // 3. Handle Date (Important: Restore the date from history)
     if (search.date) {
         if (searchParams.journeyType === "round-trip") {
             setRoundTripData(prev => ({ ...prev, departureDate: search.date }));
@@ -147,7 +137,6 @@ const FlightSearchForm = ({
     setActiveDropdown(null);
   };
 
-  // Enhanced swap that also swaps selected airports
   const handleSwapCities = () => {
     const tempOrigin = selectedOrigin;
     const tempDest = selectedDestination;
@@ -158,11 +147,9 @@ const FlightSearchForm = ({
     swapCities();
   };
 
-  // Save to recent searches when form is submitted
   const handleFormSubmit = (e) => {
     e.preventDefault();
     
-    // Ensure we have data either from local state or passed props if manually typed correctly
     if (selectedOrigin && selectedDestination) {
       const newSearch = {
         origin: {
@@ -182,14 +169,13 @@ const FlightSearchForm = ({
 
       const existing = JSON.parse(localStorage.getItem('recentFlightSearches') || '[]');
       
-      // Prevent duplicates based on IATA codes
       const isDuplicate = existing.some(search => 
         search.origin?.iataCode === newSearch.origin.iataCode &&
         search.destination?.iataCode === newSearch.destination.iataCode
       );
 
       if (!isDuplicate) {
-        const updated = [newSearch, ...existing].slice(0, 5); // Keep last 5
+        const updated = [newSearch, ...existing].slice(0, 5); 
         localStorage.setItem('recentFlightSearches', JSON.stringify(updated));
         setRecentSearches(updated);
       }
@@ -214,7 +200,6 @@ const FlightSearchForm = ({
         </div>
 
         <div className="journey-tabs-container">
-          {/* COMMENTED OUT "multi-city" FROM TABS ARRAY */}
           {["one-way", "round-trip" , "multi-city"].map((type) => (
             <button
               key={type}
@@ -235,11 +220,7 @@ const FlightSearchForm = ({
           
           {(searchParams.journeyType === "one-way" || searchParams.journeyType === "round-trip") && (
             <div className="search-bar-wrapper">
-              
-              {/* LOCATIONS SECTION */}
               <div className="sb-section locations-section">
-                
-                {/* FROM */}
                 <div className="sb-input-group relative">
                   <label className="sb-label">From</label>
                   <input 
@@ -310,7 +291,6 @@ const FlightSearchForm = ({
                   )}
                 </div>
 
-                {/* SWAP BUTTON */}
                 <div className="swap-wrapper">
                   <button type="button" onClick={handleSwapCities} className="swap-btn" title="Swap Locations">
                       <svg className="swap-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -319,7 +299,6 @@ const FlightSearchForm = ({
                   </button>
                 </div>
 
-                {/* TO */}
                 <div className="sb-input-group relative">
                   <label className="sb-label">To</label>
                   <input 
@@ -392,8 +371,6 @@ const FlightSearchForm = ({
               </div>
 
               <div className="divider-vertical"></div>
-
-              {/* DATES */}
               <div className="sb-section dates-section">
                 {searchParams.journeyType === "one-way" && (
                   <div className="sb-input-group">
@@ -449,8 +426,6 @@ const FlightSearchForm = ({
               </div>
 
               <div className="divider-vertical"></div>
-
-              {/* TRAVELERS */}
               <div className="sb-section travelers-section relative">
                 <div className="sb-input-group cursor-pointer" onClick={() => openDropdown("passengers")}>
                   <label className="sb-label">Travelers & Class</label>
@@ -488,7 +463,6 @@ const FlightSearchForm = ({
                 )}
               </div>
               
-              {/* MAIN SEARCH BUTTON */}
               <div className="search-btn-wrapper">
                 <button type="submit" disabled={loading} className="main-search-btn">
                   SEARCH
@@ -498,7 +472,6 @@ const FlightSearchForm = ({
             </div>
           )}
 
-          {/* Multi-City UI - COMMENTED OUT TEMPORARILY */}
           {searchParams.journeyType === "multi-city" && (
             <div className="multi-city-container" ref={multiCityContainerRef}>
                {multiCityLegs.map((leg, index) => (
@@ -614,7 +587,6 @@ const FlightSearchForm = ({
         </form>
       </div>
 
-      {/* Sign In Modal */}
       {showSignInModal && (
         <div className="modal-overlay" onClick={() => setShowSignInModal(false)}>
           <div className="sign-in-modal" onClick={(e) => e.stopPropagation()}>

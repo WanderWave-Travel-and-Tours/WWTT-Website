@@ -11,16 +11,10 @@
   --border-light: #e5e7eb;
 }
 
-/* =========================================
-   GLOBAL RESET & BASICS
-   ========================================= */
 * {
   box-sizing: border-box;
 }
 
-/* =========================================
-   HERO SECTION
-   ========================================= */
 .hero-section {
   position: relative;
   min-height: 60vh;
@@ -66,9 +60,6 @@
   line-height: 1.1;
 }
 
-/* =========================================
-   TABS
-   ========================================= */
 .journey-tabs-container {
   display: flex;
   gap: 20px;
@@ -76,8 +67,8 @@
   width: 100%;
   max-width: 1250px;
   padding-left: 10px;
-  flex-wrap: wrap; /* Allows wrapping on tiny screens */
-  justify-content: center; /* Center tabs on mobile */
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 @media (min-width: 768px) {
@@ -113,9 +104,6 @@
   color: var(--btn-yellow);
 }
 
-/* =========================================
-   FORM WRAPPER
-   ========================================= */
 .flight-search-form {
   width: 100%;
   display: flex;
@@ -136,9 +124,6 @@
   position: relative;
 }
 
-/* =========================================
-   SECTIONS & INPUTS
-   ========================================= */
 .sb-section {
   display: flex;
   align-items: center;
@@ -169,7 +154,7 @@
   border-radius: 8px;
   transition: background 0.2s;
   cursor: text;
-  min-width: 0; /* Prevents flex items from overflowing */
+  min-width: 0;
 }
 
 .sb-input-group:hover {
@@ -195,7 +180,7 @@
   outline: none;
   background: transparent;
   font-family: 'Roboto', sans-serif;
-  font-size: 16px; /* 16px prevents iOS zoom */
+  font-size: 16px; 
   font-weight: 700;
   color: var(--text-dark);
   padding: 0;
@@ -211,9 +196,6 @@
   font-size: 14px;
 }
 
-/* =========================================
-   DIVIDERS
-   ========================================= */
 .divider-vertical {
   width: 1px;
   height: 40px;
@@ -226,9 +208,6 @@
   height: 30px;
 }
 
-/* =========================================
-   SWAP BUTTON
-   ========================================= */
 .swap-wrapper {
   width: 50px;
   display: flex;
@@ -276,9 +255,6 @@
   flex-shrink: 0;
 }
 
-/* =========================================
-   DATEPICKER
-   ========================================= */
 .datepicker-container {
   width: 100%;
 }
@@ -299,7 +275,6 @@
   text-overflow: ellipsis;
 }
 
-/* React Datepicker Overrides */
 .react-datepicker {
   font-family: 'Roboto', sans-serif !important;
   border: none !important;
@@ -399,10 +374,6 @@
   border-width: 2px 2px 0 0 !important;
 }
 
-
-/* =========================================
-   DROPDOWNS
-   ========================================= */
 .sb-dropdown,
 .wide-dropdown {
   position: absolute;
@@ -481,7 +452,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; /* Important for flex text truncation */
+  min-width: 0; 
 }
 
 .dd-city {
@@ -518,9 +489,6 @@
   font-size: 13px;
 }
 
-/* =========================================
-   RECENT SEARCHES & SIGN IN
-   ========================================= */
 .recent-searches-section {
   padding: 0;
 }
@@ -635,9 +603,6 @@
   color: #0066FF;
 }
 
-/* =========================================
-   SEARCH BUTTON
-   ========================================= */
 .search-btn-wrapper {
   padding: 0 10px;
 }
@@ -666,9 +631,6 @@
   box-shadow: 0 6px 20px rgba(255, 160, 0, 0.4);
 }
 
-/* =========================================
-   DROPDOWN CONTROLS (Cabin/Passengers)
-   ========================================= */
 .modern-popup {
   padding: 20px;
 }
@@ -816,9 +778,6 @@
   text-transform: uppercase;
 }
 
-/* =========================================
-   MULTI-CITY SECTION (UPDATED)
-   ========================================= */
 .multi-city-container {
   background: var(--bg-white);
   border-radius: 16px;
@@ -857,7 +816,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap; /* Important for responsiveness */
+  flex-wrap: wrap;
 }
 
 .mc-input-group {
@@ -985,9 +944,6 @@
   padding: 0 32px;
 }
 
-/* =========================================
-   MODAL STYLES (Sign In)
-   ========================================= */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1061,13 +1017,7 @@
 }
 
 
-/* =========================================
-   RESPONSIVE STYLES (Mobile & Tablet)
-   ========================================= */
-
-/* --- TABLET / SMALL LAPTOP (Max 1024px) --- */
 @media (max-width: 1024px) {
-  /* Added top padding for tablet screens as well */
   .hero-section {
     padding-top: 100px; 
   }
@@ -1076,28 +1026,23 @@
   .main-search-btn { padding: 0 25px; font-size: 15px; }
 }
 
-/* --- MOBILE (Max 900px) - Stacked Layout --- */
 @media (max-width: 900px) {
-  /* Container & Basics */
   .hero-section {
-    /* MODIFIED: Increased top padding to clear Navbar */
     padding: 120px 15px 40px 15px; 
     min-height: 100vh; 
-    justify-content: flex-start; /* Ensure content starts from top */
+    justify-content: flex-start;
   }
 
   .retro-3d-title { font-size: 1.8rem; margin-bottom: 15px; }
   
-  /* Form Container */
   .search-bar-wrapper {
     flex-direction: column;
     height: auto;
     padding: 20px 15px;
     border-radius: 20px;
-    gap: 0; /* Gaps handled by margins inside sections */
+    gap: 0; 
   }
 
-  /* Sections */
   .sb-section {
     width: 100%;
     flex-direction: column;
@@ -1107,30 +1052,26 @@
     flex: auto;
   }
   
-  /* Locations Section specific */
   .locations-section {
-    position: relative; /* Context for swap button */
+    position: relative;
     gap: 10px;
     margin-bottom: 20px;
   }
 
-  /* Inputs */
   .sb-input-group {
     width: 100%;
     border: 1px solid #f3f4f6;
     padding: 12px 15px;
   }
   
-  /* Dividers - Hide on mobile */
   .divider-vertical {
     display: none;
   }
 
-  /* Swap Button - Center Overlay */
   .swap-wrapper {
     position: absolute;
     top: 50%;
-    right: 20px; /* Position to the right side */
+    right: 20px;
     transform: translateY(-50%);
     width: auto;
     height: auto;
@@ -1139,7 +1080,7 @@
   }
 
   .swap-btn {
-    transform: rotate(90deg); /* Vertical arrows */
+    transform: rotate(90deg);
     width: 36px;
     height: 36px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -1147,9 +1088,8 @@
   .swap-btn:hover { transform: rotate(90deg) scale(1.1); }
   .swap-btn:active { transform: rotate(90deg) scale(0.95); }
 
-  /* Dates & Travelers */
   .dates-section {
-    flex-direction: row; /* Keep dates side-by-side if possible */
+    flex-direction: row; 
     gap: 10px;
     border: none;
   }
@@ -1160,7 +1100,6 @@
     margin-bottom: 20px;
   }
 
-  /* Search Button */
   .search-btn-wrapper {
     width: 100%;
     padding: 0;
@@ -1171,9 +1110,8 @@
     justify-content: center;
   }
 
-  /* Dropdowns - Mobile Sheet Style */
   .sb-dropdown, .wide-dropdown {
-    width: 100vw; /* Full width */
+    width: 100vw; 
     position: fixed;
     top: auto;
     bottom: 0;
@@ -1184,10 +1122,9 @@
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
     border: none;
     max-height: 50vh;
-    padding-bottom: 20px; /* Safe area for swipe bar */
+    padding-bottom: 20px; 
   }
 
-  /* Datepicker on Mobile */
   .react-datepicker {
     display: flex !important;
     flex-direction: column;
@@ -1197,7 +1134,6 @@
     float: none !important;
   }
 
-  /* --- MULTI-CITY MOBILE --- */
   .multi-city-container {
     padding: 15px;
   }
@@ -1246,23 +1182,15 @@
   }
 }
 
-/* --- SMALL MOBILE (Max 480px) --- */
 @media (max-width: 480px) {
-  /* Added even more padding for smaller screens if needed */
   .hero-section { padding-top: 130px; } 
   .retro-3d-title { font-size: 1.5rem; }
-  
-  /* Stack dates vertically on very small screens */
   .dates-section {
     flex-direction: column;
   }
   
-  /* Hide the mini vertical divider in dates */
   .divider-vertical.mini { display: none; }
-  
   .sb-input-group { padding: 12px 10px; }
   .sb-input-main { font-size: 15px; }
-  
-  /* Adjust modal sizing */
   .sign-in-modal { padding: 20px; width: 95%; }
 }
