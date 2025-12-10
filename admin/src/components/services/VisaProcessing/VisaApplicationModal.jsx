@@ -1,29 +1,29 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { X, ChevronLeft, CheckCircle, ClipboardList, FileText, User, DollarSign, Briefcase, Building2, GraduationCap, Users, Calendar, Globe } from "lucide-react";
 import "./VisaApplicationModal.css";
 
-const VisaApplicationModal = ({ isOpen, onClose }) => {
+const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) => {
   const [step, setStep] = useState(1); // 1: Type Selection, 2: Form, 3: Confirmation
   const [applicantType, setApplicantType] = useState("Adult");
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     travelDate: "",
     lengthOfStay: "",
-    visaType: "",
+    visaType: "", 
     givenName: "",
     lastName: "",
     otherNames: "",
+    email: "", 
+    contactNumber: "",
     files: {} 
   });
 
   if (!isOpen) return null;
 
-  const handleNextStep = () => {
-    setStep(step + 1);
-  };
-
-  const handlePrevStep = () => {
-    setStep(step - 1);
-  };
+  const handleNextStep = () => setStep(step + 1);
+  const handlePrevStep = () => setStep(step - 1);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -37,15 +37,65 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
             ...prev,
             files: {
                 ...prev.files,
-                [fieldName]: file.name
+                [fieldName]: file 
             }
         }));
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Submitting Application:", { applicantType, formData });
-    handleNextStep();
+  const submitApplication = async () => {
+    if (!formData.email || !formData.givenName || !formData.lastName || !formData.visaType) {
+        alert("Please fill in Name, Email, and Visa Type fields.");
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+        const data = new FormData();
+        
+        // Use the specific description directly
+        const serviceName = formData.visaType; 
+
+        // 1. Append Text Fields
+        data.append('serviceName', serviceName);
+        data.append('inquiryType', 'VISA');
+        data.append('fullName', `${formData.givenName} ${formData.lastName}`);
+        data.append('email', formData.email); 
+        data.append('contactNumber', formData.contactNumber);
+        
+        // Find selected visa details
+        const selectedVisa = visaForms.find(v => v.description === formData.visaType || v.desc === formData.visaType);
+        const country = selectedVisa ? selectedVisa.country : 'Japan'; 
+        const price = selectedVisa ? selectedVisa.price : 0;
+
+        const message = `Application for ${formData.visaType}. 
+                         Travel Date: ${formData.travelDate || 'N/A'}, 
+                         Length of Stay: ${formData.lengthOfStay || 'N/A'} days.`;
+        data.append('message', message);
+        
+        data.append('visaCountry', country); 
+        data.append('estimatedPrice', price); 
+
+        // 2. Append ALL Files
+        Object.keys(formData.files).forEach(key => {
+            data.append(key, formData.files[key]);
+        });
+
+        // 3. Send Request
+        const response = await axios.post('http://localhost:5000/api/inquiries/upload-application', data, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        if (response.data.success) {
+            handleNextStep(); 
+            if (refreshData) refreshData(); 
+        }
+    } catch (error) {
+        console.error("Error submitting application:", error);
+        alert(error.response?.data?.message || "Failed to submit application");
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const resetAndClose = () => {
@@ -58,6 +108,8 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
         givenName: "",
         lastName: "",
         otherNames: "",
+        email: "",
+        contactNumber: "",
         files: {}
     });
     onClose();
@@ -80,11 +132,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
             <div className="modal-body">
               <div className="form-group">
                 <label>Applicant Type <span className="req">*</span></label>
-                <select 
-                  value={applicantType} 
-                  onChange={(e) => setApplicantType(e.target.value)}
-                  className="app-select"
-                >
+                <select value={applicantType} onChange={(e) => setApplicantType(e.target.value)} className="app-select">
                   <option value="Adult">Adult</option>
                   <option value="Child">Child</option>
                 </select>
@@ -113,7 +161,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
             
             <div className="form-scroll-body">
               
-              {/* SECTION: APPLICATION DETAILS */}
+              {/* Application Details */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Calendar size={20} color="#f97316" /></div>
@@ -122,16 +170,16 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 <div className="form-grid">
                     <div className="form-group">
                         <label>Travel Date <span className="req">*</span></label>
-                        <input type="text" placeholder="yyyy-mm-dd" name="travelDate" value={formData.travelDate} onChange={handleInputChange} />
+                        <input type="date" name="travelDate" value={formData.travelDate} onChange={handleInputChange} />
                     </div>
                     <div className="form-group">
-                        <label>Length of Stay (No. of Days) <span className="req">*</span></label>
-                        <input type="number" placeholder="Enter number of days" name="lengthOfStay" value={formData.lengthOfStay} onChange={handleInputChange} />
+                        <label>Length of Stay (Days) <span className="req">*</span></label>
+                        <input type="number" name="lengthOfStay" value={formData.lengthOfStay} onChange={handleInputChange} />
                     </div>
                 </div>
               </div>
 
-              {/* SECTION: VISA REQUEST */}
+              {/* Visa Request */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Globe size={20} color="#f97316" /></div>
@@ -140,15 +188,21 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 <div className="form-group">
                     <label>Visa Type <span className="req">*</span></label>
                     <select name="visaType" value={formData.visaType} onChange={handleInputChange}>
-                        <option value="">Select Visa Type...</option>
-                        <option value="Tourist">Korea</option>
-                        <option value="Business">Australia</option>
-                        <option value="Transit">Japan</option>
+                        <option value="">Select Visa Configuration...</option>
+                        {visaForms && visaForms.length > 0 ? (
+                            visaForms.map((visa) => (
+                                <option key={visa.id} value={visa.desc || visa.description}>
+                                    {visa.desc || visa.description}
+                                </option>
+                            ))
+                        ) : (
+                            <option value="" disabled>No Visa settings found.</option>
+                        )}
                     </select>
                 </div>
               </div>
 
-              {/* SECTION: BASIC INFORMATION */}
+              {/* Basic Information */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><User size={20} color="#f97316" /></div>
@@ -157,20 +211,28 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 <div className="form-grid">
                     <div className="form-group">
                         <label>Given Name <span className="req">*</span></label>
-                        <input type="text" name="givenName" placeholder="Enter your first name (and middle name if applicable)" value={formData.givenName} onChange={handleInputChange} />
+                        <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} />
                     </div>
                     <div className="form-group">
                         <label>Last Name <span className="req">*</span></label>
-                        <input type="text" name="lastName" placeholder="Enter your last name" value={formData.lastName} onChange={handleInputChange} />
+                        <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group">
+                        <label>Email Address <span className="req">*</span></label>
+                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Required" />
+                    </div>
+                    <div className="form-group">
+                        <label>Contact Number</label>
+                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} />
                     </div>
                     <div className="form-group form-full">
-                        <label>Enter other names of applicant</label>
-                        <input type="text" name="otherNames" placeholder="Other names (optional)" value={formData.otherNames} onChange={handleInputChange} />
+                        <label>Other Names (Optional)</label>
+                        <input type="text" name="otherNames" value={formData.otherNames} onChange={handleInputChange} />
                     </div>
                 </div>
               </div>
 
-              {/* SECTION: PRIMARY REQUIREMENTS */}
+              {/* --- PRIMARY REQUIREMENTS --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><FileText size={20} color="#f97316" /></div>
@@ -187,8 +249,8 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* SECTION: FINANCIAL REQUIREMENTS */}
-              <div className="form-section">
+               {/* --- FINANCIAL REQUIREMENTS --- */}
+               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><DollarSign size={20} color="#f97316" /></div>
                   <h4 className="section-title">Financial Requirements</h4>
@@ -201,7 +263,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* SECTION: IF EMPLOYED */}
+              {/* --- IF EMPLOYED --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Briefcase size={20} color="#f97316" /></div>
@@ -214,7 +276,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* SECTION: IF BUSINESS OWNER */}
+              {/* --- IF BUSINESS OWNER --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Building2 size={20} color="#f97316" /></div>
@@ -227,7 +289,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* SECTION: IF STUDENT */}
+              {/* --- IF STUDENT --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><GraduationCap size={20} color="#f97316" /></div>
@@ -239,7 +301,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-               {/* SECTION: IF SENIOR CITIZEN */}
+               {/* --- IF SENIOR CITIZEN --- */}
                <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Users size={20} color="#f97316" /></div>
@@ -250,7 +312,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* SECTION: IF SPONSORED */}
+              {/* --- IF SPONSORED --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Users size={20} color="#f97316" /></div>
@@ -262,7 +324,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-               {/* SECTION: IF MULTIPLE ENTRY */}
+               {/* --- IF MULTIPLE ENTRY --- */}
                <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><ClipboardList size={20} color="#f97316" /></div>
@@ -273,21 +335,23 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
               
-              {/* SECTION: GENERAL UPLOAD */}
+              {/* --- ADDITIONAL DOCUMENTS --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><FileText size={20} color="#f97316" /></div>
                   <h4 className="section-title">Additional Documents</h4>
                 </div>
-                 <p className="upload-note">Upload all the documents related to this applicant</p>
+                 <p className="upload-note">Upload all other documents related to this applicant</p>
                  <FileUploadField label="" fieldName="generalUpload" currentFile={formData.files['generalUpload']} onChange={handleFileChange} />
               </div>
 
             </div>
 
             <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={onClose}>Cancel</button>
-              <button className="modal-save-btn" onClick={handleSubmit}>Add Applicant</button>
+              <button className="modal-cancel-btn" onClick={onClose} disabled={isLoading}>Cancel</button>
+              <button className="modal-save-btn" onClick={submitApplication} disabled={isLoading}>
+                {isLoading ? "Saving..." : "Add Applicant"}
+              </button>
             </div>
           </>
         )}
@@ -297,8 +361,7 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
             <>
             <div className="modal-header">
               <div>
-                <h3>Application Submitted</h3>
-                <p className="modal-header-subtitle">Your visa application has been received</p>
+                <h3>Applicant Added</h3>
               </div>
               <button className="modal-close-btn" onClick={resetAndClose}><X size={24} /></button>
             </div>
@@ -306,23 +369,14 @@ const VisaApplicationModal = ({ isOpen, onClose }) => {
                 <div className="success-icon">
                     <CheckCircle size={64} color="#10b981" strokeWidth={2} />
                 </div>
-                <h3>Ready to Submit!</h3>
-                <p>You have filled out the details for <strong>1 applicant(s)</strong>.</p>
-                <p className="sub-text">By clicking submit, you confirm that all information provided is true and correct. Our team will verify this data before encoding.</p>
-                
-                <div className="applicant-summary">
-                    <span>1. {formData.givenName} {formData.lastName}</span>
-                    <span className="badge-single">{applicantType}</span>
-                </div>
-
+                <h3>Success!</h3>
+                <p>Applicant <strong>{formData.givenName} {formData.lastName}</strong> has been added to the database.</p>
                 <div className="confirmation-actions">
-                    <button className="modal-cancel-btn" onClick={() => setStep(2)}>Go Back</button>
-                    <button className="submit-inquiry-btn" onClick={resetAndClose}>Submit Inquiry</button>
+                    <button className="submit-inquiry-btn" onClick={resetAndClose}>Close</button>
                 </div>
             </div>
             </>
         )}
-
       </div>
     </div>
   );
@@ -334,14 +388,10 @@ const FileUploadField = ({ label, fieldName, currentFile, onChange }) => (
         <div className="file-input-wrapper">
             <label className="choose-file-btn" style={{color: 'white'}}>
                 CHOOSE FILE
-                <input 
-                    type="file" 
-                    style={{display:'none'}} 
-                    onChange={(e) => onChange(e, fieldName)}
-                />
+                <input type="file" style={{display:'none'}} onChange={(e) => onChange(e, fieldName)} />
             </label>
             <span className="file-name">
-                {currentFile || "No file chosen"}
+                {currentFile ? currentFile.name : "No file chosen"}
             </span>
         </div>
     </div>
