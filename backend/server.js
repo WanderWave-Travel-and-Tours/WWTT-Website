@@ -7,7 +7,6 @@ const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
-// CORS setup is crucial for cross-port communication (3000 to 5000)
 app.use(cors()); 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -36,16 +35,15 @@ const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
 const authRoute = require('./routes/authRoute');
 const tourRoutes = require('./routes/tourRoutes'); 
-const userRoutes = require('./routes/usersRouter'); // 👈 User Route Import
-
-// --- ROUTE MOUNTING ---
+const userRoutes = require('./routes/usersRouter');
 const visaRoutes = require('./routes/visaRoute');
 const serviceRoutes = require('./routes/serviceRoute');
 const psaRoutes = require('./routes/psaRoute');
-const cenomarRoutes = require('./routes/cenomarRoute'); // NEW
+const cenomarRoutes = require('./routes/cenomarRoute');
 const passportRoutes = require('./routes/passportRoute');
 const inquiryRoutes = require('./routes/inquiryRoute');
 const uploadRoutes = require('./routes/uploadRoute');
+const hotelRoutes = require('./routes/hotelRoute');
 
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
@@ -58,15 +56,16 @@ app.use('/api/payment', paymentRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/tours', tourRoutes); 
-app.use('/api/users', userRoutes); // 👈 User Routes Mounted
+app.use('/api/users', userRoutes); 
 app.use('/api/visas', visaRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/psa', psaRoutes);
-app.use('/api/cenomar', cenomarRoutes); // NEW
+app.use('/api/cenomar', cenomarRoutes); 
 app.use('/api/passports', passportRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/documents', require('./routes/documentRoute'));
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/hotels', hotelRoutes);
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
