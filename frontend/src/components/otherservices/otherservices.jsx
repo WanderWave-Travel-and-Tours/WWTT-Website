@@ -312,11 +312,13 @@ const OtherServices = ({ setAuthPage }) => {
   };
 
   const handleSelectVisa = (visaData) => {
+    // HERE IS THE FIX: Set title to visaData.description or visaData.country
     setSelectedPackage((prev) => ({
       ...prev,
+      title: visaData.description || `${visaData.country} Visa Assistance`, // Use the specific description
       visaCountry: visaData.country,
       requirements: visaData.requirements,
-      price: visaData.estimatedPrice,
+      price: visaData.price || visaData.estimatedPrice, // Ensure correct price mapping
     }));
     setShowVisaCountries(false);
     setShowModal(true);
@@ -325,6 +327,7 @@ const OtherServices = ({ setAuthPage }) => {
   const handleSelectPSA = (psaData) => {
     setSelectedPackage(prev => ({
       ...prev,
+      title: psaData.documentName || "PSA Assistance", // Use specific document name
       psaDocument: psaData.documentName,
       requirements: psaData.requirements || [],
       price: psaData.estimatedPrice,
@@ -336,6 +339,7 @@ const OtherServices = ({ setAuthPage }) => {
   const handleSelectCENOMAR = (cenomarData) => {
     setSelectedPackage(prev => ({
       ...prev,
+      title: cenomarData.documentName || "CENOMAR Assistance", // Use specific document name
       cenomarDocument: cenomarData.documentName,
       requirements: cenomarData.requirements || [],
       price: cenomarData.estimatedPrice,
@@ -436,7 +440,7 @@ const OtherServices = ({ setAuthPage }) => {
     try {
       const inquiryData = {
         serviceId: selectedPackage.serviceId,
-        serviceName: selectedPackage.title,
+        serviceName: selectedPackage.title, // This now holds the specific description (e.g. "KOREA VISA ASSISTANCE")
         fullName: formData.fullName,
         email: formData.email,
         message: formData.message,
@@ -615,6 +619,7 @@ const OtherServices = ({ setAuthPage }) => {
                     alt="Wanderwave Logo"
                     className="modal-logo"
                   />
+                  {/* TITLE UPDATE: Displays the specific Description */}
                   <h2 className="modal-title">
                     Inquire about {selectedPackage.title}
                   </h2>
@@ -706,7 +711,7 @@ const OtherServices = ({ setAuthPage }) => {
                 ))
               ) : (
                 <li className="requirement-modal-item">
-                   <span className="req-text">No specific requirements listed.</span>
+                    <span className="req-text">No specific requirements listed.</span>
                 </li>
               )}
             </ul>

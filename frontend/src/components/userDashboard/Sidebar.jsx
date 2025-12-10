@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import * as Icons from './Icons';
 import './Sidebar.css';
 
@@ -11,6 +11,9 @@ const StatusIcons = {
 
 const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, isLoading, userInteractions }) => {
     
+    // --- STATE FOR FILTERING ---
+    const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL', 'SERVICES', 'BOOKINGS'
+
     // 1. Define UI State (Message & Icon Color)
     const getInquiryState = (inquiry) => {
         const { status, remarks, deliveredDocuments } = inquiry;
@@ -26,13 +29,23 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
         return { msg: 'Submitted', type: 'info' };
     };
 
-    // 2. Sorting & Filtering Logic (THE FIX)
+    // 2. Sorting & Filtering Logic
     const { needsAttention, onProcess, history } = useMemo(() => {
         const needsAttention = [];
         const onProcess = [];
         const history = [];
 
-        inquiries.forEach(inquiry => {
+        // --- FILTERING STEP ---
+        const filteredInquiries = inquiries.filter(inq => {
+            const isBooking = inq.inquiryType === 'FLIGHT_BOOKING' || inq.inquiryType === 'BOOKING';
+            
+            if (activeFilter === 'BOOKINGS') return isBooking;
+            if (activeFilter === 'SERVICES') return !isBooking; // Visa, PSA, etc.
+            return true; // ALL
+        });
+
+        // --- GROUPING STEP ---
+        filteredInquiries.forEach(inquiry => {
             const state = getInquiryState(inquiry);
             const interaction = userInteractions ? userInteractions[inquiry._id] : null;
             
@@ -42,8 +55,6 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
             const isDownloaded = interaction?.downloaded;
             const isCompleted = inquiry.status === 'COMPLETED';
             const hasDocs = inquiry.deliveredDocuments && inquiry.deliveredDocuments.length > 0;
-
-            // --- LOGIC START ---
 
             // CASE A: HISTORY
             // If it is Completed AND (Downloaded OR No Docs to download)
@@ -69,12 +80,13 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
         });
 
         // Sort Newest First
-        needsAttention.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        onProcess.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const sortFn = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
+        needsAttention.sort(sortFn);
+        onProcess.sort(sortFn);
+        history.sort(sortFn);
 
         return { needsAttention, onProcess, history };
-    }, [inquiries, userInteractions]);
+    }, [inquiries, userInteractions, activeFilter]);
 
     const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -109,9 +121,34 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
     return (
         <aside className={`ud-sidebar ${mobileMenuOpen ? 'ud-sidebar-open' : ''}`}>
             <div className="ud-sidebar-header">
-                <div className="ud-header-icon-wrap"><Icons.Dashboard /></div>
-                <h2>MY APPLICATIONS</h2>
+                <div className="ud-header-top">
+                    <div className="ud-header-icon-wrap"><Icons.Dashboard /></div>
+                    <h2>MY APPLICATIONS</h2>
+                </div>
+                
+                {/* --- NEW FILTER TABS --- */}
+                <div className="ud-filter-tabs">
+                    <button 
+                        className={`ud-filter-btn ${activeFilter === 'ALL' ? 'active' : ''}`}
+                        onClick={() => setActiveFilter('ALL')}
+                    >
+                        All
+                    </button>
+                    <button 
+                        className={`ud-filter-btn ${activeFilter === 'SERVICES' ? 'active' : ''}`}
+                        onClick={() => setActiveFilter('SERVICES')}
+                    >
+                        Services
+                    </button>
+                    <button 
+                        className={`ud-filter-btn ${activeFilter === 'BOOKINGS' ? 'active' : ''}`}
+                        onClick={() => setActiveFilter('BOOKINGS')}
+                    >
+                        Bookings
+                    </button>
+                </div>
             </div>
+
             <div className="ud-applications-list">
                 {isLoading ? (
                     <div className="ud-loading-state"><div className="ud-loader"></div></div>
@@ -119,6 +156,13 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
                     <div className="ud-empty-state"><Icons.Globe /><p>No applications yet</p></div>
                 ) : (
                     <>
+                        {/* Empty Filter State */}
+                        {needsAttention.length === 0 && onProcess.length === 0 && history.length === 0 && (
+                            <div className="ud-empty-filter">
+                                <p>No {activeFilter.toLowerCase()} found.</p>
+                            </div>
+                        )}
+
                         {/* Needs Attention */}
                         {needsAttention.length > 0 && (
                             <div className="ud-sidebar-section">
