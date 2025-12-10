@@ -43,7 +43,7 @@ const cenomarRoutes = require('./routes/cenomarRoute');
 const passportRoutes = require('./routes/passportRoute');
 const inquiryRoutes = require('./routes/inquiryRoute');
 const uploadRoutes = require('./routes/uploadRoute');
-//const hotelRoutes = require('./routes/hotelRoute');
+const hotelRoutes = require('./routes/hotelRoute');
 
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
@@ -65,7 +65,7 @@ app.use('/api/passports', passportRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/documents', require('./routes/documentRoute'));
 app.use('/api/uploads', uploadRoutes);
-//app.use('/api/hotel', hotelRoutes);
+app.use('/api/hotels', hotelRoutes);
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {

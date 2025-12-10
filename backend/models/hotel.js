@@ -15,29 +15,28 @@ const hotelSchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    required: [true, 'Address is required'],
+    required: false, // CHANGED: Made optional
     trim: true
   },
   city: {
     type: String,
-    required: [true, 'City is required'],
+    required: false, // CHANGED: Made optional
     trim: true
   },
   country: {
     type: String,
-    required: [true, 'Country is required'],
     default: 'Philippines',
     trim: true
   },
   description: {
     type: String,
-    required: [true, 'Description is required'],
+    required: false, // CHANGED: Made optional
     trim: true,
     maxlength: [2000, 'Description cannot exceed 2000 characters']
   },
   price: {
     type: Number,
-    required: [true, 'Price is required'],
+    //required: [true, 'Price is required'],
     min: [0, 'Price cannot be negative']
   },
   priceUnit: {

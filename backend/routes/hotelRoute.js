@@ -12,7 +12,7 @@ const {
   getHotelsByCity,
   updateRating,
   getHotelStats
-} = require('../controllers/hotelController');
+} = require('../controller/hotelController');
 
 // Import middleware if you have authentication
 // const { protect, authorize } = require('../middleware/auth');

@@ -152,8 +152,8 @@ const AddHotel = () => {
   };
 
   const handleSubmit = async () => {
-    if (!hotelDetails.name || !hotelDetails.destination || !hotelDetails.price) {
-      setError('Please fill in all required fields (Name, Destination, Price)');
+    if (!hotelDetails.name || !hotelDetails.destination) {
+      setError('Please fill in all required fields (Name, Destination)');
       return;
     }
 
