@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Plane } from 'lucide-react';
 import './CurrencyModal.css';
 
-function CurrencyModal({ isOpen, onClose }) {
+function CurrencyModal({ isOpen, onClose, currency, setCurrency }) {
   if (!isOpen) return null;
 
   return (
@@ -19,6 +19,7 @@ function CurrencyModal({ isOpen, onClose }) {
         <button className="modal-close-btn" onClick={onClose} aria-label="Close">
           <X size={18} />
         </button>
+        
         <div className="receipt-header">
           <div className="receipt-logo">
             <img 
@@ -29,6 +30,29 @@ function CurrencyModal({ isOpen, onClose }) {
           </div>
           <h2 className="receipt-title">TRAVEL NOTICE</h2>
           <div className="receipt-subtitle">International Bookings Advisory</div>
+
+          {/* --- CURRENCY TOGGLE (Placed here for high visibility) --- */}
+          {setCurrency && (
+            <div className="modal-currency-wrapper">
+                <span className="modal-currency-label">View prices in:</span>
+                <div className="modal-currency-switch">
+                    <button 
+                        className={`modal-currency-btn ${currency === 'PHP' ? 'active' : ''}`}
+                        onClick={() => setCurrency('PHP')}
+                    >
+                        PHP ₱
+                    </button>
+                    <button 
+                        className={`modal-currency-btn ${currency === 'USD' ? 'active' : ''}`}
+                        onClick={() => setCurrency('USD')}
+                    >
+                        USD $
+                    </button>
+                </div>
+            </div>
+          )}
+          {/* ------------------------------------------------------- */}
+
         </div>
         <div className="receipt-body">
           <div className="main-notice">
