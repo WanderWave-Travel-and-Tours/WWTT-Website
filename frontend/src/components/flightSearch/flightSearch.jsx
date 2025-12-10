@@ -4,12 +4,12 @@ import "./FlightSearch.css";
 import FlightSearchForm from "./FlightSearchForm";
 import FlightSearchResults from "./FlightSearchResults";
 
-function FlightSearch() {
+function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestination, prefilledPassengers }) {
   const [searchParams, setSearchParams] = useState({
     journeyType: "one-way",
-    adults: "1",
-    children: "0",
-    infants: "0",
+    adults: prefilledPassengers?.adults?.toString() || "1",
+    children: prefilledPassengers?.children?.toString() || "0",
+    infants: prefilledPassengers?.infants?.toString() || "0",
     cabinType: "Economy",
     preferredAirline: "",
   });
@@ -17,18 +17,18 @@ function FlightSearch() {
   const [oneWayData, setOneWayData] = useState({
     origin: "",
     destination: "",
-    departureDate: getTomorrowDate(),
+    departureDate: prefilledDepartureDate || getTomorrowDate(),
   });
 
   const [roundTripData, setRoundTripData] = useState({
     origin: "",
     destination: "",
-    departureDate: getTomorrowDate(),
+    departureDate: prefilledDepartureDate || getTomorrowDate(),
     returnDate: getNextWeekDate(),
   });
 
   const [multiCityLegs, setMultiCityLegs] = useState([
-    { origin: "", destination: "", departureDate: getTomorrowDate() },
+    { origin: "", destination: "", departureDate: prefilledDepartureDate || getTomorrowDate() },
     { origin: "", destination: "", departureDate: getNextWeekDate() },
   ]);
 
@@ -74,6 +74,56 @@ function FlightSearch() {
     nextWeek.setDate(nextWeek.getDate() + 7);
     return nextWeek.toISOString().split("T")[0];
   }
+
+  // Update departure dates when prefilledDepartureDate changes
+  useEffect(() => {
+    if (prefilledDepartureDate) {
+      setOneWayData(prev => ({ ...prev, departureDate: prefilledDepartureDate }));
+      setRoundTripData(prev => ({ ...prev, departureDate: prefilledDepartureDate }));
+      setMultiCityLegs(prev => {
+        const updated = [...prev];
+        updated[0] = { ...updated[0], departureDate: prefilledDepartureDate };
+        return updated;
+      });
+    }
+  }, [prefilledDepartureDate]);
+
+  // Search and set destination when prefilledDestination is provided
+  useEffect(() => {
+    if (prefilledDestination) {
+      // Auto-search for destination airport
+      const searchDestination = async () => {
+        try {
+          const response = await axios.get(
+            "http://localhost:5000/api/flights/airports",
+            { params: { search: prefilledDestination } }
+          );
+
+          if (response.data.success && response.data.data && response.data.data.length > 0) {
+            const airport = response.data.data[0];
+            const iataCode = airport.iata_code;
+            const displayName = `${airport.city_name} (${iataCode})`;
+
+            // Set destination for all journey types
+            setOneWayData(prev => ({ ...prev, destination: iataCode }));
+            setRoundTripData(prev => ({ ...prev, destination: iataCode }));
+            setMultiCityLegs(prev => {
+              const updated = [...prev];
+              updated[0] = { ...updated[0], destination: iataCode };
+              return updated;
+            });
+
+            // Set display text
+            setDestinationSearchTerm(displayName);
+          }
+        } catch (error) {
+          console.error("Auto-search destination error:", error);
+        }
+      };
+
+      searchDestination();
+    }
+  }, [prefilledDestination]);
 
   // --- API SEARCH ---
   const searchAirportsFromAPI = async (searchTerm, field) => {
@@ -379,6 +429,9 @@ function FlightSearch() {
         airportSearchLoading={airportSearchLoading}
         selectAirport={selectAirport}
         loading={loading}
+        disableDateEdit={!!prefilledDepartureDate}
+        disableDestinationEdit={!!prefilledDestination}
+        disablePassengerEdit={!!prefilledPassengers}
         
         // Multi City Props
         multiCitySearchTerms={multiCitySearchTerms}
@@ -400,7 +453,8 @@ function FlightSearch() {
         flights={flights} 
         error={error} 
         loading={loading} 
-        searchParams={searchParams} 
+        searchParams={searchParams}
+        onFlightSelect={onFlightSelect}
       />
     </div>
   );

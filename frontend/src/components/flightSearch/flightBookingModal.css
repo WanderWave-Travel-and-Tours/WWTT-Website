@@ -1,22 +1,21 @@
-/* Full Screen Overlay na laging nasa ibabaw */
 .modal-overlay {
   position: fixed; 
   top: 0; 
   left: 0; 
   width: 100vw; 
   height: 100vh;
-  background: rgba(0, 0, 0, 0.75); /* Darker background para focus sa modal */
+  background: rgba(0, 0, 0, 0.75);
   display: flex; 
   justify-content: center; 
   align-items: center; 
-  z-index: 2147483647; /* Maximum possible Z-Index */
+  z-index: 2147483647; 
   backdrop-filter: blur(4px);
 }
 
 .booking-modal {
   background: white; 
   width: 95%; 
-  max-width: 550px; /* Mas malapad konti para hindi siksikan */
+  max-width: 550px;
   padding: 30px; 
   border-radius: 16px;
   position: relative; 
@@ -31,7 +30,6 @@
   to { transform: scale(1); opacity: 1; }
 }
 
-/* Close Button */
 .close-btn {
   position: absolute;
   top: 15px; 
@@ -64,9 +62,7 @@
     border: 1px solid #ffedd5;
 }
 
-/* Forms */
 .form-step h3 { color: #334155; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
-
 .form-group { margin-bottom: 18px; }
 .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
 .form-group input, .passenger-card input { 
@@ -83,7 +79,6 @@
     box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
-/* Passenger Card Styles */
 .passengers-scroll { 
     max-height: 400px; 
     overflow-y: auto; 
@@ -100,7 +95,6 @@
 .passenger-card .row { display: flex; gap: 15px; margin-bottom: 15px; }
 .passenger-card input { flex: 1; }
 
-/* Buttons */
 .next-btn, .submit-btn { 
     width: 100%; 
     padding: 15px; 
@@ -120,3 +114,157 @@
 .btn-group { display: flex; gap: 15px; margin-top: 25px; }
 .back-btn { background: #f1f5f9; color: #64748b; border: none; padding: 15px 25px; border-radius: 10px; font-weight: 700; cursor: pointer; }
 .back-btn:hover { background: #e2e8f0; color: #475569; }
+
+.flight-search-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.flight-search-modal-content {
+  background: white;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 95vh;
+  border-radius: 20px;
+  position: relative;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: slideInFromBottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.flight-modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  color: #64748b;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.flight-modal-close-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+}
+
+.flight-modal-header {
+  background: linear-gradient(135deg, #001b3e 0%, #003d7a 100%);
+  color: white;
+  padding: 40px 30px 30px;
+  border-radius: 20px 20px 0 0;
+  text-align: center;
+}
+
+.flight-modal-header h2 {
+  margin: 15px 0 10px;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.flight-modal-header p {
+  margin: 8px 0;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.flight-modal-header p strong {
+  color: #fc9c1b;
+  font-weight: 700;
+}
+
+.flight-search-wrapper {
+  padding: 0;
+  background: #f8f9fa;
+}
+
+.flight-search-modal-content .flight-search-container {
+  min-height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.flight-search-modal-content .orange-divider {
+  margin: 0;
+  padding: 20px 0;
+}
+
+.book-with-airfare-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #001b3e 0%, #003d7a 100%);
+  color: white;
+  border: 2px solid #fc9c1b;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s;
+}
+
+.book-with-airfare-btn:hover {
+  background: linear-gradient(135deg, #003d7a 0%, #001b3e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(252, 156, 27, 0.3);
+}
+
+@media (max-width: 768px) {
+  .flight-search-modal-content {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .flight-modal-header {
+    border-radius: 0;
+    padding: 50px 20px 25px;
+  }
+
+  .flight-modal-close-btn {
+    top: 15px;
+    right: 15px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .flight-modal-header h2 {
+    font-size: 1.5rem;
+  }
+}
