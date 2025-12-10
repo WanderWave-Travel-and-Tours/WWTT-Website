@@ -46,24 +46,52 @@ const UserDashboard = ({ user, onLogout }) => {
         localStorage.setItem('wanderwave_viewed_history', JSON.stringify(newHistory));
     };
 
-    // --- HELPER: FETCH INQUIRIES ---
-    const fetchInquiries = async () => {
+    // --- HELPER: FETCH INQUIRIES & BOOKINGS ---
+    const fetchUserData = async () => {
         if (!user?.email) return;
 
         try {
-            const response = await fetch(`http://localhost:5000/api/inquiries/email/${user.email}`);
-            const data = await response.json();
+            // 1. Fetch Inquiries (Services)
+            const inquiriesPromise = fetch(`http://localhost:5000/api/inquiries/email/${user.email}`).then(res => res.json());
             
-            if (data.success) {
-                setInquiries(data.data);
-                // Keep selected inquiry in sync with updates
-                if (selectedInquiry) {
-                    const updatedSelected = data.data.find(i => i._id === selectedInquiry._id);
-                    if (updatedSelected) setSelectedInquiry(updatedSelected);
-                }
+            // 2. Fetch Bookings (Flights/Packages)
+            const bookingsPromise = fetch(`http://localhost:5000/api/bookings/user/${user.email}`).then(res => res.json());
+
+            const [inquiriesData, bookingsData] = await Promise.all([inquiriesPromise, bookingsPromise]);
+            
+            let combinedData = [];
+
+            // Process Inquiries
+            if (inquiriesData.success) {
+                combinedData = [...combinedData, ...inquiriesData.data];
             }
+
+            // Process Bookings & Map to Inquiry Format for Sidebar
+            if (bookingsData.success) {
+                const formattedBookings = bookingsData.data.map(booking => ({
+                    ...booking,
+                    serviceName: booking.packageName, // Use package name as service name
+                    inquiryType: 'BOOKING', // Tag explicitly as booking for filter
+                    status: booking.status ? booking.status.toUpperCase() : 'PENDING', // Ensure UpperCase for Sidebar logic
+                    estimatedPrice: booking.totalAmount, // Map price
+                    message: booking.message || `Booking for ${booking.packageName}`
+                }));
+                combinedData = [...combinedData, ...formattedBookings];
+            }
+
+            // Sort by Date (Newest first)
+            combinedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            setInquiries(combinedData);
+
+            // Keep selected inquiry in sync with updates
+            if (selectedInquiry) {
+                const updatedSelected = combinedData.find(i => i._id === selectedInquiry._id);
+                if (updatedSelected) setSelectedInquiry(updatedSelected);
+            }
+
         } catch (error) {
-            console.error('Error fetching inquiries:', error);
+            console.error('Error fetching user data:', error);
         } finally {
             setIsLoading(false);
         }
@@ -73,8 +101,8 @@ const UserDashboard = ({ user, onLogout }) => {
     useEffect(() => {
         if (user?.email) {
             setIsLoading(true);
-            fetchInquiries();
-            const interval = setInterval(fetchInquiries, 30000); // Auto-refresh every 30s
+            fetchUserData();
+            const interval = setInterval(fetchUserData, 30000); // Auto-refresh every 30s
             return () => clearInterval(interval);
         }
     }, [user]);
@@ -92,7 +120,7 @@ const UserDashboard = ({ user, onLogout }) => {
                     await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/pay`);
                     alert('Payment successful! Status updated.');
                     window.history.replaceState({}, document.title, window.location.pathname);
-                    await fetchInquiries();
+                    await fetchUserData();
                 } catch (error) {
                     console.error('Payment verification failed:', error);
                 } finally {
@@ -209,7 +237,7 @@ const UserDashboard = ({ user, onLogout }) => {
             await fetch('http://localhost:5000/api/documents/upload', { method: 'POST', body: formData });
             alert('Documents submitted successfully!');
             setUploadedFiles({});
-            fetchInquiries(); 
+            fetchUserData(); 
         } catch (error) {
             console.error('Upload error:', error);
             alert('Failed to submit documents.');

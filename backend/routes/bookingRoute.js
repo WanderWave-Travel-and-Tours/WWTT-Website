@@ -50,6 +50,27 @@ const generateTempPassword = () => {
   return `Wander_${numbers}${randomSpecialChar}`;
 };
 
+// --- NEW ROUTE: GET BOOKINGS BY USER EMAIL ---
+router.get('/user/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    // Hanapin ang bookings na match sa email ng user, sort by newest
+    const bookings = await Booking.find({ email: email }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: bookings.length,
+      data: bookings // Return as 'data' to match inquiry structure
+    });
+  } catch (error) {
+    console.error('❌ Error fetching user bookings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user bookings'
+    });
+  }
+});
+
 router.post('/', upload.any(), async (req, res) => {
   try {
     let bookingData;
