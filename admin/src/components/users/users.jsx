@@ -2,6 +2,71 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import './users.css';
 
+// =========================================================================
+// PAGINATION COMPONENT (New)
+// =========================================================================
+const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentPage }) => {
+  const pageNumbers = [];
+  const totalPages = Math.ceil(totalApplications / applicationsPerPage);
+
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
+
+  const handlePrev = () => {
+    if (currentPage > 1) {
+      paginate(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      paginate(currentPage + 1);
+    }
+  };
+
+  if (totalApplications <= applicationsPerPage) return null;
+
+  return (
+    <nav className="pagination-nav">
+      <ul className="pagination-list">
+        <li>
+          <button 
+            onClick={handlePrev} 
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            Previous
+          </button>
+        </li>
+        {pageNumbers.map(number => (
+          <li key={number} className="page-item">
+            <button 
+              onClick={() => paginate(number)} 
+              className={`pagination-btn ${number === currentPage ? 'active' : ''}`}
+            >
+              {number}
+            </button>
+          </li>
+        ))}
+        <li>
+          <button 
+            onClick={handleNext} 
+            disabled={currentPage === totalPages}
+            className="pagination-btn"
+          >
+            Next
+          </button>
+        </li>
+      </ul>
+    </nav>
+  );
+};
+// =========================================================================
+// END PAGINATION COMPONENT
+// =========================================================================
+
+
 const USERS_PER_PAGE = 10;
 
 const Users = () => {
