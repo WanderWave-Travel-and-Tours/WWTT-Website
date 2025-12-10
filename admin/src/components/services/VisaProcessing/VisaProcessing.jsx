@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Sidebar from "../../sidebar/sidebar"; // Adjust path if needed
+import Sidebar from "../../sidebar/sidebar"; 
 import { FolderOpen, Clock, CheckCircle, RefreshCw, FileText, UserPlus } from "lucide-react";
 import "./VisaProcessing.css"; 
 
-// Import Sub-components
 import VisaInquiryModal from "./VisaInquiryModal";
 import VisaSettingsModal from "./VisaSettingsModal";
-import VisaApplicationModal from "./VisaApplicationModal"; // NEW COMPONENT
+import VisaApplicationModal from "./VisaApplicationModal"; 
 
-// --- Pagination Component ---
 const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentPage }) => {
   const pageNumbers = [];
   const totalPages = Math.ceil(totalApplications / applicationsPerPage);
@@ -36,7 +34,6 @@ const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentP
   );
 };
 
-// --- Stats Component ---
 const VisaStats = ({ stats }) => (
   <div className="visa-stats-grid">
     {stats.map((stat, index) => (
@@ -51,27 +48,21 @@ const VisaStats = ({ stats }) => (
   </div>
 );
 
-// --- MAIN COMPONENT ---
 const VisaProcessing = () => {
-  // Sidebar State
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  // Data States
   const [visaForms, setVisaForms] = useState([]);
   const [inquiries, setInquiries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modal States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false); // NEW STATE
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false); 
   const [selectedInquiry, setSelectedInquiry] = useState(null);
 
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [applicationsPerPage] = useState(10);
 
-  // Country Codes Data
   const countryCodes = [
     { code: "AE", name: "United Arab Emirates" }, { code: "AR", name: "Argentina" }, { code: "AT", name: "Austria" },
     { code: "AU", name: "Australia" }, { code: "BD", name: "Bangladesh" }, { code: "BE", name: "Belgium" },
@@ -99,7 +90,6 @@ const VisaProcessing = () => {
     { code: "VN", name: "Vietnam" }, { code: "ZA", name: "South Africa" },
   ].sort((a, b) => a.name.localeCompare(b.name));
 
-  // --- API CALLS ---
   const fetchVisas = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/visas");
@@ -133,7 +123,6 @@ const VisaProcessing = () => {
     fetchInquiries();
   }, []);
 
-  // --- HELPERS ---
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -144,14 +133,13 @@ const VisaProcessing = () => {
     return country ? country.code : null;
   }
 
-  // --- DATA MAPPING & PAGINATION ---
   const allApplications = inquiries.map((inquiry) => ({
     id: inquiry._id.slice(-8).toUpperCase(),
     client: inquiry.fullName,
     country: inquiry.visaCountry || 'N/A',
     flagCode: inquiry.visaCountry ? getCountryCode(inquiry.visaCountry) : null,
     flag: '🌍',
-    type: inquiry.serviceName,
+    type: inquiry.serviceName, 
     date: formatDate(inquiry.createdAt),
     status: inquiry.status || 'PENDING',
     _original: inquiry 
@@ -175,7 +163,6 @@ const VisaProcessing = () => {
       <div className={`visa-main ${isSidebarCollapsed ? "expanded" : ""}`}>
         <div className="visa-container">
           
-          {/* Header */}
           <div className="visa-header">
             <div className="visa-title">
               <h1>Visa Processing</h1>
@@ -193,10 +180,8 @@ const VisaProcessing = () => {
             </div>
           </div>
 
-          {/* Stats */}
           <VisaStats stats={stats} />
 
-          {/* Table */}
           <div className="visa-table-container">
             <table className="visa-table">
               <thead>
@@ -251,9 +236,6 @@ const VisaProcessing = () => {
             />
           </div>
 
-          {/* --- SUB MODALS --- */}
-          
-          {/* 1. Visa Settings Modal */}
           <VisaSettingsModal 
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
@@ -263,7 +245,6 @@ const VisaProcessing = () => {
             refreshData={fetchVisas} 
           />
 
-          {/* 2. Inquiry View Modal */}
           {selectedInquiry && (
             <VisaInquiryModal
               isOpen={!!selectedInquiry}
@@ -273,10 +254,11 @@ const VisaProcessing = () => {
             />
           )}
 
-          {/* 3. NEW: Visa Application Modal */}
           <VisaApplicationModal
             isOpen={isApplicationModalOpen}
             onClose={() => setIsApplicationModalOpen(false)}
+            refreshData={fetchInquiries} 
+            visaForms={visaForms} 
           />
 
         </div>
