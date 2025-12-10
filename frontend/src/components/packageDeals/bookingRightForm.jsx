@@ -5,6 +5,7 @@ import {
   ChevronLeft, ChevronRight, Minus, Plus, X, MessageCircle 
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import FlightSearch from '../flightSearch/flightSearch'; // FIXED: Correct path
 
 const BookingRightForm = ({ pkg }) => {
   const navigate = useNavigate();
@@ -13,6 +14,12 @@ const BookingRightForm = ({ pkg }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10));
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const [showModal, setShowModal] = useState(false);
+  const [showFlightSearchModal, setShowFlightSearchModal] = useState(false);
+  
+  // AIRFARE INTEGRATION STATES
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [bookingWithAirfare, setBookingWithAirfare] = useState(false);
+  
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -23,10 +30,17 @@ const BookingRightForm = ({ pkg }) => {
     { id: 'adult', label: 'Standard Pax', description: '3+ years old', pricePerPax: pkg.price, discount: 'Best Value' }
   ];
 
-  const totalAmount = Object.entries(quantities).reduce((sum, [type, qty]) => {
+  // PACKAGE TOTAL
+  const packageTotal = Object.entries(quantities).reduce((sum, [type, qty]) => {
     const pType = packageTypes.find(p => p.id === type);
     return sum + (pType?.pricePerPax || 0) * qty;
   }, 0);
+
+  // AIRFARE TOTAL (if selected)
+  const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
+
+  // GRAND TOTAL (Package + Airfare)
+  const totalAmount = packageTotal + airfareTotal;
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
@@ -55,6 +69,7 @@ const BookingRightForm = ({ pkg }) => {
     setCurrentMonth(new Date(newDate));
   };
 
+  // REGULAR BOOKING (Package Only)
   const handleBookClick = () => {
     if (!selectedDate) {
       toast.error("Please select a travel date first!", {
@@ -63,7 +78,44 @@ const BookingRightForm = ({ pkg }) => {
       });
       return;
     }
+    setBookingWithAirfare(false);
     setShowModal(true);
+  };
+
+  // BOOK WITH AIRFARE - Opens Flight Search
+  const handleBookWithAirfare = () => {
+    if (!selectedDate) {
+      toast.error("Please select a travel date first!", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+        iconTheme: { primary: '#ef4444', secondary: '#fff' },
+      });
+      return;
+    }
+    setShowFlightSearchModal(true);
+  };
+
+  // CALLBACK: When user selects a flight from FlightSearchResults
+  const handleFlightSelected = (flight) => {
+    setSelectedFlight(flight);
+    setShowFlightSearchModal(false);
+    setBookingWithAirfare(true);
+    
+    toast.success(
+      `✈️ Flight Added! ${flight.airline.name} - ${flight.price.formatted}`,
+      { duration: 3000 }
+    );
+    
+    // Auto-open booking modal after selecting flight
+    setTimeout(() => {
+      setShowModal(true);
+    }, 500);
+  };
+
+  // REMOVE SELECTED FLIGHT
+  const handleRemoveFlight = () => {
+    setSelectedFlight(null);
+    setBookingWithAirfare(false);
+    toast.success("Flight removed from booking", { duration: 2000 });
   };
 
   const handleInputChange = (e) => {
@@ -81,6 +133,21 @@ const BookingRightForm = ({ pkg }) => {
       endDate: `${monthNames[currentMonth.getMonth()]} ${endDate}, ${currentMonth.getFullYear()}`,
       duration: pkg.duration,
       pax: quantities,
+      packageTotal: packageTotal,
+      
+      // AIRFARE DATA (if applicable)
+      includesAirfare: bookingWithAirfare,
+      flightDetails: selectedFlight ? {
+        airline: selectedFlight.airline.name,
+        flightNumber: selectedFlight.airline.flightNumber || 'N/A',
+        route: `${selectedFlight.departure.iataCode} → ${selectedFlight.arrival.iataCode}`,
+        departureTime: selectedFlight.departure.time,
+        arrivalTime: selectedFlight.arrival.time,
+        price: selectedFlight.price.amount,
+        formatted: selectedFlight.price.formatted
+      } : null,
+      airfareTotal: airfareTotal,
+      
       totalAmount: totalAmount,
       fullName: formData.fullName,
       email: formData.email,
@@ -212,14 +279,82 @@ const BookingRightForm = ({ pkg }) => {
         ))}
       </div>
 
+      {/* SELECTED FLIGHT DISPLAY */}
+      {selectedFlight && (
+        <div style={{
+          background: '#fff7ed',
+          border: '2px solid #fc9c1b',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '20px'
+        }}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px'}}>
+            <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+              <Plane size={20} color="#fc9c1b"/>
+              <strong style={{color:'#1f2937', fontSize:'0.95rem'}}>Flight Added to Package</strong>
+            </div>
+            <button 
+              onClick={handleRemoveFlight}
+              style={{
+                background:'none', 
+                border:'none', 
+                color:'#ef4444', 
+                cursor:'pointer',
+                fontSize:'0.85rem',
+                textDecoration:'underline'
+              }}
+            >
+              Remove
+            </button>
+          </div>
+          
+          <div style={{fontSize:'0.9rem', color:'#374151', lineHeight:'1.6'}}>
+            <div><strong>{selectedFlight.airline.name}</strong> • {selectedFlight.airline.flightNumber || 'Flight'}</div>
+            <div>{selectedFlight.departure.iataCode} → {selectedFlight.arrival.iataCode}</div>
+            <div style={{color:'#6b7280', fontSize:'0.85rem'}}>{selectedFlight.departure.displayTime} - {selectedFlight.arrival.displayTime}</div>
+            <div style={{marginTop:'8px', fontWeight:'700', color:'#fc9c1b', fontSize:'1rem'}}>
+              +{selectedFlight.price.formatted}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="booking-footer">
         <div className="total-row">
-          <span className="total-label">Total Amount</span>
-          <span className="total-amount">₱{totalAmount.toLocaleString()}</span>
+          <span className="total-label">
+            {selectedFlight ? 'Package Total' : 'Total Amount'}
+          </span>
+          <span className="total-amount">₱{packageTotal.toLocaleString()}</span>
         </div>
         
+        {/* Show Airfare + Grand Total if flight selected */}
+        {selectedFlight && (
+          <>
+            <div className="total-row" style={{fontSize:'0.9rem', color:'#6b7280'}}>
+              <span>+ Airfare</span>
+              <span>₱{airfareTotal.toLocaleString()}</span>
+            </div>
+            <div className="total-row" style={{
+              borderTop:'2px solid #fc9c1b', 
+              paddingTop:'12px', 
+              marginTop:'8px',
+              fontSize:'1.1rem', 
+              fontWeight:'800',
+              color:'#1f2937'
+            }}>
+              <span>GRAND TOTAL</span>
+              <span style={{color:'#fc9c1b'}}>₱{totalAmount.toLocaleString()}</span>
+            </div>
+          </>
+        )}
+        
         <button className="book-now-btn" onClick={handleBookClick}>
-          Book This Trip
+          {selectedFlight ? '🎫 Book Package + Flight' : 'Book This Trip'}
+        </button>
+
+        <button className="book-with-airfare-btn" onClick={handleBookWithAirfare}>
+          <Plane size={20} />
+          {selectedFlight ? 'Change Flight' : 'Add Airfare'}
         </button>
 
         <button className="contact-sales-footer-btn" onClick={handleContactSales}>
@@ -232,6 +367,7 @@ const BookingRightForm = ({ pkg }) => {
         </p>
       </div>
 
+      {/* BOOKING CONFIRMATION MODAL */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
@@ -266,9 +402,35 @@ const BookingRightForm = ({ pkg }) => {
                 </div>
                 <div className="summary-divider"></div>
                 <div className="summary-item">
-                    <span className="summary-label">Total Amount</span>
-                    <strong className="summary-value price">₱{totalAmount.toLocaleString()}</strong>
+                    <span className="summary-label">Package Price</span>
+                    <strong className="summary-value price">₱{packageTotal.toLocaleString()}</strong>
                 </div>
+                
+                {/* SHOW AIRFARE IN MODAL */}
+                {selectedFlight && (
+                  <>
+                    <div className="summary-divider"></div>
+                    <div className="summary-item">
+                      <span className="summary-label">
+                        <Plane size={14} style={{display:'inline', marginRight:'4px'}}/>
+                        Airfare ({selectedFlight.airline.name})
+                      </span>
+                      <strong className="summary-value" style={{color:'#fc9c1b'}}>
+                        ₱{airfareTotal.toLocaleString()}
+                      </strong>
+                      <span style={{fontSize:'0.85rem', color:'#6b7280'}}>
+                        {selectedFlight.departure.iataCode} → {selectedFlight.arrival.iataCode}
+                      </span>
+                    </div>
+                    <div className="summary-divider"></div>
+                    <div className="summary-item" style={{background:'#fff7ed', padding:'12px', borderRadius:'8px'}}>
+                      <span className="summary-label">GRAND TOTAL</span>
+                      <strong className="summary-value" style={{fontSize:'1.4rem', color:'#fc9c1b'}}>
+                        ₱{totalAmount.toLocaleString()}
+                      </strong>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -309,10 +471,47 @@ const BookingRightForm = ({ pkg }) => {
               </div>
 
               <button type="submit" className="modal-submit-btn">
-                Confirm Booking
+                {bookingWithAirfare ? `Confirm Booking (₱${totalAmount.toLocaleString()})` : 'Confirm Booking'}
               </button>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* FLIGHT SEARCH MODAL */}
+      {showFlightSearchModal && (
+        <div className="flight-search-modal-overlay" onClick={() => setShowFlightSearchModal(false)}>
+          <div className="flight-search-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="flight-modal-close-btn" 
+              onClick={() => setShowFlightSearchModal(false)}
+              aria-label="Close Flight Search"
+            >
+              <X size={32} strokeWidth={3} />
+            </button>
+            
+            <div className="flight-modal-header">
+              <Plane size={28} color="#fc9c1b" />
+              <h2>Search Flights for Your Trip</h2>
+              <p>Package: <strong>{pkg.name}</strong></p>
+              {selectedDate && (
+                <p>Travel Date: <strong>{monthNames[currentMonth.getMonth()]} {selectedDate}, {currentMonth.getFullYear()}</strong></p>
+              )}
+            </div>
+
+            <div className="flight-search-wrapper">
+              <FlightSearch 
+                onFlightSelect={handleFlightSelected}
+                prefilledDepartureDate={selectedDate ? `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}` : null}
+                prefilledDestination={pkg.location}
+                prefilledPassengers={{
+                  adults: quantities.adult || 1,
+                  children: 0,
+                  infants: 0
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

@@ -2,12 +2,18 @@ import React, { useState } from "react";
 import "./FlightSearchResults.css";
 import FlightBookingModal from "./flightBookingModal"; 
 
-function FlightSearchResults({ searchInfo, flights, error, loading, searchParams }) {
+function FlightSearchResults({ searchInfo, flights, error, loading, searchParams, onFlightSelect }) {
 
   const [selectedFlight, setSelectedFlight] = useState(null);
 
   const handleBookClick = (flight) => {
-    setSelectedFlight(flight);
+    // If onFlightSelect callback exists (for package integration), use it
+    if (onFlightSelect) {
+      onFlightSelect(flight);
+    } else {
+      // Otherwise, show the regular booking modal
+      setSelectedFlight(flight);
+    }
   };
 
   return (
@@ -130,20 +136,17 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
                 </div>
               </div>
 
-              {/* ✅ FIXED: BUTTON IS NOW ALWAYS VISIBLE */}
               <div className="flight-footer">
-                {/* Only show quality badge IF quality exists (optional) */}
                 {flight.quality !== undefined ? (
                   <div className="quality-badge">
                     <span className="star">★</span> Quality Score: <strong>{flight.quality}/10</strong>
                   </div>
                 ) : (
-                  // Spacer para mapunta sa kanan ang button kung walang quality badge
                   <div></div> 
                 )}
                 
                 <button className="book-btn" onClick={() => handleBookClick(flight)}>
-                  Book Now
+                  {onFlightSelect ? 'Select Flight' : 'Book Now'}
                 </button>
               </div>
 
@@ -158,8 +161,8 @@ function FlightSearchResults({ searchInfo, flights, error, loading, searchParams
             </div>
           )}
           
-          {/* RENDER MODAL IF FLIGHT IS SELECTED */}
-          {selectedFlight && (
+          {/* RENDER MODAL IF FLIGHT IS SELECTED (only for standalone mode) */}
+          {selectedFlight && !onFlightSelect && (
             <FlightBookingModal 
               flight={selectedFlight} 
               searchParams={searchParams} 
