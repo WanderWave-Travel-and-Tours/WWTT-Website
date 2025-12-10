@@ -3,14 +3,14 @@ import Sidebar from '../sidebar/sidebar';
 import './addhotel.css';
 import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine } from 'lucide-react';
 
-// IMPORTANT: Update this to your actual backend URL
-const API_BASE_URL = 'http://localhost:5000'; // Change to your backend port
+const API_BASE_URL = 'http://localhost:5000'; 
 
 const AddHotel = () => {
   const [hotelDetails, setHotelDetails] = useState({
     name: '',
     destination: '',
     price: '',
+    maxCapacity: 4,
     amenities: {
       wifi: false,
       parking: false,
@@ -104,6 +104,11 @@ const AddHotel = () => {
     }
   };
 
+  const calculateRooms = (guests) => {
+    const maxCapacity = hotelDetails.maxCapacity || 4;
+    return Math.ceil(guests / maxCapacity);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setHotelDetails(prev => ({ ...prev, [name]: value }));
@@ -171,6 +176,7 @@ const AddHotel = () => {
         description: `${type} accommodation in ${hotelDetails.destination}`,
         price: Number(hotelDetails.price),
         priceUnit: 'per night',
+        maxCapacity: Number(hotelDetails.maxCapacity) || 4,
         rating: 0,
         amenities: hotelDetails.amenities,
         mainImage: previewUrl || '',
@@ -194,6 +200,7 @@ const AddHotel = () => {
           name: '',
           destination: '',
           price: '',
+          maxCapacity: 4,
           amenities: {
             wifi: false,
             parking: false,
@@ -228,6 +235,7 @@ const AddHotel = () => {
       name: '',
       destination: '',
       price: '',
+      maxCapacity: 4,
       amenities: {
         wifi: false,
         parking: false,
@@ -260,6 +268,13 @@ const AddHotel = () => {
   }, [isPasteActive]);
 
   const activeAmenitiesCount = Object.values(hotelDetails.amenities).filter(Boolean).length;
+
+  const exampleGuests = [4, 5, 8, 10];
+  const roomCalculations = exampleGuests.map(guests => ({
+    guests,
+    rooms: calculateRooms(guests),
+    totalPrice: calculateRooms(guests) * (Number(hotelDetails.price) || 0)
+  }));
 
   return (
     <div className="hotel-page">
@@ -412,7 +427,24 @@ const AddHotel = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Price per Night (₱) *</label>
+                    <label>Max Capacity per Room *</label>
+                    <input 
+                      type="number" 
+                      name="maxCapacity" 
+                      value={hotelDetails.maxCapacity} 
+                      onChange={handleChange} 
+                      placeholder="e.g. 4" 
+                      required
+                      min="1"
+                      max="10"
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                      Default: 4 persons per room
+                    </span>
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label>Price per Room per Night (₱) *</label>
                     <input 
                       type="number" 
                       name="price" 
@@ -423,6 +455,43 @@ const AddHotel = () => {
                       min="0"
                     />
                   </div>
+
+                  {/* Room Calculation Preview */}
+                  {hotelDetails.price && hotelDetails.maxCapacity && (
+                    <div className="form-group full-width">
+                      <label>Room Calculation Preview</label>
+                      <div style={{
+                        padding: '1rem',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          <Users size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                          Example: {hotelDetails.maxCapacity} persons/room @ ₱{hotelDetails.price}/room/night
+                        </p>
+                        <div style={{ display: 'grid', gap: '0.5rem' }}>
+                          {roomCalculations.map(calc => (
+                            <div key={calc.guests} style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              padding: '0.5rem',
+                              backgroundColor: 'white',
+                              borderRadius: '4px',
+                              fontSize: '0.8rem'
+                            }}>
+                              <span style={{ color: '#64748b' }}>
+                                {calc.guests} guests = {calc.rooms} room{calc.rooms > 1 ? 's' : ''}
+                              </span>
+                              <span style={{ color: '#3b82f6', fontWeight: '600' }}>
+                                ₱{calc.totalPrice.toLocaleString()}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="form-group full-width">
                     <label>Hotel Image</label>
@@ -550,7 +619,7 @@ const AddHotel = () => {
                       {hotelDetails.destination || 'Destination'}
                     </div>
                     <p className="card-desc">
-                      {`${type} accommodation in ${hotelDetails.destination || 'your destination'}`}
+                      {`${type} accommodation in ${hotelDetails.destination || 'your destination'}. Max ${hotelDetails.maxCapacity} persons per room.`}
                     </p>
                     <div className="card-footer">
                       <div className="card-amenities">
@@ -558,7 +627,7 @@ const AddHotel = () => {
                       </div>
                       <div className="card-price">
                         <span className="price-value">₱{hotelDetails.price || '0'}</span>
-                        <span className="price-unit">/ night</span>
+                        <span className="price-unit">/ room / night</span>
                       </div>
                     </div>
                   </div>

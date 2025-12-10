@@ -15,12 +15,12 @@ const hotelSchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    required: false, // CHANGED: Made optional
+    required: false,
     trim: true
   },
   city: {
     type: String,
-    required: false, // CHANGED: Made optional
+    required: false,
     trim: true
   },
   country: {
@@ -30,19 +30,25 @@ const hotelSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: false, // CHANGED: Made optional
+    required: false,
     trim: true,
     maxlength: [2000, 'Description cannot exceed 2000 characters']
   },
   price: {
     type: Number,
-    //required: [true, 'Price is required'],
+    required: false,
     min: [0, 'Price cannot be negative']
   },
   priceUnit: {
     type: String,
     default: 'per night',
     enum: ['per night', 'per hour', 'per day', 'per week']
+  },
+  maxCapacity: {
+    type: Number,
+    default: 4,
+    min: [1, 'Max capacity must be at least 1'],
+    max: [20, 'Max capacity cannot exceed 20']
   },
   rating: {
     type: Number,
@@ -179,6 +185,17 @@ hotelSchema.virtual('amenitiesCount').get(function() {
 hotelSchema.methods.getAmenitiesList = function() {
   const amenities = this.amenities;
   return Object.keys(amenities).filter(key => amenities[key]);
+};
+
+// Method to calculate required rooms based on number of guests
+hotelSchema.methods.calculateRoomsNeeded = function(numberOfGuests) {
+  return Math.ceil(numberOfGuests / this.maxCapacity);
+};
+
+// Method to calculate total price for a group
+hotelSchema.methods.calculateGroupPrice = function(numberOfGuests, numberOfNights = 1) {
+  const roomsNeeded = this.calculateRoomsNeeded(numberOfGuests);
+  return roomsNeeded * this.price * numberOfNights;
 };
 
 module.exports = mongoose.model('Hotel', hotelSchema);
