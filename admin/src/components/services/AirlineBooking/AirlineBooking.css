@@ -357,6 +357,218 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     background: #2563eb;
 }
 
+/* --- Pagination Styles --- */
+.pagination-nav {
+    margin-top: 0;
+    padding: 16px 24px;
+    background-color: white;
+    border-top: 1px solid #e2e8f0;
+    position: sticky; 
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: flex-end;
+    border-radius: 0 0 12px 12px; 
+}
+
+.pagination-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 6px;
+    align-items: center;
+}
+
+.pagination-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #334155; /* Neutral text color */
+    transition: all 0.2s;
+    min-width: 40px; 
+    text-align: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f1f5f9; /* Light gray hover */
+    border-color: #cbd5e1;
+    color: #0f172a; /* Darker text on hover */
+    transform: translateY(-1px); /* Slight lift on hover */
+}
+
+.pagination-btn.active {
+    background-color: #0f172a; /* Primary dark color background for active page */
+    border-color: #0f172a;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
+}
+
+.pagination-btn.active:hover {
+    background-color: #1e293b; /* Slightly darker primary on hover */
+    border-color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background-color: #f8fafc;
+}
+
+/* For previous/next buttons */
+.pagination-btn:first-child,
+.pagination-btn:last-child {
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* --- Search and Filter --- */
+
+.search-filter-card {
+    /* Container for the entire search/filter block */
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.search-filter-wrapper {
+    /* Flex container for the search box and filter buttons */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex-wrap: wrap; /* Allows components to wrap on smaller screens */
+}
+
+/* Search Box Container */
+.search-box {
+    flex: 1;
+    position: relative;
+    width: 100%; 
+}
+
+/* Search Icon Styling (from Lucide React) */
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0; /* Gray color */
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Search Input Field */
+.search-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 3rem; /* Left padding for icon */
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background: #f7fafc; /* Light background */
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea; /* Primary color focus */
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Filter Buttons Container - More compact gap */
+.filter-buttons {
+    display: flex;
+    gap: 0.4rem; /* Reduced gap from 0.5rem to 0.4rem */
+    flex-wrap: wrap; 
+    justify-content: flex-start;
+}
+
+/* Individual Filter Button - Smaller size adjustments */
+.filter-btn {
+    padding: 0.5rem 1rem; /* Reduced padding from 0.6rem 1.1rem */
+    border: none;
+    border-radius: 8px; /* Reduced border radius from 10px to 8px */
+    font-weight: 600;
+    font-size: 0.8rem; /* Reduced font size from 0.85rem to 0.8rem */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f7fafc;
+    color: #4a5568;
+    white-space: nowrap;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.filter-btn:hover:not(.active) {
+    background: #edf2f7;
+    transform: translateY(-2px);
+}
+
+.filter-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Active Status Styles */
+.filter-btn.active { /* General 'All Items' active state */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.filter-btn.confirmed-active { /* Green */
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); 
+    color: white;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.filter-btn.pending-active { /* Yellow/Orange */
+    background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%); 
+    color: white;
+    box-shadow: 0 4px 12px rgba(236, 201, 75, 0.3);
+}
+
+.filter-btn.cancelled-active { /* Red */
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); 
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+}
+
+
+/* --- Media Queries --- */
+
+@media (min-width: 768px) {
+    /* Desktop/Tablet Layout (768px and up) for Search/Filter */
+    .search-filter-wrapper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between; /* Spreads search and filters apart */
+    }
+    
+    .search-box {
+        max-width: 350px; 
+        flex-shrink: 0;
+    }
+    
+    .filter-buttons {
+        flex: 1; /* Allows filter buttons to take remaining space */
+        justify-content: flex-start; /* MODIFIED: Aligns filter buttons to the left on desktop */
+    }
+}
+
 @media (max-width: 1024px) {
     .airline-main { 
         padding: 30px; 
@@ -372,6 +584,44 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     
     .airline-detail-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Tablet/Mobile Layout (Max-width 768px) for Search/Filter */
+    .search-filter-card {
+        padding: 1rem;
+    }
+    
+    .search-filter-wrapper {
+        flex-direction: column; /* Stack vertically */
+    }
+    
+    .filter-buttons {
+        width: 100%;
+        gap: 0.4rem; 
+        flex-wrap: wrap; 
+        justify-content: flex-start; /* MODIFIED: Aligns wrapped buttons to the left */
+    }
+    
+    .filter-btn {
+        /* Distribute buttons more equally across three columns */
+        flex: 1 1 calc(33.33% - 0.4rem); 
+        font-size: 0.8rem; 
+        padding: 0.5rem 0.75rem; 
+    }
+    
+    /* Existing styles */
+    .airline-main { 
+        padding: 30px; 
+    }
+    
+    .airline-main.expanded { 
+        padding: 30px; 
+    }
+    
+    .airline-stats-grid { 
+        grid-template-columns: repeat(2, 1fr); 
     }
 }
 
@@ -404,5 +654,104 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     .airline-modal-body,
     .airline-modal-footer {
         padding: 20px;
+    }
+
+    .pagination-nav {
+        margin-top: 0;
+        padding: 16px 24px;
+        background-color: white;
+        border-top: 1px solid #e2e8f0;
+        position: sticky; 
+        bottom: 0;
+        z-index: 5;
+        display: flex;
+        justify-content: flex-end;
+        border-radius: 0 0 12px 12px; 
+    }
+    
+    .pagination-list {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 6px;
+        align-items: center;
+    }
+    
+    .pagination-btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #334155; 
+        transition: all 0.2s;
+        min-width: 40px; 
+        text-align: center;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    .pagination-btn:hover:not(:disabled) {
+        background-color: #f1f5f9; 
+        border-color: #cbd5e1;
+        color: #0f172a; 
+        transform: translateY(-1px); 
+    }
+    
+    .pagination-btn.active {
+        background-color: #0f172a; 
+        border-color: #0f172a;
+        color: white;
+        font-weight: 700;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
+    }
+    
+    .pagination-btn.active:hover {
+        background-color: #1e293b; 
+        border-color: #1e293b;
+        transform: translateY(-1px);
+    }
+    
+    .pagination-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        background-color: #f8fafc;
+    }
+    
+    .pagination-btn:first-child,
+    .pagination-btn:last-child {
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Small Mobile Responsiveness (Max-width 480px) for Search/Filter */
+    .search-filter-card {
+        padding: 0.875rem;
+    }
+    
+    .search-input {
+        font-size: 0.9rem;
+        padding: 0.75rem 0.875rem 0.75rem 2.75rem;
+    }
+    
+    .search-icon {
+        left: 0.875rem;
+    }
+    
+    .filter-buttons {
+        /* Stack filter buttons vertically for max simplicity */
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .filter-btn {
+        width: 100%;
+        flex: 1 1 auto;
+        font-size: 0.875rem; 
+        padding: 0.75rem 1rem; 
     }
 }

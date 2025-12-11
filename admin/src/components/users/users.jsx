@@ -2,6 +2,74 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import './users.css';
 
+// =========================================================================
+// PAGINATION COMPONENT (New)
+// =========================================================================
+const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentPage }) => {
+  const pageNumbers = [];
+  const totalPages = Math.ceil(totalApplications / applicationsPerPage);
+
+  // Determine which page numbers to show (e.g., current, and a few around it)
+  // Simple approach: show all pages. For a real app, use a range logic.
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
+
+  const handlePrev = () => {
+    if (currentPage > 1) {
+      paginate(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      paginate(currentPage + 1);
+    }
+  };
+
+  if (totalApplications <= applicationsPerPage) return null;
+
+  return (
+    <nav className="pagination-nav">
+      <ul className="pagination-list">
+        <li>
+          <button 
+            onClick={handlePrev} 
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            Previous
+          </button>
+        </li>
+        {/* Render page number buttons */}
+        {pageNumbers.map(number => (
+          <li key={number} className="page-item">
+            <button 
+              onClick={() => paginate(number)} 
+              className={`pagination-btn ${number === currentPage ? 'active' : ''}`}
+            >
+              {number}
+            </button>
+          </li>
+        ))}
+        <li>
+          <button 
+            onClick={handleNext} 
+            disabled={currentPage === totalPages}
+            className="pagination-btn"
+          >
+            Next
+          </button>
+        </li>
+      </ul>
+    </nav>
+  );
+};
+// =========================================================================
+// END PAGINATION COMPONENT
+// =========================================================================
+
+
 const USERS_PER_PAGE = 10;
 
 const Users = () => {
@@ -69,6 +137,7 @@ const Users = () => {
                     const updatedUsers = users.filter(user => user._id !== id);
                     setUsers(updatedUsers);
                     
+                    // Logic to stay on the correct page after deletion
                     if (currentPage > Math.ceil(updatedUsers.length / USERS_PER_PAGE)) {
                         setCurrentPage(Math.max(1, currentPage - 1));
                     }
@@ -98,11 +167,16 @@ const Users = () => {
 
     const activeUsers = users.filter(u => getStatus(u.isActive) === 'Active').length;
 
+    const mainClasses = `vusers-main ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`;
+
     if (loading) {
         return (
             <div className="vusers-page">
-                <Sidebar />
-                <main className="vusers-main">
+                <Sidebar 
+                    isCollapsed={isSidebarCollapsed} 
+                    toggleSidebar={toggleSidebar} 
+                />
+                <main className={mainClasses}>
                     <div className="vusers-container loading-state">Loading users...</div>
                 </main>
             </div>
@@ -112,8 +186,11 @@ const Users = () => {
     if (error) {
         return (
             <div className="vusers-page">
-                <Sidebar />
-                <main className="vusers-main">
+                <Sidebar 
+                    isCollapsed={isSidebarCollapsed} 
+                    toggleSidebar={toggleSidebar} 
+                />
+                <main className={mainClasses}>
                     <div className="vusers-container error-state">{error}</div>
                 </main>
             </div>
@@ -122,11 +199,11 @@ const Users = () => {
 
     return (
         <div className="vusers-page">
-                        <Sidebar 
+            <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
-            <main className="vusers-main">
+            <main className={mainClasses}>
                 <div className="vusers-container">
                     <header className="vusers-header">
                         <h1 className="vusers-title">SYSTEM USERS</h1>
@@ -202,32 +279,19 @@ const Users = () => {
                                     })}
                                 </tbody>
                             </table>
+                            {/* NEW: Use the comprehensive Pagination component here */}
+                            <Pagination
+                                applicationsPerPage={USERS_PER_PAGE}
+                                totalApplications={totalUsers}
+                                paginate={paginate}
+                                currentPage={currentPage}
+                            />
+                            {/* END NEW */}
                         </div>
                     )}
 
-                    {totalPages > 1 && (
-                        <div className="pagination-container">
-                            <button 
-                                className="page-btn"
-                                onClick={() => paginate(currentPage - 1)}
-                                disabled={currentPage === 1}
-                            >
-                                &larr; Previous
-                            </button>
-                            
-                            <span className="page-info">
-                                Page {currentPage} of {totalPages}
-                            </span>
-
-                            <button
-                                className="page-btn"
-                                onClick={() => paginate(currentPage + 1)}
-                                disabled={currentPage === totalPages}
-                            >
-                                Next &rarr;
-                            </button>
-                        </div>
-                    )}
+                    {/* OLD pagination buttons removed, as they are now handled by the Pagination component */}
+                    
                 </div>
             </main>
         </div>

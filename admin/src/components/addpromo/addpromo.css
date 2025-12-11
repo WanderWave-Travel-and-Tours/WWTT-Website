@@ -6,9 +6,17 @@
 
 .promo-main {
     flex: 1;
-    margin-left: 280px;
+    /* Default margin for uncollapsed sidebar (280px) */
+    margin-left: 280px; 
     padding: 40px 120px; 
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Added transition for smooth effect */
+}
+
+/* New CSS for collapsed state on desktop/large screens */
+.promo-main--collapsed {
+    /* Adjust margin for collapsed sidebar (typically 70px) */
+    margin-left: 70px;
 }
 
 .promo-main *,
@@ -358,6 +366,10 @@
 }
 
 @media (max-width: 1439px) and (min-width: 1200px) {
+    /* Adjust collapsed margin for these screen sizes */
+    .promo-main--collapsed {
+        margin-left: 70px;
+    }
     .promo-container {
         max-width: 1100px;
     }
@@ -366,8 +378,14 @@
 @media (max-width: 1199px) and (min-width: 1025px) {
     .promo-main {
         padding: 32px 40px;
+        /* Default margin for uncollapsed sidebar is still 280px */
     }
 
+    /* Collapsed margin for these screen sizes */
+    .promo-main--collapsed {
+        margin-left: 70px;
+    }
+    
     .promo-container {
         max-width: 1000px;
     }
@@ -378,10 +396,27 @@
     }
 }
 
+/* From 1024px down, the layout switches to 1 column, and the sidebar width changes based on the size of 901px.
+   If the sidebar is expected to stay at 280px until 900px, the following media query should be updated.
+   Assuming the sidebar is 280px down to 901px, then 70px from 900px down (if uncollapsed), and then 0 on small screen.
+   Based on the original file:
+    - @media (max-width: 1024px) and (min-width: 901px): promo-main has margin-left: 280px;
+    - @media (max-width: 900px) and (min-width: 769px): promo-main has margin-left: 70px; (This means the sidebar is collapsed or narrow by default here)
+    - @media (max-width: 768px) and (min-width: 641px): promo-main has margin-left: 70px;
+    - @media (max-width: 640px) and (min-width: 481px): promo-main has margin-left: 0; (Sidebar disappears or floats)
+
+   Let's ensure the collapsed state is handled for all relevant desktop/tablet sizes where the sidebar is present.
+*/
+
+/* Fix for 1024px to 901px where the default margin is 280px but the grid is 1 column (if the sidebar is collapsed to 70px) */
 @media (max-width: 1024px) and (min-width: 901px) {
     .promo-main {
-        margin-left: 280px;
+        margin-left: 280px; /* Default margin for uncollapsed sidebar in this range */
         padding: 28px 32px;
+    }
+    
+    .promo-main--collapsed {
+        margin-left: 70px; /* Collapsed margin for this range */
     }
 
     .promo-grid {
@@ -401,10 +436,19 @@
     }
 }
 
+/* Fix for 900px to 769px where the default margin is 70px (suggesting the sidebar is narrow here by default) */
 @media (max-width: 900px) and (min-width: 769px) {
     .promo-main {
-        margin-left: 70px;
+        margin-left: 70px; /* Assumed narrow sidebar default for this range */
         padding: 24px 28px;
+    }
+    
+    /* If the sidebar is already narrow (70px) by default, the collapsed class may not need to change the margin,
+       but we keep the rule for explicit control in case 'Sidebar' logic makes it narrower than 70px.
+       For this fix, we'll assume 'collapsed' and 'default' are the same here, or the sidebar is just 'narrow'.
+    */
+    .promo-main--collapsed {
+        margin-left: 70px; 
     }
 
     .promo-grid {
@@ -428,10 +472,15 @@
     }
 }
 
+/* Fix for 768px to 641px where the default margin is 70px (suggesting the sidebar is narrow here by default) */
 @media (max-width: 768px) and (min-width: 641px) {
     .promo-main {
         margin-left: 70px;
         padding: 20px;
+    }
+
+    .promo-main--collapsed {
+        margin-left: 70px; /* Keep the margin at 70px or adjust if sidebar gets hidden */
     }
 
     .promo-header {
@@ -505,10 +554,15 @@
     }
 }
 
+/* For screens where sidebar is hidden (margin-left: 0) */
 @media (max-width: 640px) and (min-width: 481px) {
     .promo-main {
         margin-left: 0;
         padding: 16px;
+    }
+
+    .promo-main--collapsed {
+        margin-left: 0; /* Ensures no unintended margin */
     }
 
     .promo-header {
@@ -655,6 +709,10 @@
         padding: 14px;
     }
 
+    .promo-main--collapsed {
+        margin-left: 0;
+    }
+
     .promo-header {
         margin-bottom: 18px;
     }
@@ -796,6 +854,10 @@
     .promo-main {
         margin-left: 0;
         padding: 12px;
+    }
+
+    .promo-main--collapsed {
+        margin-left: 0;
     }
 
     .promo-header {
@@ -953,6 +1015,11 @@
         padding: 12px;
     }
 
+    .promo-main--collapsed {
+        /* Assuming a typical landscape behavior where sidebar may be hidden or narrow */
+        margin-left: 0; /* Adjust this if the sidebar is still visible at 70px */
+    }
+
     .promo-header {
         margin-bottom: 12px;
     }
@@ -970,7 +1037,7 @@
         order: 0;
         max-width: 100%;
     }
-a
+
     .promo-section {
         padding: 16px;
     }

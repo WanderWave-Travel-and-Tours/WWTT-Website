@@ -1,5 +1,21 @@
 .vi-page { display: flex; min-height: 100vh; background: #f8fafc; }
-.vi-main { flex: 1; margin-left: 280px; padding: 40px; font-family: 'Segoe UI', sans-serif; }
+
+.vi-main { 
+    flex: 1; 
+    /* This margin matches your expanded sidebar width (280px) */
+    margin-left: 280px; 
+    padding: 40px; 
+    font-family: 'Segoe UI', sans-serif; 
+    /* Added: This makes the transition smooth */
+    transition: margin-left 0.3s ease-in-out;
+}
+
+/* Added: New class to adjust main content width when sidebar is collapsed */
+.vi-main.vi-main-collapsed {
+    /* Set to the width of your collapsed sidebar (e.g., 80px for an icon-only sidebar) */
+    margin-left: 80px; 
+}
+
 .vi-container { max-width: 1200px; margin: 0 auto; }
 
 .vi-header { text-align: center; margin-bottom: 40px; }
@@ -40,30 +56,47 @@
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 31, 63, 0.6);
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 15px;
+    align-items: center;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.3s ease-in-out;
 }
 
-.vi-card:hover .vi-overlay { opacity: 1; }
+.vi-card:hover .vi-overlay {
+    opacity: 1;
+}
 
 .vi-btn {
-    width: 40px; height: 40px;
-    border-radius: 50%;
+    background: #fff;
     border: none;
-    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 8px;
     cursor: pointer;
-    transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background 0.2s, transform 0.2s;
 }
-.vi-btn:hover { transform: scale(1.1); }
 
-.vi-copy { background: white; color: #001F3F; }
-.vi-delete { background: #ef4444; color: white; }
+.vi-btn:hover {
+    transform: scale(1.05);
+}
 
-.vi-loading, .vi-empty { text-align: center; color: #94a3b8; padding: 50px; grid-column: 1 / -1; }
+.vi-copy { color: #007bff; }
+.vi-copy:hover { background: #e6f0ff; }
+.vi-delete { color: #dc3545; }
+.vi-delete:hover { background: #f8d7da; }
 
-@media (max-width: 768px) {
-    .vi-main { margin-left: 70px; }
+.vi-empty, .vi-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
+    color: #64748b;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }

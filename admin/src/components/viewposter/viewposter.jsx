@@ -85,7 +85,7 @@ const ViewPoster = () => {
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
-            <main className="vp-main">
+            <main className={`vp-main ${isSidebarCollapsed ? 'vp-main-collapsed' : ''}`}>
                 <div className="vp-container">
                     <header className="vp-header">
                         <div>

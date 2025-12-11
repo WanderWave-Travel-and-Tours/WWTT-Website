@@ -25,7 +25,17 @@
 .tour-card span { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
 .tour-card-icon { color: #06b6d4; opacity: 0.8; }
 
-.tour-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); padding: 0; overflow: hidden; width: 100%; overflow-x: auto; }
+.tour-table-container { 
+    background: white; 
+    border-radius: 12px; 
+    border: 1px solid #e2e8f0; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
+    padding: 0; /* Important: Removed padding for full-width table/pagination */
+    overflow: hidden; 
+    width: 100%; 
+    overflow-x: auto; 
+    position: relative; /* Needed for sticky pagination */
+}
 .tour-table { width: 100%; border-collapse: collapse; min-width: 900px; }
 .tour-table th { background-color: #0f172a; color: white; text-align: left; padding: 18px 24px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
 .tour-table td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px; font-weight: 500; vertical-align: middle; white-space: nowrap; }
@@ -36,3 +46,84 @@
 
 @media (max-width: 1024px) { .tour-main, .tour-main.expanded { padding: 30px; } .tour-stats-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .tour-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } .tour-stats-grid { grid-template-columns: 1fr; } .tour-header { flex-direction: column; align-items: flex-start; } .tour-btn-add { width: 100%; justify-content: center; } }
+
+
+/* --- PAGINATION STYLES (New) --- */
+.pagination-nav {
+    /* Aligns with the table container's style */
+    margin-top: 0;
+    padding: 16px 24px;
+    background-color: white;
+    border-top: 1px solid #e2e8f0;
+    
+    /* Stick to the bottom of the table container for better UX */
+    position: sticky; 
+    bottom: 0;
+    z-index: 5;
+    
+    display: flex;
+    justify-content: flex-end; /* Align controls to the right */
+    /* Match the bottom border radius of the .tour-table-container */
+    border-radius: 0 0 12px 12px; 
+}
+
+.pagination-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 6px;
+    align-items: center;
+}
+
+.pagination-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #334155; /* Neutral text color */
+    transition: all 0.2s;
+    min-width: 40px; 
+    text-align: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f1f5f9; /* Light gray hover */
+    border-color: #cbd5e1;
+    color: #0f172a; /* Darker text on hover */
+    transform: translateY(-1px); /* Slight lift on hover */
+}
+
+.pagination-btn.active {
+    background-color: #0f172a; /* Primary dark color background for active page */
+    border-color: #0f172a;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
+}
+
+.pagination-btn.active:hover {
+    background-color: #1e293b; /* Slightly darker primary on hover */
+    border-color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background-color: #f8fafc;
+}
+
+/* For previous/next buttons */
+.pagination-btn:first-child,
+.pagination-btn:last-child {
+    font-weight: 700;
+    text-transform: uppercase;
+}

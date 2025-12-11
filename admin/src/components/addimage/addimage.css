@@ -6,9 +6,19 @@
 
 .ai-main {
     flex: 1;
-    margin-left: 280px;
+    /* Base margin for open sidebar */
+    margin-left: 280px; 
     padding: 40px;
     font-family: 'Segoe UI', sans-serif;
+    /* Add transition for smooth adjustment */
+    transition: margin-left 0.3s ease; 
+}
+
+/* NEW: Style for when the sidebar is collapsed */
+.ai-main.ai-main--collapsed {
+    /* Adjust margin to match the collapsed sidebar's width (assuming the collapsed width is smaller) */
+    /* Based on the media query below, I'll use 70px as a standard collapsed width. */
+    margin-left: 70px;
 }
 
 .ai-container {
@@ -79,5 +89,8 @@
 .ai-btn-submit:disabled { background: #ccc; cursor: not-allowed; }
 
 @media (max-width: 768px) {
-    .ai-main { margin-left: 70px; }
+    /* On mobile, this will apply a 70px margin regardless of the isCollapsed state (if the sidebar is hidden/fixed on mobile) */
+    .ai-main { 
+        margin-left: 70px; 
+    }
 }

@@ -76,13 +76,16 @@ const ViewBlog = () => {
         return imagePath;
     };
 
+    // Construct the class name for the main content
+    const mainClass = `vb-main ${isSidebarCollapsed ? 'vb-main--collapsed' : ''}`;
+
     return (
         <div className="vb-page">
                         <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
-            <main className="vb-main">
+            <main className={mainClass}>
                 <div className="vb-container">
                     <header className="vb-header">
                         <div>

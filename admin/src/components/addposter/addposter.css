@@ -6,10 +6,19 @@
 
 .poster-main {
     flex: 1;
-    margin-left: 280px;
+    /* Default margin-left for expanded sidebar (e.g., 280px) */
+    margin-left: 280px; 
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Add transition for smooth movement */
 }
+
+/* --- FIX: Styles for collapsed sidebar --- */
+/* The sidebar seems to have a width of around 70px when collapsed. */
+.poster-main--collapsed {
+    margin-left: 70px;
+}
+/* ----------------------------------------- */
 
 .poster-main *,
 .poster-main *::before,
@@ -392,8 +401,11 @@
 }
 
 @media (max-width: 1024px) {
-    .poster-main {
-        margin-left: 70px;
+    /* On smaller screens, the sidebar collapses or disappears */
+    /* Remove the conditional margin-left applied in the JS/CSS on small screens */
+    .poster-main,
+    .poster-main--collapsed { 
+        margin-left: 70px; /* Keep margin for sidebar when expanded, which is likely a minimum width */
         padding: 20px;
     }
     .poster-grid {
@@ -407,7 +419,9 @@
 }
 
 @media (max-width: 640px) {
-    .poster-main {
+    /* On mobile, the sidebar is likely gone or overlays */
+    .poster-main,
+    .poster-main--collapsed {
         margin-left: 0;
     }
     .poster-fields {

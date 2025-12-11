@@ -1,50 +1,65 @@
+/* Define CSS Variables for easy maintenance and smooth transition */
+:root {
+    /* ADAPTED: Based on dashboard.jsx */
+    --sidebar-default-width: 280px;
+    --sidebar-collapsed-width: 70px; 
+    --transition-speed: 0.3s;
+}
+
+/* ADAPTED */
 .packages-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc;
-}
- 
-.packages-main {
-    flex: 1;
-    margin-left: 280px;
-    padding: 40px 48px;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f8fafc; /* Slate-50: Softer white background */
+    overflow-x: hidden; 
 }
 
-.packages-main *,
-.packages-main *::before,
-.packages-main *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+/* ADAPTED */
+.packages-main {
+      flex: 1;
+  margin-left: 280px; /* Sidebar width */
+  padding: 40px 5%; /* Responsive padding (5% sa gilid para di sagad sa wide screen) */
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  transition: margin-left 0.3s ease;
+}
+
+/* ADAPTED: The fix for the movement */
+.packages-main--collapsed {
+    /* Move main content to the left */
+    margin-left: var(--sidebar-collapsed-width); /* 70px */
+}
+
+/* Global Reset */
+.packages-main *, .packages-main *::before, .packages-main *::after {
+  box-sizing: border-box;
 }
 
 .packages-container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
 .packages-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end; /* Align to the bottom for better visual flow */
+    align-items: flex-end;
     margin-bottom: 32px;
 }
 
 .packages-header-right {
     display: flex;
-    gap: 16px; /* Space between search and button */
+    gap: 16px;
     align-items: center;
 }
 
 .packages-search-bar {
     position: relative;
-    width: 280px; /* Width for the search bar */
+    width: 280px;
 }
 
 .packages-search-input {
     width: 100%;
-    padding: 12px 12px 12px 40px; /* Left padding for the icon */
+    padding: 12px 12px 12px 40px;
     font-size: 14px;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
@@ -161,7 +176,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 60px;
-    text-align: center; /* Center text in empty state */
+    text-align: center;
 }
 
 .packages-empty-icon {
@@ -348,39 +363,22 @@
     }
 }
 
+/* ADAPTED: Match dashboard.jsx small screen logic (70px margin) */
 @media (max-width: 900px) {
-    .packages-main {
-        margin-left: 70px;
-        padding: 24px;
+    .packages-main { 
+        margin-left: var(--sidebar-collapsed-width); /* 70px */
+        padding: 24px; 
+    }
+    
+    .packages-main--collapsed { 
+        margin-left: var(--sidebar-collapsed-width); /* 70px */
     }
 }
 
+/* ADAPTED: Match dashboard.jsx mobile screen logic (0 margin) */
 @media (max-width: 640px) {
-    .packages-main {
-        padding: 16px;
-    }
-
-    .packages-title {
-        font-size: 1.5rem;
-    }
-
-    .packages-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .pkg-card-footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-    }
-
-    .pkg-actions {
-        width: 100%;
-    }
-
-    .pkg-btn {
-        flex: 1;
-        text-align: center;
+    .packages-main, .packages-main--collapsed { 
+        padding: 16px; 
+        margin-left: 0;
     }
 }
-
