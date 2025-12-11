@@ -7,9 +7,18 @@
 
 .viewtours-main {
     flex: 1;
-    margin-left: 280px;
+    /* Default margin: 280px (the un-collapsed sidebar width) */
+    margin-left: 280px; 
     padding: 40px 100px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    /* ADDED: Transition for smooth margin change */
+    transition: margin-left 0.3s ease; 
+}
+
+/* ADDED: New class for when the sidebar is collapsed */
+.viewtours-main--collapsed {
+    /* Adjusted margin-left to match the collapsed sidebar width (e.g., 70px) */
+    margin-left: 70px;
 }
 
 .viewtours-main *,
@@ -341,15 +350,22 @@
 }
 
 @media (max-width: 900px) {
-    .viewtours-main {
-        margin-left: 70px;
+    /* Updated to apply to both main and collapsed main */
+    .viewtours-main,
+    .viewtours-main--collapsed {
+        /* Assuming the sidebar collapses to a small width even on this breakpoint */
+        margin-left: 70px; 
         padding: 24px;
     }
 }
 
 @media (max-width: 640px) {
-    .viewtours-main {
+    .viewtours-main,
+    .viewtours-main--collapsed {
         padding: 16px;
+        /* On smallest screens, sidebar is likely hidden or positioned absolute,
+           so margin-left should be reset or minimized. Assuming a small margin is fine. */
+        margin-left: 0; 
     }
 
     .viewtours-title {

@@ -269,7 +269,7 @@ const AddPackage = () => {
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
-      <main className="pkg-main">
+      <main className={`pkg-main ${isSidebarCollapsed ? 'collapsed-main' : ''}`}>
         <div className="pkg-container">
           <header className="pkg-header">
 

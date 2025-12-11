@@ -16,9 +16,9 @@ const ViewPackages = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     // 2. Sidebar Toggle Function
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
     // Redirection useEffect
     useEffect(() => {
@@ -67,9 +67,7 @@ const ViewPackages = () => {
     if (loading) {
         return (
             <div className="packages-page">
-                {/* 3A. Pass props to Sidebar in loading state */}
-                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* 3B. Use dynamic class on main content in loading state */}
+               
                 <main className={`packages-main ${isSidebarCollapsed ? 'packages-main--collapsed' : ''}`}>
                     <div className="packages-loader">
                         <div className="packages-spinner"></div>
@@ -203,4 +201,4 @@ const ViewPackages = () => {
     );
 };
 
-export default ViewPackages;
+export default ViewPackages; 

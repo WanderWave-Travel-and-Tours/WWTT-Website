@@ -1,25 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Sidebar from '../../sidebar/sidebar';
-import { 
-    BookOpen, Calendar, CheckCircle, RotateCcw, 
+import {
+    BookOpen, Calendar, CheckCircle, RotateCcw,
     FileText, Settings, RefreshCw, X, CreditCard, User,
-    ChevronDown, Trash2, PlusCircle, Save, ClipboardList, ListPlus, Download
+    ChevronDown, Trash2, PlusCircle, Save, ClipboardList, ListPlus, Download,
+    ChevronLeft, ChevronRight, Search // Added Search for search bar
 } from 'lucide-react';
 import './PassportAppt.css';
 
 const PassportAppt = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [activeTab, setActiveTab] = useState('appointments'); 
+    const [activeTab, setActiveTab] = useState('appointments');
 
     const [showContactRemarks, setShowContactRemarks] = useState(false);
     const [contactRemarks, setContactRemarks] = useState("");
     const [contactEvidence, setContactEvidence] = useState(null);
-    
+
     const [appointments, setAppointments] = useState([]);
     const [passportData, setPassportData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    
+
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [documents, setDocuments] = useState([]);
@@ -35,6 +36,59 @@ const PassportAppt = () => {
         additionalDocs: false,
         stepsProcess: false
     });
+
+    // --- SEARCH AND FILTER STATE ---
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('ALL'); // Default to 'ALL'
+    // --- END SEARCH AND FILTER STATE ---
+
+    // --- FILTERING LOGIC (Use useMemo for efficient filtering) ---
+    const filteredAppointments = useMemo(() => {
+        let filtered = appointments;
+
+        // 1. Filter by Status
+        if (filterStatus !== 'ALL') {
+            filtered = filtered.filter(appt => appt.status === filterStatus);
+        }
+
+        // 2. Filter by Search Term
+        if (searchTerm) {
+            const lowerCaseSearch = searchTerm.toLowerCase();
+            filtered = filtered.filter(appt => 
+                appt.fullName.toLowerCase().includes(lowerCaseSearch) ||
+                appt.email.toLowerCase().includes(lowerCaseSearch) ||
+                appt._id.toLowerCase().includes(lowerCaseSearch) ||
+                (appt.passportDetails?.dfaLocation || '').toLowerCase().includes(lowerCaseSearch)
+            );
+        }
+        
+        return filtered;
+    }, [appointments, filterStatus, searchTerm]);
+    // --- END FILTERING LOGIC ---
+
+
+    // --- PAGINATION STATE & LOGIC (Updated to use filteredAppointments) ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentAppointments = filteredAppointments.slice(indexOfFirstItem, indexOfLastItem);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+    const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    const goToPrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+    
+    // Reset page to 1 whenever filters or search term changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterStatus, searchTerm]);
+    // --- END PAGINATION LOGIC ---
+
+    // Helper to toggle sidebar state
+    const toggleSidebar = () => {
+        setSidebarCollapsed(!isSidebarCollapsed);
+    };
 
     const formatFileSize = (bytes) => {
         if (bytes < 1024) return bytes + ' B';
@@ -55,7 +109,7 @@ const PassportAppt = () => {
 
     const fetchPassportDetails = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/passports'); 
+            const res = await axios.get('http://localhost:5000/api/passports');
             if (res.data.success && res.data.data.length > 0) {
                 const data = res.data.data[0];
                 setPassportData(data);
@@ -75,12 +129,13 @@ const PassportAppt = () => {
         try {
             const response = await axios.get('http://localhost:5000/api/inquiries');
             if (response.data.success) {
-                const passportRequests = response.data.data.filter(inq => 
-                    inq.inquiryType === 'PASSPORT' || 
+                const passportRequests = response.data.data.filter(inq =>
+                    inq.inquiryType === 'PASSPORT' ||
                     (inq.serviceName && inq.serviceName.toUpperCase().includes('PASSPORT'))
                 );
                 passportRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 setAppointments(passportRequests);
+                setCurrentPage(1); // Reset to first page after fetching new data
             }
         } catch (error) {
             console.error('Error fetching inquiries:', error);
@@ -127,11 +182,11 @@ const PassportAppt = () => {
             if (response.data.success) {
                 alert('Status updated to CONTACTED with remarks!');
                 fetchInquiries();
-                setSelectedAppointment({ 
-                    ...selectedAppointment, 
+                setSelectedAppointment({
+                    ...selectedAppointment,
                     status: 'CONTACTED',
                     remarks: contactRemarks,
-                    evidenceUrl: response.data.data.evidenceUrl 
+                    evidenceUrl: response.data.data.evidenceUrl
                 });
                 setShowContactRemarks(false);
                 setContactRemarks("");
@@ -215,19 +270,62 @@ const PassportAppt = () => {
         }
     };
 
+    // Calculate stats based on ALL fetched appointments, not filtered ones
     const stats = [
         { label: 'Total Appts', value: appointments.length, icon: <BookOpen size={24}/> },
         { label: 'Pending', value: appointments.filter(a => a.status === 'PENDING').length, icon: <Calendar size={24}/> },
         { label: 'Completed', value: appointments.filter(a => a.status === 'COMPLETED').length, icon: <CheckCircle size={24}/> },
         { label: 'Cancelled', value: appointments.filter(a => a.status === 'CANCELLED').length, icon: <RotateCcw size={24}/> },
     ];
+    
+    // Define the list of unique status filters
+    const statusFilters = useMemo(() => {
+        const statuses = new Set(appointments.map(a => a.status));
+        return ['ALL', ...Array.from(statuses)].filter(s => s); // Ensure 'ALL' is first and no empty strings
+    }, [appointments]);
+
 
     const currentStatusRank = selectedAppointment ? getStatusRank(selectedAppointment.status) : 0;
 
+    // Logic to render pagination numbers
+    const renderPaginationNumbers = () => {
+        const pageNumbers = [];
+        const maxPagesToShow = 5; // Adjust this number as needed
+        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(
+                <li key={i}>
+                    <button
+                        onClick={() => paginate(i)}
+                        className={`pagination-btn ${i === currentPage ? 'active' : ''}`}
+                    >
+                        {i}
+                    </button>
+                </li>
+            );
+        }
+        return pageNumbers;
+    };
+
+
     return (
         <div className="passport-page">
-            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
-            <main className={`passport-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
+                   <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <main
+          className={`passport-main ${
+            // FIX: Changed "passport-main--collapsed" to "expanded"
+            isSidebarCollapsed ? "expanded" : ""
+          }`}
+        >
                 <div className="passport-container">
                     <div className="passport-header">
                         <div className="passport-title">
@@ -249,8 +347,41 @@ const PassportAppt = () => {
                             <div className="passport-stats-grid">
                                 {stats.map((s, i) => (<div className="passport-card" key={i}><div><h2>{s.value}</h2><span>{s.label}</span></div><div className="passport-card-icon">{s.icon}</div></div>))}
                             </div>
+
+                            {/* --- SEARCH AND FILTER CARD --- */}
+                            <div className="search-filter-card">
+                                <div className="search-filter-wrapper">
+                                    <div className="search-box">
+                                        <Search size={20} className="search-icon" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search by Applicant Name, Email, DFA Location, or Ref ID..."
+                                            className="search-input"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="filter-buttons">
+                                        {statusFilters.map((status) => (
+                                            <button
+                                                key={status}
+                                                className={`filter-btn ${filterStatus === status ? 'active' : ''}`}
+                                                onClick={() => setFilterStatus(status)}
+                                            >
+                                                {status.toUpperCase()} ({status === 'ALL' ? appointments.length : appointments.filter(a => a.status === status).length})
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            {/* --- END SEARCH AND FILTER CARD --- */}
+
+
                             <div className="passport-table-container">
-                                <div style={{padding: '15px', borderBottom: '1px solid #eee', display:'flex', justifyContent:'flex-end'}}>
+                                <div style={{padding: '15px', borderBottom: '1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                    <span style={{fontSize:'12px', color:'#64748b', fontWeight:'600'}}>
+                                        Showing {Math.min(indexOfFirstItem + 1, filteredAppointments.length)} - {Math.min(indexOfLastItem, filteredAppointments.length)} of {filteredAppointments.length} appointments
+                                    </span>
                                     <button onClick={fetchInquiries} style={{background:'none', border:'none', cursor:'pointer', color:'#64748b', display:'flex', alignItems:'center', gap:'5px'}}>
                                         <RefreshCw size={14}/> Refresh List
                                     </button>
@@ -258,6 +389,7 @@ const PassportAppt = () => {
                                 {isLoading ? (
                                     <div style={{padding:'40px', textAlign:'center', color:'#64748b'}}>Loading appointments...</div>
                                 ) : (
+                                    <>
                                     <table className="passport-table">
                                         <thead>
                                             <tr>
@@ -265,7 +397,7 @@ const PassportAppt = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {appointments.length > 0 ? appointments.map((item) => (
+                                            {currentAppointments.length > 0 ? currentAppointments.map((item) => (
                                                 <tr key={item._id}>
                                                     <td style={{fontWeight:'700', color:'#0f172a'}}>#{item._id.substring(item._id.length - 6).toUpperCase()}</td>
                                                     <td><div style={{display:'flex', alignItems:'center', gap:'10px'}}><div style={{background:'#eff6ff', padding:'8px', borderRadius:'50%', color:'#3b82f6'}}><User size={16}/></div><div>{item.fullName}<br/><span style={{fontSize:'11px', color:'#94a3b8'}}>{item.email}</span></div></div></td>
@@ -277,9 +409,36 @@ const PassportAppt = () => {
                                                         <button className="passport-action-btn" onClick={() => handleViewAppointment(item)}>View</button>
                                                     </td>
                                                 </tr>
-                                            )) : (<tr><td colSpan="7" style={{textAlign:'center', padding:'30px', color:'#64748b'}}>No Passport appointments found.</td></tr>)}
+                                            )) : (<tr><td colSpan="7" style={{textAlign:'center', padding:'30px', color:'#64748b'}}>No Passport appointments found matching your criteria.</td></tr>)}
                                         </tbody>
                                     </table>
+                                    {/* --- PAGINATION NAV --- */}
+                                    {totalPages > 1 && (
+                                        <nav className="pagination-nav" aria-label="Pagination">
+                                            <ul className="pagination-list">
+                                                <li>
+                                                    <button
+                                                        onClick={goToPrevPage}
+                                                        disabled={currentPage === 1}
+                                                        className="pagination-btn"
+                                                    >
+                                                        <ChevronLeft size={16} /> Prev
+                                                    </button>
+                                                </li>
+                                                {renderPaginationNumbers()}
+                                                <li>
+                                                    <button
+                                                        onClick={goToNextPage}
+                                                        disabled={currentPage === totalPages}
+                                                        className="pagination-btn"
+                                                    >
+                                                        Next <ChevronRight size={16} />
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    )}
+                                    </>
                                 )}
                             </div>
                         </>
@@ -332,7 +491,7 @@ const PassportAppt = () => {
                             <button className="modal-close-btn" onClick={() => setIsViewModalOpen(false)}><X size={24} /></button>
                         </div>
                         <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                            
+
                             <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '20px', border:'1px solid #e2e8f0' }}>
                                 <h3 style={{fontSize:'14px', fontWeight:'700', marginBottom:'15px', color:'#334155'}}>CLIENT INFORMATION</h3>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -360,7 +519,7 @@ const PassportAppt = () => {
                                                         {applicant.civilStatus}
                                                     </span>
                                                 </div>
-                                                
+
                                                 {/* Details Body */}
                                                 <div style={{ padding: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                                                     <div>
@@ -428,12 +587,12 @@ const PassportAppt = () => {
                             <div style={{marginTop: '20px'}}>
                                 <h3 style={{fontSize:'14px', fontWeight:'700', marginBottom:'15px', color:'#334155'}}>UPDATE STATUS</h3>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                    <button 
-                                        className="passport-action-btn" 
+                                    <button
+                                        className="passport-action-btn"
                                         onClick={() => handleUpdateStatus(selectedAppointment._id, 'PENDING')}
                                         disabled={currentStatusRank >= 1}
-                                        style={{ 
-                                            opacity: currentStatusRank >= 1 ? 0.5 : 1, 
+                                        style={{
+                                            opacity: currentStatusRank >= 1 ? 0.5 : 1,
                                             cursor: currentStatusRank >= 1 ? 'not-allowed' : 'pointer',
                                             background: currentStatusRank >= 1 ? '#f1f5f9' : 'white'
                                         }}
@@ -441,12 +600,12 @@ const PassportAppt = () => {
                                         Set Pending
                                     </button>
 
-                                    <button 
-                                        className="passport-action-btn" 
+                                    <button
+                                        className="passport-action-btn"
                                         onClick={initiateContactStatus}
                                         disabled={currentStatusRank >= 2}
-                                        style={{ 
-                                            opacity: currentStatusRank >= 2 ? 0.5 : 1, 
+                                        style={{
+                                            opacity: currentStatusRank >= 2 ? 0.5 : 1,
                                             cursor: currentStatusRank >= 2 ? 'not-allowed' : 'pointer',
                                             background: currentStatusRank >= 2 ? '#f1f5f9' : 'white'
                                         }}
@@ -454,45 +613,45 @@ const PassportAppt = () => {
                                         Set Contacted
                                     </button>
 
-                                    <button 
-                                        className="passport-action-btn" 
+                                    <button
+                                        className="passport-action-btn"
                                         onClick={() => handleUpdateStatus(selectedAppointment._id, 'PAYMENT_PENDING')}
                                         disabled={currentStatusRank >= 3}
-                                        style={{ 
-                                            background: currentStatusRank >= 3 ? '#f1f5f9' : '#dcfce7', 
-                                            color: currentStatusRank >= 3 ? '#94a3b8' : '#15803d', 
+                                        style={{
+                                            background: currentStatusRank >= 3 ? '#f1f5f9' : '#dcfce7',
+                                            color: currentStatusRank >= 3 ? '#94a3b8' : '#15803d',
                                             border: currentStatusRank >= 3 ? '1px solid #e2e8f0' : '1px solid #86efac',
-                                            opacity: currentStatusRank >= 3 ? 0.5 : 1, 
+                                            opacity: currentStatusRank >= 3 ? 0.5 : 1,
                                             cursor: currentStatusRank >= 3 ? 'not-allowed' : 'pointer'
                                         }}
                                     >
                                         Approve & Payment
                                     </button>
 
-                                    <button 
-                                        className="passport-action-btn" 
+                                    <button
+                                        className="passport-action-btn"
                                         onClick={() => handleUpdateStatus(selectedAppointment._id, 'COMPLETED')}
                                         disabled={currentStatusRank >= 5}
-                                        style={{ 
-                                            background: currentStatusRank >= 5 ? '#f1f5f9' : '#3b82f6', 
-                                            color: currentStatusRank >= 5 ? '#94a3b8' : 'white', 
+                                        style={{
+                                            background: currentStatusRank >= 5 ? '#f1f5f9' : '#3b82f6',
+                                            color: currentStatusRank >= 5 ? '#94a3b8' : 'white',
                                             border: 'none',
-                                            opacity: currentStatusRank >= 5 ? 0.5 : 1, 
+                                            opacity: currentStatusRank >= 5 ? 0.5 : 1,
                                             cursor: currentStatusRank >= 5 ? 'not-allowed' : 'pointer'
                                         }}
                                     >
                                         Mark Completed
                                     </button>
 
-                                    <button 
-                                        className="passport-action-btn" 
+                                    <button
+                                        className="passport-action-btn"
                                         onClick={() => handleUpdateStatus(selectedAppointment._id, 'CANCELLED')}
                                         disabled={selectedAppointment.status === 'CANCELLED'}
-                                        style={{ 
-                                            background: selectedAppointment.status === 'CANCELLED' ? '#f1f5f9' : '#ef4444', 
-                                            color: selectedAppointment.status === 'CANCELLED' ? '#94a3b8' : 'white', 
+                                        style={{
+                                            background: selectedAppointment.status === 'CANCELLED' ? '#f1f5f9' : '#ef4444',
+                                            color: selectedAppointment.status === 'CANCELLED' ? '#94a3b8' : 'white',
                                             border: 'none',
-                                            opacity: selectedAppointment.status === 'CANCELLED' ? 0.5 : 1, 
+                                            opacity: selectedAppointment.status === 'CANCELLED' ? 0.5 : 1,
                                             cursor: selectedAppointment.status === 'CANCELLED' ? 'not-allowed' : 'pointer'
                                         }}
                                     >

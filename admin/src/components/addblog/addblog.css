@@ -4,11 +4,18 @@
     background: #f8fafc;
 }
 
+/* Default state: Sidebar is open (280px wide) */
 .blog-main {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 280px; /* Initial margin for open sidebar */
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Add transition for smooth animation */
+}
+
+/* Collapsed state: Sidebar is closed (e.g., 70px wide) */
+.blog-main--collapsed {
+    margin-left: 70px; /* Adjust margin for collapsed sidebar width */
 }
 
 .blog-container {
@@ -273,14 +280,20 @@
 }
 
 @media (max-width: 1024px) {
+    /* On smaller screens, the margin is always 70px as the sidebar likely shifts from a full-size display to a collapsed one */
     .blog-main { margin-left: 70px; padding: 20px; }
+    /* The collapsed state doesn't need to be defined here since the base class already covers the collapsed size for this breakpoint. 
+       If your Sidebar component has logic to completely hide itself on mobile, you might need a different rule, but based on the current media query, this is the expected behavior. */
+    /* .blog-main--collapsed { margin-left: 70px; } */ 
+
     .blog-grid { grid-template-columns: 1fr; }
     .blog-right { position: static; max-width: 400px; margin: 0 auto; }
 }
 
 @media (max-width: 640px) {
+    /* On mobile, the main content should take up the full width, ignoring the sidebar margin */
     .blog-main { margin-left: 0; }
-    .blog-fields { grid-template-columns: 1fr; }
+    .blog-grid { grid-template-columns: 1fr; }
     .blog-actions { flex-direction: column; }
     .blog-btn { width: 100%; }
 }

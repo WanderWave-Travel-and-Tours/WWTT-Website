@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, 
   Users, 
@@ -11,10 +11,114 @@ import {
   Mail,
   Check,
   X,
-  ChevronLeft
+  ChevronLeft,
+  ChevronRight // Added for pagination
 } from 'lucide-react';
 import './Booking.css';
 import Sidebar from '../sidebar/sidebar';
+
+// --- Updated: Pagination Controls Component for new design ---
+const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
+  if (totalPages <= 1) return null;
+
+  // Function to render page numbers
+  const renderPageNumbers = () => {
+    const pages = [];
+    // Only show a limited number of page buttons, using ellipsis for large gaps.
+    
+    // Start page for the visible window of buttons
+    let startPage = Math.max(1, currentPage - 1);
+    // End page (max 3 pages shown, 1 before, current, 1 after)
+    let endPage = Math.min(totalPages, startPage + 2);
+
+    // Adjust start page if we are near the end
+    if (endPage - startPage < 2) {
+        startPage = Math.max(1, endPage - 2);
+    }
+    
+    // Always show page 1 button if it's not in the visible window
+    if (startPage > 1) {
+        pages.push(
+            <li key={1}>
+                <button
+                    onClick={() => onPageChange(1)}
+                    className={`pagination-btn ${currentPage === 1 ? 'active' : ''}`}
+                >
+                    1
+                </button>
+            </li>
+        );
+        // Add ellipsis if page 2 is not visible
+        if (startPage > 2) {
+            pages.push(<li key="start-ellipsis" className="pagination-ellipsis">...</li>);
+        }
+    }
+
+    // Render the visible window of page buttons
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <li key={i}>
+          <button
+            onClick={() => onPageChange(i)}
+            className={`pagination-btn ${i === currentPage ? 'active' : ''}`}
+          >
+            {i}
+          </button>
+        </li>
+      );
+    }
+    
+    // Always show the last page button if it's not in the visible window
+    if (endPage < totalPages) {
+        // Add ellipsis if the last page is not page right after the end page
+        if (endPage < totalPages - 1) {
+            pages.push(<li key="end-ellipsis" className="pagination-ellipsis">...</li>);
+        }
+        pages.push(
+            <li key={totalPages}>
+                <button
+                    onClick={() => onPageChange(totalPages)}
+                    className={`pagination-btn ${currentPage === totalPages ? 'active' : ''}`}
+                >
+                    {totalPages}
+                </button>
+            </li>
+        );
+    }
+    
+    return pages;
+  };
+
+  return (
+    <nav className="pagination-nav" aria-label="Pagination">
+      <ul className="pagination-list">
+        <li>
+            <button
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="pagination-btn"
+            >
+              <ChevronLeft size={16} /> Previous
+            </button>
+        </li>
+        
+        {renderPageNumbers()}
+
+        <li>
+            <button
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="pagination-btn"
+            >
+              Next <ChevronRight size={16} />
+            </button>
+        </li>
+      </ul>
+    </nav>
+  );
+};
+// --- End: Updated Pagination Controls Component ---
+
 
 const Booking = () => {
   // 1. Sidebar State Management
@@ -29,6 +133,11 @@ const Booking = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // --- Pagination States (10 items per page) ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  // --- End: Pagination States ---
 
   // 2. Sidebar Toggle Function
   const toggleSidebar = () => {
@@ -42,6 +151,7 @@ const Booking = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
+      // NOTE: Ensure your server is running on this port
       const res = await fetch('http://localhost:5000/api/admin/bookings'); 
 
       if (!res.ok) throw new Error('Failed to fetch');
@@ -94,7 +204,27 @@ const Booking = () => {
     }
 
     setFilteredBookings(filtered);
+    // Reset to first page whenever filtering/searching changes
+    setCurrentPage(1); 
   }, [searchTerm, filterStatus, bookings]);
+
+
+  // --- Pagination Logic ---
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  
+  const currentBookings = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredBookings.slice(startIndex, endIndex);
+  }, [currentPage, filteredBookings, itemsPerPage]);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+  // --- End: Pagination Logic ---
+
 
   const handleConfirm = async (booking) => {
     if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) {
@@ -287,7 +417,8 @@ const Booking = () => {
           </div>
         </div>
 
-        <div className="table-card">
+        {/* The table-card acts as the container with border radius */}
+        <div className="table-card"> 
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
@@ -315,7 +446,8 @@ const Booking = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBookings.map((booking) => (
+                  {/* Use currentBookings for display */}
+                  {currentBookings.map((booking) => (
                     <tr key={booking.id}>
                       {/* Booking ID Column */}
                       <td>
@@ -438,7 +570,17 @@ const Booking = () => {
               </table>
             </div>
           )}
+          
+          {/* --- Updated: Pagination Controls placement inside table-card for sticky nav --- */}
+          {filteredBookings.length > 0 && totalPages > 1 && (
+            <PaginationControls 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
+        {/* --- End: Pagination Controls placement --- */}
       </div>
 
       {showModal && selectedBooking && (
