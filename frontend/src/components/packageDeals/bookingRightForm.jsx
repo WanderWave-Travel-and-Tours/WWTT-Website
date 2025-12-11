@@ -133,9 +133,48 @@ const BookingRightForm = ({ pkg }) => {
 
   const packageTotal = (() => {
     const basePax = quantities.adult || 1;
+    const basePackagePrice = pkg.price * basePax;
+    
+    // If no room type selected, return 0
     if (!selectedRoomType) return 0;
-    const hotelCost = numberOfRooms * selectedRoomType.price * durationDays;
-    return hotelCost;
+    
+    // Room upgrade pricing per day per pax
+    const roomUpgradePricing = {
+      'BUDGET': 0,          // No additional charge (default)
+      'STANDARD': 750,      // +₱750/day/pax
+      '4 STAR': 1200,       // +₱1,200/day/pax
+      '5 STAR': 2040        // +₱2,040/day/pax
+    };
+    
+    // Get the room type key
+    const roomTypeKey = selectedRoomType.type?.toUpperCase() || '';
+    
+    // Find matching upgrade price
+    let upgradePerDayPerPax = 0;
+    for (const [key, price] of Object.entries(roomUpgradePricing)) {
+      if (roomTypeKey.includes(key)) {
+        upgradePerDayPerPax = price;
+        break;
+      }
+    }
+    
+    // Calculate total upgrade cost: upgrade price × days × pax
+    const totalUpgradeCost = upgradePerDayPerPax * durationDays * basePax;
+    
+    // Final price = base package price + upgrade cost
+    const finalPrice = basePackagePrice + totalUpgradeCost;
+    
+    console.log('💰 === PRICE CALCULATION ===');
+    console.log('Base Package Price:', basePackagePrice);
+    console.log('Room Type:', selectedRoomType.type);
+    console.log('Upgrade per day per pax:', upgradePerDayPerPax);
+    console.log('Duration (days):', durationDays);
+    console.log('Number of pax:', basePax);
+    console.log('Total Upgrade Cost:', totalUpgradeCost);
+    console.log('FINAL PRICE:', finalPrice);
+    console.log('💰 ========================');
+    
+    return finalPrice;
   })();
 
   const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
@@ -592,6 +631,8 @@ const BookingRightForm = ({ pkg }) => {
           selectedRoomType={selectedRoomType}
           onRoomTypeChange={handleRoomTypeChange}
           numberOfRooms={numberOfRooms}
+          numberOfPax={quantities.adult || 1}
+          durationDays={durationDays}
         />
       )}
 

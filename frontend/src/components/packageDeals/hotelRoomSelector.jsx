@@ -6,10 +6,22 @@ const HotelRoomSelector = ({
   roomTypes = [], 
   selectedRoomType, 
   onRoomTypeChange,
-  numberOfRooms = 1 
+  numberOfRooms = 1,
+  numberOfPax = 1,
+  durationDays = 1
 }) => {
   
   const sortedRoomTypes = [...roomTypes].sort((a, b) => a.price - b.price);
+
+  // Room upgrade pricing per day per pax
+  const getUpgradePricing = (type) => {
+    const typeUpper = type?.toUpperCase() || '';
+    if (typeUpper.includes('BUDGET')) return 0;
+    if (typeUpper.includes('STANDARD')) return 750;
+    if (typeUpper.includes('4 STAR')) return 1200;
+    if (typeUpper.includes('5 STAR')) return 2040;
+    return 0;
+  };
 
   const getRoomTypeIcon = (type) => {
     const typeUpper = type?.toUpperCase() || '';
@@ -43,7 +55,8 @@ const HotelRoomSelector = ({
       <div className="room-types-list">
         {sortedRoomTypes.map((room, index) => {
           const isSelected = selectedRoomType?.type === room.type;
-          const totalPrice = room.price * numberOfRooms;
+          const upgradePrice = getUpgradePricing(room.type);
+          const totalUpgradeCost = upgradePrice * durationDays * numberOfPax;
           const badgeColor = getRoomTypeBadgeColor(room.type);
 
           return (
@@ -96,15 +109,6 @@ const HotelRoomSelector = ({
               </div>
 
               <div className="room-type-footer">
-                <div className="room-price-info">
-                  <span className="price-per-room">₱{room.price.toLocaleString()}/room/night</span>
-                  {numberOfRooms > 1 && (
-                    <span className="total-price">
-                      Total: ₱{totalPrice.toLocaleString()} ({numberOfRooms} {numberOfRooms === 1 ? 'room' : 'rooms'})
-                    </span>
-                  )}
-                </div>
-                
                 <button 
                   className={`select-room-btn ${isSelected ? 'selected' : ''}`}
                   type="button"
@@ -120,21 +124,6 @@ const HotelRoomSelector = ({
           );
         })}
       </div>
-
-      {selectedRoomType && (
-        <div className="selected-room-summary">
-          <div className="summary-content">
-            <Check size={18} color="#22c55e" strokeWidth={3} />
-            <span>
-              You selected: <strong>{selectedRoomType.type}</strong> 
-              {numberOfRooms > 1 && ` × ${numberOfRooms} rooms`}
-            </span>
-          </div>
-          <div className="summary-price">
-            ₱{(selectedRoomType.price * numberOfRooms).toLocaleString()}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
