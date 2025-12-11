@@ -41,33 +41,33 @@ const ViewImage = () => {
                 });
                 if (response.ok) {
                     setImages(images.filter(img => img._id !== id));
+                } else {
+                    console.error('Failed to delete image');
                 }
             } catch (error) {
-                console.error('Error deleting:', error);
+                console.error('Error deleting image:', error);
             }
         }
     };
 
-    const copyUrl = (path, id) => {
-        const fullUrl = `http://localhost:5000/${path}`;
-        navigator.clipboard.writeText(fullUrl);
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
+    const copyUrl = (url, id) => {
+        navigator.clipboard.writeText(url).then(() => {
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 1500);
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+        });
     };
-
-    const getImageUrl = (path) => `http://localhost:5000/${path}`;
 
     return (
         <div className="vi-page">
-             <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
-            <main className="vi-main">
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            {/* The main content now gets a class when the sidebar is collapsed */}
+            <main className={`vi-main ${isSidebarCollapsed ? 'vi-main-collapsed' : ''}`}>
                 <div className="vi-container">
                     <header className="vi-header">
-                        <h1 className="vi-title">GALLERY LIST</h1>
-                        <p className="vi-subtitle">Your uploaded images for GHL display</p>
+                        <h1 className="vi-title">Your Image Gallery</h1>
+                        <p className="vi-subtitle">All your uploaded images in one place.</p>
                     </header>
 
                     {loading ? (
@@ -78,8 +78,7 @@ const ViewImage = () => {
                                 images.map((img) => (
                                     <div key={img._id} className="vi-card">
                                         <div className="vi-image-wrapper">
-                                            <img src={getImageUrl(img.imageUrl)} alt="Gallery Item" />
-                                            
+                                            <img src={img.imageUrl} alt={img.imageName} />
                                             <div className="vi-overlay">
                                                 <button 
                                                     className="vi-btn vi-copy" 

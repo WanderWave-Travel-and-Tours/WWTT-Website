@@ -1,8 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Sidebar from '../../sidebar/sidebar';
-import { Plus, Plane, Calendar, Tag, AlertCircle, X, Eye, CreditCard } from 'lucide-react';
+import { 
+    Plus, 
+    Plane, 
+    Calendar, 
+    Tag, 
+    AlertCircle, 
+    X, 
+    Eye, 
+    CreditCard, 
+    ChevronLeft, 
+    ChevronRight, 
+    Search // Added Search icon
+} from 'lucide-react';
 import './AirlineBooking.css';
+
+// Pagination Constant
+const ITEMS_PER_PAGE = 10;
 
 const AirlineBooking = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -13,6 +28,44 @@ const AirlineBooking = () => {
     const [showContactRemarks, setShowContactRemarks] = useState(false);
     const [contactRemarks, setContactRemarks] = useState('');
     const [contactEvidence, setContactEvidence] = useState(null);
+    
+    // Search and Filter State - NEW
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' for All Items
+    
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    
+    // Filtering and Searching Logic - NEW
+    const filteredBookings = useMemo(() => {
+        let filtered = bookings;
+
+        // 1. Status Filter
+        if (statusFilter !== 'ALL') {
+            filtered = filtered.filter(b => b.status === statusFilter);
+        }
+
+        // 2. Search Term Filter
+        if (searchTerm) {
+            const lowerCaseSearchTerm = searchTerm.toLowerCase();
+            filtered = filtered.filter(b =>
+                b._id.toLowerCase().includes(lowerCaseSearchTerm) ||
+                (b.fullName && b.fullName.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                (b.email && b.email.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                (b.message && b.message.toLowerCase().includes(lowerCaseSearchTerm))
+            );
+        }
+
+        return filtered;
+    }, [bookings, statusFilter, searchTerm]);
+
+    // Pagination Logic uses filteredBookings now
+    const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE);
+    const indexOfLastBooking = currentPage * ITEMS_PER_PAGE;
+    const indexOfFirstBooking = indexOfLastBooking - ITEMS_PER_PAGE;
+    const currentBookings = filteredBookings.slice(indexOfFirstBooking, indexOfLastBooking);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     // Fetch flight booking inquiries from database
     const fetchFlightBookings = async () => {
@@ -37,7 +90,18 @@ const AirlineBooking = () => {
         fetchFlightBookings();
     }, []);
 
-    // Calculate stats from actual data
+    // Recalculate pagination after data change (filter/search) - UPDATED
+    useEffect(() => {
+        // Reset page to 1 if the filter/search result set is now smaller than the current page
+        if (totalPages > 0 && currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        } else if (filteredBookings.length === 0) {
+            setCurrentPage(1);
+        }
+    }, [filteredBookings.length, totalPages, currentPage]);
+
+
+    // Calculate stats from actual data (non-filtered)
     const stats = [
         { 
             label: 'Total Inquiries', 
@@ -60,6 +124,19 @@ const AirlineBooking = () => {
             icon: <AlertCircle size={24}/> 
         },
     ];
+    
+    // Define all available statuses for the filter UI - NEW
+    const statusOptions = useMemo(() => ([
+        { label: 'All Items', value: 'ALL', count: bookings.length, activeClass: 'active' },
+        { label: 'Pending', value: 'PENDING', count: bookings.filter(b => b.status === 'PENDING').length, activeClass: 'pending-active' },
+        { label: 'Contacted', value: 'CONTACTED', count: bookings.filter(b => b.status === 'CONTACTED').length, activeClass: 'confirmed-active' }, // Green-like color
+        { label: 'Processing', value: 'PROCESSING', count: bookings.filter(b => b.status === 'PROCESSING').length, activeClass: 'pending-active' }, // Yellow-like color
+        { label: 'Completed', value: 'COMPLETED', count: bookings.filter(b => b.status === 'COMPLETED').length, activeClass: 'confirmed-active' }, // Green-like color
+        { label: 'Cancelled', value: 'CANCELLED', count: bookings.filter(b => b.status === 'CANCELLED').length, activeClass: 'cancelled-active' }, // Red-like color
+        { label: 'Payment Pending', value: 'PAYMENT_PENDING', count: bookings.filter(b => b.status === 'PAYMENT_PENDING').length, activeClass: 'pending-active' }, // Yellow-like color
+        { label: 'Paid', value: 'PAID', count: bookings.filter(b => b.status === 'PAID').length, activeClass: 'confirmed-active' }, // Green-like color
+    ]), [bookings]);
+
 
     const handleViewBooking = (booking) => {
         setSelectedBooking(booking);
@@ -84,7 +161,7 @@ const AirlineBooking = () => {
     const getStatusClass = (status) => {
         const statusMap = {
             'PENDING': 'status-pending',
-            'CONTACTED': 'status-issued',
+            'CONTACTED': 'status-issued', 
             'PROCESSING': 'status-processing',
             'COMPLETED': 'status-issued',
             'CANCELLED': 'status-cancelled',
@@ -181,6 +258,60 @@ const AirlineBooking = () => {
             }
         }
     };
+    
+    // Pagination Component
+    const Pagination = ({ totalPages, currentPage, paginate }) => {
+        if (totalPages <= 1) return null;
+
+        const pageNumbers = [];
+        // Only show a subset of page numbers for cleaner display
+        const maxPageButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+
+        if (endPage - startPage + 1 < maxPageButtons) {
+            startPage = Math.max(1, endPage - maxPageButtons + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+
+        return (
+            <nav className="pagination-nav">
+                <ul className="pagination-list">
+                    <li>
+                        <button
+                            className="pagination-btn"
+                            onClick={() => paginate(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                    </li>
+                    {pageNumbers.map(number => (
+                        <li key={number}>
+                            <button
+                                onClick={() => paginate(number)}
+                                className={`pagination-btn ${number === currentPage ? 'active' : ''}`}
+                            >
+                                {number}
+                            </button>
+                        </li>
+                    ))}
+                    <li>
+                        <button
+                            className="pagination-btn"
+                            onClick={() => paginate(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        );
+    };
 
     return (
         <div className="airline-page">
@@ -205,63 +336,100 @@ const AirlineBooking = () => {
                             </div>
                         ))}
                     </div>
+                    
+                    {/* --- Search and Filter Card --- NEW COMPONENT */}
+                    <div className="search-filter-card">
+                        <div className="search-filter-wrapper">
+                            {/* Search Box */}
+                            <div className="search-box">
+                                <Search size={20} className="search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by ID, Name, or Email..."
+                                    className="search-input"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Filter Buttons */}
+                            <div className="filter-buttons">
+                                {statusOptions.map((option) => (
+                                    <button
+                                        key={option.value}
+                                        className={`filter-btn ${statusFilter === option.value ? option.activeClass : ''}`}
+                                        onClick={() => setStatusFilter(option.value)}
+                                        // Disable if no items in that status (optional)
+                                        disabled={option.count === 0 && option.value !== 'ALL'}
+                                    >
+                                        {option.label} ({option.count})
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    {/* --- End Search and Filter Card --- */}
+
 
                     <div className="airline-table-container">
                         {isLoading ? (
                             <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
                                 Loading flight bookings...
                             </div>
-                        ) : bookings.length === 0 ? (
+                        ) : filteredBookings.length === 0 ? (
                             <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                                No flight booking inquiries yet.
+                                No flight booking inquiries found with the current filters.
                             </div>
                         ) : (
-                            <table className="airline-table">
-                                <thead>
-                                    <tr>
-                                        <th>Reference</th>
-                                        <th>Client Name</th>
-                                        <th>Email</th>
-                                        <th>Message</th>
-                                        <th>Date Submitted</th>
-                                        <th>Status</th>
-                                        <th style={{textAlign:'right'}}>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {bookings.map((booking) => (
-                                        <tr key={booking._id}>
-                                            <td style={{ fontWeight: '700', color: '#0f172a' }}>
-                                                {booking._id.slice(-6).toUpperCase()}
-                                            </td>
-                                            <td>{booking.fullName || 'N/A'}</td>
-                                            <td>{booking.email || 'N/A'}</td>
-                                            <td style={{ 
-                                                maxWidth: '300px', 
-                                                overflow: 'hidden', 
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap' 
-                                            }}>
-                                                {booking.message || 'No message'}
-                                            </td>
-                                            <td>{formatDate(booking.createdAt)}</td>
-                                            <td>
-                                                <span className={`status-pill ${getStatusClass(booking.status)}`}>
-                                                    {booking.status || 'PENDING'}
-                                                </span>
-                                            </td>
-                                            <td style={{textAlign:'right'}}>
-                                                <button 
-                                                    className="airline-action-btn"
-                                                    onClick={() => handleViewBooking(booking)}
-                                                >
-                                                    <Eye size={14} style={{marginRight:'4px'}}/> View Details
-                                                </button>
-                                            </td>
+                            <>
+                                <table className="airline-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Reference</th>
+                                            <th>Client Name</th>
+                                            <th>Email</th>
+                                            <th>Message</th>
+                                            <th>Date Submitted</th>
+                                            <th>Status</th>
+                                            <th style={{textAlign:'right'}}>Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {currentBookings.map((booking) => (
+                                            <tr key={booking._id}>
+                                                <td style={{ fontWeight: '700', color: '#0f172a' }}>
+                                                    {booking._id.slice(-6).toUpperCase()}
+                                                </td>
+                                                <td>{booking.fullName || 'N/A'}</td>
+                                                <td>{booking.email || 'N/A'}</td>
+                                                <td style={{ 
+                                                    maxWidth: '300px', 
+                                                    overflow: 'hidden', 
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap' 
+                                                }}>
+                                                    {booking.message || 'No message'}
+                                                </td>
+                                                <td>{formatDate(booking.createdAt)}</td>
+                                                <td>
+                                                    <span className={`status-pill ${getStatusClass(booking.status)}`}>
+                                                        {booking.status || 'PENDING'}
+                                                    </span>
+                                                </td>
+                                                <td style={{textAlign:'right'}}>
+                                                    <button 
+                                                        className="airline-action-btn"
+                                                        onClick={() => handleViewBooking(booking)}
+                                                    >
+                                                        <Eye size={14} style={{marginRight:'4px'}}/> View Details
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                <Pagination totalPages={totalPages} currentPage={currentPage} paginate={paginate} />
+                            </>
                         )}
                     </div>
                 </div>

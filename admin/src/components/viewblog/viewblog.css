@@ -6,9 +6,15 @@
 
 .vb-main {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 280px; /* Default margin for full sidebar */
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Added transition for smooth effect */
+}
+
+/* NEW: Styles for when the sidebar is collapsed */
+.vb-main--collapsed {
+    margin-left: 70px;
 }
 
 .vb-container {
@@ -204,11 +210,16 @@
 }
 
 @media (max-width: 1024px) {
+    /* This media query handles screens where the sidebar *automatically* collapses */
     .vb-main { margin-left: 70px; padding: 24px; }
+    /* We also need to reset the manual collapse class in this media query
+       to ensure the automatic collapse takes precedence */
+    .vb-main--collapsed { margin-left: 70px; }
 }
 
 @media (max-width: 640px) {
     .vb-main { margin-left: 0; padding: 16px; }
+    .vb-main--collapsed { margin-left: 0; }
     .vb-header { flex-direction: column; align-items: flex-start; }
     .vb-search-box { width: 100%; }
 }

@@ -10,7 +10,7 @@ exports.getVisas = async (req, res) => {
     }
 };
 
-// Create New Visa
+// Create New Visa 
 exports.createVisa = async (req, res) => {
     try {
         const { country, flagCode, description, price } = req.body;

@@ -4,11 +4,21 @@
     background: #f8fafc; 
 }
 
+/* Base style for main content: uses a transition for smooth resizing */
 .settings-main {
     flex: 1;
-    margin-left: 280px; 
+    /* Use padding to set an initial position, then transition the margin */
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    
+    /* Set default margin for expanded sidebar (assuming 280px sidebar width) */
+    margin-left: 280px; 
+    transition: margin-left 0.3s ease-in-out; /* Smooth transition */
+}
+
+/* New rule for when the sidebar is collapsed (assuming ~70px collapsed width) */
+.settings-main.collapsed {
+    margin-left: 70px;
 }
 
 .settings-main *,
@@ -248,6 +258,8 @@
     transform: translateY(0);
 }
 
+/* MEDIA QUERIES - Ensure these still work with the collapsed state */
+
 @media (max-width: 1024px) {
     .settings-main {
         padding: 32px;
@@ -258,8 +270,9 @@
 }
 
 @media (max-width: 900px) {
+    /* At 900px and below, the sidebar is likely always in its collapsed state (70px) */
     .settings-main {
-        margin-left: 70px;
+        margin-left: 70px; /* Forces the main content to the correct position */
         padding: 24px;
     }
 }
@@ -282,6 +295,7 @@
 }
 
 @media (max-width: 640px) {
+    /* Below this width, the sidebar is likely completely hidden or overlaid, so the main content should take full width */
     .settings-main {
         margin-left: 0;
         padding: 16px;

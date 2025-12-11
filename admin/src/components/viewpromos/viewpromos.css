@@ -6,9 +6,16 @@
 
 .vpromos-main {
     flex: 1;
-    margin-left: 280px;
+    /* Margin for the open sidebar (280px) */
+    margin-left: 280px; 
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Added transition for smooth change */
+}
+
+/* New style for when the sidebar is collapsed (70px) */
+.vpromos-main--collapsed {
+    margin-left: 70px;
 }
 
 .vpromos-main *,
@@ -76,6 +83,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 60px;
+    margin-top: 20px;
 }
 
 .vpromos-empty-icon {
@@ -100,7 +108,9 @@
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    overflow: hidden;
+    overflow-x: auto; /* Keep auto for responsiveness */
+    /* Add this to contain the sticky pagination */
+    position: relative; 
 }
 
 .vpromos-table {
@@ -254,6 +264,7 @@
     border-radius: 10px;
     padding: 20px;
     text-align: center;
+    margin-bottom: 25px;
 }
 
 .vpromos-stat strong {
@@ -280,18 +291,28 @@
     }
 
     .vpromos-table-wrapper {
-        overflow-x: auto;
+        /* overflow-x: auto; - Already applied above */
     }
 
     .vpromos-table {
         min-width: 800px;
     }
+    
+    /* Ensure the media query respects the collapsed state when the screen is wide enough to show the sidebar */
+    .vpromos-main:not(.vpromos-main--collapsed) {
+        margin-left: 280px;
+    }
 }
 
+/* Original rule for collapsed sidebar at 900px breakpoint */
 @media (max-width: 900px) {
     .vpromos-main {
-        margin-left: 70px;
+        margin-left: 70px; /* Applies to both collapsed and open states below 900px */
         padding: 24px;
+    }
+    /* Remove the specific collapsed class rule here as 70px is the desired behavior below 900px */
+    .vpromos-main--collapsed {
+        margin-left: 70px;
     }
 }
 
@@ -307,4 +328,83 @@
     .vpromos-stats {
         flex-direction: column;
     }
+}
+
+/* --- PAGINATION STYLES (New) --- */
+.pagination-nav {
+    /* Aligns with the table container's style */
+    margin-top: 0;
+    padding: 16px 24px;
+    background-color: white;
+    border-top: 1px solid #e2e8f0;
+    
+    /* Stick to the bottom of the table container for better UX */
+    position: sticky; 
+    bottom: 0;
+    z-index: 5;
+    
+    display: flex;
+    justify-content: flex-end; /* Align controls to the right */
+    /* Match the bottom border radius of the .vpromos-table-wrapper (10px) */
+    border-radius: 0 0 10px 10px; 
+}
+
+.pagination-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 6px;
+    align-items: center;
+}
+
+.pagination-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #334155; /* Neutral text color */
+    transition: all 0.2s;
+    min-width: 40px; 
+    text-align: center;
+    /* Keeping original font stack from the file, adjusting the one provided */
+    font-family: 'Segoe UI', Arial, sans-serif; 
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f1f5f9; /* Light gray hover */
+    border-color: #cbd5e1;
+    color: #0f172a; /* Darker text on hover */
+    transform: translateY(-1px); /* Slight lift on hover */
+}
+
+.pagination-btn.active {
+    /* Using the primary dark color for consistency: #001F3F */
+    background-color: #001F3F; 
+    border-color: #001F3F;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(0, 31, 63, 0.2);
+}
+
+.pagination-btn.active:hover {
+    background-color: #003366; /* Slightly darker primary on hover */
+    border-color: #003366;
+    transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background-color: #f8fafc;
+}
+
+/* For previous/next buttons */
+.pagination-btn:first-child,
+.pagination-btn:last-child {
+    font-weight: 700;
+    text-transform: uppercase;
 }
