@@ -2,7 +2,6 @@ const axios = require('axios');
 const Inquiry = require('../models/inquiry');
 const Payment = require('../models/payment');
 const Booking = require('../models/booking');
-const PackageModel = require('../models/package');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API = 'https://api.paymongo.com/v1';
@@ -11,7 +10,6 @@ const authHeader = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
 
 // ==========================================
 // FUNCTION 1: FOR INQUIRIES (Visa, Cenomar, PSA)
-// Saves to: Inquiry Collection & Payment Collection
 // ==========================================
 const createInquiryCheckoutSession = async (req, res) => {
   try {
@@ -26,7 +24,6 @@ const createInquiryCheckoutSession = async (req, res) => {
        return res.status(400).json({ success: false, message: 'Invalid price amount' });
     }
 
-    // Convert to centavos (PHP 100.00 = 10000 centavos)
     const amountInCentavos = Math.round(inquiry.estimatedPrice * 100);
 
     const options = {
@@ -54,11 +51,7 @@ const createInquiryCheckoutSession = async (req, res) => {
             send_email_receipt: true,
             show_description: true,
             description: `Inquiry Ref: ${inquiry._id}`,
-            
-            // 👇 CRITICAL FIX: Redirect to Dashboard with success flag & Inquiry ID
-            // Ito ang magtri-trigger sa Frontend na tawagin ang "markAsPaid" endpoint
             success_url: `http://localhost:5173/dashboard?success=true&inquiryId=${inquiry._id}`,
-            
             cancel_url: `http://localhost:5173/dashboard`
           }
         }
@@ -68,7 +61,6 @@ const createInquiryCheckoutSession = async (req, res) => {
     const response = await axios.request(options);
     const checkoutSessionId = response.data.data.id;
 
-    // Create Initial Payment Record (Status: PENDING)
     await Payment.create({
       inquiryId: inquiry._id,
       transactionId: checkoutSessionId,
@@ -96,63 +88,95 @@ const createInquiryCheckoutSession = async (req, res) => {
 
 // ==========================================
 // FUNCTION 2: FOR BOOKINGS (Travel Packages)
-// Saves to: Booking Collection
+// 🔥 FIXED VERSION - Expects bookingId to already exist
 // ==========================================
 const createBookingPaymentLink = async (req, res) => {
   try {
-    const { amount, description, bookingData } = req.body;
+    console.log('═══════════════════════════════════════');
+    console.log('📥 PAYMENT CONTROLLER RECEIVED REQUEST');
+    console.log('═══════════════════════════════════════');
+    console.log('Request Body:', req.body);
+    console.log('Request Headers:', req.headers);
+    console.log('Body Keys:', Object.keys(req.body));
+    console.log('BookingId Value:', req.body.bookingId);
+    console.log('BookingId Type:', typeof req.body.bookingId);
 
-    if (!amount || !bookingData) {
+    const { bookingId } = req.body;
+
+    if (!bookingId) {
+      console.error('❌ Missing bookingId in request body');
+      console.error('Received body:', JSON.stringify(req.body, null, 2));
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: amount or bookingData'
+        message: 'Missing required field: bookingId',
+        receivedBody: req.body,
+        debug: {
+          bodyKeys: Object.keys(req.body),
+          bodyValues: Object.values(req.body)
+        }
       });
     }
 
-    const package = await PackageModel.findOne({ title: bookingData.packageName });
+    console.log('✅ BookingId received:', bookingId);
+
+    // Find the existing booking
+    console.log('🔍 Searching for booking in database...');
+    const booking = await Booking.findById(bookingId);
     
-    if (!package) {
+    if (!booking) {
+      console.error('❌ Booking not found in database');
+      console.error('Searched for ID:', bookingId);
       return res.status(404).json({
         success: false,
-        message: 'Package not found'
+        message: 'Booking not found',
+        searchedId: bookingId
       });
     }
 
-    const newBooking = new Booking({
-      packageName: bookingData.packageName,
-      packageId: package._id,           
-      sellerPrice: package.sellerPrice,
-      markup: package.markup,           
-      price: package.price,            
-      startDate: bookingData.startDate,
-      endDate: bookingData.endDate,
-      duration: bookingData.duration,
-      pax: bookingData.pax,
-      totalAmount: bookingData.totalAmount,
-      fullName: bookingData.fullName,
-      email: bookingData.email,
-      message: bookingData.message,
-      status: 'pending'
+    console.log('✅ Booking found:', {
+      id: booking._id,
+      packageName: booking.packageName,
+      totalAmount: booking.totalAmount,
+      status: booking.status
     });
 
-    await newBooking.save();
-    const bookingId = newBooking._id.toString();
+    // Check for duplicate payment link
+    if (booking.paymentLinkId) {
+      console.warn('⚠️ Payment link already exists');
+      return res.status(400).json({
+        success: false,
+        message: 'Payment link already exists for this booking',
+        existingLinkId: booking.paymentLinkId
+      });
+    }
 
-    // Create PayMongo Link
+    // Convert to centavos
+    const amountInCentavos = Math.round(booking.totalAmount * 100);
+
+    console.log('💰 Payment Details:', {
+      totalAmount: booking.totalAmount,
+      amountInCentavos: amountInCentavos,
+      currency: 'PHP'
+    });
+
+    console.log('📡 Calling PayMongo API...');
+
+    // Create PayMongo Payment Link
     const paymentLinkResponse = await axios.post(
       `${PAYMONGO_API}/links`,
       {
         data: {
           attributes: {
-            amount: amount,
-            description: description,
-            remarks: `Booking for ${bookingData.fullName}`,
+            amount: amountInCentavos,
+            description: `${booking.packageName} - ${booking.fullName}`,
+            remarks: `Booking for ${booking.fullName}`,
             metadata: {
               booking_id: bookingId,
-              customer_name: bookingData.fullName,
-              customer_email: bookingData.email,
-              package: bookingData.packageName,
-              total_amount: bookingData.totalAmount
+              customer_name: booking.fullName,
+              customer_email: booking.email,
+              package: booking.packageName,
+              total_amount: booking.totalAmount,
+              includes_airfare: booking.includesAirfare || false
             }
           }
         }
@@ -167,9 +191,21 @@ const createBookingPaymentLink = async (req, res) => {
 
     const paymentLink = paymentLinkResponse.data.data;
     
-    newBooking.paymentLinkId = paymentLink.id;
-    newBooking.referenceNumber = paymentLink.attributes.reference_number;
-    await newBooking.save();
+    console.log('✅ PayMongo Response:', {
+      linkId: paymentLink.id,
+      checkoutUrl: paymentLink.attributes.checkout_url,
+      referenceNumber: paymentLink.attributes.reference_number
+    });
+
+    // Update booking with payment details
+    booking.paymentLinkId = paymentLink.id;
+    booking.referenceNumber = paymentLink.attributes.reference_number;
+    await booking.save();
+
+    console.log('✅ Booking updated with payment details');
+    console.log('═══════════════════════════════════════');
+    console.log('✅ PAYMENT LINK CREATED SUCCESSFULLY');
+    console.log('═══════════════════════════════════════');
 
     return res.json({
       success: true,
@@ -177,15 +213,32 @@ const createBookingPaymentLink = async (req, res) => {
       paymentLinkId: paymentLink.id,
       referenceNumber: paymentLink.attributes.reference_number,
       bookingId: bookingId,
-      message: 'Redirecting to PayMongo checkout'
+      message: 'Payment link created successfully'
     });
 
   } catch (error) {
-    console.error('❌ Booking Payment Error:', error.response?.data || error.message);
+    console.error('═══════════════════════════════════════');
+    console.error('❌ PAYMENT CONTROLLER ERROR');
+    console.error('═══════════════════════════════════════');
+    console.error('Error Type:', error.name);
+    console.error('Error Message:', error.message);
+    console.error('Error Stack:', error.stack);
+    
+    if (error.response) {
+      console.error('PayMongo API Error:');
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Failed to create booking or payment link',
-      error: error.response?.data?.errors || error.message
+      message: 'Failed to create payment link',
+      error: error.response?.data?.errors || error.message,
+      details: error.response?.data,
+      debug: {
+        errorType: error.name,
+        errorMessage: error.message
+      }
     });
   }
 };

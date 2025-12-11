@@ -31,6 +31,7 @@ import {
   UploadCloud, 
   Grid,
   MapPin,
+  //Hotel,
   Ship,       // Added for Ferry
   ShieldCheck // Added for Insurance
 } from 'lucide-react';
@@ -183,6 +184,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Create Tour', path: '/add-tour', icon: MapPin },
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
                 { name: 'Add Poster', path: '/add-poster', icon: Image },
+                { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
                 { name: 'Create Blog', path: '/add-blog', icon: PenTool },
                 { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, 
                 { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
@@ -199,6 +201,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
                 { name: 'Poster List', path: '/view-posters', icon: Images },
                 { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
+                { name: 'Hotels', path: '/view-hotels', icon: Hotel },
                 { name: 'Image Gallery', path: '/view-images', icon: Grid }, 
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
               ]}

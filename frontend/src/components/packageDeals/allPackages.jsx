@@ -109,9 +109,12 @@ function AllPackages({
   return (
     <section className="all-packages-section" ref={packagesRef}>
       
+      {/* --- Pass Currency Props to Modal --- */}
       <CurrencyModal 
         isOpen={showCurrencyModal} 
         onClose={() => setShowCurrencyModal(false)} 
+        currency={currency}
+        setCurrency={setCurrency}
       />
 
       <div className="section-title-wrapper">
