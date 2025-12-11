@@ -264,33 +264,32 @@ const AddPackage = () => {
   };
 
   return (
-    <div className="pkg-page">
-                  <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
-      <main className="pkg-main">
-        <div className="pkg-container">
-          <header className="pkg-header">
-
-            <h1 className="pkg-title">NEW PACKAGE</h1>
-            <p className="pkg-subtitle">
+    <div className="addpkg-page">
+      <Sidebar 
+        isCollapsed={isSidebarCollapsed} 
+        toggleSidebar={toggleSidebar} 
+      />
+      <main className="addpkg-main">
+        <div className="addpkg-container">
+          <header className="addpkg-header">
+            <h1 className="addpkg-title">NEW PACKAGE</h1>
+            <p className="addpkg-subtitle">
               Fill in the details below to create a new tour package
             </p>
           </header>
 
-          <form onSubmit={handleSubmit} className="pkg-form">
-            <div className="pkg-grid">
-              <div className="pkg-left">
-                <section className="pkg-section">
-                  <h2 className="pkg-section-title">COVER IMAGE</h2>
+          <form onSubmit={handleSubmit} className="addpkg-form">
+            <div className="addpkg-grid">
+              <div className="addpkg-left">
+                <section className="addpkg-section">
+                  <h2 className="addpkg-section-title">COVER IMAGE</h2>
 
                   {previewUrl ? (
-                    <div className="pkg-upload-preview-container">
-                      <div className="pkg-upload-preview">
+                    <div className="addpkg-upload-preview-container">
+                      <div className="addpkg-upload-preview">
                         <img src={previewUrl} alt="Cover" />
-                        <div className="pkg-upload-actions">
-                          <label className="pkg-upload-change-btn">
+                        <div className="addpkg-upload-actions">
+                          <label className="addpkg-upload-change-btn">
                             <input
                               type="file"
                               onChange={handleFileChange}
@@ -313,7 +312,7 @@ const AddPackage = () => {
                           </label>
                           <button
                             type="button"
-                            className="pkg-upload-paste-btn"
+                            className="addpkg-upload-paste-btn"
                             onClick={activatePasteArea}
                           >
                             <svg
@@ -332,7 +331,7 @@ const AddPackage = () => {
                           </button>
                           <button
                             type="button"
-                            className="pkg-upload-remove-btn"
+                            className="addpkg-upload-remove-btn"
                             onClick={() => {
                               setFile(null);
                               setPreviewUrl(null);
@@ -356,8 +355,8 @@ const AddPackage = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="pkg-upload-options">
-                      <label className="pkg-upload pkg-upload-click">
+                    <div className="addpkg-upload-options">
+                      <label className="addpkg-upload addpkg-upload-click">
                         <input
                           type="file"
                           onChange={handleFileChange}
@@ -365,8 +364,8 @@ const AddPackage = () => {
                           hidden
                           required
                         />
-                        <div className="pkg-upload-empty">
-                          <div className="pkg-upload-icon">
+                        <div className="addpkg-upload-empty">
+                          <div className="addpkg-upload-icon">
                             <svg
                               viewBox="0 0 24 24"
                               fill="none"
@@ -383,21 +382,21 @@ const AddPackage = () => {
                         </div>
                       </label>
 
-                      <div className="pkg-upload-divider">
+                      <div className="addpkg-upload-divider">
                         <span>OR</span>
                       </div>
 
                       <div
                         ref={pasteAreaRef}
-                        className={`pkg-upload-paste ${
+                        className={`addpkg-upload-paste ${
                           isPasteActive ? "active" : ""
                         }`}
                         onClick={activatePasteArea}
                         onBlur={() => setIsPasteActive(false)}
                         tabIndex={0}
                       >
-                        <div className="pkg-upload-paste-content">
-                          <div className="pkg-upload-icon">
+                        <div className="addpkg-upload-paste-content">
+                          <div className="addpkg-upload-icon">
                             <svg
                               viewBox="0 0 24 24"
                               fill="none"
@@ -419,10 +418,10 @@ const AddPackage = () => {
                   )}
                 </section>
 
-                <section className="pkg-section">
-                  <h2 className="pkg-section-title">BASIC INFORMATION</h2>
-                  <div className="pkg-fields">
-                    <div className="pkg-field pkg-field--full">
+                <section className="addpkg-section">
+                  <h2 className="addpkg-section-title">BASIC INFORMATION</h2>
+                  <div className="addpkg-fields">
+                    <div className="addpkg-field addpkg-field--full">
                       <label>Package Name</label>
                       <input
                         type="text"
@@ -432,7 +431,7 @@ const AddPackage = () => {
                         required
                       />
                     </div>
-                    <div className="pkg-field pkg-field--full">
+                    <div className="addpkg-field addpkg-field--full">
                       <label>Destination</label>
                       <input
                         type="text"
@@ -442,7 +441,7 @@ const AddPackage = () => {
                         required
                       />
                     </div>
-                    <div className="pkg-field">
+                    <div className="addpkg-field">
                       <label>Duration</label>
                       <input
                         type="text"
@@ -452,7 +451,7 @@ const AddPackage = () => {
                         required
                       />
                     </div>
-                    <div className="pkg-field">
+                    <div className="addpkg-field">
                       <label>Tour Type</label>
                       <select
                         value={category}
@@ -465,11 +464,11 @@ const AddPackage = () => {
                   </div>
                 </section>
 
-                <section className="pkg-section">
-                  <h2 className="pkg-section-title">PRICING</h2>
-                  <div className="pkg-pricing-layout">
-                    <div className="pkg-pricing-inputs">
-                      <div className="pkg-field">
+                <section className="addpkg-section">
+                  <h2 className="addpkg-section-title">PRICING</h2>
+                  <div className="addpkg-pricing-layout">
+                    <div className="addpkg-pricing-inputs">
+                      <div className="addpkg-field">
                         <label>Supplier Rate (PHP)</label>
                         <input
                           type="number"
@@ -483,7 +482,7 @@ const AddPackage = () => {
                           min="0"
                         />
                       </div>
-                      <div className="pkg-field">
+                      <div className="addpkg-field">
                         <label>
                           Markup 
                           <span style={{
@@ -498,7 +497,7 @@ const AddPackage = () => {
                             {markupType === "percentage" ? "% MODE" : "₱ PESO MODE"}
                           </span>
                         </label>
-                        <div className="pkg-field-with-toggle">
+                        <div className="addpkg-field-with-toggle">
                           <input
                             type="number"
                             placeholder={
@@ -515,7 +514,7 @@ const AddPackage = () => {
                           />
                           <button
                             type="button"
-                            className="pkg-toggle-markup"
+                            className="addpkg-toggle-markup"
                             onClick={toggleMarkupType}
                             title={`Switch to ${
                               markupType === "percentage"
@@ -540,9 +539,9 @@ const AddPackage = () => {
                       </div>
                     </div>
 
-                    <div className="pkg-total-price-box">
-                      <div className="pkg-total-price-content">
-                        <div className="pkg-total-price-label">
+                    <div className="addpkg-total-price-box">
+                      <div className="addpkg-total-price-content">
+                        <div className="addpkg-total-price-label">
                           <svg
                             viewBox="0 0 24 24"
                             fill="none"
@@ -557,7 +556,7 @@ const AddPackage = () => {
                           </svg>
                           TOTAL SELLING PRICE
                         </div>
-                        <div className="pkg-total-price-amount">
+                        <div className="addpkg-total-price-amount">
                           ₱
                           {price
                             ? Number(price).toLocaleString("en-US", {
@@ -566,13 +565,13 @@ const AddPackage = () => {
                               })
                             : "0.00"}
                         </div>
-                        <div className="pkg-total-price-breakdown">
+                        <div className="addpkg-total-price-breakdown">
                           {supplierRate && markupValue ? (
                             <>
                               <span>
                                 ₱{Number(supplierRate).toLocaleString()}
                               </span>
-                              <span className="pkg-plus">+</span>
+                              <span className="addpkg-plus">+</span>
                               <span>
                                 {markupType === "percentage"
                                   ? `${markupValue}% (₱${(
@@ -586,7 +585,7 @@ const AddPackage = () => {
                               </span>
                             </>
                           ) : (
-                            <span className="pkg-breakdown-empty">
+                            <span className="addpkg-breakdown-empty">
                               Enter supplier rate and markup to calculate
                             </span>
                           )}
@@ -596,17 +595,17 @@ const AddPackage = () => {
                   </div>
                 </section>
 
-                <section className="pkg-section">
-                  <div className="pkg-section-header">
-                    <h2 className="pkg-section-title">INCLUSIONS</h2>
-                    <span className="pkg-count">
+                <section className="addpkg-section">
+                  <div className="addpkg-section-header">
+                    <h2 className="addpkg-section-title">INCLUSIONS</h2>
+                    <span className="addpkg-count">
                       {inclusions.filter((i) => i.trim()).length} items
                     </span>
                   </div>
-                  <div className="pkg-list">
+                  <div className="addpkg-list">
                     {inclusions.map((inc, i) => (
-                      <div key={i} className="pkg-list-item">
-                        <span className="pkg-bullet"></span>
+                      <div key={i} className="addpkg-list-item">
+                        <span className="addpkg-bullet"></span>
                         <input
                           type="text"
                           placeholder="What's included?"
@@ -616,7 +615,7 @@ const AddPackage = () => {
                         {inclusions.length > 1 && (
                           <button
                             type="button"
-                            className="pkg-remove"
+                            className="addpkg-remove"
                             onClick={() => removeInclusion(i)}
                           >
                             <svg
@@ -637,7 +636,7 @@ const AddPackage = () => {
                   </div>
                   <button
                     type="button"
-                    className="pkg-add-btn"
+                    className="addpkg-add-btn"
                     onClick={addInclusion}
                   >
                     <svg
@@ -652,25 +651,25 @@ const AddPackage = () => {
                   </button>
                 </section>
 
-                <section className="pkg-section">
-                  <div className="pkg-section-header">
-                    <h2 className="pkg-section-title">ITINERARY</h2>
-                    <span className="pkg-count">{itinerary.length} days</span>
+                <section className="addpkg-section">
+                  <div className="addpkg-section-header">
+                    <h2 className="addpkg-section-title">ITINERARY</h2>
+                    <span className="addpkg-count">{itinerary.length} days</span>
                   </div>
-                  <div className="pkg-timeline">
+                  <div className="addpkg-timeline">
                     {itinerary.map((day, dayIdx) => (
-                      <div key={day.day} className="pkg-day">
-                        <div className="pkg-day-marker">
-                          <span className="pkg-day-num">{day.day}</span>
+                      <div key={day.day} className="addpkg-day">
+                        <div className="addpkg-day-marker">
+                          <span className="addpkg-day-num">{day.day}</span>
                           {dayIdx < itinerary.length - 1 && (
-                            <div className="pkg-day-line"></div>
+                            <div className="addpkg-day-line"></div>
                           )}
                         </div>
-                        <div className="pkg-day-content">
-                          <div className="pkg-day-header">
+                        <div className="addpkg-day-content">
+                          <div className="addpkg-day-header">
                             <input
                               type="text"
-                              className="pkg-day-title"
+                              className="addpkg-day-title"
                               placeholder="Day title"
                               value={day.title.replace(`Day ${day.day}: `, "")}
                               onChange={(e) =>
@@ -681,16 +680,16 @@ const AddPackage = () => {
                             {itinerary.length > 1 && (
                               <button
                                 type="button"
-                                className="pkg-day-remove"
+                                className="addpkg-day-remove"
                                 onClick={() => removeDay(dayIdx)}
                               >
                                 Delete
                               </button>
                             )}
                           </div>
-                          <div className="pkg-activities">
+                          <div className="addpkg-activities">
                             {day.activities.map((act, actIdx) => (
-                              <div key={actIdx} className="pkg-activity">
+                              <div key={actIdx} className="addpkg-activity">
                                 <input
                                   type="text"
                                   placeholder="Add activity"
@@ -702,7 +701,7 @@ const AddPackage = () => {
                                 {day.activities.length > 1 && (
                                   <button
                                     type="button"
-                                    className="pkg-remove pkg-remove--sm"
+                                    className="addpkg-remove addpkg-remove--sm"
                                     onClick={() => removeAct(dayIdx, actIdx)}
                                   >
                                     <svg
@@ -722,7 +721,7 @@ const AddPackage = () => {
                             ))}
                             <button
                               type="button"
-                              className="pkg-add-activity"
+                              className="addpkg-add-activity"
                               onClick={() => addAct(dayIdx)}
                             >
                               + Activity
@@ -734,7 +733,7 @@ const AddPackage = () => {
                   </div>
                   <button
                     type="button"
-                    className="pkg-add-btn"
+                    className="addpkg-add-btn"
                     onClick={addDay}
                   >
                     <svg
@@ -750,23 +749,23 @@ const AddPackage = () => {
                 </section>
               </div>
 
-              <aside className="pkg-right">
-                <div className="pkg-preview">
-                  <span className="pkg-preview-label">PREVIEW</span>
-                  <div className="pkg-card">
-                    <div className="pkg-card-image">
+              <aside className="addpkg-right">
+                <div className="addpkg-preview">
+                  <span className="addpkg-preview-label">PREVIEW</span>
+                  <div className="addpkg-card">
+                    <div className="addpkg-card-image">
                       {previewUrl ? (
                         <img src={previewUrl} alt="Preview" />
                       ) : (
                         <span>No Image</span>
                       )}
                     </div>
-                    <div className="pkg-card-body">
-                      <span className="pkg-card-badge">{category}</span>
-                      <h3 className="pkg-card-title">
+                    <div className="addpkg-card-body">
+                      <span className="addpkg-card-badge">{category}</span>
+                      <h3 className="addpkg-card-title">
                         {title || "Package Name"}
                       </h3>
-                      <p className="pkg-card-location">
+                      <p className="addpkg-card-location">
                         <svg
                           viewBox="0 0 24 24"
                           fill="none"
@@ -778,8 +777,8 @@ const AddPackage = () => {
                         </svg>
                         {destination || "Destination"}
                       </p>
-                      <div className="pkg-card-divider"></div>
-                      <div className="pkg-card-meta">
+                      <div className="addpkg-card-divider"></div>
+                      <div className="addpkg-card-meta">
                         <div>
                           <span>Price</span>
                           <strong>
@@ -793,18 +792,18 @@ const AddPackage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="pkg-stats">
-                    <div className="pkg-stat">
+                  <div className="addpkg-stats">
+                    <div className="addpkg-stat">
                       <strong>
                         {inclusions.filter((i) => i.trim()).length}
                       </strong>
                       <span>Inclusions</span>
                     </div>
-                    <div className="pkg-stat">
+                    <div className="addpkg-stat">
                       <strong>{itinerary.length}</strong>
                       <span>Days</span>
                     </div>
-                    <div className="pkg-stat">
+                    <div className="addpkg-stat">
                       <strong>
                         {itinerary.reduce(
                           (a, d) =>
@@ -816,15 +815,15 @@ const AddPackage = () => {
                     </div>
                   </div>
                 </div>
-                <div className="pkg-actions">
+                <div className="addpkg-actions">
                   <button
                     type="button"
-                    className="pkg-btn pkg-btn--cancel"
+                    className="addpkg-btn addpkg-btn--cancel"
                     onClick={() => navigate(-1)}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="pkg-btn pkg-btn--submit">
+                  <button type="submit" className="addpkg-btn addpkg-btn--submit">
                     Publish
                   </button>
                 </div>
