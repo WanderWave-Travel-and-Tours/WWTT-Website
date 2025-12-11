@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import './addhotel.css';
-import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine } from 'lucide-react';
+import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000'; 
 
@@ -58,7 +58,6 @@ const AddHotel = () => {
       setLoading(true);
       setError('');
       
-      // Use full backend URL
       const url = `${API_BASE_URL}/api/packages/all`;
       console.log('Fetching from:', url);
       
@@ -181,7 +180,14 @@ const AddHotel = () => {
         amenities: hotelDetails.amenities,
         mainImage: previewUrl || '',
         featured: false,
-        isActive: true
+        isActive: true,
+        roomTypes: [{
+          type: type,
+          capacity: Number(hotelDetails.maxCapacity) || 4,
+          price: Number(hotelDetails.price),
+          available: 10,
+          description: `${type} room with ${hotelDetails.maxCapacity} person capacity`
+        }]
       };
 
       const response = await fetch(`${API_BASE_URL}/api/hotels`, {
@@ -456,7 +462,6 @@ const AddHotel = () => {
                     />
                   </div>
 
-                  {/* Room Calculation Preview */}
                   {hotelDetails.price && hotelDetails.maxCapacity && (
                     <div className="form-group full-width">
                       <label>Room Calculation Preview</label>

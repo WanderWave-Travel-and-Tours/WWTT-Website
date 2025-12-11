@@ -11,28 +11,25 @@ const {
   getFeaturedHotels,
   getHotelsByCity,
   updateRating,
-  getHotelStats
+  getHotelStats,
+  updateRoomTypes,
+  getRoomTypesByLocation
 } = require('../controller/hotelController');
 
-// Import middleware if you have authentication
-// const { protect, authorize } = require('../middleware/auth');
-
-// Public routes
 router.get('/', getAllHotels);
 router.get('/featured', getFeaturedHotels);
-router.get('/stats', getHotelStats); // If you want this public
+router.get('/stats', getHotelStats);
 router.get('/city/:city', getHotelsByCity);
+router.get('/location/:location/rooms', getRoomTypesByLocation);
 router.get('/:id', getHotelById);
 
-// Protected routes (uncomment and add middleware when you have auth)
-// Admin only routes
-router.post('/', createHotel); // Add: protect, authorize('admin')
-router.put('/:id', updateHotel); // Add: protect, authorize('admin')
-router.delete('/:id', deleteHotel); // Add: protect, authorize('admin')
-router.delete('/:id/permanent', permanentDeleteHotel); // Add: protect, authorize('admin')
-router.patch('/:id/featured', toggleFeatured); // Add: protect, authorize('admin')
+router.post('/', createHotel); 
+router.put('/:id', updateHotel); 
+router.delete('/:id', deleteHotel); 
+router.delete('/:id/permanent', permanentDeleteHotel);
+router.patch('/:id/featured', toggleFeatured); 
 
-// User routes (for ratings)
-router.patch('/:id/rating', updateRating); // Add: protect
+router.patch('/:id/rating', updateRating); 
+router.patch('/:id/room-types', updateRoomTypes);
 
 module.exports = router;
