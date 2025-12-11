@@ -15,6 +15,7 @@ const BookingRightForm = ({ pkg }) => {
   const [quantities, setQuantities] = useState({ adult: 1 });
   const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10));
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
+  const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); // Extract nights from "4D3N"
   const [showModal, setShowModal] = useState(false);
   const [showFlightSearchModal, setShowFlightSearchModal] = useState(false);
   
@@ -138,12 +139,12 @@ const BookingRightForm = ({ pkg }) => {
     // If no room type selected, return 0
     if (!selectedRoomType) return 0;
     
-    // Room upgrade pricing per day per pax
+    // Room upgrade pricing per NIGHT per pax
     const roomUpgradePricing = {
       'BUDGET': 0,          // No additional charge (default)
-      'STANDARD': 750,      // +₱750/day/pax
-      '4 STAR': 1200,       // +₱1,200/day/pax
-      '5 STAR': 2040        // +₱2,040/day/pax
+      'STANDARD': 750,      // +₱750/night/pax
+      '4 STAR': 1200,       // +₱1,200/night/pax
+      '5 STAR': 2040        // +₱2,040/night/pax
     };
     
     // Get the room type key
@@ -158,8 +159,8 @@ const BookingRightForm = ({ pkg }) => {
       }
     }
     
-    // Calculate total upgrade cost: upgrade price × days × pax
-    const totalUpgradeCost = upgradePerDayPerPax * durationDays * basePax;
+    // Calculate total upgrade cost: upgrade price × NIGHTS × pax
+    const totalUpgradeCost = upgradePerDayPerPax * durationNights * basePax;
     
     // Final price = base package price + upgrade cost
     const finalPrice = basePackagePrice + totalUpgradeCost;
@@ -167,8 +168,8 @@ const BookingRightForm = ({ pkg }) => {
     console.log('💰 === PRICE CALCULATION ===');
     console.log('Base Package Price:', basePackagePrice);
     console.log('Room Type:', selectedRoomType.type);
-    console.log('Upgrade per day per pax:', upgradePerDayPerPax);
-    console.log('Duration (days):', durationDays);
+    console.log('Upgrade per night per pax:', upgradePerDayPerPax);
+    console.log('Duration (nights):', durationNights);
     console.log('Number of pax:', basePax);
     console.log('Total Upgrade Cost:', totalUpgradeCost);
     console.log('FINAL PRICE:', finalPrice);
@@ -633,6 +634,7 @@ const BookingRightForm = ({ pkg }) => {
           numberOfRooms={numberOfRooms}
           numberOfPax={quantities.adult || 1}
           durationDays={durationDays}
+          durationNights={durationNights}
         />
       )}
 

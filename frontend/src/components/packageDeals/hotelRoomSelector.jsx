@@ -8,12 +8,13 @@ const HotelRoomSelector = ({
   onRoomTypeChange,
   numberOfRooms = 1,
   numberOfPax = 1,
-  durationDays = 1
+  durationDays = 1,
+  durationNights = 1
 }) => {
   
   const sortedRoomTypes = [...roomTypes].sort((a, b) => a.price - b.price);
 
-  // Room upgrade pricing per day per pax
+  // Room upgrade pricing per NIGHT per pax (FOR COMPUTATION)
   const getUpgradePricing = (type) => {
     const typeUpper = type?.toUpperCase() || '';
     if (typeUpper.includes('BUDGET')) return 0;
@@ -56,7 +57,7 @@ const HotelRoomSelector = ({
         {sortedRoomTypes.map((room, index) => {
           const isSelected = selectedRoomType?.type === room.type;
           const upgradePrice = getUpgradePricing(room.type);
-          const totalUpgradeCost = upgradePrice * durationDays * numberOfPax;
+          const totalUpgradeCost = upgradePrice * durationNights * numberOfPax; // Use NIGHTS
           const badgeColor = getRoomTypeBadgeColor(room.type);
 
           return (
