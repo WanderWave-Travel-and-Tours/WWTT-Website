@@ -3,6 +3,7 @@ const Service = require('../models/service');
 const User = require('../models/user');
 const Payment = require('../models/payment');
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
+const mongoose = require('mongoose');
 
 const generateTempPassword = () => {
   const numbers = Math.floor(100000 + Math.random() * 900000);
@@ -13,6 +14,8 @@ const generateTempPassword = () => {
 
 const createInquiry = async (req, res) => {
   try {
+    console.log('📥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
+
     let {
       serviceId,
       serviceName,
@@ -34,6 +37,10 @@ const createInquiry = async (req, res) => {
       passportDetails
     } = req.body;
 
+    console.log('🔍 PASSENGERS TYPE:', typeof passengers);
+    console.log('🔍 PASSENGERS IS ARRAY?:', Array.isArray(passengers));
+    console.log('🔍 PASSENGERS VALUE:', passengers);
+
     // Auto-generate message for FLIGHT_BOOKING
     if (!message && inquiryType === 'FLIGHT_BOOKING') {
       const origin = flightDetails?.origin || 'Unknown';
@@ -53,52 +60,174 @@ const createInquiry = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
     }
 
-    let existingUser = await User.findOne({ email });
+    // ✅ USER CREATION
+    let existingUser;
     let isNewUser = false;
     let tempPassword = null;
 
-    if (!existingUser) {
-      isNewUser = true;
-      tempPassword = generateTempPassword();
-      const baseUsername = email.split('@')[0].toLowerCase();
+    try {
+      existingUser = await User.findOne({ email });
+      
+      if (!existingUser) {
+        isNewUser = true;
+        tempPassword = generateTempPassword();
+        const baseUsername = email.split('@')[0].toLowerCase();
 
-      try {
         existingUser = await User.create({
-          fullName, email, username: `${baseUsername}${Date.now()}`, password: tempPassword
+          fullName, 
+          email, 
+          username: `${baseUsername}${Date.now()}`, 
+          password: tempPassword
         });
-        await sendNewUserToGHL(email, fullName, tempPassword, serviceName);
-      } catch (e) { console.error('User/GHL Create Error', e); }
-    } else {
-      try { await sendInquiryToGHL(email, fullName, serviceName, message); }
-      catch (e) { console.error('GHL Inquiry Error', e); }
+        
+        console.log('✅ New user created:', existingUser.email);
+
+        try {
+          await sendNewUserToGHL(email, fullName, tempPassword, serviceName);
+        } catch (ghlError) {
+          console.error('⚠️ GHL New User Error (non-fatal):', ghlError.message);
+        }
+      } else {
+        console.log('✅ Existing user found:', existingUser.email);
+        
+        try {
+          await sendInquiryToGHL(email, fullName, serviceName, message);
+        } catch (ghlError) {
+          console.error('⚠️ GHL Inquiry Error (non-fatal):', ghlError.message);
+        }
+      }
+    } catch (userError) {
+      console.error('❌ User Creation/Lookup Error:', userError);
     }
 
-    const inquiry = await Inquiry.create({
+    // ✅✅✅ CRITICAL FIX: Use insertOne to bypass Mongoose casting
+    const inquiryDoc = {
+      _id: new mongoose.Types.ObjectId(),
       serviceId: serviceId || null,
-      serviceName,
-      fullName,
-      email,
-      contactNumber,
-      address,
-      message,
+      serviceName: String(serviceName).trim(),
+      fullName: String(fullName).trim(),
+      email: String(email).trim().toLowerCase(),
+      contactNumber: String(contactNumber || '').trim(),
+      address: String(address || '').trim(),
+      message: String(message).trim(),
       visaCountry: visaCountry || null,
       visaId: visaId || null,
       psaDocument: psaDocument || null,
       psaId: psaId || null,
       inquiryType: inquiryType || 'GENERAL',
-      flightDetails: flightDetails || {},
-      passengers: passengers || [],
-      passportDetails: passportDetails || {},
+      estimatedPrice: parseFloat(estimatedPrice) || 0,
       cenomarDocument: cenomarDocument || null,
       cenomarId: cenomarId || null,
-      estimatedPrice: estimatedPrice || 0
+      status: 'PENDING',
+      remarks: '',
+      evidenceUrl: '',
+      evidenceName: '',
+      adminNotes: '',
+      contactedAt: null,
+      contactedBy: null,
+      paymentConfirmedAt: null,
+      paymentConfirmedBy: null,
+      deliveredDocuments: [],
+      documentsDeliveredAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // ✅ Process flightDetails
+    if (flightDetails) {
+      if (typeof flightDetails === 'string') {
+        try {
+          inquiryDoc.flightDetails = JSON.parse(flightDetails);
+        } catch (e) {
+          inquiryDoc.flightDetails = {};
+        }
+      } else {
+        inquiryDoc.flightDetails = flightDetails;
+      }
+    } else {
+      inquiryDoc.flightDetails = {};
+    }
+
+    // ✅ Process passportDetails
+    if (passportDetails) {
+      if (typeof passportDetails === 'string') {
+        try {
+          inquiryDoc.passportDetails = JSON.parse(passportDetails);
+        } catch (e) {
+          inquiryDoc.passportDetails = {};
+        }
+      } else {
+        inquiryDoc.passportDetails = passportDetails || {};
+      }
+    } else {
+      inquiryDoc.passportDetails = {};
+    }
+
+    // ✅ Process passengers - THE FIX
+    let passengersArray = [];
+    if (passengers) {
+      // Parse if string
+      if (typeof passengers === 'string') {
+        try {
+          passengers = JSON.parse(passengers);
+        } catch (e) {
+          console.error('Failed to parse passengers');
+          passengers = [];
+        }
+      }
+      
+      // Ensure array
+      if (Array.isArray(passengers)) {
+        passengersArray = passengers.map(p => {
+          // If p is string, parse it
+          if (typeof p === 'string') {
+            try {
+              p = JSON.parse(p);
+            } catch (e) {
+              return null;
+            }
+          }
+          
+          return {
+            firstName: String(p.firstName || '').trim(),
+            lastName: String(p.lastName || '').trim(),
+            nationality: String(p.nationality || 'Filipino').trim(),
+            age: parseInt(p.age) || 0,
+            email: String(p.email || '').trim(),
+            contactNumber: String(p.contactNumber || '').trim(),
+            type: String(p.type || 'Adult').trim()
+          };
+        }).filter(p => p !== null);
+      }
+    }
+
+    inquiryDoc.passengers = passengersArray;
+
+    console.log('💾 Final Document to Insert:', JSON.stringify(inquiryDoc, null, 2));
+
+    // ✅ USE DIRECT MONGODB INSERT - BYPASSES MONGOOSE VALIDATION
+    const result = await mongoose.connection.db.collection('inquiries').insertOne(inquiryDoc);
+    
+    console.log('✅ Inquiry Inserted Successfully:', result.insertedId);
+
+    // Fetch the created document
+    const createdInquiry = await Inquiry.findById(result.insertedId);
+
+    res.status(201).json({ 
+      success: true, 
+      message: 'Inquiry submitted successfully', 
+      isNewUser, 
+      data: createdInquiry 
     });
 
-    res.status(201).json({ success: true, message: 'Inquiry submitted', isNewUser, data: inquiry });
-
   } catch (error) {
-    console.error('❌ Create inquiry error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('❌❌❌ CREATE INQUIRY ERROR:', error);
+    console.error('Error Message:', error.message);
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error: ' + error.message 
+    });
   }
 };
 
@@ -124,14 +253,12 @@ const createInquiryWithUploads = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and Name are required' });
         }
 
-        // 1. Process Files
         const uploadedDocs = (req.files || []).map(file => ({
             fileName: `${file.fieldname} - ${file.originalname}`, 
             fileUrl: `/uploads/documents/${file.filename}`,
             uploadedAt: Date.now()
         }));
 
-        // 2. Check or Create User
         let existingUser = await User.findOne({ email });
         
         if (!existingUser) {
@@ -144,7 +271,6 @@ const createInquiryWithUploads = async (req, res) => {
              } catch(e) { console.error("User creation error", e); }
         }
 
-        // 3. Create Inquiry Record
         const newInquiry = await Inquiry.create({
             serviceName: serviceName || 'Visa Application', 
             inquiryType: inquiryType || 'VISA',

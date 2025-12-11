@@ -24,6 +24,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     for (let i = 0; i < parseInt(searchParams.children); i++) types.push('Child');
     for (let i = 0; i < parseInt(searchParams.infants); i++) types.push('Infant');
     
+    // Remove one adult (the primary booker)
     const bookerIndex = types.indexOf('Adult');
     if (bookerIndex > -1) {
         types.splice(bookerIndex, 1);
@@ -66,22 +67,32 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     if(e) e.preventDefault();
     setLoading(true);
 
+    // Prepare Primary Passenger
     const nameParts = contactInfo.fullName.trim().split(' ');
-    const lastName = nameParts.length > 1 ? nameParts.pop() : '';
+    const lastName = nameParts.length > 1 ? nameParts.pop() : '.';
     const firstName = nameParts.join(' ');
 
     const primaryPassenger = {
         firstName: firstName || contactInfo.fullName,
-        lastName: lastName || '.',
+        lastName: lastName,
         nationality: contactInfo.nationality,
-        age: parseInt(contactInfo.age),
+        age: parseInt(contactInfo.age) || 0, 
         email: contactInfo.email,      
         contactNumber: contactInfo.phone,
         type: 'Adult (Primary)'
     };
 
+    // Combine All Passengers
     const allPassengers = [primaryPassenger, ...additionalPassengers];
 
+    // ✅ FIX: Ensure estimatedPrice is a proper number
+    let priceAmount = flight.price.amount;
+    if (typeof priceAmount === 'string') {
+      priceAmount = parseFloat(priceAmount.replace(/[^0-9.]/g, ''));
+    }
+    priceAmount = parseFloat(priceAmount) || 0;
+
+    // Prepare Booking Data
     const bookingData = {
       serviceName: 'Airline Booking',
       inquiryType: 'FLIGHT_BOOKING',
@@ -89,7 +100,10 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
       email: contactInfo.email,
       contactNumber: contactInfo.phone,
       address: contactInfo.address,
-      estimatedPrice: flight.price.amount,
+      message: `Flight Booking Request: ${flight.departure.iataCode} ➝ ${flight.arrival.iataCode} on ${flight.departure.time}`,
+      
+      estimatedPrice: priceAmount, // ✅ Now guaranteed to be a number
+      
       flightDetails: {
         origin: flight.departure.iataCode,
         destination: flight.arrival.iataCode,
@@ -101,18 +115,31 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
         duration: flight.duration,
         stops: flight.stops
       },
-      passengers: allPassengers
+      
+      passengers: allPassengers // ✅ Already an array, will be sent as JSON
     };
 
+    console.log("📤 Submitting Booking Data:", JSON.stringify(bookingData, null, 2));
+
     try {
-      const res = await axios.post('http://localhost:5000/api/inquiries', bookingData);
+      const res = await axios.post('http://localhost:5000/api/inquiries', bookingData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (res.data.success) {
-        alert('Booking Request Sent! Please check your email.');
+        alert('✅ Booking Request Sent Successfully! Please check your email.');
         onClose();
+      } else {
+        alert('❌ Booking submission failed. ' + (res.data.message || ''));
       }
+
     } catch (error) {
-      console.error(error);
-      alert('Booking failed. Please try again.');
+      console.error("❌ Booking Error:", error);
+      console.error("❌ Error Response:", error.response?.data);
+      const msg = error.response?.data?.message || error.message || "Unknown error";
+      alert('❌ Booking failed. Please try again. (' + msg + ')');
     } finally {
       setLoading(false);
     }
@@ -165,7 +192,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
               </div>
 
               <button type="submit" className="next-btn" disabled={loading}>
-                {loading ? 'Processing...' : (hasAdditionalPassengers ? 'Next: Add Companions' : `Submit Booking (₱${flight.price.formatted})`)}
+                {loading ? 'Processing...' : (hasAdditionalPassengers ? 'Next: Add Companions' : `Submit Booking (₱${flight.price.formatted || flight.price.amount})`)}
               </button>
             </div>
           )}
@@ -193,14 +220,14 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
                     <div className="row">
                       <input 
                         type="email" 
-                        placeholder="Email Address" 
+                        placeholder="Email Address (Optional)" 
                         value={p.email} 
                         onChange={(e) => handlePassengerChange(i, 'email', e.target.value)} 
                         style={{ flex: 1.5 }} 
                       />
                       <input 
                         type="tel" 
-                        placeholder="Phone No." 
+                        placeholder="Phone No. (Optional)" 
                         value={p.contactNumber} 
                         onChange={(e) => handlePassengerChange(i, 'contactNumber', e.target.value)} 
                         style={{ flex: 1 }}
@@ -214,7 +241,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
               <div className="btn-group">
                 <button type="button" className="back-btn" onClick={() => setStep(1)}>Back</button>
                 <button type="submit" className="submit-btn" disabled={loading}>
-                  {loading ? 'Processing...' : `Submit Booking (${flight.price.formatted})`}
+                  {loading ? 'Processing...' : `Submit Booking (${flight.price.formatted || flight.price.amount})`}
                 </button>
               </div>
             </div>

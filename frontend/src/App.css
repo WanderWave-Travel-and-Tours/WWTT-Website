@@ -634,8 +634,8 @@ body.translated-rtl {
 
 .user-profile-btn {
   padding: 0.5rem 1.5rem;
-  background: white;
-  color: #667eea;
+  background: #fc9c1b;
+  color: #ffffff;
   border: 2px solid white;
   border-radius: 8px;
   font-weight: 600;
@@ -650,7 +650,7 @@ body.translated-rtl {
 
 .user-profile-btn:hover {
   background: transparent;
-  color: white;
+  color: orange;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
 }

@@ -8,7 +8,48 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors()); 
-app.use(express.json());
+
+// ✅ CRITICAL FIX: Increase JSON payload limit
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// ✅ CUSTOM MIDDLEWARE: Parse stringified passengers BEFORE routes
+app.use((req, res, next) => {
+  if (req.body && req.body.passengers) {
+    console.log('🔍 Middleware: Checking passengers type:', typeof req.body.passengers);
+    
+    // If passengers is a string, parse it
+    if (typeof req.body.passengers === 'string') {
+      console.log('⚠️ Middleware: Passengers is STRING, parsing...');
+      try {
+        req.body.passengers = JSON.parse(req.body.passengers);
+        console.log('✅ Middleware: Parsed passengers successfully');
+      } catch (parseError) {
+        console.error('❌ Middleware: Failed to parse passengers:', parseError.message);
+      }
+    }
+    
+    // Same for flightDetails
+    if (req.body.flightDetails && typeof req.body.flightDetails === 'string') {
+      try {
+        req.body.flightDetails = JSON.parse(req.body.flightDetails);
+      } catch (e) {
+        console.error('Failed to parse flightDetails');
+      }
+    }
+    
+    // Same for passportDetails
+    if (req.body.passportDetails && typeof req.body.passportDetails === 'string') {
+      try {
+        req.body.passportDetails = JSON.parse(req.body.passportDetails);
+      } catch (e) {
+        console.error('Failed to parse passportDetails');
+      }
+    }
+  }
+  next();
+});
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 mongoose.connect(process.env.MONGODB_URI) 
@@ -424,4 +465,4 @@ app.get('/api/admin/statistics', async (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-}); 
+});
