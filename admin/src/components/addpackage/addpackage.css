@@ -9,6 +9,13 @@
     margin-left: 280px;
     padding: 40px 120px; 
     font-family: 'Segoe UI', Arial, sans-serif;
+    /* FIX: Added transition for smooth layout change */
+    transition: margin-left 0.3s ease; 
+}
+
+/* FIX: New class for when the sidebar is collapsed */
+.pkg-main.collapsed-main {
+    margin-left: 70px;
 }
 
 .pkg-main *, 

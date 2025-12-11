@@ -61,6 +61,165 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 .psa-card span { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
 .psa-card-icon { color: #f97316; opacity: 1; }
 
+/* --- Search and Filter (NEW SECTION) --- */
+.search-filter-card {
+    /* Container for the entire search/filter block */
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.search-filter-wrapper {
+    /* Flex container for the search box and filter buttons */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex-wrap: wrap; /* Allows components to wrap on smaller screens */
+}
+
+/* Desktop/Tablet Layout (768px and up) */
+@media (min-width: 768px) {
+    .search-filter-wrapper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between; /* Spreads search and filters apart */
+    }
+    
+    .search-box {
+        max-width: 350px; 
+        flex-shrink: 0;
+    }
+    
+    .filter-buttons {
+        flex: 1; /* Allows filter buttons to take remaining space */
+        justify-content: flex-end; /* Aligns filter buttons to the right on desktop */
+    }
+}
+
+/* Search Box Container */
+.search-box {
+    flex: 1;
+    position: relative;
+    width: 100%; 
+}
+
+/* Search Icon Styling (from Lucide React) */
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0; /* Gray color */
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Search Input Field */
+.search-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 3rem; /* Left padding for icon */
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background: #f7fafc; /* Light background */
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif; /* Added font */
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #f97316; /* Using PSA theme color for focus */
+    background: white;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+/* Filter Buttons Container */
+.filter-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap; 
+    justify-content: flex-start;
+    /* Added to align items on the baseline, which is good practice */
+    align-items: flex-end; 
+}
+
+/* Individual Filter Button (DECREASED SIZE) */
+.filter-btn {
+    padding: 0.75rem 1.50rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem; 
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f7fafc;
+    color: #4a5568;
+    white-space: nowrap;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    
+    /* ADDED: Reserve space for the transform and shadow so neighbors don't shift */
+    margin-bottom: 1px; /* To reserve space for translateY(-1px) */
+    position: relative; /* Good practice for transform and z-index */
+    z-index: 1; /* Ensures the hovered button is above its neighbors */
+}
+
+.filter-btn:hover {
+    background: #edf2f7;
+    /* CHANGED: Removed transform: translateY(-1px); */
+    /* NEW: Use the margin-bottom space for the visual lift */
+    margin-top: -1px; /* Moves the button up into the reserved space */
+    margin-bottom: 0px; /* Consumes the reserved space */
+}
+
+/* Active Status Styles - Using PSA Primary Color (#0f172a) for 'All' and secondary colors for others */
+.filter-btn.active { 
+    background: #0f172a;
+    color: white;
+    /* ADDED: Add a transparent border to reserve space for the box-shadow expansion */
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    /* Ensure active state also has the margin-bottom fix if it uses transform */
+    margin-bottom: 1px; /* Consistent baseline */
+}
+
+/* Add margin-bottom: 1px; to all specific active states for consistency */
+.filter-btn.badge-confirmed-active, .filter-btn.badge-paid-active {
+    background: #166534; /* Dark Green */
+    color: white;
+    margin-bottom: 1px;
+}
+
+.filter-btn.badge-pending-active {
+    background: #9a3412; /* Dark Orange */
+    color: white;
+    margin-bottom: 1px;
+}
+
+.filter-btn.badge-contacted-active {
+    background: #1e40af; /* Dark Blue */
+    color: white;
+}
+
+.filter-btn.badge-payment_pending-active {
+    background: #4f46e5; /* Dark Yellow/Brown */
+    color: white;
+}
+
+.filter-btn.badge-completed-active {
+    background: #065f46; /* Medium Green */
+    color: white;
+}
+
+.filter-btn.badge-cancelled-active {
+    background: #991b1b; /* Dark Red */
+    color: white;
+}
+
 /* --- TABLE --- */
 .psa-table-container { background: white; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); padding: 0; overflow: hidden; width: 100%; overflow-x: auto; }
 .psa-table { width: 100%; border-collapse: collapse; min-width: 900px; }
@@ -73,7 +232,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 .badge-confirmed, .badge-paid { background: #dcfce7; color: #166534; }
 .badge-pending { background: #ffedd5; color: #9a3412; }
 .badge-contacted { background: #dbeafe; color: #1e40af; }
-.badge-payment_pending { background: #fef9c3; color: #854d0e; }
+.badge-payment_pending { background: #ede9fe; color: #4f46e5; }
 .badge-completed { background: #d1fae5; color: #065f46; }
 .badge-cancelled { background: #fee2e2; color: #991b1b; }
 
@@ -89,12 +248,66 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
   .psa-stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
+@media (max-width: 768px) {
+    .search-filter-card {
+        padding: 1rem;
+    }
+    
+    .search-filter-wrapper {
+        flex-direction: column; /* Stack vertically */
+    }
+    
+    .filter-buttons {
+        width: 100%;
+        gap: 0.5rem;
+        flex-wrap: wrap; 
+        justify-content: center; /* Center buttons when wrapping */
+    }
+    
+    .filter-btn {
+        /* Distribute buttons almost equally across two columns */
+        flex: 1 1 calc(50% - 0.25rem); 
+        font-size: 0.8rem; /* Decreased font size */
+        padding: 0.6rem 0.8rem; /* Decreased padding */
+    }
+}
+
 @media (max-width: 640px) { 
   .psa-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } 
   .psa-stats-grid { grid-template-columns: 1fr; } 
   .psa-header { flex-direction: column; align-items: flex-start; } 
   .psa-btn-add { width: 100%; justify-content: center; }
 }
+
+/* Small Mobile Responsiveness (Max-width 480px) */
+@media (max-width: 480px) {
+    .search-filter-card {
+        padding: 0.875rem;
+    }
+    
+    .search-input {
+        font-size: 0.9rem;
+        padding: 0.75rem 0.875rem 0.75rem 2.75rem;
+    }
+    
+    .search-icon {
+        left: 0.875rem;
+    }
+    
+    .filter-buttons {
+        /* Stack filter buttons vertically for max simplicity */
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .filter-btn {
+        width: 100%;
+        flex: 1 1 auto;
+        font-size: 0.85rem; /* Decreased font size */
+        padding: 0.75rem 1rem; /* Decreased padding */
+    }
+}
+
 
 /* --- PAGINATION STYLES (New) --- */
 .pagination-nav {
@@ -112,7 +325,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     display: flex;
     justify-content: flex-end; /* Align controls to the right */
     /* Match the bottom border radius of the .visa-table-container */
-    border-radius: 0 0 12px 12px; 
+    border-radius: 0 0 8px 8px; /* Adjusted to 8px to match table container's style */
 }
 
 .pagination-list {
@@ -171,4 +384,11 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 .pagination-btn:last-child {
     font-weight: 700;
     text-transform: uppercase;
+}
+
+.pagination-ellipsis {
+    padding: 8px 0;
+    color: #94a3b8;
+    font-size: 16px;
+    font-weight: 600;
 }

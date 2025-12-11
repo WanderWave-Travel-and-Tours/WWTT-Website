@@ -92,7 +92,7 @@ const Settings = () => {
                 toggleSidebar={toggleSidebar} 
             />
             
-            <main className="settings-main">
+            <main className={`settings-main ${isSidebarCollapsed ? 'collapsed' : ''}`}>
                 <div className="settings-container">
                     <header className="settings-header">
                         <h1 className="settings-title">BUSINESS PROFILE</h1>

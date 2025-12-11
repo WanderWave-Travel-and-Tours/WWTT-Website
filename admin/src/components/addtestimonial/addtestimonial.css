@@ -6,9 +6,15 @@
 
 .testi-main {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 280px; /* Default margin for expanded sidebar */
     padding: 40px 120px; 
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Add transition for smooth movement */
+}
+
+/* NEW: Styles for when the sidebar is collapsed */
+.testi-main.testi-main--collapsed {
+    margin-left: 70px; /* Adjust margin to collapsed sidebar width */
 }
 
 .testi-main *,
@@ -381,15 +387,27 @@
 }
 
 @media (max-width: 900px) {
+    /* Updated for collapsed sidebar on smaller screens */
     .testi-main {
-        margin-left: 70px;
+        margin-left: 70px; 
         padding: 24px;
+    }
+    
+    /* Ensure the main content expands if needed */
+    .testi-main.testi-main--collapsed {
+        margin-left: 70px;
     }
 }
 
 @media (max-width: 640px) {
     .testi-main {
+        margin-left: 0; /* Full width on smallest screens */
         padding: 16px;
+    }
+    
+    /* NEW: Override collapsed margin on mobile */
+    .testi-main.testi-main--collapsed {
+        margin-left: 0;
     }
 
     .testi-title {

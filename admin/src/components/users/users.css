@@ -6,9 +6,16 @@
 
 .vusers-main {
     flex: 1;
-    margin-left: 280px;
+    /* Default margin for UNCOLLAPSED sidebar (280px) */
+    margin-left: 280px; 
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Add transition for smooth movement */
+}
+
+/* New rule for when the sidebar IS collapsed (usually around 70px) */
+.vusers-main.sidebar-collapsed {
+    margin-left: 70px;
 }
 
 .vusers-main *,
@@ -276,9 +283,15 @@
 }
 
 @media (max-width: 900px) {
+    /* Adjust margin for smaller screens when UNCOLLAPSED */
     .vusers-main {
-        margin-left: 70px;
+        margin-left: 70px; /* Assuming sidebar is forced collapsed or smaller on mobile */
         padding: 24px;
+    }
+
+    /* Keep the collapsed margin-left consistent with the new base margin on mobile */
+    .vusers-main.sidebar-collapsed {
+        margin-left: 70px;
     }
 }
 
@@ -333,6 +346,84 @@
     min-width: 40px; 
     text-align: center;
     font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f1f5f9; /* Light gray hover */
+    border-color: #cbd5e1;
+    color: #0f172a; /* Darker text on hover */
+    transform: translateY(-1px); /* Slight lift on hover */
+}
+
+.pagination-btn.active {
+    background-color: #0f172a; /* Primary dark color background for active page */
+    border-color: #0f172a;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
+}
+
+.pagination-btn.active:hover {
+    background-color: #1e293b; /* Slightly darker primary on hover */
+    border-color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background-color: #f8fafc;
+}
+
+/* For previous/next buttons */
+.pagination-btn:first-child,
+.pagination-btn:last-child {
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* --- PAGINATION STYLES (New) --- */
+.pagination-nav {
+    /* Aligns with the table container's style */
+    margin-top: 0;
+    padding: 16px 24px;
+    background-color: white;
+    border-top: 1px solid #e2e8f0;
+    
+    /* Stick to the bottom of the table container for better UX */
+    position: sticky; 
+    bottom: 0;
+    z-index: 5;
+    
+    display: flex;
+    justify-content: flex-end; /* Align controls to the right */
+    /* Match the bottom border radius of the .visa-table-container */
+    border-radius: 0 0 10px 10px; /* Adjusted to match table-wrapper border-radius */
+}
+
+.pagination-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 6px;
+    align-items: center;
+}
+
+.pagination-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #334155; /* Neutral text color */
+    transition: all 0.2s;
+    min-width: 40px; 
+    text-align: center;
+    /* Removed 'Plus Jakarta Sans' as it might not be available; sticking to default 'Segoe UI' etc. */
+    font-family: 'Segoe UI', Arial, sans-serif;
 }
 
 .pagination-btn:hover:not(:disabled) {

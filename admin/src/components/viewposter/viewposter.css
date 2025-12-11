@@ -9,6 +9,12 @@
     margin-left: 280px; 
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Added for smooth transition */
+}
+
+/* New style for when the sidebar is collapsed */
+.vp-main.vp-main-collapsed {
+    margin-left: 70px; 
 }
 
 .vp-container {
@@ -229,14 +235,19 @@
 }
 
 @media (max-width: 1024px) {
+    /* Existing style for max-width 1024px is fine for open sidebar when screen is small */
     .vp-main {
         margin-left: 70px;
         padding: 24px;
     }
+    /* Add specific style for collapsed state on larger screens */
+    .vp-main.vp-main-collapsed {
+        margin-left: 70px; /* This keeps the margin at 70px for the collapsed state on larger screens as well */
+    }
 }
 
 @media (max-width: 640px) {
-    .vp-main {
+    .vp-main, .vp-main.vp-main-collapsed { /* Reset margin for mobile where sidebar is usually hidden or overlay */
         margin-left: 0;
         padding: 16px;
     }

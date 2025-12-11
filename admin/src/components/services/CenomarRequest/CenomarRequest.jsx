@@ -1,10 +1,87 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from 'axios';
 import Sidebar from "../../sidebar/sidebar"; 
-import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen } from "lucide-react";
+// Added Search to the imports
+import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen, ChevronLeft, ChevronRight, Search } from "lucide-react"; 
 // Import ang modals mula sa CenomarModals.jsx
 import { InquiryModal, ServiceListModal, ServiceEditorModal, ContactRemarksModal } from "./CenomarModals"; 
 import "./CenomarRequest.css";
+
+// --- PAGINATION COMPONENT ---
+const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  if (totalPages <= 1) return null;
+
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    // Ensure all pages are shown if 5 or less
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+    } else {
+      pageNumbers.push(1);
+      
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+
+      if (start > 2) pageNumbers.push('...');
+      
+      for (let i = start; i <= end; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (end < totalPages - 1) pageNumbers.push('...');
+
+      if (!pageNumbers.includes(totalPages)) {
+        pageNumbers.push(totalPages);
+      }
+    }
+    return pageNumbers.filter((value, index, self) => 
+      // Filter out duplicate '...' and ensure current page isn't duplicated
+      self.indexOf(value) === index || value === currentPage
+    ).filter((value, index, self) => 
+      // Filter out '...' if it is immediately next to a number
+      !(value === '...' && self[index - 1] === '...')
+    );
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  return (
+    <nav className="pagination-nav">
+      <ul className="pagination-list">
+        <li>
+          <button
+            className="pagination-btn"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          ><ChevronLeft size={16} /></button>
+        </li>
+        {pageNumbers.map((number, index) => (
+          <li key={index}>
+            {number === '...' ? (
+              <span className="pagination-btn" style={{ cursor: 'default', opacity: 1, backgroundColor: 'white' }}>...</span>
+            ) : (
+              <button
+                onClick={() => onPageChange(number)}
+                className={`pagination-btn ${number === currentPage ? 'active' : ''}`}
+              >
+                {number}
+              </button>
+            )}
+          </li>
+        ))}
+        <li>
+          <button
+            className="pagination-btn"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          ><ChevronRight size={16} /></button>
+        </li>
+      </ul>
+    </nav>
+  );
+};
 
 const CenomarRequest = () => {
   // --- LAYOUT & MAIN DATA ---
@@ -13,6 +90,15 @@ const CenomarRequest = () => {
   const [inquiries, setInquiries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- SEARCH AND FILTER STATES (NEW) ---
+  const [searchTerm, setSearchTerm] = useState("");
+  // 'ALL' is the required state for "All Items"
+  const [filterStatus, setFilterStatus] = useState("ALL"); 
+  
+  // --- PAGINATION STATES ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // --- MODAL STATES ---
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [documents, setDocuments] = useState([]);
@@ -65,12 +151,94 @@ const CenomarRequest = () => {
     } catch (error) { console.error('Error fetching inquiries:', error); }
   };
 
+  // --- FILTERING LOGIC (NEW) ---
+  const filteredInquiries = useMemo(() => {
+    let list = inquiries;
+    const lowerSearchTerm = searchTerm.toLowerCase();
+
+    // 1. Filter by Status
+    if (filterStatus !== "ALL") {
+      // Use inq.status || 'PENDING' to default status for old/uninitialized records
+      list = list.filter(inq => (inq.status || 'PENDING') === filterStatus);
+    }
+
+    // 2. Filter by Search Term
+    if (lowerSearchTerm) {
+      list = list.filter(inq =>
+        inq.fullName.toLowerCase().includes(lowerSearchTerm) ||
+        (inq.cenomarDocument || inq.serviceName || '').toLowerCase().includes(lowerSearchTerm) ||
+        (inq.message || '').toLowerCase().includes(lowerSearchTerm) ||
+        (inq._id || '').slice(-6).toLowerCase().includes(lowerSearchTerm) // Search by Ref No.
+      );
+    }
+    
+    // Auto-correct page if current page is now out of bounds due to filtering
+    if (currentPage > Math.ceil(list.length / itemsPerPage) && list.length > 0) {
+      setCurrentPage(1);
+    } else if (list.length === 0 && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+
+
+    return list;
+  }, [inquiries, searchTerm, filterStatus, itemsPerPage, currentPage]);
+
   const stats = [
     { label: "Total Requests", value: inquiries.length, icon: <FileText size={24} /> },
-    { label: "To Process", value: inquiries.filter(i => i.status === 'PENDING').length, icon: <AlertTriangle size={24} /> },
+    { label: "To Process", value: inquiries.filter(i => (i.status || 'PENDING') === 'PENDING').length, icon: <AlertTriangle size={24} /> },
     { label: "Pending Payment", value: inquiries.filter(i => i.status === 'PAYMENT_PENDING').length, icon: <CreditCard size={24} /> },
     { label: "Paid/Confirming", value: inquiries.filter(i => i.status === 'PAID').length, icon: <CheckCircle size={24} /> },
   ];
+
+  // Map CENOMAR Status to the provided CSS classes
+  const getFilterClassName = (status) => {
+    switch(status) {
+      case 'PENDING':
+      case 'PAYMENT_PENDING':
+      case 'CONTACTED':
+        return 'pending-active';
+      case 'PAID':
+      case 'CONFIRMED':
+      case 'COMPLETED':
+        return 'confirmed-active';
+      case 'CANCELLED':
+        return 'cancelled-active';
+      default:
+        return 'active'; // Fallback for 'ALL'
+    }
+  }
+
+  // List of all unique statuses for the filter buttons
+  const statusOptions = useMemo(() => {
+    // Get all unique statuses, default to 'PENDING' if status is null/undefined
+    const statuses = new Set(inquiries.map(i => i.status || 'PENDING')); 
+    
+    // Order the statuses logically for the buttons (using a master list)
+    const allPossibleStatuses = [
+      'PENDING', 
+      'CONTACTED', 
+      'PAYMENT_PENDING', 
+      'PAID', 
+      'CONFIRMED', 
+      'COMPLETED',
+      'CANCELLED'
+    ];
+    
+    // Filter the master list to only include statuses present in the data
+    const sortedStatuses = allPossibleStatuses.filter(status => statuses.has(status));
+
+    // Return the required "ALL Items" button, followed by the unique statuses
+    return ['ALL', ...sortedStatuses];
+  }, [inquiries]);
+
+
+  // --- PAGINATION LOGIC ---
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentInquiries = filteredInquiries.slice(indexOfFirstItem, indexOfLastItem);
+  const totalItems = filteredInquiries.length;
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
 
   // --- INQUIRY HANDLERS ---
   const fetchDocuments = async (inquiryId) => {
@@ -144,48 +312,44 @@ const CenomarRequest = () => {
     } catch (error) { console.error(error); alert('Failed to confirm payment'); }
   };
 
-  // Sa loob ng CenomarRequest.js
+  const handleDeliverDocuments = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (deliveryFiles.length === 0) return alert('Select files first');
 
-// Sa loob ng CenomarRequest.js
+    const formData = new FormData();
+    deliveryFiles.forEach(file => formData.append('documents', file));
+    
+    // NOTE: Siguraduhin sa backend na sine-save nito ang 'uploader': 'ADMIN'
+    // formData.append('uploader', 'ADMIN'); 
 
-const handleDeliverDocuments = async (e) => {
-  if (e && e.preventDefault) e.preventDefault();
-  if (deliveryFiles.length === 0) return alert('Select files first');
+    try {
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
+        headers: { 'Content-Type': 'multipart/form-data' } 
+      });
 
-  const formData = new FormData();
-  deliveryFiles.forEach(file => formData.append('documents', file));
-  
-  // NOTE: Siguraduhin sa backend na sine-save nito ang 'uploader': 'ADMIN'
-  // formData.append('uploader', 'ADMIN'); 
+      if (response.data.success) {
+        alert('Documents sent successfully!');
 
-  try {
-    const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
-      headers: { 'Content-Type': 'multipart/form-data' } 
-    });
+        // 1. Refresh ang main table
+        fetchInquiries(); 
 
-    if (response.data.success) {
-      alert('Documents sent successfully!');
+        // 2. Update local state para maging COMPLETED agad ang itsura
+        setSelectedInquiry({ ...selectedInquiry, status: 'COMPLETED' });
 
-      // 1. Refresh ang main table
-      fetchInquiries(); 
+        // 3. ITO ANG KULANG DATI: Fetch ulit ang documents para makuha yung kakasend mo lang
+        await fetchDocuments(selectedInquiry._id);
 
-      // 2. Update local state para maging COMPLETED agad ang itsura
-      setSelectedInquiry({ ...selectedInquiry, status: 'COMPLETED' });
-
-      // 3. ITO ANG KULANG DATI: Fetch ulit ang documents para makuha yung kakasend mo lang
-      await fetchDocuments(selectedInquiry._id);
-
-      // 4. Clear ang input selection
-      setDeliveryFiles([]);
-      
-      // 5. Wag isara ang modal/section para makita mo yung result
-      setShowDeliverDocs(true); 
+        // 4. Clear ang input selection
+        setDeliveryFiles([]);
+        
+        // 5. Wag isara ang modal/section para makita mo yung result
+        setShowDeliverDocs(true); 
+      }
+    } catch (error) { 
+      console.error(error); 
+      alert('Failed to send documents'); 
     }
-  } catch (error) { 
-    console.error(error); 
-    alert('Failed to send documents'); 
-  }
-};
+  };
   // --- CMS HANDLERS ---
   const handleManageService = () => setIsCENOMARFormsOpen(true);
 
@@ -262,6 +426,36 @@ const handleDeliverDocuments = async (e) => {
               </div>
             ))}
           </div>
+          
+          {/* --- SEARCH AND FILTER CARD (NEW) --- */}
+          <div className="search-filter-card">
+              <div className="search-filter-wrapper">
+                  <div className="search-box">
+                      <Search size={20} className="search-icon" />
+                      <input
+                          type="text"
+                          className="search-input"
+                          placeholder="Search by Requester, Document, Ref No., or Purpose..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                  </div>
+                  <div className="filter-buttons">
+                      {statusOptions.map(status => (
+                          <button
+                              key={status}
+                              // Dynamically apply active class based on filterStatus
+                              className={`filter-btn ${filterStatus === status ? getFilterClassName(status) : ''}`}
+                              onClick={() => setFilterStatus(status)}
+                          >
+                              {status === 'ALL' ? 'All Requests' : status.replace('_', ' ')}
+                          </button>
+                      ))}
+                  </div>
+              </div>
+          </div>
+          {/* --- END SEARCH AND FILTER CARD (NEW) --- */}
+
 
           <div className="cenomar-table-container">
             <table className="cenomar-table">
@@ -269,10 +463,10 @@ const handleDeliverDocuments = async (e) => {
                 <tr><th>Ref No.</th><th>Requester</th><th>Document</th><th>Purpose</th><th>Status</th><th style={{ textAlign: "right" }}>Actions</th></tr>
               </thead>
               <tbody>
-                {inquiries.length === 0 ? (
+                {currentInquiries.length === 0 ? (
                   <tr><td colSpan="6" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>{isLoading ? 'Loading...' : 'No CENOMAR requests found'}</td></tr>
                 ) : (
-                  inquiries.map((row) => (
+                  currentInquiries.map((row) => (
                     <tr key={row._id}>
                       <td style={{ fontWeight: "700" }}>{row._id.slice(-6).toUpperCase()}</td>
                       <td>{row.fullName}</td>
@@ -287,6 +481,13 @@ const handleDeliverDocuments = async (e) => {
                 )}
               </tbody>
             </table>
+
+            <Pagination
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
       </main>
