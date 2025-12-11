@@ -269,22 +269,11 @@ const AddPackage = () => {
         isCollapsed={isSidebarCollapsed} 
         toggleSidebar={toggleSidebar} 
       />
-      <main className="addpkg-main">
+      <main className={`addpkg-main ${isSidebarCollapsed ? 'collapsed-main' : ''}`}>
         <div className="addpkg-container">
           <header className="addpkg-header">
             <h1 className="addpkg-title">NEW PACKAGE</h1>
             <p className="addpkg-subtitle">
-    <div className="pkg-page">
-                  <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
-      <main className={`pkg-main ${isSidebarCollapsed ? 'collapsed-main' : ''}`}>
-        <div className="pkg-container">
-          <header className="pkg-header">
-
-            <h1 className="pkg-title">NEW PACKAGE</h1>
-            <p className="pkg-subtitle">
               Fill in the details below to create a new tour package
             </p>
           </header>
