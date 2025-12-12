@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, Edit, Trash2, Plus } from 'lucide-react';
 import Sidebar from "../sidebar/sidebar";
 import { useNavigate } from 'react-router-dom';
-import './viewDeals.css';
+import './viewdeals.css';
 
 const ViewDeals = () => {
     const navigate = useNavigate();
