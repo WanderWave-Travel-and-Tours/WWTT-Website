@@ -59,7 +59,7 @@ function App() {
   return (
     <BrowserRouter basename="/">
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/admin" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/settings" element={<Settings />} />
