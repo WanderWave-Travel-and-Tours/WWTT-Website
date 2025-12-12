@@ -75,7 +75,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const handleLogout = () => {
     console.log('Logging out user...');
     localStorage.removeItem('adminToken');
-    navigate('/');
+    navigate('/admin');
   };
 
   const isActive = (path) => location.pathname === path;
