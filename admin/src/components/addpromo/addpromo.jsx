@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './AddPromo.css';
+import './addPromo.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddPromo = () => {
