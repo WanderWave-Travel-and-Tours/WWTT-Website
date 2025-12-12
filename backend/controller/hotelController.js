@@ -1,14 +1,12 @@
 const Hotel = require('../models/hotel');
 
-// @desc    Get all hotels
-// @route   GET /api/hotels
-// @access  Public
 exports.getAllHotels = async (req, res) => {
   try {
     const {
       page = 1,
       limit = 10,
       city,
+      location,
       country,
       minPrice,
       maxPrice,
@@ -20,10 +18,25 @@ exports.getAllHotels = async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    // Build filter object
     const filter = { isActive: true };
 
-    if (city) filter.city = new RegExp(city, 'i');
+    if (city) {
+      filter.$or = [
+        { city: new RegExp(city, 'i') },
+        { location: new RegExp(city, 'i') }
+      ];
+    }
+
+    if (location) {
+      if (!filter.$or) {
+        filter.$or = [];
+      }
+      filter.$or.push(
+        { location: new RegExp(location, 'i') },
+        { city: new RegExp(location, 'i') }
+      );
+    }
+
     if (country) filter.country = new RegExp(country, 'i');
     
     if (minPrice || maxPrice) {
@@ -40,7 +53,6 @@ exports.getAllHotels = async (req, res) => {
       filter.featured = featured === 'true';
     }
 
-    // Handle amenities filter
     if (amenities) {
       const amenitiesList = amenities.split(',');
       amenitiesList.forEach(amenity => {
@@ -48,16 +60,13 @@ exports.getAllHotels = async (req, res) => {
       });
     }
 
-    // Handle search
     if (search) {
       filter.$text = { $search: search };
     }
 
-    // Build sort object
     const sort = {};
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-    // Execute query with pagination
     const skip = (page - 1) * limit;
     const hotels = await Hotel.find(filter)
       .sort(sort)
@@ -65,7 +74,6 @@ exports.getAllHotels = async (req, res) => {
       .limit(Number(limit))
       .select('-__v');
 
-    // Get total count for pagination
     const total = await Hotel.countDocuments(filter);
 
     res.status(200).json({
@@ -86,9 +94,6 @@ exports.getAllHotels = async (req, res) => {
   }
 };
 
-// @desc    Get single hotel by ID
-// @route   GET /api/hotels/:id
-// @access  Public
 exports.getHotelById = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id).select('-__v');
@@ -122,12 +127,8 @@ exports.getHotelById = async (req, res) => {
   }
 };
 
-// @desc    Create new hotel
-// @route   POST /api/hotels
-// @access  Private/Admin
 exports.createHotel = async (req, res) => {
   try {
-    // Add createdBy from authenticated user if available
     if (req.user) {
       req.body.createdBy = req.user.id;
     }
@@ -142,7 +143,6 @@ exports.createHotel = async (req, res) => {
   } catch (error) {
     console.error('Error creating hotel:', error);
 
-    // Handle validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
@@ -160,9 +160,6 @@ exports.createHotel = async (req, res) => {
   }
 };
 
-// @desc    Update hotel
-// @route   PUT /api/hotels/:id
-// @access  Private/Admin
 exports.updateHotel = async (req, res) => {
   try {
     let hotel = await Hotel.findById(req.params.id);
@@ -174,7 +171,6 @@ exports.updateHotel = async (req, res) => {
       });
     }
 
-    // Update hotel
     hotel = await Hotel.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -216,9 +212,6 @@ exports.updateHotel = async (req, res) => {
   }
 };
 
-// @desc    Delete hotel (soft delete)
-// @route   DELETE /api/hotels/:id
-// @access  Private/Admin
 exports.deleteHotel = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
@@ -230,7 +223,6 @@ exports.deleteHotel = async (req, res) => {
       });
     }
 
-    // Soft delete - set isActive to false
     hotel.isActive = false;
     await hotel.save();
 
@@ -257,9 +249,6 @@ exports.deleteHotel = async (req, res) => {
   }
 };
 
-// @desc    Permanently delete hotel
-// @route   DELETE /api/hotels/:id/permanent
-// @access  Private/Admin
 exports.permanentDeleteHotel = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
@@ -296,9 +285,6 @@ exports.permanentDeleteHotel = async (req, res) => {
   }
 };
 
-// @desc    Toggle hotel featured status
-// @route   PATCH /api/hotels/:id/featured
-// @access  Private/Admin
 exports.toggleFeatured = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
@@ -336,9 +322,6 @@ exports.toggleFeatured = async (req, res) => {
   }
 };
 
-// @desc    Get featured hotels
-// @route   GET /api/hotels/featured
-// @access  Public
 exports.getFeaturedHotels = async (req, res) => {
   try {
     const { limit = 6 } = req.query;
@@ -366,9 +349,6 @@ exports.getFeaturedHotels = async (req, res) => {
   }
 };
 
-// @desc    Get hotels by city
-// @route   GET /api/hotels/city/:city
-// @access  Public
 exports.getHotelsByCity = async (req, res) => {
   try {
     const { city } = req.params;
@@ -377,7 +357,10 @@ exports.getHotelsByCity = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const hotels = await Hotel.find({ 
-      city: new RegExp(city, 'i'),
+      $or: [
+        { city: new RegExp(city, 'i') },
+        { location: new RegExp(city, 'i') }
+      ],
       isActive: true 
     })
       .sort({ rating: -1 })
@@ -386,7 +369,10 @@ exports.getHotelsByCity = async (req, res) => {
       .select('-__v');
 
     const total = await Hotel.countDocuments({ 
-      city: new RegExp(city, 'i'),
+      $or: [
+        { city: new RegExp(city, 'i') },
+        { location: new RegExp(city, 'i') }
+      ],
       isActive: true 
     });
 
@@ -408,9 +394,6 @@ exports.getHotelsByCity = async (req, res) => {
   }
 };
 
-// @desc    Update hotel rating
-// @route   PATCH /api/hotels/:id/rating
-// @access  Private
 exports.updateRating = async (req, res) => {
   try {
     const { rating } = req.body;
@@ -431,7 +414,6 @@ exports.updateRating = async (req, res) => {
       });
     }
 
-    // Calculate new average rating
     const totalRatings = hotel.rating * hotel.totalReviews;
     hotel.totalReviews += 1;
     hotel.rating = (totalRatings + rating) / hotel.totalReviews;
@@ -461,9 +443,6 @@ exports.updateRating = async (req, res) => {
   }
 };
 
-// @desc    Get hotel statistics
-// @route   GET /api/hotels/stats
-// @access  Private/Admin
 exports.getHotelStats = async (req, res) => {
   try {
     const totalHotels = await Hotel.countDocuments({ isActive: true });
@@ -501,6 +480,97 @@ exports.getHotelStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching hotel statistics',
+      error: error.message
+    });
+  }
+};
+
+exports.updateRoomTypes = async (req, res) => {
+  try {
+    const { roomTypes } = req.body;
+    
+    const hotel = await Hotel.findById(req.params.id);
+    
+    if (!hotel) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hotel not found'
+      });
+    }
+    
+    hotel.roomTypes = roomTypes;
+    await hotel.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Room types updated successfully',
+      data: hotel
+    });
+  } catch (error) {
+    console.error('Error updating room types:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating room types',
+      error: error.message
+    });
+  }
+};
+
+exports.getRoomTypesByLocation = async (req, res) => {
+  try {
+    const { location } = req.params;
+    
+    const hotels = await Hotel.find({ 
+      $or: [
+        { city: new RegExp(location, 'i') },
+        { location: new RegExp(location, 'i') }
+      ],
+      isActive: true 
+    });
+
+    if (!hotels || hotels.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `No hotels found in ${location}`
+      });
+    }
+
+    const allRoomTypes = [];
+    const seenTypes = new Set();
+    
+    hotels.forEach(hotel => {
+      if (hotel.roomTypes && hotel.roomTypes.length > 0) {
+        hotel.roomTypes.forEach(room => {
+          const typeKey = room.type.toUpperCase();
+          if (!seenTypes.has(typeKey)) {
+            seenTypes.add(typeKey);
+            allRoomTypes.push({
+              type: room.type,
+              capacity: room.capacity,
+              price: room.price,
+              available: room.available,
+              description: room.description,
+              hotelName: hotel.name,
+              hotelId: hotel._id
+            });
+          }
+        });
+      }
+    });
+
+    allRoomTypes.sort((a, b) => a.price - b.price);
+
+    res.status(200).json({
+      success: true,
+      location: location,
+      count: allRoomTypes.length,
+      data: allRoomTypes
+    });
+  } catch (error) {
+    console.error('Error fetching room types by location:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching room types',
       error: error.message
     });
   }

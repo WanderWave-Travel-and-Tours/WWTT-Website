@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Ticket, Copy, Check, Tag } from 'lucide-react';
-import './PromoSection.css';
+import './promoSection.css';
 
 function PromoSection({ onBookNow }) {
   const [promos, setPromos] = useState([]);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
-import './PackageCard.css';
+import './packageCard.css';
 
 function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, currency = 'PHP', exchangeRate = 58 }) { 
   

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   MapPin, Calendar, Plane, Hotel, Utensils, Bus, Camera, Briefcase, 
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import FlightSearch from '../flightSearch/flightSearch';
+import HotelRoomSelector from './hotelRoomSelector';
 import axios from 'axios';
 
 const BookingRightForm = ({ pkg }) => {
@@ -14,26 +15,76 @@ const BookingRightForm = ({ pkg }) => {
   const [quantities, setQuantities] = useState({ adult: 1 });
   const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10));
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
+  const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); // Extract nights from "4D3N"
   const [showModal, setShowModal] = useState(false);
   const [showFlightSearchModal, setShowFlightSearchModal] = useState(false);
   
-  // AIRFARE INTEGRATION STATES
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [bookingWithAirfare, setBookingWithAirfare] = useState(false);
   
-  // MULTI-PASSENGER MODAL STATE
+  const [selectedRoomType, setSelectedRoomType] = useState(null);
+  const [hotelData, setHotelData] = useState(null);
+  const [loadingHotelData, setLoadingHotelData] = useState(false);
+  
   const [passengerStep, setPassengerStep] = useState(1);
   const [loading, setLoading] = useState(false);
   
   const totalPassengers = quantities.adult || 1;
   
-  // Check if international flight (if airfare is added)
   const isInternationalFlight = selectedFlight && 
     selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
   const requiresPassport = isInternationalFlight;
   const requiresID = selectedFlight && !isInternationalFlight;
 
-  // Initialize passengers
+  const calculateRoomsNeeded = () => {
+    if (!selectedRoomType) return 1;
+    return Math.ceil(totalPassengers / (selectedRoomType.capacity || 4));
+  };
+
+  const numberOfRooms = calculateRoomsNeeded();
+
+  useEffect(() => {
+  const fetchHotelData = async () => {
+    const destination = pkg.destination || pkg.location;
+    
+    if (!destination) {
+      console.log('❌ No destination or location found in package');
+      return;
+    }
+    
+    try {
+      setLoadingHotelData(true);
+      const city = destination.split(',')[0].trim();
+      const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.length > 0) {
+        const roomTypes = data.data;
+        
+        console.log('🛏️ All room types:', roomTypes);
+        
+        setHotelData({
+          name: `${city} Hotels`,
+          location: city,
+          roomTypes: roomTypes
+        });
+        
+        const sortedRooms = [...roomTypes].sort((a, b) => a.price - b.price);
+        console.log('✅ Auto-selecting cheapest room:', sortedRooms[0]);
+        setSelectedRoomType(sortedRooms[0]);
+      } else {
+        console.log('⚠️ No room types found for:', city);
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+    } finally {
+      setLoadingHotelData(false);
+    }
+  };
+
+  fetchHotelData();
+}, [pkg.destination, pkg.location]);
+
   const [passengers, setPassengers] = useState(
     Array.from({ length: totalPassengers }, (_, idx) => ({
       passengerNumber: idx + 1,
@@ -52,14 +103,15 @@ const BookingRightForm = ({ pkg }) => {
       passportFileName: ''
     }))
   );
-
-  // Update passengers when quantity changes
   React.useEffect(() => {
     const newTotal = quantities.adult || 1;
-    if (newTotal !== passengers.length) {
-      setPassengers(
-        Array.from({ length: newTotal }, (_, idx) => 
-          passengers[idx] || {
+    setPassengers(prevPassengers => {
+        if (newTotal === prevPassengers.length) {
+            return prevPassengers; 
+        }
+        
+        return Array.from({ length: newTotal }, (_, idx) => 
+          prevPassengers[idx] || {
             passengerNumber: idx + 1,
             firstName: '',
             lastName: '',
@@ -75,14 +127,56 @@ const BookingRightForm = ({ pkg }) => {
             passportFile: null,
             passportFileName: ''
           }
-        )
-      );
-    }
+        );
+    });
+    
   }, [quantities.adult]);
 
-  const packageTotal = Object.entries(quantities).reduce((sum, [type, qty]) => {
-    return sum + (pkg.price * qty);
-  }, 0);
+  const packageTotal = (() => {
+    const basePax = quantities.adult || 1;
+    const basePackagePrice = pkg.price * basePax;
+    
+    // If no room type selected, return 0
+    if (!selectedRoomType) return 0;
+    
+    // Room upgrade pricing per NIGHT per pax
+    const roomUpgradePricing = {
+      'BUDGET': 0,          // No additional charge (default)
+      'STANDARD': 750,      // +₱750/night/pax
+      '4 STAR': 1200,       // +₱1,200/night/pax
+      '5 STAR': 2040        // +₱2,040/night/pax
+    };
+    
+    // Get the room type key
+    const roomTypeKey = selectedRoomType.type?.toUpperCase() || '';
+    
+    // Find matching upgrade price
+    let upgradePerDayPerPax = 0;
+    for (const [key, price] of Object.entries(roomUpgradePricing)) {
+      if (roomTypeKey.includes(key)) {
+        upgradePerDayPerPax = price;
+        break;
+      }
+    }
+    
+    // Calculate total upgrade cost: upgrade price × NIGHTS × pax
+    const totalUpgradeCost = upgradePerDayPerPax * durationNights * basePax;
+    
+    // Final price = base package price + upgrade cost
+    const finalPrice = basePackagePrice + totalUpgradeCost;
+    
+    console.log('💰 === PRICE CALCULATION ===');
+    console.log('Base Package Price:', basePackagePrice);
+    console.log('Room Type:', selectedRoomType.type);
+    console.log('Upgrade per night per pax:', upgradePerDayPerPax);
+    console.log('Duration (nights):', durationNights);
+    console.log('Number of pax:', basePax);
+    console.log('Total Upgrade Cost:', totalUpgradeCost);
+    console.log('FINAL PRICE:', finalPrice);
+    console.log('💰 ========================');
+    
+    return finalPrice;
+  })();
 
   const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
   const totalAmount = packageTotal + airfareTotal;
@@ -112,6 +206,12 @@ const BookingRightForm = ({ pkg }) => {
   const changeMonth = (offset) => {
     const newDate = new Date(currentMonth.setMonth(currentMonth.getMonth() + offset));
     setCurrentMonth(new Date(newDate));
+  };
+
+  const handleRoomTypeChange = (roomType) => {
+    console.log('🛏️ Room type changed to:', roomType);
+    setSelectedRoomType(roomType);
+    toast.success(`Room upgraded to ${roomType.type}`, { duration: 2000 });
   };
 
   const handleBookClick = () => {
@@ -200,8 +300,7 @@ const BookingRightForm = ({ pkg }) => {
       toast.error(`Please fill in all required fields for Passenger ${passengerStep}`);
       return false;
     }
-    
-    // Only check ID/Passport if booking with airfare
+
     if (bookingWithAirfare) {
       if (requiresID && !p.idFile) {
         toast.error(`Please upload a valid ID for Passenger ${passengerStep}`);
@@ -237,12 +336,10 @@ const BookingRightForm = ({ pkg }) => {
   setLoading(true);
 
   try {
-    // Create FormData object
     const formData = new FormData();
     
     const endDate = getEndDate();
     
-    // Prepare booking data object
     const bookingData = {
       packageName: pkg.name,
       startDate: `${monthNames[currentMonth.getMonth()]} ${selectedDate}, ${currentMonth.getFullYear()}`,
@@ -270,21 +367,17 @@ const BookingRightForm = ({ pkg }) => {
       }
     };
 
-    // Append booking data as JSON string
     formData.append('bookingData', JSON.stringify(bookingData));
 
-    // 🔥 CRITICAL: Append passenger fields individually
     console.log('📤 Appending', passengers.length, 'passengers to FormData');
     
     passengers.forEach((passenger, index) => {
-      // Log what we're sending
       console.log(`  Passenger ${index + 1}:`, {
         firstName: passenger.firstName,
         lastName: passenger.lastName,
         email: passenger.email
       });
       
-      // Append each field with proper key format
       formData.append(`passengers[${index}][passengerNumber]`, (index + 1).toString());
       formData.append(`passengers[${index}][firstName]`, passenger.firstName || '');
       formData.append(`passengers[${index}][lastName]`, passenger.lastName || '');
@@ -296,7 +389,6 @@ const BookingRightForm = ({ pkg }) => {
       formData.append(`passengers[${index}][address]`, passenger.address || '');
       formData.append(`passengers[${index}][nationality]`, passenger.nationality || 'Filipino');
       
-      // Append file if exists
       if (passenger.idFile) {
         formData.append(`passenger_${index}_id`, passenger.idFile);
         console.log(`    ✅ ID file attached: ${passenger.idFile.name}`);
@@ -308,7 +400,6 @@ const BookingRightForm = ({ pkg }) => {
       }
     });
 
-    // 🔥 DEBUG: Log all FormData entries
     console.log('📋 Complete FormData contents:');
     let fieldCount = 0;
     for (let [key, value] of formData.entries()) {
@@ -319,21 +410,12 @@ const BookingRightForm = ({ pkg }) => {
         console.log(`  ${key}: ${value}`);
       }
     }
-    console.log(`Total fields in FormData: ${fieldCount}`);
 
-    // STEP 1: Create Booking
-    console.log('📝 Step 1: Sending booking request...');
-
-    console.log('🔍 === FORMDATA DEBUG ===');
-    console.log('Passengers array:', passengers);
     let passengerFieldCount = 0;
     for (let [key, value] of formData.entries()) {
       if (key.startsWith('passengers[')) passengerFieldCount++;
-      console.log(`${key}:`, value instanceof File ? `[FILE: ${value.name}]` : value);
     }
-    console.log(`Total passenger fields: ${passengerFieldCount}`);
-    console.log('🔍 ===================');
-    
+
     const bookingRes = await axios.post(
       'http://localhost:5000/api/bookings', 
       formData,
@@ -343,8 +425,6 @@ const BookingRightForm = ({ pkg }) => {
         }
       }
     );
-
-    console.log('📥 Booking Response:', bookingRes.data);
 
     if (!bookingRes.data.success) {
       throw new Error(bookingRes.data.message || 'Booking creation failed');
@@ -358,13 +438,6 @@ const BookingRightForm = ({ pkg }) => {
     const createdBooking = bookingRes.data.data;
     const bookingId = createdBooking._id;
 
-    console.log('✅ Booking created successfully!');
-    console.log('   ID:', bookingId);
-    console.log('   Passengers saved:', createdBooking.passengers?.length || 0);
-
-    // STEP 2: Create Payment Link
-    console.log('💳 Step 2: Creating payment link...');
-
     const paymentRes = await axios.post(
       'http://localhost:5000/api/payment/create-intent',
       { bookingId: bookingId.toString() },
@@ -373,8 +446,6 @@ const BookingRightForm = ({ pkg }) => {
       }
     );
 
-    console.log('📥 Payment Response:', paymentRes.data);
-
     if (!paymentRes.data.success) {
       throw new Error(paymentRes.data.message || 'Payment link creation failed');
     }
@@ -382,9 +453,6 @@ const BookingRightForm = ({ pkg }) => {
     if (!paymentRes.data.checkoutUrl) {
       throw new Error('Checkout URL not found in response');
     }
-
-    console.log('✅ Payment link created!');
-    console.log('   Link ID:', paymentRes.data.paymentLinkId);
 
     // STEP 3: Redirect
     toast.success('✅ Booking confirmed! Redirecting to payment...', { duration: 2000 });
@@ -429,6 +497,16 @@ const BookingRightForm = ({ pkg }) => {
 
   const currentPassenger = passengers[passengerStep - 1];
   const progressPercent = Math.round((passengerStep / totalPassengers) * 100);
+
+  useEffect(() => {
+    console.log('📊 Component State:', {
+      hotelData: hotelData ? 'Found' : 'Not found',
+      hotelName: hotelData?.name || 'N/A',
+      roomTypes: hotelData?.roomTypes?.length || 0,  // ✅ ROOT LEVEL
+      selectedRoomType: selectedRoomType?.type || 'None',
+      loadingHotelData
+    });
+  }, [hotelData, selectedRoomType, loadingHotelData]);
 
   return (
     <div className="booking-form-content">
@@ -536,6 +614,30 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
+      {loadingHotelData && (
+        <div style={{padding:'1rem', background:'#fef3c7', borderRadius:'8px', marginBottom:'1rem'}}>
+          Loading hotel data...
+        </div>
+      )}
+
+      {!loadingHotelData && (!hotelData || !hotelData.roomTypes || hotelData.roomTypes.length === 0) && (
+        <div style={{padding:'1rem', background:'#fee2e2', borderRadius:'8px', marginBottom:'1rem', fontSize:'0.85rem'}}>
+          ⚠️ No room types available for {pkg.destination || pkg.location || 'this destination'}
+        </div>
+      )}
+
+      {hotelData && hotelData.roomTypes && hotelData.roomTypes.length > 0 && (
+        <HotelRoomSelector
+          roomTypes={hotelData.roomTypes}
+          selectedRoomType={selectedRoomType}
+          onRoomTypeChange={handleRoomTypeChange}
+          numberOfRooms={numberOfRooms}
+          numberOfPax={quantities.adult || 1}
+          durationDays={durationDays}
+          durationNights={durationNights}
+        />
+      )}
+
       {selectedFlight && (
         <div style={{
           background: '#fff7ed',
@@ -580,7 +682,9 @@ const BookingRightForm = ({ pkg }) => {
           <span className="total-label">
             {selectedFlight ? 'Package Total' : 'Total Amount'}
           </span>
-          <span className="total-amount">₱{packageTotal.toLocaleString()}</span>
+          <span className="total-amount">
+            {packageTotal === 0 ? 'Select Room Type' : `₱${packageTotal.toLocaleString()}`}
+          </span>
         </div>
         
         {selectedFlight && (
@@ -603,7 +707,15 @@ const BookingRightForm = ({ pkg }) => {
           </>
         )}
         
-        <button className="book-now-btn" onClick={handleBookClick}>
+        <button 
+          className="book-now-btn" 
+          onClick={handleBookClick}
+          disabled={!selectedRoomType}
+          style={{
+            opacity: !selectedRoomType ? 0.5 : 1,
+            cursor: !selectedRoomType ? 'not-allowed' : 'pointer'
+          }}
+        >
           {selectedFlight ? '🎫 Book Package + Flight' : 'Book This Trip'}
         </button>
 
@@ -622,7 +734,6 @@ const BookingRightForm = ({ pkg }) => {
         </p>
       </div>
 
-      {/* UPDATED MULTI-PASSENGER BOOKING MODAL */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
@@ -687,7 +798,6 @@ const BookingRightForm = ({ pkg }) => {
                 )}
               </div>
 
-              {/* Document Requirement Notice (only if with airfare) */}
               {bookingWithAirfare && (
                 <div style={{
                   background: isInternationalFlight ? '#eff6ff' : '#fef3c7',
@@ -704,7 +814,6 @@ const BookingRightForm = ({ pkg }) => {
                 </div>
               )}
 
-              {/* Progress Indicator */}
               <div style={{marginTop: '16px'}}>
                 <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                   <span style={{fontSize: '0.85rem', fontWeight: '600', color: '#64748b'}}>
@@ -851,7 +960,6 @@ const BookingRightForm = ({ pkg }) => {
                   />
                 </div>
 
-                {/* ID Upload (Domestic - only if with airfare) */}
                 {bookingWithAirfare && requiresID && (
                   <div className="form-group full-width">
                     <label>
@@ -903,7 +1011,6 @@ const BookingRightForm = ({ pkg }) => {
                   </div>
                 )}
 
-                {/* Passport Upload (International - only if with airfare) */}
                 {bookingWithAirfare && requiresPassport && (
                   <div className="form-group full-width">
                     <label>
@@ -957,7 +1064,6 @@ const BookingRightForm = ({ pkg }) => {
 
               </div>
 
-              {/* Navigation Buttons */}
               <div style={{display:'flex', gap:'12px', marginTop:'24px'}}>
                 {passengerStep > 1 && (
                   <button 
@@ -999,7 +1105,6 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       )}
 
-      {/* FLIGHT SEARCH MODAL */}
       {showFlightSearchModal && (
         <div className="flight-search-modal-overlay" onClick={() => setShowFlightSearchModal(false)}>
           <div className="flight-search-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1035,7 +1140,6 @@ const BookingRightForm = ({ pkg }) => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

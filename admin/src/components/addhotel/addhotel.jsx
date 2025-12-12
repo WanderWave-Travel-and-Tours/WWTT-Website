@@ -9,7 +9,6 @@ const AddHotel = () => {
   const [hotelDetails, setHotelDetails] = useState({
     name: '',
     destination: '',
-    // Tiyaking string pa rin para sa input handling
     price: '', 
     maxCapacity: 4,
     amenities: {
@@ -50,7 +49,6 @@ const AddHotel = () => {
     { id: 'bar', label: 'Bar', icon: <Wine size={14} /> }
   ];
 
-  // Helper function to validate file type
   const isSupportedImage = (fileBlob) => {
     const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (fileBlob && supportedTypes.includes(fileBlob.type)) {
@@ -59,11 +57,9 @@ const AddHotel = () => {
     return false;
   };
 
-  // Refactored: Only clears file and preview, no error state modification here.
   const clearFile = () => {
     setFile(null); 
     setPreviewUrl(null);
-    // Clear the error only if it's the specific file error
     setError(prev => (prev && prev.includes('Unsupported file type')) ? '' : prev); 
   };
 
@@ -150,24 +146,23 @@ const AddHotel = () => {
   };
 
   const handleFileChange = (e) => {
-    setError(''); // Clear any existing general error first
+    setError('');
     const selected = e.target.files[0];
     if (selected) {
       if (isSupportedImage(selected)) {
         setFile(selected);
         setPreviewUrl(URL.createObjectURL(selected));
       } else {
-        // **FIX: Explicitly set the file-related error and clear file states**
         setFile(null); 
         setPreviewUrl(null);
         setError('Unsupported file type. Only JPG, PNG, and WebP images are allowed. Please upload a JPG, PNG, or WebP file.');
-        e.target.value = null; // Clear the input field to allow re-selection of the same file path later
+        e.target.value = null;
       }
     }
   };
 
   const handlePaste = (e) => {
-    setError(''); // Clear any existing general error first
+    setError('');
     const items = e.clipboardData?.items;
     if (items) {
       for (let i = 0; i < items.length; i++) {
@@ -178,9 +173,8 @@ const AddHotel = () => {
               setFile(blob);
               setPreviewUrl(URL.createObjectURL(blob));
               setIsPasteActive(false);
-              return; // Exit loop after finding and setting the image
+              return;
             } else {
-              // **FIX: Explicitly set the file-related error and clear file states**
               setError('Unsupported file type from paste. Only JPG, PNG, and WebP images are allowed. Please use a JPG, PNG, or WebP image.');
               setFile(null);
               setPreviewUrl(null);
@@ -223,11 +217,9 @@ const AddHotel = () => {
       return;
     }
     
-    // Prevent submission if a file validation error exists
     if (error.includes('Unsupported file type')) {
       return; 
     }
-
 
     setIsSubmitting(true);
     setError('');
@@ -248,7 +240,14 @@ const AddHotel = () => {
         amenities: hotelDetails.amenities,
         mainImage: previewUrl || '',
         featured: false,
-        isActive: true
+        isActive: true,
+        roomTypes: [{
+          type: type,
+          capacity: Number(hotelDetails.maxCapacity) || 4,
+          price: Number(hotelDetails.price),
+          available: 10,
+          description: `${type} room with ${hotelDetails.maxCapacity} person capacity`
+        }]
       };
 
       const response = await fetch(`${API_BASE_URL}/api/hotels`, {
@@ -266,7 +265,7 @@ const AddHotel = () => {
         setHotelDetails({
           name: '',
           destination: '',
-          price: '', // Reset to empty string
+          price: '',
           maxCapacity: 4,
           amenities: {
             wifi: false,
@@ -316,7 +315,6 @@ const AddHotel = () => {
         bar: false
       }
     });
-    // Use clearFile to reset image state, and then clear general error/success
     clearFile(); 
     setType("Budget");
     setError('');
@@ -356,7 +354,6 @@ const AddHotel = () => {
             <p className="hotel-subtitle">Register a new accommodation partner</p>
           </header>
 
-          {/* Error Notification Display */}
           {error && (
             <div style={{
               padding: '1rem',
@@ -366,7 +363,7 @@ const AddHotel = () => {
               borderRadius: '8px',
               border: '1px solid #fca5a5',
               fontSize: '0.875rem',
-              fontWeight: '500' // Added to make error stand out
+              fontWeight: '500'
             }}>
               {error}
             </div>
@@ -532,8 +529,7 @@ const AddHotel = () => {
                     </span>
                   </div>
 
-                  {/* Room Calculation Preview */}
-                  {(currentPrice > 0 && hotelDetails.maxCapacity) ? (
+                  {hotelDetails.price && hotelDetails.maxCapacity && (
                     <div className="form-group full-width">
                       <label>Room Calculation Preview</label>
                       <div style={{
@@ -567,7 +563,7 @@ const AddHotel = () => {
                         </div>
                       </div>
                     </div>
-                  ) : null}
+                  )}
 
                   <div className="form-group full-width">
                     <label>Hotel Image</label>
@@ -622,7 +618,6 @@ const AddHotel = () => {
                           cursor: 'pointer',
                           backgroundColor: '#f8fafc'
                         }}>
-                          {/* Added accept attribute here for browser-side filtering */}
                           <input type="file" onChange={handleFileChange} accept="image/jpeg,image/png,image/webp" hidden />
                           <p style={{ margin: '0.5rem 0', color: '#475569' }}>Click to upload</p>
                           <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>JPG, PNG or WebP</span>

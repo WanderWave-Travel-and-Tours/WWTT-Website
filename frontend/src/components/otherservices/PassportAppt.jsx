@@ -5,7 +5,7 @@ import {
   Plus, BookOpen, Calendar, CheckCircle, RotateCcw, 
   Edit2, Trash2, Save, X, FileText, List, Settings 
 } from 'lucide-react';
-import './PassportAppt.css';
+//import './PassportAppt.css';
 
 const PassportAppt = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);

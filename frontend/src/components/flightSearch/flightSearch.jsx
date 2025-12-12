@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import "./FlightSearch.css";
+import "./flightSearch.css";
 import FlightSearchForm from "./FlightSearchForm";
 import FlightSearchResults from "./FlightSearchResults";
 
@@ -374,10 +374,18 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
       if (response.data.success && response.data.data.length > 0) {
         const allFlights = response.data.data.map((flight, index) => ({
           ...flight,
-          id: flight.id || `google-${index}`,
+          id: flight.id || `flight-${index}`,
           departure: { ...flight.departure, displayTime: flight.departure.time },
           arrival: { ...flight.arrival, displayTime: flight.arrival.time },
           airline: { ...flight.airline, logo: flight.airline.logo || "https://images.kiwi.com/airlines/64/5J.png" },
+          
+          // Ensure Price Object is well-formed
+          price: {
+             ...flight.price,
+             amount: parseFloat(flight.price.amount) || 0,
+             formatted: flight.price.formatted || `₱${(parseFloat(flight.price.amount) || 0).toLocaleString()}`
+          },
+
           source: "Google Flights",
         }));
         
