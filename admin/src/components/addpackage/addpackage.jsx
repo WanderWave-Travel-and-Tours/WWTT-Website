@@ -32,32 +32,98 @@ const AddPackage = () => {
   const navigate = useNavigate();
 
   const calculateTotalPrice = (supplier, markup, type) => {
+    // Ensure inputs are safe numbers
     const supplierValue = parseFloat(supplier) || 0;
     const markupVal = parseFloat(markup) || 0;
 
-    if (supplierValue > 0 && markupVal > 0) {
+    if (supplierValue > 0) {
       let total;
-      if (type === "percentage") {
-        total = supplierValue + supplierValue * (markupVal / 100);
+      // Only calculate if markup is a valid positive number
+      if (markupVal > 0) {
+        if (type === "percentage") {
+          total = supplierValue + supplierValue * (markupVal / 100);
+        } else {
+          total = supplierValue + markupVal;
+        }
+        setPrice(total.toFixed(2));
       } else {
-        total = supplierValue + markupVal;
+        // No markup, price is just the supplier rate
+        setPrice(supplierValue.toFixed(2));
       }
-      setPrice(total.toFixed(2));
-    } else if (supplierValue > 0) {
-      setPrice(supplierValue.toFixed(2));
     } else {
       setPrice("");
     }
   };
+  
+  /**
+   * Utility to clean and validate number inputs for price fields.
+   * - Rejects signs (e.g., -, +) and non-numeric characters.
+   * - Removes leading zeros (e.g., '0123' becomes '123').
+   * - Enforces 6-digit max for the integer part where specified ('supplierRate' and 'markupPeso').
+   */
+  const cleanNumberInput = (value, fieldName) => {
+    if (value === '') return '';
+
+    // 1. Remove signs and non-numeric characters (except for the first decimal point)
+    let cleaned = value.replace(/[^0-9.]/g, '');
+
+    // Handle multiple decimal points (keep only the first one)
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Re-split after cleaning signs
+    let [integerPart, decimalPart] = cleaned.split('.');
+
+    // 2. Reject leading zeros (e.g., '0123' should be '123')
+    if (integerPart.length > 1 && integerPart.startsWith('0')) {
+      // Remove all leading zeros until a non-zero digit is found, or leave '0' if input was all zeros
+      integerPart = integerPart.replace(/^0+(?=\d)/, ''); 
+      if (integerPart === '') integerPart = '0'; // Handles case where input was '000'
+    }
+
+    // 3. Enforce 6-digit maximum for the integer part 
+    // This applies to 'supplierRate' and 'markupPeso' (when in Peso Mode)
+    if ((fieldName === 'supplierRate' || fieldName === 'markupPeso') && integerPart.length > 6) {
+      integerPart = integerPart.substring(0, 6);
+    }
+    
+    // 4. Enforce 2 decimal places max
+    if (decimalPart !== undefined && decimalPart.length > 2) {
+      decimalPart = decimalPart.substring(0, 2);
+    }
+
+    // Recombine
+    return integerPart + (decimalPart !== undefined ? '.' + decimalPart : '');
+  };
 
   const handleSupplierRateChange = (value) => {
-    setSupplierRate(value);
-    calculateTotalPrice(value, markupValue, markupType);
+    // 1. Clean and validate the input based on all rules
+    let cleanedValue = cleanNumberInput(value, 'supplierRate');
+    
+    setSupplierRate(cleanedValue);
+    calculateTotalPrice(cleanedValue, markupValue, markupType);
   };
 
   const handleMarkupChange = (value) => {
-    setMarkupValue(value);
-    calculateTotalPrice(supplierRate, value, markupType);
+    // Determine the fieldName to inform cleanNumberInput whether to apply the 6-digit limit (only for peso mode)
+    const validationFieldName = markupType === 'peso' ? 'markupPeso' : 'markupPercentage';
+    
+    // 1. Clean and validate the input based on all rules (handles 6-digit limit for Peso mode)
+    let cleanedValue = cleanNumberInput(value, validationFieldName);
+    
+    // 2. Enforce the 100% maximum for Percentage Mode
+    if (markupType === "percentage") {
+      const floatValue = parseFloat(cleanedValue);
+      // Only allow value to be set if it's less than or equal to 100
+      if (floatValue > 100) {
+        return; 
+      }
+    }
+
+    setMarkupValue(cleanedValue);
+    calculateTotalPrice(supplierRate, cleanedValue, markupType);
   };
 
   const toggleMarkupType = () => {
@@ -65,6 +131,7 @@ const AddPackage = () => {
     setMarkupType(newType);
     setMarkupValue(""); 
     
+    // Recalculate price based on supplier rate only when markup is reset
     if (supplierRate) {
       setPrice(parseFloat(supplierRate).toFixed(2));
     } else {
@@ -72,30 +139,53 @@ const AddPackage = () => {
     }
   };
 
+  // --- IMAGE UPLOAD VALIDATION START ---
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
+    // Define allowed MIME types for .jpg, .jpeg, .png, and .webp
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
     if (selected) {
-      setFile(selected);
-      setPreviewUrl(URL.createObjectURL(selected));
+      if (allowedTypes.includes(selected.type)) {
+        setFile(selected);
+        setPreviewUrl(URL.createObjectURL(selected));
+      } else {
+        alert("❌ Hindi pinapayagan ang ganitong uri ng file. Tanging .jpg, .jpeg, .png, at .webp na mga file lamang ang tinatanggap.");
+        // Clear the file input and state to prevent the invalid file from being used
+        e.target.value = null; 
+        setFile(null);
+        setPreviewUrl(null);
+      }
     }
   };
+  // --- IMAGE UPLOAD VALIDATION END ---
 
   const handlePaste = (e) => {
     e.preventDefault();
     const items = e.clipboardData?.items;
+    // Define allowed MIME types for paste
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
     if (items) {
       for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf("image") !== -1) {
-          const blob = items[i].getAsFile();
-          if (blob) {
+        const item = items[i];
+        if (item.type.indexOf("image") !== -1) {
+          const blob = item.getAsFile();
+          if (blob && allowedTypes.includes(blob.type)) {
             setFile(blob);
             setPreviewUrl(URL.createObjectURL(blob));
             setIsPasteActive(false);
+            return; // Stop processing after finding and accepting one image
+          } else if (blob) {
+             // Handle pasted image that is not one of the allowed types (less common for paste but good for safety)
+             alert("❌ Hindi pinapayagan ang ganitong uri ng file na na-paste. Tanging .jpg, .jpeg, .png, at .webp na mga format lamang ang tinatanggap.");
+             setIsPasteActive(false);
+             return;
           }
-          break;
         }
       }
+      // If code reaches here, it means nothing was pasted or it wasn't an image
+      alert("⚠️ Walang nakitang valid na image sa iyong clipboard para i-paste.");
     }
   };
 
@@ -139,13 +229,15 @@ const AddPackage = () => {
         .map((day, index) => ({
           ...day,
           day: index + 1,
+          // Re-map title to correctly reflect the new day number
           title: day.title.replace(/^Day \d+:?/, `Day ${index + 1}:`),
         }))
     );
   };
   
   const handleDayTitle = (dayIndex, value) => {
-    const newTitle = value.trim() ? `Day ${dayIndex + 1}: ${value.trim()}` : "";
+    // Construct the title with the Day X: prefix only if there's a title value
+    const newTitle = value.trim() ? `Day ${dayIndex + 1}: ${value.trim()}` : `Day ${dayIndex + 1}:`;
     setItinerary(
       itinerary.map((day, index) =>
         index === dayIndex ? { ...day, title: newTitle } : day
@@ -185,24 +277,36 @@ const AddPackage = () => {
     const processedInclusions = inclusions.filter(
       (item) => item.trim().length > 0
     );
+    // Clean up itinerary: remove days with no activities and remove the "Day X: " prefix from titles
     const cleanedItinerary = itinerary
       .filter((day) => day.activities.some((act) => act.trim() !== ""))
       .map((day) => ({
         day: day.day,
-        title: day.title.split(": ").slice(1).join(": ") || day.title.trim(),
+        // Remove the "Day X: " prefix from the title before sending
+        title: day.title.split(": ").slice(1).join(": ") || day.title.trim().replace(/^Day \d+:?/, ""),
         activities: day.activities.filter((act) => act.trim() !== ""),
       }));
 
+    // Ensure values are parsed as numbers (they should be positive due to handlers)
     const supplierRateNum = parseFloat(supplierRate) || 0;
     const markupValueNum = parseFloat(markupValue) || 0;
     
+    // Final check for 3-digit minimum (must be at least 100) before submission
+    if (supplierRateNum < 100) {
+      alert("❌ Supplier Rate must be at least ₱100.00. Please enter a valid rate.");
+      return;
+    }
+    
     let markupInPeso = 0;
     if (markupType === "percentage") {
+      // Calculate markup in peso based on percentage
       markupInPeso = (supplierRateNum * markupValueNum) / 100;
     } else {
+      // Markup is already in peso
       markupInPeso = markupValueNum;
     }
     
+    // Round markup to 2 decimal places for accurate storage
     markupInPeso = Math.round(markupInPeso * 100) / 100;
 
     console.log('📊 Frontend Debug:', {
@@ -241,6 +345,7 @@ const AddPackage = () => {
       const data = await response.json();
       if (response.ok) {
         alert("✅ Package Added Successfully!");
+        // Reset form state on success
         setTitle("");
         setDestination("");
         setSupplierRate("");
@@ -294,7 +399,8 @@ const AddPackage = () => {
                             <input
                               type="file"
                               onChange={handleFileChange}
-                              accept="image/*"
+                              // UPDATED: Added required image formats
+                              accept="image/jpeg,image/png,image/webp" 
                               hidden
                             />
                             <svg
@@ -361,7 +467,8 @@ const AddPackage = () => {
                         <input
                           type="file"
                           onChange={handleFileChange}
-                          accept="image/*"
+                          // UPDATED: Added required image formats
+                          accept="image/jpeg,image/png,image/webp" 
                           hidden
                           required
                         />
@@ -379,7 +486,7 @@ const AddPackage = () => {
                             </svg>
                           </div>
                           <p>Click to upload</p>
-                          <span>JPG, PNG or WebP</span>
+                          <span>JPG, JPEG, PNG or WebP</span>
                         </div>
                       </label>
 
@@ -471,16 +578,27 @@ const AddPackage = () => {
                     <div className="pkg-pricing-inputs">
                       <div className="pkg-field">
                         <label>Supplier Rate (PHP)</label>
+                        {/* Changed to type="text" for full control of input cleaning/validation */}
                         <input
-                          type="number"
-                          placeholder="0.00"
+                          type="text"
+                          placeholder="Min ₱100.00 | Max 6 digits"
                           value={supplierRate}
+                          // Use onInput/onChange to call the validation handler
                           onChange={(e) =>
                             handleSupplierRateChange(e.target.value)
                           }
+                          onBlur={() => { // Apply min 100 on blur (final check)
+                            const numericRate = parseFloat(supplierRate);
+                            if (numericRate > 0 && numericRate < 100) {
+                              setSupplierRate("100");
+                              calculateTotalPrice("100", markupValue, markupType);
+                            } else if (supplierRate === '0' || supplierRate === '.') {
+                              setSupplierRate(''); // Clear if 0 or only dot on blur
+                              calculateTotalPrice("", markupValue, markupType);
+                            }
+                          }}
                           required
-                          step="0.01"
-                          min="0"
+                          inputMode="decimal"
                         />
                       </div>
                       <div className="pkg-field">
@@ -499,19 +617,23 @@ const AddPackage = () => {
                           </span>
                         </label>
                         <div className="pkg-field-with-toggle">
+                          {/* Changed to type="text" for full control of input cleaning/validation */}
                           <input
-                            type="number"
+                            type="text"
                             placeholder={
-                              markupType === "percentage" ? "Enter %" : "Enter peso amount"
+                              // UPDATED PLACEHOLDER to reflect the 6-digit limit in Peso mode and 100% in Percentage mode
+                              markupType === "percentage" ? "Enter percentage amount (Max 100%)" : "Enter peso amount (Max 6 digits)" 
                             }
                             value={markupValue}
                             onChange={(e) => handleMarkupChange(e.target.value)}
+                            onBlur={() => { // Clear if 0 or empty on blur
+                                if (markupValue === '0' || markupValue === '.') {
+                                    setMarkupValue('');
+                                    calculateTotalPrice(supplierRate, "", markupType);
+                                }
+                            }}
                             required
-                            step="0.01"
-                            min="0"
-                            max={
-                              markupType === "percentage" ? "100" : undefined
-                            }
+                            inputMode="decimal"
                           />
                           <button
                             type="button"
@@ -567,22 +689,31 @@ const AddPackage = () => {
                             : "0.00"}
                         </div>
                         <div className="pkg-total-price-breakdown">
-                          {supplierRate && markupValue ? (
+                          {supplierRate && price && price !== "0.00" ? (
                             <>
                               <span>
-                                ₱{Number(supplierRate).toLocaleString()}
+                                ₱{Number(supplierRate).toLocaleString("en-US", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
                               </span>
                               <span className="pkg-plus">+</span>
                               <span>
                                 {markupType === "percentage"
-                                  ? `${markupValue}% (₱${(
+                                  ? `${Number(markupValue).toLocaleString("en-US", {
+                                      maximumFractionDigits: 2,
+                                    })}% (₱${(
                                       (parseFloat(supplierRate) *
                                         parseFloat(markupValue)) /
                                       100
                                     ).toLocaleString("en-US", {
                                       minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
                                     })})`
-                                  : `₱${Number(markupValue).toLocaleString()}`}
+                                  : `₱${Number(markupValue).toLocaleString("en-US", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}`}
                               </span>
                             </>
                           ) : (
@@ -672,6 +803,7 @@ const AddPackage = () => {
                               type="text"
                               className="pkg-day-title"
                               placeholder="Day title"
+                              // Show title without "Day X: " prefix in the input box
                               value={day.title.replace(`Day ${day.day}: `, "")}
                               onChange={(e) =>
                                 handleDayTitle(dayIdx, e.target.value)
@@ -783,7 +915,10 @@ const AddPackage = () => {
                         <div>
                           <span>Price</span>
                           <strong>
-                            ₱{price ? Number(price).toLocaleString() : "0"}
+                            ₱{price ? Number(price).toLocaleString("en-US", {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              }) : "0"}
                           </strong>
                         </div>
                         <div>

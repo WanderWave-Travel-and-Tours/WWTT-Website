@@ -44,84 +44,307 @@
 @media (max-width: 640px) { .insurance-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } .insurance-stats-grid { grid-template-columns: 1fr; } .insurance-header { flex-direction: column; align-items: flex-start; } .insurance-btn-add { width: 100%; justify-content: center; } }
 
 
-/* --- PAGINATION STYLES (New) --- */
-.pagination-nav {
-    /* Aligns with the table container's style */
-    margin-top: 0;
-    padding: 16px 24px;
-    background-color: white;
-    border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
-    position: sticky; 
-    bottom: 0;
-    z-index: 5;
-    
-    display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .visa-table-container */
-    border-radius: 0 0 12px 12px; 
-}
+/* --- Search and Filter --- */
 
-.pagination-list {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
-    align-items: center;
-}
-
-.pagination-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
+.search-filter-card {
+    /* Container for the entire search/filter block */
     background: white;
-    border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
-    transition: all 0.2s;
-    min-width: 40px; 
-    text-align: center;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    border-radius: 12px; /* Adjusted to match other components */
+    padding: 24px; /* Adjusted to match card padding */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Adjusted to match table container shadow */
+    margin-bottom: 24px; /* Adjusted spacing */
+}
+
+.search-filter-wrapper {
+    /* Flex container for the search box and filter buttons */
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
+    flex-direction: column;
+    gap: 16px; /* Adjusted spacing */
+    flex-wrap: wrap; 
 }
 
-.pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
+/* Desktop/Tablet Layout (768px and up) */
+@media (min-width: 768px) {
+    .search-filter-wrapper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between; 
+    }
+    
+    .search-box {
+        max-width: 350px; 
+        flex-shrink: 0;
+    }
+    
+    .filter-buttons {
+        flex: 1; 
+        justify-content: flex-end; 
+    }
+}
+
+/* Search Box Container */
+.search-box {
+    flex: 1;
+    position: relative;
+    width: 100%; 
+}
+
+/* Search Icon Styling (from Lucide React) */
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8; /* Slate gray color */
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Search Input Field */
+.search-input {
+    width: 100%;
+    padding: 12px 1rem 12px 3rem; /* Left padding for icon */
+    border: 1px solid #cbd5e1; /* Light border */
+    border-radius: 8px; /* Slightly smaller radius for input */
+    font-size: 14px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: all 0.2s ease;
+    background: #ffffff; 
+    box-sizing: border-box;
+    color: #0f172a;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #6366f1; /* Primary color focus */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Filter Buttons Container */
+.filter-buttons {
+    display: flex;
+    gap: 8px; /* Adjusted spacing */
+    flex-wrap: wrap; 
+    justify-content: flex-start;
+}
+
+/* Individual Filter Button (Made Smaller) */
+.filter-btn {
+    padding: 8px 12px; /* Reduced padding for a smaller button */
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12px; /* Smaller font size */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f1f5f9; /* Light background */
+    color: #475569; /* Slate 600 */
+    white-space: nowrap;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.filter-btn:hover {
+    background: #e2e8f0;
     border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
-}
-
-.pagination-btn.active {
-    background-color: #0f172a; /* Primary dark color background for active page */
-    border-color: #0f172a;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
-}
-
-.pagination-btn.active:hover {
-    background-color: #1e293b; /* Slightly darker primary on hover */
-    border-color: #1e293b;
     transform: translateY(-1px);
 }
 
-.pagination-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background-color: #f8fafc;
+/* Active Status Styles */
+.filter-btn.active-filter { /* General 'All Items' active state */
+    background: #0f172a; /* Primary Dark */
+    color: white;
+    border-color: #0f172a;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
 }
 
-/* For previous/next buttons */
-.pagination-btn:first-child,
-.pagination-btn:last-child {
-    font-weight: 700;
-    text-transform: uppercase;
-    min-width: 80px; /* Wider for text + icon */
+.filter-btn.active-active {
+    background: #166534; /* Dark green */
+    color: white;
+    border-color: #166534;
 }
+
+.filter-btn.pending-active {
+    background: #9a3412; /* Dark orange */
+    color: white;
+    border-color: #9a3412;
+}
+
+.filter-btn.expired-active {
+    background: #b91c1c; /* Dark red */
+    color: white;
+    border-color: #b91c1c;
+}
+
+/* --- Tablet Responsiveness (Max-width 768px) --- */
+@media (max-width: 768px) {
+    .search-filter-card {
+        padding: 16px;
+    }
+    
+    .search-filter-wrapper {
+        flex-direction: column; 
+    }
+    
+    .filter-buttons {
+        width: 100%;
+        gap: 8px;
+        flex-wrap: wrap; 
+        justify-content: center; 
+    }
+    
+    .filter-btn {
+        /* Distribute buttons almost equally across two columns */
+        flex: 1 1 auto; /* Allows them to grow/shrink based on content, keeping two columns for short list */
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+}
+
+/* --- Small Mobile Responsiveness (Max-width 480px) --- */
+@media (max-width: 480px) {
+    .search-filter-card {
+        padding: 12px;
+    }
+    
+    .search-input {
+        font-size: 14px;
+        padding: 10px 1rem 10px 3rem;
+    }
+    
+    .search-icon {
+        left: 0.875rem;
+    }
+    
+    .filter-buttons {
+        /* Stack filter buttons vertically for max simplicity */
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .filter-btn {
+        width: 100%;
+        flex: 1 1 auto;
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+}
+
+/* --- PAGINATION STYLES START --- */
+
+.insurance-pagination-container {
+    padding: 20px 0; 
+    margin-top: 20px; /* Separates it from the table */
+    display: flex;
+    justify-content: center; /* Naka-center ang pagination wrapper */
+    width: 100%;
+}
+
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pagination-btn {
+    background-color: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 5px;
+}
+
+.page-number-btn {
+    background-color: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.page-number-btn:hover:not(.active-page) {
+    /* Gumamit ng kulay na mas angkop sa theme */
+    background-color: #eef2ff; 
+    border-color: #6366f1;
+}
+
+.page-number-btn.active-page {
+    background-color: #0f172a;
+    color: white;
+    border-color: #0f172a;
+}
+
+.page-ellipsis {
+    color: #94a3b8;
+    padding: 0 5px;
+    font-size: 16px;
+    align-self: center;
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 768px) {
+    .pagination-wrapper {
+        gap: 5px;
+    }
+    .pagination-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .page-number-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+    .pagination-text {
+        display: none; /* Hide 'Previous' and 'Next' text on smaller screens */
+    }
+}
+
+/* --- GENERAL MEDIA QUERIES --- */
+@media (max-width: 1024px) { 
+    /* Inayos ang 'bills-' to 'insurance-' */
+    .insurance-main, .insurance-main.expanded { padding: 30px; } 
+    .insurance-stats-grid { grid-template-columns: repeat(2, 1fr); } 
+    .search-filter-wrapper { flex-direction: column; align-items: stretch; }
+    .search-box { max-width: 100%; }
+    .filter-buttons { justify-content: center; }
+}
+
+@media (max-width: 640px) { 
+    /* Inayos ang 'bills-' to 'insurance-' */
+    .insurance-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } 
+    .insurance-stats-grid { grid-template-columns: 1fr; } 
+    .insurance-header { flex-direction: column; align-items: flex-start; } 
+    .insurance-btn-add { width: 100%; justify-content: center; } 
+}
+
+
+/* --- PAGINATION STYLES END --- */

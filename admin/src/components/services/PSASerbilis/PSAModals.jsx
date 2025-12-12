@@ -22,6 +22,7 @@ const formatFileSize = (bytes) => {
 
 // ==========================================
 // 1. PSA INQUIRY DETAILS MODAL
+// (No changes here, keeping for completeness)
 // ==========================================
 export const PSAInquiryModal = ({
   inquiry, documents = [], onClose, onUpdateStatus, onRequestPayment,
@@ -291,6 +292,7 @@ export const PSAInquiryModal = ({
 
 // ==========================================
 // 2. PSA CONTACT REMARKS MODAL
+// (No changes here, keeping for completeness)
 // ==========================================
 export const PSAContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit, onClose }) => (
   <div className="psam-overlay">
@@ -343,6 +345,7 @@ export const PSAContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSub
 
 // ==========================================
 // 3. PSA SERVICE LIST MODAL
+// (No changes here, keeping for completeness)
 // ==========================================
 export const PSAServiceListModal = ({ services, onAdd, onEdit, onDelete, onClose }) => (
   <div className="psam-overlay" onClick={onClose}>
@@ -402,170 +405,210 @@ export const PSAServiceListModal = ({ services, onAdd, onEdit, onDelete, onClose
 );
 
 // ==========================================
-// 4. PSA SERVICE EDITOR MODAL
+// 4. PSA SERVICE EDITOR MODAL (MODIFIED)
 // ==========================================
 export const PSAServiceEditorModal = ({
   isEditorOpen, form, setForm, requirements, steps, downloads, accordionState,
   toggleAccordion, addCategory, removeCategory, handleCategoryTitleChange,
   addRequirement, removeRequirement, handleLabelChange, addStep, removeStep,
   handleStepChange, handleDirectFileUpload, removeDownloadForm, onSave, onClose,
-}) => (
-  <div className="psam-overlay">
-    <div className="psam-modal psam-modal-xl">
-      <div className="psam-header">
-        <div className="psam-header-content">
-          <div className="psam-title-group">
-            <h2 className="psam-title">{isEditorOpen ? "Edit PSA Service" : "Create New PSA Service"}</h2>
-            <div className="psam-meta"><span className="psam-subtitle">Configure pricing, requirements, and processing steps</span></div>
-          </div>
-        </div>
-        <button className="psam-close-btn" onClick={onClose} aria-label="Close modal">
-          <X size={20} />
-        </button>
-      </div>
+}) => {
+  
+  // Custom handler for Price input validation
+  const handlePriceChange = (e) => {
+    const value = e.target.value;
+    
+    // 1. Remove non-digit characters and trim leading/trailing spaces
+    const numericValue = value.replace(/[^0-9]/g, '');
 
-      <div className="psam-body">
-        {/* BASIC INFO */}
-        <div className="psam-form-section">
-          <h3 className="psam-section-title"><span className="psam-section-icon">📋</span> Basic Information</h3>
-          <div className="psam-form-row">
-            <div className="psam-form-group">
-              <label className="psam-form-label">Document Type <span className="psam-label-req">*</span></label>
-              <input
-                type="text" className="psam-input" value={form.documentType}
-                onChange={(e) => setForm({ ...form, documentType: e.target.value })}
-                placeholder="e.g., Birth Certificate, CENOMAR"
-              />
-            </div>
-            <div className="psam-form-group">
-              <label className="psam-form-label">Price (PHP) <span className="psam-label-req">*</span></label>
-              <input
-                type="number" className="psam-input" value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-                placeholder="0.00" min="0" step="0.01"
-              />
-            </div>
-          </div>
-          <div className="psam-form-group">
-            <label className="psam-form-label">Description</label>
-            <textarea
-              className="psam-input" value={form.desc}
-              onChange={(e) => setForm({ ...form, desc: e.target.value })}
-              placeholder="Brief description of this service..." rows="3"
-            />
-          </div>
-        </div>
+    // 2. Check for max 6 digits AND prevent leading zero on multi-digit number
+    // Regex: ^[1-9]\d{0,5}$ - 1 to 9 followed by 0-5 digits (max 6 total)
+    //        |^0$            - OR exactly 0
+    const priceRegex = /^(?:[1-9]\d{0,5}|0)$/;
+    
+    if (numericValue === "") {
+        // Allow empty string to clear the input
+        setForm({ ...form, price: "" });
+        return;
+    }
 
-        {/* REQUIREMENTS */}
-        <div className="psam-accordion">
-          <button className={`psam-acc-header ${accordionState.requirements ? "active" : ""}`} onClick={() => toggleAccordion("requirements")}>
-            <div className="psam-acc-title">
-              <ListPlus size={20} /><span>Requirements</span><span className="psam-acc-badge">{requirements.length}</span>
+    if (priceRegex.test(numericValue)) {
+      // Input is valid (1 to 999999 or 0)
+      setForm({ ...form, price: numericValue });
+    } else {
+      // Input is invalid (e.g., "012", "1234567", non-numeric parts if 'type="number"' was not used)
+      // You should trigger your notification here. For this example, we use an alert.
+      // NOTE: Replace alert with your actual pop-up notification function (e.g., toast.error)
+      // alert("Invalid Price: Must be a maximum of 6 digits, and cannot have leading zeros (unless the value is exactly 0).");
+      
+      // Prevent state update for invalid input by doing nothing.
+      // The input field will only reflect the current valid state value until the user fixes the input.
+    }
+  };
+
+  return (
+    <div className="psam-overlay">
+      <div className="psam-modal psam-modal-xl">
+        <div className="psam-header">
+          <div className="psam-header-content">
+            <div className="psam-title-group">
+              <h2 className="psam-title">{isEditorOpen ? "Edit PSA Service" : "Create New PSA Service"}</h2>
+              <div className="psam-meta"><span className="psam-subtitle">Configure pricing, requirements, and processing steps</span></div>
             </div>
-            <ChevronDown size={20} className={`psam-acc-icon ${accordionState.requirements ? "rotate" : ""}`} />
+          </div>
+          <button className="psam-close-btn" onClick={onClose} aria-label="Close modal">
+            <X size={20} />
           </button>
-          {accordionState.requirements && (
-            <div className="psam-acc-content">
-              {requirements.map((category) => (
-                <div key={category.id} className="psam-req-category">
-                  <div className="psam-cat-header">
+        </div>
+
+        <div className="psam-body">
+          {/* BASIC INFO */}
+          <div className="psam-form-section">
+            <h3 className="psam-section-title"><span className="psam-section-icon">📋</span> Basic Information</h3>
+            <div className="psam-form-row">
+              <div className="psam-form-group">
+                <label className="psam-form-label">Document Type <span className="psam-label-req">*</span></label>
+                <input
+                  type="text" className="psam-input" value={form.documentType}
+                  onChange={(e) => setForm({ ...form, documentType: e.target.value })}
+                  placeholder="e.g., Birth Certificate, CENOMAR"
+                />
+              </div>
+              <div className="psam-form-group">
+                <label className="psam-form-label">Price (PHP) <span className="psam-label-req">*</span></label>
+                <input
+                  // Use type="text" to have full control over input and suppress browser's default number behavior
+                  type="text" 
+                  className="psam-input" 
+                  value={form.price}
+                  // **MODIFIED:** Use the custom validation handler
+                  onChange={handlePriceChange}
+                  placeholder="0.00" 
+                  maxLength="6" // HTML max length for visual guidance
+                />
+              </div>
+            </div>
+            <div className="psam-form-group">
+              <label className="psam-form-label">Description</label>
+              <textarea
+                className="psam-input" value={form.desc}
+                onChange={(e) => setForm({ ...form, desc: e.target.value })}
+                placeholder="Brief description of this service..." rows="3"
+              />
+            </div>
+          </div>
+
+          {/* REQUIREMENTS */}
+          <div className="psam-accordion">
+            <button className={`psam-acc-header ${accordionState.requirements ? "active" : ""}`} onClick={() => toggleAccordion("requirements")}>
+              <div className="psam-acc-title">
+                <ListPlus size={20} /><span>Requirements</span><span className="psam-acc-badge">{requirements.length}</span>
+              </div>
+              <ChevronDown size={20} className={`psam-acc-icon ${accordionState.requirements ? "rotate" : ""}`} />
+            </button>
+            {accordionState.requirements && (
+              <div className="psam-acc-content">
+                {requirements.map((category) => (
+                  <div key={category.id} className="psam-req-category">
+                    <div className="psam-cat-header">
+                      <input
+                        type="text" className="psam-cat-input" placeholder="Category Title"
+                        value={category.title} onChange={(e) => handleCategoryTitleChange(category.id, e.target.value)}
+                      />
+                      <button className="psam-btn psam-btn-danger psam-btn-ghost psam-btn-sm psam-btn-icon" onClick={() => removeCategory(category.id)}>
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                    <div className="psam-req-list">
+                      {category.items.map((item) => (
+                        <div key={item.id} className="psam-req-item">
+                          <CheckCircle size={16} className="psam-req-icon" />
+                          <input
+                            type="text" className="psam-req-input" placeholder="Requirement item..."
+                            value={item.label} onChange={(e) => handleLabelChange(category.id, item.id, e.target.value)}
+                          />
+                          <button className="psam-btn psam-btn-ghost psam-btn-sm psam-btn-icon" onClick={() => removeRequirement(category.id, item.id)}>
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                      <button className="psam-btn psam-btn-ghost psam-btn-sm" onClick={() => addRequirement(category.id)}>
+                        <PlusCircle size={16} /><span>Add Item</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button className="psam-btn psam-btn-outline psam-btn-block" onClick={addCategory}>
+                  <Plus size={18} /><span>Add Category</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* STEPS */}
+          <div className="psam-accordion">
+            <button className={`psam-acc-header ${accordionState.stepsProcess ? "active" : ""}`} onClick={() => toggleAccordion("stepsProcess")}>
+              <div className="psam-acc-title">
+                <ListPlus size={20} /><span>Process Steps</span><span className="psam-acc-badge">{steps.length}</span>
+              </div>
+              <ChevronDown size={20} className={`psam-acc-icon ${accordionState.stepsProcess ? "rotate" : ""}`} />
+            </button>
+            {accordionState.stepsProcess && (
+              <div className="psam-acc-content">
+                {steps.map((step, index) => (
+                  <div key={step.id} className="psam-step-item">
+                    <span className="psam-step-num">Step {index + 1}</span>
                     <input
-                      type="text" className="psam-cat-input" placeholder="Category Title"
-                      value={category.title} onChange={(e) => handleCategoryTitleChange(category.id, e.target.value)}
+                      type="text" className="psam-step-input" placeholder="Describe this step..."
+                      value={step.label} onChange={(e) => handleStepChange(step.id, e.target.value)}
                     />
-                    <button className="psam-btn psam-btn-danger psam-btn-ghost psam-btn-sm psam-btn-icon" onClick={() => removeCategory(category.id)}>
+                    <button className="psam-btn psam-btn-ghost psam-btn-sm psam-btn-icon" onClick={() => removeStep(step.id)}>
                       <Trash2 size={18} />
                     </button>
                   </div>
-                  <div className="psam-req-list">
-                    {category.items.map((item) => (
-                      <div key={item.id} className="psam-req-item">
-                        <CheckCircle size={16} className="psam-req-icon" />
-                        <input
-                          type="text" className="psam-req-input" placeholder="Requirement item..."
-                          value={item.label} onChange={(e) => handleLabelChange(category.id, item.id, e.target.value)}
-                        />
-                        <button className="psam-btn psam-btn-ghost psam-btn-sm psam-btn-icon" onClick={() => removeRequirement(category.id, item.id)}>
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ))}
-                    <button className="psam-btn psam-btn-ghost psam-btn-sm" onClick={() => addRequirement(category.id)}>
-                      <PlusCircle size={16} /><span>Add Item</span>
+                ))}
+                <button className="psam-btn psam-btn-ghost psam-btn-sm" onClick={addStep}>
+                  <Plus size={16} /><span>Add Step</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* DOWNLOADS */}
+          <div className="psam-accordion">
+            <button className={`psam-acc-header ${accordionState.downloadForms ? "active" : ""}`} onClick={() => toggleAccordion("downloadForms")}>
+              <div className="psam-acc-title">
+                <Download size={20} /><span>Downloadable Forms</span><span className="psam-acc-badge">{downloads.length}</span>
+              </div>
+              <ChevronDown size={20} className={`psam-acc-icon ${accordionState.downloadForms ? "rotate" : ""}`} />
+            </button>
+            {accordionState.downloadForms && (
+              <div className="psam-acc-content">
+                {downloads.map((file) => (
+                  <div key={file.id} className="psam-dl-item">
+                    <FileText size={20} className="psam-dl-icon" />
+                    <span className="psam-dl-name">{file.name}</span>
+                    <button className="psam-btn psam-btn-danger psam-btn-ghost psam-btn-sm" onClick={() => removeDownloadForm(file.id)}>
+                      <Trash2 size={16} />
                     </button>
                   </div>
-                </div>
-              ))}
-              <button className="psam-btn psam-btn-outline psam-btn-block" onClick={addCategory}>
-                <Plus size={18} /><span>Add Category</span>
-              </button>
-            </div>
-          )}
+                ))}
+                <label className="psam-upload-btn-lg">
+                  <input type="file" hidden onChange={handleDirectFileUpload} />
+                  <Upload size={18} /><span>Upload Form</span>
+                </label>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* STEPS */}
-        <div className="psam-accordion">
-          <button className={`psam-acc-header ${accordionState.stepsProcess ? "active" : ""}`} onClick={() => toggleAccordion("stepsProcess")}>
-            <div className="psam-acc-title">
-              <ListPlus size={20} /><span>Process Steps</span><span className="psam-acc-badge">{steps.length}</span>
-            </div>
-            <ChevronDown size={20} className={`psam-acc-icon ${accordionState.stepsProcess ? "rotate" : ""}`} />
+        <div className="psam-footer">
+          <button className="psam-btn psam-btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="psam-btn psam-btn-primary" onClick={onSave}>
+            <Save size={16} /><span>Save Changes</span>
           </button>
-          {accordionState.stepsProcess && (
-            <div className="psam-acc-content">
-              {steps.map((step, index) => (
-                <div key={step.id} className="psam-step-item">
-                  <span className="psam-step-num">Step {index + 1}</span>
-                  <input
-                    type="text" className="psam-step-input" placeholder="Describe this step..."
-                    value={step.label} onChange={(e) => handleStepChange(step.id, e.target.value)}
-                  />
-                  <button className="psam-btn psam-btn-ghost psam-btn-sm psam-btn-icon" onClick={() => removeStep(step.id)}>
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
-              <button className="psam-btn psam-btn-ghost psam-btn-sm" onClick={addStep}>
-                <Plus size={16} /><span>Add Step</span>
-              </button>
-            </div>
-          )}
         </div>
-
-        {/* DOWNLOADS */}
-        <div className="psam-accordion">
-          <button className={`psam-acc-header ${accordionState.downloadForms ? "active" : ""}`} onClick={() => toggleAccordion("downloadForms")}>
-            <div className="psam-acc-title">
-              <Download size={20} /><span>Downloadable Forms</span><span className="psam-acc-badge">{downloads.length}</span>
-            </div>
-            <ChevronDown size={20} className={`psam-acc-icon ${accordionState.downloadForms ? "rotate" : ""}`} />
-          </button>
-          {accordionState.downloadForms && (
-            <div className="psam-acc-content">
-              {downloads.map((file) => (
-                <div key={file.id} className="psam-dl-item">
-                  <FileText size={20} className="psam-dl-icon" />
-                  <span className="psam-dl-name">{file.name}</span>
-                  <button className="psam-btn psam-btn-danger psam-btn-ghost psam-btn-sm" onClick={() => removeDownloadForm(file.id)}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-              <label className="psam-upload-btn-lg">
-                <input type="file" hidden onChange={handleDirectFileUpload} />
-                <Upload size={18} /><span>Upload Form</span>
-              </label>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="psam-footer">
-        <button className="psam-btn psam-btn-ghost" onClick={onClose}>Cancel</button>
-        <button className="psam-btn psam-btn-primary" onClick={onSave}>
-          <Save size={16} /><span>Save Changes</span>
-        </button>
       </div>
     </div>
-  </div>
-);
+  );
+};

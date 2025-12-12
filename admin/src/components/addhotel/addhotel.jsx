@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import './addhotel.css';
-import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine } from 'lucide-react';
+import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000'; 
 
@@ -9,7 +9,8 @@ const AddHotel = () => {
   const [hotelDetails, setHotelDetails] = useState({
     name: '',
     destination: '',
-    price: '',
+    // Tiyaking string pa rin para sa input handling
+    price: '', 
     maxCapacity: 4,
     amenities: {
       wifi: false,
@@ -49,6 +50,23 @@ const AddHotel = () => {
     { id: 'bar', label: 'Bar', icon: <Wine size={14} /> }
   ];
 
+  // Helper function to validate file type
+  const isSupportedImage = (fileBlob) => {
+    const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (fileBlob && supportedTypes.includes(fileBlob.type)) {
+      return true;
+    }
+    return false;
+  };
+
+  // Refactored: Only clears file and preview, no error state modification here.
+  const clearFile = () => {
+    setFile(null); 
+    setPreviewUrl(null);
+    // Clear the error only if it's the specific file error
+    setError(prev => (prev && prev.includes('Unsupported file type')) ? '' : prev); 
+  };
+
   useEffect(() => {
     fetchDestinations();
   }, []);
@@ -58,7 +76,6 @@ const AddHotel = () => {
       setLoading(true);
       setError('');
       
-      // Use full backend URL
       const url = `${API_BASE_URL}/api/packages/all`;
       console.log('Fetching from:', url);
       
@@ -111,27 +128,65 @@ const AddHotel = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setHotelDetails(prev => ({ ...prev, [name]: value }));
+
+    if (name === 'price') {
+      let cleanedValue = value.replace(/[^0-9.]/g, ''); 
+
+      const parts = cleanedValue.split('.');
+      if (parts.length > 2) {
+        cleanedValue = parts[0] + '.' + parts.slice(1).join('');
+      }
+
+      const digitsOnly = cleanedValue.replace(/\./g, '');
+      if (digitsOnly.length > 6) {
+        return; 
+      }
+      
+      setHotelDetails(prev => ({ ...prev, [name]: cleanedValue }));
+
+    } else {
+      setHotelDetails(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleFileChange = (e) => {
+    setError(''); // Clear any existing general error first
     const selected = e.target.files[0];
     if (selected) {
-      setFile(selected);
-      setPreviewUrl(URL.createObjectURL(selected));
+      if (isSupportedImage(selected)) {
+        setFile(selected);
+        setPreviewUrl(URL.createObjectURL(selected));
+      } else {
+        // **FIX: Explicitly set the file-related error and clear file states**
+        setFile(null); 
+        setPreviewUrl(null);
+        setError('Unsupported file type. Only JPG, PNG, and WebP images are allowed. Please upload a JPG, PNG, or WebP file.');
+        e.target.value = null; // Clear the input field to allow re-selection of the same file path later
+      }
     }
   };
 
   const handlePaste = (e) => {
+    setError(''); // Clear any existing general error first
     const items = e.clipboardData?.items;
     if (items) {
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
           const blob = items[i].getAsFile();
           if (blob) {
-            setFile(blob);
-            setPreviewUrl(URL.createObjectURL(blob));
-            setIsPasteActive(false);
+            if (isSupportedImage(blob)) {
+              setFile(blob);
+              setPreviewUrl(URL.createObjectURL(blob));
+              setIsPasteActive(false);
+              return; // Exit loop after finding and setting the image
+            } else {
+              // **FIX: Explicitly set the file-related error and clear file states**
+              setError('Unsupported file type from paste. Only JPG, PNG, and WebP images are allowed. Please use a JPG, PNG, or WebP image.');
+              setFile(null);
+              setPreviewUrl(null);
+              setIsPasteActive(false);
+              return;
+            }
           }
           break;
         }
@@ -161,6 +216,18 @@ const AddHotel = () => {
       setError('Please fill in all required fields (Name, Destination)');
       return;
     }
+    
+    const numericPrice = Number(hotelDetails.price);
+    if (isNaN(numericPrice) || numericPrice <= 0) {
+      setError('Price per room must be a positive number.');
+      return;
+    }
+    
+    // Prevent submission if a file validation error exists
+    if (error.includes('Unsupported file type')) {
+      return; 
+    }
+
 
     setIsSubmitting(true);
     setError('');
@@ -174,7 +241,7 @@ const AddHotel = () => {
         city: hotelDetails.destination.split(',')[0].trim(),
         country: 'Philippines',
         description: `${type} accommodation in ${hotelDetails.destination}`,
-        price: Number(hotelDetails.price),
+        price: numericPrice, 
         priceUnit: 'per night',
         maxCapacity: Number(hotelDetails.maxCapacity) || 4,
         rating: 0,
@@ -199,7 +266,7 @@ const AddHotel = () => {
         setHotelDetails({
           name: '',
           destination: '',
-          price: '',
+          price: '', // Reset to empty string
           maxCapacity: 4,
           amenities: {
             wifi: false,
@@ -249,8 +316,8 @@ const AddHotel = () => {
         bar: false
       }
     });
-    setPreviewUrl(null);
-    setFile(null);
+    // Use clearFile to reset image state, and then clear general error/success
+    clearFile(); 
     setType("Budget");
     setError('');
     setSuccess('');
@@ -270,10 +337,13 @@ const AddHotel = () => {
   const activeAmenitiesCount = Object.values(hotelDetails.amenities).filter(Boolean).length;
 
   const exampleGuests = [4, 5, 8, 10];
+  
+  const currentPrice = Number(hotelDetails.price) || 0; 
+  
   const roomCalculations = exampleGuests.map(guests => ({
     guests,
     rooms: calculateRooms(guests),
-    totalPrice: calculateRooms(guests) * (Number(hotelDetails.price) || 0)
+    totalPrice: calculateRooms(guests) * currentPrice
   }));
 
   return (
@@ -286,6 +356,7 @@ const AddHotel = () => {
             <p className="hotel-subtitle">Register a new accommodation partner</p>
           </header>
 
+          {/* Error Notification Display */}
           {error && (
             <div style={{
               padding: '1rem',
@@ -294,7 +365,8 @@ const AddHotel = () => {
               color: '#dc2626',
               borderRadius: '8px',
               border: '1px solid #fca5a5',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
+              fontWeight: '500' // Added to make error stand out
             }}>
               {error}
             </div>
@@ -446,18 +518,22 @@ const AddHotel = () => {
                   <div className="form-group full-width">
                     <label>Price per Room per Night (₱) *</label>
                     <input 
-                      type="number" 
+                      type="text" 
                       name="price" 
                       value={hotelDetails.price} 
                       onChange={handleChange} 
                       placeholder="e.g. 2500" 
                       required
-                      min="0"
+                      min="1" 
+                      inputMode="decimal" 
                     />
+                    <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                      Minimum ₱1.00. Maximum 6 digits (e.g., 9999.99). Only numbers and '.' allowed.
+                    </span>
                   </div>
 
                   {/* Room Calculation Preview */}
-                  {hotelDetails.price && hotelDetails.maxCapacity && (
+                  {(currentPrice > 0 && hotelDetails.maxCapacity) ? (
                     <div className="form-group full-width">
                       <label>Room Calculation Preview</label>
                       <div style={{
@@ -468,7 +544,7 @@ const AddHotel = () => {
                       }}>
                         <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem', fontWeight: '500' }}>
                           <Users size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
-                          Example: {hotelDetails.maxCapacity} persons/room @ ₱{hotelDetails.price}/room/night
+                          Example: {hotelDetails.maxCapacity} persons/room @ ₱{currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/room/night
                         </p>
                         <div style={{ display: 'grid', gap: '0.5rem' }}>
                           {roomCalculations.map(calc => (
@@ -484,14 +560,14 @@ const AddHotel = () => {
                                 {calc.guests} guests = {calc.rooms} room{calc.rooms > 1 ? 's' : ''}
                               </span>
                               <span style={{ color: '#3b82f6', fontWeight: '600' }}>
-                                ₱{calc.totalPrice.toLocaleString()}
+                                ₱{calc.totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                               </span>
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="form-group full-width">
                     <label>Hotel Image</label>
@@ -512,7 +588,7 @@ const AddHotel = () => {
                             cursor: 'pointer',
                             fontSize: '0.875rem'
                           }}>
-                            <input type="file" onChange={handleFileChange} accept="image/*" hidden />
+                            <input type="file" onChange={handleFileChange} accept="image/jpeg,image/png,image/webp" hidden />
                             Change
                           </label>
                           <button type="button" onClick={activatePasteArea} style={{
@@ -524,7 +600,7 @@ const AddHotel = () => {
                             cursor: 'pointer',
                             fontSize: '0.875rem'
                           }}>Paste</button>
-                          <button type="button" onClick={() => { setFile(null); setPreviewUrl(null); }} style={{
+                          <button type="button" onClick={clearFile} style={{
                             padding: '0.5rem 1rem',
                             backgroundColor: '#ef4444',
                             color: 'white',
@@ -546,7 +622,8 @@ const AddHotel = () => {
                           cursor: 'pointer',
                           backgroundColor: '#f8fafc'
                         }}>
-                          <input type="file" onChange={handleFileChange} accept="image/*" hidden />
+                          {/* Added accept attribute here for browser-side filtering */}
+                          <input type="file" onChange={handleFileChange} accept="image/jpeg,image/png,image/webp" hidden />
                           <p style={{ margin: '0.5rem 0', color: '#475569' }}>Click to upload</p>
                           <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>JPG, PNG or WebP</span>
                         </label>
@@ -626,7 +703,7 @@ const AddHotel = () => {
                         <span>{activeAmenitiesCount > 0 ? `${activeAmenitiesCount} Amenities` : 'No amenities'}</span>
                       </div>
                       <div className="card-price">
-                        <span className="price-value">₱{hotelDetails.price || '0'}</span>
+                        <span className="price-value">₱{currentPrice.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) || '0'}</span>
                         <span className="price-unit">/ room / night</span>
                       </div>
                     </div>

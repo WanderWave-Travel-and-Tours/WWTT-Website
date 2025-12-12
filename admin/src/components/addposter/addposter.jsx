@@ -1,9 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Upload, X, Image as ImageIcon, Trash2 } from 'lucide-react';
 import './AddPoster.css';
 import Sidebar from '../sidebar/sidebar';
 
+// Helper function to format a date object to YYYY-MM-DD string
+const formatDate = (date) => {
+    const d = new Date(date);
+    let month = '' + (d.getMonth() + 1);
+    let day = '' + d.getDate();
+    const year = d.getFullYear();
+
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+
+    return [year, month, day].join('-');
+};
+
+// Helper function to get a date a certain number of days from a reference date
+const addDays = (date, days) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+};
+
+
 const AddPoster = () => {
+    // --- DATE RESTRICTIONS LOGIC START ---
+    // Minimum date: Tomorrow's date (Today + 1 day)
+    const minStartDate = useMemo(() => formatDate(addDays(new Date(), 1)), []);
+
+    // Maximum date: One year from tomorrow (Today + 366 days)
+    const maxDate = useMemo(() => formatDate(addDays(new Date(), 366)), []);
+    // --- DATE RESTRICTIONS LOGIC END ---
+
     // --- SIDEBAR LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
@@ -14,7 +45,7 @@ const AddPoster = () => {
     const [posterDetails, setPosterDetails] = useState({
         title: '',
         description: '',
-        startDate: '',
+        startDate: minStartDate, // Set initial value to tomorrow
         endDate: '',
         status: 'Active'
     });
@@ -31,12 +62,48 @@ const AddPoster = () => {
         };
     }, [imagePreview]);
 
+    // Use useMemo to dynamically calculate the minimum end date
+    const minEndDate = useMemo(() => {
+        if (posterDetails.startDate) {
+            // Minimum end date is 7 days after the selected start date
+            return formatDate(addDays(new Date(posterDetails.startDate), 7));
+        }
+        // If no start date is selected, minimum is 7 days from tomorrow
+        return formatDate(addDays(new Date(), 8)); 
+    }, [posterDetails.startDate]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setPosterDetails(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        
+        // Custom logic to handle date changes
+        if (name === 'startDate') {
+            const newStartDate = value;
+            let newEndDate = posterDetails.endDate;
+
+            // 1. Calculate the absolute minimum end date based on the new start date (Start + 7 days)
+            const absoluteMinEndDate = formatDate(addDays(new Date(newStartDate), 7));
+
+            // 2. If the current end date is earlier than the new absolute minimum,
+            //    reset the end date to the new absolute minimum.
+            if (newEndDate && new Date(newEndDate) < new Date(absoluteMinEndDate)) {
+                newEndDate = absoluteMinEndDate;
+            } else if (!newEndDate) {
+                // Optionally pre-select the min end date if none is set
+                // newEndDate = absoluteMinEndDate;
+            }
+
+
+            setPosterDetails(prev => ({
+                ...prev,
+                startDate: newStartDate,
+                endDate: newEndDate
+            }));
+        } else {
+            setPosterDetails(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
     const handleImageChange = (e) => {
@@ -100,7 +167,7 @@ const AddPoster = () => {
         setPosterDetails({
             title: '',
             description: '',
-            startDate: '',
+            startDate: minStartDate, // Reset to tomorrow
             endDate: '',
             status: 'Active'
         });
@@ -190,6 +257,8 @@ const AddPoster = () => {
                                             name="startDate"
                                             value={posterDetails.startDate}
                                             onChange={handleChange}
+                                            min={minStartDate} // Minimum is tomorrow
+                                            max={maxDate}      // Maximum is 1 year from tomorrow
                                         />
                                     </div>
 
@@ -200,6 +269,8 @@ const AddPoster = () => {
                                             name="endDate"
                                             value={posterDetails.endDate}
                                             onChange={handleChange}
+                                            min={minEndDate}   // Minimum is 7 days after Start Date
+                                            max={maxDate}      // Maximum is 1 year from tomorrow
                                         />
                                     </div>
 

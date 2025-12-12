@@ -9,13 +9,14 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     /* FIX: Ensure no horizontal scroll caused by page content */
     overflow-x: hidden; 
+    
 }
 
 .booking-container {
     flex: 1;
     padding: 2rem;
-    /* MAJOR FIX: Increased margin to 400px to ensure the content is well clear of a wide sidebar */
-    margin-left: 320px; 
+    /* MAJOR FIX: Increased margin to 350px for guaranteed clearance to the RIGHT. */
+    margin-left: 350px; 
     transition: margin-left 0.3s ease;
     animation: fadeIn 0.5s ease-in;
     /* Use max-width and width for responsiveness instead of fixed width */
@@ -28,24 +29,8 @@
 
 /* Desktop: Sidebar collapsed state */
 .booking-container.booking-container--collapsed {
-    /* Reverted to 80px for standard collapsed state clearance */
-    margin-left: 80px; 
-}
-
-/* Tablet and Mobile: Always remove margin when the screen is small */
-@media (max-width: 768px) {
-    .booking-container, 
-    .booking-container.booking-container--collapsed {
-        /* !important is kept as it overrides the desktop margin-left */
-        margin-left: 0 !important;
-        /* CRITICAL FIX: Use padding-top to clear the 90px fixed mobile header (from sidebar.css)
-           plus the user's desired 2.5rem of top margin/spacing. */
-        padding-top: calc(90px + 2.5rem) !important;
-        /* Standardize the side and bottom padding for mobile */
-        padding-left: 1rem;
-        padding-right: 1rem;
-        padding-bottom: 1rem;
-    }
+    /* FIX: Increased margin to 120px for guaranteed clearance to the RIGHT. */
+    margin-left: 120px; 
 }
 
 /* FIX: Image responsiveness rule (Rule 3) */
@@ -133,7 +118,7 @@ img {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* FIX: Ensure content wraps if space is tight */
+    /* FIX: Ensure content wraps if needed, though typically a column */
     flex-wrap: wrap;
 }
 
@@ -165,7 +150,7 @@ img {
     background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
     transition: transform 0.3s ease;
     /* Ensure icon doesn't shrink on small screens */
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
 
 .stat-card:hover .stat-icon {
@@ -205,10 +190,17 @@ img {
     flex-direction: column;
     gap: 1rem;
     /* FIX: Add flex-wrap for horizontal layout on desktop */
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
 }
 
 @media (min-width: 768px) {
+    
+
+
+.booking-page{
+    margin-left:100px;
+}
+
     .search-filter-wrapper {
         flex-direction: row;
         align-items: center;
@@ -229,7 +221,7 @@ img {
     flex: 1;
     position: relative;
     /* Set width to 100% to ensure it takes full space on mobile */
-    width: 100%; 
+    width: 100%;
 }
 
 .search-icon {
@@ -380,7 +372,7 @@ img {
 
 .bookings-table tbody tr:hover {
     background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-    transform: scale(1.001);
+    /* FIX: Removed transform property which caused layout shifts/jiggle on hover */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
@@ -795,6 +787,196 @@ img {
     to { transform: rotate(360deg); }
 }
 
+/* --- PAGINATION STYLES (NEW DESIGN) --- */
+
+/* Container for pagination *above* the table */
+.top-pagination-container {
+    margin-bottom: 1.5rem; /* Space between top pagination and table card */
+}
+
+/* Container for pagination *below* the table */
+.bottom-pagination-container {
+    /* Matches table-card padding/styling on the bottom */
+    padding: 1rem 1.5rem; 
+    background-color: white;
+    border-radius: 0 0 16px 16px;
+    border-top: 1px solid #e2e8f0;
+    margin-top: -1px; /* Overlap with the table-card border to look seamless */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Match table-card shadow */
+}
+
+.pagination-nav-container {
+    /* Ensures full width within its parent container */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pagination-nav-wrapper {
+    display: flex;
+    /* Aligns page numbers to the left and results/dropdown to the right */
+    justify-content: space-between; 
+    align-items: center;
+    flex-wrap: wrap; /* Allows wrapping on smaller screens */
+    gap: 1rem;
+}
+
+.pagination-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #334155; 
+    transition: all 0.2s;
+    min-width: 40px; 
+    text-align: center;
+    font-family: 'Inter', sans-serif; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-btn.arrow-btn {
+    min-width: 38px;
+    padding: 8px; /* Square arrow buttons */
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f1f5f9; 
+    border-color: #cbd5e1;
+    color: #0f172a; 
+    transform: translateY(-1px); 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.pagination-btn.active {
+    background-color: #3b82f6; /* Use a strong blue for active state */
+    border-color: #3b82f6;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.pagination-btn.active:hover {
+    background-color: #2563eb; 
+    border-color: #2563eb;
+    transform: none;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #f8fafc;
+    color: #94a3b8;
+    transform: none;
+    box-shadow: none;
+}
+
+.pagination-ellipsis {
+    color: #94a3b8;
+    padding: 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.pagination-results-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.results-text {
+    font-size: 0.9rem;
+    color: #4a5568;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.items-per-page-dropdown {
+    position: relative;
+    display: inline-block;
+    background: #edf2f7;
+    border-radius: 8px;
+    padding: 6px 10px; /* Base padding for the container */
+}
+
+.items-per-page-select {
+    appearance: none; /* Hide default dropdown arrow */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: transparent;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2d3748;
+    padding-right: 20px; /* Space for the custom icon */
+    cursor: pointer;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 2; /* Make the select clickable */
+    position: relative;
+}
+
+.items-per-page-dropdown .dropdown-icon {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #4a5568;
+    pointer-events: none; /* Icon should not block clicks on select */
+    z-index: 1;
+}
+
+/* Print Styles */
+@media print {
+    .booking-page {
+        background: white;
+    }
+    
+    .search-filter-card,
+    .action-buttons-group,
+    .modal-overlay,
+    .top-pagination-container, /* Hide top pagination */
+    .bottom-pagination-container /* Hide bottom pagination */
+    {
+        display: none;
+    }
+    
+    .booking-container {
+        margin-left: 0;
+        padding: 0;
+    }
+    
+    .stat-card:hover {
+        transform: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .bookings-table {
+        page-break-inside: auto;
+    }
+    
+    .bookings-table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+}
+
+
 /* --- Responsive Media Queries --- */
 
 /* Large Desktop (1200px and above) */
@@ -803,12 +985,20 @@ img {
         /* Optimal layout for wide screens */
         grid-template-columns: repeat(5, 1fr);
     }
+
+    .booking-page{ 
+        margin-left: 0px;
+    }
 }
 
 /* Desktop to Tablet (1024px and below) */
 @media (max-width: 1024px) {
     .booking-header h1 {
         font-size: 2rem;
+    }
+
+    .booking-page{ 
+        margin-left: 100px;
     }
     
     .booking-header p {
@@ -833,14 +1023,34 @@ img {
 
 /* Tablet (768px and below) */
 @media (max-width: 768px) {
+
+.table-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    /* Good practice: overflow: hidden prevents external shadow bleeding */
+    overflow: hidden; 
+    animation: slideUp 0.7s ease-out;
+}
+
     .booking-container {
         padding: 1rem;
     }
     
+    .booking-page{ 
+        margin-left: 100px;
+    }
+
     .booking-header {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.50rem;
+        margin-top: -100px;
+        font-size: 1.375rem;
     }
     
+    .booking-page{ 
+        margin-left: 100px;
+    }
+
     .booking-header h1 {
         font-size: 1.75rem;
     }
@@ -849,9 +1059,10 @@ img {
         font-size: 0.95rem;
     }
     
-    .stats-grid {
-        /* FIX: Adjusted minmax for smaller tablet view */
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    /* Mapped from .psam-grid */
+    .stats-grid { 
+        /* Enforce stacking on 768px as requested, overriding auto-fit */
+        grid-template-columns: 1fr; 
         gap: 1rem;
     }
     
@@ -905,7 +1116,8 @@ img {
         padding: 1rem;
         font-size: 0.85rem;
     }
-    
+
+    /* Mapped from .psam-action-grid */
     .action-buttons-group {
         flex-direction: column;
         gap: 6px;
@@ -917,42 +1129,92 @@ img {
         padding: 8px;
     }
     
+    /* --- Pagination Responsive Fixes (768px) --- */
+    .top-pagination-container {
+        padding: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .bottom-pagination-container {
+        padding: 1rem;
+    }
+
+    .pagination-nav-wrapper {
+        flex-direction: column;
+        align-items: center;
+        /* Reverses order so page numbers are on top, results/dropdown is below */
+        flex-direction: column-reverse; 
+    }
+
+    .pagination-list {
+        /* Center list items when stacked */
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .pagination-results-info {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%; /* Ensure results/dropdown section takes full width for stacking */
+    }
+    
+    .results-text {
+        width: 100%; /* Ensure text centers/aligns properly when stacked */
+        text-align: center;
+    }
+
+    .items-per-page-dropdown {
+        width: 100%; /* Make dropdown full width when stacked */
+        justify-content: space-between;
+        display: flex;
+        max-width: 300px; /* Optional: limit max width of dropdown on larger tablets */
+    }
+    
+    /* === START: User-Requested Responsive Modal Styles (768px) === */
+
+    /* Mapped from .psam-modal */
     .modal-content {
         max-height: 95vh;
+        border-radius: 16px; 
         width: calc(100% - 32px);
         margin: 16px;
     }
     
-    .modal-header {
+    /* Mapped from .psam-header, .psam-body, .psam-footer */
+    .modal-header, .modal-body, .modal-footer {
         padding: 20px;
-    }
-    
-    .modal-header h2 {
-        font-size: 1.25rem;
-    }
-    
-    .modal-body {
-        padding: 20px;
-    }
-    
-    .detail-section {
-        margin-bottom: 20px;
-    }
-    
-    .detail-section h3 {
-        font-size: 1rem;
-    }
-    
-    .modal-footer {
-        padding: 20px;
-        flex-direction: column;
     }
 
-    .modal-btn {
-        width: 100%;
-        justify-content: center;
+    /* Mapped from .psam-title */
+    .modal-header h2 {
+        font-size: 1.125rem; /* 18px */
+    }
+
+    /* Mapped from .psam-header-content (Stacking the header title/content) */
+    .modal-header {
+        /* Overrides desktop's `justify-content: space-between` to ensure title/close are handled */
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+        position: relative; /* Needed for positioning modal-close */
     }
     
+    /* Reposition the close button to the corner, separate from the title stack */
+    .modal-close { 
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    
+    /* Mapped from .psam-status-badge */
+    .status-badge { 
+        min-width: auto;
+        width: 100%;
+        justify-content: center;
+        margin-top: 5px; /* Add small margin to separate from other elements if needed */
+    }
+    
+    /* Mapped from .psam-form-row / .psam-grid (Detail Rows in Modal) */
     .detail-row {
         flex-direction: column;
         padding: 10px 0;
@@ -966,15 +1228,61 @@ img {
         min-width: 100%;
     }
     
+    /* Mapped from .psam-service-foot (Modal Footer) */
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    /* END: User-Requested Responsive Modal Styles (768px) */
+    
+    .detail-section {
+        margin-bottom: 20px;
+    }
+    
+    .detail-section h3 {
+        font-size: 1rem;
+    }
+    
+    .modal-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
     .detail-value {
         margin-top: 4px;
         /* Ensure value breaks lines on small mobile */
         word-break: break-word; 
     }
+    
+    /* Mobile Layout Fixes */
+    .booking-container, 
+    .booking-container.booking-container--collapsed {
+        /* !important is kept as it overrides the desktop margin-left */
+        margin-left: 0 !important;
+        /* CRITICAL FIX: Use padding-top to clear the 90px fixed mobile header (from sidebar.css)
+           plus the user's desired 2.5rem of top margin/spacing. */
+        padding-top: calc(90px + 2.5rem) !important;
+        /* Standardize the side and bottom padding for mobile */
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-bottom: 1rem;
+    }
 }
 
 /* Small Mobile (480px and below) */
 @media (max-width: 480px) {
+
+.table-card {
+    /* FIX: Ensure table card takes full width and isn't stuck at 250px */
+    min-width: 100%;
+    width: 100%; 
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden; 
+    animation: slideUp 0.7s ease-out;
+}
+
     .booking-container {
         /* This is overridden by the 768px query for padding-top, but kept for side/bottom */
         padding: 0.75rem;
@@ -982,6 +1290,7 @@ img {
     
     .booking-header {
         margin-bottom: 1.25rem;
+        margin-top: -100px;
     }
     
     .booking-header h1 {
@@ -992,14 +1301,14 @@ img {
         font-size: 0.875rem;
     }
     
+    /* Stacks stats cards */
     .stats-grid {
-        /* Stack cards vertically for small mobile */
         grid-template-columns: 1fr;
         gap: 0.875rem;
     }
     
     .stat-card {
-        padding: 1.25rem;
+        padding: 1rem;
     }
     
     .stat-info p {
@@ -1011,8 +1320,9 @@ img {
         height: 40px;
     }
     
+    /* Mapped from .psam-card */
     .search-filter-card {
-        padding: 0.875rem;
+        padding: 20px;
     }
     
     .search-input {
@@ -1048,14 +1358,58 @@ img {
         font-size: 0.8rem;
     }
     
+    /* --- Pagination Responsive Fixes (480px) --- */
+    .pagination-list {
+        /* Reduce gap on smallest screens */
+        gap: 4px;
+        /* Ensure pagination list itself wraps neatly */
+        justify-content: center;
+    }
+
+    .pagination-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    .pagination-btn.arrow-btn {
+        min-width: 32px;
+        padding: 6px;
+    }
+
+    .results-text,
+    .items-per-page-select {
+        font-size: 0.8rem;
+    }
+
+    .items-per-page-dropdown {
+        padding: 4px 8px;
+        /* Ensure dropdown takes full width below 480px if results text is on its own line */
+        width: 100%; 
+        max-width: 300px;
+    }
+    
+    /* === START: User-Requested Responsive Modal Styles (480px) === */
+
     .modal-content {
         width: calc(100% - 24px);
         margin: 12px;
         border-radius: 12px;
     }
+
+    /* Mapped from .psam-body (Override 768px rule) */
+    .modal-body {
+        padding: 16px;
+    }
+
+    /* Mapped from .psam-btn */
+    .modal-btn {
+        padding: 10px 16px;
+        font-size: 0.8125rem; /* 13px */
+    }
+    
+    /* END: User-Requested Responsive Modal Styles (480px) */
     
     .modal-header,
-    .modal-body,
     .modal-footer {
         padding: 16px;
     }
@@ -1077,11 +1431,6 @@ img {
     .detail-value {
         font-size: 0.875rem;
     }
-    
-    .modal-btn {
-        padding: 10px 20px;
-        font-size: 0.875rem;
-    }
 }
 
 /* Extra Small Mobile (360px and below) */
@@ -1089,11 +1438,13 @@ img {
     .booking-container {
         padding: 0.5rem;
     }
-    
-    .booking-header h1 {
+
+    .booking-header {
+        margin-bottom: 1.25rem;
+        margin-top: -100px;
         font-size: 1.375rem;
     }
-    
+
     .stat-card {
         padding: 1rem;
     }
@@ -1108,6 +1459,32 @@ img {
     
     .bookings-table {
         min-width: 750px;
+    }
+    
+    .bookings-table th,
+    .bookings-table td {
+        /* Slightly reduce padding/font-size for the smallest screen for max fit */
+        padding: 0.75rem; 
+        font-size: 0.75rem;
+    }
+
+    /* Further stack results/dropdown on smallest screen */
+    .pagination-results-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        width: 100%;
+    }
+
+    .items-per-page-dropdown {
+        width: 100%;
+        justify-content: space-between;
+        display: flex;
+    }
+    
+    .items-per-page-select {
+        /* Give select full control over width */
+        flex: 1;
     }
 }
 
@@ -1132,125 +1509,4 @@ img {
     .detail-section {
         margin-bottom: 16px;
     }
-}
-
-/* Print Styles */
-@media print {
-    .booking-page {
-        background: white;
-    }
-    
-    .search-filter-card,
-    .action-buttons-group,
-    .modal-overlay {
-        display: none;
-    }
-    
-    .booking-container {
-        margin-left: 0;
-        padding: 0;
-    }
-    
-    .stat-card:hover {
-        transform: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    }
-    
-    .bookings-table {
-        page-break-inside: auto;
-    }
-    
-    .bookings-table tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
-    }
-
-}
-
-/* --- PAGINATION STYLES (New) --- */
-.pagination-nav {
-    /* Aligns with the table container's style */
-    margin-top: 0;
-    padding: 16px 24px;
-    background-color: white;
-    border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
-    position: sticky; 
-    bottom: 0;
-    z-index: 5;
-    
-    display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .visa-table-container */
-    border-radius: 0 0 12px 12px; 
-}
-
-.pagination-list {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
-    align-items: center;
-}
-
-.pagination-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
-    transition: all 0.2s;
-    min-width: 40px; 
-    text-align: center;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    display: flex; /* For icon alignment */
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-}
-
-.pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
-    border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
-}
-
-.pagination-btn.active {
-    background-color: #0f172a; /* Primary dark color background for active page */
-    border-color: #0f172a;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
-}
-
-.pagination-btn.active:hover {
-    background-color: #1e293b; /* Slightly darker primary on hover */
-    border-color: #1e293b;
-    transform: translateY(-1px);
-}
-
-.pagination-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background-color: #f8fafc;
-}
-
-/* For previous/next buttons */
-.pagination-btn:first-child,
-.pagination-btn:last-child {
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.pagination-ellipsis {
-    color: #94a3b8;
-    padding: 0 4px;
-    font-size: 13px;
-    font-weight: 600;
 }

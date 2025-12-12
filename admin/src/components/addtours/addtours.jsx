@@ -3,6 +3,13 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 import "./addtours.css";
 
+// --- GLOBAL CONSTANT FOR ALLOWED FILE TYPES ---
+const ALLOWED_TYPES = [
+    'image/jpeg', 
+    'image/png', 
+    'image/webp'
+];
+
 const AddTour = () => {
   // --- SIDEBAR LOGIC START ---
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -47,13 +54,65 @@ const AddTour = () => {
   };
 
   const handleSupplierRateChange = (value) => {
-    setSupplierRate(value);
-    calculateTotalPrice(value, markupValue, markupType);
+    // 1. Remove non-numeric/non-decimal characters (prevents signs/letters)
+    let cleanedValue = value.replace(/[^\d.]/g, ''); 
+    
+    // --- NEW FIX: Remove leading zeros (e.g., '0991' becomes '991') ---
+    cleanedValue = cleanedValue.replace(/^0+(?=\d)/, '');
+
+    // 2. Handle multiple decimal points (keep only the first one)
+    const parts = cleanedValue.split('.');
+    if (parts.length > 2) {
+        cleanedValue = parts[0] + '.' + parts.slice(1).join('');
+    }
+
+    // 3. Ensure integer part is max 8 digits
+    let [integerPart, decimalPart] = cleanedValue.split('.');
+    if (integerPart && integerPart.length > 6) {
+        integerPart = integerPart.substring(0, 6);
+        cleanedValue = integerPart + (decimalPart ? '.' + decimalPart : '');
+    }
+    
+    // 4. Update state only if the value is different
+    if (cleanedValue !== supplierRate) {
+      setSupplierRate(cleanedValue);
+      calculateTotalPrice(cleanedValue, markupValue, markupType);
+    }
   };
 
   const handleMarkupChange = (value) => {
-    setMarkupValue(value);
-    calculateTotalPrice(supplierRate, value, markupType);
+    // 1. Remove non-numeric/non-decimal characters (prevents signs/letters)
+    let cleanedValue = value.replace(/[^\d.]/g, ''); 
+
+    // --- NEW FIX: Remove leading zeros (e.g., '012' becomes '12') ---
+    cleanedValue = cleanedValue.replace(/^0+(?=\d)/, '');
+
+    // 2. Handle multiple decimal points (keep only the first one)
+    const parts = cleanedValue.split('.');
+    if (parts.length > 2) {
+        cleanedValue = parts[0] + '.' + parts.slice(1).join('');
+    }
+
+    // 3. Ensure integer part is max 6 digits
+    let [integerPart, decimalPart] = cleanedValue.split('.');
+    if (integerPart && integerPart.length > 6) {
+        integerPart = integerPart.substring(0, 6);
+        cleanedValue = integerPart + (decimalPart ? '.' + decimalPart : '');
+    }
+    
+    // 4. Cap at 100 if % MODE
+    if (markupType === "percentage") {
+        const numericValue = parseFloat(cleanedValue);
+        if (numericValue > 100) {
+            cleanedValue = "100";
+        }
+    }
+
+    // 5. Update state only if the value is different
+    if (cleanedValue !== markupValue) {
+        setMarkupValue(cleanedValue);
+        calculateTotalPrice(supplierRate, cleanedValue, markupType);
+    }
   };
 
   const toggleMarkupType = () => {
@@ -71,6 +130,16 @@ const AddTour = () => {
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (selected) {
+      // Validation check: Check if the file MIME type is one of the allowed types
+      if (!ALLOWED_TYPES.includes(selected.type)) {
+        alert("❌ Invalid file type. Please upload only .jpg, .jpeg, .png, or .webp files.");
+        // Reset the input field so the user can try again
+        e.target.value = null; 
+        setFile(null);
+        setPreviewUrl(null);
+        return;
+      }
+      
       setFile(selected);
       setPreviewUrl(URL.createObjectURL(selected));
     }
@@ -82,9 +151,18 @@ const AddTour = () => {
 
     if (items) {
       for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf("image") !== -1) {
+        const itemType = items[i].type;
+
+        if (itemType.indexOf("image") !== -1) {
           const blob = items[i].getAsFile();
           if (blob) {
+            // New Validation check for pasted image
+            if (!ALLOWED_TYPES.includes(blob.type)) {
+                alert("❌ Invalid file type detected. Please paste only .jpg, .jpeg, .png, or .webp images.");
+                setIsPasteActive(false);
+                return; // Stop processing invalid paste
+            }
+
             setFile(blob);
             setPreviewUrl(URL.createObjectURL(blob));
             setIsPasteActive(false);
@@ -125,6 +203,29 @@ const AddTour = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Final check for file type before submission
+    if (file && !ALLOWED_TYPES.includes(file.type)) {
+        // --- UPDATED POP-UP NOTIFICATION (ENGLISH) ---
+        alert("❌ Please upload the correct file type (.jpg, .jpeg, .png, .webp) before publishing.");
+        return;
+    }
+
+    // --- NEW DURATION VALIDATION START ---
+    const trimmedDuration = duration.trim();
+    if (!trimmedDuration) {
+        alert("❌ Duration is a required field. Please enter the tour duration.");
+        return;
+    }
+
+    // Optional: Basic format check for consistency
+    // Checks if the string contains characters other than letters, numbers, spaces, '/', and '-'
+    const durationFormatRegex = /[^a-zA-Z0-9\s\/\-]/;
+    if (durationFormatRegex.test(trimmedDuration)) {
+        // A warning/suggestion, but still allows submission for flexibility
+        console.warn("Duration format contains unusual characters. Recommended format: '1 Day / 8 Hours'");
+    }
+    // --- NEW DURATION VALIDATION END ---
+
     const processedInclusions = inclusions.filter(
       (item) => item.trim().length > 0
     );
@@ -146,7 +247,7 @@ const AddTour = () => {
     formData.append("destination", destination);
     formData.append("sellerPrice", supplierRateNum.toString());
     formData.append("markup", markupInPeso.toString());
-    formData.append("duration", duration);
+    formData.append("duration", trimmedDuration); // Use the trimmed value
     formData.append("category", category); // Local or International
     
     formData.append("inclusions", JSON.stringify(processedInclusions));
@@ -222,7 +323,8 @@ const AddTour = () => {
                             <input
                               type="file"
                               onChange={handleFileChange}
-                              accept="image/*"
+                              // --- UPDATED ACCEPT ATTRIBUTE ---
+                              accept=".jpg,.jpeg,.png,.webp" 
                               hidden
                             />
                             Change
@@ -246,7 +348,8 @@ const AddTour = () => {
                         <input
                           type="file"
                           onChange={handleFileChange}
-                          accept="image/*"
+                          // --- UPDATED ACCEPT ATTRIBUTE ---
+                          accept=".jpg,.jpeg,.png,.webp"
                           hidden
                           required
                         />
@@ -288,7 +391,7 @@ const AddTour = () => {
                         placeholder="e.g. 1 Day / 8 Hours"
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
-                        required
+                        required // Required is now enforced client-side via HTML and again in handleSubmit
                       />
                     </div>
                     <div className="pkg-field">
@@ -311,7 +414,8 @@ const AddTour = () => {
                       <div className="pkg-field">
                         <label>Supplier Rate (PHP)</label>
                         <input
-                          type="number"
+                          type="text" 
+                          inputMode="decimal" 
                           placeholder="0.00"
                           value={supplierRate}
                           onChange={(e) =>
@@ -319,7 +423,8 @@ const AddTour = () => {
                           }
                           required
                           step="0.01"
-                          min="0"
+                          min="0" 
+                          maxLength="11" // 8 digits + 1 for '.' + 2 for decimal
                         />
                       </div>
                       <div className="pkg-field">
@@ -339,7 +444,8 @@ const AddTour = () => {
                         </label>
                         <div className="pkg-field-with-toggle">
                           <input
-                            type="number"
+                            type="text" 
+                            inputMode="decimal" 
                             placeholder={
                               markupType === "percentage" ? "Enter %" : "Enter peso amount"
                             }
@@ -347,7 +453,8 @@ const AddTour = () => {
                             onChange={(e) => handleMarkupChange(e.target.value)}
                             required
                             step="0.01"
-                            min="0"
+                            min="0" 
+                            maxLength="9" // 6 digits + 1 for '.' + 2 for decimal
                           />
                           <button
                             type="button"

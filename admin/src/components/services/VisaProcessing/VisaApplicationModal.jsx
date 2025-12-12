@@ -25,29 +25,208 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
   const handleNextStep = () => setStep(step + 1);
   const handlePrevStep = () => setStep(step - 1);
 
+  // --- Retained Input Change Handler with Validations ---
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    // --- 1. LENGTH OF STAY VALIDATION LOGIC ---
+    if (name === "lengthOfStay") {
+        if (value === '') {
+             setFormData({ ...formData, [name]: value });
+             return;
+        }
+        
+        // Strict check for non-negative whole numbers only
+        if (!/^\d+$/.test(value)) {
+            alert("Invalid input for Length of Stay. Only non-negative whole numbers (days) are allowed.");
+            return;
+        }
+
+        // Maximum 2 digits check (99 days max)
+        if (value.length > 2) {
+             alert("Length of Stay cannot exceed 2 digits (99 days max).");
+             return;
+        }
+    }
+
+    // --- 2. TRAVEL DATE VALIDATION LOGIC ---
+    if (name === "travelDate") {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); 
+        
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const selectedDate = new Date(value);
+        selectedDate.setHours(0, 0, 0, 0); 
+
+        if (selectedDate < tomorrow) {
+            alert("Travel Date must be tomorrow or later. Past dates and today's date are not allowed.");
+            
+            setFormData({ ...formData, [name]: "" }); 
+            e.target.value = "";
+            return;
+        }
+    }
+
+    // --- 3. NAME INPUTS VALIDATION ---
+    if (name === "givenName" || name === "lastName" || name === "otherNames") {
+        if (/\d/.test(value)) {
+            alert(`Invalid input for ${name}. Numbers are not allowed in name fields.`);
+            return;
+        }
+    }
+
+    // --- 4. CONTACT NUMBER VALIDATION ---
+    if (name === "contactNumber") {
+        if (value.length > 15) {
+            alert("Contact Number cannot exceed 15 characters.");
+            return; 
+        }
+
+        const validPattern = /^\+?[0-9]*$/;
+        if (!validPattern.test(value)) {
+            alert("Invalid characters in Contact Number. Only numbers and a single '+' sign (at the start) are allowed.");
+            return;
+        }
+    }
+    
+    // --- 5. EMAIL VALIDATION LOGIC (Basic Input Check) ---
+    if (name === "email") {
+        // Haharangan agad kung may space na i-input
+        if (/\s/.test(value)) {
+            alert("Email cannot contain spaces. Invalid input not accepted.");
+            return; 
+        }
+    }
+    // --- END EMAIL VALIDATION LOGIC ---
+
+    // Update state if validation passes or for other fields
     setFormData({ ...formData, [name]: value });
   };
+  // --- End handleInputChange ---
 
+  // --- Retained File Change Handler with Specific Validation for 'photo' ---
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
+    
+    // Default allowed extensions for documents (pdf, docx, png, jpg, jpeg)
+    const documentExtensions = ['.pdf', '.docx', '.png', '.jpg', '.jpeg'];
+    // Specific allowed extensions for Photo (jpg, jpeg, webp, png)
+    const photoExtensions = ['.jpg', '.jpeg', '.webp', '.png'];
+
+    let allowedExtensions = documentExtensions;
+    let extensionMessage = "PDF, DOCX, PNG, JPG, and JPEG files";
+
+    // Override allowed list if the field is 'photo'
+    if (fieldName === 'photo') {
+        allowedExtensions = photoExtensions;
+        extensionMessage = "JPG, JPEG, WEBP, and PNG files";
+    }
+
     if (file) {
-        setFormData(prev => ({
-            ...prev,
-            files: {
-                ...prev.files,
-                [fieldName]: file 
+      const fileName = file.name;
+      const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+
+      if (!allowedExtensions.includes(fileExtension)) {
+        alert(`Invalid file type for ${fieldName}. Only ${extensionMessage} are allowed.`);
+        
+        e.target.value = ''; 
+        
+        return; 
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        files: {
+          ...prev.files,
+          [fieldName]: file 
+        }
+      }));
+    } else {
+        setFormData(prev => {
+            const newFiles = { ...prev.files };
+            delete newFiles[fieldName];
+            return {
+                ...prev,
+                files: newFiles
             }
-        }));
+        });
     }
   };
+  // --- End handleFileChange ---
 
+  // --- MODIFIED FUNCTION: submitApplication with Financial Requirements as Mandatory ---
   const submitApplication = async () => {
-    if (!formData.email || !formData.givenName || !formData.lastName || !formData.visaType) {
-        alert("Please fill in Name, Email, and Visa Type fields.");
+    
+    // 1. Define all strictly mandatory text fields
+    const requiredTextFields = [
+        { field: 'visaType', label: 'Visa Type' },
+        { field: 'travelDate', label: 'Travel Date' },
+        { field: 'lengthOfStay', label: 'Length of Stay (Days)' },
+        { field: 'givenName', label: 'Given Name' },
+        { field: 'lastName', label: 'Last Name' },
+        { field: 'email', label: 'Email Address' },
+        { field: 'contactNumber', label: 'Contact Number' },
+    ];
+
+    // Treating ALL Primary Requirements and FINANCIAL REQUIREMENTS as mandatory
+    const requiredFileFields = [
+        // Primary Requirements
+        { field: 'passport', label: 'Passport' },
+        { field: 'photo', label: 'Photo' },
+        { field: 'appForm', label: 'Accomplished Application Form' },
+        { field: 'psaBirth', label: 'Original PSA Birth Certificate' },
+        { field: 'psaMarriage', label: 'Original PSA Marriage Certificate (if Married)' }, 
+        { field: 'schedule', label: 'Daily Schedule in Japan' },
+        { field: 'baptismal', label: 'Baptismal Certificate/Form 137 (for Late Registration)' },
+        // Financial Requirements (NEW MANDATORY FIELDS)
+        { field: 'bankCert', label: 'Original Bank Certificate' },
+        { field: 'itr', label: 'ITR (Income Tax Return)' },
+        { field: 'noItrLetter', label: 'Letter (if there is no ITR)' },
+        { field: 'bankStatement', label: 'Bank Statement (if there is no ITR)' },
+    ];
+
+    // 2. Check all mandatory text fields for emptiness
+    for (const req of requiredTextFields) {
+        if (!formData[req.field]) {
+            alert(`MANDATORY: Please fill out the required field: ${req.label}.`);
+            return;
+        }
+    }
+    
+    // 3. Email Format Final Check (Strict Validation)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+        alert("Validation Error: Please enter a valid email address (e.g., example@domain.com).");
         return;
     }
+
+    // 4. Check all mandatory files
+    for (const req of requiredFileFields) {
+        if (!formData.files[req.field]) {
+            alert(`MANDATORY: Please upload the required document in the Primary or Financial Requirements section: ${req.label}.`);
+            return;
+        }
+    }
+    
+    // 5. Run final data integrity checks (Length, Contact Number Minimum)
+    
+    // Length of Stay Final Check
+    const lengthOfStayValue = parseInt(formData.lengthOfStay, 10);
+    if (lengthOfStayValue <= 0 || lengthOfStayValue > 99) {
+         alert("Validation Error: Length of Stay must be a positive whole number, 1-99 days.");
+         return;
+    }
+    
+    // Contact Number Minimum Length Check (7 digits minimum)
+    const cleanNumber = formData.contactNumber.replace(/[^0-9]/g, ''); 
+    if (cleanNumber.length < 7) {
+        alert("Validation Error: Contact Number must be a minimum of 7 digits long.");
+        return;
+    }
+    // --- END FINAL VALIDATION CHECKS ---
+
 
     setIsLoading(true);
     try {
@@ -97,6 +276,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
         setIsLoading(false);
     }
   };
+  // --- END MODIFIED FUNCTION: submitApplication ---
 
   const resetAndClose = () => {
     setStep(1);
@@ -174,7 +354,15 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                     </div>
                     <div className="form-group">
                         <label>Length of Stay (Days) <span className="req">*</span></label>
-                        <input type="number" name="lengthOfStay" value={formData.lengthOfStay} onChange={handleInputChange} />
+                        <input 
+                            type="number" 
+                            name="lengthOfStay" 
+                            value={formData.lengthOfStay} 
+                            onChange={handleInputChange} 
+                            min="1"
+                            max="99" 
+                            step="1"
+                        />
                     </div>
                 </div>
               </div>
@@ -222,8 +410,14 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                         <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Required" />
                     </div>
                     <div className="form-group">
-                        <label>Contact Number</label>
-                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} />
+                        <label>Contact Number <span className="req">*</span></label>
+                        <input 
+                            type="text" 
+                            name="contactNumber" 
+                            value={formData.contactNumber} 
+                            onChange={handleInputChange} 
+                            placeholder="e.g., +639xxxxxxxxx"
+                        />
                     </div>
                     <div className="form-group form-full">
                         <label>Other Names (Optional)</label>
@@ -239,27 +433,28 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                   <h4 className="section-title">Primary Requirements</h4>
                 </div>
                 <div className="form-grid">
-                    <FileUploadField label="Passport" fieldName="passport" currentFile={formData.files['passport']} onChange={handleFileChange} />
-                    <FileUploadField label="Photo" fieldName="photo" currentFile={formData.files['photo']} onChange={handleFileChange} />
-                    <FileUploadField label="Accomplished Application Form" fieldName="appForm" currentFile={formData.files['appForm']} onChange={handleFileChange} />
-                    <FileUploadField label="Original PSA Birth Certificate" fieldName="psaBirth" currentFile={formData.files['psaBirth']} onChange={handleFileChange} />
-                    <FileUploadField label="Original PSA Marriage Certificate (if Married)" fieldName="psaMarriage" currentFile={formData.files['psaMarriage']} onChange={handleFileChange} />
-                    <FileUploadField label="Daily Schedule in Japan" fieldName="schedule" currentFile={formData.files['schedule']} onChange={handleFileChange} />
-                    <FileUploadField label="Baptismal Certificate/Form 137 (for Late Registration)" fieldName="baptismal" currentFile={formData.files['baptismal']} onChange={handleFileChange} />
+                    {/* All files here are now mandatory */}
+                    <FileUploadField label="Passport *" fieldName="passport" currentFile={formData.files['passport']} onChange={handleFileChange} />
+                    <FileUploadField label="Photo *" fieldName="photo" currentFile={formData.files['photo']} onChange={handleFileChange} /> 
+                    <FileUploadField label="Accomplished Application Form *" fieldName="appForm" currentFile={formData.files['appForm']} onChange={handleFileChange} />
+                    <FileUploadField label="Original PSA Birth Certificate *" fieldName="psaBirth" currentFile={formData.files['psaBirth']} onChange={handleFileChange} />
+                    <FileUploadField label="Original PSA Marriage Certificate (if Married) *" fieldName="psaMarriage" currentFile={formData.files['psaMarriage']} onChange={handleFileChange} />
+                    <FileUploadField label="Daily Schedule in Japan *" fieldName="schedule" currentFile={formData.files['schedule']} onChange={handleFileChange} />
+                    <FileUploadField label="Baptismal Certificate/Form 137 (for Late Registration) *" fieldName="baptismal" currentFile={formData.files['baptismal']} onChange={handleFileChange} />
                 </div>
               </div>
 
-               {/* --- FINANCIAL REQUIREMENTS --- */}
+               {/* --- FINANCIAL REQUIREMENTS (ALL FILES ARE NOW MANDATORY) --- */}
                <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><DollarSign size={20} color="#f97316" /></div>
                   <h4 className="section-title">Financial Requirements</h4>
                 </div>
                 <div className="form-grid">
-                    <FileUploadField label="Original Bank Certificate" fieldName="bankCert" currentFile={formData.files['bankCert']} onChange={handleFileChange} />
-                    <FileUploadField label="ITR (Income Tax Return)" fieldName="itr" currentFile={formData.files['itr']} onChange={handleFileChange} />
-                    <FileUploadField label="Letter (if there is no ITR)" fieldName="noItrLetter" currentFile={formData.files['noItrLetter']} onChange={handleFileChange} />
-                    <FileUploadField label="Bank Statement (if there is no ITR)" fieldName="bankStatement" currentFile={formData.files['bankStatement']} onChange={handleFileChange} />
+                    <FileUploadField label="Original Bank Certificate *" fieldName="bankCert" currentFile={formData.files['bankCert']} onChange={handleFileChange} />
+                    <FileUploadField label="ITR (Income Tax Return) *" fieldName="itr" currentFile={formData.files['itr']} onChange={handleFileChange} />
+                    <FileUploadField label="Letter (if there is no ITR) *" fieldName="noItrLetter" currentFile={formData.files['noItrLetter']} onChange={handleFileChange} />
+                    <FileUploadField label="Bank Statement (if there is no ITR) *" fieldName="bankStatement" currentFile={formData.files['bankStatement']} onChange={handleFileChange} />
                 </div>
               </div>
 

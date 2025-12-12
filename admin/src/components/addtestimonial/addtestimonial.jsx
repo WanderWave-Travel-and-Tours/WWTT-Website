@@ -17,20 +17,50 @@ const AddTestimonial = () => {
     });
     const [pictureFile, setPictureFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [uploadError, setUploadError] = useState(''); // New state for upload error
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setTestimonialDetails(prev => ({ ...prev, [name]: value }));
     };
 
+    // --- UPDATED: Handle File Change with Validation ---
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setPictureFile(file);
-        if (file) setPreviewUrl(URL.createObjectURL(file));
+        setUploadError(''); // Clear previous error
+
+        if (!file) {
+            setPictureFile(null);
+            setPreviewUrl(null);
+            return;
+        }
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        
+        if (allowedTypes.includes(file.type)) {
+            // File type is supported
+            setPictureFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        } else {
+            // File type is NOT supported - show error notification and reject file
+            setPictureFile(null);
+            setPreviewUrl(null);
+            setUploadError('Unsupported file type. Only JPG, PNG, and WebP are allowed.');
+            // Clear the file input for re-selection
+            e.target.value = null; 
+        }
     };
+    // --- END UPDATED: Handle File Change with Validation ---
 
     const handleSubmit = async (e) => { 
         e.preventDefault();
+        
+        // Prevent submission if a rejected file is still causing an error
+        if (uploadError) {
+             alert(uploadError);
+             return;
+        }
+
         const formData = new FormData();
 
         formData.append('customerName', testimonialDetails.name); 
@@ -42,6 +72,9 @@ const AddTestimonial = () => {
         }
 
         try {
+            // Ensure the correct Content-Type header is NOT set manually.
+            // When using FormData, the browser sets the correct 'multipart/form-data' header 
+            // including the boundary automatically.
             const response = await fetch('http://localhost:5000/api/testimonials', {
                     method: 'POST',
                 body: formData, 
@@ -51,12 +84,15 @@ const AddTestimonial = () => {
                 const result = await response.json();
                 alert(`Testimonial from ${testimonialDetails.name} added successfully!`);
                 
+                // Reset all states
                 setTestimonialDetails({
                     name: '',
                     feedback: '',
                     source: '',
                 });
                 setPictureFile(null);
+                setPreviewUrl(null);
+                setUploadError('');
                 e.target.reset();
             } else {
                 console.error("Failed to submit");
@@ -87,8 +123,14 @@ const AddTestimonial = () => {
                             <div className="testi-left">
                                 <section className="testi-section">
                                     <h2 className="testi-section-title">CUSTOMER PHOTO</h2>
+                                    {/* Added accept="image/jpeg,image/png,image/webp" as a pre-filter */}
                                     <label className="testi-upload">
-                                        <input type="file" accept="image/*" onChange={handleFileChange} hidden />
+                                        <input 
+                                            type="file" 
+                                            accept="image/jpeg,image/png,image/webp" // Client-side filter
+                                            onChange={handleFileChange} 
+                                            hidden 
+                                        />
                                         {previewUrl ? (
                                             <div className="testi-upload-preview">
                                                 <img src={previewUrl} alt="Preview" />
@@ -103,10 +145,19 @@ const AddTestimonial = () => {
                                                     </svg>
                                                 </div>
                                                 <p>Click to upload photo</p>
-                                                <span>JPG, PNG • Max 2MB</span>
+                                                {/* Updated file type message */}
+                                                <span>JPG, PNG, WebP • Max 2MB</span> 
                                             </div>
                                         )}
                                     </label>
+                                    
+                                    {/* Display the upload error notification */}
+                                    {uploadError && (
+                                        <div style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>
+                                            {uploadError}
+                                        </div>
+                                    )}
+
                                 </section>
 
                                 <section className="testi-section">

@@ -9,6 +9,7 @@
     margin-left: 280px;
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Added transition for smooth movement */
 }
 
 .pkg-main *, 
@@ -387,12 +388,20 @@
 .pkg-btn--cancel { background: #fff; border: 1px solid #e2e8f0; color: #64748b; }
 .pkg-btn--submit { background: #FF8C42; color: #fff; }
 
+/* NEW RULE FOR COLLAPSED SIDEBAR */
+.pkg-main--collapsed {
+    margin-left: 70px;
+}
+/* END NEW RULE */
+
 @media (max-width: 1100px) {
     .pkg-grid { grid-template-columns: 1fr; }
     .pkg-right { position: static; order: -1; max-width: 400px; }
 }
 @media (max-width: 900px) {
     .pkg-main { margin-left: 70px; padding: 24px; }
+    /* Ensure the collapsed state still works below 900px, although the default will be 70px */
+    .pkg-main--collapsed { margin-left: 70px; } 
 }
 @media (max-width: 640px) {
     .pkg-main { padding: 16px; }

@@ -159,6 +159,7 @@ const Booking = () => {
       const data = await res.json();
 
       const formatted = data.map((b, index) => ({
+        // Original Booking ID logic (e.g., BK0001, BK0002)
         id: `BK${String(data.length - index).padStart(4, '0')}`,
         mongoId: b._id,
         customerName: b.fullName,
@@ -210,7 +211,7 @@ const Booking = () => {
 
 
   // --- Pagination Logic ---
-  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   
   const currentBookings = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -435,6 +436,8 @@ const Booking = () => {
               <table className="bookings-table">
                 <thead>
                   <tr>
+                    {/* NEW: Add the numbering column header */}
+                    <th>#</th> 
                     <th>Booking ID</th>
                     <th>Customer Details</th>
                     <th>Package</th>
@@ -447,8 +450,19 @@ const Booking = () => {
                 </thead>
                 <tbody>
                   {/* Use currentBookings for display */}
-                  {currentBookings.map((booking) => (
+                  {currentBookings.map((booking, index) => {
+                    // Calculate the sequential number for the current page
+                    const sequentialNumber = (currentPage - 1) * itemsPerPage + index + 1;
+                    
+                    return (
                     <tr key={booking.id}>
+                      {/* NEW: Sequential Number Column */}
+                      <td>
+                          <div className="booking-id" style={{ color: '#4a5568', fontWeight: 500 }}>
+                              {sequentialNumber}
+                          </div>
+                      </td>
+
                       {/* Booking ID Column */}
                       <td>
                         <div className="booking-id">{booking.id}</div>
@@ -565,7 +579,7 @@ const Booking = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

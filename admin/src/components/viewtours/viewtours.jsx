@@ -52,7 +52,7 @@ const ViewTours = () => {
             <div className="viewtours-page">
                 {/* Sidebar updated */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* main updated */}
+                {/* main updated with collapsed class */}
                 <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-loader">
                         <div className="viewtours-spinner"></div>
@@ -68,7 +68,7 @@ const ViewTours = () => {
             <div className="viewtours-page">
                 {/* Sidebar updated */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* main updated */}
+                {/* main updated with collapsed class */}
                 <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-error">
                         <span className="viewtours-error-icon">⚠️</span>
@@ -83,7 +83,7 @@ const ViewTours = () => {
         <div className="viewtours-page">
             {/* Sidebar updated */}
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            {/* main updated */}
+            {/* main updated with collapsed class */}
             <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                 <div className="viewtours-container">
                     <header className="viewtours-header">

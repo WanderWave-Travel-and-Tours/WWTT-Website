@@ -230,6 +230,7 @@ const ViewHotels = () => {
               <table className="hotel-table">
                 <thead>
                   <tr>
+                    <th style={{ width: '50px' }}>#</th> {/* Added column for numbering */}
                     <th>Hotel Name</th>
                     <th>Location</th>
                     <th>Max Capacity</th>
@@ -239,7 +240,7 @@ const ViewHotels = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredHotels.map((hotel) => {
+                  {filteredHotels.map((hotel, index) => { // Use index for numbering
                     const amenitiesCount = Object.values(hotel.amenities || {}).filter(Boolean).length;
                     
                     // Check if mainImage is a blob URL or base64
@@ -253,6 +254,7 @@ const ViewHotels = () => {
                     
                     return (
                       <tr key={hotel._id}>
+                        <td className="text-muted font-bold">{index + 1}</td> {/* Display index + 1 */}
                         <td>
                           <div className="hotel-cell-name">
                             {imageUrl ? (
