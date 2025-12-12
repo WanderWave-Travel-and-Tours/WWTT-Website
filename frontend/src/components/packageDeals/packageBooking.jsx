@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import BookingLeftColumn from './bookingLeftColumn';
 import BookingRightForm from './bookingRightForm';
-import './PackageBooking.css';
+import './packageBooking.css';
 
 function PackageBooking({ pkg, onGoBack }) {
   if (!pkg) return null;
