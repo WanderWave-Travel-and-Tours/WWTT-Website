@@ -1,5 +1,5 @@
 import React from 'react';
-import './Footer.css';
+import './footer.css';
 
 function Footer() {
   // Logo galing sa navbar mo
