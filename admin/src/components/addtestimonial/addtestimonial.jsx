@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './addTestimonial.css';
+import './addtestimonial.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddTestimonial = () => {
