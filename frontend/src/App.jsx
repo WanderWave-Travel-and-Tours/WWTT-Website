@@ -447,7 +447,7 @@ function MainLayout() {
 
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<FlightSearch />} />
+          <Route path="/flight" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
           <Route path="/other-services" element={<OtherServices setAuthPage={setAuthPage} />} />
           <Route path="/profile" element={<Profile />} />
