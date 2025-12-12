@@ -65,7 +65,7 @@ function MainLayout() {
 
   const pages = {
     home: { name: 'Home', path: '/' },
-    flights: { name: 'Flight Search', path: '/flights' },
+    flights: { name: 'Flight Search', path: 'https://wanderwaveph.com' },
     packages: { name: 'Package Deals', path: '/packages' },
     otherservices: { name: 'Other Services', path: '/other-services' },
   };
