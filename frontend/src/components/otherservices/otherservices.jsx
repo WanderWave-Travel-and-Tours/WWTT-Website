@@ -19,7 +19,7 @@ import {
   Phone,
   Mail,
 } from "lucide-react";
-import "./otherServices.css";
+import "./otherservices.css";
 import VisaTable from "./VisaTable";
 import PSATable from "./PsaTable";
 import CenomarTable from "./CenomarTable";
