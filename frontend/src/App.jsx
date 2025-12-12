@@ -64,7 +64,6 @@ function MainLayout() {
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
 
   const pages = {
-    home: { name: 'Home', path: 'https://wanderwave ph.com' },
     flights: { name: 'Flight Search', path: '/flights' },
     packages: { name: 'Package Deals', path: '/packages' },
     otherservices: { name: 'Other Services', path: '/other-services' },
@@ -261,16 +260,10 @@ function MainLayout() {
   const currentPage = getCurrentPage();
 
   const handleNavigation = (pageKey) => {
-  const path = pages[pageKey].path;
-  
-  if (path.startsWith('http')) {
-    window.location.href = path;  
-  } else {
+    const path = pages[pageKey].path;
     navigate(path);
-  }
-  
-  setIsMobileMenuOpen(false);
-};
+    setIsMobileMenuOpen(false);
+  };
 
   const isPaymentSuccessPage = location.pathname === '/payment/success';
   const isDashboardPage = location.pathname === '/dashboard';
