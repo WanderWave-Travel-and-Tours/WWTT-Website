@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../sidebar/sidebar';
-import './EditPackage.css';
+import './editpackage.css';
 
 const API_BASE_URL = 'http://localhost:5000/api/packages';
 

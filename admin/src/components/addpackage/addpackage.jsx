@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
-import "./AddPackage.css";
+import "./addpackage.css";
 
 const AddPackage = () => {
 

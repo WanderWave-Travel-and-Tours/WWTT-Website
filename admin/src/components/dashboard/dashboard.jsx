@@ -10,7 +10,7 @@ import TopPackages from "./components/TopPackages";
 import QuickActions from "./components/QuickActions";
 import FooterStats from "./components/FooterStats";
 import { exportToPDF } from "./utils/pdfExport";
-import "./Dashboard.css";
+import "./dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();

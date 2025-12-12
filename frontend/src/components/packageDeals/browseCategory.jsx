@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react'; 
-import './BrowseCategory.css';
+import './browseCategory.css';
 
 function BrowseCategory({ title, categories, selectedFilter, onFilterChange, onCategoryClick }) {
   const scrollerRef = useRef(null);

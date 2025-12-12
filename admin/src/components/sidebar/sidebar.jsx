@@ -35,7 +35,7 @@ import {
   Ship,       // Added for Ferry
   ShieldCheck // Added for Insurance
 } from 'lucide-react';
-import './Sidebar.css';
+import './sidebar.css';
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();

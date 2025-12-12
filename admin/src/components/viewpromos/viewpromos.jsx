@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
-import './ViewPromos.css';
+import './viewpromos.css';
 
 const ViewPromos = () => {
     // --- SIDEBAR TOGGLE LOGIC START ---
