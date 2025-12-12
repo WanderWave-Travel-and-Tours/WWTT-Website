@@ -108,7 +108,6 @@ const EditPackage = () => {
                     <form onSubmit={handleSubmit} className="edit-form">
                         <div className="edit-grid">
                             <div className="edit-left">
-                                {/* Current/New Image */}
                                 <section className="edit-section">
                                     <h2 className="edit-section-title">COVER IMAGE</h2>
                                     <label className="edit-upload">
@@ -121,7 +120,6 @@ const EditPackage = () => {
                                     <p className="edit-upload-hint">Click image to upload new photo (optional)</p>
                                 </section>
 
-                                {/* Basic Info */}
                                 <section className="edit-section">
                                     <h2 className="edit-section-title">BASIC INFORMATION</h2>
                                     <div className="edit-fields">
@@ -151,7 +149,6 @@ const EditPackage = () => {
                                     </div>
                                 </section>
 
-                                {/* Inclusions */}
                                 <section className="edit-section">
                                     <div className="edit-section-header">
                                         <h2 className="edit-section-title">INCLUSIONS</h2>
@@ -176,7 +173,6 @@ const EditPackage = () => {
                                     </button>
                                 </section>
 
-                                {/* Itinerary */}
                                 <section className="edit-section">
                                     <div className="edit-section-header">
                                         <h2 className="edit-section-title">ITINERARY</h2>
@@ -218,7 +214,6 @@ const EditPackage = () => {
                                 </section>
                             </div>
 
-                            {/* Preview */}
                             <aside className="edit-right">
                                 <div className="edit-preview">
                                     <span className="edit-preview-label">PREVIEW</span>

@@ -1,0 +1,341 @@
+/* DOCUMENTS SECTION - Modern Upload Interface */
+.ud-docs-wrapper { 
+    background: white;
+    border: 1px solid var(--ud-border-color);
+    border-radius: 24px;
+    padding: 40px; 
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    max-width: 1400px; 
+    margin-inline: auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.ud-docs-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #f97316 0%, #fbbf24 50%, #f97316 100%);
+}
+
+.ud-docs-header { 
+    text-align: center; 
+    margin-bottom: 40px;
+}
+
+.ud-docs-header h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--ud-primary);
+    margin-bottom: 8px;
+}
+
+.ud-docs-header p {
+    color: var(--ud-text-secondary);
+    font-size: 1rem;
+}
+
+/* Document Section - Ticket Style */
+.ud-doc-section { 
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border: 2px solid var(--ud-border-color);
+    border-radius: 20px;
+    padding: 32px; 
+    margin-bottom: 28px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ud-doc-section::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+    border-radius: 20px 0 0 20px;
+}
+
+.ud-doc-section-head { 
+    display: flex; 
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.ud-doc-section-head h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ud-primary);
+}
+
+.ud-doc-count { 
+    background: white;
+    padding: 8px 16px; 
+    border-radius: 20px;
+    font-size: 0.85rem;
+    border: 2px solid var(--ud-border-color);
+    font-weight: 600;
+    color: var(--ud-text-secondary);
+}
+
+/* Requirements Grid */
+.ud-req-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+    gap: 12px; 
+    margin-bottom: 28px;
+}
+
+.ud-req-item { 
+    background: white;
+    border: 1px solid var(--ud-border-color);
+    padding: 14px 16px; 
+    border-radius: 12px;
+    display: flex; 
+    gap: 12px;
+    align-items: center;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.ud-req-item:hover {
+    border-color: #f97316;
+    background: #fff7ed;
+    transform: translateX(4px);
+}
+
+.ud-req-item svg { 
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+/* Upload Zone - Travel Boarding Pass Style */
+.ud-upload-zone { 
+    background: white;
+    border: 3px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 48px 32px; 
+    text-align: center; 
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.ud-upload-zone::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.ud-upload-zone:hover::before {
+    left: 100%;
+}
+
+.ud-upload-active, 
+.ud-upload-zone:hover { 
+    border-color: #f97316;
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    transform: scale(1.01);
+}
+
+.ud-upload-icon { 
+    color: #f97316;
+    margin-bottom: 16px;
+    animation: ud-float 3s ease-in-out infinite;
+}
+
+@keyframes ud-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.ud-upload-text h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ud-primary);
+    margin-bottom: 8px;
+}
+
+.ud-upload-text p {
+    color: var(--ud-text-secondary);
+    font-size: 0.95rem;
+}
+
+.ud-browse-link { 
+    color: #f97316;
+    font-weight: 700; 
+    cursor: pointer; 
+    text-decoration: underline;
+    transition: all 0.2s ease;
+}
+
+.ud-browse-link:hover {
+    color: #ea580c;
+}
+
+/* Uploaded Files Grid */
+.ud-files-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+    gap: 16px; 
+    margin-top: 24px;
+}
+
+.ud-file-card { 
+    background: white;
+    border: 2px solid var(--ud-border-color);
+    border-radius: 12px;
+    padding: 16px; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.ud-file-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+}
+
+.ud-file-card:hover {
+    border-color: #10b981;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+}
+
+.ud-file-icon {
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.ud-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ud-file-name { 
+    font-weight: 600;
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    display: block;
+    color: var(--ud-text-primary);
+    margin-bottom: 4px;
+}
+
+.ud-file-size {
+    font-size: 0.8rem;
+    color: var(--ud-text-secondary);
+}
+
+.ud-remove-file { 
+    background: #fee2e2;
+    border: none; 
+    color: #dc2626;
+    width: 32px; 
+    height: 32px; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.ud-remove-file:hover {
+    background: #fecaca;
+    transform: rotate(90deg);
+}
+
+/* Upload Progress */
+.ud-progress-container { 
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    margin-top: 24px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ud-progress-bar { 
+    height: 100%;
+    background: linear-gradient(90deg, #f97316 0%, #fbbf24 100%);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+}
+
+/* Submit Area */
+.ud-submit-area { 
+    margin-top: 40px; 
+    text-align: center;
+}
+
+.ud-submit-btn { 
+    padding: 18px 56px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white; 
+    border: none; 
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.3);
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+.ud-submit-btn:hover {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.4);
+}
+
+.ud-submit-btn:active {
+    transform: translateY(0);
+}
+
+.ud-submit-note {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--ud-text-secondary);
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .ud-docs-wrapper {
+        padding: 24px;
+    }
+    
+    .ud-doc-section {
+        padding: 20px;
+    }
+    
+    .ud-req-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .ud-files-grid {
+        grid-template-columns: 1fr;
+    }
+}

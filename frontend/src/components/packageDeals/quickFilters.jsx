@@ -1,9 +1,7 @@
 import './QuickFilters.css';
 
-// 1. Tumanggap ng 'activeFilter' prop
 function QuickFilters({ onFilterClick, activeFilter }) {
   const filters = [
-    // --- 2. IDAGDAG ANG FAVORITES DITO ---
     { id: 'favorites', label: '❤️ Favorites' },
     { id: 'featured', label: '🔥 Featured' },
     { id: 'top-rated', label: '⭐ Top Rated' },
@@ -17,7 +15,6 @@ function QuickFilters({ onFilterClick, activeFilter }) {
         {filters.map(filter => (
           <button 
             key={filter.id} 
-            // 3. Gawing dynamic ang 'className'
             className={`filter-tag ${activeFilter === filter.id ? 'active' : ''}`}
             onClick={() => {
               if (onFilterClick) {

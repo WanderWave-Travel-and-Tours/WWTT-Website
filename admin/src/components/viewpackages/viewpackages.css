@@ -1,41 +1,85 @@
-/* ========================================
-   VIEW PACKAGES PAGE STYLES
-   Scoped to .packages-main only - Sidebar SAFE
-======================================== */
+/* Define CSS Variables for easy maintenance and smooth transition */
+:root {
+    /* ADAPTED: Based on dashboard.jsx */
+    --sidebar-default-width: 280px;
+    --sidebar-collapsed-width: 70px; 
+    --transition-speed: 0.3s;
+}
 
+/* ADAPTED */
 .packages-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc;
+    background: #f8fafc; /* Slate-50: Softer white background */
+    overflow-x: hidden; 
 }
 
-/* ========== MAIN CONTENT ONLY ========== */
+/* ADAPTED */
 .packages-main {
-    flex: 1;
-    margin-left: 280px;
-    padding: 40px 48px;
-    font-family: 'Segoe UI', Arial, sans-serif;
+      flex: 1;
+  margin-left: 280px; /* Sidebar width */
+  padding: 40px 5%; /* Responsive padding (5% sa gilid para di sagad sa wide screen) */
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  transition: margin-left 0.3s ease;
 }
 
-.packages-main *,
-.packages-main *::before,
-.packages-main *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+/* ADAPTED: The fix for the movement */
+.packages-main--collapsed {
+    /* Move main content to the left */
+    margin-left: var(--sidebar-collapsed-width); /* 70px */
+}
+
+/* Global Reset */
+.packages-main *, .packages-main *::before, .packages-main *::after {
+  box-sizing: border-box;
 }
 
 .packages-container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
-/* ========== HEADER ========== */
 .packages-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
     margin-bottom: 32px;
+}
+
+.packages-header-right {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.packages-search-bar {
+    position: relative;
+    width: 280px;
+}
+
+.packages-search-input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    font-size: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    transition: border-color 0.2s;
+}
+
+.packages-search-input:focus {
+    outline: none;
+    border-color: #FF8C42;
+    box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.2);
+}
+
+.packages-search-icon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: #94a3b8;
 }
 
 .packages-title {
@@ -52,7 +96,6 @@
     color: #64748b;
 }
 
-/* ========== BUTTONS ========== */
 .packages-btn {
     padding: 14px 28px;
     font-size: 14px;
@@ -73,7 +116,6 @@
     background: #e57a35;
 }
 
-/* ========== LOADING STATE ========== */
 .packages-loader {
     display: flex;
     flex-direction: column;
@@ -101,7 +143,6 @@
     font-size: 14px;
 }
 
-/* ========== ERROR STATE ========== */
 .packages-error {
     display: flex;
     flex-direction: column;
@@ -124,7 +165,6 @@
     font-size: 14px;
 }
 
-/* ========== EMPTY STATE ========== */
 .packages-empty {
     display: flex;
     flex-direction: column;
@@ -136,6 +176,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 60px;
+    text-align: center;
 }
 
 .packages-empty-icon {
@@ -156,14 +197,12 @@
     margin-bottom: 16px;
 }
 
-/* ========== CARDS GRID ========== */
 .packages-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
 }
 
-/* ========== PACKAGE CARD ========== */
 .pkg-card {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -176,7 +215,6 @@
     box-shadow: 0 8px 24px rgba(0, 31, 63, 0.1);
 }
 
-/* Card Image */
 .pkg-card-image {
     position: relative;
     height: 180px;
@@ -203,7 +241,6 @@
     letter-spacing: 0.5px;
 }
 
-/* Card Body */
 .pkg-card-body {
     padding: 20px;
 }
@@ -217,7 +254,6 @@
     line-height: 1.4;
 }
 
-/* Card Info */
 .pkg-card-info {
     display: flex;
     flex-direction: column;
@@ -241,7 +277,6 @@
     color: #94a3b8;
 }
 
-/* Card Footer */
 .pkg-card-footer {
     display: flex;
     justify-content: space-between;
@@ -269,7 +304,6 @@
     color: #FF8C42;
 }
 
-/* Action Buttons */
 .pkg-actions {
     display: flex;
     gap: 8px;
@@ -307,47 +341,44 @@
     border-color: #dc2626;
 }
 
-/* ========== RESPONSIVE ========== */
 @media (max-width: 1024px) {
     .packages-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 20px;
     }
-}
 
-@media (max-width: 900px) {
-    .packages-main {
-        margin-left: 70px;
-        padding: 24px;
-    }
-}
-
-@media (max-width: 640px) {
-    .packages-main {
-        padding: 16px;
-    }
-
-    .packages-title {
-        font-size: 1.5rem;
-    }
-
-    .packages-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .pkg-card-footer {
+    .packages-header-right {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-    }
-
-    .pkg-actions {
+        gap: 10px;
         width: 100%;
     }
 
-    .pkg-btn {
-        flex: 1;
+    .packages-search-bar, .packages-btn--add {
+        width: 100%;
+    }
+    
+    .packages-btn--add {
         text-align: center;
+    }
+}
+
+/* ADAPTED: Match dashboard.jsx small screen logic (70px margin) */
+@media (max-width: 900px) {
+    .packages-main { 
+        margin-left: var(--sidebar-collapsed-width); /* 70px */
+        padding: 24px; 
+    }
+    
+    .packages-main--collapsed { 
+        margin-left: var(--sidebar-collapsed-width); /* 70px */
+    }
+}
+
+/* ADAPTED: Match dashboard.jsx mobile screen logic (0 margin) */
+@media (max-width: 640px) {
+    .packages-main, .packages-main--collapsed { 
+        padding: 16px; 
+        margin-left: 0;
     }
 }

@@ -1,0 +1,225 @@
+.vb-page {
+    display: flex;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+.vb-main {
+    flex: 1;
+    margin-left: 280px; /* Default margin for full sidebar */
+    padding: 40px 48px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease; /* Added transition for smooth effect */
+}
+
+/* NEW: Styles for when the sidebar is collapsed */
+.vb-main--collapsed {
+    margin-left: 70px;
+}
+
+.vb-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.vb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.vb-title {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 2rem;
+    color: #001F3F;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.vb-subtitle { font-size: 14px; color: #64748b; }
+.vb-search-box { position: relative; width: 300px; }
+
+.vb-search-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.vb-search-box input {
+    width: 100%;
+    padding: 10px 12px 10px 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+}
+
+.vb-search-box input:focus {
+    border-color: #FF8C42;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.vb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.vb-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.vb-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.vb-status {
+    position: absolute;
+    top: 12px; right: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    z-index: 10;
+    color: white;
+}
+
+.vb-status.published { background: #10b981; }
+.vb-status.draft { background: #64748b; }
+
+.vb-image-wrapper {
+    width: 100%;
+    height: 180px;
+    background: #e2e8f0;
+    position: relative;
+}
+
+.vb-image-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+
+.vb-category {
+    position: absolute;
+    bottom: 10px; left: 10px;
+    background: rgba(0, 31, 63, 0.8);
+    color: #fff;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.vb-content { padding: 20px; flex: 1; }
+
+.vb-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #001F3F;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.vb-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+.vb-meta-item { display: flex; align-items: center; gap: 5px; }
+
+.vb-excerpt {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.vb-actions {
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.vb-btn-edit {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #0f172a;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.vb-btn-edit:hover { border-color: #0f172a; }
+
+.vb-btn-delete {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    border: 1px solid #fee2e2;
+    background: #fff;
+    color: #ef4444;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.vb-btn-delete:hover { background: #fee2e2; }
+
+.vb-empty, .vb-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px;
+    color: #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.vb-spinner {
+    animation: spin 1s linear infinite;
+    color: #FF8C42;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+    /* This media query handles screens where the sidebar *automatically* collapses */
+    .vb-main { margin-left: 70px; padding: 24px; }
+    /* We also need to reset the manual collapse class in this media query
+       to ensure the automatic collapse takes precedence */
+    .vb-main--collapsed { margin-left: 70px; }
+}
+
+@media (max-width: 640px) {
+    .vb-main { margin-left: 0; padding: 16px; }
+    .vb-main--collapsed { margin-left: 0; }
+    .vb-header { flex-direction: column; align-items: flex-start; }
+    .vb-search-box { width: 100%; }
+}

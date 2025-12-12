@@ -1,269 +1,326 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, Search, Plane, FileText, HeartHandshake, Package, TrendingUp, Users, MapPin, Calendar, FileCheck, ScrollText, Heart, BookOpen, PlusCircle, Tag, MessageSquare } from 'lucide-react';
-import Sidebar from '../sidebar/sidebar';
-import './Dashboard.css';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Sidebar from "../sidebar/sidebar";
+import DashboardHeader from "./components/DashboardHeader";
+import StatsCards from "./components/StatsCards";
+import FinancialOverview from "./components/FinancialOverview";
+import ChartsSection from "./components/ChartsSection";
+import RecentBookings from "./components/RecentBookings";
+import TopPackages from "./components/TopPackages";
+import QuickActions from "./components/QuickActions";
+import FooterStats from "./components/FooterStats";
+import { exportToPDF } from "./utils/pdfExport";
+import "./Dashboard.css";
 
 const Dashboard = () => {
-    const navigate = useNavigate();
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [stats, setStats] = useState({
+    totalBookings: 0,
+    confirmedBookings: 0,
+    pendingBookings: 0,
+    cancelledBookings: 0,
+    totalRevenue: 0,
+    totalPackages: 0,
+    totalBlogs: 0,
+    totalPromos: 0,
+    totalTestimonials: 0,
+    totalSellerCost: 0,
+    totalMarkup: 0,
+    totalSales: 0,
+    profitMargin: 0,
+  });
 
-    useEffect(() => {
-        const isLoggedIn = localStorage.getItem('adminToken');
-        if (!isLoggedIn) {
-            navigate('/');
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [topPackages, setTopPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [trendData, setTrendData] = useState([]);
+
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem("adminToken");
+    if (!isLoggedIn) {
+      navigate("/");
+    } else {
+      fetchDashboardData();
+    }
+  }, [navigate]);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    let bookings = [];
+    let packages = [];
+    let blogs = [];
+    let promos = [];
+    let testimonials = [];
+
+    try {
+      const bookingsRes = await fetch(
+        "http://localhost:5000/api/admin/bookings"
+      );
+      if (!bookingsRes.ok)
+        throw new Error(`HTTP error! status: ${bookingsRes.status}`);
+      bookings = await bookingsRes.json();
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+      bookings = [];
+    }
+
+    try {
+      const packagesRes = await fetch("http://localhost:5000/api/packages");
+      if (!packagesRes.ok)
+        throw new Error(`HTTP error! status: ${packagesRes.status}`);
+      packages = await packagesRes.json();
+    } catch (err) {
+      console.error("Error fetching packages:", err);
+      packages = [];
+    }
+
+    try {
+      const blogsRes = await fetch("http://localhost:5000/api/blogs");
+      if (!blogsRes.ok)
+        throw new Error(`HTTP error! status: ${blogsRes.status}`);
+      blogs = await blogsRes.json();
+    } catch (err) {
+      console.error("Error fetching blogs:", err);
+      blogs = [];
+    }
+
+    try {
+      const promosRes = await fetch("http://localhost:5000/api/promos");
+      if (!promosRes.ok)
+        throw new Error(`HTTP error! status: ${promosRes.status}`);
+      promos = await promosRes.json();
+    } catch (err) {
+      console.error("Error fetching promos:", err);
+      promos = [];
+    }
+
+    try {
+      const testimonialsRes = await fetch(
+        "http://localhost:5000/api/testimonials"
+      );
+      if (!testimonialsRes.ok)
+        throw new Error(`HTTP error! status: ${testimonialsRes.status}`);
+      testimonials = await testimonialsRes.json();
+    } catch (err) {
+      console.error("Error fetching testimonials:", err);
+      testimonials = [];
+    }
+
+    try {
+      if (!Array.isArray(bookings)) bookings = [];
+
+      const confirmed = bookings.filter((b) => b.status === "confirmed").length;
+      const pending = bookings.filter((b) => b.status === "pending").length;
+      const cancelled = bookings.filter((b) => b.status === "cancelled").length;
+      const revenue = bookings
+        .filter((b) => b.status === "confirmed")
+        .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+      const confirmedBookings = bookings.filter(
+        (b) => b.status === "confirmed"
+      );
+      const totalRevenue = confirmedBookings.reduce(
+        (sum, b) => sum + (b.totalAmount || 0),
+        0
+      );
+      const financialStats = confirmedBookings.reduce(
+        (acc, booking) => {
+          const pax =
+            (booking.pax?.adult || 1) +
+            (booking.pax?.children || 0) +
+            (booking.pax?.infants || 0);
+          if (booking.sellerPrice && booking.markup) {
+            acc.totalSellerCost += booking.sellerPrice * pax;
+            acc.totalMarkup += booking.markup * pax;
+            acc.totalSales += booking.totalAmount || 0;
+          }
+          return acc;
+        },
+        { totalSellerCost: 0, totalMarkup: 0, totalSales: 0 }
+      );
+
+      const profitMargin =
+        financialStats.totalSales > 0
+          ? (
+              (financialStats.totalMarkup / financialStats.totalSales) *
+              100
+            ).toFixed(1)
+          : 0;
+
+      setStats({
+        totalBookings: bookings.length,
+        confirmedBookings: confirmed,
+        pendingBookings: pending,
+        cancelledBookings: cancelled,
+        totalRevenue: revenue,
+        totalPackages: Array.isArray(packages) ? packages.length : 0,
+        totalBlogs: Array.isArray(blogs) ? blogs.length : 0,
+        totalPromos: Array.isArray(promos) ? promos.length : 0,
+        totalTestimonials: Array.isArray(testimonials)
+          ? testimonials.length
+          : 0,
+        totalSellerCost: financialStats.totalSellerCost,
+        totalMarkup: financialStats.totalMarkup,
+        totalSales: financialStats.totalSales,
+        profitMargin: profitMargin,
+      });
+
+      const today = new Date();
+      const trendData = [];
+
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const monthName = date.toLocaleString("default", { month: "short" });
+        const year = date.getFullYear();
+        const startOfMonth = new Date(year, date.getMonth(), 1);
+        const endOfMonth = new Date(year, date.getMonth() + 1, 0, 23, 59, 59);
+
+        const confirmedThisMonth = bookings.filter((b) => {
+          const created = new Date(b.createdAt);
+          return (
+            b.status === "confirmed" &&
+            created >= startOfMonth &&
+            created <= endOfMonth
+          );
+        });
+
+        const confirmedCount = confirmedThisMonth.length;
+        const revenueThisMonth = confirmedThisMonth.reduce(
+          (sum, b) => sum + (b.totalAmount || 0),
+          0
+        );
+
+        trendData.push({
+          month: monthName,
+          bookings: confirmedCount,
+          revenue: revenueThisMonth,
+        });
+      }
+
+      setTrendData(trendData);
+
+      const formatted = bookings
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+        .map((b) => ({
+          id: b._id,
+          client: b.fullName,
+          package: b.packageName,
+          date: new Date(b.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          status: b.status,
+          amount: `₱${(b.totalAmount || 0).toLocaleString()}`,
+        }));
+      setRecentBookings(formatted);
+
+      const packageStats = {};
+      bookings.forEach((b) => {
+        const pkg = b.packageName || "Unknown";
+        if (!packageStats[pkg]) {
+          packageStats[pkg] = { bookings: 0, revenue: 0 };
         }
-    }, [navigate]);
+        packageStats[pkg].bookings += 1;
+        packageStats[pkg].revenue += b.totalAmount || 0;
+      });
 
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
+      const sortedPackages = Object.entries(packageStats)
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .slice(0, 5)
+        .map(([name, data]) => ({
+          name,
+          bookings: data.bookings,
+          revenue: `₱${data.revenue.toLocaleString()}`,
+          revenueValue: data.revenue,
+        }));
+      setTopPackages(sortedPackages);
+    } catch (calcErr) {
+      console.error("Error in calculations:", calcErr);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const recentBookings = [
-        { id: 1, client: 'Juan Dela Cruz', package: 'Batanes Tour', date: 'Nov 20, 2025', status: 'Confirmed', amount: '₱25,000' },
-        { id: 2, client: 'Maria Santos', package: 'Palawan Adventure', date: 'Nov 19, 2025', status: 'Pending', amount: '₱18,500' },
-        { id: 3, client: 'Jose Rizal', package: 'Boracay Getaway', date: 'Nov 18, 2025', status: 'Confirmed', amount: '₱22,000' },
-        { id: 4, client: 'Ana Reyes', package: 'Cebu Explorer', date: 'Nov 17, 2025', status: 'Cancelled', amount: '₱15,000' },
-    ];
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
-    const topPackages = [
-        { name: 'Batanes Tour', bookings: 45, revenue: '₱1,125,000', trend: '+12%' },
-        { name: 'Palawan Adventure', bookings: 38, revenue: '₱703,000', trend: '+8%' },
-        { name: 'Boracay Getaway', bookings: 32, revenue: '₱704,000', trend: '+5%' },
-    ];
+  const handleExportPDF = () => {
+    const pdfTopPackages = topPackages.map((pkg) => ({
+      ...pkg,
+      revenue: typeof pkg.revenue === 'string' 
+        ? pkg.revenue.replace('₱', 'PHP ') 
+        : pkg.revenue
+    }));
 
-    const recentInquiries = [
-        { id: 1, name: 'Pedro Garcia', subject: 'Visa Processing Time', time: '2 hours ago', status: 'New' },
-        { id: 2, name: 'Luna Martinez', subject: 'Group Discount Inquiry', time: '5 hours ago', status: 'New' },
-        { id: 3, name: 'Carlos Tan', subject: 'Payment Options', time: '1 day ago', status: 'Replied' },
-    ];
+    exportToPDF(stats, trendData, pdfTopPackages);
+  };
 
-    const servicesData = [
-        { name: 'VISA Processing', icon: FileCheck, path: '/services/visa', pending: 8, completed: 45, color: 'blue' },
-        { name: 'PSA Serbilis', icon: ScrollText, path: '/services/psa', pending: 12, completed: 89, color: 'green' },
-        { name: 'CENOMAR', icon: Heart, path: '/services/cenomar', pending: 5, completed: 34, color: 'pink' },
-        { name: 'Passport Appt', icon: BookOpen, path: '/services/passport', pending: 15, completed: 67, color: 'purple' },
-    ];
-
-    // Quick Actions Data
-    const quickActionsData = [
-        { name: 'Add Package', icon: PlusCircle, path: '/add-package', desc: 'Create new tour', color: 'blue' },
-        { name: 'Create Promo', icon: Tag, path: '/add-promo', desc: 'Special offers', color: 'orange' },
-        { name: 'Add Testimonial', icon: MessageSquare, path: '/add-testimonial', desc: 'Client feedback', color: 'purple' },
-        { name: 'View Packages', icon: MapPin, path: '/view-packages', desc: 'Manage list', color: 'green' },
-    ];
-
+  if (loading) {
     return (
-        <div className="dash-page">
-            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            
-            <main className={`dash-main ${isSidebarCollapsed ? 'dash-main--collapsed' : ''}`}>
-                <div className="dash-container">
-                    <header className="dash-header">
-                        <div className="dash-header-left">
-                            <h1 className="dash-title">DASHBOARD</h1>
-                            <p className="dash-subtitle">Welcome back, Admin! Here's what's happening today.</p>
-                        </div>
-                        <div className="dash-header-actions">
-                            <button className="dash-icon-btn"><Search size={18} /></button>
-                            <button className="dash-icon-btn dash-icon-btn--notif">
-                                <Bell size={18} />
-                                <span className="dash-notif-badge">3</span>
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* STATS ROW */}
-                    <div className="dash-stats">
-                        <div className="dash-stat">
-                            <div className="dash-stat-icon dash-stat-icon--blue"><Plane size={24} /></div>
-                            <div className="dash-stat-content">
-                                <span className="dash-stat-label">Total Bookings</span>
-                                <strong className="dash-stat-value">128</strong>
-                            </div>
-                            <span className="dash-stat-badge dash-stat-badge--green">+12%</span>
-                        </div>
-                        <div className="dash-stat">
-                            <div className="dash-stat-icon dash-stat-icon--orange"><FileText size={24} /></div>
-                            <div className="dash-stat-content">
-                                <span className="dash-stat-label">Pending Inquiries</span>
-                                <strong className="dash-stat-value">5</strong>
-                            </div>
-                            <span className="dash-stat-badge dash-stat-badge--orange">Action Needed</span>
-                        </div>
-                        <div className="dash-stat">
-                            <div className="dash-stat-icon dash-stat-icon--green"><HeartHandshake size={24} /></div>
-                            <div className="dash-stat-content">
-                                <span className="dash-stat-label">Total Sales</span>
-                                <strong className="dash-stat-value">₱2.5M</strong>
-                            </div>
-                            <span className="dash-stat-badge dash-stat-badge--green">+5.2%</span>
-                        </div>
-                        <div className="dash-stat">
-                            <div className="dash-stat-icon dash-stat-icon--purple"><Package size={24} /></div>
-                            <div className="dash-stat-content">
-                                <span className="dash-stat-label">Active Packages</span>
-                                <strong className="dash-stat-value">28</strong>
-                            </div>
-                            <span className="dash-stat-badge dash-stat-badge--gray">Active</span>
-                        </div>
-                    </div>
-
-                    <div className="dash-grid">
-                        
-                        {/* OTHER SERVICES (Wide, Horizontal Layout) */}
-                        <section className="dash-section dash-section--wide">
-                            <div className="dash-section-header">
-                                <h2 className="dash-section-title">OTHER SERVICES</h2>
-                                <span className="dash-section-badge">4 Services</span>
-                            </div>
-                            <div className="dash-services-grid">
-                                {servicesData.map((svc, i) => (
-                                    <div key={i} className={`dash-service-card dash-service-card--${svc.color}`} onClick={() => navigate(svc.path)}>
-                                        <div className="dash-service-icon">
-                                            <svc.icon size={24} />
-                                        </div>
-                                        <div className="dash-service-info">
-                                            <span className="dash-service-name">{svc.name}</span>
-                                            <div className="dash-service-stats">
-                                                <span className="dash-service-pending">{svc.pending} pending</span>
-                                                <span className="dash-service-completed">{svc.completed} completed</span>
-                                            </div>
-                                        </div>
-                                        <span className="dash-service-arrow">→</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* RECENT BOOKINGS */}
-                        <section className="dash-section dash-section--wide">
-                            <div className="dash-section-header">
-                                <h2 className="dash-section-title">RECENT BOOKINGS</h2>
-                                <button className="dash-link-btn" onClick={() => navigate('/view-bookings')}>View All</button>
-                            </div>
-                            <div className="dash-table-wrapper">
-                                <table className="dash-table">
-                                    <thead>
-                                        <tr>
-                                            <th>CLIENT</th>
-                                            <th>PACKAGE</th>
-                                            <th>DATE</th>
-                                            <th>AMOUNT</th>
-                                            <th>STATUS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {recentBookings.map((b) => (
-                                            <tr key={b.id}>
-                                                <td><span className="dash-client">{b.client}</span></td>
-                                                <td>{b.package}</td>
-                                                <td>{b.date}</td>
-                                                <td><span className="dash-amount">{b.amount}</span></td>
-                                                <td><span className={`dash-status dash-status--${b.status.toLowerCase()}`}>{b.status}</span></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
-
-                        {/* 2 COLUMN GRID */}
-                        <section className="dash-section">
-                            <div className="dash-section-header">
-                                <h2 className="dash-section-title">TOP PACKAGES</h2>
-                                <TrendingUp size={18} className="dash-section-icon" />
-                            </div>
-                            <div className="dash-packages-list">
-                                {topPackages.map((pkg, i) => (
-                                    <div key={i} className="dash-package-item">
-                                        <div className="dash-package-rank">{i + 1}</div>
-                                        <div className="dash-package-info">
-                                            <span className="dash-package-name">{pkg.name}</span>
-                                            <span className="dash-package-stats">{pkg.bookings} bookings • {pkg.revenue}</span>
-                                        </div>
-                                        <span className="dash-package-trend">{pkg.trend}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        <section className="dash-section">
-                            <div className="dash-section-header">
-                                <h2 className="dash-section-title">RECENT INQUIRIES</h2>
-                                <button className="dash-link-btn" onClick={() => navigate('/view-inquiries')}>View All</button>
-                            </div>
-                            <div className="dash-inquiries-list">
-                                {recentInquiries.map((inq) => (
-                                    <div key={inq.id} className="dash-inquiry-item">
-                                        <div className="dash-inquiry-avatar">{inq.name.charAt(0)}</div>
-                                        <div className="dash-inquiry-info">
-                                            <span className="dash-inquiry-name">{inq.name}</span>
-                                            <span className="dash-inquiry-subject">{inq.subject}</span>
-                                        </div>
-                                        <div className="dash-inquiry-meta">
-                                            <span className={`dash-inquiry-status dash-inquiry-status--${inq.status.toLowerCase()}`}>{inq.status}</span>
-                                            <span className="dash-inquiry-time">{inq.time}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* QUICK ACTIONS - Moved to Bottom & Styled Differently */}
-                        <section className="dash-section dash-section--wide">
-                            <div className="dash-section-header">
-                                <h2 className="dash-section-title">QUICK ACTIONS</h2>
-                            </div>
-                            <div className="dash-actions-grid">
-                                {quickActionsData.map((action, i) => (
-                                    <button 
-                                        key={i} 
-                                        className={`dash-action-btn dash-action-btn--${action.color}`} 
-                                        onClick={() => navigate(action.path)}
-                                    >
-                                        <div className="dash-action-icon-wrapper">
-                                            <action.icon size={28} />
-                                        </div>
-                                        <div className="dash-action-text">
-                                            <span className="dash-action-title">{action.name}</span>
-                                            <span className="dash-action-sub">{action.desc}</span>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-
-                    </div>
-
-                    {/* FOOTER STATS */}
-                    <div className="dash-footer-stats">
-                        <div className="dash-footer-stat">
-                            <Calendar size={20} />
-                            <div>
-                                <strong>15</strong>
-                                <span>Upcoming Tours</span>
-                            </div>
-                        </div>
-                        <div className="dash-footer-stat">
-                            <Users size={20} />
-                            <div>
-                                <strong>342</strong>
-                                <span>Total Customers</span>
-                            </div>
-                        </div>
-                        <div className="dash-footer-stat">
-                            <MapPin size={20} />
-                            <div>
-                                <strong>12</strong>
-                                <span>Destinations</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
+      <div className="dash-page">
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <main
+          className={`dash-main ${
+            isSidebarCollapsed ? "dash-main--collapsed" : ""
+          }`}
+        >
+          <div className="dash-loading">
+            <div className="dash-spinner"></div>
+            <p>Loading dashboard...</p>
+          </div>
+        </main>
+      </div>
     );
+  }
+
+  return (
+    <div className="dash-page">
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+
+      <main
+        className={`dash-main ${
+          isSidebarCollapsed ? "dash-main--collapsed" : ""
+        }`}
+      >
+        <div className="dash-container">
+          <DashboardHeader
+            stats={stats}
+            onExportPDF={handleExportPDF}
+          />
+
+          <StatsCards stats={stats} />
+
+          <FinancialOverview stats={stats} />
+
+          <ChartsSection
+            trendData={trendData}
+            stats={stats}
+            topPackages={topPackages}
+          />
+
+          <div className="dash-grid">
+            <RecentBookings
+              bookings={recentBookings}
+              onViewAll={() => navigate("/booking")}
+            />
+
+            <TopPackages packages={topPackages} />
+
+            <QuickActions navigate={navigate} />
+          </div>
+
+          <FooterStats stats={stats} />
+        </div>
+      </main>
+    </div>
+  );
 };
 
 export default Dashboard;

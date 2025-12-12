@@ -1,0 +1,358 @@
+/* --- Variables & Theming --- */
+:root {
+    --ad-primary: #f97316;
+    --ad-primary-dark: #ea580c;
+    --ad-bg: #f8fafc;
+    --ad-card-bg: #ffffff;
+    --ad-text-main: #1e293b;
+    --ad-text-muted: #64748b;
+    --ad-border: #e2e8f0;
+    --ad-radius: 16px;
+    --ad-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+/* --- Base Container --- */
+.ad-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--ad-text-main);
+    box-sizing: border-box;
+}
+
+/* --- HEADER --- */
+.ad-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: var(--ad-card-bg);
+    padding: 24px;
+    border-radius: var(--ad-radius);
+    border: 1px solid var(--ad-border);
+    margin-bottom: 24px;
+    box-shadow: var(--ad-shadow);
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.ad-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+}
+
+.ad-id-badge {
+    background: #f1f5f9;
+    color: var(--ad-text-muted);
+    font-family: monospace;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.ad-status-pill {
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Status Colors */
+.status-payment-pending { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+.status-paid { background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; }
+.status-confirmed { background: #ecfdf5; color: #15803d; border: 1px solid #86efac; }
+.status-completed { background: #fefce8; color: #854d0e; border: 1px solid #fde047; }
+.status-cancelled { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+.status-pending { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+/* --- MAIN LAYOUT (The Magic Part) --- */
+.ad-grid {
+    display: grid;
+    /* Desktop: Left side medyo mas malapad, Right side sakto lang */
+    grid-template-columns: 1.4fr 1fr; 
+    gap: 24px;
+    margin-bottom: 32px;
+    
+    /* CRITICAL: Ito ang nagpapapantay sa height nilang dalawa visually */
+    align-items: stretch; 
+}
+
+/* --- CARDS --- */
+.ad-card {
+    background: var(--ad-card-bg);
+    border-radius: var(--ad-radius);
+    border: 1px solid var(--ad-border);
+    padding: 28px;
+    box-shadow: var(--ad-shadow);
+
+    /* Flex setup para mag-expand yung loob */
+    display: flex;
+    flex-direction: column;
+    
+    /* Ito ang susi: Height is 100% of the grid track. 
+       Dahil "stretch" ang grid, kukunin nito ang height ng pinakamahabang content. */
+    height: 100%; 
+    box-sizing: border-box;
+}
+
+.ad-card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ad-text-main);
+    margin: 0 0 24px 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--ad-border);
+    display: flex;
+    align-items: center;
+}
+
+.ad-card-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 18px;
+    background: var(--ad-primary);
+    border-radius: 2px;
+    margin-right: 12px;
+}
+
+/* --- LEFT CONTENT --- */
+.ad-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #f1f5f9;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ad-label {
+    color: var(--ad-text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.ad-value {
+    font-weight: 600;
+    color: var(--ad-text-main);
+    text-align: right;
+    word-break: break-word;
+}
+
+.ad-price-box {
+    background: #fff7ed;
+    border: 1px dashed #fdba74;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ad-price-value {
+    color: var(--ad-primary);
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+/* --- MESSAGE BOX (NO SCROLL LOGIC) --- */
+.ad-message-section {
+    display: flex;
+    flex-direction: column;
+    /* Flex-grow: 1 means kakainin niya yung extrang space kung mas mahaba ang Right card.
+       Pero kung mahaba ang message, itutulak niya pababa ang container. */
+    flex-grow: 1; 
+    margin-top: 16px;
+}
+
+.ad-message-content {
+    background: #f8fafc;
+    border: 1px solid var(--ad-border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #475569;
+    
+    /* CRITICAL FOR "NO SCROLL": */
+    height: auto; /* Kusa siyang lalaki */
+    min-height: 80px; /* Minimum height para hindi sobrang liit pag walang text */
+    flex-grow: 1; /* Mag-eexpand siya para punuin ang card */
+    overflow: visible; /* Walang scrollbar! */
+    white-space: pre-wrap; /* Preserves newlines pero nagw-wrap */
+    word-break: break-word; /* Prevents overflow ng mahabang words */
+}
+
+/* --- RIGHT SIDE ACTIONS --- */
+.ad-alert-remarks {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.ad-alert-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: #9f1239;
+}
+.ad-alert-header h4 { margin: 0; font-size: 0.95rem; font-weight: 700; }
+
+.ad-link-btn {
+    display: inline-block;
+    margin-top: 10px;
+    color: #be123c;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* Status Box Styles */
+.ad-status-box {
+    text-align: center;
+    padding: 24px 20px;
+    border-radius: 16px;
+    /* Flex-grow ensures it centers vertically nicely or fills space */
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.ad-large-icon { font-size: 3rem; margin-bottom: 12px; }
+.ad-status-box h4 { margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 700; }
+.ad-status-box p { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+.ad-subtext { font-size: 0.85rem !important; color: #059669; margin-top: 4px !important; }
+
+/* Box Colors */
+.ad-box-payment { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.ad-box-paid { background: #f5f3ff; border: 1px solid #ddd6fe; color: #5b21b6; }
+.ad-box-confirmed { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+.ad-box-pending { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.ad-box-cancelled { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+.ad-box-completed { 
+    background: #fffbeb; 
+    border: 2px solid #fcd34d; 
+    color: #92400e; 
+    padding: 24px 16px;
+    justify-content: flex-start;
+}
+
+.ad-date-badge {
+    background: rgba(255,255,255,0.6);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    margin: 8px 0 20px 0;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Files List */
+.ad-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.ad-file-item {
+    background: #ffffff;
+    border: 1px solid #fde68a;
+    padding: 12px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+}
+
+.ad-file-info { flex: 1; overflow: hidden; min-width: 0; }
+.ad-filename { display: block; font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #451a03; }
+.ad-filedate { font-size: 0.75rem; color: #92400e; }
+
+.ad-btn-download {
+    background: #f59e0b;
+    color: white;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ad-thank-you {
+    margin-top: 24px;
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #15803d;
+    width: 100%;
+}
+
+.ad-btn-primary {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: var(--ad-primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+/* --- RESPONSIVE --- */
+
+/* Tablet & Mobile (Below 992px) */
+@media (max-width: 992px) {
+    .ad-grid {
+        grid-template-columns: 1fr; /* Stacked na */
+        align-items: start; /* Wala nang stretch, hayaan na natural height */
+        gap: 20px;
+    }
+
+    .ad-card {
+        height: auto; /* Natural height */
+    }
+}
+
+/* Mobile Specific (Below 480px) */
+@media (max-width: 480px) {
+    .ad-title { font-size: 1.4rem; }
+    
+    .ad-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .ad-value { text-align: left; }
+    
+    .ad-price-box { flex-direction: column; align-items: flex-start; }
+    .ad-price-value { align-self: flex-end; }
+    
+    .ad-file-item { flex-direction: column; align-items: flex-start; }
+    .ad-btn-download { width: 100%; text-align: center; margin-top: 8px; }
+}

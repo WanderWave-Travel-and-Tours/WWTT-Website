@@ -9,8 +9,18 @@ const ViewPackages = () => {
     const [packages, setPackages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
 
+    // 1. Sidebar State Management
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+    // 2. Sidebar Toggle Function
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+    // Redirection useEffect
     useEffect(() => {
         const isLoggedIn = localStorage.getItem('adminToken');
         if (!isLoggedIn) {
@@ -18,6 +28,7 @@ const ViewPackages = () => {
         }
     }, [navigate]);
 
+    // Data Fetching useEffect
     useEffect(() => {
         const fetchPackages = async () => {
             try {
@@ -44,11 +55,20 @@ const ViewPackages = () => {
         navigate(`/edit-package`, { state: { packageId: packageId } });
     };
 
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+    };
+
+    // Filter packages based on the search term (case-insensitive title search)
+    const filteredPackages = packages.filter(pkg =>
+        pkg.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     if (loading) {
         return (
             <div className="packages-page">
-                <Sidebar />
-                <main className="packages-main">
+               
+                <main className={`packages-main ${isSidebarCollapsed ? 'packages-main--collapsed' : ''}`}>
                     <div className="packages-loader">
                         <div className="packages-spinner"></div>
                         <p>Loading packages...</p>
@@ -61,8 +81,10 @@ const ViewPackages = () => {
     if (error) {
         return (
             <div className="packages-page">
-                <Sidebar />
-                <main className="packages-main">
+                {/* 3A. Pass props to Sidebar in error state */}
+                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+                {/* 3B. Use dynamic class on main content in error state */}
+                <main className={`packages-main ${isSidebarCollapsed ? 'packages-main--collapsed' : ''}`}>
                     <div className="packages-error">
                         <span className="packages-error-icon">⚠️</span>
                         <p>{error}</p>
@@ -71,34 +93,56 @@ const ViewPackages = () => {
             </div>
         );
     }
-
+ 
     return (
         <div className="packages-page">
-            <Sidebar />
-            <main className="packages-main">
+            {/* 3A. Pass props to Sidebar in main render */}
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            
+            {/* 3B. Use dynamic class on main content in main render */}
+            <main className={`packages-main ${isSidebarCollapsed ? 'packages-main--collapsed' : ''}`}>
                 <div className="packages-container">
                     <header className="packages-header">
                         <div className="packages-header-left">
                             <h1 className="packages-title">TOUR PACKAGES</h1>
                             <p className="packages-subtitle">Manage your travel packages ({packages.length} total)</p>
                         </div>
-                        <button className="packages-btn packages-btn--add" onClick={() => navigate('/add-package')}>
-                            + Add New Package
-                        </button>
+                        <div className="packages-header-right">
+                            {/* Search Input Field */}
+                            <div className="packages-search-bar">
+                                <input
+                                    type="text"
+                                    placeholder="Search by package title..."
+                                    value={searchTerm}
+                                    onChange={handleSearchChange}
+                                    className="packages-search-input"
+                                />
+                                <svg className="packages-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                            {/* Add New Package Button */}
+                            <button className="packages-btn packages-btn--add" onClick={() => navigate('/add-package')}>
+                                + Add New Package
+                            </button>
+                        </div>
                     </header>
 
-                    {packages.length === 0 ? (
+                    {filteredPackages.length === 0 ? (
                         <div className="packages-empty">
                             <span className="packages-empty-icon">📦</span>
-                            <h3>No packages yet</h3>
-                            <p>Start by adding your first tour package</p>
-                            <button className="packages-btn packages-btn--add" onClick={() => navigate('/add-package')}>
-                                + Add Package
-                            </button>
+                            <h3>{searchTerm ? `No packages found for "${searchTerm}"` : 'No packages yet'}</h3>
+                            <p>{searchTerm ? 'Try a different search term.' : 'Start by adding your first tour package'}</p>
+                            {!searchTerm && ( // Only show 'Add Package' button if not in search mode
+                                <button className="packages-btn packages-btn--add" onClick={() => navigate('/add-package')}>
+                                    + Add Package
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <div className="packages-grid">
-                            {packages.map((pkg) => (
+                            {filteredPackages.map((pkg) => ( // Use filteredPackages here
                                 <div key={pkg._id} className="pkg-card">
                                     <div className="pkg-card-image">
                                         <img 
@@ -157,4 +201,4 @@ const ViewPackages = () => {
     );
 };
 
-export default ViewPackages;
+export default ViewPackages; 

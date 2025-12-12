@@ -1,20 +1,24 @@
-/* ========================================
-   SETTINGS PAGE STYLES
-   Based on Add Promo UI Design
-======================================== */
-
 .settings-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc; /* Match Promo BG */
+    background: #f8fafc; 
 }
 
-/* ========== MAIN CONTENT ========== */
+/* Base style for main content: uses a transition for smooth resizing */
 .settings-main {
     flex: 1;
-    margin-left: 280px; /* Match Sidebar width */
+    /* Use padding to set an initial position, then transition the margin */
     padding: 40px 48px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    
+    /* Set default margin for expanded sidebar (assuming 280px sidebar width) */
+    margin-left: 280px; 
+    transition: margin-left 0.3s ease-in-out; /* Smooth transition */
+}
+
+/* New rule for when the sidebar is collapsed (assuming ~70px collapsed width) */
+.settings-main.collapsed {
+    margin-left: 70px;
 }
 
 .settings-main *,
@@ -24,11 +28,10 @@
 }
 
 .settings-container {
-    max-width: 1000px; /* Slightly narrower for focus */
+    max-width: 1000px; 
     margin: 0 auto;
 }
 
-/* ========== HEADER ========== */
 .settings-header {
     margin-bottom: 32px;
 }
@@ -37,7 +40,7 @@
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
     font-size: 2rem;
     font-weight: 900;
-    color: #001F3F; /* Navy Blue */
+    color: #001F3F; 
     letter-spacing: 1px;
     margin-bottom: 6px;
 }
@@ -47,7 +50,6 @@
     color: #64748b;
 }
 
-/* ========== LAYOUT & SECTIONS ========== */
 .settings-grid {
     display: flex;
     flex-direction: column;
@@ -78,7 +80,6 @@
     margin: 0;
 }
 
-/* ========== LOGO UPLOAD AREA ========== */
 .logo-upload-wrapper {
     display: flex;
     gap: 24px;
@@ -174,10 +175,9 @@
     border-color: #ef4444;
 }
 
-/* ========== FORM FIELDS (MATCHING PROMO UI) ========== */
 .settings-fields-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 Column Grid */
+    grid-template-columns: repeat(2, 1fr); 
     gap: 24px;
 }
 
@@ -215,7 +215,7 @@
 .settings-field input:focus,
 .settings-field select:focus {
     outline: none;
-    border-color: #FF8C42; /* Orange Focus */
+    border-color: #FF8C42; 
     background: #fff;
     box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
@@ -228,7 +228,6 @@
     border-color: #e2e8f0;
 }
 
-/* ========== ACTIONS ========== */
 .settings-actions {
     display: flex;
     justify-content: flex-end;
@@ -244,7 +243,7 @@
     cursor: pointer;
     border: none;
     color: #fff;
-    background: #FF8C42; /* Main Orange Theme */
+    background: #FF8C42;
     box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
     transition: all 0.2s ease;
 }
@@ -259,7 +258,8 @@
     transform: translateY(0);
 }
 
-/* ========== RESPONSIVE ========== */
+/* MEDIA QUERIES - Ensure these still work with the collapsed state */
+
 @media (max-width: 1024px) {
     .settings-main {
         padding: 32px;
@@ -270,15 +270,16 @@
 }
 
 @media (max-width: 900px) {
+    /* At 900px and below, the sidebar is likely always in its collapsed state (70px) */
     .settings-main {
-        margin-left: 70px; /* Small Sidebar */
+        margin-left: 70px; /* Forces the main content to the correct position */
         padding: 24px;
     }
 }
 
 @media (max-width: 768px) {
     .settings-fields-grid {
-        grid-template-columns: 1fr; /* Stack on mobile */
+        grid-template-columns: 1fr; 
         gap: 16px;
     }
     
@@ -294,6 +295,7 @@
 }
 
 @media (max-width: 640px) {
+    /* Below this width, the sidebar is likely completely hidden or overlaid, so the main content should take full width */
     .settings-main {
         margin-left: 0;
         padding: 16px;

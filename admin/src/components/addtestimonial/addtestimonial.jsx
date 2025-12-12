@@ -3,6 +3,13 @@ import './AddTestimonial.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddTestimonial = () => {
+    // --- SIDEBAR LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR LOGIC END ---
+    
     const [testimonialDetails, setTestimonialDetails] = useState({
         name: '',
         feedback: '',
@@ -64,10 +71,12 @@ const AddTestimonial = () => {
 
     return (
         <div className="testi-page">
-            <Sidebar />
-            <main className="testi-main">
+            {/* Sidebar component updated with props */}
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            
+            {/* Main content area updated with conditional class */}
+            <main className={`testi-main ${isSidebarCollapsed ? "testi-main--collapsed" : ""}`}>
                 <div className="testi-container">
-                    {/* Header */}
                     <header className="testi-header">
                         <h1 className="testi-title">NEW TESTIMONIAL</h1>
                         <p className="testi-subtitle">Add a customer testimonial to display on your website</p>
@@ -75,9 +84,7 @@ const AddTestimonial = () => {
 
                     <form onSubmit={handleSubmit} className="testi-form">
                         <div className="testi-grid">
-                            {/* Left Column - Form */}
                             <div className="testi-left">
-                                {/* Customer Photo */}
                                 <section className="testi-section">
                                     <h2 className="testi-section-title">CUSTOMER PHOTO</h2>
                                     <label className="testi-upload">
@@ -102,7 +109,6 @@ const AddTestimonial = () => {
                                     </label>
                                 </section>
 
-                                {/* Customer Details */}
                                 <section className="testi-section">
                                     <h2 className="testi-section-title">CUSTOMER DETAILS</h2>
                                     <div className="testi-fields">
@@ -153,7 +159,6 @@ const AddTestimonial = () => {
                                 </div>
                             </div>
 
-                            {/* Right Column - Preview */}
                             <aside className="testi-right">
                                 <div className="testi-preview">
                                     <span className="testi-preview-label">PREVIEW</span>

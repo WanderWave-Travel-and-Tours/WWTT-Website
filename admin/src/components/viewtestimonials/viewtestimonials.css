@@ -1,15 +1,9 @@
-/* ========================================
-   VIEW TESTIMONIALS PAGE STYLES
-   Scoped to .vtest-main only - Sidebar SAFE
-======================================== */
-
 .vtest-page {
     display: flex;
     min-height: 100vh;
     background: #f8fafc;
 }
 
-/* ========== MAIN CONTENT ONLY ========== */
 .vtest-main {
     flex: 1;
     margin-left: 280px;
@@ -30,7 +24,6 @@
     margin: 0 auto;
 }
 
-/* ========== HEADER ========== */
 .vtest-header {
     display: flex;
     justify-content: space-between;
@@ -52,7 +45,6 @@
     color: #64748b;
 }
 
-/* ========== BUTTONS ========== */
 .vtest-btn {
     padding: 14px 28px;
     font-size: 14px;
@@ -73,7 +65,6 @@
     background: #e57a35;
 }
 
-/* ========== EMPTY STATE ========== */
 .vtest-empty {
     display: flex;
     flex-direction: column;
@@ -104,14 +95,12 @@
     font-size: 14px;
 }
 
-/* ========== CARDS GRID ========== */
 .vtest-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 24px;
 }
 
-/* ========== TESTIMONIAL CARD ========== */
 .vtest-card {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -126,7 +115,6 @@
     box-shadow: 0 8px 24px rgba(0, 31, 63, 0.1);
 }
 
-/* Card Header */
 .vtest-card-header {
     display: flex;
     align-items: center;
@@ -187,7 +175,6 @@
     color: #fff;
 }
 
-/* Card Body */
 .vtest-card-body {
     flex: 1;
     padding: 24px 20px;
@@ -210,7 +197,6 @@
     font-style: italic;
 }
 
-/* Card Footer */
 .vtest-card-footer {
     display: flex;
     justify-content: space-between;
@@ -248,7 +234,6 @@
     border-color: #dc2626;
 }
 
-/* ========== STATS ========== */
 .vtest-stats {
     display: flex;
     gap: 16px;
@@ -280,7 +265,6 @@
     letter-spacing: 0.5px;
 }
 
-/* ========== RESPONSIVE ========== */
 @media (max-width: 1024px) {
     .vtest-header {
         flex-direction: column;

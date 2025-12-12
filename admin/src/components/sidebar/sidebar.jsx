@@ -23,9 +23,19 @@ import {
   Plane,
   BookOpen,
   Hotel,
-  Calendar  // NEW IMPORT
+  Calendar,
+  Image, 
+  Images,
+  PenTool,
+  Newspaper,
+  UploadCloud, 
+  Grid,
+  MapPin,
+  //Hotel,
+  Ship,       // Added for Ferry
+  ShieldCheck // Added for Insurance
 } from 'lucide-react';
-import './sidebar.css';
+import './Sidebar.css';
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
@@ -52,8 +62,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       toggleSidebar();
       setTimeout(() => {
         setOpenMenus(prev => ({ ...prev, [menuKey]: true }));
-      }, 150);
-      return;
+      }, 300);
+      return; 
     }
 
     setOpenMenus(prev => ({
@@ -104,7 +114,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               <Icon size={20} className="btn-icon" />
               <span className="btn-label">{title}</span>
             </div>
-            
             {!isCollapsed && (
               isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />
             )}
@@ -149,13 +158,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <span>Admin Panel</span>
           </div>
         </div>
-        
         <button 
             className="toggle-btn" 
             onClick={toggleSidebar}
             type="button"
+            style={{ zIndex: 1002 }}
         >
-           {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+            {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
 
@@ -165,15 +174,20 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           <ul className="nav-list">
             <MenuItem path="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <MenuItem path="/booking" icon={Calendar} label="Booking" />
+            
             <DropdownMenu 
               title="Add" 
               icon={PlusCircle} 
               menuKey="add"
               childrenItems={[
                 { name: 'Create Package', path: '/add-package', icon: FilePlus },
+                { name: 'Create Tour', path: '/add-tour', icon: MapPin },
                 { name: 'Add Promo', path: '/add-promo', icon: Tag },
-                { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
+                { name: 'Add Poster', path: '/add-poster', icon: Image },
                 { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
+                { name: 'Create Blog', path: '/add-blog', icon: PenTool },
+                { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, 
+                { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
               ]}
             />
 
@@ -183,9 +197,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               menuKey="list"
               childrenItems={[
                 { name: 'Manage Packages', path: '/view-packages', icon: Package },
+                { name: 'Manage Tours', path: '/view-tours', icon: MapPin },
                 { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
+                { name: 'Poster List', path: '/view-posters', icon: Images },
+                { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
+                { name: 'Hotels', path: '/view-hotels', icon: Hotel },
+                { name: 'Image Gallery', path: '/view-images', icon: Grid }, 
                 { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
-                { name: 'Hotel List', path: '/view-hotels', icon: Hotel },
               ]}
             />
           </ul>
@@ -202,14 +220,18 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'VISA Processing', path: '/services/visa', icon: BookOpen },
                 { name: 'PSA Serbilis', path: '/services/psa', icon: FileText },
                 { name: 'CENOMAR', path: '/services/cenomar', icon: HeartHandshake },
-                { name: 'Passport Appt', path: '/services/passport', icon: Plane },
+                { name: 'Passport Appt', path: '/services/passport', icon: BookOpen },
+                { name: 'Airline Booking', path: '/services/airlinebooking', icon: Plane },
+                { name: 'Hotel Booking', path: '/services/hotelbooking', icon: Hotel },
+                { name: 'Tour Arrangements', path: '/services/tourarrangements', icon: Calendar },
+                { name: 'Ferry Booking', path: '/services/ferrybooking', icon: Ship },
+                { name: 'Marriage Cert', path: '/services/marriagecert', icon: FileText },
+                { name: 'Travel Insurance', path: '/services/travelinsurance', icon: ShieldCheck },
+                { name: 'Bills Payment', path: '/services/billspayment', icon: FileText },
               ]}
             />
-
             <MenuItem path="/users" icon={Users} label="Users" />
-            
             <MenuItem path="/settings" icon={Settings} label="Settings" />
-            
           </ul>
         </div>
       </nav>
@@ -224,11 +246,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             </div>
           </div>
           {!isCollapsed && (
-            <button 
-              onClick={handleLogout}
-              className="logout-btn"
-              title="Logout"
-            >
+            <button onClick={handleLogout} className="logout-btn" title="Logout">
               <LogOut size={18} />
             </button>
           )}

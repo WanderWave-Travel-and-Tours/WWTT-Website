@@ -3,7 +3,16 @@ import Sidebar from '../sidebar/sidebar';
 import './ViewPromos.css';
 
 const ViewPromos = () => {
+    // --- SIDEBAR TOGGLE LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR TOGGLE LOGIC END ---
+
     const [promos, setPromos] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1); // New state for current page
+    const itemsPerPage = 10; // Constant for items per page
 
     const fetchPromos = async () => {
         try {
@@ -13,6 +22,7 @@ const ViewPromos = () => {
             }
             const data = await response.json();
             setPromos(data);
+            setCurrentPage(1); // Reset to page 1 on new data fetch
         } catch (error) {
             console.error("Error loading promos:", error);
         }
@@ -44,8 +54,16 @@ const ViewPromos = () => {
                 });
 
                 if (response.ok) {
-                    setPromos(promos.filter(promo => promo._id !== id));
+                    // Update state and re-check if the current page is now empty
+                    const updatedPromos = promos.filter(promo => promo._id !== id);
+                    setPromos(updatedPromos);
                     alert(`Promo Code ${code} has been deleted.`);
+                    
+                    // Adjust page if current page is empty after deletion and not the first page
+                    const maxPage = Math.ceil(updatedPromos.length / itemsPerPage);
+                    if (currentPage > maxPage && maxPage > 0) {
+                        setCurrentPage(maxPage);
+                    }
                 } else {
                     alert("Failed to delete promo.");
                 }
@@ -55,17 +73,35 @@ const ViewPromos = () => {
             }
         }
     };
+    
+    // --- PAGINATION LOGIC START ---
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentPromos = promos.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(promos.length / itemsPerPage);
 
-    // FIXED: Renamed this variable to match what you use in the JSX below
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    // Create array for pagination buttons
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+    }
+    // --- PAGINATION LOGIC END ---
+
     const activePromos = promos.filter(p => getStatus(p.validUntil) === 'Active').length;
+    
+    // Dynamically set the main content class
+    const mainClass = `vpromos-main ${isSidebarCollapsed ? 'vpromos-main--collapsed' : ''}`;
 
     return (
         <div className="vpromos-page">
-            <Sidebar />
-            <main className="vpromos-main">
+         <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
+            <main className={mainClass}>
                 <div className="vpromos-container">
-                    
-                    {/* Header Section */}
                     <header className="vpromos-header">
                         <div className="vpromos-header-left">
                             <h1 className="vpromos-title">PROMO CODES</h1>
@@ -77,8 +113,23 @@ const ViewPromos = () => {
                             + Add New Promo
                         </button>
                     </header>
-
-                    {/* Conditional Rendering: Empty State vs Table */}
+                    {promos.length > 0 && (
+                        <div className="vpromos-stats">
+                            <div className="vpromos-stat">
+                                <strong>{promos.length}</strong>
+                                <span>Total Promos</span>
+                            </div>
+                            <div className="vpromos-stat">
+                                <strong>{activePromos}</strong>
+                                <span>Active</span>
+                            </div>
+                            <div className="vpromos-stat">
+                                <strong>{promos.length - activePromos}</strong>
+                                <span>Expired</span>
+                            </div>
+                        </div>
+                    )}
+                    
                     {promos.length === 0 ? (
                         <div className="vpromos-empty">
                             <span className="vpromos-empty-icon">🏷️</span>
@@ -103,7 +154,8 @@ const ViewPromos = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {promos.map(promo => {
+                                    {/* Map over currentPromos instead of all promos */}
+                                    {currentPromos.map(promo => {
                                         const status = getStatus(promo.validUntil);
                                         return (
                                             <tr key={promo._id}>
@@ -155,26 +207,47 @@ const ViewPromos = () => {
                                     })}
                                 </tbody>
                             </table>
+                            
+                            {/* PAGINATION NAVIGATION */}
+                            {totalPages > 1 && (
+                                <nav className="pagination-nav">
+                                    <ul className="pagination-list">
+                                        <li>
+                                            <button
+                                                className="pagination-btn"
+                                                onClick={() => paginate(currentPage - 1)}
+                                                disabled={currentPage === 1}
+                                            >
+                                                Previous
+                                            </button>
+                                        </li>
+                                        {pageNumbers.map(number => (
+                                            <li key={number}>
+                                                <button
+                                                    onClick={() => paginate(number)}
+                                                    className={`pagination-btn ${currentPage === number ? 'active' : ''}`}
+                                                >
+                                                    {number}
+                                                </button>
+                                            </li>
+                                        ))}
+                                        <li>
+                                            <button
+                                                className="pagination-btn"
+                                                onClick={() => paginate(currentPage + 1)}
+                                                disabled={currentPage === totalPages}
+                                            >
+                                                Next
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            )}
+                            {/* END PAGINATION NAVIGATION */}
                         </div>
                     )}
 
-                    {/* Stats Footer */}
-                    {promos.length > 0 && (
-                        <div className="vpromos-stats">
-                            <div className="vpromos-stat">
-                                <strong>{promos.length}</strong>
-                                <span>Total Promos</span>
-                            </div>
-                            <div className="vpromos-stat">
-                                <strong>{activePromos}</strong>
-                                <span>Active</span>
-                            </div>
-                            <div className="vpromos-stat">
-                                <strong>{promos.length - activePromos}</strong>
-                                <span>Expired</span>
-                            </div>
-                        </div>
-                    )}
+
                 </div>
             </main>
         </div>

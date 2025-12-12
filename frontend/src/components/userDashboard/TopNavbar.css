@@ -1,0 +1,118 @@
+/* TOP NAVBAR - Modern Travel Theme */
+.ud-navbar {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    right: 0;
+    height: 70px; 
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    padding: 0 32px; 
+    z-index: 100; 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.ud-nav-left, 
+.ud-nav-right, 
+.ud-brand-section, 
+.ud-user-info { 
+    display: flex; 
+    align-items: center; 
+}
+
+.ud-nav-left { gap: 20px; }
+.ud-brand-section { gap: 12px; }
+.ud-nav-right { gap: 24px; }
+.ud-user-info { gap: 12px; }
+
+.ud-brand-logo { 
+    height: 40px; 
+    width: auto; 
+    object-fit: contain; 
+    filter: brightness(1.2);
+}
+
+.ud-brand-name { 
+    font-size: 1.5rem; 
+    font-weight: 800; 
+    color: #ffffff;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+} 
+
+.ud-mobile-toggle { 
+    display: none; 
+    background: rgba(255, 255, 255, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px; 
+    cursor: pointer; 
+    color: #ffffff;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.ud-mobile-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Glass Morphism Avatar */
+.ud-user-avatar { 
+    width: 40px; 
+    height: 40px; 
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: 700; 
+    font-size: 0.9rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.ud-user-details { 
+    display: flex; 
+    flex-direction: column; 
+}
+
+.ud-user-name { 
+    font-weight: 600; 
+    font-size: 0.9rem; 
+    color: #ffffff;
+}
+
+.ud-user-email { 
+    font-size: 0.75rem; 
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Premium Outlined Button */
+.ud-logout-btn { 
+    padding: 8px 18px; 
+    background: transparent; 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    font-weight: 600; 
+    font-size: 0.85rem;
+    cursor: pointer; 
+    transition: all 0.2s ease;
+    color: #ffffff;
+}
+
+.ud-logout-btn:hover { 
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #f97316;
+    color: #f97316;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .ud-mobile-toggle { display: block; }
+    .ud-navbar { padding: 0 16px; }
+    .ud-user-details { display: none; }
+}

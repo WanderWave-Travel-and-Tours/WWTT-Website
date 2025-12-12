@@ -7,7 +7,6 @@ const BookingLeftColumn = ({ pkg }) => {
 
   return (
     <div className="booking-left-content">
-      
       <div className="booking-image-wrapper">
         <img 
             src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'} 
@@ -49,8 +48,7 @@ const BookingLeftColumn = ({ pkg }) => {
       </div>
 
       <hr style={{border: '0', borderTop: '1px solid #f0f0f0', margin: '32px 0'}} />
-
-      {/* Tabs System */}
+      
       <div className="tabs-section">
         <div className="tabs-header">
           {['itinerary', 'campaign', 'terms'].map((tab) => (

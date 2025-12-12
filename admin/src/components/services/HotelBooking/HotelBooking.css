@@ -1,0 +1,304 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+* { box-sizing: border-box; } body { margin: 0; padding: 0; overflow-x: hidden; }
+
+.hotel-page {
+    font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; min-height: 100vh; width: 100%; display: flex; position: relative;
+}
+.hotel-main {
+    margin-left: 260px; width: calc(100% - 260px); padding: 40px 120px; min-height: 100vh; transition: all 0.3s ease;
+}
+.hotel-main.expanded { 
+    margin-left: 80px !important; width: calc(100% - 80px) !important; padding: 40px 60px; 
+}
+.hotel-container { max-width: 1600px; width: 100%; margin: 0 auto; }
+
+.hotel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+.hotel-title h1 { font-family: 'Arial Black', sans-serif; font-size: 30px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: -0.5px; margin: 0; }
+.hotel-title p { color: #64748b; font-size: 14px; margin: 4px 0 0 0; }
+
+.hotel-btn-add { background-color: #8b5cf6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2); }
+.hotel-btn-add:hover { background-color: #7c3aed; transform: translateY(-1px); }
+
+.hotel-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
+.hotel-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.hotel-card h2 { font-size: 32px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }
+.hotel-card span { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.hotel-card-icon { color: #8b5cf6; opacity: 0.8; }
+
+.hotel-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); padding: 0; overflow: hidden; width: 100%; overflow-x: auto; }
+.hotel-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.hotel-table th { background-color: #0f172a; color: white; text-align: left; padding: 18px 24px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.hotel-table td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px; font-weight: 500; vertical-align: middle; white-space: nowrap; }
+.hotel-table tr:hover td { background-color: #f8fafc; }
+
+.hotel-action-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: white; border: 1px solid #e2e8f0; color: #8b5cf6; transition: all 0.2s; }
+.hotel-action-btn:hover { background: #f3e8ff; border-color: #8b5cf6; }
+
+/* --- PAGINATION STYLES (New) --- */
+.pagination-nav {
+    /* Aligns with the table container's style */
+    margin-top: 0;
+    padding: 16px 24px;
+    background-color: white;
+    border-top: 1px solid #e2e8f0;
+    
+    /* Stick to the bottom of the table container for better UX */
+    position: sticky; 
+    bottom: 0;
+    z-index: 5;
+    
+    display: flex;
+    justify-content: flex-end; /* Align controls to the right */
+    /* Match the bottom border radius of the .hotel-table-container */
+    border-radius: 0 0 12px 12px; 
+}
+
+.pagination-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 6px;
+    align-items: center;
+}
+
+.pagination-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #334155; /* Neutral text color */
+    transition: all 0.2s;
+    min-width: 40px; 
+    text-align: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f1f5f9; /* Light gray hover */
+    border-color: #cbd5e1;
+    color: #0f172a; /* Darker text on hover */
+    transform: translateY(-1px); /* Slight lift on hover */
+}
+
+.pagination-btn.active {
+    background-color: #0f172a; /* Primary dark color background for active page */
+    border-color: #0f172a;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
+}
+
+.pagination-btn.active:hover {
+    background-color: #1e293b; /* Slightly darker primary on hover */
+    border-color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background-color: #f8fafc;
+}
+
+/* For previous/next buttons */
+.pagination-btn:first-child,
+.pagination-btn:last-child {
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------- */
+/* --- Search and Filter Styles (Modified for Smaller Buttons) --- */
+/* ------------------------------------------------------------------- */
+
+.search-filter-card {
+    /* Container for the entire search/filter block */
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.search-filter-wrapper {
+    /* Flex container for the search box and filter buttons */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex-wrap: wrap; /* Allows components to wrap on smaller screens */
+}
+
+/* Desktop/Tablet Layout (768px and up) */
+@media (min-width: 768px) {
+    .search-filter-wrapper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between; /* Spreads search and filters apart */
+    }
+    
+    .search-box {
+        max-width: 350px; 
+        flex-shrink: 0;
+    }
+    
+    .filter-buttons {
+        flex: 1; /* Allows filter buttons to take remaining space */
+        justify-content: flex-end; /* Aligns filter buttons to the right on desktop */
+    }
+}
+
+/* Search Box Container */
+.search-box {
+    flex: 1;
+    position: relative;
+    width: 100%; 
+}
+
+/* Search Icon Styling (from Lucide React) */
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0; /* Gray color */
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Search Input Field */
+.search-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 3rem; /* Left padding for icon */
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background: #f7fafc; /* Light background */
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif; /* Ensure font consistency */
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea; /* Primary color focus */
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Filter Buttons Container */
+.filter-buttons {
+    display: flex;
+    gap: 0.5rem; /* Reduced gap slightly */
+    flex-wrap: wrap; 
+    justify-content: flex-start;
+}
+
+/* Individual Filter Button */
+.filter-btn {
+    /* Smaller padding */
+    padding: 0.75rem 1.25rem; 
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.875rem; /* Slightly smaller font */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f7fafc;
+    color: #4a5568;
+    white-space: nowrap;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif; /* Ensure font consistency */
+}
+
+.filter-btn:hover {
+    background: #edf2f7;
+    transform: translateY(-2px);
+}
+
+/* Active Status Styles */
+.filter-btn.active { /* General 'All Bookings' active state */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.filter-btn.confirmed-active {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); /* Green */
+    color: white;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.filter-btn.pending-active {
+    background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%); /* Yellow */
+    color: white;
+    box-shadow: 0 4px 12px rgba(236, 201, 75, 0.3);
+}
+
+.filter-btn.cancelled-active {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); /* Red */
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+}
+
+/* --- Tablet Responsiveness (Max-width 768px) --- */
+@media (max-width: 768px) {
+    .search-filter-card {
+        padding: 1rem;
+    }
+    
+    .search-filter-wrapper {
+        flex-direction: column; /* Stack vertically */
+    }
+    
+    .filter-buttons {
+        width: 100%;
+        gap: 0.5rem;
+        flex-wrap: wrap; 
+        justify-content: center; /* Center buttons when wrapping */
+    }
+    
+    .filter-btn {
+        /* Distribute buttons almost equally across two columns */
+        flex: 1 1 calc(50% - 0.25rem); 
+        font-size: 0.8rem; /* Further reduced font size */
+        padding: 0.6rem 1rem; /* Reduced padding */
+    }
+}
+
+/* --- Small Mobile Responsiveness (Max-width 480px) --- */
+@media (max-width: 480px) {
+    .search-filter-card {
+        padding: 0.875rem;
+    }
+    
+    .search-input {
+        font-size: 0.9rem;
+        padding: 0.75rem 0.875rem 0.75rem 2.75rem;
+    }
+    
+    .search-icon {
+        left: 0.875rem;
+    }
+    
+    .filter-buttons {
+        /* Stack filter buttons vertically for max simplicity */
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .filter-btn {
+        width: 100%;
+        flex: 1 1 auto;
+        font-size: 0.875rem;
+        padding: 0.75rem 1rem; /* Adjusted mobile padding */
+    }
+}
+
+@media (max-width: 1024px) { .hotel-main, .hotel-main.expanded { padding: 30px; } .hotel-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .hotel-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } .hotel-stats-grid { grid-template-columns: 1fr; } .hotel-header { flex-direction: column; align-items: flex-start; } .hotel-btn-add { width: 100%; justify-content: center; } }

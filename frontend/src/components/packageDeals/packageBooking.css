@@ -1,14 +1,9 @@
-/* ========================================
-   PACKAGE BOOKING PAGE STYLES
-   ======================================== */
-
 .booking-page {
   min-height: 100vh;
-  background-color: #f3f4f6; /* Light gray background outside the card */
+  background-color: #f3f4f6;
   padding-bottom: 80px;
 }
 
-/* Header */
 .booking-header {
   background-color: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -41,43 +36,32 @@
   color: #fc9c1b;
 }
 
-/* MAIN CONTAINER */
 .booking-container {
-  max-width: 1200px; /* Slightly tighter width for better focus */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
 }
 
-/* ========================================
-   UNIFIED CARD LAYOUT (The Big Change)
-   ======================================== */
 .unified-booking-card {
   display: grid;
-  grid-template-columns: 1.3fr 0.9fr; /* Left is slightly wider than Right */
+  grid-template-columns: 1.3fr 0.9fr; 
   background-color: white;
   border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); /* Soft, deep shadow */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); 
   overflow: hidden;
   min-height: 600px;
 }
 
-/* LEFT PANEL */
 .unified-left-panel {
   padding: 40px;
-  border-right: 1px solid #f0f0f0; /* Divider line */
+  border-right: 1px solid #f0f0f0; 
 }
 
-/* RIGHT PANEL */
 .unified-right-panel {
   padding: 40px;
   background-color: #ffffff;
 }
 
-/* ========================================
-   SHARED COMPONENT STYLES
-   ======================================== */
-
-/* Images */
 .booking-image-wrapper {
   border-radius: 16px;
   overflow: hidden;
@@ -91,7 +75,6 @@
   object-fit: cover;
 }
 
-/* Typography & Icons */
 .section-title-with-icon {
   font-size: 1.25rem;
   font-weight: 700;
@@ -123,7 +106,6 @@
   font-size: 0.95rem;
 }
 
-/* Tabs Styling (Simplified) */
 .tabs-header {
   display: flex;
   border-bottom: 2px solid #f3f4f6;
@@ -147,7 +129,6 @@
   border-bottom-color: #001b3e;
 }
 
-/* Form Elements (Right Panel) */
 .package-title {
   font-size: 1.75rem;
   font-weight: 800;
@@ -177,8 +158,6 @@
 }
 
 .service-icon { color: #6b7280; }
-
-/* Calendar */
 .calendar-wrapper {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -219,7 +198,6 @@
 .calendar-day:hover { background-color: #f3f4f6; }
 .calendar-day.selected { background-color: #001b3e; color: white; font-weight: 700; }
 
-/* Quantity Controls */
 .quantity-item {
   display: flex;
   justify-content: space-between;
@@ -243,7 +221,6 @@
 }
 .quantity-value { font-weight: 700; width: 20px; text-align: center; }
 
-/* Footer Buttons */
 .total-row {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
 }
@@ -264,15 +241,11 @@
 }
 .book-now-btn:hover { background-color: #e68a0f; }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .unified-booking-card { grid-template-columns: 1fr; }
   .unified-left-panel { border-right: none; border-bottom: 1px solid #f0f0f0; }
 }
 
-/* ========================================
-   PACKAGE BOOKING PAGE STYLES (FULL)
-   ======================================== */
 
 .booking-page {
   min-height: 100vh;
@@ -280,7 +253,6 @@
   padding-bottom: 80px;
 }
 
-/* Header */
 .booking-header {
   background-color: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -313,16 +285,12 @@
   color: #fc9c1b;
 }
 
-/* MAIN CONTAINER */
 .booking-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
 }
 
-/* ========================================
-   UNIFIED CARD LAYOUT
-   ======================================== */
 .unified-booking-card {
   display: grid;
   grid-template-columns: 1.3fr 0.9fr;
@@ -333,23 +301,16 @@
   min-height: 600px;
 }
 
-/* LEFT PANEL */
 .unified-left-panel {
   padding: 40px;
   border-right: 1px solid #f0f0f0;
 }
 
-/* RIGHT PANEL */
 .unified-right-panel {
   padding: 40px;
   background-color: #ffffff;
 }
 
-/* ========================================
-   SHARED COMPONENT STYLES
-   ======================================== */
-
-/* Images */
 .booking-image-wrapper {
   border-radius: 16px;
   overflow: hidden;
@@ -363,7 +324,6 @@
   object-fit: cover;
 }
 
-/* Typography & Icons */
 .section-title-with-icon {
   font-size: 1.25rem;
   font-weight: 700;
@@ -395,7 +355,6 @@
   font-size: 0.95rem;
 }
 
-/* Tabs Styling */
 .tabs-header {
   display: flex;
   border-bottom: 2px solid #f3f4f6;
@@ -419,7 +378,6 @@
   border-bottom-color: #001b3e;
 }
 
-/* Form Elements (Right Panel) */
 .package-title {
   font-size: 1.75rem;
   font-weight: 800;
@@ -450,7 +408,6 @@
 
 .service-icon { color: #6b7280; }
 
-/* Calendar */
 .calendar-wrapper {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -491,7 +448,6 @@
 .calendar-day:hover { background-color: #f3f4f6; }
 .calendar-day.selected { background-color: #001b3e; color: white; font-weight: 700; }
 
-/* Quantity Controls */
 .quantity-item {
   display: flex;
   justify-content: space-between;
@@ -515,7 +471,6 @@
 }
 .quantity-value { font-weight: 700; width: 20px; text-align: center; }
 
-/* Footer Buttons */
 .total-row {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
 }
@@ -536,22 +491,17 @@
 }
 .book-now-btn:hover { background-color: #e68a0f; }
 
-/* Responsive Grid */
 @media (max-width: 1024px) {
   .unified-booking-card { grid-template-columns: 1fr; }
   .unified-left-panel { border-right: none; border-bottom: 1px solid #f0f0f0; }
 }
 
-/* ... (Keep existing styles above) ... */
-
-/* Footer Buttons (UPDATED) */
 .total-row {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
 }
 .total-label { font-size: 1.1rem; font-weight: 600; color: #374151; }
 .total-amount { font-size: 1.5rem; font-weight: 800; color: #001b3e; }
 
-/* Main CTA - Orange */
 .book-now-btn {
   width: 100%;
   background-color: #fc9c1b;
@@ -567,18 +517,17 @@
 }
 .book-now-btn:hover { background-color: #e68a0f; }
 
-/* Secondary CTA - Contact Sales (NEW) */
 .contact-sales-footer-btn {
   width: 100%;
   background-color: white;
-  color: #001b3e; /* Dark Blue Text */
-  border: 2px solid #e5e7eb; /* Subtle Border */
+  color: #001b3e; 
+  border: 2px solid #e5e7eb;
   padding: 16px;
   border-radius: 12px;
   font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
-  margin-top: 12px; /* Space between Book btn and this btn */
+  margin-top: 12px; 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -590,10 +539,6 @@
   border-color: #001b3e;
   background-color: #f8fafc;
 }
-
-/* ========================================
-   MODAL STYLES (Cleaned up Buttons)
-   ======================================== */
 
 .modal-overlay {
   position: fixed;
@@ -625,7 +570,6 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* --- FIXED & SUPER LARGE CLOSE BUTTON --- */
 .modal-close-btn {
   position: absolute;
   top: 20px;
@@ -634,7 +578,7 @@
   border: 2px solid transparent;
   color: #001b3e;
   cursor: pointer;
-  width: 64px; /* Super Large Touch Target */
+  width: 64px; 
   height: 64px;
   display: flex;
   align-items: center;
@@ -646,7 +590,7 @@
 }
 
 .modal-close-btn svg {
-  width: 44px; /* Icon Size */
+  width: 44px;
   height: 44px;
 }
 
@@ -656,7 +600,6 @@
   transform: scale(1.1) rotate(90deg);
 }
 
-/* Modal Content Styles */
 .modal-logo {
   display: block;
   height: 50px;
@@ -697,8 +640,6 @@
 .summary-value { font-size: 1rem; font-weight: 700; color: #334155; }
 .summary-value.price { color: #10b981; font-size: 1.25rem; }
 .summary-divider { width: 1px; height: 40px; background-color: #cbd5e1; margin: 0 16px; }
-
-/* Modal Form Fields */
 .form-group { margin-bottom: 24px; }
 .form-group label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 .form-group input, .form-group textarea {
@@ -707,7 +648,6 @@
 }
 .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #fc9c1b; box-shadow: 0 4px 12px rgba(252, 156, 27, 0.15); }
 
-/* Modal Primary Button (Just one now) */
 .modal-submit-btn {
   width: 100%;
   background-color: #001b3e;
@@ -729,7 +669,6 @@
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* Responsive Modal Logic */
 @media (max-width: 640px) {
   .modal-card { padding: 32px 24px; max-height: 85vh; }
   .modal-trip-summary { flex-direction: column; align-items: flex-start; gap: 16px; }

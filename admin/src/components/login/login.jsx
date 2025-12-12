@@ -92,7 +92,6 @@ const Login = () => {
     return (
         <div className="login-wrapper">
             <div className="login-container">
-                {/* Slideshow Panel */}
                 <div className="slideshow-panel">
                     <div className="slideshow-container">
                         {destinations.map((dest, index) => {
@@ -124,7 +123,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* Login Panel */}
                 <div className="login-panel">
                     <div className="login-form-wrapper">
                         <div className="logo-section">
@@ -134,7 +132,7 @@ const Login = () => {
                                 className="logo-img"
                             />
                             <h1 className="admin-title">Admin Portal</h1>
-                            <p className="admin-subtitle">Sign in to manage your travel experiences</p>
+                            <p className="admin-subtitle">Sign in to manage travel experiences</p>
                         </div>
 
                         <form onSubmit={handleLogin} className="login-form">

@@ -1,39 +1,200 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   MapPin, Calendar, Plane, Hotel, Utensils, Bus, Camera, Briefcase, 
-  ChevronLeft, ChevronRight, Minus, Plus, X, MessageCircle 
+  ChevronLeft, ChevronRight, Minus, Plus, X, MessageCircle, Upload, CheckCircle 
 } from 'lucide-react';
-// 1. IMPORT TOAST
 import toast, { Toaster } from 'react-hot-toast';
+import FlightSearch from '../flightSearch/flightSearch';
+import HotelRoomSelector from './hotelRoomSelector';
+import axios from 'axios';
 
 const BookingRightForm = ({ pkg }) => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(null);
   const [quantities, setQuantities] = useState({ adult: 1 });
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10)); // Nov 2025
-  
-  // Modal State
+  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10));
+  const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
+  const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); // Extract nights from "4D3N"
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    message: ''
-  });
+  const [showFlightSearchModal, setShowFlightSearchModal] = useState(false);
+  
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [bookingWithAirfare, setBookingWithAirfare] = useState(false);
+  
+  const [selectedRoomType, setSelectedRoomType] = useState(null);
+  const [hotelData, setHotelData] = useState(null);
+  const [loadingHotelData, setLoadingHotelData] = useState(false);
+  
+  const [passengerStep, setPassengerStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  
+  const totalPassengers = quantities.adult || 1;
+  
+  const isInternationalFlight = selectedFlight && 
+    selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
+  const requiresPassport = isInternationalFlight;
+  const requiresID = selectedFlight && !isInternationalFlight;
 
-  // Package Definitions
-  const packageTypes = [
-    { id: 'adult', label: 'Standard Pax', description: '3+ years old', pricePerPax: pkg.price, discount: 'Best Value' }
-  ];
+  const calculateRoomsNeeded = () => {
+    if (!selectedRoomType) return 1;
+    return Math.ceil(totalPassengers / (selectedRoomType.capacity || 4));
+  };
 
-  // Calculation Logic
-  const totalAmount = Object.entries(quantities).reduce((sum, [type, qty]) => {
-    const pType = packageTypes.find(p => p.id === type);
-    return sum + (pType?.pricePerPax || 0) * qty;
-  }, 0);
+  const numberOfRooms = calculateRoomsNeeded();
 
-  // Calendar Helpers
+  useEffect(() => {
+  const fetchHotelData = async () => {
+    const destination = pkg.destination || pkg.location;
+    
+    if (!destination) {
+      console.log('❌ No destination or location found in package');
+      return;
+    }
+    
+    try {
+      setLoadingHotelData(true);
+      const city = destination.split(',')[0].trim();
+      const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.length > 0) {
+        const roomTypes = data.data;
+        
+        console.log('🛏️ All room types:', roomTypes);
+        
+        setHotelData({
+          name: `${city} Hotels`,
+          location: city,
+          roomTypes: roomTypes
+        });
+        
+        const sortedRooms = [...roomTypes].sort((a, b) => a.price - b.price);
+        console.log('✅ Auto-selecting cheapest room:', sortedRooms[0]);
+        setSelectedRoomType(sortedRooms[0]);
+      } else {
+        console.log('⚠️ No room types found for:', city);
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+    } finally {
+      setLoadingHotelData(false);
+    }
+  };
+
+  fetchHotelData();
+}, [pkg.destination, pkg.location]);
+
+  const [passengers, setPassengers] = useState(
+    Array.from({ length: totalPassengers }, (_, idx) => ({
+      passengerNumber: idx + 1,
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      dateOfBirth: '',
+      age: '',
+      gender: '',
+      address: '',
+      nationality: 'Filipino',
+      idFile: null,
+      idFileName: '',
+      passportFile: null,
+      passportFileName: ''
+    }))
+  );
+  React.useEffect(() => {
+    const newTotal = quantities.adult || 1;
+    setPassengers(prevPassengers => {
+        if (newTotal === prevPassengers.length) {
+            return prevPassengers; 
+        }
+        
+        return Array.from({ length: newTotal }, (_, idx) => 
+          prevPassengers[idx] || {
+            passengerNumber: idx + 1,
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            dateOfBirth: '',
+            age: '',
+            gender: '',
+            address: '',
+            nationality: 'Filipino',
+            idFile: null,
+            idFileName: '',
+            passportFile: null,
+            passportFileName: ''
+          }
+        );
+    });
+    
+  }, [quantities.adult]);
+
+  const packageTotal = (() => {
+    const basePax = quantities.adult || 1;
+    const basePackagePrice = pkg.price * basePax;
+    
+    // If no room type selected, return 0
+    if (!selectedRoomType) return 0;
+    
+    // Room upgrade pricing per NIGHT per pax
+    const roomUpgradePricing = {
+      'BUDGET': 0,          // No additional charge (default)
+      'STANDARD': 750,      // +₱750/night/pax
+      '4 STAR': 1200,       // +₱1,200/night/pax
+      '5 STAR': 2040        // +₱2,040/night/pax
+    };
+    
+    // Get the room type key
+    const roomTypeKey = selectedRoomType.type?.toUpperCase() || '';
+    
+    // Find matching upgrade price
+    let upgradePerDayPerPax = 0;
+    for (const [key, price] of Object.entries(roomUpgradePricing)) {
+      if (roomTypeKey.includes(key)) {
+        upgradePerDayPerPax = price;
+        break;
+      }
+    }
+    
+    // Calculate total upgrade cost: upgrade price × NIGHTS × pax
+    const totalUpgradeCost = upgradePerDayPerPax * durationNights * basePax;
+    
+    // Final price = base package price + upgrade cost
+    const finalPrice = basePackagePrice + totalUpgradeCost;
+    
+    console.log('💰 === PRICE CALCULATION ===');
+    console.log('Base Package Price:', basePackagePrice);
+    console.log('Room Type:', selectedRoomType.type);
+    console.log('Upgrade per night per pax:', upgradePerDayPerPax);
+    console.log('Duration (nights):', durationNights);
+    console.log('Number of pax:', basePax);
+    console.log('Total Upgrade Cost:', totalUpgradeCost);
+    console.log('FINAL PRICE:', finalPrice);
+    console.log('💰 ========================');
+    
+    return finalPrice;
+  })();
+
+  const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
+  const totalAmount = packageTotal + airfareTotal;
+
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const isInSelectedRange = (day) => {
+    if (!selectedDate) return false;
+    const endDate = selectedDate + durationDays - 1;
+    return day >= selectedDate && day <= endDate;
+  };
+
+  const getEndDate = () => {
+    if (!selectedDate) return null;
+    return selectedDate + durationDays - 1;
+  };
 
   const handleQuantity = (type, delta) => {
     setQuantities(prev => ({
@@ -47,6 +208,12 @@ const BookingRightForm = ({ pkg }) => {
     setCurrentMonth(new Date(newDate));
   };
 
+  const handleRoomTypeChange = (roomType) => {
+    console.log('🛏️ Room type changed to:', roomType);
+    setSelectedRoomType(roomType);
+    toast.success(`Room upgraded to ${roomType.type}`, { duration: 2000 });
+  };
+
   const handleBookClick = () => {
     if (!selectedDate) {
       toast.error("Please select a travel date first!", {
@@ -55,70 +222,295 @@ const BookingRightForm = ({ pkg }) => {
       });
       return;
     }
+    setBookingWithAirfare(false);
+    setPassengerStep(1);
     setShowModal(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleBookWithAirfare = () => {
+    if (!selectedDate) {
+      toast.error("Please select a travel date first!", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+        iconTheme: { primary: '#ef4444', secondary: '#fff' },
+      });
+      return;
+    }
+    setShowFlightSearchModal(true);
+  };
+
+  const handleFlightSelected = (flight) => {
+    setSelectedFlight(flight);
+    setShowFlightSearchModal(false);
+    setBookingWithAirfare(true);
+    
+    toast.success(
+      `✈️ Flight Added! ${flight.airline.name} - ${flight.price.formatted}`,
+      { duration: 3000 }
+    );
+    
+    setTimeout(() => {
+      setPassengerStep(1);
+      setShowModal(true);
+    }, 500);
+  };
+
+  const handleRemoveFlight = () => {
+    setSelectedFlight(null);
+    setBookingWithAirfare(false);
+    toast.success("Flight removed from booking", { duration: 2000 });
+  };
+
+  const handlePassengerChange = (index, field, value) => {
+    const updated = [...passengers];
+    updated[index][field] = value;
+    setPassengers(updated);
+  };
+
+  const handleFileUpload = (index, fileType, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const updated = [...passengers];
+      if (fileType === 'id') {
+        updated[index].idFile = file;
+        updated[index].idFileName = file.name;
+      } else if (fileType === 'passport') {
+        updated[index].passportFile = file;
+        updated[index].passportFileName = file.name;
+      }
+      setPassengers(updated);
+    }
+  };
+
+  const removeFile = (index, fileType) => {
+    const updated = [...passengers];
+    if (fileType === 'id') {
+      updated[index].idFile = null;
+      updated[index].idFileName = '';
+    } else if (fileType === 'passport') {
+      updated[index].passportFile = null;
+      updated[index].passportFileName = '';
+    }
+    setPassengers(updated);
+  };
+
+  const validateCurrentPassenger = () => {
+    const p = passengers[passengerStep - 1];
+    if (!p.firstName || !p.lastName || !p.email || !p.phone || !p.dateOfBirth || 
+        !p.age || !p.gender || !p.address || !p.nationality) {
+      toast.error(`Please fill in all required fields for Passenger ${passengerStep}`);
+      return false;
+    }
+
+    if (bookingWithAirfare) {
+      if (requiresID && !p.idFile) {
+        toast.error(`Please upload a valid ID for Passenger ${passengerStep}`);
+        return false;
+      }
+      if (requiresPassport && !p.passportFile) {
+        toast.error(`Please upload passport for Passenger ${passengerStep}`);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleNextPassenger = (e) => {
+    e.preventDefault();
+    if (validateCurrentPassenger()) {
+      if (passengerStep < totalPassengers) {
+        setPassengerStep(passengerStep + 1);
+      } else {
+        handleFinalSubmit(e);
+      }
+    }
+  };
+
+  const handleBackPassenger = () => {
+    if (passengerStep > 1) setPassengerStep(passengerStep - 1);
   };
 
   const handleFinalSubmit = async (e) => {
-  e.preventDefault();
+  if (e) e.preventDefault();
+  if (!validateCurrentPassenger()) return;
   
-  const bookingData = {
-    packageName: pkg.name,
-    date: `${monthNames[currentMonth.getMonth()]} ${selectedDate}, ${currentMonth.getFullYear()}`,
-    pax: quantities,
-    totalAmount: totalAmount,
-    fullName: formData.fullName,
-    email: formData.email,
-    message: formData.message
-  };
+  setLoading(true);
 
   try {
-    const response = await fetch('http://localhost:5000/api/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bookingData)
-    });
+    const formData = new FormData();
+    
+    const endDate = getEndDate();
+    
+    const bookingData = {
+      packageName: pkg.name,
+      startDate: `${monthNames[currentMonth.getMonth()]} ${selectedDate}, ${currentMonth.getFullYear()}`,
+      endDate: `${monthNames[currentMonth.getMonth()]} ${endDate}, ${currentMonth.getFullYear()}`,
+      duration: pkg.duration,
+      pax: quantities,
+      packageTotal: packageTotal,
+      includesAirfare: bookingWithAirfare,
+      flightDetails: selectedFlight ? {
+        airline: selectedFlight.airline.name,
+        flightNumber: selectedFlight.airline.flightNumber || 'N/A',
+        route: `${selectedFlight.departure.iataCode} → ${selectedFlight.arrival.iataCode}`,
+        departureTime: selectedFlight.departure.time,
+        arrivalTime: selectedFlight.arrival.time,
+        price: selectedFlight.price.amount,
+        formatted: selectedFlight.price.formatted,
+        isInternational: isInternationalFlight
+      } : null,
+      airfareTotal: airfareTotal,
+      totalAmount: totalAmount,
+      primaryContact: {
+        fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
+        email: passengers[0].email,
+        phone: passengers[0].phone
+      }
+    };
 
-    if (response.ok) {
-      toast.success("Booking confirmed! Check your email for details.", {
-        duration: 5000,
-        style: { border: '1px solid #10b981', padding: '16px', color: '#064e3b' },
-        iconTheme: { primary: '#10b981', secondary: '#FFFAEE' }
+    formData.append('bookingData', JSON.stringify(bookingData));
+
+    console.log('📤 Appending', passengers.length, 'passengers to FormData');
+    
+    passengers.forEach((passenger, index) => {
+      console.log(`  Passenger ${index + 1}:`, {
+        firstName: passenger.firstName,
+        lastName: passenger.lastName,
+        email: passenger.email
       });
-    } else {
-      throw new Error('Failed to create booking');
-    }
-  } catch (error) {
-      toast.error("Error submitting booking. Please try again.", {
-        style: { border: '1px solid #ef4444', color: '#ef4444' },
-        iconTheme: { primary: '#ef4444', secondary: '#fff' }
-      });
-    }
-
-    setShowModal(false);
-  };
-
-  const handleContactSales = () => {
-    // 4. REPLACED ALERT WITH CUSTOM LOADING TOAST
-    toast.loading("Connecting to sales representative...", {
-      duration: 3000,
-      style: {
-        background: '#333',
-        color: '#fff',
+      
+      formData.append(`passengers[${index}][passengerNumber]`, (index + 1).toString());
+      formData.append(`passengers[${index}][firstName]`, passenger.firstName || '');
+      formData.append(`passengers[${index}][lastName]`, passenger.lastName || '');
+      formData.append(`passengers[${index}][email]`, passenger.email || '');
+      formData.append(`passengers[${index}][phone]`, passenger.phone || '');
+      formData.append(`passengers[${index}][dateOfBirth]`, passenger.dateOfBirth || '');
+      formData.append(`passengers[${index}][age]`, (passenger.age || 0).toString());
+      formData.append(`passengers[${index}][gender]`, passenger.gender || '');
+      formData.append(`passengers[${index}][address]`, passenger.address || '');
+      formData.append(`passengers[${index}][nationality]`, passenger.nationality || 'Filipino');
+      
+      if (passenger.idFile) {
+        formData.append(`passenger_${index}_id`, passenger.idFile);
+        console.log(`    ✅ ID file attached: ${passenger.idFile.name}`);
+      }
+      
+      if (passenger.passportFile) {
+        formData.append(`passenger_${index}_passport`, passenger.passportFile);
+        console.log(`    ✅ Passport file attached: ${passenger.passportFile.name}`);
       }
     });
+
+    console.log('📋 Complete FormData contents:');
+    let fieldCount = 0;
+    for (let [key, value] of formData.entries()) {
+      fieldCount++;
+      if (value instanceof File) {
+        console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+
+    let passengerFieldCount = 0;
+    for (let [key, value] of formData.entries()) {
+      if (key.startsWith('passengers[')) passengerFieldCount++;
+    }
+
+    const bookingRes = await axios.post(
+      'http://localhost:5000/api/bookings', 
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+
+    if (!bookingRes.data.success) {
+      throw new Error(bookingRes.data.message || 'Booking creation failed');
+    }
+
+    if (!bookingRes.data.data || !bookingRes.data.data._id) {
+      console.error('❌ Invalid response structure');
+      throw new Error('Booking ID not found in response');
+    }
+
+    const createdBooking = bookingRes.data.data;
+    const bookingId = createdBooking._id;
+
+    const paymentRes = await axios.post(
+      'http://localhost:5000/api/payment/create-intent',
+      { bookingId: bookingId.toString() },
+      {
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+
+    if (!paymentRes.data.success) {
+      throw new Error(paymentRes.data.message || 'Payment link creation failed');
+    }
+
+    if (!paymentRes.data.checkoutUrl) {
+      throw new Error('Checkout URL not found in response');
+    }
+
+    // STEP 3: Redirect
+    toast.success('✅ Booking confirmed! Redirecting to payment...', { duration: 2000 });
+    setShowModal(false);
+    
+    setTimeout(() => {
+      console.log('🌐 Redirecting to PayMongo...');
+      window.location.href = paymentRes.data.checkoutUrl;
+    }, 2000);
+
+  } catch (error) {
+    console.error('❌ ERROR:', error);
+    console.error('❌ Error message:', error.message);
+    
+    if (error.response) {
+      console.error('❌ Response status:', error.response.status);
+      console.error('❌ Response data:', error.response.data);
+    }
+
+    const errorMsg = error.response?.data?.message || error.message || 'Booking failed. Please try again.';
+    
+    toast.error(`❌ ${errorMsg}`, {
+      duration: 5000,
+      style: {
+        background: '#fee2e2',
+        color: '#dc2626',
+        border: '1px solid #fca5a5'
+      }
+    });
+    
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleContactSales = () => {
+    toast.loading("Connecting to sales representative...", {
+      duration: 3000,
+      style: { background: '#333', color: '#fff' }
+    });
   };
+
+  const currentPassenger = passengers[passengerStep - 1];
+  const progressPercent = Math.round((passengerStep / totalPassengers) * 100);
+
+  useEffect(() => {
+    console.log('📊 Component State:', {
+      hotelData: hotelData ? 'Found' : 'Not found',
+      hotelName: hotelData?.name || 'N/A',
+      roomTypes: hotelData?.roomTypes?.length || 0,  // ✅ ROOT LEVEL
+      selectedRoomType: selectedRoomType?.type || 'None',
+      loadingHotelData
+    });
+  }, [hotelData, selectedRoomType, loadingHotelData]);
 
   return (
     <div className="booking-form-content">
-      {/* 5. ADD TOASTER COMPONENT HERE (Para lumabas ang toast) */}
       <Toaster position="top-center" reverseOrder={false} />
-
-      {/* Title & Price */}
       <div className="form-header">
         <h1 className="package-title">{pkg.name}</h1>
         <div className="price-row">
@@ -136,18 +528,29 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
-      {/* Service Icons */}
       <div className="service-icons">
         {[Plane, Hotel, Bus, Utensils, Camera, Briefcase].map((Icon, i) => (
           <Icon key={i} size={20} className="service-icon" />
         ))}
       </div>
 
-      {/* Calendar Section */}
       <div className="calendar-section">
         <label style={{display:'block', marginBottom:'12px', fontWeight:'600', color:'#374151'}}>
           Select Travel Date
         </label>
+        {selectedDate && (
+          <div style={{
+            padding: '12px',
+            background: '#f0fdf4',
+            border: '1px solid #86efac',
+            borderRadius: '8px',
+            marginBottom: '12px',
+            fontSize: '0.9rem',
+            color: '#166534'
+          }}>
+            <strong>Selected Trip:</strong> {monthNames[currentMonth.getMonth()]} {selectedDate} - {getEndDate()}, {currentMonth.getFullYear()} ({durationDays} days)
+          </div>
+        )}
         <div className="calendar-wrapper">
           <div className="calendar-header">
             <button onClick={() => changeMonth(-1)} style={{background:'none', border:'none', cursor:'pointer'}}>
@@ -166,12 +569,20 @@ const BookingRightForm = ({ pkg }) => {
             {[...Array(firstDay)].map((_, i) => <div key={`empty-${i}`} />)}
             {[...Array(daysInMonth)].map((_, i) => {
               const day = i + 1;
-              const isSelected = selectedDate === day;
+              const isStartDate = selectedDate === day;
+              const isInRange = isInSelectedRange(day);
+              const isEndDate = selectedDate && day === getEndDate();
+              
               return (
                 <button
                   key={day}
                   onClick={() => setSelectedDate(day)}
-                  className={`calendar-day ${isSelected ? 'selected' : ''}`}
+                  className={`calendar-day ${isStartDate ? 'selected' : ''} ${isInRange && !isStartDate ? 'in-range' : ''} ${isEndDate ? 'end-date' : ''}`}
+                  style={{
+                    background: isStartDate ? '#fc9c1b' : isEndDate ? '#22c55e' : isInRange ? '#fef3c7' : 'white',
+                    color: isStartDate || isEndDate ? 'white' : isInRange ? '#92400e' : '#374151',
+                    fontWeight: isStartDate || isEndDate ? '600' : '400'
+                  }}
                 >
                   {day}
                 </button>
@@ -181,44 +592,138 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
-      {/* Quantity Section */}
       <div className="quantity-section">
-        {packageTypes.map((type) => (
-          <div key={type.id} className="quantity-item">
-            <div>
-              <div style={{display:'flex', alignItems:'center'}}>
-                <span className="quantity-label">{type.label}</span>
-                <span className="quantity-discount-badge">{type.discount}</span>
-              </div>
-              <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>{type.description}</div>
+        <div className="quantity-item">
+          <div>
+            <div style={{display:'flex', alignItems:'center'}}>
+              <span className="quantity-label">Standard Pax</span>
+              <span className="quantity-discount-badge">Best Value</span>
             </div>
-            
-            <div className="quantity-controls">
-              <button onClick={() => handleQuantity(type.id, -1)} className="quantity-btn">
-                <Minus size={16} />
-              </button>
-              <span className="quantity-value">{quantities[type.id]}</span>
-              <button onClick={() => handleQuantity(type.id, 1)} className="quantity-btn">
-                <Plus size={16} />
-              </button>
-            </div>
+            <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
           </div>
-        ))}
+          
+          <div className="quantity-controls">
+            <button onClick={() => handleQuantity('adult', -1)} className="quantity-btn">
+              <Minus size={16} />
+            </button>
+            <span className="quantity-value">{quantities.adult}</span>
+            <button onClick={() => handleQuantity('adult', 1)} className="quantity-btn">
+              <Plus size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Bottom: Total & Buttons */}
+      {loadingHotelData && (
+        <div style={{padding:'1rem', background:'#fef3c7', borderRadius:'8px', marginBottom:'1rem'}}>
+          Loading hotel data...
+        </div>
+      )}
+
+      {!loadingHotelData && (!hotelData || !hotelData.roomTypes || hotelData.roomTypes.length === 0) && (
+        <div style={{padding:'1rem', background:'#fee2e2', borderRadius:'8px', marginBottom:'1rem', fontSize:'0.85rem'}}>
+          ⚠️ No room types available for {pkg.destination || pkg.location || 'this destination'}
+        </div>
+      )}
+
+      {hotelData && hotelData.roomTypes && hotelData.roomTypes.length > 0 && (
+        <HotelRoomSelector
+          roomTypes={hotelData.roomTypes}
+          selectedRoomType={selectedRoomType}
+          onRoomTypeChange={handleRoomTypeChange}
+          numberOfRooms={numberOfRooms}
+          numberOfPax={quantities.adult || 1}
+          durationDays={durationDays}
+          durationNights={durationNights}
+        />
+      )}
+
+      {selectedFlight && (
+        <div style={{
+          background: '#fff7ed',
+          border: '2px solid #fc9c1b',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '20px'
+        }}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px'}}>
+            <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+              <Plane size={20} color="#fc9c1b"/>
+              <strong style={{color:'#1f2937', fontSize:'0.95rem'}}>Flight Added to Package</strong>
+            </div>
+            <button 
+              onClick={handleRemoveFlight}
+              style={{
+                background:'none', 
+                border:'none', 
+                color:'#ef4444', 
+                cursor:'pointer',
+                fontSize:'0.85rem',
+                textDecoration:'underline'
+              }}
+            >
+              Remove
+            </button>
+          </div>
+          
+          <div style={{fontSize:'0.9rem', color:'#374151', lineHeight:'1.6'}}>
+            <div><strong>{selectedFlight.airline.name}</strong> • {selectedFlight.airline.flightNumber || 'Flight'}</div>
+            <div>{selectedFlight.departure.iataCode} → {selectedFlight.arrival.iataCode}</div>
+            <div style={{color:'#6b7280', fontSize:'0.85rem'}}>{selectedFlight.departure.displayTime} - {selectedFlight.arrival.displayTime}</div>
+            <div style={{marginTop:'8px', fontWeight:'700', color:'#fc9c1b', fontSize:'1rem'}}>
+              +{selectedFlight.price.formatted}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="booking-footer">
         <div className="total-row">
-          <span className="total-label">Total Amount</span>
-          <span className="total-amount">₱{totalAmount.toLocaleString()}</span>
+          <span className="total-label">
+            {selectedFlight ? 'Package Total' : 'Total Amount'}
+          </span>
+          <span className="total-amount">
+            {packageTotal === 0 ? 'Select Room Type' : `₱${packageTotal.toLocaleString()}`}
+          </span>
         </div>
         
-        {/* Main CTA */}
-        <button className="book-now-btn" onClick={handleBookClick}>
-          Book This Trip
+        {selectedFlight && (
+          <>
+            <div className="total-row" style={{fontSize:'0.9rem', color:'#6b7280'}}>
+              <span>+ Airfare</span>
+              <span>₱{airfareTotal.toLocaleString()}</span>
+            </div>
+            <div className="total-row" style={{
+              borderTop:'2px solid #fc9c1b', 
+              paddingTop:'12px', 
+              marginTop:'8px',
+              fontSize:'1.1rem', 
+              fontWeight:'800',
+              color:'#1f2937'
+            }}>
+              <span>GRAND TOTAL</span>
+              <span style={{color:'#fc9c1b'}}>₱{totalAmount.toLocaleString()}</span>
+            </div>
+          </>
+        )}
+        
+        <button 
+          className="book-now-btn" 
+          onClick={handleBookClick}
+          disabled={!selectedRoomType}
+          style={{
+            opacity: !selectedRoomType ? 0.5 : 1,
+            cursor: !selectedRoomType ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {selectedFlight ? '🎫 Book Package + Flight' : 'Book This Trip'}
         </button>
 
-        {/* Secondary CTA (Below Book Now) */}
+        <button className="book-with-airfare-btn" onClick={handleBookWithAirfare}>
+          <Plane size={20} />
+          {selectedFlight ? 'Change Flight' : 'Add Airfare'}
+        </button>
+
         <button className="contact-sales-footer-btn" onClick={handleContactSales}>
            <MessageCircle size={20} />
            Contact Sales
@@ -229,12 +734,10 @@ const BookingRightForm = ({ pkg }) => {
         </p>
       </div>
 
-      {/* ================= MODAL START ================= */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
             
-            {/* SUPER LARGE CLOSE BUTTON */}
             <button 
               className="modal-close-btn" 
               onClick={() => setShowModal(false)}
@@ -255,67 +758,388 @@ const BookingRightForm = ({ pkg }) => {
                 Please complete your details below. We'll secure your spot for <strong>{pkg.name}</strong> instantly.
               </p>
               
-              {/* Trip Summary */}
               <div className="modal-trip-summary">
                 <div className="summary-item">
-                    <span className="summary-label">Selected Date</span>
-                    <strong className="summary-value">{monthNames[currentMonth.getMonth()]} {selectedDate}, {currentMonth.getFullYear()}</strong>
+                    <span className="summary-label">TRAVEL DATES</span>
+                    <strong className="summary-value">
+                      {monthNames[currentMonth.getMonth()]} {selectedDate} - {getEndDate()}, {currentMonth.getFullYear()}
+                    </strong>
+                    <span style={{fontSize:'0.85rem', color:'#6b7280'}}>({durationDays} days trip)</span>
                 </div>
                 <div className="summary-divider"></div>
                 <div className="summary-item">
-                    <span className="summary-label">Total Amount</span>
-                    <strong className="summary-value price">₱{totalAmount.toLocaleString()}</strong>
+                    <span className="summary-label">PACKAGE PRICE</span>
+                    <strong className="summary-value price">₱{packageTotal.toLocaleString()}</strong>
+                </div>
+                
+                {selectedFlight && (
+                  <>
+                    <div className="summary-divider"></div>
+                    <div className="summary-item">
+                      <span className="summary-label">
+                        <Plane size={14} style={{display:'inline', marginRight:'4px'}}/>
+                        AIRFARE ({selectedFlight.airline.name})
+                      </span>
+                      <strong className="summary-value" style={{color:'#fc9c1b'}}>
+                        ₱{airfareTotal.toLocaleString()}
+                      </strong>
+                      <span style={{fontSize:'0.85rem', color:'#6b7280'}}>
+                        {selectedFlight.departure.iataCode} → {selectedFlight.arrival.iataCode}
+                      </span>
+                    </div>
+                    <div className="summary-divider"></div>
+                    <div className="summary-item" style={{background:'#fff7ed', padding:'12px', borderRadius:'8px'}}>
+                      <span className="summary-label">GRAND TOTAL</span>
+                      <strong className="summary-value" style={{fontSize:'1.4rem', color:'#fc9c1b'}}>
+                        ₱{totalAmount.toLocaleString()}
+                      </strong>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {bookingWithAirfare && (
+                <div style={{
+                  background: isInternationalFlight ? '#eff6ff' : '#fef3c7',
+                  border: `1px solid ${isInternationalFlight ? '#3b82f6' : '#f59e0b'}`,
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  marginTop: '16px',
+                  fontSize: '0.85rem',
+                  color: isInternationalFlight ? '#1e40af' : '#92400e',
+                  fontWeight: 500
+                }}>
+                  <strong>📋 Required Documents:</strong>
+                  {isInternationalFlight ? ' Passport for all passengers' : ' Valid ID for all passengers'}
+                </div>
+              )}
+
+              <div style={{marginTop: '16px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                  <span style={{fontSize: '0.85rem', fontWeight: '600', color: '#64748b'}}>
+                    Passenger {passengerStep} of {totalPassengers}
+                    {passengerStep === 1 && <span style={{color:'#f97316', marginLeft:'6px'}}>(Primary)</span>}
+                  </span>
+                  <span style={{fontSize: '0.85rem', color: '#94a3b8'}}>
+                    {progressPercent}% Complete
+                  </span>
+                </div>
+                <div style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#e2e8f0',
+                  borderRadius: '3px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${progressPercent}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #f97316, #ea580c)',
+                    transition: 'width 0.3s ease'
+                  }} />
                 </div>
               </div>
             </div>
 
-            <form className="modal-form" onSubmit={handleFinalSubmit}>
-              <div className="form-group">
-                <label>FULL NAME</label>
-                <input 
-                  type="text" 
-                  name="fullName"
-                  placeholder="e.g. Juan dela Cruz" 
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required 
-                />
+            <form className="modal-form" onSubmit={handleNextPassenger}>
+              <h3 style={{
+                color: '#334155',
+                fontSize: '1rem',
+                fontWeight: '700',
+                marginBottom: '20px',
+                paddingBottom: '10px',
+                borderBottom: '2px solid #e2e8f0'
+              }}>
+                Passenger {passengerStep}
+                {passengerStep === 1 && <span style={{fontSize:'0.85rem', color:'#f97316', marginLeft:'8px'}}>(Primary Contact)</span>}
+              </h3>
+
+              <div className="form-grid">
+                
+                <div className="form-group">
+                  <label>FIRST NAME <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="text" 
+                    value={currentPassenger.firstName}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'firstName', e.target.value)}
+                    placeholder="Juan"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>LAST NAME <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="text"
+                    value={currentPassenger.lastName}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'lastName', e.target.value)}
+                    placeholder="Dela Cruz"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>EMAIL ADDRESS <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="email"
+                    value={currentPassenger.email}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'email', e.target.value)}
+                    placeholder="juan@example.com"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>PHONE NUMBER <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="tel"
+                    value={currentPassenger.phone}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'phone', e.target.value)}
+                    placeholder="0917 123 4567"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>DATE OF BIRTH <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="date"
+                    value={currentPassenger.dateOfBirth}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'dateOfBirth', e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>AGE <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="number"
+                    value={currentPassenger.age}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'age', e.target.value)}
+                    placeholder="25"
+                    min="0"
+                    max="120"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>GENDER <span style={{color:'#ef4444'}}>*</span></label>
+                  <select
+                    required
+                    value={currentPassenger.gender}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'gender', e.target.value)}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>NATIONALITY <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="text"
+                    value={currentPassenger.nationality}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'nationality', e.target.value)}
+                    placeholder="Filipino"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>COMPLETE ADDRESS <span style={{color:'#ef4444'}}>*</span></label>
+                  <input 
+                    required 
+                    type="text"
+                    value={currentPassenger.address}
+                    onChange={(e) => handlePassengerChange(passengerStep - 1, 'address', e.target.value)}
+                    placeholder="123 Main St, Makati City, Metro Manila"
+                  />
+                </div>
+
+                {bookingWithAirfare && requiresID && (
+                  <div className="form-group full-width">
+                    <label>
+                      UPLOAD VALID ID <span style={{color:'#ef4444'}}>*</span>
+                      <span style={{fontSize:'0.75rem', color:'#6b7280', marginLeft:'8px', fontWeight:400}}>
+                        (Driver's License, UMID, SSS, Postal ID, etc.)
+                      </span>
+                    </label>
+                    
+                    {currentPassenger.idFileName ? (
+                      <div className="file-uploaded">
+                        <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                          <CheckCircle size={18} color="#22c55e"/>
+                          <span>{currentPassenger.idFileName}</span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => removeFile(passengerStep - 1, 'id')}
+                          style={{
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fecaca',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="file-upload-box">
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => handleFileUpload(passengerStep - 1, 'id', e)}
+                          id={`id-upload-${passengerStep}`}
+                          style={{display: 'none'}}
+                        />
+                        <label htmlFor={`id-upload-${passengerStep}`} className="file-upload-label">
+                          <Upload size={32} color="#94a3b8"/>
+                          <span style={{fontWeight:600, color:'#475569'}}>Click to upload ID</span>
+                          <span style={{fontSize:'0.8rem', color:'#94a3b8'}}>PNG, JPG or PDF (Max 5MB)</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {bookingWithAirfare && requiresPassport && (
+                  <div className="form-group full-width">
+                    <label>
+                      UPLOAD PASSPORT <span style={{color:'#ef4444'}}>*</span>
+                      <span style={{fontSize:'0.75rem', color:'#6b7280', marginLeft:'8px', fontWeight:400}}>
+                        (Bio-data page with photo)
+                      </span>
+                    </label>
+                    
+                    {currentPassenger.passportFileName ? (
+                      <div className="file-uploaded">
+                        <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                          <CheckCircle size={18} color="#22c55e"/>
+                          <span>{currentPassenger.passportFileName}</span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => removeFile(passengerStep - 1, 'passport')}
+                          style={{
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fecaca',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="file-upload-box">
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => handleFileUpload(passengerStep - 1, 'passport', e)}
+                          id={`passport-upload-${passengerStep}`}
+                          style={{display: 'none'}}
+                        />
+                        <label htmlFor={`passport-upload-${passengerStep}`} className="file-upload-label">
+                          <Upload size={32} color="#94a3b8"/>
+                          <span style={{fontWeight:600, color:'#475569'}}>Click to upload Passport</span>
+                          <span style={{fontSize:'0.8rem', color:'#94a3b8'}}>PNG, JPG or PDF (Max 5MB)</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
 
-              <div className="form-group">
-                <label>EMAIL ADDRESS</label>
-                <input 
-                  type="email" 
-                  name="email"
-                  placeholder="name@email.com" 
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required 
-                />
+              <div style={{display:'flex', gap:'12px', marginTop:'24px'}}>
+                {passengerStep > 1 && (
+                  <button 
+                    type="button" 
+                    onClick={handleBackPassenger}
+                    style={{
+                      flex: 1,
+                      padding: '16px',
+                      background: '#f1f5f9',
+                      color: '#64748b',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontWeight: 700,
+                      fontSize: '1rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ← BACK
+                  </button>
+                )}
+                
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="modal-submit-btn"
+                  style={{
+                    flex: passengerStep > 1 ? 2 : 1,
+                    width: passengerStep === 1 ? '100%' : 'auto'
+                  }}
+                >
+                  {loading ? 'PROCESSING...' : 
+                   passengerStep === totalPassengers ? 'CONFIRM BOOKING' : 
+                   `NEXT: PASSENGER ${passengerStep + 1}`}
+                </button>
               </div>
-
-              <div className="form-group">
-                <label>MESSAGE (OPTIONAL)</label>
-                <textarea 
-                  name="message"
-                  placeholder="Any special requests or questions?"
-                  rows="3"
-                  value={formData.message}
-                  onChange={handleInputChange}
-                ></textarea>
-              </div>
-
-              {/* Just One Confirm Button Inside Modal Now */}
-              <button type="submit" className="modal-submit-btn">
-                Confirm Booking
-              </button>
 
             </form>
           </div>
         </div>
       )}
-      {/* ================= MODAL END ================= */}
 
+      {showFlightSearchModal && (
+        <div className="flight-search-modal-overlay" onClick={() => setShowFlightSearchModal(false)}>
+          <div className="flight-search-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="flight-modal-close-btn" 
+              onClick={() => setShowFlightSearchModal(false)}
+              aria-label="Close Flight Search"
+            >
+              <X size={32} strokeWidth={3} />
+            </button>
+            
+            <div className="flight-modal-header">
+              <Plane size={28} color="#fc9c1b" />
+              <h2>Search Flights for Your Trip</h2>
+              <p>Package: <strong>{pkg.name}</strong></p>
+              {selectedDate && (
+                <p>Travel Date: <strong>{monthNames[currentMonth.getMonth()]} {selectedDate}, {currentMonth.getFullYear()}</strong></p>
+              )}
+            </div>
+
+            <div className="flight-search-wrapper">
+              <FlightSearch 
+                onFlightSelect={handleFlightSelected}
+                prefilledDepartureDate={selectedDate ? `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}` : null}
+                prefilledDestination={pkg.location}
+                prefilledPassengers={{
+                  adults: quantities.adult || 1,
+                  children: 0,
+                  infants: 0
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

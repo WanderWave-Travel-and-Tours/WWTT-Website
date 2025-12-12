@@ -3,6 +3,13 @@ import './AddPromo.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddPromo = () => {
+    // --- SIDEBAR LOGIC START ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    // --- SIDEBAR LOGIC END ---
+
     const [promoDetails, setPromoDetails] = useState({
         code: '',
         discount: '',
@@ -16,10 +23,8 @@ const AddPromo = () => {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    // New state to track if "Other" is selected in the dropdown
     const [isOtherCategory, setIsOtherCategory] = useState(false);
 
-    // Auto-calculate end date based on duration type and start date
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
             const start = new Date(promoDetails.startDate);
@@ -39,7 +44,6 @@ const AddPromo = () => {
                     break;
             }
 
-            // Handle invalid date case
             if (!isNaN(endDate.getTime())) {
                 const formattedDate = endDate.toISOString().split('T')[0];
                 setPromoDetails(prev => ({
@@ -58,22 +62,19 @@ const AddPromo = () => {
         }));
     };
 
-    // Special handler for the Category Dropdown
     const handleCategorySelect = (e) => {
         const value = e.target.value;
         
         if (value === 'Other') {
             setIsOtherCategory(true);
-            setPromoDetails(prev => ({ ...prev, category: '' })); // Clear value so user can type
+            setPromoDetails(prev => ({ ...prev, category: '' }));
         } else {
             setIsOtherCategory(false);
             setPromoDetails(prev => ({ ...prev, category: value }));
         }
     };
 
-    // --- DITO ANG API CALL ---
     const handleSubmit = async () => {
-        // 1. Validation
         if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
             !promoDetails.discountValue || !promoDetails.startDate) {
             alert('Please fill in all required fields');
@@ -83,7 +84,6 @@ const AddPromo = () => {
         setIsSubmitting(true);
 
         try {
-            // 2. Send Data to Backend
             const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
                 headers: {
@@ -95,11 +95,9 @@ const AddPromo = () => {
             const data = await response.json();
 
             if (response.ok) {
-                // 3. Success Handling
                 alert(`Promo Code ${promoDetails.code} added successfully!`);
                 console.log('Saved Promo:', data);
 
-                // Reset form
                 setPromoDetails({
                     code: '',
                     discount: '',
@@ -140,17 +138,22 @@ const AddPromo = () => {
 
     return (
         <div className="promo-page">
-            <Sidebar />
-            <main className="promo-main">
+            {/* 1. Pass the state and toggle function to Sidebar */}
+            <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
+            {/* 2. Apply conditional class to the main content */}
+            <main className={`promo-main ${
+                isSidebarCollapsed ? "promo-main--collapsed" : ""
+            }`}>
                 <div className="promo-container">
-                    {/* Header */}
                     <header className="promo-header">
                         <h1 className="promo-title">NEW PROMO CODE</h1>
                         <p className="promo-subtitle">Create a new promotional code for your packages</p>
                     </header>
 
                     <div className="promo-grid">
-                        {/* Left Column - Form */}
                         <div className="promo-left">
                             <section className="promo-section">
                                 <h2 className="promo-section-title">PROMO DETAILS</h2>
@@ -178,7 +181,6 @@ const AddPromo = () => {
                                         ></textarea>
                                     </div>
 
-                                    {/* MODIFIED CATEGORY SECTION */}
                                     <div className="promo-field promo-field--full">
                                         <label>Apply to Category</label>
                                         <select
@@ -194,7 +196,6 @@ const AddPromo = () => {
                                             <option value="Other" style={{fontWeight: 'bold', color: '#FF8C42'}}>+ Other (Custom)</option>
                                         </select>
 
-                                        {/* Custom Input appears if "Other" is selected */}
                                         {isOtherCategory && (
                                             <input
                                                 type="text"
@@ -292,7 +293,6 @@ const AddPromo = () => {
                             </div>
                         </div>
 
-                        {/* Right Column - Preview */}
                         <aside className="promo-right">
                             <div className="promo-preview">
                                 <span className="promo-preview-label">PREVIEW</span>

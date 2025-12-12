@@ -1,0 +1,397 @@
+/* MAIN CONTAINER */
+.viewtours-page {
+    display: flex;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+.viewtours-main {
+    flex: 1;
+    /* Default margin: 280px (the un-collapsed sidebar width) */
+    margin-left: 280px; 
+    padding: 40px 100px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    /* ADDED: Transition for smooth margin change */
+    transition: margin-left 0.3s ease; 
+}
+
+/* ADDED: New class for when the sidebar is collapsed */
+.viewtours-main--collapsed {
+    /* Adjusted margin-left to match the collapsed sidebar width (e.g., 70px) */
+    margin-left: 70px;
+}
+
+.viewtours-main *,
+.viewtours-main *::before,
+.viewtours-main *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.viewtours-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* HEADER SECTION */
+.viewtours-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.viewtours-header-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.viewtours-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.viewtours-subtitle {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* BUTTONS */
+.viewtours-btn {
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.viewtours-btn--add {
+    color: #fff;
+    background: #FF8C42;
+    border: none;
+}
+
+.viewtours-btn--add:hover {
+    background: #e57a35;
+}
+
+/* LOADER */
+.viewtours-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 20px;
+}
+
+.viewtours-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #FF8C42;
+    border-radius: 50%;
+    animation: viewtours-spin 1s linear infinite;
+}
+
+@keyframes viewtours-spin {
+    to { transform: rotate(360deg); }
+}
+
+.viewtours-loader p {
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* ERROR STATE */
+.viewtours-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 40px;
+}
+
+.viewtours-error-icon {
+    font-size: 48px;
+}
+
+.viewtours-error p {
+    color: #dc2626;
+    font-size: 14px;
+}
+
+/* EMPTY STATE */
+.viewtours-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 60px;
+}
+
+.viewtours-empty-icon {
+    font-size: 56px;
+    margin-bottom: 8px;
+}
+
+.viewtours-empty h3 {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #001F3F;
+}
+
+.viewtours-empty p {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* GRID LAYOUT */
+.viewtours-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 24px;
+}
+
+/* TOUR CARD */
+.viewtours-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.viewtours-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.12);
+    transform: translateY(-2px);
+}
+
+/* CARD IMAGE */
+.viewtours-card-image {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+    background: #f1f5f9;
+}
+
+.viewtours-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.viewtours-card-category {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: #001F3F;
+    color: #fff;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* CARD BODY */
+.viewtours-card-body {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.viewtours-card-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #001F3F;
+    margin-bottom: 20px;
+    line-height: 1.3;
+    letter-spacing: 0.5px;
+}
+
+/* CARD INFO - VERTICAL LAYOUT */
+.viewtours-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+.viewtours-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.viewtours-info-row svg {
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+/* CARD FOOTER */
+.viewtours-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.viewtours-price {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.viewtours-price-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.viewtours-price-value {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #FF8C42;
+    line-height: 1;
+}
+
+/* ACTION BUTTONS */
+.viewtours-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.viewtours-btn-action {
+    padding: 13px 24px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+}
+
+.viewtours-btn-action--edit {
+    color: #fff;
+    background: #001F3F;
+}
+
+.viewtours-btn-action--edit:hover {
+    background: #003366;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 31, 63, 0.2);
+}
+
+.viewtours-btn-action--delete {
+    color: #dc2626;
+    background: transparent;
+    border: none;
+    padding: 13px 20px;
+    font-weight: 700;
+}
+
+.viewtours-btn-action--delete:hover {
+    color: #b91c1c;
+    background: #fef2f2;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+    .viewtours-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    
+    .viewtours-grid {
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    /* Updated to apply to both main and collapsed main */
+    .viewtours-main,
+    .viewtours-main--collapsed {
+        /* Assuming the sidebar collapses to a small width even on this breakpoint */
+        margin-left: 70px; 
+        padding: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .viewtours-main,
+    .viewtours-main--collapsed {
+        padding: 16px;
+        /* On smallest screens, sidebar is likely hidden or positioned absolute,
+           so margin-left should be reset or minimized. Assuming a small margin is fine. */
+        margin-left: 0; 
+    }
+
+    .viewtours-title {
+        font-size: 1.5rem;
+    }
+
+    .viewtours-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .viewtours-card-title {
+        font-size: 0.85rem;
+    }
+
+    .viewtours-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .viewtours-actions {
+        width: 100%;
+    }
+
+    .viewtours-btn-action {
+        flex: 1;
+        text-align: center;
+    }
+}

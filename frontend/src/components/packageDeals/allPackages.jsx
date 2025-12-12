@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PackageCard from './packageCard';
-import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
+import CurrencyModal from './CurrencyModal';
+import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import './AllPackages.css';
 
 function AllPackages({ 
@@ -8,7 +9,7 @@ function AllPackages({
   categoryName, 
   favorites, 
   onToggleFavorite,
-  onBookNow, // ✅ ADD THIS PROP
+  onBookNow,
   packagesRef,
   scopeFilter,
   onScopeChange,
@@ -25,6 +26,63 @@ function AllPackages({
 }) {
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [currency, setCurrency] = useState('PHP'); 
+  const EXCHANGE_RATE = 58; 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; 
+
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const hasTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (hasTriggeredRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShowCurrencyModal(true);
+          hasTriggeredRef.current = true;
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+
+    if (packagesRef.current) {
+      observer.observe(packagesRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [packagesRef]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [packages, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations]);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPackages = packages.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(packages.length / itemsPerPage);
+
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    if (packagesRef.current) {
+        const yOffset = -120; 
+        const element = packagesRef.current;
+        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({top: y, behavior: 'smooth'});
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) paginate(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) paginate(currentPage - 1);
+  };
 
   const handleDestinationChange = (location) => {
     if (selectedDestinations.includes(location)) {
@@ -51,15 +109,49 @@ function AllPackages({
   return (
     <section className="all-packages-section" ref={packagesRef}>
       
+      {/* --- Pass Currency Props to Modal --- */}
+      <CurrencyModal 
+        isOpen={showCurrencyModal} 
+        onClose={() => setShowCurrencyModal(false)} 
+        currency={currency}
+        setCurrency={setCurrency}
+      />
+
       <div className="section-title-wrapper">
         <h2 className="packages-main-title">{categoryName}</h2>
         <span className="packages-count-badge">{packages.length} packages</span>
       </div>
 
-      <div className="all-packages-layout">
+      <div className="currency-banner">
+        <div className="currency-info">
+          <Info className="info-icon" size={20} />
+          <div className="info-text">
+            <strong>International Booking Notice:</strong> Prices may vary due to currency exchange rates and bank transaction fees. 
+            Displayed USD prices are estimates based on the current exchange rate (₱{EXCHANGE_RATE} = $1).
+          </div>
+        </div>
         
+        <div className="currency-toggle-container">
+          <span className="toggle-label">View in:</span>
+          <div className="currency-switch">
+            <button 
+              className={`currency-btn ${currency === 'PHP' ? 'active' : ''}`}
+              onClick={() => setCurrency('PHP')}
+            >
+              PHP ₱
+            </button>
+            <button 
+              className={`currency-btn ${currency === 'USD' ? 'active' : ''}`}
+              onClick={() => setCurrency('USD')}
+            >
+              USD $
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="all-packages-layout">
         <aside className={`side-filter ${isMobileFilterOpen ? 'mobile-open' : ''}`}>
-          
           <button 
             className={`mobile-filter-toggle ${isMobileFilterOpen ? 'active' : ''}`}
             onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
@@ -97,7 +189,7 @@ function AllPackages({
             </div>
 
             <div className="filter-group">
-              <label className="filter-label">Price Range</label>
+              <label className="filter-label">Price Range ({currency})</label>
               <div className="price-inputs-container">
                 <input 
                   type="number" 
@@ -162,23 +254,23 @@ function AllPackages({
 
         <div className="main-content">
           
-          <div className="filter-bar-container">
-            <div className="scope-filter-container">
+          <div className="packages-filter-bar-container">
+            <div className="packages-scope-filter-container">
               <button 
-                className={`scope-filter-btn ${scopeFilter === 'all' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn ${scopeFilter === 'all' ? 'active' : ''}`}
                 onClick={() => onScopeChange('all')}
               >
                 All
               </button>
               <button 
-                className={`scope-filter-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
                 onClick={() => onScopeChange('best-deals')}
               >
                 <Sparkles size={16} />
                 <span>Best Deals</span>
               </button>
               <button 
-                className={`scope-filter-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
                 onClick={() => onScopeChange('favorites')}
               >
                 <Heart size={16} fill={scopeFilter === 'favorites' ? 'currentColor' : 'none'} />
@@ -186,14 +278,14 @@ function AllPackages({
                 {favorites.length > 0 && <span className="fav-count">({favorites.length})</span>}
               </button>
               <button 
-                className={`scope-filter-btn ${scopeFilter === 'local' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn ${scopeFilter === 'local' ? 'active' : ''}`}
                 onClick={() => onScopeChange('local')}
               >
                 <MapPin size={16} />
                 <span>Local</span>
               </button>
               <button 
-                className={`scope-filter-btn ${scopeFilter === 'international' ? 'active' : ''}`}
+                className={`packages-scope-filter-btn ${scopeFilter === 'international' ? 'active' : ''}`}
                 onClick={() => onScopeChange('international')}
               >
                 <Globe size={16} />
@@ -203,14 +295,16 @@ function AllPackages({
           </div>
 
           <div className="packages-grid">
-            {packages.length > 0 ? (
-              packages.map(pkg => (
+            {currentPackages.length > 0 ? (
+              currentPackages.map(pkg => (
                 <PackageCard
                   key={pkg.id}
                   package={pkg}
                   isFavorite={favorites.includes(pkg.id)}
                   onToggleFavorite={onToggleFavorite}
-                  onBookNow={onBookNow} // ✅ ADD THIS PROP
+                  onBookNow={onBookNow}
+                  currency={currency}
+                  exchangeRate={EXCHANGE_RATE}
                 />
               ))
             ) : (
@@ -229,6 +323,37 @@ function AllPackages({
               </div>
             )}
           </div>
+
+          {packages.length > itemsPerPage && (
+            <div className="pagination-container">
+              <button 
+                className="pagination-btn" 
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i + 1}
+                  className={`pagination-btn ${currentPage === i + 1 ? 'active' : ''}`}
+                  onClick={() => paginate(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button 
+                className="pagination-btn" 
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
+          
         </div>
       </div>
     </section>

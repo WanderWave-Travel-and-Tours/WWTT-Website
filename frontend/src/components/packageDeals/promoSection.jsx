@@ -1,42 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react'; 
+import { ChevronLeft, ChevronRight, Ticket, Copy, Check, Tag } from 'lucide-react';
 import './PromoSection.css';
 
 function PromoSection({ onBookNow }) {
-  
   const [promos, setPromos] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [copiedCode, setCopiedCode] = useState(null);
 
   const getPromoDesign = (type) => {
     switch(type) {
       case 'Weekly':
         return {
-          label: 'Weekly',
-          icon: "🎁",
-          color: "linear-gradient(135deg, #ffe8cc 0%, #ffd9a8 100%)", 
-          btnColor: "#f97316"
+          gradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)',
+          accentColor: '#FF6B6B',
+          image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=80"
         };
       case 'Monthly':
         return {
-          label: 'Monthly',
-          icon: "🏖️",
-          color: "linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)", 
-          btnColor: "#0891b2"
+          gradient: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)',
+          accentColor: '#F093FB',
+          image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80"
         };
       case 'Yearly':
         return {
-          label: 'Yearly',
-          icon: "🌸",
-          color: "linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)", 
-          btnColor: "#db2777"
+          gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          accentColor: '#667eea',
+          image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80"
         };
-      default: 
+      default:
         return {
-          label: 'Special',
-          icon: "✨",
-          color: "linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)",
-          btnColor: "#7e22ce"
+          gradient: 'linear-gradient(135deg, #FFD93D 0%, #FFE066 100%)',
+          accentColor: '#FFD93D',
+          image: "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=1200&q=80"
         };
     }
   };
@@ -49,22 +45,24 @@ function PromoSection({ onBookNow }) {
 
         if (Array.isArray(data)) {
           const today = new Date();
-
           const activePromos = data.filter(promo => {
-             const expiryDate = new Date(promo.validUntil);
-             return expiryDate >= today; 
+            const expiryDate = new Date(promo.validUntil);
+            return expiryDate >= today;
           });
 
           const formattedPromos = activePromos.map(p => {
             const design = getPromoDesign(p.durationType);
             return {
               id: p._id,
-              label: design.label, 
-              title: `${p.code}: GET ${p.discountType === 'Percentage' ? p.discountValue + '%' : '₱' + p.discountValue} OFF!`,
-              text: p.description,
-              icon: design.icon,
-              color: design.color,
-              btnColor: design.btnColor
+              type: p.durationType,
+              code: p.code,
+              discount: p.discountType === 'Percentage' 
+                ? `${p.discountValue}` 
+                : `₱${p.discountValue}`,
+              discountType: p.discountType,
+              description: p.description,
+              validUntil: new Date(p.validUntil),
+              ...design
             };
           });
 
@@ -80,14 +78,6 @@ function PromoSection({ onBookNow }) {
     fetchPromos();
   }, []);
 
-  const uniqueLabels = [...new Set(promos.map(item => item.label))];
-  const handleFilterClick = (label) => {
-    const newIndex = promos.findIndex(p => p.label === label);
-    if (newIndex !== -1) {
-      setCurrentIndex(newIndex);
-    }
-  };
-
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % promos.length);
   };
@@ -96,19 +86,21 @@ function PromoSection({ onBookNow }) {
     setCurrentIndex((prev) => (prev - 1 + promos.length) % promos.length);
   };
 
+  const copyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   useEffect(() => {
-    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-    if (isDesktop && promos.length > 0) {
-      const interval = setInterval(() => {
-        handleNext();
-      }, 4000); 
+    if (promos.length > 1) {
+      const interval = setInterval(handleNext, 5000);
       return () => clearInterval(interval);
     }
-  }, [currentIndex, promos.length]); 
+  }, [currentIndex, promos.length]);
 
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
-  const minSwipeDistance = 50;
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -122,71 +114,136 @@ function PromoSection({ onBookNow }) {
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
+    const minSwipeDistance = 50;
     if (distance > minSwipeDistance) handleNext();
     if (distance < -minSwipeDistance) handlePrev();
   };
 
-  if (loading) return null; 
+  if (loading) return null;
   if (promos.length === 0) return null;
 
   const currentPromo = promos[currentIndex];
 
   return (
-    <section className="promo-section">
-      
-      <div className="promo-header">
-        <h2 className="promo-section-title">PROMO</h2>
-        <div className="promo-filters">
-          {uniqueLabels.map((label) => (
-            <button
-              key={label}
-              className={`promo-filter-btn ${currentPromo?.label === label ? 'active' : ''}`}
-              onClick={() => handleFilterClick(label)}
-            >
-              {label}
+    <section className="promo-destination-section">
+      <div className="section-title-header">
+        <h2 className="section-main-title">PROMO</h2>
+      </div>
+
+      <div className="promo-carousel-wrapper">
+        {promos.length > 1 && (
+          <>
+            <button className="external-arrow arrow-left" onClick={handlePrev}>
+              <ChevronLeft size={26} />
             </button>
-          ))}
-        </div>
-      </div>
+            <button className="external-arrow arrow-right" onClick={handleNext}>
+              <ChevronRight size={26} />
+            </button>
+          </>
+        )}
+        <div className="promo-carousel-container">
+          <div 
+            className="promo-track"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
+            {promos.map((promo, index) => (
+              <div
+                key={promo.id}
+                className={`promo-slide ${index === currentIndex ? 'active' : ''}`}
+                style={{
+                  transform: `translateX(${(index - currentIndex) * 100}%)`
+                }}
+              >
+                <div className="promo-voucher-card">
+                  <div className="card-image-side">
+                    <img src={promo.image} alt="Destination" className="destination-bg-image" />
+                    <div className="image-gradient-overlay"></div>
 
-      <div 
-        className="promo-slider-container"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        <button className="slider-arrow arrow-left" onClick={handlePrev}>
-          <ChevronLeft size={24} />
-        </button>
-        <button className="slider-arrow arrow-right" onClick={handleNext}>
-          <ChevronRight size={24} />
-        </button>
+                    <div 
+                      className="circular-discount-badge"
+                      style={{ background: promo.gradient }}
+                    >
+                      <div className="discount-inner">
+                        <span className="discount-save-text">SAVE</span>
+                        <span className="discount-percentage">
+                          {promo.discount}
+                        </span>
+                        <span className="discount-off-text">
+                          {promo.discountType === 'Percentage' ? '%' : ''}
+                        </span>
+                        <span className="discount-bottom-text">OFF</span>
+                      </div>
+                    </div>
 
-        <div 
-          className="promo-slider-track"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        >
-          {promos.map((promo) => (
-            <div key={promo.id} className="promo-slide">
-              <div className="promo-banner" style={{ background: promo.color }}>
-                <div className="promo-content">
-                  <h2 className="promo-title">{promo.title}</h2>
-                  <p className="promo-text">{promo.text}</p>
-                  <button 
-                    className="promo-button" 
-                    onClick={onBookNow}
-                    style={{ backgroundColor: promo.btnColor }}
-                  >
-                    Book Now
-                  </button>
+                    <div className="perforation-line">
+                      {[...Array(8)].map((_, i) => (
+                        <div key={i} className="perf-circle"></div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="card-details-side">
+                    <div className="glass-container">
+                      <div className="details-header">
+                        <div className="deal-type-badge">
+                          <Ticket size={14} />
+                          <span>{promo.type.toUpperCase()} DEAL</span>
+                        </div>
+                        
+                        <div className="limited-offer-badge">
+                          <Tag size={12} />
+                          <span>LIMITED OFFER</span>
+                        </div>
+                      </div>
+
+                      <div className="details-content">
+                        <h3 className="deal-title">All Tours & Packages</h3>
+                        <p className="deal-description">{promo.description}</p>
+
+                        <div className="promo-code-wrapper">
+                          <div className="code-header-label">
+                            <span>PROMO CODE</span>
+                          </div>
+                          <div className="code-input-group">
+                            <div className="code-display-field">
+                              <span className="code-value">{promo.code}</span>
+                            </div>
+                            <button 
+                              className="copy-code-button"
+                              onClick={() => copyCode(promo.code)}
+                              style={{ background: promo.gradient }}
+                            >
+                              {copiedCode === promo.code ? (
+                                <Check size={18} />
+                              ) : (
+                                <Copy size={18} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="promo-icon">{promo.icon}</div>
               </div>
+            ))}
+          </div>
+
+          {promos.length > 1 && (
+            <div className="carousel-dots-indicator">
+              {promos.map((_, index) => (
+                <button
+                  key={index}
+                  className={`dot-button ${index === currentIndex ? 'active' : ''}`}
+                  onClick={() => setCurrentIndex(index)}
+                />
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
-
     </section>
   );
 }
