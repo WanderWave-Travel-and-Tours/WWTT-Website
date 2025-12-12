@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon, Trash2 } from 'lucide-react';
-import './addPoster.css';
+import './addposter.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddPoster = () => {
