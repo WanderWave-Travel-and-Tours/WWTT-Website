@@ -29,7 +29,7 @@ const ViewHotels = () => {
       setError('');
 
       // Fetch all hotels without pagination
-      const response = await fetch('http://localhost:5000/api/hotels?limit=100');
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/hotels?limit=100');
       const data = await response.json();
 
       console.log('Hotels fetched:', data);
@@ -50,7 +50,7 @@ const ViewHotels = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/hotels/stats');
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/hotels/stats');
       const data = await response.json();
 
       if (data.success) {
@@ -72,7 +72,7 @@ const ViewHotels = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}`, {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/${hotelId}`, {
         method: 'DELETE'
       });
 
@@ -96,7 +96,7 @@ const ViewHotels = () => {
 
   const handleToggleFeatured = async (hotelId, currentStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}/featured`, {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/${hotelId}/featured`, {
         method: 'PATCH'
       });
 

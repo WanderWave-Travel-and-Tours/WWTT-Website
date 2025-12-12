@@ -55,7 +55,7 @@ const BookingRightForm = ({ pkg }) => {
     try {
       setLoadingHotelData(true);
       const city = destination.split(',')[0].trim();
-      const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
       const data = await response.json();
       
       if (data.success && data.data && data.data.length > 0) {
@@ -417,7 +417,7 @@ const BookingRightForm = ({ pkg }) => {
     }
 
     const bookingRes = await axios.post(
-      'http://localhost:5000/api/bookings', 
+      'https://wanderwaveph-backend.onrender.com/api/bookings', 
       formData,
       {
         headers: {
@@ -439,7 +439,7 @@ const BookingRightForm = ({ pkg }) => {
     const bookingId = createdBooking._id;
 
     const paymentRes = await axios.post(
-      'http://localhost:5000/api/payment/create-intent',
+      'https://wanderwaveph-backend.onrender.com/api/payment/create-intent',
       { bookingId: bookingId.toString() },
       {
         headers: { 'Content-Type': 'application/json' }
