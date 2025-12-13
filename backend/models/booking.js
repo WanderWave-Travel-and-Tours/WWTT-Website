@@ -29,6 +29,17 @@ const passengerSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+// NEW PRICE SCHEMA (for flightDetails.price)
+const flightPriceSchema = new mongoose.Schema({
+  amount: { type: Number, required: true },
+  originalAmount: { type: Number },
+  markupApplied: { type: Number },
+  formatted: { type: String },
+  perPerson: { type: Number },
+  totalPassengers: { type: Number }
+}, { _id: false });
+
+
 const bookingSchema = new mongoose.Schema({
   packageName: { type: String, required: true },
 
@@ -47,10 +58,15 @@ const bookingSchema = new mongoose.Schema({
     infants: { type: Number, default: 0 },
   },
 
-  // NEW: Package total (without airfare)
+  // NEW: Hotel/Room Details
+  selectedRoomType: { type: String },
+  hotelName: { type: String },
+  numberOfRooms: { type: Number },
+
+  // Package total (without airfare)
   packageTotal: { type: Number },
 
-  // NEW: Airfare details (if booking includes flight)
+  // Airfare details (if booking includes flight)
   includesAirfare: { type: Boolean, default: false },
   flightDetails: {
     airline: String,
@@ -58,7 +74,8 @@ const bookingSchema = new mongoose.Schema({
     route: String,
     departureTime: String,
     arrivalTime: String,
-    price: Number,
+    // CRITICAL FIX: Changed from Number to Object/Schema
+    price: flightPriceSchema, 
     formatted: String,
     isInternational: Boolean
   },
@@ -66,13 +83,16 @@ const bookingSchema = new mongoose.Schema({
 
   totalAmount: { type: Number, required: true },
 
-  // Primary contact info
+  // Primary contact info (from Passenger 1)
   fullName: { type: String, required: true },
   email:    { type: String, required: true },
   message:  { type: String },
 
-  // NEW: Array of all passengers with complete details
-  passengers: [passengerSchema],
+  // Array of all passengers with complete details
+  passengers: { type: [passengerSchema], required: true, validate: {
+    validator: v => Array.isArray(v) && v.length > 0,
+    message: 'A booking must contain at least one passenger.'
+  }},
 
   status: {
     type: String,
