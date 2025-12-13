@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import './addhotel.css';
-import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users } from 'lucide-react';
+import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users, ImagePlus, X } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000'; 
 
@@ -27,8 +27,14 @@ const AddHotel = () => {
 
   const [destinations, setDestinations] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Main Image State
   const [previewUrl, setPreviewUrl] = useState(null);
   const [file, setFile] = useState(null);
+  
+  // Gallery Images State (Multiple)
+  const [galleryFiles, setGalleryFiles] = useState([]); // Stores objects: { file, preview }
+
   const pasteAreaRef = useRef(null);
   const [isPasteActive, setIsPasteActive] = useState(false);
   const [type, setType] = useState("Budget");
@@ -63,20 +69,16 @@ const AddHotel = () => {
       
       const response = await fetch(url);
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers.get('content-type'));
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Response is not JSON! Got HTML instead. Check if backend is running on correct port.');
+        throw new Error('Response is not JSON! Got HTML instead.');
       }
       
       const data = await response.json();
-      console.log('Received data:', data);
       
       if (data.status === 'ok' && Array.isArray(data.data)) {
         const uniqueDestinations = [...new Set(
@@ -85,19 +87,17 @@ const AddHotel = () => {
             .filter(dest => dest && dest.trim() !== '')
         )];
         
-        console.log('Unique destinations:', uniqueDestinations);
         setDestinations(uniqueDestinations);
         
         if (uniqueDestinations.length === 0) {
           setError('No destinations found in packages');
         }
       } else {
-        console.error('Invalid data format:', data);
         setError('Invalid data format from server');
       }
     } catch (error) {
       console.error('Error fetching destinations:', error);
-      setError(`Failed to load destinations: ${error.message}. Make sure backend is running on ${API_BASE_URL}`);
+      setError(`Failed to load destinations: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -113,12 +113,43 @@ const AddHotel = () => {
     setHotelDetails(prev => ({ ...prev, [name]: value }));
   };
 
+  // Helper to convert file to Base64
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onload = () => {
+        resolve(fileReader.result);
+      };
+      fileReader.onerror = (error) => {
+        reject(error);
+      };
+    });
+  };
+
+  // Handle Main Image
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (selected) {
       setFile(selected);
       setPreviewUrl(URL.createObjectURL(selected));
     }
+  };
+
+  // Handle Multiple Gallery Images
+  const handleGalleryChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      const newGalleryItems = files.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setGalleryFiles(prev => [...prev, ...newGalleryItems]);
+    }
+  };
+
+  const removeGalleryImage = (indexToRemove) => {
+    setGalleryFiles(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const handlePaste = (e) => {
@@ -166,6 +197,23 @@ const AddHotel = () => {
     setSuccess('');
 
     try {
+      // Convert main image to base64
+      let mainImageBase64 = '';
+      if (file) {
+        mainImageBase64 = await convertToBase64(file);
+      }
+
+      // Convert gallery images to base64 array
+      const galleryImagesPromises = galleryFiles.map(async (item) => {
+        const base64 = await convertToBase64(item.file);
+        return {
+          url: base64,
+          caption: '' // Optional caption
+        };
+      });
+      
+      const galleryImagesBase64 = await Promise.all(galleryImagesPromises);
+
       const formData = {
         name: hotelDetails.name,
         location: hotelDetails.destination,
@@ -178,7 +226,8 @@ const AddHotel = () => {
         maxCapacity: Number(hotelDetails.maxCapacity) || 4,
         rating: 0,
         amenities: hotelDetails.amenities,
-        mainImage: previewUrl || '',
+        mainImage: mainImageBase64 || '',
+        images: galleryImagesBase64, // Send the array of gallery images
         featured: false,
         isActive: true,
         roomTypes: [{
@@ -202,6 +251,7 @@ const AddHotel = () => {
 
       if (data.success) {
         setSuccess('Hotel added successfully!');
+        // Reset Form
         setHotelDetails({
           name: '',
           destination: '',
@@ -222,6 +272,7 @@ const AddHotel = () => {
         });
         setPreviewUrl(null);
         setFile(null);
+        setGalleryFiles([]); // Clear gallery
         setType("Budget");
         
         setTimeout(() => setSuccess(''), 3000);
@@ -257,6 +308,7 @@ const AddHotel = () => {
     });
     setPreviewUrl(null);
     setFile(null);
+    setGalleryFiles([]);
     setType("Budget");
     setError('');
     setSuccess('');
@@ -498,8 +550,9 @@ const AddHotel = () => {
                     </div>
                   )}
 
+                  {/* Main Image Section */}
                   <div className="form-group full-width">
-                    <label>Hotel Image</label>
+                    <label>Main Hotel Image (Cover)</label>
                     {previewUrl ? (
                       <div style={{ marginTop: '0.5rem' }}>
                         <img src={previewUrl} alt="Preview" style={{
@@ -552,7 +605,7 @@ const AddHotel = () => {
                           backgroundColor: '#f8fafc'
                         }}>
                           <input type="file" onChange={handleFileChange} accept="image/*" hidden />
-                          <p style={{ margin: '0.5rem 0', color: '#475569' }}>Click to upload</p>
+                          <p style={{ margin: '0.5rem 0', color: '#475569' }}>Click to upload cover</p>
                           <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>JPG, PNG or WebP</span>
                         </label>
                         <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>OR</span>
@@ -567,10 +620,46 @@ const AddHotel = () => {
                           outline: 'none'
                         }}>
                           <p style={{ margin: '0.5rem 0', color: '#475569' }}>Paste screenshot</p>
-                          <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Press Ctrl+V or Cmd+V</span>
+                          <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Press Ctrl+V</span>
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Multiple Gallery Images Section */}
+                  <div className="form-group full-width">
+                    <label>Hotel Gallery (Multiple Views)</label>
+                    <div className="gallery-section">
+                      <div className="gallery-grid">
+                        {/* Upload Button */}
+                        <label className="upload-box">
+                          <input 
+                            type="file" 
+                            onChange={handleGalleryChange} 
+                            accept="image/*" 
+                            multiple 
+                            hidden 
+                          />
+                          <ImagePlus size={24} color="#64748b" />
+                          <span>Add Photos</span>
+                        </label>
+
+                        {/* Gallery Previews */}
+                        {galleryFiles.map((item, index) => (
+                          <div key={index} className="gallery-item">
+                            <img src={item.preview} alt={`Gallery ${index}`} />
+                            <button 
+                              type="button" 
+                              className="remove-image-btn"
+                              onClick={() => removeGalleryImage(index)}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="helper-text">{galleryFiles.length} photos selected</p>
+                    </div>
                   </div>
 
                   <div className="form-group full-width">
