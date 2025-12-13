@@ -516,6 +516,7 @@ exports.updateRoomTypes = async (req, res) => {
   }
 };
 
+// --- UPDATED FUNCTION ---
 exports.getRoomTypesByLocation = async (req, res) => {
   try {
     const { location } = req.params;
@@ -529,19 +530,35 @@ exports.getRoomTypesByLocation = async (req, res) => {
     });
 
     if (!hotels || hotels.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `No hotels found in ${location}`
+      return res.status(200).json({
+        success: true,
+        location: location,
+        count: 0,
+        data: []
       });
     }
 
     const allRoomTypes = [];
     const seenTypes = new Set();
     
+    // Sort hotels by price ascending
+    hotels.sort((a, b) => a.price - b.price);
+    
     hotels.forEach(hotel => {
       if (hotel.roomTypes && hotel.roomTypes.length > 0) {
+        
+        // Extract images from DB
+        const hotelImages = hotel.images && hotel.images.length > 0 
+          ? hotel.images.map(img => img.url) 
+          : [];
+
+        if (hotel.mainImage && !hotelImages.includes(hotel.mainImage)) {
+            hotelImages.unshift(hotel.mainImage);
+        }
+
         hotel.roomTypes.forEach(room => {
           const typeKey = room.type.toUpperCase();
+          
           if (!seenTypes.has(typeKey)) {
             seenTypes.add(typeKey);
             allRoomTypes.push({
@@ -550,8 +567,16 @@ exports.getRoomTypesByLocation = async (req, res) => {
               price: room.price,
               available: room.available,
               description: room.description,
-              hotelName: hotel.name,
-              hotelId: hotel._id
+              hotelName: hotel.name, 
+              hotelId: hotel._id,
+              // Pass images array
+              images: hotelImages, 
+              hotelImage: hotel.mainImage || (hotelImages.length > 0 ? hotelImages[0] : null),
+              
+              // --- NEW DB FIELDS PASSED TO FRONTEND ---
+              hotelLocation: hotel.location || hotel.city, // Pass precise location
+              hotelRating: hotel.rating || 0,              // Pass rating
+              amenities: hotel.amenities                   // Pass amenities object
             });
           }
         });
