@@ -1,19 +1,18 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import BrowseCategory from './browseCategory';
 import AllPackages from './allPackages';
-import PackageBooking from './packageBooking';
 import './packageDeals.css';
 import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
 
 function PackageDeals() {
+  const navigate = useNavigate();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [favorites, setFavorites] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [scopeFilter, setScopeFilter] = useState('all'); 
   const packagesRef = useRef(null);
-  const [currentView, setCurrentView] = useState('list'); 
-  const [selectedPackageForBooking, setSelectedPackageForBooking] = useState(null);
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [selectedDuration, setSelectedDuration] = useState('');
   const [selectedDestinations, setSelectedDestinations] = useState([]);
@@ -45,15 +44,16 @@ function PackageDeals() {
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
 
   const handleBookNow = (pkg) => {
-    setSelectedPackageForBooking(pkg);
-    setCurrentView('booking');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleGoBack = () => {
-    setCurrentView('list');
-    setSelectedPackageForBooking(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    console.log('Book Now clicked for package:', pkg);
+    console.log('Package ID:', pkg.id);
+    
+    // Store package data in sessionStorage for security
+    sessionStorage.setItem('currentPackage', JSON.stringify(pkg));
+    
+    // Navigate to a generic booking route without any identifiers
+    navigate('/packages/book', {
+      state: { packageData: pkg }
+    });
   };
   
   const mostVisitedCategories = [
@@ -151,10 +151,12 @@ function PackageDeals() {
           const data = result.data;
           const formattedPackages = data.map((pkg, index) => ({
             id: pkg._id,
+            _id: pkg._id, // Keep both for compatibility
             name: pkg.title,
             category: pkg.category.toLowerCase(),
             scope: pkg.category.toLowerCase() === 'local' ? 'local' : 'international',
             location: pkg.destination,
+            destination: pkg.destination, // Keep both
             duration: pkg.duration,
             nights: pkg.duration && pkg.duration.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights', 
             price: pkg.price,
@@ -171,6 +173,8 @@ function PackageDeals() {
             description: pkg.title,
             includes: pkg.inclusions || [],
           }));
+          
+          console.log('Loaded packages:', formattedPackages);
           setPackages(formattedPackages);
         } else {
           setError(result.error || 'Failed to fetch packages.');
@@ -193,10 +197,6 @@ function PackageDeals() {
 
   if (error) {
     return <div className="error-screen">Error: {error}</div>;
-  }
-  
-  if (currentView === 'booking' && selectedPackageForBooking) {
-    return <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} />;
   }
 
   const selectedCategory = mostVisitedCategories.find(c => c.id === selectedFilter);
