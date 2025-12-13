@@ -5,17 +5,18 @@ const {
   getService,
   createService,
   updateService,
-  deleteService
+  deleteService,
+  getAllServicesForAdmin
 } = require('../controller/serviceController');
 
 const router = express.Router();
 
-// Public routes
 router.get('/', getAllServices);
 router.get('/category/:category', getServicesByCategory);
 router.get('/:id', getService);
 
-// Admin routes (add authentication middleware later)
+router.get('/admin/all', getAllServicesForAdmin);
+
 router.post('/', createService);
 router.put('/:id', updateService);
 router.delete('/:id', deleteService);
