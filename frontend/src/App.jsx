@@ -1,15 +1,88 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, Globe } from 'lucide-react'; 
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Menu, X, Globe } from 'lucide-react';
+import axios from 'axios';
 import './App.css'; 
+
+// --- IMPORTS ---
 import FlightSearch from './components/flightSearch/flightSearch.jsx';
 import PackageDeals from './components/packageDeals/packageDeals.jsx';
+import PackageBooking from './components/packageDeals/packageBooking.jsx';
 import Footer from './components/footer/footer.jsx';
 import OtherServices from './components/otherservices/otherservices.jsx';
 import UserAuth from './components/userLogin/userLogin.jsx'; 
 import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 import UserDashboard from './components/userDashboard/userDashboard.jsx';
+
+// Wrapper component to get package data from location state
+const PackageBookingWrapper = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { code } = useParams();
+  
+  // Get package data from location state
+  const pkg = location.state?.packageData;
+
+  useEffect(() => {
+    // If no package data in state, redirect to packages page after a short delay
+    if (!pkg) {
+      console.error('No package data found for code:', code);
+      const timer = setTimeout(() => {
+        navigate('/packages', { replace: true });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [pkg, navigate, code]);
+
+  if (!pkg) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '60vh',
+        fontSize: '1.2rem',
+        color: '#666',
+        gap: '1rem'
+      }}>
+        <p>Package data not found...</p>
+        <p style={{ fontSize: '0.9rem', color: '#999' }}>Redirecting to packages page...</p>
+        <button 
+          onClick={() => navigate('/packages')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: '#fc9c1b',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '1rem'
+          }}
+        >
+          Go to Packages Now
+        </button>
+      </div>
+    );
+  }
+
+  // Transform the package data to match the format expected by PackageBooking
+  const transformedPkg = {
+    ...pkg,
+    id: pkg._id || pkg.id,
+    _id: pkg._id || pkg.id,
+    name: pkg.title || pkg.name,
+    location: pkg.destination || pkg.location,
+    destination: pkg.destination || pkg.location,
+    image: pkg.image || 'https://default-image-url.jpg'
+  };
+
+  console.log('Rendering PackageBooking with code:', code);
+  console.log('Package data:', transformedPkg);
+
+  return <PackageBooking pkg={transformedPkg} />;
+};
 
 const Profile = () => (
   <div className="page-container">
@@ -189,7 +262,13 @@ function MainLayout() {
   const getCurrentPage = () => {
     const currentPath = location.pathname;
     const page = Object.entries(pages).find(([_, page]) => page.path === currentPath);
-    return page ? page[0] : 'packages';
+    // If exact match found, return key
+    if (page) return page[0];
+    
+    // Fallback logic for dynamic/other pages
+    if (currentPath.includes('package')) return 'packages';
+    if (currentPath.includes('flight')) return 'flights';
+    return 'packages';
   };
 
   const handleLoginSuccess = (user) => {
@@ -447,13 +526,24 @@ function MainLayout() {
 
       <main className="main-content">
         <Routes>
+          {/* 1. Root Route */}
           <Route path="/" element={<FlightSearch />} />
+
+          {/* 2. Flight Search Route */}
+          <Route path="/flight-search" element={<FlightSearch />} />
+          
+          {/* 3. Package Deals Route */}
           <Route path="/packages" element={<PackageDeals />} />
+
+          {/* 4. Individual Package Booking Route - uses short code for security */}
+          <Route path="/packages/:code" element={<PackageBookingWrapper />} />
+
+          {/* 5. Other Routes */}
           <Route path="/other-services" element={<OtherServices setAuthPage={setAuthPage} />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/help" element={<Help />} />
           <Route path="/payment" element={<Payment />} />
-          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route 
             path="/dashboard" 
             element={
