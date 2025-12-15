@@ -5,7 +5,7 @@ import {
   Plus, BookOpen, Calendar, CheckCircle, RotateCcw, 
   Edit2, Trash2, Save, X, FileText, List, Settings 
 } from 'lucide-react';
-import './PassportAppt.css';
+//import './PassportAppt.css';
 
 const PassportAppt = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -34,7 +34,7 @@ const PassportAppt = () => {
 
     const fetchPassportData = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/passports');
+            const res = await axios.get('https://wanderwaveph-backend.onrender.com/api/passports');
             if (res.data.success && res.data.data.length > 0) {
                 setPassportData(res.data.data[0]);
             }
@@ -49,7 +49,7 @@ const PassportAppt = () => {
         if (!window.confirm('Initialize default passport data? This will only work if no data exists.')) return;
         
         try {
-            const res = await axios.post('http://localhost:5000/api/passports/initialize');
+            const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/passports/initialize');
             if (res.data.success) {
                 alert('Passport data initialized successfully!');
                 fetchPassportData();
@@ -74,7 +74,7 @@ const PassportAppt = () => {
 
         try {
             const res = await axios.put(
-                `http://localhost:5000/api/passports/${editData._id}`, 
+                `https://wanderwaveph-backend.onrender.com/api/passports/${editData._id}`, 
                 editData
             );
             if (res.data.success) {

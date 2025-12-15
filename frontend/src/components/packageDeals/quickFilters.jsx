@@ -1,4 +1,4 @@
-import './QuickFilters.css';
+import './quickFilters.css';
 
 function QuickFilters({ onFilterClick, activeFilter }) {
   const filters = [

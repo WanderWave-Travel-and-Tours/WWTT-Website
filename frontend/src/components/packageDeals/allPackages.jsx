@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import PackageCard from './packageCard';
 import CurrencyModal from './CurrencyModal';
 import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info } from 'lucide-react';
-import './AllPackages.css';
+import './allPackages.css';
 
 function AllPackages({ 
   packages, 

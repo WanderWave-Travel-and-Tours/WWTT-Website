@@ -137,7 +137,7 @@ function MainLayout() {
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
 
   const pages = {
-    flights: { name: 'Flight Search', path: '/' },
+    flights: { name: 'Flight Search', path: '/flights' },
     packages: { name: 'Package Deals', path: '/packages' },
     otherservices: { name: 'Other Services', path: '/other-services' },
   };
@@ -526,13 +526,7 @@ function MainLayout() {
 
       <main className="main-content">
         <Routes>
-          {/* 1. Root Route */}
-          <Route path="/" element={<FlightSearch />} />
-
-          {/* 2. Flight Search Route */}
-          <Route path="/flight-search" element={<FlightSearch />} />
-          
-          {/* 3. Package Deals Route */}
+          <Route path="/flights" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
 
           {/* 4. Individual Package Booking Route - uses short code for security */}

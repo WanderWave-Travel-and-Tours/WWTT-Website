@@ -3,7 +3,7 @@ import Sidebar from '../sidebar/sidebar';
 import './addhotel.css';
 import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users, ImagePlus, X } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000'; 
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com'; 
 
 const AddHotel = () => {
   const [hotelDetails, setHotelDetails] = useState({

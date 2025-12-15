@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
-import "./AddPackage.css";
+import "./addpackage.css";
 
 const AddPackage = () => {
 
@@ -234,7 +234,7 @@ const AddPackage = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/packages/add", {
+      const response = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/add", {
         method: "POST",
         body: formData,
       });

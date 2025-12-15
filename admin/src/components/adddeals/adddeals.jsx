@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, Globe, DollarSign, Calculator, Loader2, MapPin } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
-import './AddDeals.css';
+import './adddeals.css';
 
 const AddDeals = () => {
     const FOREX_RATE = 58;
@@ -63,7 +63,7 @@ const AddDeals = () => {
         }
 
         setIsSubmitting(true);
-        // const API_BASE_URL = 'http://localhost:5000'; 
+        // const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com'; 
 
         try {
             const formData = new FormData();

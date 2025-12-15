@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon, Trash2 } from 'lucide-react';
-import './AddPoster.css';
+import './addposter.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddPoster = () => {
@@ -75,7 +75,7 @@ const AddPoster = () => {
         formData.append('status', posterDetails.status);
 
         try {
-            const response = await fetch('http://localhost:5000/api/posters/add', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters/add', {
                 method: 'POST',
                 body: formData,
             });

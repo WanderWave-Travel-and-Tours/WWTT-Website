@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Login.css';
+import './login.css';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -64,7 +64,7 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/admin/login', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),

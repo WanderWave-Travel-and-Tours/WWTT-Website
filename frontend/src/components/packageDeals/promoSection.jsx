@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Ticket, Copy, Check } from 'lucide-react';
-import './PromoSection.css';
+import { ChevronLeft, ChevronRight, Ticket, Copy, Check, Tag } from 'lucide-react';
+import './promoSection.css';
 
 function PromoSection({ onBookNow }) {
   const [promos, setPromos] = useState([]);
@@ -32,7 +32,7 @@ function PromoSection({ onBookNow }) {
   useEffect(() => {
     const fetchPromos = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/promos');
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
         const data = await response.json();
 
         if (Array.isArray(data)) {

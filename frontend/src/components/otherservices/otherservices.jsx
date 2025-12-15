@@ -21,7 +21,7 @@ import {
   Calendar,
   Briefcase,
 } from "lucide-react";
-import "./OtherServices.css";
+import "./otherservices.css";
 import VisaTable from "./VisaTable";
 import PSATable from "./PsaTable";
 import CenomarTable from "./CenomarTable";

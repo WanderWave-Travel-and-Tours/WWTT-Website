@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './AddPromo.css';
+import './addpromo.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddPromo = () => {
@@ -84,7 +84,7 @@ const AddPromo = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/promos/add', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

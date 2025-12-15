@@ -35,7 +35,7 @@ import {
   ShieldCheck,
   Briefcase 
 } from 'lucide-react';
-import './Sidebar.css';
+import './sidebar.css';
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
@@ -72,11 +72,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     }));
   };
 
-  const handleLogout = () => {
-    console.log('Logging out user...');
-    localStorage.removeItem('adminToken');
-    navigate('/');
-  };
+  const handleLogout = () => {
+    console.log('Logging out user...');
+    localStorage.removeItem('adminToken');
+    navigate('/admin');
+  };
 
   const isActive = (path) => location.pathname === path;
   
