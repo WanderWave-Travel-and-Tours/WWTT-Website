@@ -20,7 +20,7 @@ import ViewTours from './components/viewtours/viewtours.jsx';
 // Promos & Posters
 import AddPromo from './components/addpromo/addpromo.jsx';
 import ViewPromos from './components/viewpromos/viewpromos.jsx';
-import AddPoster from './components/addposter/addposter.jsx';       
+import AddPoster from './components/addposter/addposter.jsx';       
 import ViewPoster from './components/viewposter/viewposter.jsx'; 
 
 // Blogs
@@ -41,7 +41,11 @@ import ViewDeal from './components/viewdeals/viewdeals.jsx';
 import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
 
-// --- SERVICE MANAGEMENT IMPORTS (PascalCase folders based on screenshot) ---
+// --- NEW SERVICE MANAGEMENT IMPORTS ---
+import AddService from './components/addservice/addservice.jsx';
+import ViewServices from './components/viewservice/viewservice.jsx';
+
+// --- SERVICE MANAGEMENT IMPORTS (PascalCase folders based on structure) ---
 import VisaProcessing from './components/services/VisaProcessing/VisaProcessing.jsx';
 import PSASerbilis from './components/services/PSASerbilis/PSASerbilis.jsx';
 import CenomarRequest from './components/services/CenomarRequest/CenomarRequest.jsx';

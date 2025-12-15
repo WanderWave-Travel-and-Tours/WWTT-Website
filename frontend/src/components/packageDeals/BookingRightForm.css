@@ -1,0 +1,1553 @@
+/* BookingRightForm.css */
+
+/* --- Calendar Section --- */
+.brf-calendar-wrapper {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  background-color: white;
+}
+
+.brf-calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.brf-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.brf-calendar-day-label {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.brf-calendar-day {
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.brf-calendar-day:hover { background-color: #f3f4f6; }
+.brf-calendar-day.brf-selected { background-color: #001b3e; color: white; font-weight: 700; }
+.brf-calendar-day.brf-in-range { background-color: #fef3c7; color: #92400e; }
+.brf-calendar-day.brf-end-date { background-color: #22c55e; color: white; font-weight: 600; }
+
+/* --- Quantity Section --- */
+.brf-quantity-section { margin-bottom: 1rem; }
+.brf-quantity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f9fafb;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.brf-quantity-label { font-weight: 700; color: #111827; }
+.brf-quantity-discount-badge { 
+  font-size: 0.7rem; background: #dcfce7; color: #166534; 
+  padding: 2px 8px; border-radius: 10px; margin-left: 8px; 
+}
+
+.brf-quantity-controls { display: flex; align-items: center; gap: 12px; }
+.brf-quantity-btn {
+  width: 32px; height: 32px; border-radius: 8px; background: white;
+  border: 1px solid #e5e7eb; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.brf-quantity-value { font-weight: 700; width: 20px; text-align: center; }
+
+/* --- Footer Totals & Buttons --- */
+.brf-booking-footer {
+  margin-top: 24px;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 24px;
+}
+
+.brf-total-row {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+}
+.brf-total-label { font-size: 1.1rem; font-weight: 600; color: #374151; }
+.brf-total-amount { font-size: 1.5rem; font-weight: 800; color: #001b3e; }
+
+.brf-book-now-btn {
+  width: 100%;
+  background-color: #fc9c1b;
+  color: white;
+  padding: 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 4px 6px rgba(252, 156, 27, 0.2);
+  margin-bottom: 12px;
+}
+.brf-book-now-btn:hover { background-color: #e68a0f; }
+.brf-book-now-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.brf-book-with-airfare-btn {
+  width: 100%;
+  background-color: #fff;
+  border: 2px solid #fc9c1b;
+  color: #fc9c1b;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.brf-book-with-airfare-btn:hover { background-color: #fff7ed; }
+
+.brf-contact-sales-btn {
+  width: 100%;
+  background-color: white;
+  color: #001b3e; 
+  border: 2px solid #e5e7eb;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 12px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.brf-contact-sales-btn:hover {
+  border-color: #001b3e;
+  background-color: #f8fafc;
+}
+
+/* --- REDESIGNED MODAL STYLES --- */
+.brf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: brfOverlayFadeIn 0.3s ease;
+}
+
+@keyframes brfOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.brf-modal-card {
+  background: white;
+  width: 100%;
+  max-width: 900px;
+  border-radius: 24px;
+  padding: 0;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: brfModalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes brfModalSlideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(40px) scale(0.95);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1);
+  }
+}
+
+.brf-modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #64748b;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.brf-modal-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  transform: rotate(90deg) scale(1.1);
+  border-color: #fecaca;
+}
+
+/* --- PREMIUM MODAL HEADER --- */
+.brf-modal-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8f 100%);
+  padding: 40px 48px 32px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.brf-modal-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(252, 156, 27, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.brf-modal-logo {
+  display: block;
+  height: 50px;
+  margin: 0 auto 20px auto;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+  filter: brightness(0) invert(1);
+}
+
+.brf-modal-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: white;
+  text-align: center;
+  margin-bottom: 12px;
+  line-height: 1.2;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.brf-modal-subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  margin-bottom: 28px;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+/* --- TRIP SUMMARY --- */
+.brf-modal-trip-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.brf-summary-item { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 6px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.brf-summary-label { 
+  font-size: 0.7rem; 
+  text-transform: uppercase; 
+  letter-spacing: 0.8px; 
+  color: #64748b; 
+  font-weight: 800;
+}
+
+.brf-summary-value { 
+  font-size: 1rem; 
+  font-weight: 700; 
+  color: #1e3a5f;
+}
+
+.brf-summary-value.brf-price { 
+  color: #10b981; 
+  font-size: 1.35rem;
+}
+
+.brf-summary-divider {
+  display: none;
+}
+
+/* --- SCROLLABLE FORM AREA --- */
+.brf-modal-form-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 48px;
+  background: #f8fafc;
+}
+
+.brf-modal-form-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.brf-modal-form-wrapper::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+.brf-modal-form-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.brf-modal-form-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* --- PROGRESS BAR --- */
+.brf-progress-section {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.brf-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.brf-progress-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.brf-progress-primary-badge {
+  background: linear-gradient(135deg, #fc9c1b 0%, #f97316 100%);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.brf-progress-percent {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.brf-progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.brf-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fc9c1b 0%, #f97316 100%);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(252, 156, 27, 0.4);
+}
+
+/* --- FORM SECTION HEADER --- */
+.brf-form-section-header {
+  color: #1e3a5f;
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid #fc9c1b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.brf-passenger-number-badge {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8f 100%);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* --- 2 COLUMN FORM GRID --- */
+.brf-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.brf-form-group { 
+  margin-bottom: 0;
+}
+
+.brf-form-group.brf-full-width {
+  grid-column: 1 / -1;
+}
+
+.brf-form-group label { 
+  display: block; 
+  font-size: 0.7rem; 
+  font-weight: 800; 
+  color: #64748b; 
+  margin-bottom: 10px; 
+  text-transform: uppercase; 
+  letter-spacing: 0.8px;
+}
+
+.brf-form-group input, 
+.brf-form-group textarea, 
+.brf-form-group select {
+  width: 100%; 
+  padding: 14px 16px; 
+  border: 2px solid #e2e8f0; 
+  border-radius: 12px; 
+  font-size: 0.95rem;
+  background-color: white; 
+  transition: all 0.2s ease; 
+  color: #334155; 
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.brf-form-group input:focus, 
+.brf-form-group textarea:focus, 
+.brf-form-group select:focus { 
+  outline: none; 
+  border-color: #fc9c1b; 
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.15);
+  background: #fffbf5;
+}
+
+.brf-form-group input::placeholder {
+  color: #cbd5e1;
+}
+
+.brf-required-asterisk {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+/* --- FILE UPLOAD STYLES --- */
+.brf-file-upload-box {
+  width: 100%;
+}
+
+.brf-file-upload-label {
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 10px;
+  padding: 28px; 
+  border: 2px dashed #cbd5e1; 
+  border-radius: 12px; 
+  cursor: pointer; 
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+
+.brf-file-upload-label:hover { 
+  border-color: #fc9c1b; 
+  background-color: #fff7ed;
+}
+
+.brf-file-uploaded {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 14px 16px; 
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
+  border: 2px solid #86efac; 
+  border-radius: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.brf-file-uploaded-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.brf-file-uploaded-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brf-remove-file-btn {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.brf-remove-file-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* --- DOCUMENT REQUIREMENT BOX --- */
+.brf-document-requirement-box {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  color: #1e40af;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.brf-document-requirement-box.brf-domestic {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+/* --- ACTION BUTTONS --- */
+.brf-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.brf-back-btn {
+  flex: 1;
+  padding: 16px;
+  background: white;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.brf-back-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.brf-modal-submit-btn {
+  flex: 2;
+  background: linear-gradient(135deg, #fc9c1b 0%, #f97316 100%);
+  color: white;
+  padding: 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
+}
+
+.brf-modal-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(252, 156, 27, 0.4);
+}
+
+.brf-modal-submit-btn:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- FLIGHT SEARCH MODAL --- */
+.brf-flight-overlay {
+  position: fixed; 
+  inset: 0; 
+  background-color: rgba(0,0,0,0.6); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 1001; 
+  backdrop-filter: blur(3px);
+  padding: 16px;
+}
+
+.brf-flight-content {
+  background: #f3f4f6; 
+  width: 95%; 
+  max-width: 1100px; 
+  height: 90vh; 
+  border-radius: 20px;
+  overflow: hidden; 
+  display: flex; 
+  flex-direction: column; 
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+}
+
+.brf-flight-close-btn {
+  position: absolute; 
+  top: 15px; 
+  right: 15px; 
+  background: white; 
+  border: none; 
+  border-radius: 50%;
+  width: 40px; 
+  height: 40px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  cursor: pointer; 
+  z-index: 20; 
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+  color: #6b7280;
+}
+
+.brf-flight-header {
+  padding: 24px 32px; 
+  background: white; 
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.brf-flight-header h2 { 
+  margin: 8px 0 4px 0; 
+  font-size: 1.5rem; 
+  color: #111827; 
+}
+
+.brf-flight-header p { 
+  margin: 0; 
+  color: #6b7280; 
+  font-size: 0.95rem; 
+}
+
+.brf-flight-wrapper {
+  flex: 1; 
+  overflow-y: auto; 
+  padding: 24px;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* --- LARGE DESKTOP (1200px+) --- */
+@media (min-width: 1200px) {
+  .brf-modal-card {
+    max-width: 1000px;
+  }
+
+  .brf-form-grid {
+    gap: 24px;
+  }
+
+  .brf-modal-form-wrapper {
+    padding: 40px 56px;
+  }
+}
+
+/* --- DESKTOP (992px - 1199px) --- */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .brf-modal-card {
+    max-width: 900px;
+  }
+
+  .brf-modal-title {
+    font-size: 1.85rem;
+  }
+}
+
+/* --- TABLET LANDSCAPE (768px - 991px) --- */
+@media (min-width: 768px) and (max-width: 991px) {
+  .brf-modal-card {
+    max-width: 720px;
+  }
+
+  .brf-modal-header {
+    padding: 32px 36px 28px 36px;
+  }
+
+  .brf-modal-title {
+    font-size: 1.65rem;
+  }
+
+  .brf-modal-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .brf-modal-form-wrapper {
+    padding: 28px 36px;
+  }
+
+  .brf-modal-trip-summary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .brf-form-grid {
+    gap: 18px;
+  }
+
+  .brf-form-section-header {
+    font-size: 1.05rem;
+  }
+}
+
+/* --- TABLET PORTRAIT (640px - 767px) --- */
+@media (min-width: 640px) and (max-width: 767px) {
+  .brf-modal-overlay {
+    padding: 16px;
+  }
+
+  .brf-modal-card {
+    max-width: 100%;
+    border-radius: 20px;
+    max-height: 94vh;
+  }
+
+  .brf-modal-header {
+    padding: 28px 28px 24px 28px;
+  }
+
+  .brf-modal-title {
+    font-size: 1.5rem;
+  }
+
+  .brf-modal-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+
+  .brf-modal-logo {
+    height: 42px;
+    margin-bottom: 16px;
+  }
+
+  .brf-modal-trip-summary {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .brf-summary-item {
+    padding: 10px;
+  }
+
+  .brf-summary-label {
+    font-size: 0.65rem;
+  }
+
+  .brf-summary-value {
+    font-size: 0.95rem;
+  }
+
+  .brf-summary-value.brf-price {
+    font-size: 1.2rem;
+  }
+
+  .brf-document-requirement-box {
+    padding: 12px 16px;
+    font-size: 0.85rem;
+  }
+
+  .brf-modal-form-wrapper {
+    padding: 24px 28px;
+  }
+
+  .brf-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .brf-form-section-header {
+    font-size: 1rem;
+    gap: 8px;
+  }
+
+  .brf-passenger-number-badge {
+    font-size: 0.8rem;
+    padding: 5px 12px;
+  }
+
+  .brf-progress-section {
+    padding: 16px;
+  }
+
+  .brf-progress-label {
+    font-size: 0.85rem;
+  }
+
+  .brf-progress-primary-badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+  }
+
+  .brf-modal-actions {
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .brf-back-btn,
+  .brf-modal-submit-btn {
+    padding: 14px;
+    font-size: 0.95rem;
+  }
+}
+
+/* --- MOBILE LARGE (480px - 639px) --- */
+@media (min-width: 480px) and (max-width: 639px) {
+  .brf-modal-overlay {
+    padding: 12px;
+  }
+
+  .brf-modal-card {
+    max-width: 100%;
+    border-radius: 16px;
+    max-height: 95vh;
+  }
+
+  .brf-modal-close-btn {
+    width: 38px;
+    height: 38px;
+    top: 12px;
+    right: 12px;
+  }
+
+  .brf-modal-header {
+    padding: 24px 20px 20px 20px;
+  }
+
+  .brf-modal-header::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .brf-modal-logo {
+    height: 38px;
+    margin-bottom: 14px;
+  }
+
+  .brf-modal-title {
+    font-size: 1.35rem;
+    margin-bottom: 10px;
+  }
+
+  .brf-modal-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+
+  .brf-modal-trip-summary {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .brf-summary-item {
+    padding: 10px;
+  }
+
+  .brf-summary-label {
+    font-size: 0.65rem;
+  }
+
+  .brf-summary-value {
+    font-size: 0.9rem;
+  }
+
+  .brf-summary-value.brf-price {
+    font-size: 1.15rem;
+  }
+
+  .brf-document-requirement-box {
+    padding: 12px 14px;
+    font-size: 0.8rem;
+    margin-bottom: 18px;
+  }
+
+  .brf-modal-form-wrapper {
+    padding: 20px;
+  }
+
+  .brf-modal-form-wrapper::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .brf-progress-section {
+    padding: 14px;
+    margin-bottom: 24px;
+  }
+
+  .brf-progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .brf-progress-label {
+    font-size: 0.8rem;
+  }
+
+  .brf-progress-primary-badge {
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    margin-left: 6px;
+  }
+
+  .brf-progress-percent {
+    font-size: 0.8rem;
+    align-self: flex-end;
+  }
+
+  .brf-progress-bar-container {
+    height: 6px;
+  }
+
+  .brf-form-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .brf-form-section-header {
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .brf-passenger-number-badge {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+  }
+
+  .brf-form-group label {
+    font-size: 0.65rem;
+    margin-bottom: 8px;
+  }
+
+  .brf-form-group input,
+  .brf-form-group textarea,
+  .brf-form-group select {
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+  }
+
+  .brf-file-upload-label {
+    padding: 20px;
+    gap: 8px;
+  }
+
+  .brf-file-uploaded {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .brf-file-uploaded-info {
+    width: 100%;
+  }
+
+  .brf-remove-file-btn {
+    width: 100%;
+    padding: 10px 16px;
+  }
+
+  .brf-modal-actions {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 18px;
+  }
+
+  .brf-back-btn,
+  .brf-modal-submit-btn {
+    width: 100%;
+    flex: 1;
+    padding: 14px;
+    font-size: 0.9rem;
+  }
+
+  .brf-calendar-day {
+    font-size: 0.8rem;
+    height: 32px;
+  }
+
+  .brf-calendar-day-label {
+    font-size: 0.7rem;
+  }
+}
+
+/* --- MOBILE MEDIUM (375px - 479px) --- */
+@media (min-width: 375px) and (max-width: 479px) {
+  .brf-modal-overlay {
+    padding: 8px;
+  }
+
+  .brf-modal-card {
+    max-width: 100%;
+    border-radius: 12px;
+    max-height: 96vh;
+  }
+
+  .brf-modal-close-btn {
+    width: 36px;
+    height: 36px;
+    top: 10px;
+    right: 10px;
+  }
+
+  .brf-modal-header {
+    padding: 20px 16px 18px 16px;
+  }
+
+  .brf-modal-logo {
+    height: 36px;
+    margin-bottom: 12px;
+  }
+
+  .brf-modal-title {
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+  }
+
+  .brf-modal-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .brf-modal-trip-summary {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .brf-summary-item {
+    padding: 8px;
+  }
+
+  .brf-summary-label {
+    font-size: 0.6rem;
+  }
+
+  .brf-summary-value {
+    font-size: 0.85rem;
+  }
+
+  .brf-summary-value.brf-price {
+    font-size: 1.1rem;
+  }
+
+  .brf-document-requirement-box {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+    margin-bottom: 16px;
+  }
+
+  .brf-modal-form-wrapper {
+    padding: 18px 16px;
+  }
+
+  .brf-progress-section {
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+
+  .brf-progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .brf-progress-label {
+    font-size: 0.75rem;
+  }
+
+  .brf-progress-primary-badge {
+    font-size: 0.55rem;
+    padding: 1px 6px;
+    margin-left: 4px;
+  }
+
+  .brf-progress-percent {
+    font-size: 0.75rem;
+  }
+
+  .brf-progress-bar-container {
+    height: 5px;
+  }
+
+  .brf-form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .brf-form-section-header {
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .brf-passenger-number-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+
+  .brf-form-group label {
+    font-size: 0.6rem;
+    margin-bottom: 6px;
+  }
+
+  .brf-form-group input,
+  .brf-form-group textarea,
+  .brf-form-group select {
+    padding: 11px 12px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+  }
+
+  .brf-file-upload-label {
+    padding: 18px;
+    gap: 6px;
+  }
+
+  .brf-file-upload-label svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .brf-file-upload-label span:first-of-type {
+    font-size: 0.85rem;
+  }
+
+  .brf-file-upload-label span:last-of-type {
+    font-size: 0.7rem;
+  }
+
+  .brf-file-uploaded {
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .brf-remove-file-btn {
+    width: 100%;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+
+  .brf-modal-actions {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 16px;
+  }
+
+  .brf-back-btn,
+  .brf-modal-submit-btn {
+    width: 100%;
+    padding: 13px;
+    font-size: 0.85rem;
+  }
+
+  .brf-calendar-day {
+    font-size: 0.75rem;
+    height: 30px;
+  }
+
+  .brf-calendar-day-label {
+    font-size: 0.65rem;
+  }
+
+  .brf-quantity-item {
+    padding: 12px;
+  }
+
+  .brf-quantity-label {
+    font-size: 0.85rem;
+  }
+
+  .brf-total-label {
+    font-size: 1rem;
+  }
+
+  .brf-total-amount {
+    font-size: 1.3rem;
+  }
+}
+
+/* --- MOBILE SMALL (320px - 374px) --- */
+@media (max-width: 374px) {
+  .brf-modal-overlay {
+    padding: 4px;
+  }
+
+  .brf-modal-card {
+    border-radius: 10px;
+    max-height: 97vh;
+  }
+
+  .brf-modal-close-btn {
+    width: 32px;
+    height: 32px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .brf-modal-close-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .brf-modal-header {
+    padding: 18px 14px 16px 14px;
+  }
+
+  .brf-modal-logo {
+    height: 32px;
+    margin-bottom: 10px;
+  }
+
+  .brf-modal-title {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+
+  .brf-modal-subtitle {
+    font-size: 0.75rem;
+    margin-bottom: 14px;
+    line-height: 1.3;
+  }
+
+  .brf-modal-trip-summary {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .brf-summary-item {
+    padding: 6px 8px;
+  }
+
+  .brf-summary-label {
+    font-size: 0.55rem;
+  }
+
+  .brf-summary-value {
+    font-size: 0.8rem;
+  }
+
+  .brf-summary-value.brf-price {
+    font-size: 1rem;
+  }
+
+  .brf-document-requirement-box {
+    padding: 8px 10px;
+    font-size: 0.7rem;
+    margin-bottom: 14px;
+  }
+
+  .brf-modal-form-wrapper {
+    padding: 16px 14px;
+  }
+
+  .brf-progress-section {
+    padding: 10px;
+    margin-bottom: 18px;
+  }
+
+  .brf-progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .brf-progress-label {
+    font-size: 0.7rem;
+  }
+
+  .brf-progress-primary-badge {
+    font-size: 0.5rem;
+    padding: 1px 5px;
+    margin-left: 3px;
+  }
+
+  .brf-progress-percent {
+    font-size: 0.7rem;
+  }
+
+  .brf-progress-bar-container {
+    height: 4px;
+  }
+
+  .brf-form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .brf-form-section-header {
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom-width: 2px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .brf-passenger-number-badge {
+    font-size: 0.65rem;
+    padding: 2px 7px;
+  }
+
+  .brf-form-group label {
+    font-size: 0.55rem;
+    margin-bottom: 5px;
+  }
+
+  .brf-form-group input,
+  .brf-form-group textarea,
+  .brf-form-group select {
+    padding: 10px;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    border-width: 1.5px;
+  }
+
+  .brf-file-upload-label {
+    padding: 16px;
+    gap: 5px;
+  }
+
+  .brf-file-upload-label svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .brf-file-upload-label span:first-of-type {
+    font-size: 0.8rem;
+  }
+
+  .brf-file-upload-label span:last-of-type {
+    font-size: 0.65rem;
+  }
+
+  .brf-file-uploaded {
+    padding: 8px 10px;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .brf-file-uploaded-info svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .brf-file-uploaded-info span {
+    font-size: 0.75rem;
+  }
+
+  .brf-remove-file-btn {
+    width: 100%;
+    padding: 7px 12px;
+    font-size: 0.75rem;
+  }
+
+  .brf-modal-actions {
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+    padding-top: 14px;
+  }
+
+  .brf-back-btn,
+  .brf-modal-submit-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.8rem;
+    letter-spacing: 0.3px;
+  }
+
+  .brf-calendar-day {
+    font-size: 0.7rem;
+    height: 28px;
+  }
+
+  .brf-calendar-day-label {
+    font-size: 0.6rem;
+  }
+
+  .brf-calendar-grid {
+    gap: 4px;
+  }
+
+  .brf-quantity-item {
+    padding: 10px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .brf-quantity-label {
+    font-size: 0.8rem;
+  }
+
+  .brf-quantity-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .brf-total-label {
+    font-size: 0.9rem;
+  }
+
+  .brf-total-amount {
+    font-size: 1.2rem;
+  }
+
+  .brf-book-now-btn,
+  .brf-book-with-airfare-btn,
+  .brf-contact-sales-btn {
+    padding: 14px;
+    font-size: 0.9rem;
+  }
+}
+
+/* --- LANDSCAPE MODE ADJUSTMENTS --- */
+@media (max-height: 600px) and (orientation: landscape) {
+  .brf-modal-card {
+    max-height: 98vh;
+  }
+
+  .brf-modal-header {
+    padding: 20px 28px 16px 28px;
+  }
+
+  .brf-modal-logo {
+    height: 36px;
+    margin-bottom: 10px;
+  }
+
+  .brf-modal-title {
+    font-size: 1.3rem;
+  }
+
+  .brf-modal-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+  }
+
+  .brf-modal-trip-summary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .brf-modal-form-wrapper {
+    padding: 20px 24px;
+  }
+
+  .brf-progress-section {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .brf-form-section-header {
+    margin-bottom: 16px;
+  }
+
+  .brf-form-grid {
+    gap: 14px;
+  }
+
+  .brf-modal-actions {
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+}
+
+/* --- PRINT STYLES --- */
+@media print {
+  .brf-modal-close-btn,
+  .brf-back-btn,
+  .brf-modal-submit-btn {
+    display: none;
+  }
+
+  .brf-modal-overlay {
+    background: white;
+  }
+
+  .brf-modal-card {
+    box-shadow: none;
+    max-height: none;
+  }
+}

@@ -37,7 +37,7 @@ router.post('/documents', upload.single('file'), (req, res) => {
       success: true,
       fileName: req.file.originalname,
       // Ibalik ang path na pwedeng ma-access sa frontend
-      filePath: `http://localhost:5000/uploads/${req.file.filename}` 
+      filePath: `https://wanderwaveph-backend.onrender.com/uploads/${req.file.filename}` 
     });
   } catch (error) {
     console.error(error);

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
-import './addhotel.css';
+import './addhotel.css'; // Assuming this CSS file contains necessary styles
 import toast, { Toaster } from 'react-hot-toast';
-import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users } from 'lucide-react';
+import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users, ImagePlus, X } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000'; 
 
@@ -11,7 +11,7 @@ const AddHotel = () => {
     name: '',
     destination: '',
     price: '', 
-    maxCapacity: '', // <-- Binago mula 4 tungo sa ''
+    maxCapacity: '', // <-- Inayos na: Simula sa blankong string
     amenities: {
       wifi: false,
       parking: false,
@@ -28,8 +28,14 @@ const AddHotel = () => {
 
   const [destinations, setDestinations] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Main Image State
   const [previewUrl, setPreviewUrl] = useState(null);
   const [file, setFile] = useState(null);
+  
+  // Gallery Images State (Multiple)
+  const [galleryFiles, setGalleryFiles] = useState([]); // Stores objects: { file, preview }
+
   const pasteAreaRef = useRef(null);
   const [isPasteActive, setIsPasteActive] = useState(false);
   const [type, setType] = useState("Budget");
@@ -90,20 +96,19 @@ const AddHotel = () => {
       
       const response = await fetch(url);
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers.get('content-type'));
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Response is not JSON! Got HTML instead. Check if backend is running on correct port.');
+        // Log the unexpected content type or content for debugging
+        const text = await response.text(); 
+        console.error('Non-JSON response:', text.substring(0, 200) + '...');
+        throw new Error('Response is not JSON! Got non-JSON content instead.');
       }
       
       const data = await response.json();
-      console.log('Received data:', data);
       
       if (data.status === 'ok' && Array.isArray(data.data)) {
         const uniqueDestinations = [...new Set(
@@ -112,27 +117,25 @@ const AddHotel = () => {
             .filter(dest => dest && dest.trim() !== '')
         )];
         
-        console.log('Unique destinations:', uniqueDestinations);
         setDestinations(uniqueDestinations);
         
         if (uniqueDestinations.length === 0) {
           showToastError('No destinations found in packages.');
         }
       } else {
-        console.error('Invalid data format:', data);
         showToastError('Invalid data format from server.');
       }
     } catch (error) {
       console.error('Error fetching destinations:', error);
-      showToastError(`Failed to load destinations: ${error.message}. Make sure backend is running on ${API_BASE_URL}`);
+      showToastError(`Failed to load destinations: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   const calculateRooms = (guests) => {
-    // Gumagamit ng 4 bilang default kung walang value na inilagay
-    const maxCapacity = Number(hotelDetails.maxCapacity) || 4; 
+    // Gumagamit ng 4 bilang default kung walang valid number ang maxCapacity
+    const maxCapacity = Number(hotelDetails.maxCapacity) > 0 ? Number(hotelDetails.maxCapacity) : 4; 
     return Math.ceil(guests / maxCapacity);
   };
 
@@ -142,11 +145,13 @@ const AddHotel = () => {
     if (name === 'price') {
       let cleanedValue = value.replace(/[^0-9.]/g, ''); 
 
+      // Pinipigilan ang multiple decimal points
       const parts = cleanedValue.split('.');
       if (parts.length > 2) {
         cleanedValue = parts[0] + '.' + parts.slice(1).join('');
       }
 
+      // Max 6 total digits (e.g., 9999.99, 123456)
       const digitsOnly = cleanedValue.replace(/\./g, '');
       if (digitsOnly.length > 6) {
         return; 
@@ -158,7 +163,7 @@ const AddHotel = () => {
       // Tanggapin lang ang digits (alisin ang signs at non-numeric characters)
       const cleanedValue = value.replace(/[^0-9]/g, '');
 
-      // Limitahan sa 3 digits (hindi nag-a-update ng state kung 4 digits na)
+      // Limitahan sa 3 digits
       if (cleanedValue.length > 3) {
         return; 
       }
@@ -171,6 +176,21 @@ const AddHotel = () => {
     }
   };
 
+  // Helper to convert file to Base64
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onload = () => {
+        resolve(fileReader.result);
+      };
+      fileReader.onerror = (error) => {
+        reject(error);
+      };
+    });
+  };
+
+  // Handle Main Image
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (selected) {
@@ -185,6 +205,42 @@ const AddHotel = () => {
       }
     }
   };
+
+  // Handle Multiple Gallery Images
+  const handleGalleryChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      const validFiles = files.filter(file => isSupportedImage(file));
+
+      if (validFiles.length < files.length) {
+        showToastError('Some selected files were ignored. Only JPG, PNG, and WebP images are allowed for the gallery.');
+      }
+      
+      const newGalleryItems = validFiles.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setGalleryFiles(prev => [...prev, ...newGalleryItems]);
+    }
+    // Clear the input value to allow the same file(s) to be selected again if needed
+    e.target.value = null;
+  };
+
+  const removeGalleryImage = (indexToRemove) => {
+    // Revoke the object URL to prevent memory leaks
+    if (galleryFiles[indexToRemove] && galleryFiles[indexToRemove].preview) {
+      URL.revokeObjectURL(galleryFiles[indexToRemove].preview);
+    }
+    setGalleryFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+  
+  // Clean up object URLs when the component unmounts (or on cancel/reset)
+  useEffect(() => {
+    return () => {
+      galleryFiles.forEach(item => URL.revokeObjectURL(item.preview));
+    };
+  }, []);
+
 
   const handlePaste = (e) => {
     const items = e.clipboardData?.items;
@@ -235,24 +291,29 @@ const AddHotel = () => {
   };
 
   const handleSubmit = async () => {
+    // 1. Basic Field Validation
     if (!hotelDetails.name || !hotelDetails.destination) {
       showToastError('Please fill in all required fields (Name, Destination).');
       return;
     }
     
+    // 2. Price Validation
     const numericPrice = Number(hotelDetails.price);
     if (isNaN(numericPrice) || numericPrice <= 0) {
       showToastError('Price per room must be a positive number.');
       return;
     }
 
+    // 3. Capacity Validation
     const numericCapacity = Number(hotelDetails.maxCapacity);
-    if (isNaN(numericCapacity) || numericCapacity < 1) { // Min 1 validation
+    if (isNaN(numericCapacity) || numericCapacity < 1) { 
+      // Gumagamit ng 4 bilang default sa logic, pero kailangan ng valid input para sa database
       showToastError('Max Capacity must be a positive number (minimum 1).');
       return;
     }
 
-    if (hotelDetails.maxCapacity.length > 3 || numericCapacity > 999) { // Max 3 digits validation
+    // Since we filtered to max 3 digits in handleChange, this check is redundant but kept for safety.
+    if (hotelDetails.maxCapacity.length > 3 || numericCapacity > 999) { 
       showToastError('Max capacity cannot exceed 3 digits (999).');
       return;
     }
@@ -260,6 +321,25 @@ const AddHotel = () => {
     setIsSubmitting(true);
 
     try {
+      // Convert main image to base64
+      let mainImageBase64 = '';
+      if (file) {
+        mainImageBase64 = await convertToBase64(file);
+      }
+
+      // Convert gallery images to base64 array
+      const galleryImagesPromises = galleryFiles.map(async (item) => {
+        const base64 = await convertToBase64(item.file);
+        // It's important to include the file extension in the caption or filename 
+        // if the backend relies on it, but for simplicity here, we stick to the required format.
+        return {
+          url: base64,
+          caption: item.file.name || '' // Use file name as caption or just empty string
+        };
+      });
+      
+      const galleryImagesBase64 = await Promise.all(galleryImagesPromises);
+
       const formData = {
         name: hotelDetails.name,
         location: hotelDetails.destination,
@@ -272,15 +352,16 @@ const AddHotel = () => {
         maxCapacity: numericCapacity, 
         rating: 0,
         amenities: hotelDetails.amenities,
-        mainImage: previewUrl || '', 
+        mainImage: mainImageBase64 || '', 
+        images: galleryImagesBase64, // Array of {url: base64, caption: string}
         featured: false,
         isActive: true,
         roomTypes: [{
           type: type,
           capacity: numericCapacity, 
           price: numericPrice,
-          available: 10,
-          description: `${type} room with ${hotelDetails.maxCapacity} person capacity`
+          available: 10, // Default value for availability
+          description: `${type} room with ${numericCapacity} person capacity`
         }]
       };
 
@@ -296,28 +377,8 @@ const AddHotel = () => {
 
       if (data.success) {
         showToastSuccess('Hotel added successfully!');
-        setHotelDetails({
-          name: '',
-          destination: '',
-          price: '',
-          maxCapacity: '', // <-- Binago mula 4 tungo sa ''
-          amenities: {
-            wifi: false,
-            parking: false,
-            pool: false,
-            gym: false,
-            restaurant: false,
-            spa: false,
-            airConditioning: false,
-            roomService: false,
-            laundry: false,
-            bar: false
-          }
-        });
-        setPreviewUrl(null);
-        setFile(null);
-        setType("Budget");
-        
+        // Reset Form
+        handleCancel(); // Re-use handleCancel for reset logic
       } else {
         showToastError(data.message || 'Error creating hotel.');
       }
@@ -330,25 +391,24 @@ const AddHotel = () => {
   };
 
   const handleCancel = () => {
+    // Clear hotel details
     setHotelDetails({
       name: '',
       destination: '',
       price: '',
-      maxCapacity: '', // <-- Binago mula 4 tungo sa ''
+      maxCapacity: '', // <-- Reset to blank string
       amenities: {
-        wifi: false,
-        parking: false,
-        pool: false,
-        gym: false,
-        restaurant: false,
-        spa: false,
-        airConditioning: false,
-        roomService: false,
-        laundry: false,
-        bar: false
+        wifi: false, parking: false, pool: false, gym: false, restaurant: false,
+        spa: false, airConditioning: false, roomService: false, laundry: false, bar: false
       }
     });
-    clearFile(); 
+    // Clear images and revoke URLs to free up memory
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    galleryFiles.forEach(item => URL.revokeObjectURL(item.preview));
+    
+    setPreviewUrl(null);
+    setFile(null);
+    setGalleryFiles([]); 
     setType("Budget");
   };
 
@@ -369,8 +429,8 @@ const AddHotel = () => {
   const exampleGuests = [4, 5, 8, 10];
   
   const currentPrice = Number(hotelDetails.price) || 0; 
-  // Gumagamit ng default na 4 para sa preview kung blangko ang input
-  const currentCapacity = Number(hotelDetails.maxCapacity) || 4; 
+  // Gumagamit ng default na 4 para sa preview kung blangko ang input (pero > 0 dapat)
+  const currentCapacity = Number(hotelDetails.maxCapacity) > 0 ? Number(hotelDetails.maxCapacity) : 4; 
   
   const roomCalculations = exampleGuests.map(guests => ({
     guests,
@@ -525,13 +585,13 @@ const AddHotel = () => {
                       name="price" 
                       value={hotelDetails.price} 
                       onChange={handleChange} 
-                      placeholder="e.g. 2500" 
+                      placeholder="e.g. 2500.00" 
                       required
                       min="1" 
                       inputMode="decimal" 
                     />
                     <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                      Minimum ₱1.00. Maximum 6 digits (e.g., 9999.99). Only numbers and '.' allowed.
+                      Minimum ₱1.00. Maximum 6 total digits (e.g., 9999.99). Only numbers and '.' allowed.
                     </span>
                   </div>
 
@@ -571,8 +631,9 @@ const AddHotel = () => {
                     </div>
                   )}
 
+                  {/* Main Image Section */}
                   <div className="form-group full-width">
-                    <label>Hotel Image</label>
+                    <label>Main Hotel Image (Cover)</label>
                     {previewUrl ? (
                       <div style={{ marginTop: '0.5rem' }}>
                         <img src={previewUrl} alt="Preview" style={{
@@ -612,6 +673,11 @@ const AddHotel = () => {
                             fontSize: '0.875rem'
                           }}>Remove</button>
                         </div>
+                        {isPasteActive && (
+                           <div style={{ marginTop: '0.5rem', padding: '0.5rem', border: '1px solid #3b82f6', borderRadius: '4px', backgroundColor: '#eff6ff' }}>
+                             <p style={{ margin: 0, color: '#1d4ed8', fontSize: '0.875rem' }}>Press **Ctrl+V** anywhere to paste the image.</p>
+                           </div>
+                         )}
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -629,30 +695,126 @@ const AddHotel = () => {
                           <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>JPG, PNG or WebP</span>
                         </label>
                         <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>OR</span>
-                        <div ref={pasteAreaRef} onClick={activatePasteArea} onBlur={() => setIsPasteActive(false)} tabIndex={0} style={{
-                          flex: 1,
-                          padding: '2rem',
-                          border: `2px dashed ${isPasteActive ? '#3b82f6' : '#cbd5e1'}`,
-                          borderRadius: '8px',
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          backgroundColor: isPasteActive ? '#eff6ff' : '#f8fafc',
-                          outline: 'none'
-                        }}>
+                        <div ref={pasteAreaRef} 
+                             onClick={activatePasteArea} 
+                             onBlur={() => setIsPasteActive(false)} 
+                             tabIndex={0} 
+                             style={{
+                               flex: 1,
+                               padding: '2rem',
+                               border: `2px dashed ${isPasteActive ? '#3b82f6' : '#cbd5e1'}`,
+                               borderRadius: '8px',
+                               textAlign: 'center',
+                               cursor: 'pointer',
+                               backgroundColor: isPasteActive ? '#eff6ff' : '#f8fafc',
+                               outline: 'none',
+                               transition: 'border-color 0.2s, background-color 0.2s'
+                             }}>
                           <p style={{ margin: '0.5rem 0', color: '#475569' }}>Paste screenshot</p>
-                          <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Press Ctrl+V or Cmd+V</span>
+                          <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Press Ctrl+V</span>
                         </div>
                       </div>
                     )}
                   </div>
 
+                  {/* Multiple Gallery Images Section */}
+                  <div className="form-group full-width">
+                    <label>Hotel Gallery (Multiple Views)</label>
+                    <div className="gallery-section">
+                      <div className="gallery-grid">
+                        {/* Upload Button */}
+                        <label className="upload-box" style={{
+                           padding: '2rem', 
+                           border: '2px dashed #3b82f6', 
+                           borderRadius: '8px', 
+                           display: 'flex', 
+                           flexDirection: 'column', 
+                           alignItems: 'center', 
+                           justifyContent: 'center', 
+                           cursor: 'pointer', 
+                           backgroundColor: '#eff6ff', 
+                           color: '#3b82f6',
+                           minHeight: '120px'
+                        }}>
+                          <input 
+                            type="file" 
+                            onChange={handleGalleryChange} 
+                            accept="image/jpeg,image/png,image/webp" // Restricted to supported types
+                            multiple 
+                            hidden 
+                          />
+                          <ImagePlus size={24} color="#3b82f6" />
+                          <span style={{ marginTop: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>Add Photos</span>
+                        </label>
+
+                        {/* Gallery Previews */}
+                        {galleryFiles.map((item, index) => (
+                          <div key={index} className="gallery-item" style={{ position: 'relative', height: '120px', overflow: 'hidden', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <img 
+                              src={item.preview} 
+                              alt={`Gallery ${index}`} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                            <button 
+                              type="button" 
+                              className="remove-image-btn"
+                              onClick={() => removeGalleryImage(index)}
+                              style={{ 
+                                position: 'absolute', 
+                                top: '4px', 
+                                right: '4px', 
+                                backgroundColor: 'rgba(239, 68, 68, 0.8)', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '50%', 
+                                width: '24px', 
+                                height: '24px', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                cursor: 'pointer',
+                                zIndex: 10
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="helper-text" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>{galleryFiles.length} photos selected (JPG, PNG, WebP allowed)</p>
+                    </div>
+                  </div>
+
                   <div className="form-group full-width">
                     <label>Amenities</label>
-                    <div className="amenities-grid">
+                    <div className="amenities-grid" style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                        gap: '0.5rem'
+                    }}>
                       {amenitiesList.map(item => (
-                        <label key={item.id} className={`amenity-checkbox ${hotelDetails.amenities[item.id] ? 'active' : ''}`}>
-                          <input type="checkbox" checked={hotelDetails.amenities[item.id]} onChange={() => handleAmenityChange(item.id)} />
-                          <span className="amenity-icon">{item.icon}</span>
+                        <label key={item.id} 
+                               className={`amenity-checkbox ${hotelDetails.amenities[item.id] ? 'active' : ''}`}
+                               style={{
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   padding: '0.5rem',
+                                   border: `1px solid ${hotelDetails.amenities[item.id] ? '#3b82f6' : '#e2e8f0'}`,
+                                   borderRadius: '6px',
+                                   cursor: 'pointer',
+                                   backgroundColor: hotelDetails.amenities[item.id] ? '#eff6ff' : '#fff',
+                                   fontSize: '0.875rem',
+                                   fontWeight: '500',
+                                   color: hotelDetails.amenities[item.id] ? '#3b82f6' : '#475569',
+                                   transition: 'all 0.2s'
+                               }}>
+                          <input 
+                            type="checkbox" 
+                            checked={hotelDetails.amenities[item.id]} 
+                            onChange={() => handleAmenityChange(item.id)} 
+                            hidden 
+                          />
+                          <span className="amenity-icon" style={{ marginRight: '0.5rem', display: 'flex', alignItems: 'center' }}>{item.icon}</span>
                           {item.label}
                         </label>
                       ))}
@@ -661,51 +823,86 @@ const AddHotel = () => {
                 </div>
               </section>
 
-              <div className="action-buttons">
-                <button className="btn-cancel" onClick={handleCancel}>Cancel</button>
-                <button className="btn-submit" onClick={handleSubmit} disabled={isSubmitting}>
+              <div className="action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                <button className="btn-cancel" onClick={handleCancel} style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#e2e8f0',
+                    color: '#475569',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                }}>Cancel</button>
+                <button className="btn-submit" onClick={handleSubmit} disabled={isSubmitting} style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: isSubmitting ? '#93c5fd' : '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    fontWeight: '600'
+                }}>
                   {isSubmitting ? 'Saving...' : 'Save Hotel'}
                 </button>
               </div>
             </div>
 
             <aside className="hotel-right">
-              <div className="preview-card">
-                <span className="preview-label">PREVIEW</span>
+              <div className="preview-card" style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  backgroundColor: '#fff',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)'
+              }}>
+                <span className="preview-label" style={{
+                    display: 'block',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: '#94a3b8'
+                }}>PREVIEW</span>
                 <div className="card-display">
                   <div className="card-image-placeholder" style={{
                     backgroundImage: previewUrl ? `url(${previewUrl})` : 'none',
                     backgroundSize: 'cover',
-                    backgroundPosition: 'center'
+                    backgroundPosition: 'center',
+                    height: '180px',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#94a3b8'
                   }}>
                     {!previewUrl && <span>Hotel Image</span>}
                   </div>
-                  <div className="card-content">
-                    <div className="card-header-row">
-                      <h3 className="card-title">{hotelDetails.name || 'Hotel Name'}</h3>
+                  <div className="card-content" style={{ padding: '1rem 0 0 0' }}>
+                    <div className="card-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h3 className="card-title" style={{ margin: 0, fontSize: '1.125rem', color: '#1e293b' }}>{hotelDetails.name || 'Hotel Name'}</h3>
                       <span style={{
                         background: '#f3f4f6',
                         color: '#6b7280',
                         padding: '4px 8px',
                         borderRadius: '4px',
-                        fontSize: '0.85rem',
+                        fontSize: '0.75rem', // Changed from 0.85rem for better fit
                         fontWeight: '500'
                       }}>{type}</span>
                     </div>
-                    <div className="card-location">
-                      <MapPin size={14} />
+                    <div className="card-location" style={{ display: 'flex', alignItems: 'center', marginTop: '0.25rem', fontSize: '0.875rem', color: '#475569' }}>
+                      <MapPin size={14} style={{ marginRight: '0.4rem' }} />
                       {hotelDetails.destination || 'Destination'}
                     </div>
-                    <p className="card-desc">
+                    <p className="card-desc" style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.75rem', lineHeight: '1.4' }}>
                       {`${type} accommodation in ${hotelDetails.destination || 'your destination'}. Max ${currentCapacity} persons per room.`}
                     </p>
-                    <div className="card-footer">
+                    <div className="card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginTop: '1rem' }}>
                       <div className="card-amenities">
-                        <span>{activeAmenitiesCount > 0 ? `${activeAmenitiesCount} Amenities` : 'No amenities'}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '500' }}>{activeAmenitiesCount > 0 ? `${activeAmenitiesCount} Amenities Selected` : 'No amenities'}</span>
                       </div>
-                      <div className="card-price">
-                        <span className="price-value">₱{currentPrice.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) || '0'}</span>
-                        <span className="price-unit">/ room / night</span>
+                      <div className="card-price" style={{ textAlign: 'right' }}>
+                        <span className="price-value" style={{ display: 'block', fontSize: '1.25rem', color: '#16a34a', fontWeight: '700' }}>₱{currentPrice.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) || '0'}</span>
+                        <span className="price-unit" style={{ fontSize: '0.75rem', color: '#64748b' }}>/ room / night</span>
                       </div>
                     </div>
                   </div>

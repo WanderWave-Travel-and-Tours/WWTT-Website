@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import './viewhotel.css';
-import { Edit, Trash2, MapPin, Star, Plus, Search, Filter, RefreshCw } from 'lucide-react';
+import { Edit, Trash2, MapPin, Star, Plus, Search, Filter, RefreshCw, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ViewHotelModal from './ViewHotelModal'; // Import the new modal
 
 const ViewHotels = () => {
   const navigate = useNavigate();
@@ -11,6 +12,11 @@ const ViewHotels = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCity, setFilterCity] = useState('');
+  
+  // Modal State
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
   const [stats, setStats] = useState({
     total: 0,
     featured: 0,
@@ -28,7 +34,7 @@ const ViewHotels = () => {
       setLoading(true);
       setError('');
 
-      // Fetch all hotels without pagination
+      // Fetch all hotels without pagination for the list
       const response = await fetch('http://localhost:5000/api/hotels?limit=100');
       const data = await response.json();
 
@@ -50,7 +56,7 @@ const ViewHotels = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/hotels/stats');
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/hotels/stats');
       const data = await response.json();
 
       if (data.success) {
@@ -72,7 +78,7 @@ const ViewHotels = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}`, {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/${hotelId}`, {
         method: 'DELETE'
       });
 
@@ -94,9 +100,15 @@ const ViewHotels = () => {
     navigate(`/edit-hotel/${hotelId}`);
   };
 
+  // OPEN VIEW MODAL
+  const handleView = (hotel) => {
+    setSelectedHotel(hotel);
+    setIsViewModalOpen(true);
+  };
+
   const handleToggleFeatured = async (hotelId, currentStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}/featured`, {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/${hotelId}/featured`, {
         method: 'PATCH'
       });
 
@@ -304,6 +316,15 @@ const ViewHotels = () => {
                         </td>
                         <td>
                           <div className="action-group">
+                            {/* View Button */}
+                            <button 
+                              className="action-btn view" 
+                              onClick={() => handleView(hotel)}
+                              title="View Details"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            
                             <button 
                               className="action-btn edit" 
                               onClick={() => handleEdit(hotel._id)}
@@ -343,6 +364,18 @@ const ViewHotels = () => {
           )}
         </div>
       </main>
+
+      {/* RENDER THE VIEW MODAL */}
+      {isViewModalOpen && (
+        <ViewHotelModal 
+          hotel={selectedHotel} 
+          onClose={() => setIsViewModalOpen(false)} 
+          onEdit={(id) => {
+            setIsViewModalOpen(false); // Close modal
+            navigate(`/edit-hotel/${id}`); // Navigate to edit page
+          }}
+        />
+      )}
     </div>
   );
 };
