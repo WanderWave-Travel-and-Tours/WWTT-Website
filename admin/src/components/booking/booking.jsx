@@ -152,7 +152,7 @@ const Booking = () => {
     try {
       setLoading(true);
       // NOTE: Ensure your server is running on this port
-      const res = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/bookings'); 
+      const res = await fetch('http://localhost:5000/api/admin/bookings'); 
 
       if (!res.ok) throw new Error('Failed to fetch');
 
@@ -234,7 +234,7 @@ const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
 
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/admin/bookings/${booking.mongoId}/confirm`, {
+      const res = await fetch(`http://localhost:5000/api/admin/bookings/${booking.mongoId}/confirm`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -258,7 +258,7 @@ const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
 
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/admin/bookings/${booking.mongoId}/cancel`, {
+      const res = await fetch(`http://localhost:5000/api/admin/bookings/${booking.mongoId}/cancel`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });

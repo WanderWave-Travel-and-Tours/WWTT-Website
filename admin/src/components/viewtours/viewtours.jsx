@@ -3,7 +3,7 @@ import Sidebar from '../sidebar/sidebar';
 import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/tours';
+const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 const ViewTours = () => {
     // --- SIDEBAR LOGIC START ---
@@ -111,7 +111,7 @@ const ViewTours = () => {
                                 <div key={tour._id} className="viewtours-card">
                                     <div className="viewtours-card-image">
                                         <img 
-                                            src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} 
+                                            src={`http://localhost:5000/uploads/${tour.image}`} 
                                             alt={tour.title} 
                                         />
                                         <span className="viewtours-card-category">{tour.category}</span>

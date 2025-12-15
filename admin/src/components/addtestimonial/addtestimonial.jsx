@@ -80,7 +80,7 @@ const AddTestimonial = () => {
         }
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials', {
+            const response = await fetch('http://localhost:5000/api/testimonials', {
                     method: 'POST',
                 body: formData, 
             });

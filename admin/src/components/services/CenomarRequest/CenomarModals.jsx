@@ -178,7 +178,7 @@ export const InquiryModal = ({
                         </span>
                       </div>
                       <a 
-                        href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} 
+                        href={`http://localhost:5000${doc.fileUrl}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="cnm-btn cnm-btn-ghost cnm-btn-sm" 
@@ -309,7 +309,7 @@ export const InquiryModal = ({
                       <span className="cnm-doc-name">{doc.originalName}</span>
                       <span className="cnm-doc-meta">{formatFileSize(doc.fileSize)} • Uploaded {formatDate(doc.uploadedAt)}</span>
                     </div>
-                    <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="cnm-btn cnm-btn-ghost cnm-btn-sm">
+                    <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="cnm-btn cnm-btn-ghost cnm-btn-sm">
                       <TrendingUp size={14} /> View
                     </a>
                   </div>
