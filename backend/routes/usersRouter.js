@@ -55,4 +55,26 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// --- GET: Check if email exists (NEW ENDPOINT) ---
+router.get('/check-email', async (req, res) => {
+    try {
+        const email = req.query.email;
+        if (!email) {
+            return res.status(400).json({ status: "error", message: "Email parameter is required." });
+        }
+
+        const user = await User.findOne({ email: email });
+
+        if (user) {
+            return res.status(200).json({ status: "ok", exists: true, data: user });
+        } else {
+            return res.status(200).json({ status: "ok", exists: false, message: "Email not found." });
+        }
+    } catch (err) {
+        // Log the error for server-side debugging
+        console.error("Error checking email:", err);
+        res.status(500).json({ status: "error", message: err.message });
+    }
+});
+
 module.exports = router;

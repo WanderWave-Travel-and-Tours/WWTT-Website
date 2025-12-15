@@ -8,6 +8,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import FlightSearch from '../flightSearch/flightSearch';
 import HotelRoomSelector from './hotelRoomSelector';
 import axios from 'axios';
+//import './BookingRightColumn.css';
 
 const BookingRightForm = ({ pkg }) => {
   const navigate = useNavigate();
