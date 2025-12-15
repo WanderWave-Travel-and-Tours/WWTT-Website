@@ -142,6 +142,36 @@
     background: #fffaf6;
 }
 
+.pkg-upload-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pkg-upload-icon svg {
+    width: 24px;
+    height: 24px;
+    color: #94a3b8;
+}
+
+.pkg-upload-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.pkg-upload-hint {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
 .pkg-upload-preview {
     position: relative;
     height: 220px;
@@ -249,36 +279,74 @@
     color: #fff;
 }
 
-.pkg-list {
+/* UPDATED INCLUSIONS SECTION */
+.pkg-inclusions-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 16px;
 }
-.pkg-list-item {
+
+.pkg-inclusion-row {
     display: flex;
     align-items: center;
     gap: 12px;
 }
-.pkg-bullet {
+
+.pkg-inclusion-bullet {
     width: 8px;
     height: 8px;
     background: #FF8C42;
     border-radius: 50%;
     flex-shrink: 0;
 }
-.pkg-list-item input {
+
+.pkg-inclusion-input-wrapper {
     flex: 1;
 }
-.pkg-remove {
+
+.pkg-inclusion-input-wrapper input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: 0.15s ease;
+    margin-bottom: 15px;
+}
+
+.pkg-inclusion-input-wrapper input::placeholder {
+    color: #94a3b8;
+}
+
+.pkg-inclusion-input-wrapper input:focus {
+    outline: none;
+    border-color: #FF8C42;
+    background: #fff;
+}
+
+.pkg-inclusion-delete-btn {
     background: none;
     border: none;
     cursor: pointer;
     color: #94a3b8;
     font-size: 20px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.15s ease;
 }
-.pkg-remove:hover { color: #dc2626; }
-.pkg-add-btn {
+
+.pkg-inclusion-delete-btn:hover {
+    color: #dc2626;
+}
+
+.pkg-add-inclusion-btn {
     width: 100%;
     padding: 14px;
     font-size: 13px;
@@ -288,8 +356,15 @@
     border: 2px dashed #e2e8f0;
     border-radius: 6px;
     cursor: pointer;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    transition: 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
-.pkg-add-btn:hover {
+
+.pkg-add-inclusion-btn:hover {
     color: #FF8C42;
     border-color: #FF8C42;
 }

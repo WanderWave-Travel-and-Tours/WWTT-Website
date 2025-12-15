@@ -251,7 +251,13 @@ const AddTour = () => {
                           required
                         />
                         <div className="pkg-upload-empty">
-                          <p>Click to upload image</p>
+                          <div className="pkg-upload-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <p className="pkg-upload-text">Click to upload</p>
+                          <p className="pkg-upload-hint">JPG, PNG or WebP</p>
                         </div>
                       </label>
                     </div>
@@ -382,25 +388,28 @@ const AddTour = () => {
 
                 <section className="pkg-section">
                   <div className="pkg-section-header">
-                    <h2 className="pkg-section-title">WHAT'S INCLUDED</h2>
+                    <h2 className="pkg-section-title">INCLUSIONS</h2>
                     <span className="pkg-count">
                       {inclusions.filter((i) => i.trim()).length} items
                     </span>
                   </div>
-                  <div className="pkg-list">
+                  
+                  <div className="pkg-inclusions-wrapper">
                     {inclusions.map((inc, i) => (
-                      <div key={i} className="pkg-list-item">
-                        <span className="pkg-bullet"></span>
-                        <input
-                          type="text"
-                          placeholder="e.g. Lunch Buffet, Hotel Transfer"
-                          value={inc}
-                          onChange={(e) => handleIncChange(i, e.target.value)}
-                        />
+                      <div key={i} className="pkg-inclusion-row">
+                        <span className="pkg-inclusion-bullet"></span>
+                        <div className="pkg-inclusion-input-wrapper">
+                          <input
+                            type="text"
+                            placeholder="What's included?"
+                            value={inc}
+                            onChange={(e) => handleIncChange(i, e.target.value)}
+                          />
+                        </div>
                         {inclusions.length > 1 && (
                           <button
                             type="button"
-                            className="pkg-remove"
+                            className="pkg-inclusion-delete-btn"
                             onClick={() => removeInclusion(i)}
                           >
                             ×
@@ -409,12 +418,13 @@ const AddTour = () => {
                       </div>
                     ))}
                   </div>
+                  
                   <button
                     type="button"
-                    className="pkg-add-btn"
+                    className="pkg-add-inclusion-btn"
                     onClick={addInclusion}
                   >
-                    + Add Item
+                    <span>+</span> Add Item
                   </button>
                 </section>
               </div>

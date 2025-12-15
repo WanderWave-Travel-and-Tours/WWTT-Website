@@ -10,16 +10,16 @@
   --os-dark-blue: #0a203b;
   --os-light-blue: #2196F3;
   --header-height-desktop: 130px; 
-  --header-height-mobile: 90px;   
+  --header-height-mobile: 90px;  
 }
 
 html, body {
   width: 100%;
-  height: 100%; /* Gamitin ang 100% para fit sa screen */
+  height: 100%; 
   margin: 0 !important;
   padding: 0 !important;
-  overflow-x: hidden; /* Bawal horizontal scroll */
-  overflow-y: auto; /* Kusa mag-scroll lang pag kailangan */
+  overflow-x: hidden; 
+  overflow-y: auto; 
   background-color: #0a203b;
 }
 
@@ -100,140 +100,198 @@ html, body {
   padding: 0;
 }
 
-.os-scroll-container {
+/* --- OS-SLIDER AND OS-CARD STYLES (REQUIRED FOR DISPLAY) --- */
+.os-slider {
   display: flex;
-  gap: var(--os-gap);
+  gap: 2rem;
   overflow-x: auto;
+  overflow-y: visible;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  padding: 1rem calc((100% - var(--os-card-width-desktop)) / 2) 2rem;
-  width: 100%;
+  padding: 1rem 2rem 2rem 2rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.os-scroll-container::-webkit-scrollbar {
+.os-slider::-webkit-scrollbar {
   display: none;
 }
 
-.os-glass-card {
+.os-card {
   flex: 0 0 var(--os-card-width-desktop);
-  height: 420px; 
+  height: 420px;
   scroll-snap-align: center;
-  background: var(--os-glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--os-glass-border);
-  border-top: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  overflow: visible;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
-
-.os-glass-card:hover {
-  transform: translateY(-8px);
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
-  border-color: rgba(255, 255, 255, 0.4);
-  z-index: 5;
-}
-
-.os-card-img-box {
-  height: 50%;
-  width: 100%;
   position: relative;
-  border-radius: 24px 24px 0 0;
-  overflow: hidden;
 }
 
-.os-card-img-box img {
+.os-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.70);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.os-card-img {
+  position: relative;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s ease;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  overflow: visible;
+  z-index: 10;
 }
 
-.os-glass-card:hover .os-card-img-box img {
-  transform: scale(1.08);
-}
-
-.os-floating-icon {
+.os-card-overlay {
   position: absolute;
-  bottom: -25px; 
-  left: 25px;
-  width: 50px; 
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+.os-card-icon-wrapper {
+  position: absolute;
+  bottom: -25px;
+  left: 20px;
+  z-index: 200;
+}
+
+.os-card-icon {
+  width: 50px;
   height: 50px;
-  background: linear-gradient(135deg, var(--os-dark-blue), #1a3a5f);
-  color: white;
-  border-radius: 14px;
+  background: linear-gradient(135deg, #0a203b, #1a3a5f);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  z-index: 10;
+  color: white;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
 }
 
-.os-floating-icon svg {
-  width: 24px;
-  height: 24px;
+.os-card:hover .os-card-icon {
+  background: linear-gradient(135deg, #fc9c1b, #ff6b00);
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 12px 32px rgba(252, 156, 27, 0.5), 0 4px 12px rgba(252, 156, 27, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.5);
 }
 
-.os-glass-card:hover .os-floating-icon {
-  background: linear-gradient(135deg, var(--os-accent), #ff6b00);
-  transform: rotate(8deg) scale(1.08);
-  box-shadow: 0 12px 32px rgba(252, 156, 27, 0.4);
-}
-
-.os-card-body {
+.os-card-content {
   flex: 1;
-  padding: 35px 20px 20px; 
+  padding: 35px 20px 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  background: transparent;
+  position: relative;
+  z-index: 2;
 }
 
 .os-card-title {
-  font-size: 1.25rem; 
+  font-size: 1.25rem;
   font-weight: 800;
-  color: #fff;
+  color: #0a203b;
   margin: 0 0 0.5rem;
   line-height: 1.3;
 }
 
-.os-card-desc {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.75);
+.os-card-description {
+  font-size: 0.9rem;
+  color: #666;
   line-height: 1.5;
-  margin: 0;
+  margin: 0 0 1rem;
   flex: 1;
 }
 
-.os-card-link {
-  margin-top: auto;
+.os-card-btn {
+  background: #fc9c1b;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--os-accent);
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 0.95rem;
   transition: all 0.3s ease;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
+  align-self: flex-start;
 }
 
-.os-card-link:hover {
-  gap: 12px;
-  color: white;
-  text-shadow: 0 0 8px rgba(252, 156, 27, 0.6);
+.os-card-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
 }
+
+.os-card-btn:hover {
+  background: #e88a0a;
+  gap: 12px;
+  transform: translateX(4px);
+}
+
+.os-card-btn:hover svg {
+  transform: translateX(4px);
+}
+
+/* --- COMING SOON STYLES --- */
+
+.os-card--coming-soon {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+  overflow: hidden;
+}
+
+.os-card--coming-soon .os-card-img,
+.os-card--coming-soon .os-card-content {
+  filter: blur(1.5px);
+}
+
+.os-card--coming-soon .os-card-icon-wrapper {
+  filter: none;
+  opacity: 1;
+}
+
+.os-card-soon-tag {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 205;
+  
+  background: var(--os-dark-blue); 
+  color: var(--os-accent); 
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  border: 3px solid var(--os-accent);
+  filter: none;
+}
+
+.os-card-btn--disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* --- END COMING SOON STYLES --- */
 
 .os-nav-btn {
   position: absolute;
@@ -591,7 +649,7 @@ html, body {
 
 .requirements-modal-header {
   background: linear-gradient(135deg, var(--os-dark-blue), #1a3a5f);
-  padding: 1.25rem 2rem; /* BINAWASAN pa lalo */
+  padding: 1.25rem 2rem; 
   text-align: center;
   border-radius: 20px 20px 0 0;
   position: relative;
@@ -615,7 +673,7 @@ html, body {
 
 .requirements-modal-list {
   list-style: none;
-  padding: 1.5rem 2rem 2rem; /* BINAWASAN top padding from 2rem */
+  padding: 1.5rem 2rem 2rem; 
   margin: 0;
   background: #f8f9fa;
   border-radius: 0 0 20px 20px;
@@ -670,16 +728,16 @@ html, body {
 /* Close button positioning for requirements modal */
 .requirements-modal .modal-close-btn {
   position: absolute;
-  top: 12px; /* BINAWASAN from 15px */
-  right: 12px; /* BINAWASAN from 15px */
+  top: 12px; 
+  right: 12px; 
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
   cursor: pointer;
   padding: 6px;
   border-radius: 50%;
-  width: 34px; /* BINAWASAN from 36px */
-  height: 34px; /* BINAWASAN from 36px */
+  width: 34px; 
+  height: 34px; 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -695,8 +753,8 @@ html, body {
 }
 
 .requirements-modal .modal-close-btn svg {
-  width: 24px; /* BINAWASAN from 32px */
-  height: 24px; /* BINAWASAN from 32px */
+  width: 24px; 
+  height: 24px; 
 }
 
 /* Scrollbar styling for requirements modal */
@@ -727,7 +785,7 @@ html, body {
   }
 
   .requirements-modal-header {
-    padding: 1.25rem 1.5rem; /* BINAWASAN */
+    padding: 1.25rem 1.5rem; 
   }
 
   .req-icon-large {
@@ -737,15 +795,15 @@ html, body {
   }
 
   .requirements-modal-title {
-    font-size: 1.25rem; /* BINAWASAN */
+    font-size: 1.25rem; 
   }
 
   .requirements-modal-subtitle {
-    font-size: 0.85rem; /* BINAWASAN */
+    font-size: 0.85rem; 
   }
 
   .requirements-modal-list {
-    padding: 1.25rem 1.5rem 1.5rem; /* BINAWASAN */
+    padding: 1.25rem 1.5rem 1.5rem; 
   }
 
   .requirement-modal-item {
@@ -807,7 +865,7 @@ html, body {
 /* Header Image Banner - UPDATED HEIGHT */
 .modal-header-image {
   width: calc(100% + 5rem);
-  height: 140px; /* BINAWASAN from 180px */
+  height: 140px; 
   margin: -2.5rem -2.5rem 1.5rem -2.5rem;
   border-radius: 20px 0 0 0;
   background-size: cover;
@@ -826,7 +884,7 @@ html, body {
 }
 
 .header-title-overlay {
-  font-size: 1.75rem; /* BINAWASAN from 2rem */
+  font-size: 1.75rem; 
   font-weight: 800;
   color: white;
   text-align: center;
@@ -893,6 +951,7 @@ html, body {
 .footer-contact-item {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   color: white;
   font-size: 0.85rem;
@@ -914,7 +973,7 @@ html, body {
 @media (max-width: 1024px) {
   .modal-header-image {
     width: calc(100% + 4rem);
-    height: 120px; /* BINAWASAN */
+    height: 120px; 
     margin: -2rem -2rem 1.5rem -2rem;
   }
 
@@ -930,7 +989,7 @@ html, body {
 @media (max-width: 768px) {
   .modal-header-image {
     width: calc(100% + 3rem);
-    height: 100px; /* BINAWASAN */
+    height: 100px; 
     margin: -1.5rem -1.5rem 1rem -1.5rem;
     border-radius: 20px 20px 0 0;
   }
@@ -971,7 +1030,7 @@ html, body {
     font-size: 2.2rem;
   }
 
-  .os-scroll-container {
+  .os-slider {
     padding: 1rem calc((100% - (var(--os-card-width-desktop) * 2) - var(--os-gap)) / 2) 1rem;
     justify-content: flex-start;
   }
@@ -1020,25 +1079,30 @@ html, body {
     display: block;
   }
 
-  .os-scroll-container {
+  .os-slider {
     padding: 0.5rem 1.5rem 1rem;
   }
 
-  .os-glass-card {
+  .os-card {
     flex: 0 0 var(--os-card-width-mobile);
     height: 380px;
   }
 
   .os-card-body {
-    padding: 25px 16px 16px;
+    padding: 30px 16px 16px;
   }
 
   .os-card-title {
     font-size: 1.1rem;
   }
 
-  .os-card-desc {
+  .os-card-description {
     font-size: 0.85rem;
+  }
+
+  .os-card-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .modal-overlay {
@@ -1085,6 +1149,11 @@ html, body {
     width: 36px;
     height: 36px;
   }
+
+  .modal-close-btn svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1096,7 +1165,7 @@ html, body {
     font-size: 1.5rem;
   }
 
-  .os-glass-card {
+  .os-card {
     flex: 0 0 280px;
     height: 360px;
   }
@@ -1109,7 +1178,7 @@ html, body {
   background: white;
   border-radius: 20px;
   width: 90%;
-  max-width: 900px; /* BINAWASAN from 1200px */
+  max-width: 900px; 
   max-height: 85vh;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
@@ -1196,7 +1265,7 @@ html, body {
 
 /* ========================================
    PASSPORT MODAL STYLES
-   ======================================== */
+   ======================================= */
 
 .passport-modal-expanded {
   position: relative;
@@ -1261,7 +1330,7 @@ html, body {
 /* ========================================
    PASSPORT SERVICE MODAL
    (Same structure as visa-countries-modal)
-   ======================================== */
+   ======================================= */
 
 .passport-service-modal {
   position: relative;
@@ -1269,8 +1338,8 @@ html, body {
   border-radius: 20px;
   width: 90%;
   max-width: 900px;
-  max-height: 90vh; /* Tinaasan ko slight */
-  overflow-y: auto; /* PALITAN ITO: from 'hidden' to 'auto' */
+  max-height: 90vh; 
+  overflow-y: auto; 
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   animation: slideUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
@@ -1306,194 +1375,48 @@ html, body {
     width: 95%;
     max-height: 90vh;
   }
-}/* ========================================
-   OS-SLIDER AND OS-CARD STYLES
-   (Missing from current CSS)
-   ======================================== */
-
-.os-slider {
-  display: flex;
-  gap: 2rem;
-  overflow-x: auto;
-  overflow-y: visible;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  padding: 1rem 2rem 2rem 2rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
-.os-slider::-webkit-scrollbar {
-  display: none;
+/* =========================
+   PUBLIC FRONTEND CSS (otherservices.css)
+========================= */
+/* Keep all existing styles above this new block */
+
+.os-card--coming-soon {
+    pointer-events: none; /* Disable all clicks on the card */
+    opacity: 0.7; /* Make the whole card semi-transparent */
+    position: relative;
+    overflow: hidden;
 }
 
-.os-card {
-  flex: 0 0 var(--os-card-width-desktop);
-  height: 420px;
-  scroll-snap-align: center;
-  background: rgba(255, 255, 255, 0.60);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  position: relative;
+/* Apply blur and grayscale effect to the image */
+.os-card--coming-soon .os-card-img {
+    filter: grayscale(100%) blur(2px);
+    opacity: 0.8;
 }
 
-.os-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  background: rgba(255, 255, 255, 0.70);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+/* Style the "Coming Soon" tag */
+.os-card-soon-tag {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10; 
+    background: rgba(0, 31, 63, 0.9);
+    color: #FF8C42;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
-.os-card-img {
-  position: relative;
-  width: 100%;
-  height: 200px;
-  background-size: cover;
-  background-position: center;
-  overflow: visible;
-  z-index: 10;
-}
-
-.os-card-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
-}
-
-.os-card-icon-wrapper {
-  position: absolute;
-  bottom: -25px;
-  left: 20px;
-  z-index: 200;
-}
-
-.os-card-icon {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #0a203b, #1a3a5f);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-}
-
-.os-card:hover .os-card-icon {
-  background: linear-gradient(135deg, #fc9c1b, #ff6b00);
-  transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 12px 32px rgba(252, 156, 27, 0.5), 0 4px 12px rgba(252, 156, 27, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-}
-
-.os-card-content {
-  flex: 1;
-  padding: 35px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background: transparent;
-  position: relative;
-  z-index: 2;
-}
-
-.os-card-title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #0a203b;
-  margin: 0 0 0.5rem;
-  line-height: 1.3;
-}
-
-.os-card-description {
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.5;
-  margin: 0 0 1rem;
-  flex: 1;
-}
-
-.os-card-btn {
-  background: #fc9c1b;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  align-self: flex-start;
-}
-
-.os-card-btn svg {
-  width: 20px;
-  height: 20px;
-  transition: transform 0.3s ease;
-}
-
-.os-card-btn:hover {
-  background: #e88a0a;
-  gap: 12px;
-  transform: translateX(4px);
-}
-
-.os-card-btn:hover svg {
-  transform: translateX(4px);
-}
-
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .os-slider {
-    padding: 1rem;
-    gap: 1.5rem;
-  }
-
-  .os-card {
-    flex: 0 0 var(--os-card-width-mobile);
-    height: 380px;
-  }
-
-  .os-card-img {
-    height: 160px;
-  }
-
-  .os-card-content {
-    padding: 30px 16px 16px;
-  }
-
-  .os-card-title {
-    font-size: 1.1rem;
-  }
-
-  .os-card-description {
-    font-size: 0.85rem;
-  }
-
-  .os-card-btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .os-card {
-    height: 360px;
-  }
-
-  .os-card-title {
-    font-size: 1rem;
-  }
+/* Visually disable the button inside the coming soon card */
+.os-card--coming-soon .os-card-btn {
+    background-color: #94a3b8 !important;
+    color: #f8fafc !important;
+    cursor: not-allowed;
+    box-shadow: none;
 }

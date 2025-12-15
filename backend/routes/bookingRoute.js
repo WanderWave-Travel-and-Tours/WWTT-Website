@@ -26,12 +26,18 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+  const allowedMimeTypes = [
+    'image/jpeg', 'image/png', 'image/jpg', 'application/pdf',
+    'image/gif', 'image/webp', 'image/tiff' 
+  ];
   
-  if (allowedTypes.includes(file.mimetype)) {
+  const isImage = file.mimetype.startsWith('image/');
+
+  if (allowedMimeTypes.includes(file.mimetype) || isImage) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only JPG, PNG and PDF are allowed.'), false);
+    // This returns the error to the client, preventing the 500 crash later
+    cb(new Error('Invalid file type. Only JPG, PNG, GIF, WEBP, and PDF are allowed.'), false);
   }
 };
 
@@ -54,13 +60,12 @@ const generateTempPassword = () => {
 router.get('/user/:email', async (req, res) => {
   try {
     const { email } = req.params;
-    // Hanapin ang bookings na match sa email ng user, sort by newest
     const bookings = await Booking.find({ email: email }).sort({ createdAt: -1 });
 
     res.json({
       success: true,
       count: bookings.length,
-      data: bookings // Return as 'data' to match inquiry structure
+      data: bookings
     });
   } catch (error) {
     console.error('❌ Error fetching user bookings:', error);
@@ -75,66 +80,65 @@ router.post('/', upload.any(), async (req, res) => {
   try {
     let bookingData;
     
+    // ===========================================
+    // 1. Parse Booking Data (Includes all text data now, including passengers)
+    // ===========================================
     if (!req.body.bookingData) {
       console.error('❌ No bookingData field found in request!');
       return res.status(400).json({
         success: false,
         message: 'No booking data provided',
-        hint: 'The bookingData field is missing from the request',
-        receivedKeys: Object.keys(req.body).slice(0, 10)
+        hint: 'The bookingData field is missing from the request'
       });
     }
 
-    if (typeof req.body.bookingData === 'string') {
-      try {
+    try {
         bookingData = JSON.parse(req.body.bookingData);
-      } catch (error) {
+    } catch (error) {
         console.error('❌ Failed to parse bookingData:', error);
         return res.status(400).json({
           success: false,
           message: 'Invalid booking data format',
           error: error.message
         });
-      }
-    } else if (typeof req.body.bookingData === 'object') {
-      bookingData = req.body.bookingData;
-    } else {
-      console.error('❌ bookingData is neither string nor object');
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid bookingData type',
-        receivedType: typeof req.body.bookingData
-      });
     }
 
-    const passengers = [];
-    
-    if (req.body.passengers && typeof req.body.passengers === 'object') {
-      const passengersData = Array.isArray(req.body.passengers) 
-        ? req.body.passengers 
-        : Object.values(req.body.passengers);
-      
-      passengersData.forEach((passengerData, index) => {
-        if (!passengerData.firstName || !passengerData.lastName) {
-          console.error(`❌ Missing required fields for passenger ${index + 1}`);
-          return;
+    // ===========================================
+    // 2. Process Passengers (Get array from bookingData) and Files
+    // ===========================================
+    const rawPassengers = bookingData.passengers || []; // Get the embedded array
+    const totalExpectedPassengers = bookingData.pax?.adult || 1;
+    const passengers = []; // Final array with file paths
+
+    if (rawPassengers.length === 0) {
+        console.error(`❌ Embedded passenger array is empty.`);
+    }
+
+    // Process the embedded passenger array
+    rawPassengers.forEach((passengerData, index) => {
+        // Mongoose requires these fields to be true, so we check here
+        if (!passengerData.firstName || !passengerData.lastName || !passengerData.email || !passengerData.phone || !passengerData.dateOfBirth) {
+            console.warn(`⚠️ Warning: Skipping passenger ${index + 1} due to missing required fields in embedded data.`);
+            return; // Skip this passenger if validation fails
         }
 
         const passenger = {
-          passengerNumber: parseInt(passengerData.passengerNumber) || index + 1,
-          firstName: passengerData.firstName,
-          lastName: passengerData.lastName,
-          email: passengerData.email || '',
-          phone: passengerData.phone || '',
-          dateOfBirth: passengerData.dateOfBirth || '',
-          age: parseInt(passengerData.age) || 0,
-          gender: passengerData.gender || '',
-          address: passengerData.address || '',
-          nationality: passengerData.nationality || 'Filipino'
+            // Map fields from the embedded array
+            passengerNumber: passengerData.passengerNumber || index + 1,
+            firstName: passengerData.firstName,
+            lastName: passengerData.lastName,
+            email: passengerData.email,
+            phone: passengerData.phone,
+            dateOfBirth: passengerData.dateOfBirth,
+            age: parseInt(passengerData.age) || 0,
+            gender: passengerData.gender || '',
+            address: passengerData.address || '',
+            nationality: passengerData.nationality || 'Filipino'
         };
 
-        const idFile = req.files?.find(f => f.fieldname === `passenger_${index}_id`);
-        const passportFile = req.files?.find(f => f.fieldname === `passenger_${index}_passport`);
+        // Find files using the exact fieldname: idFile_X and passportFile_X
+        const idFile = req.files ? req.files.find(f => f.fieldname === `idFile_${index}`) : null;
+        const passportFile = req.files ? req.files.find(f => f.fieldname === `passportFile_${index}`) : null;
 
         if (idFile) {
           passenger.idDocument = {
@@ -143,7 +147,7 @@ router.post('/', upload.any(), async (req, res) => {
             path: idFile.path,
             size: idFile.size
           };
-          console.log(`  📄 ID uploaded: ${idFile.originalname}`);
+          console.log(`  📄 ID uploaded for passenger ${index + 1}: ${idFile.originalname}`);
         }
 
         if (passportFile) {
@@ -153,87 +157,30 @@ router.post('/', upload.any(), async (req, res) => {
             path: passportFile.path,
             size: passportFile.size
           };
-          console.log(`  📄 Passport uploaded: ${passportFile.originalname}`);
+          console.log(`  📄 Passport uploaded for passenger ${index + 1}: ${passportFile.originalname}`);
         }
 
         passengers.push(passenger);
-      });
-    } 
-    else {
-      const passengerKeys = Object.keys(req.body).filter(key => key.startsWith('passengers['));
-      
-      if (passengerKeys.length === 0) {
-        console.warn('⚠️ No passenger data found!');
+    });
+
+    // Final check for minimum passengers required
+    if (passengers.length !== totalExpectedPassengers) {
+        // Clean up uploaded files if available
+        req.files?.forEach(file => {
+          try {
+            fs.unlinkSync(file.path);
+          } catch (e) {}
+        });
+        console.error(`❌ CRASH REASON: Invalid number of passengers processed: ${passengers.length} found, ${totalExpectedPassengers} expected. (Mongoose Validation Failure or incomplete form data)`);
         return res.status(400).json({
           success: false,
-          message: 'No passenger data provided',
-          hint: 'Make sure passenger data is being sent correctly'
+          message: `Booking failed: Invalid number of passengers processed. Expected ${totalExpectedPassengers}, found ${passengers.length}. Please ensure all passenger fields are complete.`,
         });
-      }
-
-      const passengerIndices = [...new Set(passengerKeys.map(key => {
-        const match = key.match(/passengers\[(\d+)\]/);
-        return match ? parseInt(match[1]) : null;
-      }))].filter(index => index !== null).sort((a, b) => a - b);
-
-      passengerIndices.forEach(index => {
-        const firstName = req.body[`passengers[${index}][firstName]`];
-        const lastName = req.body[`passengers[${index}][lastName]`];
-        
-        if (!firstName || !lastName) {
-          console.error(`❌ Missing required fields for passenger ${index + 1}`);
-          return;
-        }
-
-        const passenger = {
-          passengerNumber: parseInt(req.body[`passengers[${index}][passengerNumber]`]) || index + 1,
-          firstName: firstName,
-          lastName: lastName,
-          email: req.body[`passengers[${index}][email]`] || '',
-          phone: req.body[`passengers[${index}][phone]`] || '',
-          dateOfBirth: req.body[`passengers[${index}][dateOfBirth]`] || '',
-          age: parseInt(req.body[`passengers[${index}][age]`]) || 0,
-          gender: req.body[`passengers[${index}][gender]`] || '',
-          address: req.body[`passengers[${index}][address]`] || '',
-          nationality: req.body[`passengers[${index}][nationality]`] || 'Filipino'
-        };
-
-        const idFile = req.files?.find(f => f.fieldname === `passenger_${index}_id`);
-        const passportFile = req.files?.find(f => f.fieldname === `passenger_${index}_passport`);
-
-        if (idFile) {
-          passenger.idDocument = {
-            filename: idFile.filename,
-            originalName: idFile.originalname,
-            path: idFile.path,
-            size: idFile.size
-          };
-          console.log(`  📄 ID uploaded: ${idFile.originalname}`);
-        }
-
-        if (passportFile) {
-          passenger.passportDocument = {
-            filename: passportFile.filename,
-            originalName: passportFile.originalname,
-            path: passportFile.path,
-            size: passportFile.size
-          };
-          console.log(`  📄 Passport uploaded: ${passportFile.originalname}`);
-        }
-
-        passengers.push(passenger);
-      });
     }
 
-    if (passengers.length === 0) {
-      console.error('❌ No valid passengers were processed!');
-      return res.status(400).json({
-        success: false,
-        message: 'Failed to process passenger data',
-        hint: 'Check that passenger data includes firstName and lastName'
-      });
-    }
-
+    // ===========================================
+    // 3. User Handling and GHL Communication
+    // ===========================================
     const primaryEmail = bookingData.primaryContact?.email || passengers[0]?.email;
     const primaryName = bookingData.primaryContact?.fullName || `${passengers[0]?.firstName} ${passengers[0]?.lastName}`;
     
@@ -276,6 +223,20 @@ router.post('/', upload.any(), async (req, res) => {
       }
     }
 
+    // ===========================================
+    // 4. Create and Save Booking
+    // ===========================================
+    
+    let flightDetailsObject = bookingData.flightDetails;
+    if (flightDetailsObject && typeof flightDetailsObject === 'string') {
+        try {
+            flightDetailsObject = JSON.parse(flightDetailsObject);
+        } catch (e) {
+            console.error('Failed to parse flightDetails string:', e);
+            flightDetailsObject = null;
+        }
+    }
+
     const newBooking = new Booking({
       packageName: bookingData.packageName,
       packageId: bookingData.packageId || null,
@@ -286,15 +247,24 @@ router.post('/', upload.any(), async (req, res) => {
       endDate: bookingData.endDate,
       duration: bookingData.duration,
       pax: bookingData.pax,
+      
+      // Included fields for Mongoose
+      selectedRoomType: bookingData.selectedRoomType,
+      hotelName: bookingData.hotelName,
+      numberOfRooms: bookingData.numberOfRooms,
+      
       packageTotal: bookingData.packageTotal || bookingData.totalAmount,
       includesAirfare: bookingData.includesAirfare || false,
-      flightDetails: bookingData.flightDetails || null,
+      
+      // Use the final processed object (which can now handle the nested price object)
+      flightDetails: flightDetailsObject, 
+      
       airfareTotal: bookingData.airfareTotal || 0,
       totalAmount: bookingData.totalAmount,
       fullName: primaryName,
       email: primaryEmail,
       message: bookingData.message || '',
-      passengers: passengers,
+      passengers: passengers, 
       status: 'pending',
       createdAt: new Date()
     });
@@ -302,20 +272,35 @@ router.post('/', upload.any(), async (req, res) => {
     console.log('💾 Saving booking to database...');
     await newBooking.save();
 
+    // 5. SUCCESS RESPONSE: Return the booking ID for payment initiation
+    console.log(`💰 Booking saved. Returning ID for payment link creation: ${newBooking._id}`);
+
     res.json({
       success: true,
-      message: 'Booking created successfully',
+      message: 'Booking saved successfully. Proceed to payment link generation.',
       isNewUser: isNewUser,
-      data: newBooking
+      bookingId: newBooking._id,
+      data: newBooking,
+      // No paymentRedirectUrl is returned here. Frontend calls the payment API.
     });
 
   } catch (error) {
     console.error('❌ ==========================================');
-    console.error('❌ BOOKING ERROR');
+    console.error('❌ BOOKING ERROR (500)');
     console.error('❌ ==========================================');
     console.error('Error:', error);
     console.error('Stack:', error.stack);
     
+    // Clean up uploaded files on failure
+    req.files?.forEach(file => {
+      try {
+        fs.unlinkSync(file.path);
+        console.log(`🧹 Deleted file: ${file.path}`);
+      } catch (e) {
+        // Ignore file delete errors
+      }
+    });
+
     res.status(500).json({
       success: false,
       message: 'Failed to create booking',

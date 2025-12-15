@@ -1,33 +1,25 @@
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
 import BookingLeftColumn from './bookingLeftColumn';
 import BookingRightForm from './bookingRightForm';
 import './packageBooking.css';
 
-function PackageBooking({ pkg, onGoBack }) {
+function PackageBooking({ pkg }) {
   if (!pkg) return null;
 
   return (
-    <div className="booking-page">
-      <div className="booking-header">
-        <div className="booking-header-content">
-          <button onClick={onGoBack} className="go-back-btn">
-            <ArrowLeft size={20} />
-            <span>GO BACK</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="booking-container">
-        <div className="unified-booking-card">
-          <div className="unified-left-panel">
+    <div className="pb-page">
+      {/* Main Booking Container */}
+      <div className="pb-container">
+        <div className="pb-unified-card">
+          {/* Left Panel - Package Details & Itinerary */}
+          <div className="pb-left-panel">
             <BookingLeftColumn pkg={pkg} />
           </div>
 
-          <div className="unified-right-panel">
+          {/* Right Panel - Calendar & Booking Form */}
+          <div className="pb-right-panel">
             <BookingRightForm pkg={pkg} />
           </div>
-
         </div>
       </div>
     </div>

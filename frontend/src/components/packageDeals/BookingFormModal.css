@@ -1,0 +1,388 @@
+/* BookingFormModal.css */
+
+/* --- Modal Overlay --- */
+.bfm-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  animation: bfmFadeIn 0.2s ease-out;
+}
+
+@keyframes bfmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* --- Modal Card --- */
+.bfm-modal-card {
+  background: white;
+  width: 100%;
+  max-width: 700px;
+  border-radius: 16px;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  height: auto;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; 
+}
+
+@keyframes bfmSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- Close Button --- */
+.bfm-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: white;
+  cursor: pointer;
+  width: 40px; 
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  z-index: 30; 
+  backdrop-filter: blur(4px);
+  padding: 0;
+}
+
+.bfm-close-btn:hover {
+  background: rgba(239, 68, 68, 0.9);
+  border-color: #ef4444;
+  transform: rotate(90deg);
+}
+
+/* --- Header Section --- */
+.bfm-modal-header {
+  background-color: #1e3a5f;
+  background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80');
+  background-size: cover;
+  background-position: center;
+  padding: 24px 32px; 
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0; 
+}
+
+.bfm-modal-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 95, 0.95) 100%);
+    z-index: 1;
+}
+
+.bfm-modal-logo,
+.bfm-modal-title,
+.bfm-modal-subtitle,
+.bfm-trip-summary,
+.bfm-doc-req-box {
+  position: relative;
+  z-index: 2;
+}
+
+.bfm-modal-logo {
+  display: block;
+  height: 32px; 
+  margin: 0 auto 12px auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.bfm-modal-title {
+  font-size: 1.4rem; 
+  font-weight: 800;
+  color: white;
+  text-align: center;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.bfm-modal-subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  display: block;
+}
+
+/* --- Trip Summary --- */
+.bfm-trip-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1); 
+  backdrop-filter: blur(8px);
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.bfm-summary-item { 
+  flex: 1;
+  min-width: 120px;
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.95); 
+  border-radius: 8px;
+}
+
+.bfm-summary-label { 
+  font-size: 0.6rem; 
+  text-transform: uppercase; 
+  color: #64748b; 
+  font-weight: 700;
+}
+
+.bfm-summary-value { 
+  font-size: 0.85rem; 
+  font-weight: 700; 
+  color: #1e3a5f;
+  white-space: nowrap;
+}
+
+.bfm-summary-subtext {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.bfm-price { color: #10b981; font-size: 1rem; }
+.bfm-accent-color { color: #fc9c1b; }
+
+.bfm-grand-total {
+  background: #fff7ed;
+  border: 1px solid #fc9c1b;
+}
+
+.bfm-grand-total-value {
+  font-size: 1.1rem;
+  color: #ea580c;
+}
+
+/* --- Document Requirements --- */
+.bfm-doc-req-box {
+  background: rgba(239, 246, 255, 0.95); 
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: #1e40af;
+  font-weight: 600;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.bfm-doc-req-box.bfm-domestic {
+  background: rgba(254, 243, 199, 0.95);
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+/* --- Scrollable Form Area --- */
+.bfm-form-wrapper {
+  flex: 1; 
+  overflow-y: auto; 
+  overscroll-behavior: contain; 
+  padding: 24px 32px;
+  background: #f8fafc;
+}
+
+/* --- Form Inputs --- */
+.bfm-form-section-header {
+  color: #1e3a5f;
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bfm-passenger-badge {
+  background: #1e3a5f;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.bfm-primary-contact-label { font-size: 0.75rem; color: #f97316; font-weight: 700; }
+
+.bfm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.bfm-form-group { margin-bottom: 0; }
+.bfm-form-group.bfm-full-width { grid-column: 1 / -1; }
+
+.bfm-form-group label { 
+  display: block; 
+  font-size: 0.75rem; 
+  font-weight: 700; 
+  color: #475569; 
+  margin-bottom: 4px; 
+}
+
+.bfm-form-group input, 
+.bfm-form-group select {
+  width: 100%; 
+  padding: 10px 12px; 
+  border: 1px solid #cbd5e1; 
+  border-radius: 8px; 
+  font-size: 0.9rem;
+  background-color: white; 
+  color: #334155; 
+  box-sizing: border-box; /* Crucial for responsiveness */
+}
+
+.bfm-form-group input:focus, 
+.bfm-form-group select:focus { 
+  outline: none; 
+  border-color: #fc9c1b; 
+  box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.1);
+}
+
+.bfm-required { color: #ef4444; margin-left: 2px; }
+
+/* --- File Upload --- */
+.bfm-file-upload-label {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 16px; border: 2px dashed #cbd5e1; border-radius: 8px; cursor: pointer; 
+  background: white; text-align: center;
+}
+.bfm-upload-text { font-weight: 600; color: #475569; font-size: 0.85rem; }
+.bfm-upload-subtext { font-size: 0.7rem; color: #94a3b8; }
+
+.bfm-file-uploaded {
+  display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; 
+  background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;
+}
+.bfm-file-name { font-size: 0.8rem; font-weight: 600; color: #166534; }
+.bfm-remove-file-btn {
+  background: #fff; color: #dc2626; border: 1px solid #fecaca; padding: 4px 10px; 
+  border-radius: 4px; font-size: 0.7rem; cursor: pointer; 
+}
+
+/* --- Footer Actions --- */
+.bfm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.bfm-back-btn, .bfm-submit-btn {
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+}
+
+.bfm-back-btn { flex: 1; background: #e2e8f0; color: #475569; }
+.bfm-submit-btn { flex: 2; background: #fc9c1b; color: white; }
+
+/* ============================================
+   RESPONSIVE (Mobile Specifics)
+   ============================================ */
+
+/* --- MOBILE (Max width: 640px) --- */
+@media (max-width: 640px) {
+  .bfm-overlay {
+    padding: 0; 
+    align-items: flex-end; /* Slide up feel */
+  }
+
+  .bfm-modal-card {
+    border-radius: 12px 12px 0 0;
+    width: 100%;
+    height: 100dvh; /* Dynamic viewport height */
+    max-height: 100dvh; 
+    max-width: 100%;
+  }
+
+  .bfm-modal-header {
+    padding: 16px 20px;
+  }
+
+  .bfm-modal-logo { height: 24px; margin-bottom: 8px; }
+  .bfm-modal-title { font-size: 1.1rem; margin-bottom: 2px; }
+  .bfm-modal-subtitle { display: none; } /* Hide on mobile to save space */
+
+  /* Summary Grid on Mobile */
+  .bfm-trip-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 8px;
+    margin-bottom: 0; /* Save space */
+  }
+  
+  /* Make odd items span full width if needed, or keep compact */
+  .bfm-summary-item { padding: 6px 8px; min-width: auto; }
+  .bfm-summary-value { font-size: 0.8rem; }
+  .bfm-summary-label { font-size: 0.55rem; }
+
+  .bfm-form-wrapper {
+    padding: 16px 20px;
+    padding-bottom: 40px; /* Space for bottom navigation bars */
+  }
+
+  /* Single Column Form on Mobile */
+  .bfm-form-grid {
+    grid-template-columns: 1fr; 
+    gap: 12px;
+  }
+
+  .bfm-form-group.bfm-full-width { grid-column: auto; }
+
+  .bfm-form-group input, 
+  .bfm-form-group select {
+    padding: 12px;
+    font-size: 1rem; /* Prevent auto-zoom on iPhone */
+  }
+
+  .bfm-actions {
+    flex-direction: column-reverse; /* Back button below Next */
+    gap: 12px;
+  }
+
+  .bfm-back-btn, .bfm-submit-btn {
+    width: 100%;
+    padding: 14px;
+  }
+  
+  .bfm-close-btn {
+    width: 32px;
+    height: 32px;
+    top: 12px;
+    right: 12px;
+  }
+}

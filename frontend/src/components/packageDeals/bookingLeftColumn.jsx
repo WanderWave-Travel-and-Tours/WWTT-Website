@@ -1,99 +1,184 @@
 import React, { useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Check, X, MapPin, Calendar, Plane, Hotel, 
+  Utensils, Bus, Camera, Briefcase, ChevronDown, ChevronUp, 
+  CheckSquare, XCircle, CalendarDays, ChevronLeft 
+} from 'lucide-react';
+import './BookingLeftColumn.css';
 
 const BookingLeftColumn = ({ pkg }) => {
-  const [activeTab, setActiveTab] = useState('itinerary');
+  const navigate = useNavigate();
+  
+  const [isItineraryExpanded, setIsItineraryExpanded] = useState(false);
+  const [expandedDayIndices, setExpandedDayIndices] = useState({});
+  const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
+  const [isExcludedExpanded, setIsExcludedExpanded] = useState(false);
+
   const hasExclusions = pkg.excludes && pkg.excludes.length > 0;
+  const itinerary = pkg.itinerary || [];
+  const INITIAL_DAYS = 3;
+  const shouldShowButton = itinerary.length > INITIAL_DAYS;
+  const visibleItinerary = isItineraryExpanded ? itinerary : itinerary.slice(0, INITIAL_DAYS);
+
+  const toggleDay = (index) => {
+    setExpandedDayIndices(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
 
   return (
-    <div className="booking-left-content">
-      <div className="booking-image-wrapper">
+    <div className="blc-container">
+      
+      {/* GO BACK */}
+      <button className="blc-back-btn" onClick={() => navigate(-1)}>
+        <ChevronLeft size={20} />
+        Go Back
+      </button>
+
+      {/* IMAGE */}
+      <div className="blc-image-wrapper">
         <img 
             src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'} 
             alt={pkg.name} 
-            className="booking-main-image" 
+            className="blc-main-image" 
         />
       </div>
 
-      <div className="info-section">
-        <h3 className="section-title-with-icon">
-          <Check className="icon-check" size={20} />
-          What's Included
-        </h3>
-        <ul className="included-list">
-          {pkg.inclusions?.map((item, idx) => (
-            <li key={idx} className="included-item">
-              <Check className="check-icon" size={16} />
-              <span>{item}</span>
-            </li>
+      {/* HEADER INFO */}
+      <div className="blc-header-section">
+        <h1 className="blc-title">{pkg.name}</h1>
+        
+        <div className="blc-price-row">
+          <span className="blc-price">
+            ₱{pkg.price ? pkg.price.toLocaleString() : '0'}
+          </span>
+          <span className="blc-pax">/ pax</span>
+        </div>
+        
+        <div className="blc-meta-row">
+          <div className="blc-meta-item">
+            <MapPin size={18} color="#f97316"/> {pkg.location || pkg.destination}
+          </div>
+          <div className="blc-meta-item">
+            <Calendar size={18} color="#f97316"/> {pkg.duration} {pkg.nights ? `/ ${pkg.nights}` : ''}
+          </div>
+        </div>
+
+        <div className="blc-icons-row">
+          {[Plane, Hotel, Bus, Utensils, Camera, Briefcase].map((Icon, i) => (
+            <Icon key={i} size={22} className="blc-icon" />
           ))}
-        </ul>
+        </div>
+      </div>
+
+      {/* INCLUSIONS SECTION */}
+      <div className="blc-card">
+        <div className="blc-card-header" onClick={() => setIsIncludedExpanded(!isIncludedExpanded)}>
+          <h3 className="blc-section-title">
+            <CheckSquare size={24} color="#10b981" /> What's Included
+          </h3>
+          <div className={`blc-chevron ${isIncludedExpanded ? 'rotated' : ''}`}>
+            <ChevronDown size={20} />
+          </div>
+        </div>
+
+        <div className={`blc-collapsible ${isIncludedExpanded ? 'open' : ''}`}>
+          <ul className="blc-list">
+            {pkg.inclusions?.map((item, idx) => (
+              <li key={idx} className="blc-list-item">
+                <div style={{minWidth:'20px', marginTop:'2px'}}><CheckSquare size={16} color="#10b981" /></div>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {hasExclusions && (
-          <>
-            <h3 className="section-title-with-icon" style={{marginTop: '24px'}}>
-              <X className="icon-x" size={20} />
-              What's Excluded
-            </h3>
-            <ul className="excluded-list">
-              {pkg.excludes.map((item, idx) => (
-                <li key={idx} className="excluded-item">
-                  <X className="x-icon" size={16} />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </>
+          <div className="blc-divider">
+            <div className="blc-card-header" onClick={() => setIsExcludedExpanded(!isExcludedExpanded)}>
+              <h3 className="blc-section-title">
+                <XCircle size={20} color="#ef4444" /> What's Excluded
+              </h3>
+              <div className={`blc-chevron ${isExcludedExpanded ? 'rotated' : ''}`}>
+                <ChevronDown size={20} />
+              </div>
+            </div>
+
+            <div className={`blc-collapsible ${isExcludedExpanded ? 'open' : ''}`}>
+              <ul className="blc-list">
+                {pkg.excludes.map((item, idx) => (
+                  <li key={idx} className="blc-list-item">
+                    <div style={{minWidth:'20px', marginTop:'2px'}}><XCircle size={16} color="#ef4444" /></div>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         )}
       </div>
 
-      <hr style={{border: '0', borderTop: '1px solid #f0f0f0', margin: '32px 0'}} />
-      
-      <div className="tabs-section">
-        <div className="tabs-header">
-          {['itinerary', 'campaign', 'terms'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-              style={{ textTransform: 'capitalize' }}
-            >
-              {tab === 'campaign' ? 'Description' : tab === 'terms' ? 'Terms' : tab}
-            </button>
-          ))}
+      {/* ITINERARY TIMELINE */}
+      <div>
+        <h3 className="blc-section-title" style={{marginBottom: '24px'}}>
+           <CalendarDays size={24} color="#f97316"/> Tour Itinerary
+        </h3>
+
+        <div className="blc-timeline-container">
+          <div className="blc-timeline-line"></div>
+
+          {visibleItinerary.map((day, idx) => {
+            const isOpen = expandedDayIndices[idx];
+
+            return (
+              <div key={idx} className="blc-timeline-item">
+                <div className={`blc-timeline-dot ${isOpen ? 'active' : ''}`}></div>
+
+                <div style={{ paddingLeft: '16px' }}>
+                  <div className={`blc-day-card ${isOpen ? 'active' : ''}`} onClick={() => toggleDay(idx)}>
+                    <h4 className="blc-day-title">
+                      Day {day.day}: <span style={{color: '#f97316'}}>{day.title}</span>
+                    </h4>
+                    <div className={`blc-chevron ${isOpen ? 'rotated' : ''}`}>
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
+
+                  <div className={`blc-day-content ${isOpen ? 'open' : ''}`}>
+                      <div className="blc-day-inner">
+                        <ul style={{ paddingLeft: '20px', margin: 0, color: '#475569', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                          {day.activities.map((act, i) => (
+                              <li key={i} style={{marginBottom: '6px'}}>{act}</li>
+                          ))}
+                        </ul>
+                      </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {(!itinerary || itinerary.length === 0) && (
+             <p style={{color: '#999', paddingLeft: '20px', fontStyle: 'italic'}}>No itinerary available.</p>
+          )}
         </div>
 
-        <div className="tabs-content">
-          {activeTab === 'itinerary' && (
-            <div className="itinerary-content">
-              {pkg.itinerary?.map((day, idx) => (
-                <div key={idx} style={{ marginBottom: '20px', paddingLeft: '10px' }}>
-                  <h4 style={{fontWeight: '700', color: '#001b3e'}}>Day {day.day}: {day.title}</h4>
-                  <ul style={{ paddingLeft: '20px', marginTop: '8px', color: '#4b5563' }}>
-                    {day.activities.map((act, i) => <li key={i}>{act}</li>)}
-                  </ul>
-                </div>
-              ))}
-              {(!pkg.itinerary || pkg.itinerary.length === 0) && (
-                <p style={{color: '#999'}}>Walang itinerary na nakalista para sa package na ito.</p>
+        {shouldShowButton && (
+          <div className="blc-expand-btn-container">
+            <button
+              onClick={() => setIsItineraryExpanded(!isItineraryExpanded)}
+              className="blc-expand-btn"
+            >
+              {isItineraryExpanded ? (
+                <>Show Less Days <ChevronUp size={16} /></>
+              ) : (
+                <>Show {itinerary.length - INITIAL_DAYS} More Days <ChevronDown size={16} /></>
               )}
-            </div>
-          )}
-          
-          {activeTab === 'campaign' && (
-            <div className="campaign-content">
-              <p style={{lineHeight: '1.6', color: '#4b5563'}}>{pkg.description}</p>
-            </div>
-          )}
-          
-          {activeTab === 'terms' && (
-            <div className="terms-content" style={{lineHeight: '1.6', color: '#4b5563'}}>
-              <p>• Full payment required at booking</p>
-              <p>• Cancellation 7 days before: 50% refund</p>
-              <p>• No refund for last-minute cancellations</p>
-            </div>
-          )}
-        </div>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
