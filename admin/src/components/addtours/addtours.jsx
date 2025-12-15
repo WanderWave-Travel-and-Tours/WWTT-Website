@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+// --- NEW IMPORT: react-hot-toast for better notifications ---
+import toast, { Toaster } from 'react-hot-toast'; 
 import Sidebar from "../sidebar/sidebar";
 import "./addtours.css";
 
@@ -9,6 +11,23 @@ const ALLOWED_TYPES = [
     'image/png', 
     'image/webp'
 ];
+
+// --- Helper function for toast error style (based on your request) ---
+const errorToast = (message) => {
+    toast.error(message, {
+      style: { border: '1px solid #ef4444', color: '#ef4444' },
+      iconTheme: { primary: '#ef4444', secondary: '#fff' },
+    });
+};
+
+// --- Helper function for toast success style ---
+const successToast = (message) => {
+    toast.success(message, {
+      style: { border: '1px solid #10b981', color: '#10b981' },
+      iconTheme: { primary: '#10b981', secondary: '#fff' },
+    });
+};
+
 
 const AddTour = () => {
   // --- SIDEBAR LOGIC START ---
@@ -132,7 +151,7 @@ const AddTour = () => {
     if (selected) {
       // Validation check: Check if the file MIME type is one of the allowed types
       if (!ALLOWED_TYPES.includes(selected.type)) {
-        alert("❌ Invalid file type. Please upload only .jpg, .jpeg, .png, or .webp files.");
+        errorToast("Invalid file type. Please upload only .jpg, .jpeg, .png, or .webp files."); // Use toast
         // Reset the input field so the user can try again
         e.target.value = null; 
         setFile(null);
@@ -158,7 +177,7 @@ const AddTour = () => {
           if (blob) {
             // New Validation check for pasted image
             if (!ALLOWED_TYPES.includes(blob.type)) {
-                alert("❌ Invalid file type detected. Please paste only .jpg, .jpeg, .png, or .webp images.");
+                errorToast("Invalid file type detected. Please paste only .jpg, .jpeg, .png, or .webp images."); // Use toast
                 setIsPasteActive(false);
                 return; // Stop processing invalid paste
             }
@@ -203,17 +222,22 @@ const AddTour = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Final check for file existence
+    if (!file) {
+        errorToast("Please upload an image for the tour before publishing."); // Use toast
+        return;
+    }
+    
     // Final check for file type before submission
     if (file && !ALLOWED_TYPES.includes(file.type)) {
-        // --- UPDATED POP-UP NOTIFICATION (ENGLISH) ---
-        alert("❌ Please upload the correct file type (.jpg, .jpeg, .png, .webp) before publishing.");
+        errorToast("Please upload the correct file type (.jpg, .jpeg, .png, .webp) before publishing."); // Use toast
         return;
     }
 
     // --- NEW DURATION VALIDATION START ---
     const trimmedDuration = duration.trim();
     if (!trimmedDuration) {
-        alert("❌ Duration is a required field. Please enter the tour duration.");
+        errorToast("Duration is a required field. Please enter the tour duration."); // Use toast
         return;
     }
 
@@ -221,8 +245,10 @@ const AddTour = () => {
     // Checks if the string contains characters other than letters, numbers, spaces, '/', and '-'
     const durationFormatRegex = /[^a-zA-Z0-9\s\/\-]/;
     if (durationFormatRegex.test(trimmedDuration)) {
-        // A warning/suggestion, but still allows submission for flexibility
-        console.warn("Duration format contains unusual characters. Recommended format: '1 Day / 8 Hours'");
+        // Changed to a neutral/warning toast instead of console.warn
+        toast("Duration format contains unusual characters. Recommended format: '1 Day / 8 Hours'", {
+            icon: '⚠️',
+        });
     }
     // --- NEW DURATION VALIDATION END ---
 
@@ -254,9 +280,6 @@ const AddTour = () => {
 
     if (file) {
       formData.append("image", file);
-    } else {
-      alert("Please upload an image for the tour.");
-      return;
     }
 
     try {
@@ -266,7 +289,7 @@ const AddTour = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        alert("✅ Tour Added Successfully!");
+        successToast("Tour Added Successfully!"); // Use success toast
         setTitle("");
         setDestination("");
         setSupplierRate("");
@@ -280,16 +303,19 @@ const AddTour = () => {
         setMarkupType("peso");
       } else {
         console.error("Server error:", data);
-        alert("❌ Error: " + (data.error || "Server error"));
+        errorToast("Error: " + (data.error || "Server error")); // Use error toast
       }
     } catch (error) {
       console.error("Fetch error:", error);
-      alert("❌ Error connecting to server");
+      errorToast("Error connecting to server"); // Use error toast
     }
   };
 
   return (
     <div className="pkg-page">
+      {/* ADDED TOASTER COMPONENT, POSITIONED TOP-CENTER PARA NAKA-GITNA */}
+      <Toaster position="top-center" reverseOrder={false} />
+      
       {/* 1. Pass the state and toggle function to Sidebar */}
       <Sidebar 
         isCollapsed={isSidebarCollapsed} 
@@ -351,7 +377,7 @@ const AddTour = () => {
                           // --- UPDATED ACCEPT ATTRIBUTE ---
                           accept=".jpg,.jpeg,.png,.webp"
                           hidden
-                          required
+                          // Removed 'required' attribute here to enable custom toast validation
                         />
                         <div className="pkg-upload-empty">
                           <p>Click to upload image</p>
@@ -391,7 +417,7 @@ const AddTour = () => {
                         placeholder="e.g. 1 Day / 8 Hours"
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
-                        required // Required is now enforced client-side via HTML and again in handleSubmit
+                        required // Retained HTML required but added custom validation in handleSubmit
                       />
                     </div>
                     <div className="pkg-field">

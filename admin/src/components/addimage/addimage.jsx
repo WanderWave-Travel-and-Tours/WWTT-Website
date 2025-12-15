@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Trash2 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast'; // Import toast and Toaster
 import Sidebar from '../sidebar/sidebar';
 import './addimage.css';
 
@@ -16,31 +17,70 @@ const AddImage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
+        // Cleanup function for object URL
         return () => {
             if (imagePreview) URL.revokeObjectURL(imagePreview);
         };
     }, [imagePreview]);
 
+    const showToastError = (message) => {
+        toast.error(message, {
+            position: 'top-center', // Set position to top-center
+            style: { 
+                border: '1px solid #ef4444', 
+                color: '#ef4444',
+                padding: '16px',
+                fontWeight: '600'
+            },
+            iconTheme: { 
+                primary: '#ef4444', 
+                secondary: '#fff' 
+            },
+        });
+    };
+
+    const showToastSuccess = (message) => {
+        toast.success(message, {
+            position: 'top-center', // Set position to top-center
+            style: { 
+                border: '1px solid #10b981', // Custom success color
+                color: '#10b981',
+                padding: '16px',
+                fontWeight: '600'
+            },
+            iconTheme: { 
+                primary: '#10b981', 
+                secondary: '#fff' 
+            },
+        });
+    };
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // File validation check
             if (!file.type.startsWith('image/')) {
-                alert('Please upload a valid image file (JPG, PNG).');
+                showToastError('Please upload a valid image file (JPG, PNG, GIF).'); // Use toast for error
+                // Reset file input value to allow selecting the same file again after error
+                e.target.value = null; 
                 return;
             }
             setImageFile(file);
+            // Create a preview URL
             setImagePreview(URL.createObjectURL(file));
         }
     };
 
     const removeImage = () => {
         setImageFile(null);
+        // Clean up the object URL before setting to null
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
         setImagePreview(null);
     };
 
     const handleSubmit = async () => {
         if (!imageFile) {
-            alert('Please select an image to upload.');
+            showToastError('Please select an image to upload.'); // Use toast for validation error
             return;
         }
 
@@ -59,14 +99,15 @@ const AddImage = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert('Image uploaded successfully!');
+                showToastSuccess('Image uploaded successfully!'); // Use toast for success
                 removeImage(); 
             } else {
-                alert(`Error: ${data.message || 'Failed to upload'}`);
+                // Handle API error message
+                showToastError(`Upload Error: ${data.message || 'Failed to upload image.'}`);
             }
         } catch (error) {
             console.error('Upload Error:', error);
-            alert('Failed to connect to server.');
+            showToastError('Failed to connect to server. Please check your network.'); // Use toast for network error
         } finally {
             setIsSubmitting(false);
         }
@@ -74,6 +115,7 @@ const AddImage = () => {
 
     return (
         <div className="ai-page">
+            <Toaster /> {/* Add the Toaster component here */}
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             <main className={`ai-main ${isSidebarCollapsed ? "ai-main--collapsed" : ""}`}>
                 <div className="ai-container">

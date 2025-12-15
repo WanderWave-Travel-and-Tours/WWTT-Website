@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast'; // Import toast and Toaster
 import './addtestimonial.css';
 import Sidebar from '../sidebar/sidebar';
 
@@ -17,17 +18,16 @@ const AddTestimonial = () => {
     });
     const [pictureFile, setPictureFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
-    const [uploadError, setUploadError] = useState(''); // New state for upload error
+    // Removed uploadError state as we will use toast notifications
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setTestimonialDetails(prev => ({ ...prev, [name]: value }));
     };
 
-    // --- UPDATED: Handle File Change with Validation ---
+    // --- UPDATED: Handle File Change with Toast Validation ---
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setUploadError(''); // Clear previous error
 
         if (!file) {
             setPictureFile(null);
@@ -42,22 +42,30 @@ const AddTestimonial = () => {
             setPictureFile(file);
             setPreviewUrl(URL.createObjectURL(file));
         } else {
-            // File type is NOT supported - show error notification and reject file
+            // File type is NOT supported - show toast error
             setPictureFile(null);
             setPreviewUrl(null);
-            setUploadError('Unsupported file type. Only JPG, PNG, and WebP are allowed.');
+            toast.error('Unsupported file type. Only JPG, PNG, and WebP are allowed.', {
+                position: 'top-center',
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            });
             // Clear the file input for re-selection
             e.target.value = null; 
         }
     };
-    // --- END UPDATED: Handle File Change with Validation ---
+    // --- END UPDATED: Handle File Change with Toast Validation ---
 
     const handleSubmit = async (e) => { 
         e.preventDefault();
         
-        // Prevent submission if a rejected file is still causing an error
-        if (uploadError) {
-             alert(uploadError);
+        // Prevent submission if no file is selected but required for a successful upload logic
+        if (e.target.querySelector('input[type="file"]').value && !pictureFile) {
+             toast.error('Please select a valid image file before submitting.', {
+                position: 'top-center',
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            });
              return;
         }
 
@@ -72,17 +80,18 @@ const AddTestimonial = () => {
         }
 
         try {
-            // Ensure the correct Content-Type header is NOT set manually.
-            // When using FormData, the browser sets the correct 'multipart/form-data' header 
-            // including the boundary automatically.
             const response = await fetch('http://localhost:5000/api/testimonials', {
                     method: 'POST',
                 body: formData, 
             });
 
             if (response.ok) {
-                const result = await response.json();
-                alert(`Testimonial from ${testimonialDetails.name} added successfully!`);
+                // Success Toast Notification
+                toast.success(`Testimonial from ${testimonialDetails.name} added successfully!`, {
+                    position: 'top-center',
+                    style: { border: '1px solid #10b981', color: '#065f46' }, // Example success styling
+                    iconTheme: { primary: '#10b981', secondary: '#fff' },
+                });
                 
                 // Reset all states
                 setTestimonialDetails({
@@ -92,21 +101,33 @@ const AddTestimonial = () => {
                 });
                 setPictureFile(null);
                 setPreviewUrl(null);
-                setUploadError('');
                 e.target.reset();
             } else {
                 console.error("Failed to submit");
-                alert("Error submitting testimonial.");
+                // Error Toast Notification for failed API response
+                toast.error("Error submitting testimonial. Please check server status.", {
+                    position: 'top-center',
+                    style: { border: '1px solid #ef4444', color: '#ef4444' },
+                    iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                });
             }
 
         } catch (error) {
             console.error("Error:", error);
-            alert("Something went wrong with the server.");
+            // Error Toast Notification for network/server error
+            toast.error("Something went wrong with the server or network connection.", {
+                position: 'top-center',
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            });
         }
     };
 
     return (
         <div className="testi-page">
+            {/* The Toaster component is required to display the notifications */}
+            <Toaster /> 
+
             {/* Sidebar component updated with props */}
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
@@ -140,7 +161,7 @@ const AddTestimonial = () => {
                                             <div className="testi-upload-empty">
                                                 <div className="testi-upload-icon">
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        <path d="M20 21v-2a4 4 4 00-4-4H8a4 4 4 00-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
                                                         <circle cx="12" cy="7" r="4"/>
                                                     </svg>
                                                 </div>
@@ -151,12 +172,12 @@ const AddTestimonial = () => {
                                         )}
                                     </label>
                                     
-                                    {/* Display the upload error notification */}
-                                    {uploadError && (
+                                    {/* REMOVED: Inline uploadError notification */}
+                                    {/* {uploadError && (
                                         <div style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>
                                             {uploadError}
                                         </div>
-                                    )}
+                                    )} */}
 
                                 </section>
 
@@ -228,7 +249,7 @@ const AddTestimonial = () => {
                                                     <img src={previewUrl} alt="Avatar" />
                                                 ) : (
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                                        <path d="M20 21v-2a4 4 4 00-4-4H8a4 4 4 00-4 4v2"/>
                                                         <circle cx="12" cy="7" r="4"/>
                                                     </svg>
                                                 )}

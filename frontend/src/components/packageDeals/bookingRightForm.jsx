@@ -11,9 +11,15 @@ import axios from 'axios';
 
 const BookingRightForm = ({ pkg }) => {
   const navigate = useNavigate();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of today for comparison
+  const oneYearFromNow = new Date(today);
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
   const [selectedDate, setSelectedDate] = useState(null);
   const [quantities, setQuantities] = useState({ adult: 1 });
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10));
+  // Set initial month to today's month
+  const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth()));
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); // Extract nights from "4D3N"
   const [showModal, setShowModal] = useState(false);
@@ -204,8 +210,44 @@ const BookingRightForm = ({ pkg }) => {
   };
 
   const changeMonth = (offset) => {
-    const newDate = new Date(currentMonth.setMonth(currentMonth.getMonth() + offset));
-    setCurrentMonth(new Date(newDate));
+    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1);
+    
+    // Prevent going back beyond today's month
+    const todayMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const maxMonth = new Date(oneYearFromNow.getFullYear(), oneYearFromNow.getMonth(), 1);
+
+    if (offset < 0 && newDate < todayMonth) {
+      newDate.setTime(todayMonth.getTime());
+    }
+    
+    if (offset > 0 && newDate > maxMonth) {
+      newDate.setTime(maxMonth.getTime());
+    }
+
+    setCurrentMonth(newDate);
+  };
+
+  const isDaySelectable = (day) => {
+    const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    
+    // Must be today or later (minimum date)
+    const isPast = checkDate < today;
+    
+    // Must be within one year from now (maximum date)
+    const isFutureLimit = checkDate > oneYearFromNow;
+    
+    return !isPast && !isFutureLimit;
+  };
+
+  const handleSelectDate = (day) => {
+    if (isDaySelectable(day)) {
+      setSelectedDate(day);
+    } else {
+      toast.error("Invalid date: Please select a date from today up to 1 year from now.", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+        iconTheme: { primary: '#ef4444', secondary: '#fff' },
+      });
+    }
   };
 
   const handleRoomTypeChange = (roomType) => {
@@ -508,6 +550,11 @@ const BookingRightForm = ({ pkg }) => {
     });
   }, [hotelData, selectedRoomType, loadingHotelData]);
 
+  // Determine if the currentMonth is the today's month for back button
+  const isCurrentMonthToday = currentMonth.getFullYear() === today.getFullYear() && currentMonth.getMonth() === today.getMonth();
+  // Determine if the currentMonth is the max allowed month for forward button
+  const isCurrentMonthMax = currentMonth.getFullYear() === oneYearFromNow.getFullYear() && currentMonth.getMonth() === oneYearFromNow.getMonth();
+
   return (
     <div className="booking-form-content">
       <Toaster position="top-center" reverseOrder={false} />
@@ -553,11 +600,19 @@ const BookingRightForm = ({ pkg }) => {
         )}
         <div className="calendar-wrapper">
           <div className="calendar-header">
-            <button onClick={() => changeMonth(-1)} style={{background:'none', border:'none', cursor:'pointer'}}>
+            <button 
+              onClick={() => changeMonth(-1)} 
+              disabled={isCurrentMonthToday}
+              style={{background:'none', border:'none', cursor: isCurrentMonthToday ? 'not-allowed' : 'pointer', opacity: isCurrentMonthToday ? 0.5 : 1}}
+            >
               <ChevronLeft size={20} color="#4b5563"/>
             </button>
             <span style={{fontWeight:'600'}}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
-            <button onClick={() => changeMonth(1)} style={{background:'none', border:'none', cursor:'pointer'}}>
+            <button 
+              onClick={() => changeMonth(1)} 
+              disabled={isCurrentMonthMax}
+              style={{background:'none', border:'none', cursor: isCurrentMonthMax ? 'not-allowed' : 'pointer', opacity: isCurrentMonthMax ? 0.5 : 1}}
+            >
               <ChevronRight size={20} color="#4b5563"/>
             </button>
           </div>
@@ -569,6 +624,7 @@ const BookingRightForm = ({ pkg }) => {
             {[...Array(firstDay)].map((_, i) => <div key={`empty-${i}`} />)}
             {[...Array(daysInMonth)].map((_, i) => {
               const day = i + 1;
+              const isSelectable = isDaySelectable(day);
               const isStartDate = selectedDate === day;
               const isInRange = isInSelectedRange(day);
               const isEndDate = selectedDate && day === getEndDate();
@@ -576,12 +632,15 @@ const BookingRightForm = ({ pkg }) => {
               return (
                 <button
                   key={day}
-                  onClick={() => setSelectedDate(day)}
-                  className={`calendar-day ${isStartDate ? 'selected' : ''} ${isInRange && !isStartDate ? 'in-range' : ''} ${isEndDate ? 'end-date' : ''}`}
+                  onClick={() => handleSelectDate(day)}
+                  disabled={!isSelectable}
+                  className={`calendar-day ${isStartDate ? 'selected' : ''} ${isInRange && !isStartDate ? 'in-range' : ''} ${isEndDate ? 'end-date' : ''} ${!isSelectable ? 'disabled' : ''}`}
                   style={{
                     background: isStartDate ? '#fc9c1b' : isEndDate ? '#22c55e' : isInRange ? '#fef3c7' : 'white',
-                    color: isStartDate || isEndDate ? 'white' : isInRange ? '#92400e' : '#374151',
-                    fontWeight: isStartDate || isEndDate ? '600' : '400'
+                    color: isStartDate || isEndDate ? 'white' : isInRange ? '#92400e' : isSelectable ? '#374151' : '#ccc',
+                    fontWeight: isStartDate || isEndDate ? '600' : '400',
+                    cursor: isSelectable ? 'pointer' : 'not-allowed',
+                    opacity: isSelectable ? 1 : 0.4 
                   }}
                 >
                   {day}

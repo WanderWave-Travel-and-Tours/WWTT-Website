@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast, { Toaster } from 'react-hot-toast'; // Import toast and Toaster
 import './addpromo.css';
 import Sidebar from '../sidebar/sidebar';
 
@@ -43,6 +44,14 @@ const AddPromo = () => {
     const maxStartDate = getMaxStartDate(); 
     // --- DATE VALIDATION LOGIC END ---
 
+    // --- TOAST NOTIFICATION FUNCTION ---
+    const showErrorToast = (message) => {
+        toast.error(message, {
+            style: { border: '1px solid #ef4444', color: '#ef4444' },
+            iconTheme: { primary: '#ef4444', secondary: '#fff' },
+        });
+    };
+    // --- END TOAST NOTIFICATION FUNCTION ---
 
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
@@ -110,20 +119,20 @@ const AddPromo = () => {
             if (isPercentage) {
                 // Percentage Check (0-100) - Handles paste events
                 if (numValue < 0 || numValue > 100) {
-                    alert('Discount Percentage must be a whole number between 0 and 100. Input has been reset.');
+                    showErrorToast('Discount Percentage must be a whole number between 0 and 100. Input has been reset.');
                     setPromoDetails(prevDetails => ({ ...prevDetails, [name]: '' })); // AUTOMATIC RESET
                     return;
                 }
             } else { // Fixed Amount (Peso)
                 // New Logic: Max 6 digits check (Handles paste events)
                 if (numericValueString.length > 6) {
-                    alert('Discount amount must not exceed 6 digits. Input has been reset.');
+                    showErrorToast('Discount amount must not exceed 6 digits. Input has been reset.');
                     setPromoDetails(prevDetails => ({ ...prevDetails, [name]: '' })); 
                     return;
                 }
                  // Fixed amount check: ensure it's non-negative
                  if (numValue < 0) { 
-                    alert('Discount amount must be a non-negative whole number. Input has been reset.');
+                    showErrorToast('Discount amount must be a non-negative whole number. Input has been reset.');
                     setPromoDetails(prevDetails => ({ ...prevDetails, [name]: '' })); 
                     return;
                 }
@@ -165,6 +174,7 @@ const AddPromo = () => {
         // Block non-digit keys (including signs/symbols)
         if (!isDigit) {
             e.preventDefault();
+            // Optional: You could show a toast here, but for key presses, preventing the action is usually sufficient.
             return;
         }
         
@@ -177,6 +187,7 @@ const AddPromo = () => {
             if (currentValue === '10') {
                 if (newKey !== '0') {
                     e.preventDefault();
+                    showErrorToast('Percentage value cannot exceed 100.');
                     return;
                 }
             }
@@ -184,6 +195,7 @@ const AddPromo = () => {
             if (currentValue.length >= 2) {
                 if (currentValue === '100') {
                     e.preventDefault();
+                    showErrorToast('Maximum percentage reached (100).');
                     return;
                 }
                 
@@ -191,6 +203,7 @@ const AddPromo = () => {
                 
                 if (resultingValue > 100) {
                     e.preventDefault();
+                    showErrorToast('Percentage value cannot exceed 100.');
                     return;
                 }
             }
@@ -198,12 +211,14 @@ const AddPromo = () => {
             // New Logic: Real-time 6-digit restriction
             if (currentValue.length >= 6) {
                  e.preventDefault();
+                 showErrorToast('Fixed amount discount is limited to 6 digits.');
                  return;
             }
             
             // New Logic: Prevent typing '00' (The 'handleChange' handles '01' becoming '1')
             if (currentValue === '0' && newKey === '0') {
                 e.preventDefault();
+                showErrorToast('Cannot start an amount with multiple zeroes (e.g., 00).');
                 return;
             }
         }
@@ -224,6 +239,8 @@ const AddPromo = () => {
         const regex = /^[a-zA-Z0-9]$/;
         if (!regex.test(e.key)) {
             e.preventDefault();
+            // Optional: Toast for blocked key press for code
+            showErrorToast('Promo Code Name must be alphanumeric (A-Z, 0-9) only.');
         }
     };
 
@@ -242,7 +259,9 @@ const AddPromo = () => {
     const handleSubmit = async () => {
         if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
             !promoDetails.discountValue || !promoDetails.startDate) {
-            alert('Please fill in all required fields');
+            
+            // Replaced alert with toast notification
+            showErrorToast('Please fill in all required fields (Code, Description, Category, Discount Value, and Start Date).');
             return;
         }
 
@@ -260,7 +279,10 @@ const AddPromo = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert(`Promo Code ${promoDetails.code} added successfully!`);
+                // Replaced alert with toast notification
+                toast.success(`Promo Code ${promoDetails.code} added successfully!`, {
+                    position: 'top-center'
+                });
                 console.log('Saved Promo:', data);
 
                 setPromoDetails({
@@ -276,11 +298,13 @@ const AddPromo = () => {
                 });
                 setIsOtherCategory(false);
             } else {
-                alert(`Error adding promo: ${data.message || 'Unknown error'}`);
+                // Replaced alert with toast notification
+                showErrorToast(`Error adding promo: ${data.message || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Network Error:', error);
-            alert('Failed to connect to the server. Please check if your backend is running.');
+            // Replaced alert with toast notification
+            showErrorToast('Failed to connect to the server. Please check if your backend is running.');
         } finally {
             setIsSubmitting(false);
         }
@@ -299,10 +323,17 @@ const AddPromo = () => {
             startDate: ''
         });
         setIsOtherCategory(false);
+        toast('Form has been reset.', { 
+            icon: '👋',
+            position: 'top-center'
+        });
     };
 
     return (
         <div className="promo-page">
+            {/* TOASTER COMPONENT ADDED HERE for top-center notifications */}
+            <Toaster position="top-center" />
+            
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 

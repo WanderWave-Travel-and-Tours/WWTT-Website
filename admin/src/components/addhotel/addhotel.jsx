@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import './addhotel.css';
+import toast, { Toaster } from 'react-hot-toast';
 import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000'; 
@@ -10,7 +11,7 @@ const AddHotel = () => {
     name: '',
     destination: '',
     price: '', 
-    maxCapacity: 4,
+    maxCapacity: '', // <-- Binago mula 4 tungo sa ''
     amenities: {
       wifi: false,
       parking: false,
@@ -32,8 +33,6 @@ const AddHotel = () => {
   const pasteAreaRef = useRef(null);
   const [isPasteActive, setIsPasteActive] = useState(false);
   const [type, setType] = useState("Budget");
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
 
   const amenitiesList = [
@@ -49,6 +48,22 @@ const AddHotel = () => {
     { id: 'bar', label: 'Bar', icon: <Wine size={14} /> }
   ];
 
+  const showToastError = (message) => {
+    toast.error(message, {
+      style: { border: '1px solid #ef4444', color: '#ef4444' },
+      iconTheme: { primary: '#ef4444', secondary: '#fff' },
+      position: 'top-center',
+    });
+  };
+
+  const showToastSuccess = (message) => {
+    toast.success(message, {
+      style: { border: '1px solid #059669', color: '#059669' },
+      iconTheme: { primary: '#059669', secondary: '#fff' },
+      position: 'top-center',
+    });
+  };
+
   const isSupportedImage = (fileBlob) => {
     const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (fileBlob && supportedTypes.includes(fileBlob.type)) {
@@ -60,7 +75,6 @@ const AddHotel = () => {
   const clearFile = () => {
     setFile(null); 
     setPreviewUrl(null);
-    setError(prev => (prev && prev.includes('Unsupported file type')) ? '' : prev); 
   };
 
   useEffect(() => {
@@ -70,7 +84,6 @@ const AddHotel = () => {
   const fetchDestinations = async () => {
     try {
       setLoading(true);
-      setError('');
       
       const url = `${API_BASE_URL}/api/packages/all`;
       console.log('Fetching from:', url);
@@ -103,22 +116,23 @@ const AddHotel = () => {
         setDestinations(uniqueDestinations);
         
         if (uniqueDestinations.length === 0) {
-          setError('No destinations found in packages');
+          showToastError('No destinations found in packages.');
         }
       } else {
         console.error('Invalid data format:', data);
-        setError('Invalid data format from server');
+        showToastError('Invalid data format from server.');
       }
     } catch (error) {
       console.error('Error fetching destinations:', error);
-      setError(`Failed to load destinations: ${error.message}. Make sure backend is running on ${API_BASE_URL}`);
+      showToastError(`Failed to load destinations: ${error.message}. Make sure backend is running on ${API_BASE_URL}`);
     } finally {
       setLoading(false);
     }
   };
 
   const calculateRooms = (guests) => {
-    const maxCapacity = hotelDetails.maxCapacity || 4;
+    // Gumagamit ng 4 bilang default kung walang value na inilagay
+    const maxCapacity = Number(hotelDetails.maxCapacity) || 4; 
     return Math.ceil(guests / maxCapacity);
   };
 
@@ -140,13 +154,24 @@ const AddHotel = () => {
       
       setHotelDetails(prev => ({ ...prev, [name]: cleanedValue }));
 
+    } else if (name === 'maxCapacity') { // Max Capacity Validation and Filtering
+      // Tanggapin lang ang digits (alisin ang signs at non-numeric characters)
+      const cleanedValue = value.replace(/[^0-9]/g, '');
+
+      // Limitahan sa 3 digits (hindi nag-a-update ng state kung 4 digits na)
+      if (cleanedValue.length > 3) {
+        return; 
+      }
+      
+      // Update state with the cleaned value (empty string is allowed)
+      setHotelDetails(prev => ({ ...prev, [name]: cleanedValue }));
+
     } else {
       setHotelDetails(prev => ({ ...prev, [name]: value }));
     }
   };
 
   const handleFileChange = (e) => {
-    setError('');
     const selected = e.target.files[0];
     if (selected) {
       if (isSupportedImage(selected)) {
@@ -155,18 +180,19 @@ const AddHotel = () => {
       } else {
         setFile(null); 
         setPreviewUrl(null);
-        setError('Unsupported file type. Only JPG, PNG, and WebP images are allowed. Please upload a JPG, PNG, or WebP file.');
+        showToastError('Unsupported file type. Only JPG, PNG, and WebP images are allowed.');
         e.target.value = null;
       }
     }
   };
 
   const handlePaste = (e) => {
-    setError('');
     const items = e.clipboardData?.items;
+    let imageFound = false;
     if (items) {
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
+          imageFound = true;
           const blob = items[i].getAsFile();
           if (blob) {
             if (isSupportedImage(blob)) {
@@ -175,7 +201,7 @@ const AddHotel = () => {
               setIsPasteActive(false);
               return;
             } else {
-              setError('Unsupported file type from paste. Only JPG, PNG, and WebP images are allowed. Please use a JPG, PNG, or WebP image.');
+              showToastError('Unsupported file type from paste. Only JPG, PNG, and WebP images are allowed.');
               setFile(null);
               setPreviewUrl(null);
               setIsPasteActive(false);
@@ -185,6 +211,9 @@ const AddHotel = () => {
           break;
         }
       }
+    }
+    if (!imageFound) {
+      showToastError('No image data found in the clipboard.');
     }
   };
 
@@ -207,23 +236,28 @@ const AddHotel = () => {
 
   const handleSubmit = async () => {
     if (!hotelDetails.name || !hotelDetails.destination) {
-      setError('Please fill in all required fields (Name, Destination)');
+      showToastError('Please fill in all required fields (Name, Destination).');
       return;
     }
     
     const numericPrice = Number(hotelDetails.price);
     if (isNaN(numericPrice) || numericPrice <= 0) {
-      setError('Price per room must be a positive number.');
+      showToastError('Price per room must be a positive number.');
       return;
     }
-    
-    if (error.includes('Unsupported file type')) {
-      return; 
+
+    const numericCapacity = Number(hotelDetails.maxCapacity);
+    if (isNaN(numericCapacity) || numericCapacity < 1) { // Min 1 validation
+      showToastError('Max Capacity must be a positive number (minimum 1).');
+      return;
+    }
+
+    if (hotelDetails.maxCapacity.length > 3 || numericCapacity > 999) { // Max 3 digits validation
+      showToastError('Max capacity cannot exceed 3 digits (999).');
+      return;
     }
 
     setIsSubmitting(true);
-    setError('');
-    setSuccess('');
 
     try {
       const formData = {
@@ -235,16 +269,16 @@ const AddHotel = () => {
         description: `${type} accommodation in ${hotelDetails.destination}`,
         price: numericPrice, 
         priceUnit: 'per night',
-        maxCapacity: Number(hotelDetails.maxCapacity) || 4,
+        maxCapacity: numericCapacity, 
         rating: 0,
         amenities: hotelDetails.amenities,
-        mainImage: previewUrl || '',
+        mainImage: previewUrl || '', 
         featured: false,
         isActive: true,
         roomTypes: [{
           type: type,
-          capacity: Number(hotelDetails.maxCapacity) || 4,
-          price: Number(hotelDetails.price),
+          capacity: numericCapacity, 
+          price: numericPrice,
           available: 10,
           description: `${type} room with ${hotelDetails.maxCapacity} person capacity`
         }]
@@ -261,12 +295,12 @@ const AddHotel = () => {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Hotel added successfully!');
+        showToastSuccess('Hotel added successfully!');
         setHotelDetails({
           name: '',
           destination: '',
           price: '',
-          maxCapacity: 4,
+          maxCapacity: '', // <-- Binago mula 4 tungo sa ''
           amenities: {
             wifi: false,
             parking: false,
@@ -284,13 +318,12 @@ const AddHotel = () => {
         setFile(null);
         setType("Budget");
         
-        setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(data.message || 'Error creating hotel');
+        showToastError(data.message || 'Error creating hotel.');
       }
     } catch (error) {
       console.error('Error creating hotel:', error);
-      setError('Failed to create hotel. Please try again.');
+      showToastError('Failed to create hotel. Please check your network and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -301,7 +334,7 @@ const AddHotel = () => {
       name: '',
       destination: '',
       price: '',
-      maxCapacity: 4,
+      maxCapacity: '', // <-- Binago mula 4 tungo sa ''
       amenities: {
         wifi: false,
         parking: false,
@@ -317,13 +350,12 @@ const AddHotel = () => {
     });
     clearFile(); 
     setType("Budget");
-    setError('');
-    setSuccess('');
   };
 
   useEffect(() => {
     const handleGlobalPaste = (e) => {
       if (isPasteActive && pasteAreaRef.current) {
+        e.preventDefault(); 
         handlePaste(e);
       }
     };
@@ -337,6 +369,8 @@ const AddHotel = () => {
   const exampleGuests = [4, 5, 8, 10];
   
   const currentPrice = Number(hotelDetails.price) || 0; 
+  // Gumagamit ng default na 4 para sa preview kung blangko ang input
+  const currentCapacity = Number(hotelDetails.maxCapacity) || 4; 
   
   const roomCalculations = exampleGuests.map(guests => ({
     guests,
@@ -347,40 +381,13 @@ const AddHotel = () => {
   return (
     <div className="hotel-page">
       <Sidebar />
+      <Toaster /> 
       <main className="hotel-main">
         <div className="hotel-container">
           <header className="hotel-header">
             <h1 className="hotel-title">ADD NEW HOTEL</h1>
             <p className="hotel-subtitle">Register a new accommodation partner</p>
           </header>
-
-          {error && (
-            <div style={{
-              padding: '1rem',
-              marginBottom: '1rem',
-              backgroundColor: '#fee2e2',
-              color: '#dc2626',
-              borderRadius: '8px',
-              border: '1px solid #fca5a5',
-              fontSize: '0.875rem',
-              fontWeight: '500'
-            }}>
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div style={{
-              padding: '1rem',
-              marginBottom: '1rem',
-              backgroundColor: '#d1fae5',
-              color: '#059669',
-              borderRadius: '8px',
-              border: '1px solid #6ee7b7'
-            }}>
-              {success}
-            </div>
-          )}
 
           <div className="hotel-grid">
             <div className="hotel-left">
@@ -498,17 +505,16 @@ const AddHotel = () => {
                   <div className="form-group">
                     <label>Max Capacity per Room *</label>
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="numeric" 
                       name="maxCapacity" 
-                      value={hotelDetails.maxCapacity} 
+                      value={hotelDetails.maxCapacity} // <-- Ito ay blangko na sa simula
                       onChange={handleChange} 
                       placeholder="e.g. 4" 
                       required
-                      min="1"
-                      max="10"
                     />
                     <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                      Default: 4 persons per room
+                      Minimum 1 person. Maximum 3 digits (999). Only numbers allowed.
                     </span>
                   </div>
 
@@ -529,7 +535,7 @@ const AddHotel = () => {
                     </span>
                   </div>
 
-                  {hotelDetails.price && hotelDetails.maxCapacity && (
+                  {(hotelDetails.price || hotelDetails.maxCapacity !== '') && (
                     <div className="form-group full-width">
                       <label>Room Calculation Preview</label>
                       <div style={{
@@ -540,7 +546,7 @@ const AddHotel = () => {
                       }}>
                         <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem', fontWeight: '500' }}>
                           <Users size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
-                          Example: {hotelDetails.maxCapacity} persons/room @ ₱{currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/room/night
+                          Example: {currentCapacity} persons/room @ ₱{currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/room/night
                         </p>
                         <div style={{ display: 'grid', gap: '0.5rem' }}>
                           {roomCalculations.map(calc => (
@@ -691,7 +697,7 @@ const AddHotel = () => {
                       {hotelDetails.destination || 'Destination'}
                     </div>
                     <p className="card-desc">
-                      {`${type} accommodation in ${hotelDetails.destination || 'your destination'}. Max ${hotelDetails.maxCapacity} persons per room.`}
+                      {`${type} accommodation in ${hotelDetails.destination || 'your destination'}. Max ${currentCapacity} persons per room.`}
                     </p>
                     <div className="card-footer">
                       <div className="card-amenities">

@@ -2,6 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 import "./addpackage.css";
+// IMPORT: react-hot-toast for notifications
+import toast, { Toaster } from 'react-hot-toast';
+
+// NOTE: You must install this library first: npm install react-hot-toast
 
 const AddPackage = () => {
 
@@ -150,7 +154,10 @@ const AddPackage = () => {
         setFile(selected);
         setPreviewUrl(URL.createObjectURL(selected));
       } else {
-        alert("❌ Hindi pinapayagan ang ganitong uri ng file. Tanging .jpg, .jpeg, .png, at .webp na mga file lamang ang tinatanggap.");
+        // ERROR TOAST: English, Concise, Custom Style
+        toast.error("Invalid file type. Only JPG, PNG, and WebP are allowed.", {
+          style: { border: '1px solid #ef4444', color: '#ef4444' },
+        });
         // Clear the file input and state to prevent the invalid file from being used
         e.target.value = null; 
         setFile(null);
@@ -177,15 +184,20 @@ const AddPackage = () => {
             setIsPasteActive(false);
             return; // Stop processing after finding and accepting one image
           } else if (blob) {
-             // Handle pasted image that is not one of the allowed types (less common for paste but good for safety)
-             alert("❌ Hindi pinapayagan ang ganitong uri ng file na na-paste. Tanging .jpg, .jpeg, .png, at .webp na mga format lamang ang tinatanggap.");
+             // ERROR TOAST: English, Concise, Custom Style
+             toast.error("Pasted image format not supported. Use JPG, PNG, or WebP.", {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+             });
              setIsPasteActive(false);
              return;
           }
         }
       }
       // If code reaches here, it means nothing was pasted or it wasn't an image
-      alert("⚠️ Walang nakitang valid na image sa iyong clipboard para i-paste.");
+      // ERROR TOAST: English, Concise, Custom Style
+      toast.error("No valid image found in clipboard.", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+      });
     }
   };
 
@@ -293,7 +305,10 @@ const AddPackage = () => {
     
     // Final check for 3-digit minimum (must be at least 100) before submission
     if (supplierRateNum < 100) {
-      alert("❌ Supplier Rate must be at least ₱100.00. Please enter a valid rate.");
+      // ERROR TOAST: English, Concise, Custom Style
+      toast.error("Supplier Rate must be at least ₱100.00.", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+      });
       return;
     }
     
@@ -333,7 +348,10 @@ const AddPackage = () => {
     if (file) {
       formData.append("image", file);
     } else {
-      alert("Please upload an image for the package.");
+      // ERROR TOAST: English, Concise, Custom Style
+      toast.error("Please upload a package cover image.", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+      });
       return;
     }
 
@@ -344,7 +362,10 @@ const AddPackage = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        alert("✅ Package Added Successfully!");
+        // SUCCESS TOAST: English and Concise (Green Style)
+        toast.success("Package Added Successfully!", {
+            style: { border: '1px solid #22c55e', color: '#22c55e' }
+        });
         // Reset form state on success
         setTitle("");
         setDestination("");
@@ -360,16 +381,27 @@ const AddPackage = () => {
         setMarkupType("peso");
       } else {
         console.error("Server error:", data);
-        alert("❌ Error: " + (data.error || "Server error"));
+        // ERROR TOAST: English, Concise, Custom Style
+        toast.error("Error adding package. Please check details.", {
+            style: { border: '1px solid #ef4444', color: '#ef4444' },
+        });
       }
     } catch (error) {
       console.error("Fetch error:", error);
-      alert("❌ Error connecting to server");
+      // ERROR TOAST: English, Concise, Custom Style
+      toast.error("Network error. Cannot connect to server.", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+      });
     }
   };
 
   return (
     <div className="addpkg-page">
+      {/* TOASTER COMPONENT ADDED FOR NOTIFICATIONS (top-center as requested) */}
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false} 
+      />
       <Sidebar 
         isCollapsed={isSidebarCollapsed} 
         toggleSidebar={toggleSidebar} 

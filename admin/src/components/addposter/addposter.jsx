@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Upload, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast'; // Import toast and Toaster
 import './addposter.css';
 import Sidebar from '../sidebar/sidebar';
 
@@ -110,7 +111,11 @@ const AddPoster = () => {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
-                alert('Please upload a valid image file (JPG, PNG).');
+                // Replace alert with toast notification for invalid file type
+                toast.error('Please upload a valid image file (JPG, PNG, GIF).', {
+                    style: { border: '1px solid #ef4444', color: '#ef4444' },
+                    iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                });
                 return;
             }
             
@@ -123,11 +128,26 @@ const AddPoster = () => {
     const removeImage = () => {
         setImageFile(null);
         setImagePreview(null);
+        if (imagePreview) {
+            URL.revokeObjectURL(imagePreview);
+        }
     };
 
     const handleSubmit = async () => {
-        if (!posterDetails.title || !imageFile) {
-            alert('Please provide a title and upload an image.');
+        // Validation check for title and image
+        if (!posterDetails.title) {
+            toast.error('Poster Title is required.', {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            });
+            return;
+        }
+        
+        if (!imageFile) {
+            toast.error('Please upload an image for the poster.', {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            });
             return;
         }
 
@@ -150,14 +170,26 @@ const AddPoster = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert('Poster uploaded successfully!');
+                // Success notification (using a different toast type for positive feedback)
+                toast.success('Poster uploaded successfully!', {
+                    style: { border: '1px solid #10b981', color: '#10b981' },
+                    iconTheme: { primary: '#10b981', secondary: '#fff' },
+                });
                 handleCancel(); // Reset form
             } else {
-                alert(`Error: ${data.message || 'Failed to upload'}`);
+                // Replace alert with toast notification for server error
+                toast.error(`Error: ${data.message || 'Failed to upload poster.'}`, {
+                    style: { border: '1px solid #ef4444', color: '#ef4444' },
+                    iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                });
             }
         } catch (error) {
             console.error('Upload Error:', error);
-            alert('Failed to connect to server.');
+            // Replace alert with toast notification for connection error
+            toast.error('Failed to connect to server. Please check your network.', {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -172,11 +204,18 @@ const AddPoster = () => {
             status: 'Active'
         });
         setImageFile(null);
+        // Important: Revoke the object URL when canceling to free up memory
+        if (imagePreview) {
+            URL.revokeObjectURL(imagePreview);
+        }
         setImagePreview(null);
     };
 
     return (
         <div className="poster-page">
+            {/* Toaster Component for Notifications */}
+            <Toaster position="top-center" reverseOrder={false} />
+            
             {/* 1. Pass the state and toggle function to Sidebar */}
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 

@@ -293,7 +293,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
          handleResendOtpFetch();
     }
     
-    // Existing Login Logic
+    // Existing Login Logic (with localStorage.setItem for successful login)
     const handleLogin = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -319,7 +319,8 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             if (res.ok) {
                 alert(data.message || 'Welcome back!');
                 if (data.user && onLoginSuccess) {
-                    localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
+                    // Ito ang key na binabasa ng packageDeals.jsx
+                    localStorage.setItem('wanderwave_user', JSON.stringify(data.user)); 
                     onLoginSuccess(data.user);
                 }
             } else {

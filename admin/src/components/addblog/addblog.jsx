@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, FileText, User, Tag, Loader2 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import { useNavigate } from 'react-router-dom'; 
+import toast, { Toaster } from 'react-hot-toast'; // Import ng toast at Toaster
 import './addblog.css';
 
 const AddBlog = () => {
@@ -47,8 +48,12 @@ const AddBlog = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Gumamit ng toast.error para sa validation ng file type
             if (!file.type.startsWith('image/')) {
-                alert('Please upload a valid image file (JPG, PNG).');
+                toast.error("Please upload a valid image file (JPG, PNG).", {
+                    style: { border: '1px solid #ef4444', color: '#ef4444' },
+                    iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                });
                 return;
             }
             setImageFile(file);
@@ -63,8 +68,12 @@ const AddBlog = () => {
     };
 
     const handleSubmit = async () => {
+        // Gumamit ng toast.error para sa field validation
         if (!blogDetails.title || !blogDetails.content || !imageFile) {
-            alert('Please provide a title, content, and cover image.');
+            toast.error('Please provide a title, content, and cover image.', {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            });
             return;
         }
 
@@ -87,15 +96,27 @@ const AddBlog = () => {
             const result = await response.json();
 
             if (response.ok) {
-                alert('Blog post created successfully!');
+                // Gumamit ng toast.success
+                toast.success('Blog post created successfully!', {
+                    style: { border: '1px solid #22c55e', color: '#22c55e' },
+                    iconTheme: { primary: '#22c55e', secondary: '#fff' },
+                });
                 handleCancel(); 
             } else {
-                alert(`Error: ${result.message || 'Failed to create blog'}`);
+                // Gumamit ng toast.error para sa server response error
+                toast.error(`Error: ${result.message || 'Failed to create blog'}`, {
+                    style: { border: '1px solid #ef4444', color: '#ef4444' },
+                    iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                });
             }
 
         } catch (error) {
             console.error('Error submitting blog:', error);
-            alert('Server error. Please check if backend is running.');
+            // Gumamit ng toast.error para sa network/server error
+            toast.error('Server error. Please check if backend is running.', {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -119,6 +140,10 @@ const AddBlog = () => {
 
     return (
         <div className="blog-page">
+            <Toaster 
+                position="top-center" // --- (1) UPDATED POSITION DITO
+                reverseOrder={false}
+            /> 
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
