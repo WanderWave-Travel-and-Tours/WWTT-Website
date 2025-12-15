@@ -14,7 +14,7 @@ import {
   ChevronLeft,
   ChevronRight // Added for pagination
 } from 'lucide-react';
-import './Booking.css';
+import './booking.css';
 import Sidebar from '../sidebar/sidebar';
 
 // --- Updated: Pagination Controls Component for new design ---

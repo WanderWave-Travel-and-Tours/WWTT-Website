@@ -57,9 +57,9 @@ import Users from './components/users/users.jsx';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/">
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/admin" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/settings" element={<Settings />} />
