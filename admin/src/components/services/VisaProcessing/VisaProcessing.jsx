@@ -92,7 +92,7 @@ const VisaProcessing = () => {
 
   const fetchVisas = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/visas");
+      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/visas");
       if (Array.isArray(res.data)) {
         setVisaForms(res.data.map((v) => ({ ...v, id: v._id, desc: v.description })));
       }
@@ -105,7 +105,7 @@ const VisaProcessing = () => {
 
   const fetchInquiries = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/inquiries');
+      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries');
       if (response.data.success) {
         const visaRequests = response.data.data.filter(inq => 
             (inq.serviceName && inq.serviceName.toUpperCase().includes('VISA')) ||

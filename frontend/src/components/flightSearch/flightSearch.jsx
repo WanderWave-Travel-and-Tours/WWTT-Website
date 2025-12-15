@@ -95,7 +95,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
       const searchDestination = async () => {
         try {
           const response = await axios.get(
-            "http://localhost:5000/api/flights/airports",
+            "https://wanderwaveph-backend.onrender.com/api/flights/airports",
             { params: { search: prefilledDestination } }
           );
 
@@ -139,7 +139,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
 
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/flights/airports",
+        "https://wanderwaveph-backend.onrender.com/api/flights/airports",
         { params: { search: searchTerm } }
       );
 
@@ -361,7 +361,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     }
 
     try {
-      const response = await axios.get("http://localhost:5000/api/flights/search-domestic", {
+      const response = await axios.get("https://wanderwaveph-backend.onrender.com/api/flights/search-domestic", {
           params: { 
             ...searchData, 
             adults: searchParams.adults, 

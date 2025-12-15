@@ -22,7 +22,7 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/posters');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters');
             if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
             setPosters(data);
@@ -36,7 +36,7 @@ const ViewPoster = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this poster?')) {
             try {
-                const response = await fetch(`http://localhost:5000/api/posters/${id}`, { 
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/${id}`, { 
                     method: 'DELETE' 
                 });
 
@@ -57,7 +57,7 @@ const ViewPoster = () => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         
         try {
-            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -117,7 +117,7 @@ const ViewPoster = () => {
                                         </div>
 
                                         <div className="vp-image-wrapper">
-                                            <img src={`http://localhost:5000/${poster.imageUrl}`} alt={poster.title} />
+                                            <img src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} alt={poster.title} />
                                         </div>
 
                                         <div className="vp-content">

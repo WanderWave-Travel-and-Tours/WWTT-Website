@@ -15,7 +15,7 @@ const ViewTestimonials = () => {
 
     const fetchTestimonials = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/testimonials');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials');
             if (!response.ok) {
                 throw new Error('Failed to fetch');
             }
@@ -80,7 +80,7 @@ const ViewTestimonials = () => {
                                         <img 
                                             src={
                                                 t.customerImage 
-                                                ? `http://localhost:5000/uploads/${t.customerImage}` 
+                                                ? `https://wanderwaveph-backend.onrender.com/uploads/${t.customerImage}` 
                                                 : 'https://via.placeholder.com/150?text=No+Img'
                                             } 
                                             alt={`Profile of ${t.customerName}`} 

@@ -16,7 +16,7 @@ const ViewPromos = () => {
 
     const fetchPromos = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/promos');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
             if (!response.ok) {
                 throw new Error('Failed to fetch promos');
             }
@@ -49,7 +49,7 @@ const ViewPromos = () => {
     const handleDelete = async (id, code) => {
         if (window.confirm(`Are you sure you want to delete promo code ${code}?`)) {
             try {
-                const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
                     method: 'DELETE',
                 });
 

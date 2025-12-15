@@ -3,7 +3,7 @@ import Sidebar from '../sidebar/sidebar';
 import './viewpackages.css';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'http://localhost:5000/api/packages';
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
 
 const ViewPackages = () => {
     const [packages, setPackages] = useState([]);
@@ -146,7 +146,7 @@ const ViewPackages = () => {
                                 <div key={pkg._id} className="pkg-card">
                                     <div className="pkg-card-image">
                                         <img 
-                                            src={`http://localhost:5000/uploads/${pkg.image}`} 
+                                            src={`https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`} 
                                             alt={pkg.title} 
                                         />
                                         <span className="pkg-card-category">{pkg.category}</span>
