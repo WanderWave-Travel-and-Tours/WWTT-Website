@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-// Main Components (Lowercase folders based on screenshot)
+// Main Components 
 import Login from './components/login/login.jsx'; 
 import Dashboard from './components/dashboard/dashboard.jsx'; 
 import Booking from './components/booking/booking.jsx';
-// Assuming settings is in components/settings based on structure
 import Settings from './components/settings/settings.jsx'; 
+import Archive from './components/archive/Archive.jsx'; // NEW ARCHIVE IMPORT
 
 // Packages
 import AddPackage from './components/addpackage/addpackage.jsx';
@@ -45,7 +45,7 @@ import ViewHotels from './components/viewhotel/viewhotel.jsx';
 import AddService from './components/addservice/addservice.jsx';
 import ViewServices from './components/viewservice/viewservice.jsx';
 
-// --- SERVICE MANAGEMENT IMPORTS (PascalCase folders based on structure) ---
+// --- SERVICE MANAGEMENT IMPORTS ---
 import VisaProcessing from './components/services/VisaProcessing/VisaProcessing.jsx';
 import PSASerbilis from './components/services/PSASerbilis/PSASerbilis.jsx';
 import CenomarRequest from './components/services/CenomarRequest/CenomarRequest.jsx';
@@ -66,6 +66,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/booking" element={<Booking />} />
+        <Route path="/archive" element={<Archive />} /> {/* NEW ARCHIVE ROUTE */}
         <Route path="/settings" element={<Settings />} />
         <Route path="/users" element={<Users />} />
 
