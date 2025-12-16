@@ -33,7 +33,8 @@ import {
   MapPin,
   Ship,       
   ShieldCheck,
-  Briefcase 
+  Briefcase,
+    Archive as ArchiveIcon // Import Archive Icon
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -218,7 +219,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               icon={Wrench} 
               menuKey="services"
               childrenItems={[
-                { name: 'Manage Services', path: '/view-services', icon: Briefcase }, // <-- ADDED THIS LINE
+                { name: 'Manage Services', path: '/view-services', icon: Briefcase }, 
                 { name: 'VISA Processing', path: '/services/visa', icon: BookOpen },
                 { name: 'PSA Serbilis', path: '/services/psa', icon: FileText },
                 { name: 'CENOMAR', path: '/services/cenomar', icon: HeartHandshake },
@@ -233,6 +234,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               ]}
             />
             <MenuItem path="/users" icon={Users} label="Users" />
+            <MenuItem path="/archive" icon={ArchiveIcon} label="Archive" /> {/* Inilipat sa ilalim ng Users */}
             <MenuItem path="/settings" icon={Settings} label="Settings" />
           </ul>
         </div>
