@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import './UserLogin.css';
+import './userLogin.css';
 // Import icons (assuming you have a dependency like lucide-react or similar)
 import { Mail, Key, User, Lock, CheckCircle, XCircle } from 'lucide-react'; 
 
-const API_BASE_URL = 'http://localhost:5000/api/auth'; 
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/auth'; 
 
 // --- OTP Verification Form Component (Modal) ---
 const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading, error }) => {
@@ -306,7 +306,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         setIsLoading(true);
         
         try {
-            const res = await fetch(`http://localhost:5000/api/auth/login`, {
+            const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

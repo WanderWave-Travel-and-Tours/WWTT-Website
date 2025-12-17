@@ -10,7 +10,7 @@ import TopPackages from "./components/TopPackages";
 import QuickActions from "./components/QuickActions";
 import FooterStats from "./components/FooterStats";
 import { exportToPDF } from "./utils/pdfExport";
-import "./Dashboard.css";
+import "./dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -55,7 +55,7 @@ const Dashboard = () => {
 
     try {
       const bookingsRes = await fetch(
-        "http://localhost:5000/api/admin/bookings"
+        "https://wanderwaveph-backend.onrender.com/api/admin/bookings"
       );
       if (!bookingsRes.ok)
         throw new Error(`HTTP error! status: ${bookingsRes.status}`);
@@ -66,7 +66,7 @@ const Dashboard = () => {
     }
 
     try {
-      const packagesRes = await fetch("http://localhost:5000/api/packages");
+      const packagesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/packages");
       if (!packagesRes.ok)
         throw new Error(`HTTP error! status: ${packagesRes.status}`);
       packages = await packagesRes.json();
@@ -76,7 +76,7 @@ const Dashboard = () => {
     }
 
     try {
-      const blogsRes = await fetch("http://localhost:5000/api/blogs");
+      const blogsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/blogs");
       if (!blogsRes.ok)
         throw new Error(`HTTP error! status: ${blogsRes.status}`);
       blogs = await blogsRes.json();
@@ -86,7 +86,7 @@ const Dashboard = () => {
     }
 
     try {
-      const promosRes = await fetch("http://localhost:5000/api/promos");
+      const promosRes = await fetch("https://wanderwaveph-backend.onrender.com/api/promos");
       if (!promosRes.ok)
         throw new Error(`HTTP error! status: ${promosRes.status}`);
       promos = await promosRes.json();
@@ -97,7 +97,7 @@ const Dashboard = () => {
 
     try {
       const testimonialsRes = await fetch(
-        "http://localhost:5000/api/testimonials"
+        "https://wanderwaveph-backend.onrender.com/api/testimonials"
       );
       if (!testimonialsRes.ok)
         throw new Error(`HTTP error! status: ${testimonialsRes.status}`);

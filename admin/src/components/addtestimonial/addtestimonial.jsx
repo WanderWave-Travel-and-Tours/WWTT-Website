@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './AddTestimonial.css';
+import './addtestimonial.css';
 import Sidebar from '../sidebar/sidebar';
 
 const AddTestimonial = () => {
@@ -42,7 +42,7 @@ const AddTestimonial = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/testimonials', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials', {
                     method: 'POST',
                 body: formData, 
             });

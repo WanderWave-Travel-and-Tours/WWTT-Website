@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./FlightSearch.css";
+import "./flightSearch.css";
 import FlightSearchForm from "./FlightSearchForm";
 import FlightSearchResults from "./FlightSearchResults";
 
@@ -106,7 +106,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
         try {
           const response = await axios.get(
             "http://localhost:5000/api/flights/airports",
-            { params: { search: destination } }
+            { params: { search: prefilledDestination } }
           );
 
           if (response.data.success && response.data.data && response.data.data.length > 0) {
@@ -149,7 +149,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
 
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/flights/airports",
+        "https://wanderwaveph-backend.onrender.com/api/flights/airports",
         { params: { search: searchTerm } }
       );
 
@@ -392,7 +392,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     }
 
     try {
-      const response = await axios.get("http://localhost:5000/api/flights/search-domestic", {
+      const response = await axios.get("https://wanderwaveph-backend.onrender.com/api/flights/search-domestic", {
           params: { 
             ...searchData, 
             adults: searchParams.adults, 

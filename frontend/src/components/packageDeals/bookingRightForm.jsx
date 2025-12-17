@@ -54,9 +54,11 @@ const BookingRightForm = ({ pkg }) => {
     const bookingData = sessionStorage.getItem('pendingBookingData');
     console.log('Checking for pending booking data:', bookingData);
     
-    if (bookingData) {
-      const data = JSON.parse(bookingData);
-      console.log('Parsed booking data:', data);
+    try {
+      setLoadingHotelData(true);
+      const city = destination.split(',')[0].trim();
+      const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+      const data = await response.json();
       
       if (data.selectedFlight && data.packageId === pkg._id) {
         console.log('Found selected flight for this package:', data.selectedFlight);
@@ -438,46 +440,35 @@ const BookingRightForm = ({ pkg }) => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      if (bookingResponse.data.success) {
-        const bookingId = bookingResponse.data.bookingId;
-        
-        console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
-        toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
-        
-        // ===========================================
-        // API CALL 2: CREATE PAYMENT LINK (Final Redirect)
-        // ===========================================
-        // The /create-intent route expects { bookingId: '...' } in the body
-        const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
-            bookingId: bookingId
-        });
-        
-        if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
-            const checkoutUrl = paymentResponse.data.checkoutUrl;
-            toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
-            setShowModal(false);
-            
-            // CRITICAL FIX: REDIRECT TO PAYMONGO URL
-            window.location.href = checkoutUrl; 
-            return;
-            
-        } else {
-             // If payment link creation fails, redirect to dashboard/pending page
-             const redirectId = bookingResponse.data.bookingId || bookingResponse.data.data._id; 
-             toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
-             setTimeout(() => {
-                 navigate('/dashboard');
-             }, 1500);
+    const bookingRes = await axios.post(
+      'http://localhost:5000/api/bookings', 
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
       } else {
          throw new Error(bookingResponse.data.message || 'Booking submission failed on server.');
       }
-    } catch (error) {
-      console.error('Booking/Payment Error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking. Please try again.';
-      
-      if (error.response?.data?.error) {
-          console.error("Payment API Error Details:", error.response.data.error);
+    );
+
+    if (!bookingRes.data.success) {
+      throw new Error(bookingRes.data.message || 'Booking creation failed');
+    }
+
+    if (!bookingRes.data.data || !bookingRes.data.data._id) {
+      console.error('❌ Invalid response structure');
+      throw new Error('Booking ID not found in response');
+    }
+
+    const createdBooking = bookingRes.data.data;
+    const bookingId = createdBooking._id;
+
+    const paymentRes = await axios.post(
+      'http://localhost:5000/api/payment/create-intent',
+      { bookingId: bookingId.toString() },
+      {
+        headers: { 'Content-Type': 'application/json' }
       }
       
       toast.error(errorMessage);

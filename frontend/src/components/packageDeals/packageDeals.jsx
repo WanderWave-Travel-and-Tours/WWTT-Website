@@ -139,7 +139,7 @@ function PackageDeals() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/packages/all'); 
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/packages/all'); 
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -164,7 +164,7 @@ function PackageDeals() {
             discount: 30,
             rating: 4.5,
             reviews: 100, 
-            image: pkg.image ? `http://localhost:5000/uploads/${pkg.image}` : 'https://default-image-url.jpg', 
+            image: pkg.image ? `https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}` : 'https://default-image-url.jpg', 
             inclusions: pkg.inclusions || [], 
             itinerary: pkg.itinerary || [], 
             excludes: [], 

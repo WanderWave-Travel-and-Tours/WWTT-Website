@@ -1,7 +1,7 @@
 import React from 'react';
 import BookingLeftColumn from './bookingLeftColumn';
 import BookingRightForm from './bookingRightForm';
-import './PackageBooking.css';
+import './packageBooking.css';
 
 function PackageBooking({ pkg }) {
   if (!pkg) return null;
