@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 import './login.css';
 
 const Login = () => {
@@ -7,8 +8,10 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const recaptchaRef = useRef(null);
+    const [recaptchaToken, setRecaptchaToken] = useState(null);
     const navigate = useNavigate();
-
+    const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
     const destinations = [
         { 
             image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eb2c3a1eaa1cc1c2ab8.jpg', 
@@ -61,13 +64,19 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+
+        if (!recaptchaToken) {
+            alert("Please complete the reCAPTCHA verification");
+            return;
+        }
+
         setIsLoading(true);
 
         try {
             const response = await fetch('http://localhost:5000/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ username, password, recaptchaToken }),
             });
 
             const data = await response.json();
@@ -86,6 +95,8 @@ const Login = () => {
             console.error('Login error:', error);
         } finally {
             setIsLoading(false);
+            if (recaptchaRef.current) recaptchaRef.current.reset();
+            setRecaptchaToken(null);
         }
     };
 
@@ -161,6 +172,14 @@ const Login = () => {
                                     className="input-field"
                                     required
                                     autoComplete="current-password"
+                                />
+                            </div>
+
+                            <div className="recaptcha-wrapper" style={{ marginBottom: '15px' }}>
+                                <ReCAPTCHA
+                                    ref={recaptchaRef}
+                                    sitekey={RECAPTCHA_SITE_KEY}
+                                    onChange={(token) => setRecaptchaToken(token)}
                                 />
                             </div>
 
