@@ -1,0 +1,68 @@
+.apkg-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 28px;
+}
+
+.apkg-section-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1.5px;
+    margin-bottom: 20px;
+}
+
+.apkg-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.apkg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.apkg-field--full {
+    grid-column: 1 / -1;
+}
+
+.apkg-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.apkg-field input,
+.apkg-field select {
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: 0.15s ease;
+}
+
+.apkg-field input:focus,
+.apkg-field select:focus {
+    outline: none;
+    border-color: #FF8C42;
+    background: #fff;
+}
+
+.apkg-field input::placeholder {
+    color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+    .apkg-fields {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,232 @@
+.apkg-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 28px;
+}
+
+.apkg-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.apkg-section-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1.5px;
+}
+
+.apkg-count {
+    font-size: 12px;
+    font-weight: 500;
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.apkg-timeline {
+    margin-bottom: 20px;
+}
+
+.apkg-day {
+    display: flex;
+    gap: 20px;
+}
+
+.apkg-day-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 44px;
+    flex-shrink: 0;
+}
+
+.apkg-day-num {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #fff;
+    background: #001F3F;
+    border-radius: 50%;
+}
+
+.apkg-day-line {
+    flex: 1;
+    width: 2px;
+    background: #e2e8f0;
+    margin: 8px 0;
+}
+
+.apkg-day-content {
+    flex: 1;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.apkg-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.apkg-day-title {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-right: 12px;
+}
+
+.apkg-day-title:focus {
+    outline: none;
+    border-color: #FF8C42;
+}
+
+.apkg-day-remove {
+    font-size: 12px;
+    font-weight: 600;
+    color: #dc2626;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.apkg-activities {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.apkg-activity {
+    display: flex;
+    gap: 8px;
+}
+
+.apkg-activity input {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+
+.apkg-activity input:focus {
+    outline: none;
+    border-color: #FF8C42;
+}
+
+.apkg-remove {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: 0.15s ease;
+}
+
+.apkg-remove:hover {
+    color: #dc2626;
+}
+
+.apkg-remove svg {
+    width: 18px;
+    height: 18px;
+}
+
+.apkg-remove--sm {
+    width: 32px;
+    height: 32px;
+}
+
+.apkg-remove--sm svg {
+    width: 16px;
+    height: 16px;
+}
+
+.apkg-add-activity {
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #94a3b8;
+    background: none;
+    border: 1px dashed #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.apkg-add-activity:hover {
+    color: #FF8C42;
+    border-color: #FF8C42;
+}
+
+.apkg-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #64748b;
+    background: none;
+    border: 2px dashed #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.apkg-add-btn:hover {
+    color: #FF8C42;
+    border-color: #FF8C42;
+}
+
+.apkg-add-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+@media (max-width: 640px) {
+    .apkg-day {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .apkg-day-marker {
+        flex-direction: row;
+        width: auto;
+    }
+    
+    .apkg-day-line {
+        display: none;
+    }
+}

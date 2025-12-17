@@ -1,0 +1,107 @@
+/* --- STATS CARDS (bkm-) --- */
+.bkm-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
+
+/* Base Card Style (DRAMATIC IMAGE BACKGROUND UI) */
+.bkm-card { 
+    /* Base visual properties */
+    border-radius: 16px; /* Larger radius matching image_c9619f.jpg */
+    padding: 24px; 
+    
+    /* Flex layout for content */
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+    position: relative; 
+    overflow: hidden; 
+    transition: all 0.3s ease;
+    
+    /* === Background Image Styling === */
+    background-size: cover;
+    background-position: center;
+    background-color: #2b3a4a; /* Fallback dark color */
+    color: white; /* Default text color for dark background */
+}
+
+/* === Gradient Overlay (Dark Navy Fade - Simulating image_c9619f.jpg) === */
+.bkm-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Dark Blue/Navy fade for dramatic effect */
+    background: linear-gradient(90deg, 
+        rgba(15, 23, 42, 0.9) 0%, /* Navy Blue Start */
+        rgba(15, 23, 42, 0.7) 40%, 
+        rgba(15, 23, 42, 0.4) 70%, 
+        rgba(15, 23, 42, 0.1) 100% /* Softer fade end */
+    );
+    z-index: 1;
+}
+
+/* Text and Value Styles (Must be above Z-index 1) */
+.bkm-card h2, .bkm-card span {
+    color: white; /* Ensure text is visible */
+    position: relative;
+    z-index: 2;
+}
+.bkm-card h2 { 
+    font-size: 28px; 
+    font-weight: 800; 
+    margin: 0 0 4px 0; 
+    letter-spacing: -0.05em;
+}
+.bkm-card span { 
+    font-size: 11px; 
+    font-weight: 600; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    opacity: 0.8;
+}
+
+/* Icon Styles */
+.bkm-card-icon { 
+    position: relative;
+    z-index: 2;
+    /* Default icon color: Yellow-Orange (Wanderwave accent) */
+    color: #f59e0b; 
+}
+/* Ensure Content is grouped */
+.bkm-card-content {
+    position: relative;
+    z-index: 2;
+}
+
+
+/* --- COLOR VARIANTS (Override for unique icon color) --- */
+
+/* 1. Total Bookings */
+.bkm-card-total-bookings .bkm-card-icon { color: #f59e0b; } 
+
+/* 2. Pending */
+.bkm-card-pending .bkm-card-icon { color: #3b82f6; } /* Light Blue */
+
+/* 3. Confirmed */
+.bkm-card-confirmed .bkm-card-icon { color: #16a34a; } /* Green */
+
+/* 4. Total Revenue */
+.bkm-card-total-revenue .bkm-card-icon { color: #0284c7; } /* Primary Blue */
+
+
+/* Hover Effect */
+.bkm-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
+}
+
+/* Responsive (bkm-) */
+@media (max-width: 1024px) { 
+    .bkm-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) { 
+    .bkm-stats-grid { grid-template-columns: 1fr; } 
+    .bkm-card h2 { font-size: 24px; }
+}
