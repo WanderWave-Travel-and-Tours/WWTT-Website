@@ -1,5 +1,4 @@
 const router = require('express').Router();
-// Changed to require('../models/user') to match the likely file name
 const User = require('../models/user'); 
 
 // --- POST: Add New User ---
@@ -21,8 +20,6 @@ router.post('/add', async (req, res) => {
         res.status(201).json({ status: "ok", message: "User created successfully!", data: other });
     } catch (err) {
         if (err.code === 11000) {
-            // Note: The provided model does not have a 'username' field, 
-            // only 'email' is unique. This check might need adjustment.
             return res.status(400).json({ status: "error", message: "Email already exists." });
         }
         res.status(500).json({ status: "error", message: err.message });
@@ -32,7 +29,6 @@ router.post('/add', async (req, res) => {
 // --- GET: Fetch All Users ---
 router.get('/', async (req, res) => {
     try {
-        // This is the endpoint hit by your React app
         const users = await User.find().select('-password').sort({ createdAt: -1 });
         res.status(200).json(users);
     } catch (err) {
@@ -53,6 +49,54 @@ router.delete('/:id', async (req, res) => {
     } catch (err) {
         res.status(500).json(err);
     }
+});
+
+// --- PUT: Update Personal Information ---
+router.put('/update-profile/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        
+        if (userId === "undefined" || !userId) {
+            return res.status(400).json({ status: "error", message: "Invalid User ID provided." });
+        }
+
+        const { fullName, email, username } = req.body;
+        
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { fullName, email, username },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ status: "error", message: "User not found." });
+        }
+
+        res.status(200).json({ status: "ok", data: updatedUser });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ status: "error", message: "Database error: " + err.message });
+    }
+});
+
+// --- PUT: Update Password ---
+router.put('/update-password/:id', async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.params.id).select('+password');
+
+        if (!user) return res.status(404).json({ status: "error", message: "User not found" });
+
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) return res.status(400).json({ status: "error", message: "Incorrect current password." });
+
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({ status: "ok", message: "Password updated successfully!" });
+    } catch (err) {
+        res.status(500).json({ status: "error", message: err.message });
+    }
 });
 
 module.exports = router;

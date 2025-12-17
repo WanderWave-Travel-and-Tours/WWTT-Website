@@ -5,6 +5,7 @@ const AccountSettings = ({ user }) => {
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
+        username: '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
@@ -15,7 +16,8 @@ const AccountSettings = ({ user }) => {
             setFormData(prev => ({
                 ...prev,
                 fullName: user.fullName || '',
-                email: user.email || ''
+                email: user.email || '',
+                username: user.username || ''
             }));
         }
     }, [user]);
@@ -26,16 +28,75 @@ const AccountSettings = ({ user }) => {
 
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
-        alert("Profile details updated (Frontend Demo)");
+
+        if (!user || !user.id) {
+            console.error("DEBUG: Current User Object:", user);
+            alert("❌ Error: User ID not found. Please try logging in again.");
+            return;
+        }
+        try {
+            const response = await fetch(`http://localhost:5000/api/users/update-profile/${user.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    username: formData.username
+                })
+            });
+            const result = await response.json();
+
+            if (result.status === "ok") {
+                alert("✅ Profile updated! Please log in again to see changes.");
+                localStorage.setItem('wanderwave_user', JSON.stringify(result.data));
+            } else {
+                alert("❌ " + result.message);
+            }
+        } catch (error) {
+            alert("⚠️ Connection error to server.");
+        }
     };
 
     const handleChangePassword = async (e) => {
         e.preventDefault();
-        if (formData.newPassword !== formData.confirmPassword) {
-            alert("Passwords do not match!");
+        
+        if (!user || !user.id) {
+            console.error("DEBUG: User ID missing in Password Update:", user);
+            alert("❌ Error: User ID not found. Please log in again.");
             return;
         }
-        alert("Password change request sent!");
+
+        if (formData.newPassword !== formData.confirmPassword) {
+            alert("❌ New passwords do not match!");
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:5000/api/users/update-password/${user.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    currentPassword: formData.currentPassword,
+                    newPassword: formData.newPassword
+                })
+            });
+            const result = await response.json();
+
+            if (result.status === "ok") {
+                alert("✅ Password updated successfully!");
+                setFormData(prev => ({ 
+                    ...prev, 
+                    currentPassword: '', 
+                    newPassword: '', 
+                    confirmPassword: '' 
+                }));
+            } else {
+                alert("❌ " + result.message);
+            }
+        } catch (error) {
+            console.error("Password Update Error:", error);
+            alert("⚠️ Connection error to server.");
+        }
     };
 
     return (
