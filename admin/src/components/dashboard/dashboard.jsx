@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 import DashboardHeader from "./components/DashboardHeader";
@@ -14,6 +14,7 @@ import "./dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const TIMEOUT_IN_MS = 15 * 60 * 1000; // 15 Minutes
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [stats, setStats] = useState({
     totalBookings: 0,
@@ -36,6 +37,37 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [trendData, setTrendData] = useState([]);
 
+  const handleAutoLogout = useCallback(() => {
+    console.warn("Admin session expired due to inactivity.");
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminData");
+    alert("⚠️ Security Alert: Your session has expired due to inactivity. Please log in again.");
+    navigate("/admin"); 
+  }, [navigate]);
+
+  useEffect(() => {
+    let timeoutId;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleAutoLogout, TIMEOUT_IN_MS);
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    resetTimer();
+
+    activityEvents.forEach(event => {
+        window.addEventListener(event, resetTimer);
+    });
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [handleAutoLogout]);
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("adminToken");
     if (!isLoggedIn) {
@@ -55,7 +87,7 @@ const Dashboard = () => {
 
     try {
       const bookingsRes = await fetch(
-        "https://wanderwaveph-backend.onrender.com/api/admin/bookings"
+        "http://localhost:5000/api/admin/bookings"
       );
       if (!bookingsRes.ok)
         throw new Error(`HTTP error! status: ${bookingsRes.status}`);
@@ -66,7 +98,7 @@ const Dashboard = () => {
     }
 
     try {
-      const packagesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/packages");
+      const packagesRes = await fetch("http://localhost:5000/api/packages");
       if (!packagesRes.ok)
         throw new Error(`HTTP error! status: ${packagesRes.status}`);
       packages = await packagesRes.json();
@@ -76,7 +108,7 @@ const Dashboard = () => {
     }
 
     try {
-      const blogsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/blogs");
+      const blogsRes = await fetch("http://localhost:5000/api/blogs");
       if (!blogsRes.ok)
         throw new Error(`HTTP error! status: ${blogsRes.status}`);
       blogs = await blogsRes.json();
@@ -86,7 +118,7 @@ const Dashboard = () => {
     }
 
     try {
-      const promosRes = await fetch("https://wanderwaveph-backend.onrender.com/api/promos");
+      const promosRes = await fetch("http://localhost:5000/api/promos");
       if (!promosRes.ok)
         throw new Error(`HTTP error! status: ${promosRes.status}`);
       promos = await promosRes.json();
@@ -97,7 +129,7 @@ const Dashboard = () => {
 
     try {
       const testimonialsRes = await fetch(
-        "https://wanderwaveph-backend.onrender.com/api/testimonials"
+        "http://localhost:5000/api/testimonials"
       );
       if (!testimonialsRes.ok)
         throw new Error(`HTTP error! status: ${testimonialsRes.status}`);
