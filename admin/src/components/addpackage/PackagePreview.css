@@ -1,0 +1,139 @@
+.apkg-preview {
+    background: #001F3F;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+.apkg-preview-label {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    color: #FF8C42;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+}
+
+.apkg-card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.apkg-card-image {
+    height: 160px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.apkg-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.apkg-card-image span {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.apkg-card-body {
+    padding: 20px;
+}
+
+.apkg-card-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #FF8C42;
+    background: #fff4ec;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.apkg-card-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #001F3F;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.apkg-card-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.apkg-card-location svg {
+    width: 14px;
+    height: 14px;
+}
+
+.apkg-card-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 16px 0;
+}
+
+.apkg-card-meta {
+    display: flex;
+    justify-content: space-between;
+}
+
+.apkg-card-meta > div span {
+    display: block;
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.apkg-card-meta > div strong {
+    font-size: 15px;
+    font-weight: 700;
+    color: #001F3F;
+}
+
+.apkg-card-meta > div:first-child strong {
+    color: #FF8C42;
+}
+
+.apkg-stats {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.apkg-stat {
+    flex: 1;
+    text-align: center;
+    padding: 14px 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+}
+
+.apkg-stat strong {
+    display: block;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: #FF8C42;
+}
+
+.apkg-stat span {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
