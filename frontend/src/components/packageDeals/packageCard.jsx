@@ -16,15 +16,13 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
 
   // UPDATED: Handler function for the favorite button - Added logic to check login status
-  const handleFavoriteClick = (e) => {
+const handleFavoriteClick = (e) => {
     e.stopPropagation();
     
-    // 1. Check if user is logged in
     if (isLoggedIn) {
-      // 2. Kung naka-login, ipasa ang package ID (promo_id) sa parent function
-      onToggleFavorite(pkg.id);
+      // Passes the package ID (which is the promo_id) to the handler
+      onToggleFavorite(pkg.id); // <--- This passes the promo ID
     } else {
-      // 3. Kung hindi naka-login, ipakita ang login notice
       onLoginRequired();
     }
   };

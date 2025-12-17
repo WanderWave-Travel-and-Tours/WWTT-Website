@@ -29,14 +29,6 @@ const userSchema = new mongoose.Schema({
     minlength: 6,
     select: false // Ensures password is NOT returned by default queries
   },
-  role: { 
-    type: String,
-    default: 'user'
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
   role: {
     type: String,
     enum: ['user', 'admin'],
@@ -60,12 +52,15 @@ const userSchema = new mongoose.Schema({
 });
 
 // Pre-save hook to hash the password before saving
-// Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   
-  const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, salt);
+  // Check if already hashed using full bcrypt regex
+  const bcryptRegex = /^\$2[ayb]\$\d{1,2}\$[./0-9A-Za-z]{53}$/;
+  if (!bcryptRegex.test(this.password)) {
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+  }
   
   next();
 });

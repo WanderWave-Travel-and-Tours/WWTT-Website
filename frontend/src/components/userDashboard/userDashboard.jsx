@@ -5,6 +5,8 @@ import TopNavbar from './TopNavbar';
 import Sidebar from './Sidebar';
 import ApplicationDetails from './ApplicationDetails';
 import * as Icons from './Icons'; 
+// *** ADD THIS IMPORT for Toaster functionality ***
+import toast, { Toaster } from 'react-hot-toast';
 
 const UserDashboard = ({ user, onLogout }) => {
     // --- State ---
@@ -118,11 +120,24 @@ const UserDashboard = ({ user, onLogout }) => {
                 try {
                     setIsLoading(true);
                     await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/pay`);
-                    alert('Payment successful! Status updated.');
+                    
+                    // *** TOAST: Payment Success (assuming success toast style) ***
+                    toast.success('Payment successful! Status updated.', {
+                        position: 'top-center'
+                    });
+                    
                     window.history.replaceState({}, document.title, window.location.pathname);
                     await fetchUserData();
                 } catch (error) {
                     console.error('Payment verification failed:', error);
+                    
+                    // *** TOAST: Payment Error (using the provided error style) ***
+                    toast.error("Payment verification failed.", {
+                        style: { border: '1px solid #ef4444', color: '#ef4444' },
+                        iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                        position: 'top-center'
+                    });
+                    
                 } finally {
                     setIsLoading(false);
                 }
@@ -185,11 +200,22 @@ const UserDashboard = ({ user, onLogout }) => {
             if (data.success && data.checkoutUrl) {
                 window.location.href = data.checkoutUrl;
             } else {
-                alert('Failed to initiate payment.');
+                // *** TOAST: Failed to initiate payment (using the provided error style) ***
+                toast.error("Failed to initiate payment.", {
+                    style: { border: '1px solid #ef4444', color: '#ef4444' },
+                    iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                    position: 'top-center'
+                });
                 setIsLoading(false);
             }
         } catch (error) {
             console.error('Payment error:', error);
+            // *** TOAST: Payment error (using the provided error style) ***
+            toast.error("An error occurred during payment.", {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                position: 'top-center'
+            });
             setIsLoading(false);
         }
     };
@@ -221,9 +247,23 @@ const UserDashboard = ({ user, onLogout }) => {
     };
 
     const submitDocuments = async () => {
-        if (!selectedInquiry) return alert('Please select an inquiry');
+        if (!selectedInquiry) {
+            // *** TOAST: Select Inquiry Error (using the provided error style) ***
+            return toast.error("Please select an application first.", {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                position: 'top-center'
+            });
+        }
         const allFiles = Object.values(uploadedFiles).flat();
-        if (allFiles.length === 0) return alert('Please upload at least one document');
+        if (allFiles.length === 0) {
+            // *** TOAST: No documents Error (using the provided error style) ***
+            return toast.error("Please upload at least one document.", {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                position: 'top-center'
+            });
+        }
 
         const formData = new FormData();
         formData.append('inquiryId', selectedInquiry._id);
@@ -235,17 +275,30 @@ const UserDashboard = ({ user, onLogout }) => {
 
         try {
             await fetch('http://localhost:5000/api/documents/upload', { method: 'POST', body: formData });
-            alert('Documents submitted successfully!');
+            
+            // *** UPDATED: Success Toast Notification ***
+            toast.success('Documents submitted successfully!', {
+                position: 'top-center'
+            });
+            
             setUploadedFiles({});
             fetchUserData(); 
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Failed to submit documents.');
+            // *** TOAST: Upload Failed Error (using the provided error style) ***
+            toast.error("Failed to submit documents.", {
+                style: { border: '1px solid #ef4444', color: '#ef4444' },
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                position: 'top-center'
+            });
         }
     };
 
     return (
         <div className="ud-wrapper">
+            {/* 1. Add the Toaster component */}
+            <Toaster position="top-center" reverseOrder={false} /> 
+
             <TopNavbar 
                 user={user} 
                 onLogout={handleLogout}

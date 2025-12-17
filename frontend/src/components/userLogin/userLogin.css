@@ -237,6 +237,7 @@
     transition: all 0.3s ease;
     background-color: #f8f9fa;
     font-family: inherit;
+    color: #333; /* ADDED: Ensures input text is visible (dark) */
 }
 
 .input-field:focus {

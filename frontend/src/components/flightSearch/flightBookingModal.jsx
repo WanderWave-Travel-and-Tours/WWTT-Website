@@ -4,6 +4,9 @@ import axios from 'axios';
 import { Toaster, toast } from 'react-hot-toast'; // Import Toaster and toast
 import './flightBookingModal.css';
 
+// Base URL for your API (Assuming your users router is mounted here)
+const API_BASE_URL = 'http://localhost:5000/api'; 
+
 const FlightBookingModal = ({ flight, searchParams, onClose }) => {
   const MAX_AGE = 120;
   const MIN_AGE = 1;
@@ -47,7 +50,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     }))
   );
   
-  // Custom Toaster Error Function (Unchanged)
+  // Custom Toaster Error Function (Removed ❌ from the message)
   const showToastError = (message) => {
     toast.error(message, {
       style: { border: '1px solid #ef4444', color: '#ef4444' },
@@ -66,8 +69,8 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     let { name, value } = e.target;
     
     if (name === 'age') {
-        // 1. Clean input: only numbers, max 3 digits (for input field restriction)
-        value = value.replace(/[^0-9]/g, '').slice(0, 3);
+        // 1. Clean input: only numbers and explicitly remove '.'
+        value = value.replace(/[^0-9]/g, '').slice(0, 3); // ⬅️ UPDATED: This regex already handles the sign removal, but the handler logic is clean.
 
         let ageNum = parseInt(value, 10);
 
@@ -85,8 +88,8 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     const updated = [...additionalPassengers];
     
     if (field === 'age') {
-        // 1. Clean input: only numbers, max 3 digits
-        value = value.replace(/[^0-9]/g, '').slice(0, 3);
+        // 1. Clean input: only numbers and explicitly remove '.'
+        value = value.replace(/[^0-9]/g, '').slice(0, 3); // ⬅️ UPDATED: This regex already handles the sign removal, but the handler logic is clean.
 
         let ageNum = parseInt(value, 10);
         
@@ -99,6 +102,14 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     
     updated[index][field] = value;
     setAdditionalPassengers(updated);
+  };
+
+  // NEW: Function to prevent signs and 'e' in number inputs (Kept for redundancy, although logic in handle*Change is more robust)
+  const preventSignsAndE = (e) => {
+    // Includes the decimal point '.' for strict enforcement in the input field
+    if (['e', 'E', '+', '-', '.'].includes(e.key)) { // ⬅️ UPDATED: Added '.'
+      e.preventDefault();
+    }
   };
   
   // Validation function for Step 1
@@ -145,11 +156,21 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
       return true;
   };
 
-  const handleNextOrSubmit = (e) => {
+  const handleNextOrSubmit = async (e) => {
     e.preventDefault();
     if (step === 1) {
         if (!validateStep1()) return;
         
+        // --- Email Registration Check ---
+        setLoading(true);
+        const isRegistered = await checkEmailRegistration(contactInfo.email);
+        setLoading(false);
+
+        if (!isRegistered) {
+            // Error toast already handled in checkEmailRegistration
+            return; 
+        }
+
         if (hasAdditionalPassengers) {
             setStep(2);
         } else {
@@ -159,6 +180,28 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
         if (!validateStep2()) return;
         handleSubmit();
     }
+  };
+  
+  // --- Function to check email registration ---
+  const checkEmailRegistration = async (email) => {
+      try {
+          // Assuming your user router is mounted at /api/users
+          const res = await axios.get(`${API_BASE_URL}/users/check-email?email=${email}`);
+          
+          if (res.data.status === 'ok' && res.data.exists === false) {
+              // Removed ❌ from the message
+              showToastError('Booking Denied. You must use a registered email address to proceed.'); 
+              return false;
+          }
+          // If exists: true or status is ok and exists is not specifically false
+          return true; 
+      } catch (error) {
+          console.error("Error checking email registration:", error);
+          const msg = error.response?.data?.message || error.message || "Unknown error";
+          // Removed ❌ from the message
+          showToastError(`Failed to verify registration status. Please try again. (${msg})`); 
+          return false;
+      }
   };
 
 
@@ -197,26 +240,33 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     priceAmount = parseFloat(priceAmount) || 0;
 
     // Prepare Booking Data (omitted for brevity)
-    const bookingData = { /* ... */ };
+    const bookingData = { 
+        flightDetails: flight,
+        contact: contactInfo,
+        passengers: allPassengers,
+        totalPrice: priceAmount * totalPax // Example calculation
+    };
 
     try {
       // Simulate API call
-      // const res = await axios.post('http://localhost:5000/api/inquiries', bookingData, { /* ... */ });
+      // const res = await axios.post(`${API_BASE_URL}/inquiries`, bookingData);
+      
       // Using a mock response for demonstration
       const res = { data: { success: true } }; 
       
       if (res.data.success) {
-        // Removed ✅ emoji from success toast
         toast.success('Booking Request Sent Successfully! Please check your email.', { duration: 5000 });
         setTimeout(onClose, 2000); // Close after successful toast
       } else {
-        showToastError('❌ Booking submission failed. ' + (res.data.message || ''));
+        // Removed ❌ from the message
+        showToastError('Booking submission failed. ' + (res.data.message || '')); 
       }
 
     } catch (error) {
-      console.error("❌ Booking Error:", error);
+      console.error("Booking Error:", error);
       const msg = error.response?.data?.message || error.message || "Unknown error";
-      showToastError('❌ Booking failed. Please try again. (' + msg + ')');
+      // Removed ❌ from the message
+      showToastError('Booking failed. Please try again. (' + msg + ')'); 
     } finally {
       setLoading(false);
     }
@@ -267,12 +317,12 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
                       name="age" 
                       value={contactInfo.age} 
                       onChange={handleContactChange} 
+                      onKeyDown={preventSignsAndE} // UPDATED: Now prevents '.'
                       placeholder="Age" 
                       min={MIN_AGE}
                       max={MAX_AGE}
-                      pattern="\d{1,3}"
+                      // pattern="\d{1,3}" is generally ignored by type="number" but kept for completeness
                       title={`Age must be a number between ${MIN_AGE} and ${MAX_AGE}.`}
-                      // Note: onInput logic is removed here and moved to handleContactChange for state control
                     />
                 </div>
               </div>
@@ -300,7 +350,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
               </div>
 
               <button type="submit" className="next-btn" disabled={loading}>
-                {loading ? 'Processing...' : (hasAdditionalPassengers ? 'Next: Add Companions' : `Submit Booking (₱${flight.price.formatted || flight.price.amount})`)}
+                {loading ? 'Processing...' : (hasAdditionalPassengers ? 'Next: Add Companions' : `Submit Booking (${flight.price.formatted || flight.price.amount})`)}
               </button>
             </div>
           )}
@@ -338,12 +388,12 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
                         placeholder="Age" 
                         value={p.age} 
                         onChange={(e) => handlePassengerChange(i, 'age', e.target.value)} 
+                        onKeyDown={preventSignsAndE} // UPDATED: Now prevents '.'
                         style={{width: '80px'}} 
-                        min={MIN_AGE}
+                        min={MIN_AGE} 
                         max={MAX_AGE}
-                        pattern="\d{1,3}"
+                        // pattern="\d{1,3}" is generally ignored by type="number" but kept for completeness
                         title={`Age must be a number between ${MIN_AGE} and ${MAX_AGE}.`}
-                        // Note: onInput logic is removed here and moved to handlePassengerChange for state control
                       />
                     </div>
 
