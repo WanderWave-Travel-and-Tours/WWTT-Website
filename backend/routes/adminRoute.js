@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const sanitize = require('mongo-sanitize');
+const jwt = require('jsonwebtoken'); 
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -36,9 +37,17 @@ router.post('/login', async (req, res) => {
         const isMatch = await admin.comparePassword(password); 
 
         if (isMatch) {
+
+            const token = jwt.sign(
+                { id: admin._id, username: admin.username, role: 'admin' }, 
+                'wanderwaveph_admin25', 
+                { expiresIn: '1h' }
+            );
+
             res.json({ 
                 status: "ok", 
                 message: "Login Success!",
+                token: token, 
                 data: {
                     username: admin.username,
                     businessName: admin.businessName,

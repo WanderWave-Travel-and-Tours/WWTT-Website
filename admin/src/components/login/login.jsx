@@ -64,7 +64,7 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/login', {
+            const response = await fetch('http://localhost:5000/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
@@ -73,7 +73,7 @@ const Login = () => {
             const data = await response.json();
 
             if (data.status === 'ok') {
-                localStorage.setItem('adminToken', 'true'); 
+                localStorage.setItem('adminToken', data.token); 
                 localStorage.setItem('adminData', JSON.stringify(data.data)); 
                 
                 alert('✅ Access Granted!');

@@ -20,6 +20,7 @@
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.5.31",
     "lucide-react": "^0.554.0",
+    "mongo-sanitize": "^1.1.0",
     "mongoose": "^9.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
