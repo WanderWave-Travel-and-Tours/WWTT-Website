@@ -16,7 +16,7 @@ const ViewBlog = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com'; 
+    const API_BASE_URL = 'http://localhost:5000'; 
 
     const fetchBlogs = async () => {
         try {

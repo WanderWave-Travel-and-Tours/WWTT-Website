@@ -12,7 +12,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
   useEffect(() => {
     const fetchPSADocuments = async () => {
       try {
-        const res = await axios.get('https://wanderwaveph-backend.onrender.com/api/psa');
+        const res = await axios.get('http://localhost:5000/api/psa');
         
         if (Array.isArray(res.data)) {
           setPsaDocs(res.data);
@@ -202,7 +202,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
                               {psa.downloadForms.map((form, index) => {
                                 const formLabel = typeof form === 'string' ? form : (form.fileName || form.label || 'Download Form');
                                 const formUrl = typeof form === 'object' ? form.fileUrl : null;
-                                const finalUrl = formUrl && formUrl.startsWith('http') ? formUrl : `https://wanderwaveph-backend.onrender.com${formUrl}`;
+                                const finalUrl = formUrl && formUrl.startsWith('http') ? formUrl : `http://localhost:5000${formUrl}`;
 
                                 return (
                                   <li key={index} className="psa-download-item">
