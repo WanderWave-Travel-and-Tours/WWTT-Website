@@ -1,0 +1,205 @@
+/* --- TABLE STYLES (arc-) --- */
+.arc-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+
+/* === SORTING STYLES === */
+.arc-table th { 
+    background-color: #0f172a; 
+    color: white; 
+    text-align: left; 
+    padding: 16px 24px; 
+    font-size: 12px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    white-space: nowrap; 
+}
+
+/* Base style for the sortable header (NO. column) */
+.arc-table th.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding: 0; 
+}
+
+/* Make inner div the clickable area and flex container */
+.arc-table th .sort-click-area {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: pointer;
+    padding: 16px 24px; 
+    width: 100%;
+    height: 100%;
+    transition: background-color 0.2s;
+}
+.arc-table th.sortable-header:hover .sort-click-area {
+    background-color: #1a273b; 
+}
+
+
+.arc-table th .sort-icon {
+    margin-left: 8px; 
+    opacity: 1;
+    color: #f59e0b; 
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+
+/* Icon Rotation States */
+/* ASC = 1,2,3,4 -> Arrow points UP (no rotation or 0deg) */
+.arc-table th .sort-icon.rotate-asc {
+    transform: rotate(0deg);
+}
+
+/* DESC = 4,3,2,1 -> Arrow points DOWN (180deg rotation) */
+.arc-table th .sort-icon.rotate-desc {
+    transform: rotate(180deg);
+}
+/* === END SORTING STYLES === */
+
+.arc-table td { 
+    padding: 16px 24px; 
+    border-bottom: 1px solid #f1f5f9; 
+    color: #334155; 
+    font-size: 14px; 
+    font-weight: 500; 
+    vertical-align: middle; 
+    white-space: nowrap; 
+}
+
+/* Alternating Row Colors (Zebra Stripes) */
+.arc-table tbody tr:nth-child(odd) { 
+    background-color: white; 
+}
+.arc-table tbody tr:nth-child(even) { 
+    background-color: #f8fafc; 
+}
+
+/* Ensure hover works on both odd/even rows */
+.arc-table tr:hover td { background-color: #f1f5f9; } 
+.arc-table tr:last-child td { border-bottom: none; }
+
+/* --- Table Badges (arc-) --- */
+.arc-badge { 
+    padding: 4px 10px; 
+    border-radius: 20px; 
+    font-size: 11px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    display: inline-block; 
+    letter-spacing: 0.3px; 
+}
+.badge-cancelled { background: #fef2f2; color: #991b1b; } 
+.badge-deleted { background: #e2e8f0; color: #475569; } 
+
+/* Action Button Group */
+.arc-action-group {
+    display: flex;
+    justify-content: flex-end; 
+    gap: 8px; 
+}
+
+/* Base style for all action buttons */
+.arc-action-btn { 
+    height: 36px;
+    padding: 8px 14px; 
+    border-radius: 6px; 
+    font-size: 12px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    background: white; 
+    border: 1px solid #cbd5e1; 
+    color: #475569; 
+    transition: all 0.2s; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.arc-action-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; color: #0f172a; }
+.arc-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --- ENHANCED VIEW BUTTON (Primary Outline Style) --- */
+.arc-view-btn { 
+    color: #0f172a; 
+    font-weight: 700; 
+    border-color: #0f172a; 
+    min-width: 60px;
+    padding: 8px 16px;
+    background: white;
+    gap: 6px;
+}
+.arc-view-btn:hover:not(:disabled) { 
+    background: #0f172a; 
+    color: white; 
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(15, 23, 42, 0.2);
+}
+
+/* --- RESTORE BUTTON (Green/Success Icon Style) --- */
+.arc-restore-text-btn {
+    background: #dcfce7; 
+    color: #16a34a; 
+    font-weight: 700; 
+    border-color: #16a34a;
+    gap: 6px;
+}
+.arc-restore-text-btn:hover:not(:disabled) {
+    background: #16a34a; 
+    border-color: #15803d;
+    color: white;
+    transform: translateY(-1px);
+}
+
+
+/* Custom Cell Styles for Archive */
+.item-name-cell { font-weight: 600; }
+.item-type-cell { 
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 600; 
+}
+
+/* Style for the item icon/initials */
+.item-initials-badge {
+    background: #f1f5f9; 
+    color: #0f172a; 
+    padding: 6px 10px; 
+    border-radius: 50px; 
+    font-size: 12px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    flex-shrink: 0;
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    /* Hide the sorting icon on small screens to save space */
+    .arc-table th .sort-icon {
+        display: none;
+    }
+    .arc-table th.sortable-header {
+        cursor: default;
+    }
+    
+    .arc-action-group {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+    }
+    .arc-table td {
+        padding: 12px 16px; 
+    }
+    .arc-action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 8px 10px;
+    }
+    
+    .arc-view-btn {
+        padding: 8px 10px;
+    }
+}

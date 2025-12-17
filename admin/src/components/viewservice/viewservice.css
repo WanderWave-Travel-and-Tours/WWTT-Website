@@ -1,0 +1,516 @@
+/* =========================
+   MAIN CONTAINER
+========================= */
+.viewservices-page {
+    display: flex;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+.viewservices-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: 40px 100px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease;
+}
+
+.viewservices-main--collapsed {
+    margin-left: 70px;
+}
+
+.viewservices-main *,
+.viewservices-main *::before,
+.viewservices-main *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.viewservices-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* =========================
+   HEADER
+========================= */
+.viewservices-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.viewservices-header-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.viewservices-title {
+    font-family: 'Arial Black', Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.viewservices-subtitle {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+.viewservices-btn {
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+}
+
+.viewservices-btn--add {
+    color: #fff;
+    background: #FF8C42;
+}
+
+.viewservices-btn--add:hover {
+    background: #e57a35;
+}
+
+/* =========================
+   LOADER
+========================= */
+.viewservices-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 20px;
+}
+
+.viewservices-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #FF8C42;
+    border-radius: 50%;
+    animation: viewservices-spin 1s linear infinite;
+}
+
+@keyframes viewservices-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.viewservices-loader p {
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* =========================
+   ERROR STATE
+========================= */
+.viewservices-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 40px;
+}
+
+.viewservices-error-icon {
+    font-size: 48px;
+}
+
+.viewservices-error p {
+    color: #dc2626;
+    font-size: 14px;
+}
+
+/* =========================
+   EMPTY STATE
+========================= */
+.viewservices-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 60px;
+}
+
+.viewservices-empty-icon {
+    font-size: 56px;
+    margin-bottom: 8px;
+}
+
+.viewservices-empty h3 {
+    font-family: 'Arial Black', Arial, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #001F3F;
+}
+
+.viewservices-empty p {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* =========================
+   GRID LAYOUT
+========================= */
+.viewservices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 24px;
+}
+
+/* =========================
+   SERVICE CARD
+========================= */
+.viewservices-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.viewservices-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.12);
+}
+
+/* --- COMING SOON VIEW STYLES --- */
+.viewservices-card--coming-soon {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.95;
+    overflow: hidden;
+}
+
+.viewservices-card--coming-soon .viewservices-card-image {
+    filter: grayscale(80%) blur(1px);
+    opacity: 0.8;
+}
+
+.viewservices-soon-tag {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    background: rgba(0, 31, 63, 0.9);
+    color: #FF8C42;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+}
+
+.viewservices-card--coming-soon .viewservices-btn-action {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    background: #e2e8f0;
+    color: #94a3b8;
+}
+/* ADDED FIX: Exemption for the toggle button */
+.viewservices-card--coming-soon .viewservices-status-bar .viewservices-toggle-btn {
+    pointer-events: auto !important; /* Re-enables click for the toggle button */
+    cursor: pointer;
+    opacity: 1; 
+}
+/* END ADDED FIX */
+
+/* --- END COMING SOON VIEW STYLES --- */
+
+/* =========================
+   CARD IMAGE
+========================= */
+.viewservices-card-image {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    background: #f1f5f9;
+    overflow: hidden;
+}
+
+.viewservices-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.viewservices-card-category {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: #001F3F;
+    color: #fff;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* =========================
+   CARD BODY
+========================= */
+.viewservices-card-body {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.viewservices-card-title {
+    font-family: 'Arial Black', Arial, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #001F3F;
+    margin-bottom: 20px;
+    line-height: 1.3;
+    letter-spacing: 0.5px;
+}
+
+/* =========================
+   CARD INFO
+========================= */
+.viewservices-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+.viewservices-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.viewservices-info-row svg {
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+/* =========================
+   CARD FOOTER
+========================= */
+.viewservices-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.viewservices-price {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.viewservices-price-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.viewservices-price-value {
+    font-family: 'Arial Black', Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #FF8C42;
+    line-height: 1;
+}
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+.viewservices-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.viewservices-btn-action {
+    padding: 13px 24px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+}
+
+.viewservices-btn-action--edit {
+    background: #001F3F;
+    color: #fff;
+}
+
+.viewservices-btn-action--edit:hover {
+    background: #003366;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 31, 63, 0.2);
+}
+
+.viewservices-btn-action--delete {
+    background: transparent;
+    color: #dc2626;
+    padding: 13px 20px;
+}
+
+.viewservices-btn-action--delete:hover {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+/* --- STATUS BAR & TOGGLE --- */
+.viewservices-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px 0;
+}
+
+.viewservices-status-indicator {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.viewservices-status-indicator.is-active {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.viewservices-status-indicator.is-coming-soon {
+    background: #fffbeb;
+    color: #b45309;
+}
+
+.viewservices-toggle-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.viewservices-toggle-btn:hover {
+    transform: scale(1.1);
+}
+
+.viewservices-toggle-btn svg {
+    width: 32px;
+    height: 32px;
+}
+
+.viewservices-toggle-btn .toggle-on {
+    color: #16a34a;
+}
+
+.viewservices-toggle-btn .toggle-off {
+    color: #b45309;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 1024px) {
+    .viewservices-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .viewservices-grid {
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .viewservices-main,
+    .viewservices-main--collapsed {
+        margin-left: 70px;
+        padding: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .viewservices-main,
+    .viewservices-main--collapsed {
+        margin-left: 0;
+        padding: 16px;
+    }
+
+    .viewservices-title {
+        font-size: 1.5rem;
+    }
+
+    .viewservices-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .viewservices-card-title {
+        font-size: 0.85rem;
+    }
+
+    .viewservices-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .viewservices-actions {
+        width: 100%;
+    }
+
+    .viewservices-btn-action {
+        flex: 1;
+        text-align: center;
+    }
+}

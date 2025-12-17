@@ -1,0 +1,173 @@
+/* ========================================
+   BOOKING MODAL - CENOMAR MODALS STYLES
+   ======================================== */
+
+/* ===== ANIMATIONS (Defined in Booking.css) ===== */
+@keyframes cnmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cnmSlideUp { from { opacity: 0; transform: translateY(30px) scale(0.96); } to { transform: translateY(0) scale(1); } }
+
+/* ===== MODAL OVERLAY & CONTAINER (CENOMAR UI) ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.9));
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: cnmFadeIn 0.25s ease;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  animation: cnmSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  max-width: 850px; 
+}
+
+/* ===== HEADER (CENOMAR UI) ===== */
+.modal-header {
+  padding: 28px 32px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: linear-gradient(to bottom, #ffffff, #fafbfc);
+  border-radius: 20px 20px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.modal-header .cnm-header-content { display: flex; align-items: center; gap: 20px; flex: 1; flex-wrap: wrap; }
+.modal-header .cnm-title-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+.modal-header h2 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.02em; }
+
+.modal-header .cnm-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; font-weight: 500; }
+.modal-header .cnm-ref { font-weight: 700; color: #475569; font-family: "Courier New", monospace; }
+.modal-header .cnm-divider { color: #cbd5e1; }
+.modal-header .cnm-date { color: #64748b; }
+
+.modal-close {
+  background: #f1f5f9; border: none; border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #64748b; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0;
+}
+.modal-close:hover { background: #fee2e2; color: #dc2626; transform: scale(1.05); }
+
+/* ===== STATUS BADGE (CENOMAR UI) ===== */
+.cnm-status-badge { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 12px; border: 2px solid; min-width: 200px; }
+.cnm-status-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cnm-status-content { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.cnm-status-label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+.cnm-status-desc { font-size: 11px; opacity: 0.8; font-weight: 600; }
+
+/* Status Variants (CENOMAR UI Colors) */
+.cnm-status-amber { background: #fffbeb; border-color: #fde68a; color: #92400e; margin-right: 15px; }
+.cnm-status-amber .cnm-status-icon { background: #fef3c7; color: #f59e0b; }
+.cnm-status-green { background: #f0fdf4; border-color: #bbf7d0; color: #166534; margin-right: 15px; }
+.cnm-status-green .cnm-status-icon { background: #dcfce7; color: #16a34a; }
+.cnm-status-red { background: #fef2f2; border-color: #fecaca; color: #991b1b; margin-right: 15px; }
+.cnm-status-red .cnm-status-icon { background: #fee2e2; color: #dc2626; }
+
+
+/* ===== BODY & SCROLLBAR ===== */
+.modal-body { padding: 28px 32px; overflow-y: auto; flex: 1; }
+.modal-body::-webkit-scrollbar { width: 8px; }
+.modal-body::-webkit-scrollbar-track { background: #f8fafc; }
+.modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* ===== CARD STYLES (CENOMAR UI) ===== */
+.cnm-card { background: white; border: 2px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 15px; transition: all 0.2s ease; }
+.cnm-card:hover { border-color: #cbd5e1; }
+
+.cnm-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.cnm-card-title { font-size: 12px; font-weight: 800; color: #64748b; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+
+.cnm-badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.cnm-badge-amber { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
+
+/* INFO GRID */
+.cnm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.cnm-info-item { display: flex; gap: 14px; align-items: flex-start; }
+
+.cnm-info-icon {
+  width: 44px; height: 44px; background: linear-gradient(135deg, #fef3c7, #fde68a); color: #f59e0b; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+.cnm-info-content { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.cnm-info-label { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.cnm-info-value { font-size: 15px; font-weight: 700; color: #0f172a; word-break: break-word; }
+.cnm-val-amount { color: #16a34a; font-size: 18px; }
+
+/* MESSAGE BOX */
+.cnm-message-box {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  padding: 20px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.7;
+  border: 2px solid #e2e8f0;
+}
+
+/* ===== FOOTER (CENOMAR UI) ===== */
+.modal-footer {
+  padding: 24px 32px;
+  border-top: 2px solid #e2e8f0;
+  background: linear-gradient(to top, #fafbfc, #ffffff);
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  border-radius: 0 0 20px 20px;
+}
+
+/* BUTTONS (CENOMAR UI) */
+.cnm-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 24px; border-radius: 10px;
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: none;
+  white-space: nowrap; position: relative; overflow: hidden;
+}
+.cnm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cnm-btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3); }
+.cnm-btn-success:hover:not(:disabled) { background: linear-gradient(135deg, #16a34a, #15803d); transform: translateY(-2px); }
+
+.cnm-btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+.cnm-btn-danger:hover:not(:disabled) { background: linear-gradient(135deg, #dc2626, #b91c1c); transform: translateY(-2px); }
+
+.cnm-btn-ghost { background: transparent; color: #64748b; }
+.cnm-btn-ghost:hover:not(:disabled) { background: #f1f5f9; color: #0f172a; }
+
+.cnm-btn-danger.cnm-btn-outline { border-color: #fee2e2; background: white; color: #dc2626; }
+.cnm-btn-danger.cnm-btn-outline:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; }
+
+
+/* ===== RESPONSIVE (CENOMAR UI) ===== */
+@media (max-width: 768px) {
+  .modal-content { max-height: 95vh; border-radius: 16px; }
+  .modal-header, .modal-body, .modal-footer { padding: 20px; }
+  .modal-header h2 { font-size: 18px; }
+  .modal-header .cnm-header-content { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .cnm-status-badge { min-width: auto; width: 100%; }
+  .cnm-grid { grid-template-columns: 1fr; }
+  .modal-footer { flex-direction: column; }
+}
+
+@media (max-width: 480px) {
+  .modal-body { padding: 16px; }
+  .cnm-card { padding: 20px; }
+  .cnm-btn { font-size: 13px; padding: 10px 16px; }
+}

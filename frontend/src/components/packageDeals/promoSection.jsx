@@ -12,26 +12,18 @@ function PromoSection({ onBookNow }) {
     switch(type) {
       case 'Weekly':
         return {
-          gradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)',
-          accentColor: '#FF6B6B',
           image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=80"
         };
       case 'Monthly':
         return {
-          gradient: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)',
-          accentColor: '#F093FB',
           image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80"
         };
       case 'Yearly':
         return {
-          gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          accentColor: '#667eea',
           image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80"
         };
       default:
         return {
-          gradient: 'linear-gradient(135deg, #FFD93D 0%, #FFE066 100%)',
-          accentColor: '#FFD93D',
           image: "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=1200&q=80"
         };
     }
@@ -57,7 +49,7 @@ function PromoSection({ onBookNow }) {
               type: p.durationType,
               code: p.code,
               discount: p.discountType === 'Percentage' 
-                ? `${p.discountValue}` 
+                ? `${p.discountValue}%` 
                 : `₱${p.discountValue}`,
               discountType: p.discountType,
               description: p.description,
@@ -122,8 +114,6 @@ function PromoSection({ onBookNow }) {
   if (loading) return null;
   if (promos.length === 0) return null;
 
-  const currentPromo = promos[currentIndex];
-
   return (
     <section className="promo-destination-section">
       <div className="section-title-header">
@@ -141,6 +131,7 @@ function PromoSection({ onBookNow }) {
             </button>
           </>
         )}
+
         <div className="promo-carousel-container">
           <div 
             className="promo-track"
@@ -159,70 +150,46 @@ function PromoSection({ onBookNow }) {
                 <div className="promo-voucher-card">
                   <div className="card-image-side">
                     <img src={promo.image} alt="Destination" className="destination-bg-image" />
-                    <div className="image-gradient-overlay"></div>
-
-                    <div 
-                      className="circular-discount-badge"
-                      style={{ background: promo.gradient }}
-                    >
-                      <div className="discount-inner">
-                        <span className="discount-save-text">SAVE</span>
-                        <span className="discount-percentage">
-                          {promo.discount}
-                        </span>
-                        <span className="discount-off-text">
-                          {promo.discountType === 'Percentage' ? '%' : ''}
-                        </span>
-                        <span className="discount-bottom-text">OFF</span>
-                      </div>
-                    </div>
-
-                    <div className="perforation-line">
-                      {[...Array(8)].map((_, i) => (
-                        <div key={i} className="perf-circle"></div>
-                      ))}
-                    </div>
+                    <div className="image-overlay"></div>
                   </div>
 
                   <div className="card-details-side">
-                    <div className="glass-container">
-                      <div className="details-header">
+                    <div className="promo-header">
+                      <div className="promo-type-row">
                         <div className="deal-type-badge">
                           <Ticket size={14} />
                           <span>{promo.type.toUpperCase()} DEAL</span>
                         </div>
                         
-                        <div className="limited-offer-badge">
-                          <Tag size={12} />
-                          <span>LIMITED OFFER</span>
+                        <div className="discount-badge">
+                          <span className="discount-text">SAVE</span>
+                          <span>{promo.discount}</span>
+                          <span className="discount-text">OFF</span>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="details-content">
-                        <h3 className="deal-title">All Tours & Packages</h3>
-                        <p className="deal-description">{promo.description}</p>
+                    <div className="promo-content">
+                      <h3 className="promo-title">All Tours & Packages</h3>
+                      <p className="promo-description">{promo.description}</p>
+                    </div>
 
-                        <div className="promo-code-wrapper">
-                          <div className="code-header-label">
-                            <span>PROMO CODE</span>
-                          </div>
-                          <div className="code-input-group">
-                            <div className="code-display-field">
-                              <span className="code-value">{promo.code}</span>
-                            </div>
-                            <button 
-                              className="copy-code-button"
-                              onClick={() => copyCode(promo.code)}
-                              style={{ background: promo.gradient }}
-                            >
-                              {copiedCode === promo.code ? (
-                                <Check size={18} />
-                              ) : (
-                                <Copy size={18} />
-                              )}
-                            </button>
-                          </div>
+                    <div className="promo-code-box">
+                      <span className="code-label">PROMO CODE</span>
+                      <div className="code-input-container">
+                        <div className="code-display">
+                          <span className="code-value">{promo.code}</span>
                         </div>
+                        <button 
+                          className="copy-btn"
+                          onClick={() => copyCode(promo.code)}
+                        >
+                          {copiedCode === promo.code ? (
+                            <Check size={18} />
+                          ) : (
+                            <Copy size={18} />
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -232,11 +199,11 @@ function PromoSection({ onBookNow }) {
           </div>
 
           {promos.length > 1 && (
-            <div className="carousel-dots-indicator">
+            <div className="carousel-dots">
               {promos.map((_, index) => (
                 <button
                   key={index}
-                  className={`dot-button ${index === currentIndex ? 'active' : ''}`}
+                  className={`dot ${index === currentIndex ? 'active' : ''}`}
                   onClick={() => setCurrentIndex(index)}
                 />
               ))}
