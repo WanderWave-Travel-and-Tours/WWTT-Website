@@ -1,18 +1,68 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import BrowseCategory from './browseCategory';
 import AllPackages from './allPackages';
+import PackageBooking from './packageBooking';
 import './packageDeals.css';
 import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
+import toast, { Toaster } from 'react-hot-toast'; // <--- NEW IMPORT
+
+// NEW: Login Notice Component (NO CHANGE HERE)
+const LoginNoticeModal = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" style={{
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      bottom: 0, 
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      zIndex: 1000 
+    }}>
+      <div className="modal-content" style={{
+        backgroundColor: 'white', 
+        padding: '30px', 
+        borderRadius: '8px', 
+        maxWidth: '400px', 
+        textAlign: 'center',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      }}>
+        <h3 style={{ marginBottom: '15px' }}>Login Required</h3>
+        <p style={{ marginBottom: '25px' }}>
+          Please log in to add items to your wishlist.
+        </p>
+        <button 
+          onClick={onClose} 
+          style={{
+            padding: '10px 20px', 
+            backgroundColor: '#FF6F61', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '4px', 
+            cursor: 'pointer'
+          }}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+};
+
 
 function PackageDeals() {
-  const navigate = useNavigate();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [favorites, setFavorites] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [scopeFilter, setScopeFilter] = useState('all'); 
   const packagesRef = useRef(null);
+  const [currentView, setCurrentView] = useState('list'); 
+  const [selectedPackageForBooking, setSelectedPackageForBooking] = useState(null);
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [selectedDuration, setSelectedDuration] = useState('');
   const [selectedDestinations, setSelectedDestinations] = useState([]);
@@ -22,14 +72,51 @@ function PackageDeals() {
 
   const [showModal, setShowModal] = useState(false);
   const [hasShownModal, setHasShownModal] = useState(false);
-
+  
+  // UPDATED: Login State initialized to false
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [showLoginNotice, setShowLoginNotice] = useState(false);
+  
+  const handleLoginRequired = () => {
+    setShowLoginNotice(true);
+  };
+  
+  // NEW: useEffect to check login status from localStorage
   useEffect(() => {
+    const checkLoginStatus = () => {
+      // Tinitingnan kung may 'wanderwave_user' item sa localStorage
+      const user = localStorage.getItem('wanderwave_user');
+      // Set to true if user exists, false otherwise
+      setIsLoggedIn(!!user); 
+    };
+    
+    // Check on initial load
+    checkLoginStatus(); 
+
+    // Add event listener para sa pagbabago ng storage (e.g., login/logout sa ibang tab)
+    const handleStorageChange = () => {
+      checkLoginStatus();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+  // END NEW LOGIN CHECK LOGIC
+
+  // Existing useEffect for scrolling
+  useEffect(() => {
+    if (hasShownModal) return;
+
     const handleScroll = () => {
-      if (hasShownModal) return;
       if (window.scrollY > 150) {
-        console.log("User scrolled down! Opening Modal...");
+        // console.log("User scrolled down! Opening Modal...");
         setShowModal(true);
         setHasShownModal(true);
+        window.removeEventListener('scroll', handleScroll);
       }
     };
 
@@ -44,16 +131,15 @@ function PackageDeals() {
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
 
   const handleBookNow = (pkg) => {
-    console.log('Book Now clicked for package:', pkg);
-    console.log('Package ID:', pkg.id);
-    
-    // Store package data in sessionStorage for security
-    sessionStorage.setItem('currentPackage', JSON.stringify(pkg));
-    
-    // Navigate to a generic booking route without any identifiers
-    navigate('/packages/book', {
-      state: { packageData: pkg }
-    });
+    setSelectedPackageForBooking(pkg);
+    setCurrentView('booking');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoBack = () => {
+    setCurrentView('list');
+    setSelectedPackageForBooking(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   const mostVisitedCategories = [
@@ -136,6 +222,7 @@ function PackageDeals() {
     },
   ];
 
+  // Existing useEffect for fetching packages (NO CHANGE HERE)
   useEffect(() => {
     const fetchPackages = async () => {
       try {
@@ -151,12 +238,10 @@ function PackageDeals() {
           const data = result.data;
           const formattedPackages = data.map((pkg, index) => ({
             id: pkg._id,
-            _id: pkg._id, // Keep both for compatibility
             name: pkg.title,
             category: pkg.category.toLowerCase(),
             scope: pkg.category.toLowerCase() === 'local' ? 'local' : 'international',
             location: pkg.destination,
-            destination: pkg.destination, // Keep both
             duration: pkg.duration,
             nights: pkg.duration && pkg.duration.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights', 
             price: pkg.price,
@@ -173,8 +258,6 @@ function PackageDeals() {
             description: pkg.title,
             includes: pkg.inclusions || [],
           }));
-          
-          console.log('Loaded packages:', formattedPackages);
           setPackages(formattedPackages);
         } else {
           setError(result.error || 'Failed to fetch packages.');
@@ -198,6 +281,13 @@ function PackageDeals() {
   if (error) {
     return <div className="error-screen">Error: {error}</div>;
   }
+  
+  if (currentView === 'booking' && selectedPackageForBooking) {
+    // If you use the hypothetical PackageBooking.jsx above, the toast will work here.
+    return <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} />;
+  }
+
+  // ... (rest of filtering logic) ...
 
   const selectedCategory = mostVisitedCategories.find(c => c.id === selectedFilter);
 
@@ -245,13 +335,92 @@ function PackageDeals() {
     filteredPackages = filteredPackages.filter(pkg => selectedDestinations.includes(pkg.location));
   }
 
-  const toggleFavorite = (id) => {
-    setFavorites(prev => 
-      prev.includes(id) 
-        ? prev.filter(fav => fav !== id)
-        : [...prev, id]
-    );
+  // BEGIN UPDATED: ASYNC toggleFavorite function with API CALL and TOAST
+  const toggleFavorite = async (packageId) => {
+    
+    // Ang login check ay ginagawa na sa packageCard.jsx, pero idadagdag ko rin dito para sigurado.
+    if (!isLoggedIn) {
+      handleLoginRequired();
+      return;
+    }
+
+    // 1. KUNIN ANG USER ID (user_id) MULA SA LOCAL STORAGE
+    const userJSON = localStorage.getItem('wanderwave_user');
+    if (!userJSON) {
+      handleLoginRequired();
+      return;
+    }
+    
+    try {
+      const user = JSON.parse(userJSON);
+      const userId = user._id; // Kukunin ang _id na galing sa User Collection
+
+      const isCurrentlyFavorite = favorites.includes(packageId);
+      
+      // Gagamitin ang POST method para sa pag-add at pag-remove (Toggle)
+      const method = 'POST'; 
+      const url = `http://localhost:5000/api/favorites`;
+
+      // Optimistic UI update: I-update muna ang state bago mag-API call
+      const previousState = favorites;
+      setFavorites(prev => 
+        isCurrentlyFavorite
+          ? prev.filter(fav => fav !== packageId)
+          : [...prev, packageId]
+      );
+      
+      // 2. I-BATTO ANG USER ID AT PROMO ID SA COLLECTION FAVORITE SA BACKEND
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          // Kung kailangan ng Authorization Token, idadagdag mo dito
+          // 'Authorization': `Bearer ${user.token}`,
+        },
+        body: JSON.stringify({ 
+          promo_id: packageId, // Mula sa Promo Collection
+        }),
+      });
+
+      if (!response.ok) {
+        // I-revert ang state kung failed ang API call
+        setFavorites(previousState);
+        
+        // **TOAST NOTIFICATION FOR API ERROR**
+        toast.error('Failed to update wishlist. Please try again.', {
+          style: { border: '1px solid #ef4444', color: '#ef4444' },
+          iconTheme: { primary: '#ef4444', secondary: '#fff' },
+          position: 'top-center',
+        });
+        
+        throw new Error('Failed to update favorites on server.');
+      }
+      
+      // Optional: Success toast
+      const successMessage = isCurrentlyFavorite 
+          ? 'Package removed from wishlist.' 
+          : 'Package added to wishlist!';
+
+      toast.success(successMessage, {
+          style: { border: '1px solid #10b981', color: '#10b981' },
+          iconTheme: { primary: '#10b981', secondary: '#fff' },
+          position: 'top-center',
+      });
+
+
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+      // Catch-all toast for unexpected errors (e.g., network failure)
+      if (!err.message.includes('Failed to update favorites on server.')) {
+        toast.error('Network error. Could not connect to the server.', {
+          style: { border: '1px solid #ef4444', color: '#ef4444' },
+          iconTheme: { primary: '#ef4444', secondary: '#fff' },
+          position: 'top-center',
+        });
+      }
+    }
   };
+  // END UPDATED toggleFavorite
 
   const scrollToPackages = () => {
     if (packagesRef.current) {
@@ -268,9 +437,19 @@ function PackageDeals() {
 
   return (
     <div className="package-deals-page">
+      
+      {/* NEW: Toaster for showing notifications at the top center */}
+      <Toaster position="top-center" />
+      
       <CurrencyModal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)} 
+      />
+      
+      {/* Login Notice Modal */}
+      <LoginNoticeModal 
+        isOpen={showLoginNotice} 
+        onClose={() => setShowLoginNotice(false)} 
       />
 
       <section className="top-section-bg">
@@ -293,7 +472,7 @@ function PackageDeals() {
             packages={filteredPackages}
             categoryName={headerTitle} 
             favorites={favorites}
-            onToggleFavorite={toggleFavorite}
+            onToggleFavorite={toggleFavorite} // Gagamitin ang bagong async function
             onBookNow={handleBookNow}
             packagesRef={packagesRef}
             scopeFilter={scopeFilter}
@@ -308,6 +487,9 @@ function PackageDeals() {
             selectedDestinations={selectedDestinations}
             setSelectedDestinations={setSelectedDestinations}
             allLocations={allLocations}
+            // MAHALAGA: Ipasa ang status at handler
+            isLoggedIn={isLoggedIn}
+            onLoginRequired={handleLoginRequired}
           />
         </div>
       </section>

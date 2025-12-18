@@ -1,274 +1,320 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Calendar, Users, Search, TrendingUp, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
-  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen
+  Calendar, Users, Search, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
+  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw
 } from 'lucide-react';
 import './Booking.css';
-import Sidebar from '../sidebar/sidebar'; // Assume Sidebar is a separate component
+import Sidebar from '../sidebar/sidebar';
 import BookingStats from './BookingStats';
 import BookingFilters from './BookingFilters';
 import BookingTable from './BookingTable';
 import BookingDetailModal from './BookingDetailModal';
 import PaginationControls from './PaginationControls';
 
-// NEW: Iba't Ibang Destination Image URLs (Placeholder - Palitan ng real URLs)
 const DESTINATION_IMAGES = {
-    TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600', // Beach theme
-    PENDING: 'https://picsum.photos/seed/mountain/800/600',    // Mountain theme
-    CONFIRMED: 'https://picsum.photos/seed/city/800/600',      // City/Urban theme
-    TOTAL_REVENUE: 'https://picsum.photos/seed/forest/800/600' // Forest/Nature theme
+    TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600',
+    PENDING: 'https://picsum.photos/seed/mountain/800/600',
+    CONFIRMED: 'https://picsum.photos/seed/city/800/600',
+    TOTAL_REVENUE: 'https://picsum.photos/seed/forest/800/600'
 };
 
-
 const Booking = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [bookings, setBookings] = useState([]);
-  const [filteredBookings, setFilteredBookings] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('ALL'); 
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [bookings, setBookings] = useState([]);
+  const [filteredBookings, setFilteredBookings] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  const toggleSidebar = () => setIsSidebarCollapsed(prev => !prev);
 
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('http://localhost:5000/api/admin/bookings'); 
+  useEffect(() => {
+    fetchBookings();
+  }, []);
 
-      if (!res.ok) throw new Error('Failed to fetch');
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      // Prioritize /active, fallback to / if 404 (temporary fix)
+      let res = await fetch('http://localhost:5000/api/bookings/active');
+      if (!res.ok) {
+        console.warn('Active endpoint failed, falling back to all bookings');
+        res = await fetch('http://localhost:5000/api/bookings');
+      }
 
-      const data = await res.json();
+      if (!res.ok) throw new Error('Failed to fetch bookings');
 
-      const formatted = data.map((b, index) => ({
-        id: `BK${String(data.length - index).padStart(4, '0')}`,
-        mongoId: b._id,
-        customerName: b.fullName,
-        email: b.email,
-        packageName: b.packageName,
-        travelDate: b.startDate || 'Not specified',
-        startDate: b.startDate,
-        endDate: b.endDate,
-        duration: b.duration,
-        totalAmount: b.totalAmount,
-        guests: b.pax?.adult || 1,
-        status: b.status || 'pending',
-        bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
-        message: b.message || '',
-        referenceNumber: b.referenceNumber || 'N/A',
-        paymentLinkId: b.paymentLinkId,
-        rawData: b
-      }));
+      const data = await res.json();
 
-      setBookings(formatted);
-    } catch (err) {
-      console.error('Fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Normalize data structure
+      const bookingsArray = data.bookings || data; // /active returns {bookings, count}, / returns array
+      const count = data.count || bookingsArray.length;
 
-  useEffect(() => {
-    let filtered = bookings;
+      const formatted = bookingsArray
+        .filter(b => (b.isArchive || 'No') === 'No') // Client-side filter if backend fallback
+        .map((b, index) => ({
+          id: `BK${String(count - index).padStart(4, '0')}`,
+          mongoId: b._id,
+          customerName: b.fullName || 'N/A',
+          email: b.email || 'N/A',
+          packageName: b.packageName || 'Unknown Package',
+          travelDate: b.startDate || 'Not specified',
+          startDate: b.startDate,
+          endDate: b.endDate,
+          duration: b.duration,
+          totalAmount: b.totalAmount || 0,
+          guests: b.pax?.adult || 1,
+          status: b.status || 'pending',
+          bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
+          message: b.message || '',
+          referenceNumber: b.referenceNumber || 'N/A',
+          paymentLinkId: b.paymentLinkId,
+          rawData: b,
+          isArchive: b.isArchive || 'No'
+        }));
 
-    const normalizedStatus = filterStatus === 'ALL' ? 'ALL' : filterStatus;
-    const lowerSearchTerm = searchTerm.toLowerCase();
+      setBookings(formatted);
+    } catch (err) {
+      console.error('Fetch error:', err);
+      alert('Failed to load bookings. Please check if the server is running.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    if (normalizedStatus !== 'ALL') {
-      filtered = filtered.filter(booking => (booking.status || 'pending') === normalizedStatus);
-    }
+  // Filtering
+  useEffect(() => {
+    let filtered = bookings;
 
-    if (lowerSearchTerm) {
-      filtered = filtered.filter(booking => 
-        booking.customerName.toLowerCase().includes(lowerSearchTerm) ||
-        booking.id.toLowerCase().includes(lowerSearchTerm) ||
-        booking.packageName.toLowerCase().includes(lowerSearchTerm) ||
-        booking.referenceNumber.toLowerCase().includes(lowerSearchTerm)
-      );
-    }
+    if (filterStatus !== 'ALL') {
+      filtered = filtered.filter(b => b.status.toLowerCase() === filterStatus.toLowerCase());
+    }
 
-    setFilteredBookings(filtered);
-    setCurrentPage(1); 
-  }, [searchTerm, filterStatus, bookings]);
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(b =>
+        b.customerName.toLowerCase().includes(term) ||
+        b.id.toLowerCase().includes(term) ||
+        b.packageName.toLowerCase().includes(term) ||
+        b.email.toLowerCase().includes(term) ||
+        b.referenceNumber.toLowerCase().includes(term)
+      );
+    }
 
-  // --- Core Business Logic: CONFIRM & CANCEL (Preserved Original) ---
-  const handleAction = async (booking, actionType) => {
-    const actionText = actionType === 'confirm' ? 'Confirm' : 'Cancel';
-    if (!window.confirm(`${actionText} booking ${booking.id} for ${booking.customerName}? ${actionType === 'cancel' ? 'This action cannot be undone.' : ''}`)) {
-      return;
-    }
+    setFilteredBookings(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, bookings]);
 
-    setActionLoading(true);
-    try {
-      const endpoint = `http://localhost:5000/api/admin/bookings/${booking.mongoId}/${actionType}`;
-      const res = await fetch(endpoint, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
-      });
+  const handleConfirm = async (booking) => {
+    if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/confirm`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error();
+      await fetchBookings();
+      alert('Booking confirmed successfully!');
+    } catch (err) {
+      alert('Failed to confirm booking.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-      if (!res.ok) throw new Error(`Failed to ${actionType} booking`);
+  const handleCancel = async (booking) => {
+    if (!window.confirm(`Cancel booking ${booking.id}? This cannot be undone.`)) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/cancel`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error();
+      await fetchBookings();
+      alert('Booking cancelled successfully!');
+    } catch (err) {
+      alert('Failed to cancel booking.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-      await fetchBookings();
-      if (selectedBooking && selectedBooking.mongoId === booking.mongoId) {
-          setShowModal(false);
-      }
-      
-      alert(`✅ Booking ${actionType}ed successfully!`);
-    } catch (error) {
-      console.error(`${actionType} error:`, error);
-      alert(`❌ Failed to ${actionType} booking. Please try again.`);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  const handleArchive = async (booking) => {
+    const isCurrentlyArchived = booking.isArchive === 'Yes';
+    const action = isCurrentlyArchived ? 'unarchive' : 'archive';
+    const message = isCurrentlyArchived
+      ? `Unarchive booking ${booking.id}? It will reappear in the active list.`
+      : `Archive booking ${booking.id}? It will be hidden from the active list.`;
 
-  const handleConfirm = (booking) => handleAction(booking, 'confirm');
-  const handleCancel = (booking) => handleAction(booking, 'cancel');
+    if (!window.confirm(message)) return;
 
-  const handleViewDetails = (booking) => {
-    setSelectedBooking(booking);
-    setShowModal(true);
-  };
+    setActionLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/archive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-  const stats = useMemo(() => {
-    const confirmedRevenue = bookings
-      .filter(b => b.status === 'confirmed')
-      .reduce((sum, b) => sum + b.totalAmount, 0);
+      const result = await res.json();
 
-    return [
-      { label: "Total Bookings", value: bookings.length, icon: <FileText size={24} />, image: DESTINATION_IMAGES.TOTAL_BOOKINGS },
-      { label: "Pending", value: bookings.filter(i => (i.status || 'pending') === 'pending').length, icon: <AlertCircle size={24} />, image: DESTINATION_IMAGES.PENDING },
-      { label: "Confirmed", value: bookings.filter(i => i.status === 'confirmed').length, icon: <CheckCircle size={24} />, image: DESTINATION_IMAGES.CONFIRMED },
-      { label: "Total Revenue", value: confirmedRevenue.toLocaleString(), icon: <CreditCard size={24} />, image: DESTINATION_IMAGES.TOTAL_REVENUE },
-    ];
-  }, [bookings]);
+      if (result.status === 'ok') {
+        alert(`Booking ${action}d successfully!`);
+        await fetchBookings(); // Always refresh — simpler and consistent
+      } else {
+        alert('Failed to update archive status.');
+      }
+    } catch (err) {
+      console.error('Archive error:', err);
+      alert('An error occurred while archiving.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-  /* * * * F I N A L   C O L O R   L O G I C * * *
-     All active buttons return 'active-navy'
-  */
-  const getFilterClassName = (status) => {
-    // Check if the passed status matches the currently selected filter status
-    if (status.toLowerCase() === filterStatus.toLowerCase()) {
-      return 'active-navy'; // Universal Navy Blue class
-    }
-    return ''; // Inactive
-  }
+  const handleViewDetails = (booking) => {
+    setSelectedBooking(booking);
+    setShowModal(true);
+  };
 
-  const statusOptions = useMemo(() => {
-    const uniqueStatuses = new Set(bookings.map(i => i.status || 'pending')); 
-    const options = ['ALL'];
-    if (uniqueStatuses.has('pending')) options.push('pending');
-    if (uniqueStatuses.has('confirmed')) options.push('confirmed');
-    if (uniqueStatuses.has('cancelled')) options.push('cancelled');
-    return options;
-  }, [bookings]);
+  const stats = useMemo(() => {
+    const confirmedRevenue = bookings
+      .filter(b => b.status === 'confirmed')
+      .reduce((sum, b) => sum + b.totalAmount, 0);
 
-  // --- Pagination Logic ---
-  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
-  
-  const currentBookings = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredBookings.slice(startIndex, endIndex);
-  }, [currentPage, filteredBookings, itemsPerPage]);
+    return [
+      { label: "Total Active Bookings", value: bookings.length, icon: <FileText size={24} />, image: DESTINATION_IMAGES.TOTAL_BOOKINGS },
+      { label: "Pending", value: bookings.filter(b => b.status === 'pending').length, icon: <AlertCircle size={24} />, image: DESTINATION_IMAGES.PENDING },
+      { label: "Confirmed", value: bookings.filter(b => b.status === 'confirmed').length, icon: <CheckCircle size={24} />, image: DESTINATION_IMAGES.CONFIRMED },
+      { label: "Revenue (Confirmed)", value: `₱${confirmedRevenue.toLocaleString()}`, icon: <CreditCard size={24} />, image: DESTINATION_IMAGES.TOTAL_REVENUE },
+    ];
+  }, [bookings]);
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
+  const getFilterClassName = (status) => 
+    status.toLowerCase() === filterStatus.toLowerCase() ? 'active-navy' : '';
 
-  // Calculate the starting index for the current page
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const statusOptions = useMemo(() => {
+    const opts = ['ALL'];
+    const unique = new Set(bookings.map(b => b.status));
+    ['pending', 'confirmed', 'cancelled'].forEach(s => unique.has(s) && opts.push(s));
+    return opts;
+  }, [bookings]);
 
-  return (
-    <div className="bkm-page">
-      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      
-      <main className={`bkm-main ${isSidebarCollapsed ? "expanded" : ""}`}>
-        <div className="bkm-container">
-          
-          {/* HEADER (Unique Class Names) */}
-          <div className="bkm-header">
-            <div className="bkm-title"><h1>Booking Management</h1><p>View and manage all customer bookings</p></div>
-            <button className="bkm-btn-add" onClick={() => alert('Service Management is currently not available for Booking.')}><FolderOpen size={18} /> Manage Service</button>
-          </div>
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const currentBookings = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredBookings.slice(start, start + itemsPerPage);
+  }, [currentPage, filteredBookings]);
 
-          <BookingStats stats={stats} />
-          
-          <BookingFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            filterStatus={filterStatus}
-            setFilterStatus={setFilterStatus}
-            statusOptions={statusOptions}
-            getFilterClassName={getFilterClassName}
-          />
-          
-          {/* Main Table Container (Unique Class Names) */}
-          <div className="bkm-table-container">
-            <BookingTable
-              loading={loading}
-              filteredBookingsCount={filteredBookings.length}
-              currentBookings={currentBookings}
-              handleViewDetails={handleViewDetails}
-              handleConfirm={handleConfirm}
-              handleCancel={handleCancel}
-              actionLoading={actionLoading}
-              MailIcon={Mail}
-              CheckCircleIcon={CheckCircle}
-              AlertCircleIcon={AlertCircle}
-              XCircleIcon={XCircle}
-              EyeIcon={Eye}
-              CheckIcon={Check}
-              XIcon={X}
-              CalendarIcon={Calendar}
-              UsersIcon={Users}
-              startIndex={startIndex} 
-            />
-          </div>
-          
-          {/* PAGINATION CONTROLS - MOVED OUTSIDE THE TABLE CONTAINER */}
-          {filteredBookings.length > 0 && totalPages > 1 && (
-            <PaginationControls 
-              totalItems={filteredBookings.length}
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage}
-              onPageChange={handlePageChange}
-              ChevronLeftIcon={ChevronLeft}
-              ChevronRightIcon={ChevronRight}
-            />
-          )}
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
-        </div>
-      </main>
+  const startIndex = (currentPage - 1) * itemsPerPage;
 
-      <BookingDetailModal
-        showModal={showModal}
-        selectedBooking={selectedBooking}
-        setShowModal={setShowModal}
-        handleConfirm={handleConfirm}
-        handleCancel={handleCancel}
-        actionLoading={actionLoading}
-        CheckCircleIcon={CheckCircle}
-        AlertCircleIcon={AlertCircle}
-        XCircleIcon={XCircle}
-        CheckIcon={Check}
-        XIcon={X}
-      />
-    </div>
-  );
+  return (
+    <div className="bkm-page">
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+      
+      <main className={`bkm-main ${isSidebarCollapsed ? "expanded" : ""}`}>
+        <div className="bkm-container">
+          <div className="bkm-header">
+            <div className="bkm-title">
+              <h1>Booking Management</h1>
+              <p>View and manage all active customer bookings</p>
+            </div>
+          </div>
+
+          <BookingStats stats={stats} />
+          
+          <BookingFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            statusOptions={statusOptions}
+            getFilterClassName={getFilterClassName}
+          />
+          
+          <div className="bkm-table-container">
+            <table className="bkm-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '50px' }}>No.</th>
+                  <th>Booking ID</th>
+                  <th>Customer Details</th>
+                  <th>Package</th>
+                  <th>Travel Date</th>
+                  <th>Guests</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
+              
+              <BookingTable
+                loading={loading}
+                filteredBookingsCount={filteredBookings.length}
+                currentBookings={currentBookings}
+                handleViewDetails={handleViewDetails}
+                handleConfirm={handleConfirm}
+                handleCancel={handleCancel}
+                handleArchive={handleArchive}
+                actionLoading={actionLoading}
+                MailIcon={Mail}
+                CheckCircleIcon={CheckCircle}
+                AlertCircleIcon={AlertCircle}
+                XCircleIcon={XCircle}
+                EyeIcon={Eye}
+                CheckIcon={Check}
+                XIcon={X}
+                CalendarIcon={Calendar}
+                UsersIcon={Users}
+                ArchiveIcon={Archive}
+                RotateCcwIcon={RotateCcw}
+                startIndex={startIndex}
+              />
+            </table>
+          </div>
+
+          {filteredBookings.length > 0 && totalPages > 1 && (
+            <PaginationControls 
+              totalItems={filteredBookings.length}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+              ChevronLeftIcon={ChevronLeft}
+              ChevronRightIcon={ChevronRight}
+            />
+          )}
+        </div>
+      </main>
+
+      <BookingDetailModal
+        showModal={showModal}
+        selectedBooking={selectedBooking}
+        setShowModal={setShowModal}
+        handleConfirm={handleConfirm}
+        handleCancel={handleCancel}
+        handleArchive={handleArchive}
+        actionLoading={actionLoading}
+        CheckCircleIcon={CheckCircle}
+        AlertCircleIcon={AlertCircle}
+        XCircleIcon={XCircle}
+        CheckIcon={Check}
+        XIcon={X}
+        ArchiveIcon={Archive}
+        RotateCcwIcon={RotateCcw}
+      />
+    </div>
+  );
 };
 
 export default Booking;

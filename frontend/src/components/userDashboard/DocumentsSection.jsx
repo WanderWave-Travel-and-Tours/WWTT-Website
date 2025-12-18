@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+// I-import ang 'Toaster' para mag-render ang notifications
+import toast, { Toaster } from 'react-hot-toast'; 
 import * as Icons from './Icons';
 import './DocumentsSection.css';
 
@@ -13,6 +15,93 @@ const DocumentsSection = ({
     uploadProgress 
 }) => {
     const [draggingSection, setDraggingSection] = useState(null);
+
+    // Set the accepted file types for the 'accept' attribute
+    const acceptedFileTypes = '.jpg, .jpeg, .png, .webp, .pdf, .doc, .docx';
+    
+    // Define the valid file extensions for strict validation
+    const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx'];
+
+    // --- Custom Toast Design Functions ---
+
+    // Success/Removal Toast (Green Theme)
+    const showSuccessToast = (message) => {
+        toast.success(message, {
+            position: 'top-center',
+            style: { 
+                border: '1px solid #10b981', // Success Green
+                color: '#10b981',
+                backgroundColor: '#d1fae5', 
+            },
+            iconTheme: { 
+                primary: '#10b981', 
+                secondary: '#fff' 
+            },
+        });
+    };
+
+    // Error Toast (Red Theme) - ginamit na natin ito dati
+    const showErrorToast = (message) => {
+        toast.error(message, {
+            position: 'top-center', 
+            style: { 
+                border: '1px solid #ef4444', 
+                color: '#ef4444',
+                backgroundColor: '#fee2e2', 
+            },
+            iconTheme: { 
+                primary: '#ef4444', 
+                secondary: '#fff' 
+            },
+        });
+    };
+
+    // --- Validation Logic Function ---
+    const validateFiles = (fileList) => {
+        const filesToUpload = [];
+        const invalidFiles = [];
+
+        for (const file of fileList) {
+            // Get the file extension (e.g., 'file.docx' -> 'docx')
+            const extension = file.name.split('.').pop().toLowerCase();
+
+            if (validExtensions.includes(extension)) {
+                filesToUpload.push(file);
+            } else {
+                invalidFiles.push(file);
+            }
+        }
+
+        if (invalidFiles.length > 0) {
+            const invalidFileNames = invalidFiles.map(f => f.name).join(', ');
+            
+            showErrorToast(
+                `The following files were rejected: ${invalidFileNames}. Only JPG, PNG, WEBP, PDF, DOC, and DOCX files are allowed.`
+            );
+        }
+        
+        return filesToUpload;
+    };
+    // ---------------------------------
+    
+    // --- New Handlers for Toast Notifications ---
+    
+    const handleRemoveFile = (sectionTitle, fileId, fileName) => {
+        // 1. Tawagin ang prop function
+        removeFile(sectionTitle, fileId);
+        // 2. Ipakita ang success toast para sa pagtanggal
+        showSuccessToast(`File "${fileName}" has been successfully removed.`);
+    };
+
+    // FIX: Ipakita muna ang Toaster at tawagin ang submitDocuments() sa huli.
+    // NOTE: Kung lalabas pa rin ang alert, ang problema ay nasa implementation ng 'submitDocuments' function (sa parent component).
+    const handleSubmitDocuments = () => {
+        // 1. Ipakita ang success toast para sa submission (Ito ang gusto mong notification
+        // 2. Tawagin ang prop function (Ito ay dapat walang 'alert()' function sa loob nito)
+        submitDocuments();
+    };
+
+    // --------------------------------------------
 
     const getRequirements = () => {
         if (visaDetails?.requirements) {
@@ -37,13 +126,39 @@ const DocumentsSection = ({
         setDraggingSection(null); 
     };
 
+    // --- Updated Drop Handler with Validation ---
     const onDropHandler = (e, section) => { 
         setDraggingSection(null); 
-        handleDrop(e, section); 
+        e.preventDefault(); 
+
+        const fileList = e.dataTransfer.files;
+        const validFileList = validateFiles(fileList);
+        
+        if (validFileList.length > 0) {
+            handleDrop(e, section); 
+        }
     };
+    // ------------------------------------------
+
+    // --- Updated File Select Handler with Validation ---
+    const handleFileInputChange = (e, sectionTitle) => {
+        const fileList = e.target.files;
+        const validFileList = validateFiles(fileList);
+        
+        if (validFileList.length > 0) {
+            handleFileSelect(e, sectionTitle);
+        }
+        
+        // Reset the input value to allow the same file to be selected again
+        e.target.value = null;
+    };
+    // ---------------------------------------------------
 
     return (
         <div className="ud-docs-wrapper">
+            {/* INILAGAY ANG TOASTER DITO para gumana ang notifications */}
+            <Toaster />
+            
             <div className="ud-docs-header">
                 <h2>Required Documents</h2>
                 <p>Upload clear copies of the required documents for your application</p>
@@ -86,7 +201,8 @@ const DocumentsSection = ({
                                         <input 
                                             type="file" 
                                             multiple 
-                                            onChange={(e) => handleFileSelect(e, section.title)} 
+                                            accept={acceptedFileTypes}
+                                            onChange={(e) => handleFileInputChange(e, section.title)} 
                                             hidden 
                                         />
                                     </label>
@@ -109,7 +225,8 @@ const DocumentsSection = ({
                                     </div>
                                     <button 
                                         className="ud-remove-file" 
-                                        onClick={() => removeFile(section.title, file.id)}
+                                        // Gumamit ng handler na may toast notification
+                                        onClick={() => handleRemoveFile(section.title, file.id, file.name)}
                                     >
                                         <Icons.Close />
                                     </button>
@@ -134,7 +251,8 @@ const DocumentsSection = ({
             <div className="ud-submit-area">
                 <button 
                     className="ud-submit-btn" 
-                    onClick={submitDocuments}
+                    // Gumamit ng handler na may toast notification
+                    onClick={handleSubmitDocuments}
                 >
                     Submit All Documents
                 </button>

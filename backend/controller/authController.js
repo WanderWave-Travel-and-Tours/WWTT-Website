@@ -20,75 +20,75 @@ console.log(`Logo path configured: ${LOGO_PATH}`);
 
 // Helper function to verify reCAPTCHA
 const verifyRecaptcha = async (token) => {
-  console.log('🔍 Starting reCAPTCHA verification...');
-  try {
-    const response = await axios.post(
-      'https://www.google.com/recaptcha/api/siteverify',
-      null,
-      {
-        params: {
-          secret: process.env.RECAPTCHA_SECRET_KEY,
-          response: token
-        }
-      }
-    );
-    const success = response.data.success;
-    console.log(`✅ reCAPTCHA verification result: ${success ? 'SUCCESS' : 'FAILURE'}`);
-    if (!success) console.warn('reCAPTCHA response details:', response.data);
-    return success;
-  } catch (error) {
-    console.error('❌ reCAPTCHA verification error:', error.message);
-    return false;
-  }
+  console.log('🔍 Starting reCAPTCHA verification...');
+  try {
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      null,
+      {
+        params: {
+          secret: process.env.RECAPTCHA_SECRET_KEY,
+          response: token
+        }
+      }
+    );
+    const success = response.data.success;
+    console.log(`✅ reCAPTCHA verification result: ${success ? 'SUCCESS' : 'FAILURE'}`);
+    if (!success) console.warn('reCAPTCHA response details:', response.data);
+    return success;
+  } catch (error) {
+    console.error('❌ reCAPTCHA verification error:', error.message);
+    return false;
+  }
 };
 
 // --------------------------------------------------------------------
 // NODEMAILER TRANSPORT AND EMAIL HELPER
 // --------------------------------------------------------------------
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, 
-    },
-    logger: true, 
-    debug: true
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS, 
+    },
+    logger: true, 
+    debug: true
 });
 
 const sendEmail = async (to, subject, html) => {
-    console.log(`📧 Attempting to send email to: ${to} with subject: "${subject}"`);
-    try {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.error("❌ Email configuration missing: EMAIL_USER or EMAIL_PASS not set in .env");
-            return false;
-        }
+    console.log(`📧 Attempting to send email to: ${to} with subject: "${subject}"`);
+    try {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.error("❌ Email configuration missing: EMAIL_USER or EMAIL_PASS not set in .env");
+            return false;
+        }
 
-        const mailOptions = {
-            from: `WanderWave Customer Service <${process.env.EMAIL_USER}>`, 
-            to, 
-            subject,
-            html,
-            attachments: [{
-                filename: 'LOGOPIC.png',
-                path: LOGO_PATH, 
-                cid: 'logo@wanderwave.com'
-            }]
-        };
+        const mailOptions = {
+            from: `WanderWave Customer Service <${process.env.EMAIL_USER}>`, 
+            to, 
+            subject,
+            html,
+            attachments: [{
+                filename: 'LOGOPIC.png',
+                path: LOGO_PATH, 
+                cid: 'logo@wanderwave.com'
+            }]
+        };
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Email sent successfully. Message ID: ${info.messageId}`);
-        return true; 
-    } catch (error) {
-        console.error("❌ Nodemailer Error:", error); 
-        if (error.code === 'ENOENT') {
-            console.error(`⚠️ Logo file not found at path: ${LOGO_PATH}`);
-        }
-        return false;
-    }
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`✅ Email sent successfully. Message ID: ${info.messageId}`);
+        return true; 
+    } catch (error) {
+        console.error("❌ Nodemailer Error:", error); 
+        if (error.code === 'ENOENT') {
+            console.error(`⚠️ Logo file not found at path: ${LOGO_PATH}`);
+        }
+        return false;
+    }
 };
 
 const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
-    return `
+    return `
 <!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -239,17 +239,7 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
                                                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0;">
                                                     <tr>
                                                         <td style="background-color:#FFF7ED !important;border-left:4px solid #FF8C00;padding:15px 20px;border-radius:4px;">
-                                                            <p style="font-size:13px;color:#ea580c !important;margin:0;line-height:1.6;font-family:Arial,sans-serif;"><strong>⏱️ Valid for ${OTP_DURATION_MINUTES} minutes</strong><br/>Please do not share this code with anyone for security purposes.</p>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                                
-                                                <!-- SIGNATURE - Border with Navy Text -->
-                                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-top:1px dashed #e2e8f0;margin-top:30px;padding-top:25px;">
-                                                    <tr>
-                                                        <td style="padding:0;">
-                                                            <p style="font-size:13px;color:#64748b !important;margin:0 0 5px 0;font-family:Arial,sans-serif;">Best regards,</p>
-                                                            <p style="font-size:14px;color:#001b3e !important;font-weight:700;margin:0;font-family:Arial,sans-serif;">WanderWave Team</p>
+                                                            <p style="font-size:13px;color...(truncated 1167 characters)...nt-weight:700;margin:0;font-family:Arial,sans-serif;">WanderWave Team</p>
                                                         </td>
                                                     </tr>
                                                 </table>
@@ -284,274 +274,307 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
 const OTP_DURATION_MINUTES = 5; 
 
 const generateAndSendOtp = async (email) => {
-    const userData = unverifiedUsers.get(email);
-    if (!userData) return { success: false, emailSent: false };
+    const userData = unverifiedUsers.get(email);
+    if (!userData) return { success: false, emailSent: false };
 
-    const otp = crypto.randomInt(100000, 999999).toString(); 
-    const otpExpires = Date.now() + OTP_DURATION_MINUTES * 60 * 1000; 
+    const otp = crypto.randomInt(100000, 999999).toString(); 
+    const otpExpires = Date.now() + OTP_DURATION_MINUTES * 60 * 1000; 
 
-    unverifiedUsers.set(email, { ...userData, otp, otpExpires });
+    unverifiedUsers.set(email, { ...userData, otp, otpExpires });
 
-    const emailBody = getOtpEmailHtml(userData.fullName, otp, OTP_DURATION_MINUTES);
-    const emailSent = await sendEmail(email, 'WanderWave - Verification Code', emailBody);
+    const emailBody = getOtpEmailHtml(userData.fullName, otp, OTP_DURATION_MINUTES);
+    const emailSent = await sendEmail(email, 'WanderWave - Verification Code', emailBody);
 
-    return { success: true, emailSent };
+    return { success: true, emailSent };
 };
 
 // --------------------------------------------------------------------
 // SIGNUP CONTROLLER - Clear messages for frontend
 // --------------------------------------------------------------------
 const signup = async (req, res) => {
-    console.log('\n--- SIGNUP Controller Hit ---');
-    const { fullName, email, username, password, confirmPassword, recaptchaToken } = req.body;
+    console.log('\n--- SIGNUP Controller Hit ---');
+    const { fullName, email: emailInput, username: usernameInput, password, confirmPassword, recaptchaToken } = req.body;
 
-    try {
-        // Validation
-        if (!fullName || !email || !username || !password || !confirmPassword) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'All fields are required.' 
-            });
-        }
-        if (password !== confirmPassword) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Passwords do not match.' 
-            });
-        }
+    const email = emailInput.toLowerCase();
+    const username = usernameInput.toLowerCase();
 
-        // Check existing user
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'This email is already registered. Please log in.' 
-            });
-        }
+    try {
+        // Validation
+        if (!fullName || !email || !username || !password || !confirmPassword) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'All fields are required.' 
+            });
+        }
+        if (password !== confirmPassword) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Passwords do not match.' 
+            });
+        }
 
-        // reCAPTCHA
-        if (!recaptchaToken) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Please complete the reCAPTCHA.' 
-            });
-        }
-        const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
-        if (!isValidRecaptcha) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'reCAPTCHA failed. Please try again.' 
-            });
-        }
+        // Check existing user
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This email is already registered. Please log in.' 
+            });
+        }
 
-        // Clean old session
-        if (unverifiedUsers.has(email)) unverifiedUsers.delete(email);
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This username is already taken.' 
+            });
+        }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        unverifiedUsers.set(email, { fullName, email, username, password: hashedPassword });
+        // reCAPTCHA
+        if (!recaptchaToken) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please complete the reCAPTCHA.' 
+            });
+        }
+        const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+        if (!isValidRecaptcha) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'reCAPTCHA failed. Please try again.' 
+            });
+        }
 
-        const result = await generateAndSendOtp(email);
+        // Clean old session
+        if (unverifiedUsers.has(email)) unverifiedUsers.delete(email);
 
-        if (!result.success) {
-            unverifiedUsers.delete(email);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Failed to send verification code. Please try again.' 
-            });
-        }
+        const hashedPassword = await bcrypt.hash(password, 12);
+        unverifiedUsers.set(email, { fullName, email, username, password: hashedPassword });
 
-        return res.status(200).json({
-            success: true,
-            message: result.emailSent 
-                ? 'Verification code sent! Check your inbox.'
-                : 'Code generated. Try resending if not received.',
-            verificationRequired: true,
-            email
-        });
+        const result = await generateAndSendOtp(email);
 
-    } catch (error) {
-        console.error('❌ Signup error:', error);
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Server error. Please try again later.' 
-        });
-    }
+        if (!result.success) {
+            unverifiedUsers.delete(email);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Failed to send verification code. Please try again.' 
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: result.emailSent 
+                ? 'Verification code sent! Check your inbox.'
+                : 'Code generated. Try resending if not received.',
+            verificationRequired: true,
+            email
+        });
+
+    } catch (error) {
+        console.error('❌ Signup error:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Server error. Please try again later.' 
+        });
+    }
 };
 
 // --------------------------------------------------------------------
 // RESEND OTP - Clear, frontend-friendly messages
 // --------------------------------------------------------------------
 const resendOtp = async (req, res) => {
-    console.log('\n--- RESEND OTP Controller Hit ---');
-    const { email } = req.body;
+    console.log('\n--- RESEND OTP Controller Hit ---');
+    const { email: emailInput } = req.body;
+    const email = emailInput.toLowerCase();
 
-    try {
-        if (!email) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Email is required.' 
-            });
-        }
+    try {
+        if (!email) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Email is required.' 
+            });
+        }
 
-        if (!unverifiedUsers.has(email)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'No active signup session. Please start over.' 
-            });
-        }
+        if (!unverifiedUsers.has(email)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'No active signup session. Please start over.' 
+            });
+        }
 
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            unverifiedUsers.delete(email);
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Account already verified. Please log in.' 
-            });
-        }
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            unverifiedUsers.delete(email);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Account already verified. Please log in.' 
+            });
+        }
 
-        const result = await generateAndSendOtp(email);
+        const result = await generateAndSendOtp(email);
 
-        if (result.emailSent) {
-            return res.status(200).json({
-                success: true,
-                message: 'New code sent! Check your inbox & spam folder.'
-            });
-        } else {
-            return res.status(200).json({
-                success: true,
-                message: 'New code generated. Check spam or try resending again.',
-                warning: 'Email delivery delayed, but code is active.'
-            });
-        }
+        if (result.emailSent) {
+            return res.status(200).json({
+                success: true,
+                message: 'New code sent! Check your inbox & spam folder.'
+            });
+        } else {
+            return res.status(200).json({
+                success: true,
+                message: 'New code generated. Check spam or try resending again.',
+                warning: 'Email delivery delayed, but code is active.'
+            });
+        }
 
-    } catch (error) {
-        console.error('❌ Resend OTP error:', error);
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Server error. Please try again.' 
-        });
-    }
+    } catch (error) {
+        console.error('❌ Resend OTP error:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Server error. Please try again.' 
+        });
+    }
 };
 
 // --------------------------------------------------------------------
 // VERIFY OTP - Clear error messages (no reload needed)
 // --------------------------------------------------------------------
 const verifyOtp = async (req, res) => {
-    console.log('\n--- VERIFY OTP Controller Hit ---');
-    const { email, otp } = req.body;
+    console.log('\n--- VERIFY OTP Controller Hit ---');
+    const { email: emailInput, otp } = req.body;
+    const email = emailInput.toLowerCase();
 
-    try {
-        const userData = unverifiedUsers.get(email);
+    try {
+        const userData = unverifiedUsers.get(email);
 
-        if (!userData) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Session expired. Please sign up again.' 
-            });
-        }
+        if (!userData) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Session expired. Please sign up again.' 
+            });
+        }
 
-        if (userData.otp !== otp) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Invalid code. Please check and try again.' 
-            });
-        }
+        if (userData.otp !== otp) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid code. Please check and try again.' 
+            });
+        }
 
-        if (Date.now() > userData.otpExpires) { 
-            unverifiedUsers.delete(email);
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Code has expired. Please request a new one.' 
-            });
-        }
+        if (Date.now() > userData.otpExpires) { 
+            unverifiedUsers.delete(email);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Code has expired. Please request a new one.' 
+            });
+        }
 
-        const newUser = new User({
-            fullName: userData.fullName,
-            email: userData.email,
-            username: userData.username,
-            password: userData.password, 
-        });
-        
-        const savedUser = await newUser.save();
-        unverifiedUsers.delete(email);
+        const newUser = new User({
+            fullName: userData.fullName,
+            email: userData.email,
+            username: userData.username,
+            password: userData.password, 
+        });
+         
+        const savedUser = await newUser.save();
+        unverifiedUsers.delete(email);
 
-        return res.status(201).json({
-            success: true,
-            message: 'Account verified successfully!',
-            user: {
-                id: savedUser._id,
-                fullName: savedUser.fullName,
-                email: savedUser.email,
-                username: savedUser.username,
-            }
-        });
+        return res.status(201).json({
+            success: true,
+            message: 'Account verified successfully!',
+            user: {
+                id: savedUser._id,
+                fullName: savedUser.fullName,
+                email: savedUser.email,
+                username: savedUser.username,
+            }
+        });
 
-    } catch (error) {
-        console.error('❌ Verify OTP error:', error);
-        if (error.code === 11000) {
-            unverifiedUsers.delete(email);
-            return res.status(409).json({ 
-                success: false, 
-                message: 'Email or username already in use.' 
-            });
-        }
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Server error. Please try again.' 
-        });
-    }
+    } catch (error) {
+        console.error('❌ Verify OTP error:', error);
+        if (error.code === 11000) {
+            unverifiedUsers.delete(email);
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Email or username already in use.' 
+            });
+        }
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Server error. Please try again.' 
+        });
+    }
 };
 
 // --------------------------------------------------------------------
 // LOGIN CONTROLLER
 // --------------------------------------------------------------------
 const login = async (req, res) => {
-    console.log('\n--- LOGIN Controller Hit ---');
-    const { email, password, recaptchaToken } = req.body;
-  
-    try {
-        if (!recaptchaToken) {
-            return res.status(400).json({ success: false, message: 'Please complete reCAPTCHA.' });
-        }
+    console.log('\n--- LOGIN Controller Hit ---');
+    const { email: emailInput, password, recaptchaToken } = req.body;
+    const email = emailInput.toLowerCase();
+  
+    try {
+        if (!recaptchaToken) {
+            return res.status(400).json({ success: false, message: 'Please complete reCAPTCHA.' });
+        }
 
-        const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
-        if (!isValidRecaptcha) {
-            return res.status(400).json({ success: false, message: 'reCAPTCHA failed.' });
-        }
-        
-        if (!email || !password) {
-            return res.status(400).json({ success: false, message: 'Email and password required.' });
-        }
+        const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+        if (!isValidRecaptcha) {
+            return res.status(400).json({ success: false, message: 'reCAPTCHA failed.' });
+        }
+         
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: 'Email and password required.' });
+        }
 
-        const user = await User.findOne({ email }).select('+password');
-        if (!user || !(await user.comparePassword(password))) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-        }
+        const user = await User.findOne({ email }).select('+password');
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+        }
 
-        return res.json({
-            success: true,
-            message: 'Login successful!',
-            user: { 
-                id: user._id, 
-                fullName: user.fullName, 
-                email: user.email, 
-                username: user.username, 
-                role: user.role || 'user'
-            }
-        });
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            console.log('Password mismatch for user:', email);
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+        }
 
-    } catch (error) {
-        console.error('❌ Login error:', error);
-        return res.status(500).json({ success: false, message: 'Server error.' });
-    }
+        return res.json({
+            success: true,
+            message: 'Login successful!',
+            user: { 
+                id: user._id, 
+                fullName: user.fullName, 
+                email: user.email, 
+                username: user.username, 
+                role: user.role || 'user'
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        return res.status(500).json({ success: false, message: 'Server error.' });
+    }
+};
+
+exports.getMe = (req, res) => {
+    // Ang req.user ay na-set na ng 'protect' middleware
+    // Ang 'protect' middleware ay kukuha ng user data galing sa database
+    // at ise-save ito sa req.user
+    res.status(200).json({
+        // Ibalik ang user data (walang password)
+        _id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        // (Iba pang user data na gusto mong i-return)
+    });
 };
 
 //  --------------------------------------------------------------------
 // EXPORTS
 // --------------------------------------------------------------------
 module.exports = {
-    signup,
-    login,
-    verifyOtp,
-    resendOtp
+    signup,
+    login,
+    verifyOtp,
+    resendOtp
 };

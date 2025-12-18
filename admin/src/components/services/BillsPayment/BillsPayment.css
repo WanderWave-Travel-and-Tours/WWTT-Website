@@ -13,6 +13,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     position: relative;
 }
 
+/* MAIN CONTENT LAYOUT */
 .bills-main {
     margin-left: 260px; 
     width: calc(100% - 260px);
@@ -29,127 +30,197 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 
 .bills-container { max-width: 1600px; width: 100%; margin: 0 auto; }
 
+/* HEADER STYLES */
 .bills-header {
     display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
 }
 
 .bills-title h1 {
-    font-family: 'Arial Black', sans-serif; font-size: 30px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: -0.5px; margin: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 30px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; margin: 0;
 }
 .bills-title p { color: #64748b; font-size: 14px; margin: 4px 0 0 0; }
 
 .bills-btn-add {
     background-color: #10b981; /* Emerald Green */
     color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
-.bills-btn-add:hover { background-color: #059669; transform: translateY(-1px); }
+.bills-btn-add:hover { background-color: #059669; transform: translateY(-1px); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); }
 
+/* STATS GRID STYLES */
 .bills-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
 
 .bills-card {
-    background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
-.bills-card h2 { font-size: 32px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }
-.bills-card span { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.bills-card h2 { font-size: 28px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; }
+.bills-card span { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
 .bills-card-icon { color: #10b981; opacity: 0.8; }
 
+/* SEARCH & FILTER CARD */
+.search-filter-card {
+    background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); padding: 20px; margin-bottom: 32px;
+}
+.search-filter-wrapper {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+}
+.search-box {
+    position: relative; flex-grow: 1; max-width: 400px;
+}
+.search-input {
+    width: 100%; padding: 10px 10px 10px 40px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #334155; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-input:focus { border-color: #10b981; box-shadow: 0 0 0 1px #10b981; outline: none; }
+.search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;
+}
+
+/* FILTER BUTTONS */
+.filter-buttons {
+    display: flex; gap: 10px; flex-wrap: wrap;
+}
+.filter-btn {
+    border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.filter-btn:hover { background: #e2e8f0; }
+
+.filter-btn.active, .filter-btn.confirmed-active { background-color: #10b981; color: white; border-color: #10b981; }
+.filter-btn.pending-active { background-color: #fbbf24; color: #644500; border-color: #fbbf24; }
+.filter-btn.cancelled-active { background-color: #ef4444; color: white; border-color: #ef4444; }
+
+
+/* TABLE STYLES */
 .bills-table-container {
     background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); padding: 0; overflow: hidden; width: 100%; overflow-x: auto; 
 }
 .bills-table { width: 100%; border-collapse: collapse; min-width: 900px; }
-.bills-table th { background-color: #0f172a; color: white; text-align: left; padding: 18px 24px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-.bills-table td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px; font-weight: 500; vertical-align: middle; white-space: nowrap; }
+.bills-table th { background-color: #0f172a; color: white; text-align: left; padding: 18px 24px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.bills-table td { padding: 16px 24px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px; font-weight: 500; vertical-align: middle; white-space: nowrap; }
+.bills-table tr:last-child td { border-bottom: none; }
 .bills-table tr:hover td { background-color: #f8fafc; }
 
+.status-pill {
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; min-width: 80px; text-align: center;
+}
 .status-paid { background: #dcfce7; color: #166534; }
 .status-unpaid { background: #fee2e2; color: #991b1b; }
-.status-pending { background: #fffbeb; color: #92400e; } /* Added style for 'Pending' */
+.status-pending { background: #fffbeb; color: #92400e; }
 
 .bills-action-btn {
     padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: white; border: 1px solid #e2e8f0; color: #10b981; transition: all 0.2s;
 }
-.bills-action-btn:hover { background: #ecfdf5; border-color: #10b981; }
+.bills-action-btn:hover { background: #ecfdf5; border-color: #059669; color: #059669; }
 
-@media (max-width: 1024px) { .bills-main, .bills-main.expanded { padding: 30px; } .bills-stats-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { .bills-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } .bills-stats-grid { grid-template-columns: 1fr; } .bills-header { flex-direction: column; align-items: flex-start; } .bills-btn-add { width: 100%; justify-content: center; } }
+/* --- PAGINATION STYLES START --- */
 
-
-/* --- PAGINATION STYLES (New) --- */
-.pagination-nav {
-    /* Aligns with the table container's style */
-    margin-top: 0;
-    padding: 16px 24px;
-    background-color: white;
-    border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
-    position: sticky; 
-    bottom: 0;
-    z-index: 5;
-    
+.bills-pagination-container {
+    padding: 20px 0; 
+    margin-top: 20px; /* Separates it from the table */
     display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .bills-table-container */
-    border-radius: 0 0 12px 12px; 
+    justify-content: center; /* Naka-center ang pagination wrapper */
+    width: 100%;
 }
 
-.pagination-list {
+.pagination-wrapper {
     display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
     align-items: center;
+    gap: 10px;
 }
 
 .pagination-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
+    background-color: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
-    transition: all 0.2s;
-    min-width: 40px; 
-    text-align: center;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    display: inline-flex; /* To align the icon and text */
+    display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    transition: all 0.2s;
 }
 
 .pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
-    border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
-}
-
-.pagination-btn.active {
-    background-color: #0f172a; /* Primary dark color background for active page */
-    border-color: #0f172a;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
-}
-
-.pagination-btn.active:hover {
-    background-color: #1e293b; /* Slightly darker primary on hover */
-    border-color: #1e293b;
-    transform: translateY(-1px);
+    background-color: #e2e8f0;
+    border-color: #94a3b8;
 }
 
 .pagination-btn:disabled {
-    cursor: not-allowed;
     opacity: 0.5;
-    background-color: #f8fafc;
+    cursor: not-allowed;
 }
 
-/* For previous/next buttons */
-.pagination-btn:first-child,
-.pagination-btn:last-child {
-    font-weight: 700;
-    text-transform: none; /* Removed uppercase for better look with icon */
+.page-numbers {
+    display: flex;
+    gap: 5px;
 }
+
+.page-number-btn {
+    background-color: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.page-number-btn:hover:not(.active-page) {
+    background-color: #ffc107;
+}
+
+.page-number-btn.active-page {
+    background-color: #0f172a;
+    color: white;
+    border-color: #0f172a;
+}
+
+.page-ellipsis {
+    color: #94a3b8;
+    padding: 0 5px;
+    font-size: 16px;
+    align-self: center;
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 768px) {
+    .pagination-wrapper {
+        gap: 5px;
+    }
+    .pagination-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .page-number-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+    .pagination-text {
+        display: none; /* Hide 'Previous' and 'Next' text on smaller screens */
+    }
+}
+
+
+/* --- GENERAL MEDIA QUERIES --- */
+@media (max-width: 1024px) { 
+    .bills-main, .bills-main.expanded { padding: 30px; } 
+    .bills-stats-grid { grid-template-columns: repeat(2, 1fr); } 
+    .search-filter-wrapper { flex-direction: column; align-items: stretch; }
+    .search-box { max-width: 100%; }
+    .filter-buttons { justify-content: center; }
+}
+
+@media (max-width: 640px) { 
+    .bills-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } 
+    .bills-stats-grid { grid-template-columns: 1fr; } 
+    .bills-header { flex-direction: column; align-items: flex-start; } 
+    .bills-btn-add { width: 100%; justify-content: center; } 
+}
+
+/* --- PAGINATION STYLES END --- */

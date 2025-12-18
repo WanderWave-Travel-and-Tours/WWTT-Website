@@ -107,7 +107,185 @@
 
 .ferry-card-icon { color: #0ea5e9; opacity: 0.8; }
 
-/* Table */
+/* --- Search and Filter (New Styles) --- */
+
+.search-filter-card {
+    /* Container for the entire search/filter block */
+    background: white;
+    border-radius: 12px; /* Adjusted to match other components */
+    padding: 24px; /* Adjusted padding */
+    border: 1px solid #e2e8f0; /* Added border */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Adjusted shadow */
+    margin-bottom: 32px; /* Adjusted margin */
+}
+
+.search-filter-wrapper {
+    /* Flex container for the search box and filter buttons */
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Adjusted gap */
+    flex-wrap: wrap;
+}
+
+/* Desktop/Tablet Layout (768px and up) */
+@media (min-width: 768px) {
+    .search-filter-wrapper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .search-box {
+        max-width: 350px; 
+        flex-shrink: 0;
+    }
+    
+    .filter-buttons {
+        flex: 1;
+        justify-content: flex-end;
+    }
+}
+
+/* Search Box Container */
+.search-box {
+    flex: 1;
+    position: relative;
+    width: 100%; 
+}
+
+/* Search Icon Styling */
+.search-icon {
+    position: absolute;
+    left: 16px; /* 1rem */
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8; /* Gray color (slate-400) */
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Search Input Field */
+.search-input {
+    width: 100%;
+    padding: 10px 16px 10px 48px; /* Adjusted padding to match buttons and accommodate icon */
+    border: 1px solid #e2e8f0; /* Adjusted border width */
+    border-radius: 8px; /* Adjusted border radius */
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: #f8fafc; /* Light background */
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #0ea5e9; /* Sky Blue focus */
+    background: white;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+/* Filter Buttons Container */
+.filter-buttons {
+    display: flex;
+    gap: 8px; /* Smaller gap */
+    flex-wrap: wrap; 
+    justify-content: flex-start;
+}
+
+/* Individual Filter Button (Made Smaller) */
+.filter-btn {
+    padding: 10px 14px; /* Reduced padding to make buttons smaller */
+    border: 1px solid #cbd5e1; /* Added border */
+    border-radius: 8px; /* Adjusted border radius */
+    font-weight: 600;
+    font-size: 13px; /* Smaller font size */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #ffffff; /* White background */
+    color: #475569; /* Slate-600 color */
+    white-space: nowrap;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.filter-btn:hover {
+    background: #f1f5f9; /* Light hover */
+    transform: translateY(-1px); /* Slight lift */
+}
+
+/* Active Status Styles - Using a flat primary color for consistency */
+.filter-btn.active { 
+    background-color: #0f172a; /* Dark Blue Primary */
+    border-color: #0f172a;
+    color: white;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+
+/* Specific Active Colors - Reverted to flat colors from the status pills */
+.filter-btn.Issued-active {
+    background-color: #166534; /* Dark Green from Issued status */
+    border-color: #166534;
+    color: white;
+}
+
+.filter-btn.Pending-active {
+    background-color: #9a3412; /* Dark Brown from Pending status */
+    border-color: #9a3412;
+    color: white;
+}
+
+/* --- Tablet Responsiveness (Max-width 768px) --- */
+@media (max-width: 768px) {
+    .search-filter-card {
+        padding: 16px;
+    }
+    
+    .search-filter-wrapper {
+        flex-direction: column;
+    }
+    
+    .filter-buttons {
+        width: 100%;
+        gap: 6px;
+        justify-content: center;
+    }
+    
+    .filter-btn {
+        flex: 1 1 calc(50% - 3px); 
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+}
+
+/* --- Small Mobile Responsiveness (Max-width 480px) --- */
+@media (max-width: 480px) {
+    .search-filter-card {
+        padding: 12px;
+    }
+    
+    .search-input {
+        font-size: 14px;
+        padding: 8px 12px 8px 40px;
+    }
+    
+    .search-icon {
+        left: 12px;
+    }
+    
+    .filter-buttons {
+        flex-direction: row; /* Keep wrapping on small screens for better use of space */
+        justify-content: space-between;
+    }
+    
+    .filter-btn {
+        width: auto;
+        flex: 1 1 auto;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+}
+
+/* Table (Existing styles, just for completeness) */
 .ferry-table-container {
     background: white;
     border-radius: 12px;
@@ -167,22 +345,17 @@
 }
 .ferry-action-btn:hover { background: #e0f2fe; border-color: #0ea5e9; }
 
-/* --- PAGINATION STYLES (New) --- */
+/* --- PAGINATION STYLES (Existing styles, just for completeness) --- */
 .pagination-nav {
-    /* Aligns with the table container's style */
     margin-top: 0;
     padding: 16px 24px;
     background-color: white;
     border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
     position: sticky; 
     bottom: 0;
     z-index: 5;
-    
     display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .visa-table-container */
+    justify-content: flex-end;
     border-radius: 0 0 12px 12px; 
 }
 
@@ -203,7 +376,7 @@
     cursor: pointer;
     background: white;
     border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
+    color: #334155;
     transition: all 0.2s;
     min-width: 40px; 
     text-align: center;
@@ -211,14 +384,14 @@
 }
 
 .pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
+    background-color: #f1f5f9;
     border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
+    color: #0f172a;
+    transform: translateY(-1px);
 }
 
 .pagination-btn.active {
-    background-color: #0f172a; /* Primary dark color background for active page */
+    background-color: #0f172a;
     border-color: #0f172a;
     color: white;
     font-weight: 700;
@@ -226,7 +399,7 @@
 }
 
 .pagination-btn.active:hover {
-    background-color: #1e293b; /* Slightly darker primary on hover */
+    background-color: #1e293b;
     border-color: #1e293b;
     transform: translateY(-1px);
 }
@@ -245,7 +418,7 @@
 }
 
 
-/* Responsive */
+/* Responsive (Existing styles, just for completeness) */
 @media (max-width: 1366px) { .ferry-main { padding: 32px 40px; } }
 @media (max-width: 1024px) { 
     .ferry-main { margin-left: 0 !important; width: 100% !important; padding: 32px 30px; }

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Sidebar from '../../sidebar/sidebar';
-import { Anchor, Ship, Calendar, Ticket, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+// Added Search and Filter icons
+import { Anchor, Ship, Calendar, Ticket, Plus, ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
 import './FerryBooking.css';
 
 // Mock data increased to test pagination
@@ -37,10 +38,51 @@ const allBookings = [
 
 const ITEMS_PER_PAGE = 10;
 
+// Utility function to get unique statuses for the filter buttons
+const getUniqueStatuses = (bookings) => {
+    const statuses = new Set(bookings.map(b => b.status));
+    return ['All', ...Array.from(statuses)];
+};
+
 const FerryBooking = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    // New state for search and filter
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Issued', 'Pending', etc.
 
+    // Filter and Search Logic
+    const filteredBookings = useMemo(() => {
+        let bookings = allBookings;
+        let filtered = bookings;
+
+        // 1. Filter by Status
+        if (filterStatus !== 'All') {
+            filtered = filtered.filter(b => b.status === filterStatus);
+        }
+
+        // 2. Filter by Search Term
+        if (searchTerm.trim()) {
+            const lowercasedSearch = searchTerm.toLowerCase().trim();
+            filtered = filtered.filter(b =>
+                b.client.toLowerCase().includes(lowercasedSearch) ||
+                b.id.toLowerCase().includes(lowercasedSearch) ||
+                b.vessel.toLowerCase().includes(lowercasedSearch) ||
+                b.route.toLowerCase().includes(lowercasedSearch)
+            );
+        }
+
+        // Reset page to 1 after filtering/searching
+        if (currentPage !== 1) {
+            setCurrentPage(1);
+        }
+        
+        return filtered;
+    }, [filterStatus, searchTerm]); // Dependencies for re-calculation
+
+    const uniqueStatuses = useMemo(() => getUniqueStatuses(allBookings), [allBookings]);
+
+    // Update stats to reflect all data, not just the filtered view
     const stats = [
         { label: 'Total Bookings', value: allBookings.length, icon: <Ship size={24}/> },
         { label: 'Departing Today', value: '4', icon: <Calendar size={24}/> },
@@ -48,20 +90,29 @@ const FerryBooking = () => {
         { label: 'Cancellations', value: '1', icon: <Anchor size={24}/> },
     ];
 
-    // Pagination Logic
-    const totalPages = Math.ceil(allBookings.length / ITEMS_PER_PAGE);
+    // Pagination Logic on the filtered data
+    const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    const currentBookings = allBookings.slice(startIndex, endIndex);
+    const currentBookings = filteredBookings.slice(startIndex, endIndex);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
         }
     };
+    
+    // Function to handle status button click
+    const handleFilterClick = (status) => {
+        setFilterStatus(status);
+        setCurrentPage(1); // Always reset to page 1 on filter change
+    };
 
     const renderPageNumbers = () => {
         const pageNumbers = [];
+        // Only render pages if there are pages to show
+        if (totalPages === 0) return null;
+
         for (let i = 1; i <= totalPages; i++) {
             pageNumbers.push(
                 <li key={i}>
@@ -100,11 +151,44 @@ const FerryBooking = () => {
                         </div>
                     ))}
                 </div>
+                
+                {/* Search and Filter System */}
+                <div className="search-filter-card">
+                    <div className="search-filter-wrapper">
+                        {/* Search Bar */}
+                        <div className="search-box">
+                            <Search size={18} className="search-icon" />
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search by Ticket ID, Passenger, or Route..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Filter Buttons */}
+                        <div className="filter-buttons">
+                            <Filter size={18} style={{color: '#475569', alignSelf: 'center'}} />
+                            {uniqueStatuses.map((status) => (
+                                <button
+                                    key={status}
+                                    onClick={() => handleFilterClick(status)}
+                                    className={`filter-btn ${filterStatus === status ? `${status.replace(/\s/g, '')}-active` : ''} ${filterStatus === status && status === 'All' ? 'active' : ''}`}
+                                >
+                                    {status}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
 
                 <div className="ferry-table-container">
                     <table className="ferry-table">
                         <thead>
                             <tr>
+                                <th>#</th> 
                                 <th>Ticket ID</th>
                                 <th>Passenger</th>
                                 <th>Vessel Line</th>
@@ -116,18 +200,28 @@ const FerryBooking = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {currentBookings.map((item) => (
-                                <tr key={item.id}>
-                                    <td style={{fontWeight:'700'}}>{item.id}</td>
-                                    <td>{item.client}</td>
-                                    <td>{item.vessel}</td>
-                                    <td style={{fontFamily:'monospace'}}>{item.route}</td>
-                                    <td>{item.class}</td>
-                                    <td>{item.date}</td>
-                                    <td><span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span></td>
-                                    <td><button className="ferry-action-btn">View</button></td>
+                            {currentBookings.length > 0 ? (
+                                currentBookings.map((item, index) => (
+                                    <tr key={item.id}>
+                                        {/* Calculated Index: startIndex + index + 1 */}
+                                        <td className="row-index">{startIndex + index + 1}</td> 
+                                        <td style={{fontWeight:'700'}}>{item.id}</td>
+                                        <td>{item.client}</td>
+                                        <td>{item.vessel}</td>
+                                        <td style={{fontFamily:'monospace'}}>{item.route}</td>
+                                        <td>{item.class}</td>
+                                        <td>{item.date}</td>
+                                        <td><span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span></td>
+                                        <td><button className="ferry-action-btn">View</button></td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="9" style={{textAlign: 'center', padding: '24px'}}>
+                                        No bookings found matching your search and filter criteria.
+                                    </td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
 
