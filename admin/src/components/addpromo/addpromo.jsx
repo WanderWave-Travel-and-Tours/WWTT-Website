@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import toast, { Toaster } from 'react-hot-toast'; // Import toast and Toaster
 import './addpromo.css';
 import Sidebar from '../sidebar/sidebar';
 
@@ -26,39 +25,11 @@ const AddPromo = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOtherCategory, setIsOtherCategory] = useState(false);
 
-    // --- DATE VALIDATION LOGIC START ---
-    const getTomorrowDate = () => {
-        const today = new Date();
-        today.setDate(today.getDate() + 1);
-        return today.toISOString().split('T')[0];
-    };
-    
-    const getMaxStartDate = () => {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1); 
-        tomorrow.setFullYear(tomorrow.getFullYear() + 1);
-        return tomorrow.toISOString().split('T')[0];
-    }
-
-    const minStartDate = getTomorrowDate();
-    const maxStartDate = getMaxStartDate(); 
-    // --- DATE VALIDATION LOGIC END ---
-
-    // --- TOAST NOTIFICATION FUNCTION ---
-    const showErrorToast = (message) => {
-        toast.error(message, {
-            style: { border: '1px solid #ef4444', color: '#ef4444' },
-            iconTheme: { primary: '#ef4444', secondary: '#fff' },
-        });
-    };
-    // --- END TOAST NOTIFICATION FUNCTION ---
-
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
             const start = new Date(promoDetails.startDate);
             let endDate = new Date(start);
 
-            // 1. Calculate base end date based on duration type
             switch (promoDetails.durationType) {
                 case 'Weekly':
                     endDate.setDate(start.getDate() + 7);
@@ -71,15 +42,6 @@ const AddPromo = () => {
                     break;
                 default:
                     break;
-            }
-            
-            // 2. Calculate the absolute max end date (1 year from start date)
-            const maxEndDateLimit = new Date(start);
-            maxEndDateLimit.setFullYear(start.getFullYear() + 1);
-            
-            // 3. CAP THE END DATE
-            if (endDate.getTime() > maxEndDateLimit.getTime()) {
-                endDate = maxEndDateLimit;
             }
 
             if (!isNaN(endDate.getTime())) {
@@ -94,154 +56,10 @@ const AddPromo = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
-        if (name === 'discountValue') {
-            const isPercentage = promoDetails.discountType === 'Percentage';
-            
-            // Step 1: Clean the input value (removes signs/decimals if pasted)
-            let numericValueString = value.replace(/[^0-9]/g, '');
-
-            // Step 2: Allow clearing the input (empty string)
-            if (numericValueString === '') {
-                setPromoDetails(prevDetails => ({ ...prevDetails, [name]: '' }));
-                return;
-            }
-
-            // --- Updated Logic: Handle Leading Zeroes ---
-            // If the string starts with '0' and is longer than one character, remove leading zeros.
-            // Example: '0123' becomes '123'; '000' becomes '0'.
-            if (numericValueString.length > 1 && numericValueString.startsWith('0')) {
-                numericValueString = String(parseInt(numericValueString, 10)); 
-            }
-            
-            const numValue = parseInt(numericValueString, 10);
-            
-            if (isPercentage) {
-                // Percentage Check (0-100) - Handles paste events
-                if (numValue < 0 || numValue > 100) {
-                    showErrorToast('Discount Percentage must be a whole number between 0 and 100. Input has been reset.');
-                    setPromoDetails(prevDetails => ({ ...prevDetails, [name]: '' })); // AUTOMATIC RESET
-                    return;
-                }
-            } else { // Fixed Amount (Peso)
-                // New Logic: Max 6 digits check (Handles paste events)
-                if (numericValueString.length > 6) {
-                    showErrorToast('Discount amount must not exceed 6 digits. Input has been reset.');
-                    setPromoDetails(prevDetails => ({ ...prevDetails, [name]: '' })); 
-                    return;
-                }
-                 // Fixed amount check: ensure it's non-negative
-                 if (numValue < 0) { 
-                    showErrorToast('Discount amount must be a non-negative whole number. Input has been reset.');
-                    setPromoDetails(prevDetails => ({ ...prevDetails, [name]: '' })); 
-                    return;
-                }
-            }
-
-            // Update state with the clean numeric string if all checks pass
-            setPromoDetails(prevDetails => ({
-                ...prevDetails,
-                [name]: numericValueString
-            }));
-            return;
-        }
-
-        // Default handler for other fields
         setPromoDetails(prevDetails => ({
             ...prevDetails,
             [name]: value
         }));
-    };
-
-    /**
-     * Key Press Handler for Discount Value Input: Blocks all non-digit characters (signs)
-     * AND implements real-time maximum restrictions.
-     */
-    const handleDiscountValueKeyDown = (e) => {
-        // Allow functional keys (e.g., Backspace, Delete, Tab, Arrow Keys, Enter)
-        const isFunctionalKey = [
-            'Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'
-        ].includes(e.key);
-        
-        // Allow command keys (e.g., Ctrl+C, Ctrl+V, Ctrl+A)
-        if (isFunctionalKey || (e.ctrlKey || e.metaKey)) {
-            return;
-        }
-        
-        // Check if the pressed key is a digit (0-9)
-        const isDigit = /^\d$/.test(e.key);
-        
-        // Block non-digit keys (including signs/symbols)
-        if (!isDigit) {
-            e.preventDefault();
-            // Optional: You could show a toast here, but for key presses, preventing the action is usually sufficient.
-            return;
-        }
-        
-        const { discountType, discountValue } = promoDetails;
-        const currentValue = discountValue.toString();
-        const newKey = e.key;
-        
-        if (discountType === 'Percentage') {
-            // Logic: Real-time 100% restriction
-            if (currentValue === '10') {
-                if (newKey !== '0') {
-                    e.preventDefault();
-                    showErrorToast('Percentage value cannot exceed 100.');
-                    return;
-                }
-            }
-            
-            if (currentValue.length >= 2) {
-                if (currentValue === '100') {
-                    e.preventDefault();
-                    showErrorToast('Maximum percentage reached (100).');
-                    return;
-                }
-                
-                const resultingValue = parseInt(currentValue + newKey, 10);
-                
-                if (resultingValue > 100) {
-                    e.preventDefault();
-                    showErrorToast('Percentage value cannot exceed 100.');
-                    return;
-                }
-            }
-        } else { // Fixed Amount (Peso)
-            // New Logic: Real-time 6-digit restriction
-            if (currentValue.length >= 6) {
-                 e.preventDefault();
-                 showErrorToast('Fixed amount discount is limited to 6 digits.');
-                 return;
-            }
-            
-            // New Logic: Prevent typing '00' (The 'handleChange' handles '01' becoming '1')
-            if (currentValue === '0' && newKey === '0') {
-                e.preventDefault();
-                showErrorToast('Cannot start an amount with multiple zeroes (e.g., 00).');
-                return;
-            }
-        }
-    };
-    
-    /**
-     * Key Press Handler for Promo Code Name: Allows only alphanumeric characters.
-     */
-    const handleCodeKeyPress = (e) => {
-        const isFunctionalKey = [
-            'Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'
-        ].includes(e.key);
-        
-        if (isFunctionalKey || (e.ctrlKey || e.metaKey)) {
-            return;
-        }
-
-        const regex = /^[a-zA-Z0-9]$/;
-        if (!regex.test(e.key)) {
-            e.preventDefault();
-            // Optional: Toast for blocked key press for code
-            showErrorToast('Promo Code Name must be alphanumeric (A-Z, 0-9) only.');
-        }
     };
 
     const handleCategorySelect = (e) => {
@@ -259,16 +77,13 @@ const AddPromo = () => {
     const handleSubmit = async () => {
         if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
             !promoDetails.discountValue || !promoDetails.startDate) {
-            
-            // Replaced alert with toast notification
-            showErrorToast('Please fill in all required fields (Code, Description, Category, Discount Value, and Start Date).');
+            alert('Please fill in all required fields');
             return;
         }
 
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/promos/add', {
             const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
                 headers: {
@@ -280,10 +95,7 @@ const AddPromo = () => {
             const data = await response.json();
 
             if (response.ok) {
-                // Replaced alert with toast notification
-                toast.success(`Promo Code ${promoDetails.code} added successfully!`, {
-                    position: 'top-center'
-                });
+                alert(`Promo Code ${promoDetails.code} added successfully!`);
                 console.log('Saved Promo:', data);
 
                 setPromoDetails({
@@ -299,13 +111,11 @@ const AddPromo = () => {
                 });
                 setIsOtherCategory(false);
             } else {
-                // Replaced alert with toast notification
-                showErrorToast(`Error adding promo: ${data.message || 'Unknown error'}`);
+                alert(`Error adding promo: ${data.message || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Network Error:', error);
-            // Replaced alert with toast notification
-            showErrorToast('Failed to connect to the server. Please check if your backend is running.');
+            alert('Failed to connect to the server. Please check if your backend is running.');
         } finally {
             setIsSubmitting(false);
         }
@@ -324,25 +134,15 @@ const AddPromo = () => {
             startDate: ''
         });
         setIsOtherCategory(false);
-        toast('Form has been reset.', { 
-            icon: '👋',
-            position: 'top-center'
-        });
     };
 
     return (
         <div className="promo-page">
-            {/* TOASTER COMPONENT ADDED HERE for top-center notifications */}
-            <Toaster position="top-center" />
-            
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
             <main className={`promo-main ${isSidebarCollapsed ? "promo-main--collapsed" : ""}`}>
-            <main className={`promo-main ${
-                isSidebarCollapsed ? "promo-main--collapsed" : ""
-            }`}>
                 <div className="promo-container">
                     <header className="promo-header">
                         <div className="promo-header-content">
@@ -363,14 +163,9 @@ const AddPromo = () => {
                                             name="code"
                                             value={promoDetails.code}
                                             onChange={handleChange}
-                                            onKeyDown={handleCodeKeyPress}
-                                            maxLength="20"
-                                            placeholder="e.g., SUMMER2025 (Max 20 chars, Alphanumeric only)"
+                                            placeholder="e.g., SUMMER2025"
                                             style={{ textTransform: 'uppercase', letterSpacing: '1px' }}
                                         />
-                                        <small style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                                            Only alphanumeric characters (A-Z, 0-9) allowed. Maximum of 20 characters.
-                                        </small>
                                     </div>
 
                                     <div className="promo-field promo-field--full">
@@ -427,16 +222,14 @@ const AddPromo = () => {
                                     <div className="promo-field">
                                         <label>Discount Value</label>
                                         <input
-                                            type="text" 
+                                            type="number"
                                             name="discountValue"
                                             value={promoDetails.discountValue}
                                             onChange={handleChange}
-                                            onKeyDown={handleDiscountValueKeyDown} 
-                                            placeholder={promoDetails.discountType === 'Percentage' ? 'Enter % (0-100)' : 'Enter amount (Max 6 digits)'}
+                                            placeholder={promoDetails.discountType === 'Percentage' ? 'Enter %' : 'Enter amount'}
+                                            min="1"
+                                            max={promoDetails.discountType === 'Percentage' ? '100' : undefined}
                                         />
-                                        <small style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                                            {promoDetails.discountType === 'Percentage' ? 'Value must be between 0 and 100.' : 'Enter a non-negative whole number, maximum 6 digits.'}
-                                        </small>
                                     </div>
 
                                     <div className="promo-field">
@@ -459,16 +252,11 @@ const AddPromo = () => {
                                             name="startDate"
                                             value={promoDetails.startDate}
                                             onChange={handleChange}
-                                            min={minStartDate} 
-                                            max={maxStartDate} 
                                         />
-                                        <small style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                                            Start Date must be between tomorrow and one year from tomorrow.
-                                        </small>
                                     </div>
 
                                     <div className="promo-field promo-field--full">
-                                        <label>End Date (Auto-Calculated - Max 1 Year)</label>
+                                        <label>End Date (Auto-Calculated)</label>
                                         <input
                                             type="date"
                                             name="validUntil"
@@ -477,7 +265,7 @@ const AddPromo = () => {
                                             style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                                         />
                                         <small style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                                            Automatically calculated based on Duration Type and Start Date, but capped at a **maximum of 1 year** from the Start Date.
+                                            Automatically calculated based on Duration Type and Start Date
                                         </small>
                                     </div>
                                 </div>
