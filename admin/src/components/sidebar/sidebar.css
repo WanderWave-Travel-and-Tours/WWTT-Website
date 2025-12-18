@@ -7,8 +7,8 @@
   --text-active: #001F3F;
   --border-color: #e5e7eb;
   
-  --sidebar-width-full: 300px;
-  --sidebar-width-mini: 90px;
+  --sidebar-width-full: 300px; /* Updated: 300px */
+  --sidebar-width-mini: 90px; /* Updated: 90px */
 }
 
 .sidebar-container {

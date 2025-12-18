@@ -8,14 +8,14 @@
 /* Main Content Area (yung nasa kanan ng sidebar) */
 .dash-main {
   flex: 1;
-  margin-left: 280px; /* Sidebar width */
+  margin-left: 300px; /* Sidebar width (Updated from 280px to match new sidebar.css) */
   padding: 40px 5%; /* Responsive padding (5% sa gilid para di sagad sa wide screen) */
   font-family: 'Inter', 'Segoe UI', sans-serif;
   transition: margin-left 0.3s ease;
 }
 
 .dash-main--collapsed {
-  margin-left: 70px;
+  margin-left: 90px; /* Collapsed Sidebar width (Updated from 70px to match new sidebar.css) */
 }
 
 /* Global Reset */
@@ -23,7 +23,7 @@
   box-sizing: border-box;
 }
 
-/* --- THE FIX IS HERE --- */
+/* --- THE FIX IS HERE (General Layout) --- */
 .dash-container {
   max-width: 1400px; /* Mas malaki para kasya yung 4 cards side-by-side */
   margin: 0 auto;
@@ -66,6 +66,50 @@
   to { transform: rotate(360deg); }
 }
 
+/* ------------------------------------------------------------------- */
+/* --- TABLE/CARD VIEW STYLES (New Section for Responsive Table) --- */
+/* ------------------------------------------------------------------- */
+
+.table-responsive-container {
+  overflow-x: auto; /* Allows horizontal scrolling on desktop/tablet if content is too wide */
+  width: 100%;
+}
+
+.bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.bookings-table th, .bookings-table td {
+  padding: 1rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0; /* Light border for rows */
+}
+
+.bookings-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b; /* Slate-500 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Specific Column Widths for Desktop */
+.bookings-table col:nth-child(1) { width: 40px; }  /* # */
+.bookings-table col:nth-child(2) { width: 15%; }   /* Booking ID */
+.bookings-table col:nth-child(3) { width: 20%; }   /* Customer Details */
+.bookings-table col:nth-child(4) { width: 18%; }   /* Package */
+.bookings-table col:nth-child(5) { width: 12%; }   /* Travel Date */
+.bookings-table col:nth-child(6) { width: 7%; }    /* Guests */
+.bookings-table col:nth-child(7) { width: 10%; }   /* Amount */
+.bookings-table col:nth-child(8) { width: 8%; }    /* Status */
+.bookings-table col:nth-child(9) { width: 10%; }   /* Actions */
+
+
+/* --- MEDIA QUERIES --- */
+
+/* Tablet/Small Desktop */
 @media (max-width: 1200px) {
   .dash-main {
     padding: 32px;
@@ -76,29 +120,102 @@
   }
 }
 
+/* Tablet Portrait/Sidebar Collapsed */
 @media (max-width: 900px) {
   .dash-main { 
-    margin-left: 70px; 
+    margin-left: 90px; /* Align with collapsed sidebar width */
     padding: 24px; 
   }
   
   .dash-main--collapsed { 
-    margin-left: 70px; 
+    margin-left: 90px; 
   }
   
   .dash-grid { 
-    grid-template-columns: 1fr; 
+    grid-template-columns: 1fr; /* Stack charts/sections vertically */
   }
 }
 
-/* Mobile */
+/* Mobile View: Convert Table to Cards (Crucial part for the visual) */
 @media (max-width: 640px) {
+  /* Main content adjustments */
   .dash-main { 
     padding: 16px; 
-    margin-left: 0;
+    margin-left: 0; /* Full width on mobile, sidebar hidden or accessed via overlay/toggle */
   }
   
   .dash-container {
     gap: 24px; 
+  }
+
+  /* Table to Card View Transformation */
+  .table-responsive-container {
+    overflow-x: hidden; /* No horizontal scroll on mobile */
+  }
+
+  .bookings-table {
+    display: block; /* Treat table as a block element */
+    width: 100%;
+    border: none;
+  }
+
+  /* Hide table header */
+  .bookings-table thead {
+    display: none;
+  }
+
+  /* Each table row becomes a card */
+  .bookings-table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    background: white;
+    padding: 1rem;
+    border-radius: 12px; /* Soft rounding */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Subtle shadow like in the image */
+    border: 1px solid #e5e7eb;
+  }
+
+  /* Each table data cell becomes a flex item within the card (row) */
+  .bookings-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: none; /* Remove horizontal lines within the card */
+    padding: 0.5rem 0; /* Adjust padding for stack */
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  /* Add a data-label for a visual label on mobile (like in the image) */
+  .bookings-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+  }
+
+  /* Specific styling for the first TD (Booking ID + Customer Details) 
+     and the last TD (Actions) to match the visual */
+  .bookings-table td:nth-of-type(1) { /* Booking ID (assuming first TD is Booking ID) */
+    display: block;
+    padding-top: 0;
+  }
+  .bookings-table td:nth-of-type(1)::before {
+    content: none; /* Hide label for the main ID/Details block */
+  }
+  
+  .bookings-table td:nth-last-of-type(1) { /* Actions column */
+    display: flex;
+    justify-content: flex-end; /* Align to the right */
+    gap: 0.5rem;
+    padding-bottom: 0;
+    margin-top: 1rem;
+    border-top: 1px solid #e5e7eb; /* Separator for actions */
+    padding-top: 1rem;
+  }
+  .bookings-table td:nth-last-of-type(1)::before {
+    content: 'Actions';
+    margin-right: auto; /* Push the label to the left */
   }
 }

@@ -3,7 +3,7 @@ import Sidebar from '../sidebar/sidebar';
 import './viewpackages.css';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
+const API_BASE_URL = 'http://localhost:5000/api/packages';
 
 const ViewPackages = () => {
     const [packages, setPackages] = useState([]);
@@ -11,16 +11,12 @@ const ViewPackages = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
-
-    // 1. Sidebar State Management
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-    // 2. Sidebar Toggle Function
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
 
-    // Redirection useEffect
     useEffect(() => {
         const isLoggedIn = localStorage.getItem('adminToken');
         if (!isLoggedIn) {
@@ -28,26 +24,26 @@ const ViewPackages = () => {
         }
     }, [navigate]);
 
-    // Data Fetching useEffect
-    useEffect(() => {
-        const fetchPackages = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/all`);
-                const result = await response.json();
+    const fetchPackages = async () => {
+        try {
+            // Kinukuha ang data mula sa /all endpoint na naka-filter na sa "No"
+            const response = await fetch(`${API_BASE_URL}/all`);
+            const result = await response.json();
 
-                if (result.status === 'ok') {
-                    setPackages(result.data);
-                } else {
-                    setError('Error: ' + (result.error || 'Failed to fetch data.'));
-                }
-            } catch (err) {
-                console.error('Fetch error:', err);
-                setError('Network error: Could not connect to the server.');
-            } finally {
-                setLoading(false);
+            if (result.status === 'ok') {
+                setPackages(result.data);
+            } else {
+                setError('Error: ' + (result.error || 'Failed to fetch data.'));
             }
-        };
+        } catch (err) {
+            console.error('Fetch error:', err);
+            setError('Network error: Could not connect to the server.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchPackages();
     }, []);
 
@@ -55,11 +51,38 @@ const ViewPackages = () => {
         navigate(`/edit-package`, { state: { packageId: packageId } });
     };
 
+    const handleArchive = async (packageId) => {
+        if (window.confirm("Are you sure you want to archive this package? It will be moved to the archive section.")) {
+            try {
+                // Tinatawag ang archive endpoint
+                const response = await fetch(`${API_BASE_URL}/${packageId}/archive`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'ok') {
+                    alert("Package archived successfully!");
+                    // Tinatanggal ang in-archive na package sa UI state
+                    setPackages(prevPackages => prevPackages.filter(pkg => pkg._id !== packageId));
+                } else {
+                    alert("Failed to archive: " + (result.message || "Unknown error"));
+                }
+            } catch (err) {
+                console.error("Error archiving:", err);
+                alert("An error occurred while archiving the package.");
+            }
+        }
+    };
+
     const handleSearchChange = (event) => {
         setSearchTerm(event.target.value);
     };
 
-    // Filter packages based on the search term (case-insensitive title search)
+    // Filter logic para sa search bar
     const filteredPackages = packages.filter(pkg =>
         pkg.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -67,11 +90,10 @@ const ViewPackages = () => {
     if (loading) {
         return (
             <div className="packages-page">
-               
                 <main className={`packages-main ${isSidebarCollapsed ? 'packages-main--collapsed' : ''}`}>
                     <div className="packages-loader">
                         <div className="packages-spinner"></div>
-                        <p>Loading packages...</p>
+                        <p>Loading active packages...</p>
                     </div>
                 </main>
             </div>
@@ -81,9 +103,7 @@ const ViewPackages = () => {
     if (error) {
         return (
             <div className="packages-page">
-                {/* 3A. Pass props to Sidebar in error state */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* 3B. Use dynamic class on main content in error state */}
                 <main className={`packages-main ${isSidebarCollapsed ? 'packages-main--collapsed' : ''}`}>
                     <div className="packages-error">
                         <span className="packages-error-icon">⚠️</span>
@@ -93,26 +113,23 @@ const ViewPackages = () => {
             </div>
         );
     }
- 
+
     return (
         <div className="packages-page">
-            {/* 3A. Pass props to Sidebar in main render */}
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
-            {/* 3B. Use dynamic class on main content in main render */}
             <main className={`packages-main ${isSidebarCollapsed ? 'packages-main--collapsed' : ''}`}>
                 <div className="packages-container">
                     <header className="packages-header">
                         <div className="packages-header-left">
-                            <h1 className="packages-title">TOUR PACKAGES</h1>
-                            <p className="packages-subtitle">Manage your travel packages ({packages.length} total)</p>
+                            <h1 className="packages-title">ACTIVE TOUR PACKAGES</h1>
+                            <p className="packages-subtitle">Viewing packages with isArchive: "No" ({packages.length} items)</p>
                         </div>
                         <div className="packages-header-right">
-                            {/* Search Input Field */}
                             <div className="packages-search-bar">
                                 <input
                                     type="text"
-                                    placeholder="Search by package title..."
+                                    placeholder="Search active packages..."
                                     value={searchTerm}
                                     onChange={handleSearchChange}
                                     className="packages-search-input"
@@ -122,7 +139,6 @@ const ViewPackages = () => {
                                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                 </svg>
                             </div>
-                            {/* Add New Package Button */}
                             <button className="packages-btn packages-btn--add" onClick={() => navigate('/add-package')}>
                                 + Add New Package
                             </button>
@@ -132,21 +148,16 @@ const ViewPackages = () => {
                     {filteredPackages.length === 0 ? (
                         <div className="packages-empty">
                             <span className="packages-empty-icon">📦</span>
-                            <h3>{searchTerm ? `No packages found for "${searchTerm}"` : 'No packages yet'}</h3>
-                            <p>{searchTerm ? 'Try a different search term.' : 'Start by adding your first tour package'}</p>
-                            {!searchTerm && ( // Only show 'Add Package' button if not in search mode
-                                <button className="packages-btn packages-btn--add" onClick={() => navigate('/add-package')}>
-                                    + Add Package
-                                </button>
-                            )}
+                            <h3>{searchTerm ? `No active packages found for "${searchTerm}"` : 'No active packages'}</h3>
+                            <p>All archived packages are moved to the Archive List.</p>
                         </div>
                     ) : (
                         <div className="packages-grid">
-                            {filteredPackages.map((pkg) => ( // Use filteredPackages here
+                            {filteredPackages.map((pkg) => (
                                 <div key={pkg._id} className="pkg-card">
                                     <div className="pkg-card-image">
                                         <img 
-                                            src={`https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`} 
+                                            src={`http://localhost:5000/uploads/${pkg.image}`} 
                                             alt={pkg.title} 
                                         />
                                         <span className="pkg-card-category">{pkg.category}</span>
@@ -185,8 +196,12 @@ const ViewPackages = () => {
                                                 >
                                                     Edit
                                                 </button>
-                                                <button className="pkg-btn pkg-btn--delete">
-                                                    Delete
+                                                <button 
+                                                    className="pkg-btn pkg-btn--delete"
+                                                    onClick={() => handleArchive(pkg._id)}
+                                                    style={{ backgroundColor: '#dc3545' }} // Ginawang pula para sa Archive action
+                                                >
+                                                    Archive
                                                 </button>
                                             </div>
                                         </div>
@@ -201,4 +216,4 @@ const ViewPackages = () => {
     );
 };
 
-export default ViewPackages; 
+export default ViewPackages;

@@ -1,12 +1,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ToastProvider } from './components/toast/ToastManager'; // 👈 ADD THIS IMPORT
 
 // Main Components 
 import Login from './components/login/login.jsx'; 
 import Dashboard from './components/dashboard/dashboard.jsx'; 
 import Booking from './components/booking/booking.jsx';
 import Settings from './components/settings/settings.jsx'; 
-import Archive from './components/archive/Archive.jsx'; // NEW ARCHIVE IMPORT
+import Archive from './components/archive/Archive.jsx'; 
 
 // Packages
 import AddPackage from './components/addpackage/addpackage.jsx';
@@ -20,7 +21,7 @@ import ViewTours from './components/viewtours/viewtours.jsx';
 // Promos & Posters
 import AddPromo from './components/addpromo/addpromo.jsx';
 import ViewPromos from './components/viewpromos/viewpromos.jsx';
-import AddPoster from './components/addposter/addposter.jsx';       
+import AddPoster from './components/addposter/addposter.jsx';       
 import ViewPoster from './components/viewposter/viewposter.jsx'; 
 
 // Blogs
@@ -41,11 +42,11 @@ import ViewDeal from './components/viewdeals/viewdeals.jsx';
 import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
 
-// --- NEW SERVICE MANAGEMENT IMPORTS ---
+// --- SERVICE MANAGEMENT IMPORTS ---
 import AddService from './components/addservice/addservice.jsx';
 import ViewServices from './components/viewservice/viewservice.jsx';
 
-// --- SERVICE MANAGEMENT IMPORTS ---
+// --- SPECIFIC SERVICES IMPORTS ---
 import VisaProcessing from './components/services/VisaProcessing/VisaProcessing.jsx';
 import PSASerbilis from './components/services/PSASerbilis/PSASerbilis.jsx';
 import CenomarRequest from './components/services/CenomarRequest/CenomarRequest.jsx';

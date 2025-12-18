@@ -2,7 +2,8 @@ import React from 'react';
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
 import './packageCard.css';
 
-function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, currency = 'PHP', exchangeRate = 58 }) { 
+// Added isLoggedIn and onLoginRequired props
+function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, currency = 'PHP', exchangeRate = 58, isLoggedIn, onLoginRequired }) { 
   
   const displayPrice = currency === 'PHP' 
     ? pkg.price 
@@ -13,6 +14,18 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
     : (pkg.originalPrice / exchangeRate);
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
+
+  // UPDATED: Handler function for the favorite button - Added logic to check login status
+const handleFavoriteClick = (e) => {
+    e.stopPropagation();
+    
+    if (isLoggedIn) {
+      // Passes the package ID (which is the promo_id) to the handler
+      onToggleFavorite(pkg.id); // <--- This passes the promo ID
+    } else {
+      onLoginRequired();
+    }
+  };
 
   return (
     <div className="package-card">
@@ -27,10 +40,7 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
       
       <button 
         className={`favorite-button ${isFavorite ? 'active' : ''}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite(pkg.id);
-        }}
+        onClick={handleFavoriteClick} // Gagamitin ang new handler
         aria-label="Add to favorites"
       >
         <Heart strokeWidth={2.5} fill={isFavorite ? 'currentColor' : 'none'} />
@@ -39,7 +49,7 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
       <div className="card-image">
         <img src={pkg.image} alt={pkg.name} className="image-content" />
       </div>
-
+      {/* ... (rest of the component) ... */}
       <div className="card-body">
         <div>
           <div className="card-header">

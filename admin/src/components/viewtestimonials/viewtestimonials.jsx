@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react'; 
-import Sidebar from '../sidebar/sidebar';
-import './viewtestimonials.css';
+import Sidebar from '../sidebar/sidebar'; //
+import './viewtestimonials.css'; //
 
 const ViewTestimonials = () => {
 
-    // --- SIDEBAR TOGGLE LOGIC START ---
+    // --- SIDEBAR TOGGLE LOGIC (Existing) ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
-    // --- SIDEBAR TOGGLE LOGIC END ---
+    }; //
 
-    const [testimonials, setTestimonials] = useState([]);
+    const [testimonials, setTestimonials] = useState([]); //
 
     const fetchTestimonials = async () => {
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials');
+            const response = await fetch('http://localhost:5000/api/testimonials');
             if (!response.ok) {
                 throw new Error('Failed to fetch');
             }
@@ -24,16 +23,37 @@ const ViewTestimonials = () => {
         } catch (error) {
             console.error("Error fetching testimonials:", error);
         }
-    };
+    }; //
 
     useEffect(() => {
         fetchTestimonials();
-    }, []);
+    }, []); //
 
-    const handleDelete = async (id, name) => {
-        if (window.confirm(`Are you sure you want to delete the testimonial from ${name}?`)) {
-            setTestimonials(testimonials.filter(t => t._id !== id));
-            alert(`Testimonial from ${name} has been deleted (from view).`);
+    // MODIFIED: handleDelete ay naging handleArchive na ngayon
+    const handleArchive = async (id, name) => {
+        if (window.confirm(`Are you sure you want to archive the testimonial of ${name}?`)) {
+            try {
+                // Tatawag sa PATCH route na ginawa natin sa itaas
+                const response = await fetch(`http://localhost:5000/api/testimonials/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ isArchive: "Yes" }),
+                });
+
+                if (response.ok) {
+                    // I-update ang UI list
+                    setTestimonials(prev => prev.map(t => 
+                        t._id === id ? { ...t, isArchive: "Yes" } : t
+                    ));
+                    alert(`The testimonial of ${name} has been successfully archived.`);
+                } else {
+                    alert("Error archiving testimonial");
+                }
+            } catch (error) {
+                console.error("Error archiving testimonial:", error);
+            }
         }
     };
 
@@ -44,7 +64,10 @@ const ViewTestimonials = () => {
         if (s.includes('website')) return 'website';
         if (s.includes('email')) return 'email';
         return 'default';
-    };
+    }; //
+
+    // --- LOGIC: Filter para mga naka isArchive === "No" lang ang ididisplay ---
+    const activeTestimonials = testimonials.filter(t => t.isArchive === "No");
 
     return (
         <div className="vtest-page">
@@ -58,7 +81,7 @@ const ViewTestimonials = () => {
                         <div className="vtest-header-left">
                             <h1 className="vtest-title">TESTIMONIALS</h1>
                             <p className="vtest-subtitle">
-                                Managing {testimonials.length} customer reviews from various sources
+                                Managing {activeTestimonials.length} active customer reviews
                             </p>
                         </div>
                         <button className="vtest-btn vtest-btn--add" onClick={() => window.location.href='/add-testimonial'}>
@@ -66,26 +89,26 @@ const ViewTestimonials = () => {
                         </button>
                     </header>
 
-                    {testimonials.length === 0 ? (
+                    {activeTestimonials.length === 0 ? (
                         <div className="vtest-empty">
                             <span className="vtest-empty-icon">⭐</span>
-                            <h3>No testimonials yet</h3>
+                            <h3>No active testimonials</h3>
                             <p>Customer reviews will appear here</p>
                         </div>
                     ) : (
                         <div className="vtest-grid">
-                            {testimonials.map(t => (
+                            {activeTestimonials.map(t => (
                                 <div key={t._id} className="vtest-card">
                                     <div className="vtest-card-header">
                                         <img 
                                             src={
                                                 t.customerImage 
-                                                ? `https://wanderwaveph-backend.onrender.com/uploads/${t.customerImage}` 
+                                                ? `http://localhost:5000/uploads/${t.customerImage}` 
                                                 : 'https://via.placeholder.com/150?text=No+Img'
                                             } 
                                             alt={`Profile of ${t.customerName}`} 
                                             className="vtest-avatar" 
-                                            onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Error"; }}
+                                            onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
                                         />
                                         <div className="vtest-user">
                                             <h3 className="vtest-name">{t.customerName}</h3>
@@ -106,11 +129,13 @@ const ViewTestimonials = () => {
                                         <div className="vtest-rating">
                                             <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
                                         </div>
+                                        {/* MODIFIED: Archive Button */}
                                         <button 
                                             className="vtest-delete-btn"
-                                            onClick={() => handleDelete(t._id, t.customerName)}
+                                            style={{ backgroundColor: '#f39c12', color: 'white' }} 
+                                            onClick={() => handleArchive(t._id, t.customerName)}
                                         >
-                                            Delete
+                                            Archive
                                         </button>
                                     </div>
                                 </div>
@@ -118,21 +143,22 @@ const ViewTestimonials = () => {
                         </div>
                     )}
 
+                    {/* Stats Computed based on Active Testimonials */}
                     <div className="vtest-stats">
                         <div className="vtest-stat">
-                            <strong>{testimonials.length}</strong>
-                            <span>Total Reviews</span>
+                            <strong>{activeTestimonials.length}</strong>
+                            <span>Active Reviews</span>
                         </div>
                         <div className="vtest-stat">
-                            <strong>{testimonials.filter(t => t.source && t.source.toLowerCase().includes('facebook')).length}</strong>
+                            <strong>{activeTestimonials.filter(t => t.source && t.source.toLowerCase().includes('facebook')).length}</strong>
                             <span>Facebook</span>
                         </div>
                         <div className="vtest-stat">
-                            <strong>{testimonials.filter(t => t.source && t.source.toLowerCase().includes('website')).length}</strong>
+                            <strong>{activeTestimonials.filter(t => t.source && t.source.toLowerCase().includes('website')).length}</strong>
                             <span>Website</span>
                         </div>
                         <div className="vtest-stat">
-                            <strong>{testimonials.filter(t => t.source && t.source.toLowerCase().includes('email')).length}</strong>
+                            <strong>{activeTestimonials.filter(t => t.source && t.source.toLowerCase().includes('email')).length}</strong>
                             <span>Email</span>
                         </div>
                     </div>

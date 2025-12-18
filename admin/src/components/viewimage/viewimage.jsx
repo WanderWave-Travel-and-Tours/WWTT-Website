@@ -23,7 +23,7 @@ const ViewImage = () => {
     const fetchImages = async () => {
         setLoading(true);
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/images');
+            const response = await fetch('http://localhost:5000/api/images');
             const data = await response.json();
             setImages(data);
         } catch (error) {
@@ -36,7 +36,7 @@ const ViewImage = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Delete this image?')) {
             try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/images/${id}`, {
+                const response = await fetch(`http://localhost:5000/api/images/${id}`, {
                     method: 'DELETE'
                 });
                 if (response.ok) {

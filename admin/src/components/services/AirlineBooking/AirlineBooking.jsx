@@ -71,7 +71,7 @@ const AirlineBooking = () => {
     // Fetch flight booking inquiries from database
     const fetchFlightBookings = async () => {
         try {
-            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries');
+            const response = await axios.get('http://localhost:5000/api/inquiries');
             if (response.data.success) {
                 const flightRequests = response.data.data.filter(inq => 
                     inq.inquiryType === 'FLIGHT_BOOKING'
@@ -176,7 +176,7 @@ const AirlineBooking = () => {
     const handleUpdateBookingStatus = async (bookingId, newStatus) => {
         try {
             const response = await axios.put(
-                `https://wanderwaveph-backend.onrender.com/api/inquiries/${bookingId}/status`,
+                `http://localhost:5000/api/inquiries/${bookingId}/status`,
                 { status: newStatus }
             );
 
@@ -212,7 +212,7 @@ const AirlineBooking = () => {
             }
 
             const response = await axios.put(
-                `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/status`,
+                `http://localhost:5000/api/inquiries/${selectedBooking._id}/status`,
                 formData,
                 {
                     headers: { 'Content-Type': 'multipart/form-data' }
@@ -245,7 +245,7 @@ const AirlineBooking = () => {
         if (window.confirm('Send payment request to client?')) {
             try {
                 const response = await axios.post(
-                    `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/request-payment`
+                    `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`
                 );
                 
                 if (response.data.success) {
@@ -393,6 +393,7 @@ const AirlineBooking = () => {
                                 <table className="airline-table">
                                     <thead>
                                         <tr>
+                                            <th>#</th> {/* ADDED INDEX COLUMN */}
                                             <th>Reference</th>
                                             <th>Client Name</th>
                                             <th>Email</th>
@@ -403,8 +404,13 @@ const AirlineBooking = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {currentBookings.map((booking) => (
+                                        {currentBookings.map((booking, index) => ( // ADDED index
                                             <tr key={booking._id}>
+                                                {/* ADDED ROW NUMBER */}
+                                                <td style={{ fontWeight: '700', color: '#0f172a' }}>
+                                                    {indexOfFirstBooking + index + 1} 
+                                                </td>
+                                                {/* REFERENCE ID */}
                                                 <td style={{ fontWeight: '700', color: '#0f172a' }}>
                                                     {booking._id.slice(-6).toUpperCase()}
                                                 </td>
@@ -501,7 +507,7 @@ const AirlineBooking = () => {
                                     <div className="airline-detail-item full-width">
                                         <label>Evidence/Attachment</label>
                                         <a 
-                                            href={`https://wanderwaveph-backend.onrender.com${selectedBooking.evidenceUrl}`}
+                                            href={`http://localhost:5000${selectedBooking.evidenceUrl}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="airline-evidence-link"

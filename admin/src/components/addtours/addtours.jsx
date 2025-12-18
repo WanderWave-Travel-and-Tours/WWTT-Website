@@ -1,139 +1,124 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 import "./addtours.css";
+import { useToast } from "../toast/ToastManager"; // Import useToast hook
+
+// Import the renamed sub-components
+import TourBasicInfo from "./TourBasicInfo";
+import TourImageUpload from "./TourImageUpload";
+import TourPricing from "./TourPricing";
+import TourInclusions from "./TourInclusions";
+import TourPreview from "./TourPreview";
 
 const AddTour = () => {
-  // --- SIDEBAR LOGIC START ---
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-  // --- SIDEBAR LOGIC END ---
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  const [title, setTitle] = useState("");
-  const [destination, setDestination] = useState("");
-  const [supplierRate, setSupplierRate] = useState("");
-  const [markupValue, setMarkupValue] = useState("");
-  const [markupType, setMarkupType] = useState("peso");
-  const [price, setPrice] = useState("");
-  const [duration, setDuration] = useState("");
-  const [category, setCategory] = useState("Local");
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [inclusions, setInclusions] = useState([""]);
-  const [isPasteActive, setIsPasteActive] = useState(false);
+  // Toast hook
+  const toast = useToast();
 
-  const pasteAreaRef = useRef(null);
+  // State Management
+  const [tourTitle, setTourTitle] = useState("");
+  const [tourDest, setTourDest] = useState("");
+  const [tourSupplier, setTourSupplier] = useState("");
+  const [tourMarkup, setTourMarkup] = useState("");
+  const [tourMarkupType, setTourMarkupType] = useState("peso");
+  const [tourPrice, setTourPrice] = useState("");
+  const [tourDuration, setTourDuration] = useState("");
+  const [tourCat, setTourCat] = useState("Local");
+  const [tourFile, setTourFile] = useState(null);
+  const [tourPreviewUrl, setTourPreviewUrl] = useState(null);
+  const [tourIncs, setTourIncs] = useState([""]);
+  const [isTourPasteActive, setIsTourPasteActive] = useState(false);
+
+  const tourPasteRef = useRef(null);
   const navigate = useNavigate();
 
-  const calculateTotalPrice = (supplier, markup, type) => {
-    const supplierValue = parseFloat(supplier) || 0;
-    const markupVal = parseFloat(markup) || 0;
-
-    if (supplierValue > 0 && markupVal > 0) {
-      let total;
-      if (type === "percentage") {
-        total = supplierValue + supplierValue * (markupVal / 100);
-      } else {
-        total = supplierValue + markupVal;
-      }
-      setPrice(total.toFixed(2));
-    } else if (supplierValue > 0) {
-      setPrice(supplierValue.toFixed(2));
+  const calculateTourTotal = useCallback((supp, mark, type) => {
+    const sVal = parseFloat(supp) || 0;
+    const mVal = parseFloat(mark) || 0;
+    if (sVal > 0) {
+      let total =
+        type === "percentage" ? sVal + sVal * (mVal / 100) : sVal + mVal;
+      setTourPrice(total.toFixed(2));
     } else {
-      setPrice("");
+      setTourPrice("");
     }
+  }, []);
+
+  const handleTourSuppChange = (val) => {
+    setTourSupplier(val);
+    calculateTourTotal(val, tourMarkup, tourMarkupType);
   };
 
-  const handleSupplierRateChange = (value) => {
-    setSupplierRate(value);
-    calculateTotalPrice(value, markupValue, markupType);
+  const handleTourMarkChange = (val) => {
+    setTourMarkup(val);
+    calculateTourTotal(tourSupplier, val, tourMarkupType);
   };
 
-  const handleMarkupChange = (value) => {
-    setMarkupValue(value);
-    calculateTotalPrice(supplierRate, value, markupType);
+  const toggleTourMarkType = () => {
+    const nextType = tourMarkupType === "percentage" ? "peso" : "percentage";
+    setTourMarkupType(nextType);
+    setTourMarkup("");
+    setTourPrice(tourSupplier ? parseFloat(tourSupplier).toFixed(2) : "");
   };
 
-  const toggleMarkupType = () => {
-    const newType = markupType === "percentage" ? "peso" : "percentage";
-    setMarkupType(newType);
-    setMarkupValue(""); 
-    
-    if (supplierRate) {
-      setPrice(parseFloat(supplierRate).toFixed(2));
-    } else {
-      setPrice("");
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const selected = e.target.files[0];
-    if (selected) {
-      setFile(selected);
-      setPreviewUrl(URL.createObjectURL(selected));
-    }
-  };
-
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const items = e.clipboardData?.items;
-
-    if (items) {
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf("image") !== -1) {
-          const blob = items[i].getAsFile();
-          if (blob) {
-            setFile(blob);
-            setPreviewUrl(URL.createObjectURL(blob));
-            setIsPasteActive(false);
-          }
-          break;
-        }
-      }
+  const handleTourFile = (e) => {
+    const sel = e.target.files[0];
+    if (sel) {
+      setTourFile(sel);
+      setTourPreviewUrl(URL.createObjectURL(sel));
+      setIsTourPasteActive(false);
     }
   };
 
   useEffect(() => {
-    const handleGlobalPaste = (e) => {
-      if (isPasteActive && pasteAreaRef.current) {
-        handlePaste(e);
+    const handleGlobalTourPaste = (e) => {
+      if (isTourPasteActive) {
+        const items = e.clipboardData?.items;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf("image") !== -1) {
+            const blob = items[i].getAsFile();
+            setTourFile(blob);
+            setTourPreviewUrl(URL.createObjectURL(blob));
+            setIsTourPasteActive(false);
+            break;
+          }
+        }
       }
     };
+    document.addEventListener("paste", handleGlobalTourPaste);
+    return () => document.removeEventListener("paste", handleGlobalTourPaste);
+  }, [isTourPasteActive]);
 
-    document.addEventListener("paste", handleGlobalPaste);
-
-    return () => {
-      document.removeEventListener("paste", handleGlobalPaste);
-    };
-  }, [isPasteActive]);
-
-  const activatePasteArea = () => {
-    setIsPasteActive(true);
-    if (pasteAreaRef.current) {
-      pasteAreaRef.current.focus();
-    }
-  };
-
-  const addInclusion = () => setInclusions([...inclusions, ""]);
-  const removeInclusion = (i) =>
-    setInclusions(inclusions.filter((_, idx) => idx !== i));
-  const handleIncChange = (i, val) =>
-    setInclusions(inclusions.map((item, idx) => (idx === i ? val : item)));
-
-  const handleSubmit = async (e) => {
+  const handleSubmitTour = async (e) => {
     e.preventDefault();
     
-    const processedInclusions = inclusions.filter(
-      (item) => item.trim().length > 0
-    );
+    // Validation with Toast notifications
+    if (!tourFile) {
+      toast.error("Please upload an image for the tour.", "Missing Image");
+      return;
+    }
 
-    const supplierRateNum = parseFloat(supplierRate) || 0;
-    const markupValueNum = parseFloat(markupValue) || 0;
+    if (!tourTitle.trim() || !tourDest.trim() || !tourDuration.trim()) {
+      toast.error("Please fill in all required fields.", "Incomplete Form");
+      return;
+    }
+
+    if (!tourSupplier || !tourMarkup) {
+      toast.error("Please enter supplier rate and markup.", "Missing Pricing");
+      return;
+    }
+
+    const finalIncs = tourIncs.filter((item) => item.trim());
+    
+    // Calculate markup in peso
+    const supplierRateNum = parseFloat(tourSupplier) || 0;
+    const markupValueNum = parseFloat(tourMarkup) || 0;
     
     let markupInPeso = 0;
-    if (markupType === "percentage") {
+    if (tourMarkupType === "percentage") {
       markupInPeso = (supplierRateNum * markupValueNum) / 100;
     } else {
       markupInPeso = markupValueNum;
@@ -142,346 +127,151 @@ const AddTour = () => {
     markupInPeso = Math.round(markupInPeso * 100) / 100;
 
     const formData = new FormData();
-    formData.append("title", title);
-    formData.append("destination", destination);
+    formData.append("title", tourTitle.trim());
+    formData.append("destination", tourDest.trim());
     formData.append("sellerPrice", supplierRateNum.toString());
     formData.append("markup", markupInPeso.toString());
-    formData.append("duration", duration);
-    formData.append("category", category); // Local or International
-    
-    formData.append("inclusions", JSON.stringify(processedInclusions));
+    formData.append("duration", tourDuration.trim());
+    formData.append("category", tourCat);
+    formData.append("inclusions", JSON.stringify(finalIncs));
+    formData.append("image", tourFile);
 
-    if (file) {
-      formData.append("image", file);
-    } else {
-      alert("Please upload an image for the tour.");
-      return;
-    }
+    // Show loading toast
+    toast.info("Uploading tour package...", "Please Wait", 2000);
 
     try {
-      const response = await fetch("https://wanderwaveph-backend.onrender.com/api/tours/add", {
+      const res = await fetch("http://localhost:5000/api/tours/add", {
         method: "POST",
         body: formData,
       });
-      const data = await response.json();
-      if (response.ok) {
-        alert("✅ Tour Added Successfully!");
-        setTitle("");
-        setDestination("");
-        setSupplierRate("");
-        setMarkupValue("");
-        setPrice("");
-        setDuration("");
-        setCategory("Local");
-        setFile(null);
-        setPreviewUrl(null);
-        setInclusions([""]);
-        setMarkupType("peso");
+      const data = await res.json();
+      
+      if (res.ok && data.status === 'ok') {
+        // Success toast
+        toast.success(
+          `${tourTitle} has been added to ${tourCat} tours!`,
+          "Tour Published Successfully",
+          6000
+        );
+
+        // Reset form
+        setTourTitle("");
+        setTourDest("");
+        setTourSupplier("");
+        setTourMarkup("");
+        setTourPrice("");
+        setTourDuration("");
+        setTourCat("Local");
+        setTourFile(null);
+        setTourPreviewUrl(null);
+        setTourIncs([""]);
+        setTourMarkupType("peso");
+
+        // Optional: Navigate after delay
+        setTimeout(() => {
+          // navigate("/tours"); // Uncomment if you want to redirect
+        }, 2000);
       } else {
         console.error("Server error:", data);
-        alert("❌ Error: " + (data.error || "Server error"));
+        toast.error(
+          data.error || "Failed to add tour. Please try again.",
+          "Upload Failed",
+          6000
+        );
+        if (data.details) {
+          console.error("Details:", data.details);
+        }
       }
-    } catch (error) {
-      console.error("Fetch error:", error);
-      alert("❌ Error connecting to server");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast.error(
+        "Unable to connect to server. Please check your connection.",
+        "Connection Error",
+        6000
+      );
     }
   };
 
   return (
-    <div className="pkg-page">
-      {/* 1. Pass the state and toggle function to Sidebar */}
-      <Sidebar 
-        isCollapsed={isSidebarCollapsed} 
-        toggleSidebar={toggleSidebar} 
-      />
-      
-      {/* 2. Apply conditional class to the main content */}
-      <main className={`pkg-main ${
-        isSidebarCollapsed ? "pkg-main--collapsed" : ""
-      }`}>
-        <div className="pkg-container">
-          <header className="pkg-header">
-            <h1 className="pkg-title">NEW TOUR</h1>
-            <p className="pkg-subtitle">
-              Add a new destination tour offer
-            </p>
+    <div className="atour-page">
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+      <main
+        className={`atour-main ${isSidebarCollapsed ? "atour-collapsed" : ""}`}
+      >
+        <div className="atour-container">
+          <header className="atour-header">
+            <div className="atour-header-content">
+              <h1 className="atour-title">NEW TOUR</h1>
+              <p className="atour-subtitle">
+                Add a new travel offer to your catalog
+              </p>
+            </div>
           </header>
-
-          <form onSubmit={handleSubmit} className="pkg-form">
-            <div className="pkg-grid">
-              <div className="pkg-left">
-                <section className="pkg-section">
-                  <h2 className="pkg-section-title">COVER IMAGE</h2>
-
-                  {previewUrl ? (
-                    <div className="pkg-upload-preview-container">
-                      <div className="pkg-upload-preview">
-                        <img src={previewUrl} alt="Cover" />
-                        <div className="pkg-upload-actions">
-                          <label className="pkg-upload-change-btn">
-                            <input
-                              type="file"
-                              onChange={handleFileChange}
-                              accept="image/*"
-                              hidden
-                            />
-                            Change
-                          </label>
-                          <button
-                            type="button"
-                            className="pkg-upload-remove-btn"
-                            onClick={() => {
-                              setFile(null);
-                              setPreviewUrl(null);
-                            }}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="pkg-upload-options">
-                      <label className="pkg-upload pkg-upload-click">
-                        <input
-                          type="file"
-                          onChange={handleFileChange}
-                          accept="image/*"
-                          hidden
-                          required
-                        />
-                        <div className="pkg-upload-empty">
-                          <div className="pkg-upload-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                          <p className="pkg-upload-text">Click to upload</p>
-                          <p className="pkg-upload-hint">JPG, PNG or WebP</p>
-                        </div>
-                      </label>
-                    </div>
-                  )}
-                </section>
-
-                <section className="pkg-section">
-                  <h2 className="pkg-section-title">TOUR DETAILS</h2>
-                  <div className="pkg-fields">
-                    <div className="pkg-field pkg-field--full">
-                      <label>Tour Name</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Island Hopping Adventure"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="pkg-field pkg-field--full">
-                      <label>Destination</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Boracay, Philippines"
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="pkg-field">
-                      <label>Duration</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 1 Day / 8 Hours"
-                        value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="pkg-field">
-                      <label>Category</label>
-                      <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                      >
-                        <option value="Local">Local</option>
-                        <option value="International">International</option>
-                      </select>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="pkg-section">
-                  <h2 className="pkg-section-title">PRICING</h2>
-                  <div className="pkg-pricing-layout">
-                    <div className="pkg-pricing-inputs">
-                      <div className="pkg-field">
-                        <label>Supplier Rate (PHP)</label>
-                        <input
-                          type="number"
-                          placeholder="0.00"
-                          value={supplierRate}
-                          onChange={(e) =>
-                            handleSupplierRateChange(e.target.value)
-                          }
-                          required
-                          step="0.01"
-                          min="0"
-                        />
-                      </div>
-                      <div className="pkg-field">
-                        <label>
-                          Markup 
-                          <span style={{
-                            marginLeft: '8px',
-                            padding: '3px 8px',
-                            background: markupType === "percentage" ? '#fef3c7' : '#dcfce7',
-                            color: markupType === "percentage" ? '#92400e' : '#166534',
-                            borderRadius: '4px',
-                            fontSize: '0.75em',
-                            fontWeight: 'bold'
-                          }}>
-                            {markupType === "percentage" ? "% MODE" : "₱ PESO MODE"}
-                          </span>
-                        </label>
-                        <div className="pkg-field-with-toggle">
-                          <input
-                            type="number"
-                            placeholder={
-                              markupType === "percentage" ? "Enter %" : "Enter peso amount"
-                            }
-                            value={markupValue}
-                            onChange={(e) => handleMarkupChange(e.target.value)}
-                            required
-                            step="0.01"
-                            min="0"
-                          />
-                          <button
-                            type="button"
-                            className="pkg-toggle-markup"
-                            onClick={toggleMarkupType}
-                            title="Switch Mode"
-                          >
-                            ⇄
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pkg-total-price-box">
-                      <div className="pkg-total-price-content">
-                        <div className="pkg-total-price-label">
-                          TOTAL SELLING PRICE
-                        </div>
-                        <div className="pkg-total-price-amount">
-                          ₱
-                          {price
-                            ? Number(price).toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })
-                            : "0.00"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="pkg-section">
-                  <div className="pkg-section-header">
-                    <h2 className="pkg-section-title">INCLUSIONS</h2>
-                    <span className="pkg-count">
-                      {inclusions.filter((i) => i.trim()).length} items
-                    </span>
-                  </div>
-                  
-                  <div className="pkg-inclusions-wrapper">
-                    {inclusions.map((inc, i) => (
-                      <div key={i} className="pkg-inclusion-row">
-                        <span className="pkg-inclusion-bullet"></span>
-                        <div className="pkg-inclusion-input-wrapper">
-                          <input
-                            type="text"
-                            placeholder="What's included?"
-                            value={inc}
-                            onChange={(e) => handleIncChange(i, e.target.value)}
-                          />
-                        </div>
-                        {inclusions.length > 1 && (
-                          <button
-                            type="button"
-                            className="pkg-inclusion-delete-btn"
-                            onClick={() => removeInclusion(i)}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <button
-                    type="button"
-                    className="pkg-add-inclusion-btn"
-                    onClick={addInclusion}
-                  >
-                    <span>+</span> Add Item
-                  </button>
-                </section>
+          <form onSubmit={handleSubmitTour}>
+            <div className="atour-grid">
+              <div className="atour-left">
+                <TourImageUpload
+                  previewUrl={tourPreviewUrl}
+                  handleFileChange={handleTourFile}
+                  clearImage={() => {
+                    setTourFile(null);
+                    setTourPreviewUrl(null);
+                  }}
+                  isPasteActive={isTourPasteActive}
+                  activatePasteArea={() => setIsTourPasteActive(true)}
+                />
+                <TourBasicInfo
+                  title={tourTitle}
+                  setTitle={setTourTitle}
+                  destination={tourDest}
+                  setDestination={setTourDest}
+                  duration={tourDuration}
+                  setDuration={setTourDuration}
+                  category={tourCat}
+                  setCategory={setTourCat}
+                />
+                <TourPricing
+                  supp={tourSupplier}
+                  onSupp={handleTourSuppChange}
+                  mark={tourMarkup}
+                  onMark={handleTourMarkChange}
+                  type={tourMarkupType}
+                  onToggle={toggleTourMarkType}
+                  price={tourPrice}
+                />
+                <TourInclusions
+                  incs={tourIncs}
+                  onChange={(i, v) =>
+                    setTourIncs(
+                      tourIncs.map((item, idx) => (idx === i ? v : item))
+                    )
+                  }
+                  onAdd={() => setTourIncs([...tourIncs, ""])}
+                  onRem={(i) =>
+                    setTourIncs(tourIncs.filter((_, idx) => idx !== i))
+                  }
+                />
               </div>
-
-              <aside className="pkg-right">
-                <div className="pkg-preview">
-                  <span className="pkg-preview-label">PREVIEW</span>
-                  <div className="pkg-card">
-                    <div className="pkg-card-image">
-                      {previewUrl ? (
-                        <img src={previewUrl} alt="Preview" />
-                      ) : (
-                        <span>No Image</span>
-                      )}
-                    </div>
-                    <div className="pkg-card-body">
-                      <span className="pkg-card-badge">{category}</span>
-                      <h3 className="pkg-card-title">
-                        {title || "Tour Name"}
-                      </h3>
-                      <p className="pkg-card-location">
-                        {destination || "Destination"}
-                      </p>
-                      <div className="pkg-card-divider"></div>
-                      <div className="pkg-card-meta">
-                        <div>
-                          <span>Price</span>
-                          <strong>
-                            ₱{price ? Number(price).toLocaleString() : "0"}
-                          </strong>
-                        </div>
-                        <div>
-                          <span>Duration</span>
-                          <strong>{duration || "--"}</strong>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pkg-stats">
-                    <div className="pkg-stat">
-                      <strong>
-                        {inclusions.filter((i) => i.trim()).length}
-                      </strong>
-                      <span>Inclusions</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="pkg-actions">
+              <aside className="atour-right">
+                <TourPreview
+                  url={tourPreviewUrl}
+                  cat={tourCat}
+                  title={tourTitle}
+                  dest={tourDest}
+                  price={tourPrice}
+                  dur={tourDuration}
+                  incs={tourIncs}
+                />
+                <div className="atour-actions">
                   <button
                     type="button"
-                    className="pkg-btn pkg-btn--cancel"
+                    className="atour-btn atour-btn--cancel"
                     onClick={() => navigate(-1)}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="pkg-btn pkg-btn--submit">
-                    Publish Tour
+                  <button type="submit" className="atour-btn atour-btn--submit">
+                    Publish
                   </button>
                 </div>
               </aside>
@@ -493,4 +283,4 @@ const AddTour = () => {
   );
 };
 
-export default AddTour;
+export default AddTour; 

@@ -135,7 +135,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     transition: all 0.2s ease;
     background: #f7fafc; /* Light background */
     box-sizing: border-box;
-    font-family: 'Plus Jakarta Sans', sans-serif; /* Added font */
+    font-family: 'Plus Jakarta Sans', sans-serif; /* Consistent font */
 }
 
 .search-input:focus {
@@ -151,83 +151,77 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     gap: 0.75rem;
     flex-wrap: wrap; 
     justify-content: flex-start;
-    /* Added to align items on the baseline, which is good practice */
     align-items: flex-end; 
 }
 
-/* Individual Filter Button (DECREASED SIZE) */
+/* Individual Filter Button - ADJUSTED FOR SMALLER SIZE */
 .filter-btn {
-    padding: 0.75rem 1.50rem;
+    padding: 0.3rem 0.7rem; /* REDUCED FOR SMALLER SIZE */
     border: none;
-    border-radius: 12px;
+    border-radius: 10px; 
     font-weight: 600;
-    font-size: 0.85rem; 
+    font-size: 0.7rem; /* REDUCED FOR SMALLER SIZE */
     cursor: pointer;
     transition: all 0.2s ease;
-    background: #f7fafc;
-    color: #4a5568;
+    background: #f1f5f9; 
+    color: #475569;
     white-space: nowrap;
     flex-grow: 0;
     flex-shrink: 1;
     min-width: 0;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    
-    /* ADDED: Reserve space for the transform and shadow so neighbors don't shift */
-    margin-bottom: 1px; /* To reserve space for translateY(-1px) */
-    position: relative; /* Good practice for transform and z-index */
-    z-index: 1; /* Ensures the hovered button is above its neighbors */
+    position: relative; 
 }
 
 .filter-btn:hover {
-    background: #edf2f7;
-    /* CHANGED: Removed transform: translateY(-1px); */
-    /* NEW: Use the margin-bottom space for the visual lift */
-    margin-top: -1px; /* Moves the button up into the reserved space */
-    margin-bottom: 0px; /* Consumes the reserved space */
+    background: #e2e8f0;
+    transform: translateY(-1px);
 }
 
-/* Active Status Styles - Using PSA Primary Color (#0f172a) for 'All' and secondary colors for others */
+/* Active Status Styles - Using PSA Primary Color (#0f172a) and status colors */
+
+/* General 'All' active state (and default active color) */
 .filter-btn.active { 
-    background: #0f172a;
+    background-color: #0f172a; 
     color: white;
-    /* ADDED: Add a transparent border to reserve space for the box-shadow expansion */
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-    /* Ensure active state also has the margin-bottom fix if it uses transform */
-    margin-bottom: 1px; /* Consistent baseline */
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+    transform: translateY(-1px);
 }
 
-/* Add margin-bottom: 1px; to all specific active states for consistency */
-.filter-btn.badge-confirmed-active, .filter-btn.badge-paid-active {
-    background: #166534; /* Dark Green */
-    color: white;
-    margin-bottom: 1px;
-}
+/* Specific active states based on status: badge-STATUS-active */
 
-.filter-btn.badge-pending-active {
-    background: #9a3412; /* Dark Orange */
-    color: white;
-    margin-bottom: 1px;
-}
-
-.filter-btn.badge-contacted-active {
-    background: #1e40af; /* Dark Blue */
+.filter-btn.badge-confirmed.active, 
+.filter-btn.badge-paid.active {
+    background-color: #16a34a; /* Medium Green */
     color: white;
 }
 
-.filter-btn.badge-payment_pending-active {
-    background: #4f46e5; /* Dark Yellow/Brown */
+.filter-btn.badge-pending.active {
+    background-color: #f59e0b; /* Amber */
     color: white;
 }
 
-.filter-btn.badge-completed-active {
-    background: #065f46; /* Medium Green */
+.filter-btn.badge-contacted.active {
+    background-color: #3b82f6; /* Blue */
     color: white;
 }
 
-.filter-btn.badge-cancelled-active {
-    background: #991b1b; /* Dark Red */
+.filter-btn.badge-payment_pending.active {
+    background-color: #8b5cf6; /* Violet */
     color: white;
 }
+
+.filter-btn.badge-completed.active {
+    background-color: #059669; /* Darker Green */
+    color: white;
+}
+
+.filter-btn.badge-cancelled.active {
+    background-color: #ef4444; /* Red */
+    color: white;
+}
+
 
 /* --- TABLE --- */
 .psa-table-container { background: white; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); padding: 0; overflow: hidden; width: 100%; overflow-x: auto; }
@@ -276,8 +270,8 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     .filter-btn {
         /* Distribute buttons almost equally across two columns */
         flex: 1 1 calc(50% - 0.25rem); 
-        font-size: 0.8rem; /* Decreased font size */
-        padding: 0.6rem 0.8rem; /* Decreased padding */
+        font-size: 0.7rem; 
+        padding: 0.3rem 0.7rem; 
     }
 }
 
@@ -312,92 +306,233 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
     .filter-btn {
         width: 100%;
         flex: 1 1 auto;
-        font-size: 0.85rem; /* Decreased font size */
-        padding: 0.75rem 1rem; /* Decreased padding */
+        font-size: 0.75rem; /* Slightly increased for better readability on stack */
+        padding: 0.5rem 0.7rem; /* REDUCED PADDING */
     }
 }
 
+/* --- PAGINATION STYLES START --- */
 
-/* --- PAGINATION STYLES (New) --- */
-.pagination-nav {
-    /* Aligns with the table container's style */
-    margin-top: 0;
-    padding: 16px 24px;
-    background-color: white;
-    border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
-    position: sticky; 
-    bottom: 0;
-    z-index: 5;
-    
+
+
+.bills-pagination-container {
+
+    padding: 20px 0; 
+
+    margin-top: 20px; /* Separates it from the table */
+
     display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .visa-table-container */
-    border-radius: 0 0 8px 8px; /* Adjusted to 8px to match table container's style */
+
+    justify-content: center; /* Naka-center ang pagination wrapper */
+
+    width: 100%;
+
 }
 
-.pagination-list {
+
+
+.pagination-wrapper {
+
     display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
+
     align-items: center;
+
+    gap: 10px;
+
 }
+
+
 
 .pagination-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
+
+    background-color: white;
+
+    color: #475569;
+
+    border: 1px solid #cbd5e1;
+
+    padding: 8px 12px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+
     font-weight: 600;
+
     cursor: pointer;
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
     transition: all 0.2s;
-    min-width: 40px; 
-    text-align: center;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+
 }
+
+
 
 .pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
-    border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
+
+    background-color: #e2e8f0;
+
+    border-color: #94a3b8;
+
 }
 
-.pagination-btn.active {
-    background-color: #0f172a; /* Primary dark color background for active page */
-    border-color: #0f172a;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
-}
 
-.pagination-btn.active:hover {
-    background-color: #1e293b; /* Slightly darker primary on hover */
-    border-color: #1e293b;
-    transform: translateY(-1px);
-}
 
 .pagination-btn:disabled {
-    cursor: not-allowed;
+
     opacity: 0.5;
-    background-color: #f8fafc;
+
+    cursor: not-allowed;
+
 }
 
-/* For previous/next buttons */
-.pagination-btn:first-child,
-.pagination-btn:last-child {
-    font-weight: 700;
-    text-transform: uppercase;
+
+
+.page-numbers {
+
+    display: flex;
+
+    gap: 5px;
+
 }
 
-.pagination-ellipsis {
-    padding: 8px 0;
-    color: #94a3b8;
-    font-size: 16px;
+
+
+.page-number-btn {
+
+    background-color: white;
+
+    color: #475569;
+
+    border: 1px solid #cbd5e1;
+
+    width: 40px;
+
+    height: 40px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+
     font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.2s;
+
 }
+
+
+
+.page-number-btn:hover:not(.active-page) {
+
+    background-color: #ffc107;
+
+}
+
+
+
+.page-number-btn.active-page {
+
+    background-color: #0f172a;
+
+    color: white;
+
+    border-color: #0f172a;
+
+}
+
+
+
+.page-ellipsis {
+
+    color: #94a3b8;
+
+    padding: 0 5px;
+
+    font-size: 16px;
+
+    align-self: center;
+
+}
+
+
+
+/* RESPONSIVENESS */
+
+@media (max-width: 768px) {
+
+    .pagination-wrapper {
+
+        gap: 5px;
+
+    }
+
+    .pagination-btn {
+
+        padding: 6px 10px;
+
+        font-size: 12px;
+
+    }
+
+    .page-number-btn {
+
+        width: 32px;
+
+        height: 32px;
+
+        font-size: 12px;
+
+    }
+
+    .pagination-text {
+
+        display: none; /* Hide 'Previous' and 'Next' text on smaller screens */
+
+    }
+
+}
+
+
+
+
+
+/* --- GENERAL MEDIA QUERIES --- */
+
+@media (max-width: 1024px) { 
+
+    .bills-main, .bills-main.expanded { padding: 30px; } 
+
+    .bills-stats-grid { grid-template-columns: repeat(2, 1fr); } 
+
+    .search-filter-wrapper { flex-direction: column; align-items: stretch; }
+
+    .search-box { max-width: 100%; }
+
+    .filter-buttons { justify-content: center; }
+
+}
+
+
+
+@media (max-width: 640px) { 
+
+    .bills-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } 
+
+    .bills-stats-grid { grid-template-columns: 1fr; } 
+
+    .bills-header { flex-direction: column; align-items: flex-start; } 
+
+    .bills-btn-add { width: 100%; justify-content: center; } 
+
+}
+
+
+
+/* --- PAGINATION STYLES END --- */

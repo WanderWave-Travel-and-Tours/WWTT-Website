@@ -1,36 +1,48 @@
 import React, { useState, useEffect } from 'react';
+import { Archive, Calendar, Eye } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
+import PromoDetailModal from './PromoDetailModal';
+import PromoPagination from './PromoPagination';
+import PromoFilters from './PromoFilters';
 import './viewpromos.css';
 
 const ViewPromos = () => {
-    // --- SIDEBAR TOGGLE LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR TOGGLE LOGIC END ---
 
     const [promos, setPromos] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1); // New state for current page
-    const itemsPerPage = 10; // Constant for items per page
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('ALL');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedPromo, setSelectedPromo] = useState(null);
 
-    const fetchPromos = async () => {
-        try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
-            if (!response.ok) {
-                throw new Error('Failed to fetch promos');
-            }
-            const data = await response.json();
-            setPromos(data);
-            setCurrentPage(1); // Reset to page 1 on new data fetch
-        } catch (error) {
-            console.error("Error loading promos:", error);
-        }
+    const statusOptions = ['ALL', 'Active', 'Expired'];
+
+    const getFilterClassName = (status) => {
+        return filterStatus === status ? 'prf-active-navy' : '';
     };
 
     useEffect(() => {
         fetchPromos();
     }, []);
+
+    const fetchPromos = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/promos');
+            if (!response.ok) {
+                throw new Error('Failed to fetch promos');
+            }
+            const data = await response.json();
+            setPromos(data);
+            setCurrentPage(1);
+        } catch (error) {
+            console.error("Error loading promos:", error);
+        }
+    };
 
     const getStatus = (validUntil) => {
         const today = new Date();
@@ -46,64 +58,62 @@ const ViewPromos = () => {
         });
     };
 
-    const handleDelete = async (id, code) => {
-        if (window.confirm(`Are you sure you want to delete promo code ${code}?`)) {
+    const handleArchive = async (id, code) => {
+        if (window.confirm(`Are you sure you want to archive promo code ${code}?`)) {
             try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
+                const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                     method: 'DELETE',
                 });
 
                 if (response.ok) {
-                    // Update state and re-check if the current page is now empty
                     const updatedPromos = promos.filter(promo => promo._id !== id);
                     setPromos(updatedPromos);
-                    alert(`Promo Code ${code} has been deleted.`);
+                    alert(`Promo Code ${code} has been archived.`);
                     
-                    // Adjust page if current page is empty after deletion and not the first page
                     const maxPage = Math.ceil(updatedPromos.length / itemsPerPage);
                     if (currentPage > maxPage && maxPage > 0) {
                         setCurrentPage(maxPage);
                     }
                 } else {
-                    alert("Failed to delete promo.");
+                    alert("Failed to archive promo.");
                 }
             } catch (error) {
-                console.error("Error deleting:", error);
+                console.error("Error archiving:", error);
                 alert("Server error.");
             }
         }
     };
-    
-    // --- PAGINATION LOGIC START ---
+
+    const handleViewDetails = (promo) => {
+        setSelectedPromo(promo);
+        setShowDetailModal(true);
+    };
+
+    // Filter and search logic
+    const filteredPromos = promos.filter(promo => {
+        const matchesSearch = promo.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            promo.description.toLowerCase().includes(searchTerm.toLowerCase());
+        const promoStatus = getStatus(promo.validUntil);
+        const matchesStatus = filterStatus === 'ALL' || promoStatus === filterStatus;
+        return matchesSearch && matchesStatus;
+    });
+
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentPromos = promos.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(promos.length / itemsPerPage);
-
-    const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-    // Create array for pagination buttons
-    const pageNumbers = [];
-    for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-    }
-    // --- PAGINATION LOGIC END ---
+    const currentPromos = filteredPromos.slice(indexOfFirstItem, indexOfLastItem);
 
     const activePromos = promos.filter(p => getStatus(p.validUntil) === 'Active').length;
-    
-    // Dynamically set the main content class
-    const mainClass = `vpromos-main ${isSidebarCollapsed ? 'vpromos-main--collapsed' : ''}`;
 
     return (
         <div className="vpromos-page">
-         <Sidebar 
+            <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
-            <main className={mainClass}>
+            <main className={`vpromos-main ${isSidebarCollapsed ? "vpromos-main--collapsed" : ""}`}>
                 <div className="vpromos-container">
                     <header className="vpromos-header">
-                        <div className="vpromos-header-left">
+                        <div className="vpromos-header-content">
                             <h1 className="vpromos-title">PROMO CODES</h1>
                             <p className="vpromos-subtitle">
                                 Managing {promos.length} promo codes • {activePromos} currently active
@@ -113,22 +123,16 @@ const ViewPromos = () => {
                             + Add New Promo
                         </button>
                     </header>
-                    {promos.length > 0 && (
-                        <div className="vpromos-stats">
-                            <div className="vpromos-stat">
-                                <strong>{promos.length}</strong>
-                                <span>Total Promos</span>
-                            </div>
-                            <div className="vpromos-stat">
-                                <strong>{activePromos}</strong>
-                                <span>Active</span>
-                            </div>
-                            <div className="vpromos-stat">
-                                <strong>{promos.length - activePromos}</strong>
-                                <span>Expired</span>
-                            </div>
-                        </div>
-                    )}
+
+                    {/* PROMO FILTERS */}
+                    <PromoFilters
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        filterStatus={filterStatus}
+                        setFilterStatus={setFilterStatus}
+                        statusOptions={statusOptions}
+                        getFilterClassName={getFilterClassName}
+                    />
                     
                     {promos.length === 0 ? (
                         <div className="vpromos-empty">
@@ -154,7 +158,6 @@ const ViewPromos = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {/* Map over currentPromos instead of all promos */}
                                     {currentPromos.map(promo => {
                                         const status = getStatus(promo.validUntil);
                                         return (
@@ -195,10 +198,20 @@ const ViewPromos = () => {
                                                 <td>
                                                     <div className="vpromos-actions">
                                                         <button 
-                                                            className="vpromos-action-btn vpromos-action-btn--delete"
-                                                            onClick={() => handleDelete(promo._id, promo.code)}
+                                                            className="vpromos-action-btn vpromos-action-btn--view"
+                                                            onClick={() => handleViewDetails(promo)}
+                                                            title="View Details"
                                                         >
-                                                            Delete
+                                                            <Eye size={16} />
+                                                            <span>View</span>
+                                                        </button>
+                                                        <button 
+                                                            className="vpromos-action-btn vpromos-action-btn--archive"
+                                                            onClick={() => handleArchive(promo._id, promo.code)}
+                                                            title="Archive Promo"
+                                                        >
+                                                            <Archive size={16} />
+                                                            <span>Archive</span>
                                                         </button>
                                                     </div>
                                                 </td>
@@ -208,48 +221,25 @@ const ViewPromos = () => {
                                 </tbody>
                             </table>
                             
-                            {/* PAGINATION NAVIGATION */}
-                            {totalPages > 1 && (
-                                <nav className="pagination-nav">
-                                    <ul className="pagination-list">
-                                        <li>
-                                            <button
-                                                className="pagination-btn"
-                                                onClick={() => paginate(currentPage - 1)}
-                                                disabled={currentPage === 1}
-                                            >
-                                                Previous
-                                            </button>
-                                        </li>
-                                        {pageNumbers.map(number => (
-                                            <li key={number}>
-                                                <button
-                                                    onClick={() => paginate(number)}
-                                                    className={`pagination-btn ${currentPage === number ? 'active' : ''}`}
-                                                >
-                                                    {number}
-                                                </button>
-                                            </li>
-                                        ))}
-                                        <li>
-                                            <button
-                                                className="pagination-btn"
-                                                onClick={() => paginate(currentPage + 1)}
-                                                disabled={currentPage === totalPages}
-                                            >
-                                                Next
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </nav>
-                            )}
-                            {/* END PAGINATION NAVIGATION */}
+                            <PromoPagination
+                                totalItems={filteredPromos.length}
+                                itemsPerPage={itemsPerPage}
+                                currentPage={currentPage}
+                                onPageChange={setCurrentPage}
+                            />
                         </div>
                     )}
-
-
                 </div>
             </main>
+
+            {showDetailModal && selectedPromo && (
+                <PromoDetailModal
+                    showModal={showDetailModal}
+                    selectedPromo={selectedPromo}
+                    setShowModal={setShowDetailModal}
+                    handleArchive={handleArchive}
+                />
+            )}
         </div>
     );
 };

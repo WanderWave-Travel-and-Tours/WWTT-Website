@@ -1,13 +1,14 @@
 import React from 'react';
-import './BookingTable.css'; 
+import './BookingTable.css';
 
-const BookingTable = ({ 
-    loading, 
-    filteredBookingsCount, 
-    currentBookings, 
-    handleViewDetails, 
-    handleConfirm, 
-    handleCancel, 
+const BookingTable = ({
+    loading,
+    filteredBookingsCount,
+    currentBookings,
+    handleViewDetails,
+    handleConfirm,
+    handleCancel,
+    handleArchive,        // NEW: Dedicated archive handler
     actionLoading,
     MailIcon,
     CheckCircleIcon,
@@ -18,132 +19,150 @@ const BookingTable = ({
     XIcon,
     CalendarIcon,
     UsersIcon,
-    startIndex // Prop para sa numbering
+    ArchiveIcon,          // NEW
+    RotateCcwIcon,        // NEW for unarchive
+    startIndex
 }) => {
 
     const getStatusBadgeClass = (status) => {
-        switch(status.toLowerCase()) {
+        switch (status?.toLowerCase()) {
             case 'confirmed': return 'badge-confirmed';
             case 'pending': return 'badge-pending';
             case 'cancelled': return 'badge-cancelled';
             default: return 'badge-pending';
         }
-    }
+    };
 
-    // UPDATED: Colspan increased to 9 (8 original + 1 for numbering)
+    // Loading state - full row
     if (loading) {
         return (
-            <tr><td colSpan="9" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>Loading bookings...</td></tr>
+            <tbody>
+                <tr>
+                    <td colSpan="9" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                        Loading active bookings...
+                    </td>
+                </tr>
+            </tbody>
         );
     }
 
-    // UPDATED: Colspan increased to 9
+    // Empty state
     if (filteredBookingsCount === 0) {
         return (
-            <tr><td colSpan="9" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>No bookings found</td></tr>
+            <tbody>
+                <tr>
+                    <td colSpan="9" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                        No active bookings found
+                    </td>
+                </tr>
+            </tbody>
         );
     }
 
     return (
-        <div className="bkm-table-wrapper">
-            <table className="bkm-table">
-                <thead>
-                    <tr>
-                        <th style={{ width: '50px' }}>No.</th> {/* NEW COLUMN FOR NUMBERING */}
-                        <th>Booking ID</th>
-                        <th>Customer Details</th>
-                        <th>Package</th>
-                        <th>Travel Date</th>
-                        <th>Guests</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th style={{ textAlign: "right" }}>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {currentBookings.map((booking, index) => (
-                        <tr key={booking.id}>
-                            {/* NEW COLUMN: Sequential Numbering */}
-                            <td style={{ fontWeight: "700", color: '#0f172a' }}>
-                                {startIndex + index + 1}
-                            </td>
+        <tbody>
+            {currentBookings.map((booking, index) => {
+                const isArchived = booking.isArchive === 'Yes';
 
-                            <td style={{ fontWeight: "700" }}>
-                                {booking.id}
-                                <div className="booking-date-small">
-                                    Booked: {booking.bookingDate}
-                                </div>
-                            </td>
+                return (
+                    <tr key={booking.mongoId || booking.id}>
+                        {/* Numbering */}
+                        <td style={{ fontWeight: "700", color: '#0f172a', textAlign: 'center' }}>
+                            {startIndex + index + 1}
+                        </td>
 
-                            <td>
-                                <div className="customer-name">{booking.customerName}</div>
-                                <div className="customer-contact">
-                                    <MailIcon size={13} />
-                                    <span>{booking.email}</span>
-                                </div>
-                            </td>
+                        {/* Booking ID + Date */}
+                        <td style={{ fontWeight: "700" }}>
+                            {booking.id}
+                            <div className="booking-date-small">
+                                Booked: {booking.bookingDate}
+                            </div>
+                        </td>
 
-                            {/* Package Name UI */}
-                            <td>
-                                <div className="package-name-cell">
-                                    <div className="package-initials-badge">BK</div>
-                                    {booking.packageName}
-                                </div>
-                            </td>
+                        {/* Customer Details */}
+                        <td>
+                            <div className="customer-name">{booking.customerName}</div>
+                            <div className="customer-contact">
+                                <MailIcon size={13} />
+                                <span>{booking.email}</span>
+                            </div>
+                        </td>
 
-                            <td>
-                                {booking.travelDate}
-                            </td>
+                        {/* Package Name */}
+                        <td>
+                            <div className="package-name-cell">
+                                <div className="package-initials-badge">BK</div>
+                                {booking.packageName}
+                            </div>
+                        </td>
 
-                            <td>
-                                <div className="guests-cell">
-                                    {/* UPDATED: Mas magandang icon para sa guests/pax */}
-                                    <UsersIcon size={15} /> 
-                                    {booking.guests}
-                                </div>
-                            </td>
+                        {/* Travel Date */}
+                        <td>{booking.travelDate}</td>
 
-                            <td>
-                                ₱{booking.totalAmount.toLocaleString()}
-                            </td>
+                        {/* Guests */}
+                        <td>
+                            <div className="guests-cell">
+                                <UsersIcon size={15} />
+                                {booking.guests}
+                            </div>
+                        </td>
 
-                            <td>
-                                <span className={`bkm-badge ${getStatusBadgeClass(booking.status)}`}>
-                                    {booking.status}
-                                </span>
-                            </td>
+                        {/* Amount */}
+                        <td>₱{booking.totalAmount.toLocaleString()}</td>
 
-                            <td style={{ textAlign: "right" }}>
-                                <div className="bkm-action-group">
-                                    
-                                    {/* 1. VIEW BUTTON (Text) - Always present */}
-                                    <button 
-                                        className="bkm-action-btn bkm-view-btn" 
-                                        onClick={() => handleViewDetails(booking)}
-                                        title="View Details"
-                                    >
-                                        View
-                                    </button>
-                                    
-                                    {/* 2. ARCHIVE BUTTON (Text) - For active statuses */}
-                                    {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                                         <button 
-                                            className="bkm-action-btn bkm-archive-text-btn"
-                                            onClick={() => handleCancel(booking)}
-                                            disabled={actionLoading}
-                                            title="Archive / Cancel Booking"
-                                        >
+                        {/* Status Badge */}
+                        <td>
+                            <span className={`bkm-badge ${getStatusBadgeClass(booking.status)}`}>
+                                {booking.status || 'pending'}
+                            </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ textAlign: "right" }}>
+                            <div className="bkm-action-group">
+
+                                {/* View Button */}
+                                <button
+                                    className="bkm-action-btn bkm-view-btn"
+                                    onClick={() => handleViewDetails(booking)}
+                                    title="View Details"
+                                >
+                                    <EyeIcon size={16} />
+                                    View
+                                </button>
+
+                                {/* Archive / Unarchive Button */}
+                                <button
+                                    className={`bkm-action-btn ${isArchived ? 'bkm-unarchive-btn' : 'bkm-archive-btn'}`}
+                                    onClick={() => handleArchive(booking)}
+                                    disabled={actionLoading}
+                                    title={isArchived ? 'Unarchive booking' : 'Archive booking'}
+                                >
+                                    {isArchived ? (
+                                        <>
+                                            <RotateCcwIcon size={16} />
+                                            Unarchive
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ArchiveIcon size={16} />
                                             Archive
-                                        </button>
+                                        </>
                                     )}
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+                                </button>
+
+                                {/* Optional: Confirm button only for pending */}
+                                {!isArchived && booking.status === 'pending' }
+
+                                {/* Optional: Cancel button only for non-cancelled */}
+                                {!isArchived && booking.status !== 'cancelled' && booking.status !== 'confirmed' }
+                            </div>
+                        </td>
+                    </tr>
+                );
+            })}
+        </tbody>
     );
 };
 
-export default BookingTable;
+export default BookingTable; 

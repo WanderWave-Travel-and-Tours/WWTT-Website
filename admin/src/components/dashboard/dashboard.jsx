@@ -487,7 +487,7 @@ const Dashboard = () => {
   return (
     <div className="dash-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-
+ 
       <main
         className={`dash-main ${
           isSidebarCollapsed ? "dash-main--collapsed" : ""

@@ -5,20 +5,34 @@
 .apkg-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc;
+    /* Main Background: Consistent gray gradient throughout */
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    width: 100%;
+    position: relative;
+}
+
+.apkg-page::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    z-index: -1;
 }
 
 .apkg-main {
     flex: 1;
-    margin-left: 280px; /* Default: Full sidebar width */
-    padding: 40px 120px; 
+    margin-left: 300px; /* Full sidebar width - updated to match sidebar.css */
+    padding: 40px 80px;
     font-family: 'Segoe UI', Arial, sans-serif;
-    transition: margin-left 0.3s ease; /* Smooth sidebar transition */
+    transition: margin-left 0.3s ease;
+    width: 100%;
 }
 
-/* Sidebar Collapsed State */
 .apkg-main.collapsed-main {
-    margin-left: 70px; /* Collapsed sidebar width */
+    margin-left: 90px; /* Collapsed sidebar width - updated to match sidebar.css */
 }
 
 .apkg-main *, 
@@ -30,31 +44,93 @@
 }
 
 .apkg-container {
-    max-width: 1280px;
+    max-width: 1320px;
     margin: 0 auto;
+    width: 100%;
 }
 
+/* --- CLEAN TRAVEL HEADER (NO ANIMATIONS) --- */
 .apkg-header {
-    margin-bottom: 32px;
+    position: relative;
+    margin-bottom: 40px;
+    text-align: left;
+    padding: 45px 50px; 
+    border-radius: 16px;
+    overflow: hidden;
+    /* Vibrant travel image background */
+    background: url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop'); 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    display: flex;
+    align-items: center;
+    min-height: 180px;
+    width: 100%;
+}
+
+/* Dark Gradient Overlay */
+.apkg-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    background: linear-gradient(90deg, 
+        rgba(0, 31, 63, 0.92) 0%, 
+        rgba(0, 31, 63, 0.75) 50%, 
+        rgba(255, 140, 66, 0.3) 100%);
+    z-index: 1;
+}
+
+.apkg-header-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+    width: 100%;
 }
 
 .apkg-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 900;
-    color: #001F3F;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    line-height: 1.1;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .apkg-subtitle {
-    font-size: 14px;
-    color: #64748b;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
+
+.apkg-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #FF8C42 0%, transparent 100%);
+    display: inline-block;
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(255, 140, 66, 0.5);
+}
+
+/* ================================================= */
+/* RETAINED UI ELEMENTS (Logic Unchanged)           */
+/* ================================================= */
 
 .apkg-grid {
     display: grid;
-    grid-template-columns: 1fr 360px;
+    grid-template-columns: 1fr 380px;
     gap: 32px;
     align-items: start;
 }
@@ -68,142 +144,44 @@
 .apkg-right {
     position: sticky;
     top: 40px;
+    width: 100%;
 }
 
 .apkg-actions {
     display: flex;
     gap: 12px;
+    width: 100%;
 }
 
 .apkg-btn {
     flex: 1;
-    padding: 14px 20px;
+    padding: 16px 24px;
     font-size: 14px;
     font-weight: 700;
     font-family: 'Segoe UI', Arial, sans-serif;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: 0.15s ease;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width: 100%;
 }
 
 .apkg-btn--cancel {
     color: #64748b;
     background: #fff;
-    border: 1px solid #e2e8f0;
-}
-
-.apkg-btn--cancel:hover {
-    border-color: #94a3b8;
+    border: 2px solid #e2e8f0;
 }
 
 .apkg-btn--submit {
     color: #fff;
-    background: #FF8C42;
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
     border: none;
-}
-
-.apkg-btn--submit:hover {
-    background: #e57a35;
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
 }
 
 /* ================================================= */
-/* SHARED STYLES (Used in sub-components, needed here to define scope) */
-/* ================================================= */
-
-.apkg-section {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 28px;
-}
-
-.apkg-section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-
-.apkg-section-title {
-    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 12px;
-    font-weight: 900;
-    color: #001F3F;
-    letter-spacing: 1.5px;
-}
-
-/* Base style for the count badges */
-.apkg-count {
-    font-size: 12px;
-    font-weight: 500;
-    color: #94a3b8;
-    background: #f1f5f9;
-    padding: 4px 10px;
-    border-radius: 20px;
-}
-
-.apkg-remove {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #94a3b8;
-    transition: 0.15s ease;
-}
-
-.apkg-remove:hover {
-    color: #dc2626;
-}
-
-.apkg-remove svg {
-    width: 18px;
-    height: 18px;
-}
-
-.apkg-remove--sm {
-    width: 32px;
-    height: 32px;
-}
-
-.apkg-remove--sm svg {
-    width: 16px;
-    height: 16px;
-}
-
-.apkg-add-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 14px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    color: #64748b;
-    background: none;
-    border: 2px dashed #e2e8f0;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.15s ease;
-}
-
-.apkg-add-btn:hover {
-    color: #FF8C42;
-    border-color: #FF8C42;
-}
-
-.apkg-add-btn svg {
-    width: 18px;
-    height: 18px;
-}
-
-/* ================================================= */
-/* MEDIA QUERIES (Main Layout)                     */
+/* RESPONSIVENESS FIX FOR HEADER & PREVIEW          */
 /* ================================================= */
 
 @media (max-width: 1100px) {
@@ -213,29 +191,271 @@
     
     .apkg-right {
         position: static;
-        order: -1;
-        max-width: 400px;
-        margin: 0 auto 24px auto;
+        order: 2; /* Preview will go below the form in tablet/mobile */
+        margin-top: 24px;
     }
 }
 
-@media (max-width: 900px) {
-    .apkg-main {
-        margin-left: 70px;
-        padding: 24px;
+@media (max-width: 768px) {
+    .apkg-main, .apkg-main.collapsed-main {
+        margin-left: 90px !important;
+        margin-right: 0 !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    .apkg-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+    
+    /* Make all child elements responsive */
+    .apkg-container * {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .apkg-header { 
+        padding: 45px 40px;
+        min-height: 180px;
+        text-align: left;
+        justify-content: flex-start;
+        margin-bottom: 32px;
+    }
+    
+    .apkg-header::before { 
+        background: linear-gradient(90deg, 
+            rgba(0, 31, 63, 0.92) 0%, 
+            rgba(0, 31, 63, 0.75) 50%, 
+            rgba(255, 140, 66, 0.3) 100%);
+    }
+    
+    .apkg-header-content {
+        max-width: 100%;
+    }
+    
+    .apkg-title { 
+        font-size: 2.5rem;
+        letter-spacing: 3px;
+        color: #FFFFFF;
+    }
+    
+    .apkg-subtitle { 
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.95);
+    }
+    
+    .apkg-subtitle::before {
+        width: 40px;
+    }
+    
+    /* Grid layout to single column */
+    .apkg-grid {
+        grid-template-columns: 1fr !important;
+        gap: 24px;
+    }
+    
+    /* All sections responsive */
+    .apkg-section {
+        width: 100%;
+        padding: 24px 16px;
+        overflow-x: hidden;
+    }
+    
+    /* Form elements */
+    .apkg-field input,
+    .apkg-field select,
+    .apkg-field textarea {
+        width: 100% !important;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Itinerary specific fixes */
+    .apkg-day-content {
+        width: 100%;
+        padding: 20px 16px;
+    }
+    
+    .apkg-day-title {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .apkg-activity input {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Floating Bottom Bar for Buttons on Mobile */
+    .apkg-actions {
+        position: fixed;
+        bottom: 0;
+        left: 90px;
+        right: 0;
+        background: #fff;
+        padding: 12px 16px;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+        z-index: 100;
+        margin: 0;
+        width: calc(100% - 90px);
+        gap: 8px;
+        box-sizing: border-box;
+    }
+    
+    .apkg-btn {
+        padding: 12px 16px;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    .apkg-right {
+        margin-bottom: 80px;
     }
 }
 
 @media (max-width: 640px) {
-    .apkg-main {
-        padding: 16px;
+    .apkg-main, .apkg-main.collapsed-main {
+        padding: 24px 14px !important;
     }
     
-    .apkg-title {
-        font-size: 1.5rem;
+    .apkg-section {
+        padding: 20px 14px;
+    }
+    
+    .apkg-header { 
+        padding: 40px 30px;
+        min-height: 180px;
+        margin-bottom: 28px;
+    }
+    
+    .apkg-title { 
+        font-size: 2.2rem;
+        letter-spacing: 2px;
+    }
+    
+    .apkg-subtitle { 
+        font-size: 14px;
+    }
+    
+    .apkg-subtitle::before {
+        width: 35px;
     }
     
     .apkg-actions {
+        padding: 12px 14px;
+    }
+    
+    .apkg-day-content {
+        padding: 18px 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .apkg-main, .apkg-main.collapsed-main {
+        margin-left: 90px !important;
+        width: calc(100% - 90px) !important;
+        padding: 20px 12px !important;
+    }
+    
+    .apkg-section {
+        padding: 18px 12px;
+    }
+    
+    .apkg-header { 
+        padding: 35px 25px;
+        min-height: 180px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+    
+    .apkg-title { 
+        font-size: 2rem;
+        letter-spacing: 2px;
+        margin-bottom: 8px;
+    }
+    
+    .apkg-subtitle { 
+        font-size: 13px;
+    }
+    
+    .apkg-subtitle::before {
+        width: 30px;
+    }
+    
+    .apkg-actions {
+        left: 90px;
+        width: calc(100% - 90px);
+        flex-direction: row;
+        padding: 10px 12px;
+        gap: 6px;
+    }
+    
+    .apkg-btn {
+        padding: 10px 12px;
+        font-size: 11px;
+        letter-spacing: 0.3px;
+    }
+    
+    .apkg-right {
+        margin-bottom: 70px;
+    }
+    
+    .apkg-day-content {
+        padding: 16px 12px;
+    }
+    
+    .apkg-day-header {
         flex-direction: column;
+        gap: 8px;
+    }
+    
+    .apkg-day-title {
+        width: 100%;
+    }
+    
+    .apkg-day-remove {
+        width: 100%;
+    }
+}
+
+@media (max-width: 360px) {
+    .apkg-main, .apkg-main.collapsed-main {
+        padding: 20px 10px !important;
+    }
+    
+    .apkg-section {
+        padding: 16px 10px;
+    }
+    
+    .apkg-header { 
+        padding: 20px 12px; 
+        min-height: 110px;
+    }
+    
+    .apkg-title { 
+        font-size: 1.35rem;
+    }
+    
+    .apkg-subtitle { 
+        font-size: 11px;
+    }
+    
+    .apkg-actions {
+        padding: 10px;
+    }
+    
+    .apkg-day-content {
+        padding: 14px 10px;
+    }
+    
+    .apkg-btn {
+        font-size: 10px;
+        padding: 9px 10px;
     }
 }

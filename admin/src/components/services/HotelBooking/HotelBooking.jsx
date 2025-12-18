@@ -55,12 +55,11 @@ const HotelBooking = () => {
         }
 
         // Reset page to 1 after filtering/searching
-        if (currentPage !== 1 && filtered.length > 0) {
-            setCurrentPage(1);
-        }
-
+        // NOTE: Removed conditional reset and rely only on setCurrentPage(1) in handleFilterChange/setSearchTerm
+        // to prevent infinite loop or unexpected behavior due to dependency array
+        
         return filtered;
-    }, [filterStatus, searchTerm, allReservations, currentPage]); // Include currentPage in dependency array to prevent infinite loop
+    }, [filterStatus, searchTerm, allReservations]);
 
     // Logic for pagination
     const totalItems = getFilteredReservations.length;
@@ -79,6 +78,12 @@ const HotelBooking = () => {
         setFilterStatus(status);
         setCurrentPage(1); // Reset page to 1 on filter change
     };
+    
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1); // Reset page to 1 on search change
+    };
+
 
     const renderPageNumbers = () => {
         const pageNumbers = [];
@@ -137,7 +142,7 @@ const HotelBooking = () => {
                                     placeholder="Search by ID, Guest Name, Hotel, or Location..."
                                     className="search-input"
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={handleSearchChange} // Use the new handler
                                 />
                             </div>
                             
@@ -176,6 +181,9 @@ const HotelBooking = () => {
                         <table className="hotel-table">
                             <thead>
                                 <tr>
+                                    {/* --- NEW COLUMN FOR INDEX --- */}
+                                    <th style={{width: '60px'}}>No.</th> 
+                                    {/* --- END NEW COLUMN FOR INDEX --- */}
                                     <th>Resv ID</th>
                                     <th>Guest Name</th>
                                     <th>Hotel / Resort</th>
@@ -185,8 +193,11 @@ const HotelBooking = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {reservationsToShow.map((res) => (
+                                {reservationsToShow.map((res, index) => (
                                     <tr key={res.id}>
+                                        {/* --- DISPLAY INDEX NUMBER --- */}
+                                        <td style={{fontWeight:'500', color:'#64748b'}}>{startIndex + index + 1}</td>
+                                        {/* --- END DISPLAY INDEX NUMBER --- */}
                                         <td style={{fontWeight:'700', color:'#0f172a'}}>{res.id}</td>
                                         <td>{res.client}</td>
                                         <td>{res.hotel} <span style={{color:'#64748b', fontSize:'12px'}}>({res.location})</span></td>
@@ -201,6 +212,14 @@ const HotelBooking = () => {
                                         </td>
                                     </tr>
                                 ))}
+                                {/* Display a row if no reservations are found */}
+                                {reservationsToShow.length === 0 && (
+                                    <tr>
+                                        <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                                            No reservations match your criteria.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                         
@@ -232,6 +251,8 @@ const HotelBooking = () => {
                                 </ul>
                             </nav>
                         )}
+
+
 
                     </div>
                 </div>

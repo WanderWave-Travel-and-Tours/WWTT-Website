@@ -3,15 +3,13 @@ import Sidebar from '../sidebar/sidebar';
 import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/tours';
+const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 const ViewTours = () => {
-    // --- SIDEBAR LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR LOGIC END ---
 
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,7 +30,9 @@ const ViewTours = () => {
                 const result = await response.json();
 
                 if (result.status === 'ok') {
-                    setTours(result.data);
+                    // FILTER: Display lang ang mga tour na may isArchive: "No"
+                    const activeTours = result.data.filter(tour => tour.isArchive === 'No');
+                    setTours(activeTours);
                 } else {
                     setError('Error: ' + (result.error || 'Failed to fetch data.'));
                 }
@@ -47,12 +47,33 @@ const ViewTours = () => {
         fetchTours();
     }, []);
 
+    const handleArchive = async (id) => {
+        if (window.confirm('Are you sure you want to archive this tour?')) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/archive/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                
+                if (result.status === 'ok') {
+                    // Tanggalin sa state array para mawala sa UI agad
+                    setTours(tours.filter(tour => tour._id !== id));
+                    alert('✅ Tour archived successfully!');
+                } else {
+                    alert('❌ Error archiving tour');
+                }
+            } catch (err) {
+                console.error('Archive error:', err);
+                alert('❌ Error connecting to server');
+            }
+        }
+    };
+
     if (loading) {
         return (
             <div className="viewtours-page">
-                {/* Sidebar updated */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* main updated */}
                 <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-loader">
                         <div className="viewtours-spinner"></div>
@@ -66,9 +87,7 @@ const ViewTours = () => {
     if (error) {
         return (
             <div className="viewtours-page">
-                {/* Sidebar updated */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* main updated */}
                 <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-error">
                         <span className="viewtours-error-icon">⚠️</span>
@@ -81,29 +100,24 @@ const ViewTours = () => {
 
     return (
         <div className="viewtours-page">
-            {/* Sidebar updated */}
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            {/* main updated */}
             <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                 <div className="viewtours-container">
                     <header className="viewtours-header">
                         <div className="viewtours-header-left">
                             <h1 className="viewtours-title">TOUR LISTS</h1>
-                            <p className="viewtours-subtitle">Manage your travel packages ({tours.length} total)</p>
+                            <p className="viewtours-subtitle">Manage your active packages ({tours.length} total)</p>
                         </div>
                         <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
-                            + Add New Package
+                            + Add New Tour
                         </button>
                     </header>
 
                     {tours.length === 0 ? (
                         <div className="viewtours-empty">
                             <span className="viewtours-empty-icon">📍</span>
-                            <h3>No tours yet</h3>
-                            <p>Start by creating your first tour destination</p>
-                            <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
-                                + Add Tour
-                            </button>
+                            <h3>No active tours</h3>
+                            <p>All tours are archived or none exist.</p>
                         </div>
                     ) : (
                         <div className="viewtours-grid">
@@ -111,7 +125,7 @@ const ViewTours = () => {
                                 <div key={tour._id} className="viewtours-card">
                                     <div className="viewtours-card-image">
                                         <img 
-                                            src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} 
+                                            src={`http://localhost:5000/uploads/${tour.image}`} 
                                             alt={tour.title} 
                                         />
                                         <span className="viewtours-card-category">{tour.category}</span>
@@ -144,11 +158,17 @@ const ViewTours = () => {
                                             </div>
                                             
                                             <div className="viewtours-actions">
-                                                <button className="viewtours-btn-action viewtours-btn-action--edit">
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--edit"
+                                                    onClick={() => navigate(`/edit-tour/${tour._id}`)}
+                                                >
                                                     Edit
                                                 </button>
-                                                <button className="viewtours-btn-action viewtours-btn-action--delete">
-                                                    Delete
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--delete"
+                                                    onClick={() => handleArchive(tour._id)}
+                                                >
+                                                    Archive
                                                 </button>
                                             </div>
                                         </div>
@@ -163,4 +183,4 @@ const ViewTours = () => {
     );
 };
 
-export default ViewTours;
+export default ViewTours; 

@@ -16,6 +16,11 @@ const TestimonialSchema = new mongoose.Schema({
     feedback: {
         type: String,
         required: true
+    },
+    // Binago sa "No" ang default value
+    isArchive: {
+        type: String,
+        default: "No"
     }
 }, { timestamps: true }); 
 

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Sidebar from '../../sidebar/sidebar';
-import { Plus, Heart, Clock, Truck, AlertOctagon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Heart, Clock, Truck, AlertOctagon, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import './MarriageCertificate.css';
 
 const ITEMS_PER_PAGE = 10;
@@ -40,12 +40,45 @@ const allRequests = [
 const MarriageCertificate = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    // New state for Search and Filter
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeFilter, setActiveFilter] = useState('All'); // 'All', 'Completed', 'Pending', etc.
+
+    // 1. Filtering and Searching Logic
+    const filteredRequests = useMemo(() => {
+        let results = allRequests;
+        const lowerSearchTerm = searchTerm.toLowerCase();
+
+        // Filter by Status
+        if (activeFilter !== 'All') {
+            results = results.filter(req => req.status === activeFilter);
+        }
+
+        // Search by Name or ID
+        if (lowerSearchTerm) {
+            results = results.filter(req => 
+                req.id.toLowerCase().includes(lowerSearchTerm) ||
+                req.husband.toLowerCase().includes(lowerSearchTerm) ||
+                req.wife.toLowerCase().includes(lowerSearchTerm)
+            );
+        }
+
+        // Reset page to 1 after filtering/searching
+        if (currentPage !== 1 && results.length <= (currentPage - 1) * ITEMS_PER_PAGE) {
+            setCurrentPage(1);
+        }
+
+        return results;
+    }, [searchTerm, activeFilter, currentPage]);
     
-    // Pagination Logic
-    const totalPages = Math.ceil(allRequests.length / ITEMS_PER_PAGE);
+    // Extract unique statuses for the filter buttons (including 'All')
+    const uniqueStatuses = ['All', ...new Set(allRequests.map(req => req.status))];
+
+    // 2. Pagination Logic
+    const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    const currentRequests = allRequests.slice(startIndex, endIndex);
+    const currentRequests = filteredRequests.slice(startIndex, endIndex);
 
     const changePage = (pageNumber) => {
         if (pageNumber > 0 && pageNumber <= totalPages) {
@@ -69,6 +102,9 @@ const MarriageCertificate = () => {
         { label: 'Unclaimed', value: '3', icon: <AlertOctagon size={24}/> },
     ];
 
+    // Helper to get status for dynamic class
+    const getStatusClass = (status) => status.toLowerCase().replace(' ', '-');
+
     return (
         <div className="marriage-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
@@ -90,11 +126,43 @@ const MarriageCertificate = () => {
                             </div>
                         ))}
                     </div>
+                    
+                    {/* --- NEW SEARCH AND FILTER CARD --- */}
+                    <div className="search-filter-card">
+                        <div className="search-filter-wrapper">
+                            {/* Search Box */}
+                            <div className="search-box">
+                                <Search size={20} className="search-icon" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search by ID, Husband or Wife Name..." 
+                                    className="search-input" 
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Filter Buttons */}
+                            <div className="filter-buttons">
+                                {uniqueStatuses.map(status => (
+                                    <button
+                                        key={status}
+                                        className={`filter-btn ${activeFilter === status ? 'active' : ''} filter-${getStatusClass(status)}-active`}
+                                        onClick={() => setActiveFilter(status)}
+                                    >
+                                        {status}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    {/* --- END NEW SEARCH AND FILTER CARD --- */}
 
                     <div className="marriage-table-container">
                         <table className="marriage-table">
                             <thead>
                                 <tr>
+                                    <th>#</th>
                                     <th>Ref #</th>
                                     <th>Husband Name</th>
                                     <th>Wife Name</th>
@@ -105,55 +173,66 @@ const MarriageCertificate = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {currentRequests.map((req) => (
+                                {currentRequests.map((req, i) => (
                                     <tr key={req.id}>
+                                        <td style={{fontWeight:'700', color:'#475569'}}>{startIndex + i + 1}</td>
                                         <td style={{fontWeight:'700', color:'#0f172a'}}>{req.id}</td>
                                         <td>{req.husband}</td>
                                         <td>{req.wife}</td>
                                         <td>{req.dateMarried}</td>
                                         <td style={{textAlign:'center'}}>{req.copies}</td>
-                                        <td><span className={`status-pill status-${req.status.toLowerCase().replace(' ', '-')}`}>{req.status}</span></td>
+                                        <td><span className={`status-pill status-${getStatusClass(req.status)}`}>{req.status}</span></td>
                                         <td style={{textAlign:'right'}}>
                                             <button className="marriage-action-btn">Details</button>
                                         </td>
                                     </tr>
                                 ))}
+                                {/* Display message if no results are found */}
+                                {currentRequests.length === 0 && (
+                                    <tr>
+                                        <td colSpan="8" style={{textAlign: 'center', padding: '40px'}}>
+                                            No requests found matching your search and filter criteria.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                         
                         {/* --- PAGINATION NAVIGATION --- */}
-                        <div className="pagination-nav">
-                            <ul className="pagination-list">
-                                <li>
-                                    <button 
-                                        className="pagination-btn"
-                                        onClick={() => changePage(currentPage - 1)}
-                                        disabled={currentPage === 1}
-                                    >
-                                        <ChevronLeft size={16} /> Previous
-                                    </button>
-                                </li>
-                                {getPageNumbers().map(number => (
-                                    <li key={number}>
-                                        <button
-                                            className={`pagination-btn ${currentPage === number ? 'active' : ''}`}
-                                            onClick={() => changePage(number)}
+                        {filteredRequests.length > ITEMS_PER_PAGE && (
+                            <div className="pagination-nav">
+                                <ul className="pagination-list">
+                                    <li>
+                                        <button 
+                                            className="pagination-btn"
+                                            onClick={() => changePage(currentPage - 1)}
+                                            disabled={currentPage === 1}
                                         >
-                                            {number}
+                                            <ChevronLeft size={16} /> Previous
                                         </button>
                                     </li>
-                                ))}
-                                <li>
-                                    <button 
-                                        className="pagination-btn"
-                                        onClick={() => changePage(currentPage + 1)}
-                                        disabled={currentPage === totalPages}
-                                    >
-                                        Next <ChevronRight size={16} />
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
+                                    {getPageNumbers().map(number => (
+                                        <li key={number}>
+                                            <button
+                                                className={`pagination-btn ${currentPage === number ? 'active' : ''}`}
+                                                onClick={() => changePage(number)}
+                                            >
+                                                {number}
+                                            </button>
+                                        </li>
+                                    ))}
+                                    <li>
+                                        <button 
+                                            className="pagination-btn"
+                                            onClick={() => changePage(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            Next <ChevronRight size={16} />
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        )}
                         {/* --- END PAGINATION NAVIGATION --- */}
                     </div>
                 </div>
