@@ -14,7 +14,7 @@ const generateTempPassword = () => {
 
 const createInquiry = async (req, res) => {
   try {
-    console.log('📥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
+    console.log('🔥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
 
     let {
       serviceId,
@@ -100,7 +100,6 @@ const createInquiry = async (req, res) => {
       console.error('❌ User Creation/Lookup Error:', userError);
     }
 
-    // ✅✅✅ CRITICAL FIX: Use insertOne to bypass Mongoose casting
     const inquiryDoc = {
       _id: new mongoose.Types.ObjectId(),
       serviceId: serviceId || null,
@@ -133,7 +132,6 @@ const createInquiry = async (req, res) => {
       updatedAt: new Date()
     };
 
-    // ✅ Process flightDetails
     if (flightDetails) {
       if (typeof flightDetails === 'string') {
         try {
@@ -148,7 +146,6 @@ const createInquiry = async (req, res) => {
       inquiryDoc.flightDetails = {};
     }
 
-    // ✅ Process passportDetails
     if (passportDetails) {
       if (typeof passportDetails === 'string') {
         try {
@@ -163,10 +160,8 @@ const createInquiry = async (req, res) => {
       inquiryDoc.passportDetails = {};
     }
 
-    // ✅ Process passengers - THE FIX
     let passengersArray = [];
     if (passengers) {
-      // Parse if string
       if (typeof passengers === 'string') {
         try {
           passengers = JSON.parse(passengers);
@@ -176,10 +171,8 @@ const createInquiry = async (req, res) => {
         }
       }
       
-      // Ensure array
       if (Array.isArray(passengers)) {
         passengersArray = passengers.map(p => {
-          // If p is string, parse it
           if (typeof p === 'string') {
             try {
               p = JSON.parse(p);
@@ -202,15 +195,11 @@ const createInquiry = async (req, res) => {
     }
 
     inquiryDoc.passengers = passengersArray;
-
     console.log('💾 Final Document to Insert:', JSON.stringify(inquiryDoc, null, 2));
 
-    // ✅ USE DIRECT MONGODB INSERT - BYPASSES MONGOOSE VALIDATION
     const result = await mongoose.connection.db.collection('inquiries').insertOne(inquiryDoc);
-    
     console.log('✅ Inquiry Inserted Successfully:', result.insertedId);
 
-    // Fetch the created document
     const createdInquiry = await Inquiry.findById(result.insertedId);
 
     res.status(201).json({ 
@@ -231,13 +220,8 @@ const createInquiry = async (req, res) => {
   }
 };
 
-// --- NEW FUNCTION: Create Inquiry with Multi-File Uploads ---
 const createInquiryWithUploads = async (req, res) => {
     try {
-        console.log("📥 Received Application Upload");
-        console.log("Body:", req.body);
-        console.log("Files:", req.files ? req.files.length : 0);
-
         const {
             serviceName, 
             inquiryType,
@@ -289,7 +273,6 @@ const createInquiryWithUploads = async (req, res) => {
             message: 'Application submitted successfully',
             data: newInquiry
         });
-
     } catch (error) {
         console.error('❌ Application Upload Error:', error);
         res.status(500).json({ success: false, message: 'Server error processing application' });
@@ -369,7 +352,6 @@ const getInquiryStats = async (req, res) => {
 const markAsPaid = async (req, res) => {
   try {
     const { id } = req.params;
-
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       {
@@ -486,6 +468,122 @@ const deliverDocuments = async (req, res) => {
   }
 };
 
+const getInquiryAnalytics = async (req, res) => {
+  try {
+    const inquiries = await Inquiry.find();
+    const completedInquiries = inquiries.filter(i => i.status === 'COMPLETED');
+    const totalRevenue = completedInquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const todayRevenue = completedInquiries
+      .filter(i => {
+        const updated = new Date(i.updatedAt);
+        return updated >= today && updated < tomorrow;
+      })
+      .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+
+    const monthRevenue = completedInquiries
+      .filter(i => {
+        const updated = new Date(i.updatedAt);
+        return updated >= startOfMonth && updated <= endOfMonth;
+      })
+      .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+    
+    const revenueByService = {};
+    completedInquiries.forEach(inquiry => {
+      const service = inquiry.serviceName || 'Other';
+      if (!revenueByService[service]) {
+        revenueByService[service] = {
+          count: 0,
+          revenue: 0
+        };
+      }
+      revenueByService[service].count += 1;
+      revenueByService[service].revenue += inquiry.estimatedPrice || 0;
+    });
+    
+    const statusBreakdown = {
+      completed: completedInquiries.length,
+      pending: inquiries.filter(i => i.status === 'PENDING').length,
+      processing: inquiries.filter(i => i.status === 'PROCESSING' || i.status === 'CONTACTED').length,
+      paid: inquiries.filter(i => i.status === 'PAID' || i.status === 'CONFIRMED').length,
+      cancelled: inquiries.filter(i => i.status === 'CANCELLED').length,
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        totalInquiries: inquiries.length,
+        completedCount: completedInquiries.length,
+        totalRevenue,
+        todayRevenue,
+        monthRevenue,
+        revenueByService,
+        statusBreakdown,
+        recentInquiries: inquiries.slice(0, 10)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching inquiries analytics:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching analytics', 
+      error: error.message 
+    });
+  }
+};
+
+const getInquiriesByDateRange = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Start date and end date are required' 
+      });
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    const inquiries = await Inquiry.find({
+      updatedAt: {
+        $gte: start,
+        $lte: end
+      },
+      status: 'COMPLETED'
+    });
+    
+    const totalRevenue = inquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+    
+    res.json({
+      success: true,
+      data: {
+        count: inquiries.length,
+        totalRevenue,
+        inquiries
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching inquiries by date range:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching inquiries', 
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   createInquiry,
   createInquiryWithUploads, 
@@ -497,5 +595,7 @@ module.exports = {
   getInquiryStats,
   markAsPaid,
   confirmPayment,
-  deliverDocuments
+  deliverDocuments,
+  getInquiryAnalytics,
+  getInquiriesByDateRange
 };

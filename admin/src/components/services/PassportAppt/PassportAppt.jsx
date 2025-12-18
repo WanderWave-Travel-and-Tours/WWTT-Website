@@ -5,9 +5,10 @@ import {
     BookOpen, Calendar, CheckCircle, RotateCcw,
     FileText, Settings, RefreshCw, X, CreditCard, User,
     ChevronDown, Trash2, PlusCircle, Save, ClipboardList, ListPlus, Download,
-    ChevronLeft, ChevronRight, Search // Added Search for search bar
+    ChevronLeft, ChevronRight, Search, UserPlus
 } from 'lucide-react';
 import './PassportAppt.css';
+import PassportApplicationModal from './PassportApplicationModal';
 
 const PassportAppt = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -37,6 +38,7 @@ const PassportAppt = () => {
         stepsProcess: false
     });
 
+    const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false); 
     // --- SEARCH AND FILTER STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL'); // Default to 'ALL'
@@ -333,13 +335,41 @@ const PassportAppt = () => {
                             <p>DFA Slot Management & Assistance</p>
                         </div>
                         <div style={{display: 'flex', gap: '10px'}}>
-                            <button onClick={() => setActiveTab('appointments')} className={`passport-btn-add ${activeTab !== 'appointments' ? 'secondary' : ''}`} style={{backgroundColor: activeTab === 'appointments' ? '#3b82f6' : 'white', color: activeTab === 'appointments' ? 'white' : '#64748b', border: activeTab !== 'appointments' ? '1px solid #e2e8f0' : 'none'}}>
-                                <Calendar size={18} style={{marginRight:'8px'}}/> Appointments
-                            </button>
-                            <button onClick={() => setActiveTab('details')} className={`passport-btn-add ${activeTab !== 'details' ? 'secondary' : ''}`} style={{backgroundColor: activeTab === 'details' ? '#3b82f6' : 'white', color: activeTab === 'details' ? 'white' : '#64748b', border: activeTab !== 'details' ? '1px solid #e2e8f0' : 'none'}}>
-                                <FileText size={18} style={{marginRight:'8px'}}/> Requirements
-                            </button>
-                        </div>
+                        {/* 1. Add Walk-in (Primary Action) */}
+                        <button 
+                            className="passport-btn-add" 
+                            style={{ backgroundColor: '#0f172a' }} 
+                            onClick={() => setIsApplicationModalOpen(true)}
+                        >
+                            <UserPlus size={18} style={{marginRight:'8px'}}/> Add Walk-in
+                        </button>
+
+                        {/* 2. View Appointments Tab */}
+                        <button 
+                            onClick={() => setActiveTab('appointments')} 
+                            className={`passport-btn-add ${activeTab !== 'appointments' ? 'secondary' : ''}`} 
+                            style={{
+                                backgroundColor: activeTab === 'appointments' ? '#3b82f6' : 'white', 
+                                color: activeTab === 'appointments' ? 'white' : '#64748b', 
+                                border: activeTab !== 'appointments' ? '1px solid #e2e8f0' : 'none'
+                            }}
+                        >
+                            <Calendar size={18} style={{marginRight:'8px'}}/> Appointments
+                        </button>
+
+                        {/* 3. Manage Settings (Formerly Requirements) */}
+                        <button 
+                            onClick={() => setActiveTab('details')} 
+                            className={`passport-btn-add ${activeTab !== 'details' ? 'secondary' : ''}`} 
+                            style={{
+                                backgroundColor: activeTab === 'details' ? '#3b82f6' : 'white', 
+                                color: activeTab === 'details' ? 'white' : '#64748b', 
+                                border: activeTab !== 'details' ? '1px solid #e2e8f0' : 'none'
+                            }}
+                        >
+                            <Settings size={18} style={{marginRight:'8px'}}/> Manage Settings
+                        </button>
+                    </div>
                     </div>
 
                     {activeTab === 'appointments' && (
@@ -482,6 +512,13 @@ const PassportAppt = () => {
                     </div>
                </div>
             )}
+
+            <PassportApplicationModal 
+                        isOpen={isApplicationModalOpen}
+                        onClose={() => setIsApplicationModalOpen(false)}
+                        refreshData={fetchInquiries}
+                        passportData={passportData} // Ipapasa ang initialized passport requirements para sa pricing
+                    />
 
             {isViewModalOpen && selectedAppointment && (
                 <div className="modal-overlay" onClick={(e) => { if(e.target.className === 'modal-overlay') setIsViewModalOpen(false) }}>

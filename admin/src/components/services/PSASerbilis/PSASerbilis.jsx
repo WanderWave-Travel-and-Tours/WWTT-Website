@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   FolderOpen,
   CheckCircle,
-  Search, // Added Search icon for the input field
+  UserPlus,
 } from "lucide-react";
 import "./PSASerbilis.css";
 // IMPORT THE NEW MODALS
@@ -16,39 +16,17 @@ import {
   PSAServiceListModal,
   PSAServiceEditorModal
 } from "./PSAModals";
+//import { FolderOpen, UserPlus, FileText, AlertTriangle, CheckCircle } from "lucide-react"; // Dagdag UserPlus
+import PSAApplicationModal from "./PSAApplicationModal";
 
 // =========================================================================
-// PAGINATION COMPONENT (Updated with ellipsis logic)
+// PAGINATION COMPONENT (New)
 // =========================================================================
 const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentPage }) => {
   const pageNumbers = [];
   const totalPages = Math.ceil(totalApplications / applicationsPerPage);
 
-  // Logic to only show a limited number of page buttons and ellipses
-  const maxButtons = 5;
-  let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-  let endPage = Math.min(totalPages, currentPage + Math.floor(maxButtons / 2));
-
-  // Adjust start/end to ensure maxButtons are visible if possible
-  if (endPage - startPage + 1 < maxButtons) {
-    if (currentPage < totalPages / 2) {
-        endPage = Math.min(totalPages, startPage + maxButtons - 1);
-    } else {
-        startPage = Math.max(1, endPage - maxButtons + 1);
-    }
-  }
-  
-  // Final check to ensure range is appropriate
-  if (endPage - startPage + 1 < maxButtons) {
-    if (startPage === 1) {
-        endPage = Math.min(totalPages, maxButtons);
-    } else if (endPage === totalPages) {
-        startPage = Math.max(1, totalPages - maxButtons + 1);
-    }
-  }
-
-
-  for (let i = startPage; i <= endPage; i++) {
+  for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
 
@@ -78,15 +56,6 @@ const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentP
             Previous
           </button>
         </li>
-
-        {/* First page button and optional ellipsis */}
-        {startPage > 1 && (
-            <>
-                <li className="page-item"><button onClick={() => paginate(1)} className="pagination-btn">1</button></li>
-                {startPage > 2 && <span className="pagination-ellipsis">...</span>}
-            </>
-        )}
-
         {pageNumbers.map(number => (
           <li key={number} className="page-item">
             <button 
@@ -97,15 +66,6 @@ const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentP
             </button>
           </li>
         ))}
-
-        {/* Last page button and optional ellipsis */}
-        {endPage < totalPages && (
-            <>
-                {endPage < totalPages - 1 && <span className="pagination-ellipsis">...</span>}
-                <li className="page-item"><button onClick={() => paginate(totalPages)} className="pagination-btn">{totalPages}</button></li>
-            </>
-        )}
-
         <li>
           <button 
             onClick={handleNext} 
@@ -128,14 +88,6 @@ const PSASerbilis = () => {
   const [psaDocs, setPsaDocs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // PAGINATION STATES (NEW)
-  const [currentPage, setCurrentPage] = useState(1);
-  const [applicationsPerPage] = useState(10); // Set to 10 items per page
-
-  // SEARCH/FILTER STATES (NEW)
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("ALL"); // Default to 'ALL'
-
   // Modal States
   const [isPSAFormsOpen, setIsPSAFormsOpen] = useState(false); // Manage Services List
   const [isEditorOpen, setIsEditorOpen] = useState(false); // Add/Edit Service
@@ -173,8 +125,7 @@ const PSASerbilis = () => {
   const [showDeliverDocs, setShowDeliverDocs] = useState(false);
   const [deliveryFiles, setDeliveryFiles] = useState([]);
 
-  // List of all possible unique statuses for filters (ensure 'ALL' is first)
-  const statusOptions = ['ALL', 'PENDING', 'PAYMENT_PENDING', 'CONTACTED', 'CONFIRMED', 'PAID', 'COMPLETED', 'CANCELLED'];
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false); // New State
 
   const stats = [
     { label: "Total Requests", value: inquiries.length, icon: <FileText size={24} /> },
@@ -187,16 +138,10 @@ const PSASerbilis = () => {
     fetchPSADocs();
     fetchInquiries();
   }, []);
-  
-  // Effect to reset page when filter or search query changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filterStatus]);
-
 
   const fetchPSADocs = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/psa");
+      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/psa");
       if (Array.isArray(res.data)) {
         const mappedData = res.data.map((p) => ({
           ...p,
@@ -214,7 +159,7 @@ const PSASerbilis = () => {
 
   const fetchInquiries = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/inquiries');
+      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries');
       if (response.data.success) {
         const psaRequests = response.data.data.filter(inq => 
             inq.psaDocument || 
@@ -222,7 +167,6 @@ const PSASerbilis = () => {
             (inq.serviceName && inq.serviceName.toUpperCase().includes('CERTIFICATE'))
         );
         setInquiries(psaRequests);
-        setCurrentPage(1); // Reset to first page after new data load
       }
     } catch (error) {
       console.error('Error fetching inquiries:', error);
@@ -231,7 +175,7 @@ const PSASerbilis = () => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) {
         setDocuments(response.data.documents || []);
       }
@@ -259,7 +203,7 @@ const PSASerbilis = () => {
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${inquiryId}/status`,
+        `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/status`,
         { status: newStatus }
       );
 
@@ -292,7 +236,7 @@ const PSASerbilis = () => {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`,
+        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -411,11 +355,11 @@ const PSASerbilis = () => {
     try {
         if (selectedPSA) {
             // Update
-            await axios.put(`http://localhost:5000/api/psa/${selectedPSA.id}`, payload);
+            await axios.put(`https://wanderwaveph-backend.onrender.com/api/psa/${selectedPSA.id}`, payload);
             alert("Changes saved successfully!");
         } else {
             // Create
-            await axios.post("http://localhost:5000/api/psa", payload);
+            await axios.post("https://wanderwaveph-backend.onrender.com/api/psa", payload);
             alert("PSA Document created successfully!");
         }
         fetchPSADocs();
@@ -429,12 +373,12 @@ const PSASerbilis = () => {
 
   const handleDeletePSA = async (id) => {
     if (window.confirm("Delete this service?")) {
-        await axios.delete(`http://localhost:5000/api/psa/${id}`);
+        await axios.delete(`https://wanderwaveph-backend.onrender.com/api/psa/${id}`);
         fetchPSADocs();
     }
   };
 
-  // Helper functions for editor lists (omitted for brevity, keep in actual file)
+  // Helper functions for editor lists
   const addCategory = () => setRequirements([...requirements, { id: Date.now(), title: "", items: [] }]);
   const removeCategory = (id) => setRequirements(requirements.filter(c => c.id !== id));
   const handleCategoryTitleChange = (id, v) => setRequirements(requirements.map(c => c.id === id ? { ...c, title: v } : c));
@@ -456,7 +400,7 @@ const PSASerbilis = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/psa/upload', formData, {
+      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/psa/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -477,49 +421,6 @@ const PSASerbilis = () => {
     }
   };
 
-  // --- FILTERING, SEARCHING & PAGINATION LOGIC (NEW) ---
-  const filteredApplications = inquiries.filter((inquiry) => {
-    // 1. Filter by Status
-    const statusMatch = filterStatus === "ALL" || (inquiry.status && inquiry.status.toUpperCase() === filterStatus);
-
-    if (!statusMatch) return false;
-
-    // 2. Filter by Search Query
-    if (searchQuery.trim() === "") return true;
-
-    const searchLower = searchQuery.toLowerCase();
-    
-    const refNo = inquiry._id.slice(-6).toLowerCase();
-    const fullName = (inquiry.fullName || "").toLowerCase();
-    const documentType = (inquiry.psaDocument || inquiry.serviceName || "").toLowerCase();
-    const message = (inquiry.message || "").toLowerCase();
-    
-    return (
-      refNo.includes(searchLower) ||
-      fullName.includes(searchLower) ||
-      documentType.includes(searchLower) ||
-      message.includes(searchLower)
-    );
-  });
-
-  const totalFilteredApplications = filteredApplications.length;
-  
-  // Change page function
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-  // Apply Pagination
-  const indexOfLastApplication = currentPage * applicationsPerPage;
-  const indexOfFirstApplication = indexOfLastApplication - applicationsPerPage;
-  // Ensure we don't paginate beyond the available pages if filters change
-  const currentApplications = filteredApplications.slice(indexOfFirstApplication, indexOfLastApplication);
-
-  // Ensure current page is valid after filtering/searching
-  if (currentPage > 1 && currentApplications.length === 0 && totalFilteredApplications > 0) {
-      setCurrentPage(Math.ceil(totalFilteredApplications / applicationsPerPage));
-  }
-  // --- END LOGIC ---
-
-
   return (
     <div className="psa-page">
       <Sidebar
@@ -533,9 +434,19 @@ const PSASerbilis = () => {
               <h1>PSA Serbilis</h1>
               <p>Birth, Marriage, Death Certificate Processing</p>
             </div>
-            <button className="psa-btn-add" onClick={handleManageService}>
-              <FolderOpen size={18} style={{ marginRight: "8px" }} /> Manage Service
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                className="psa-btn-add" 
+                style={{ background: '#0f172a' }} // Dark blue like Visa
+                onClick={() => setIsApplicationModalOpen(true)}
+              >
+                <UserPlus size={18} style={{ marginRight: "8px" }} /> Add Requester
+              </button>
+              
+              <button className="psa-btn-add" onClick={handleManageService}>
+                <FolderOpen size={18} style={{ marginRight: "8px" }} /> Manage Service
+              </button>
+            </div>
           </div>
 
           <div className="psa-stats-grid">
@@ -549,41 +460,11 @@ const PSASerbilis = () => {
               </div>
             ))}
           </div>
-          
-          {/* --- SEARCH AND FILTER SYSTEM (NEW) --- */}
-          <div className="search-filter-card">
-              <div className="search-filter-wrapper">
-                  <div className="search-box">
-                      <Search size={20} className="search-icon" />
-                      <input
-                          type="text"
-                          placeholder="Search by Ref No, Requester, Document Type, or Message..."
-                          className="search-input"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                  </div>
-                  <div className="filter-buttons">
-                      {statusOptions.map(status => (
-                          <button
-                              key={status}
-                              className={`filter-btn badge-${status.toLowerCase()} ${filterStatus === status ? 'active' : ''}`}
-                              onClick={() => setFilterStatus(status)}
-                          >
-                              {status.replace('_', ' ')}
-                          </button>
-                      ))}
-                  </div>
-              </div>
-          </div>
-          {/* --- END SEARCH AND FILTER SYSTEM --- */}
-
 
           <div className="psa-table-container">
             <table className="psa-table">
               <thead>
                 <tr>
-                  <th>#</th> {/* Re-added for numbering */}
                   <th>Ref No.</th>
                   <th>Requester</th>
                   <th>Document Type</th>
@@ -593,18 +474,13 @@ const PSASerbilis = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentApplications.length === 0 ? (
+                {inquiries.length === 0 ? (
                     <tr>
-                    <td colSpan="7" style={{textAlign: 'center', padding: '20px'}}>
-                        {inquiries.length === 0 ? "No PSA requests found." : "No requests match your current search and filter criteria."}
-                    </td>
+                    <td colSpan="6" style={{textAlign: 'center', padding: '20px'}}>No PSA requests found.</td>
                     </tr>
                 ) : (
-                    currentApplications.map((row, i) => ( // Use currentApplications
+                    inquiries.map((row) => (
                     <tr key={row._id}>
-                        <td style={{ fontWeight: "700", color: "#64748b" }}>
-                          {indexOfFirstApplication + i + 1} {/* Correct sequential numbering */}
-                        </td>
                         <td style={{ fontWeight: "700", color: "#0f172a" }}>
                         {row._id.slice(-6).toUpperCase()}
                         </td>
@@ -644,17 +520,17 @@ const PSASerbilis = () => {
                 )}
               </tbody>
             </table>
-
-            {/* Render Pagination */}
-            <Pagination 
-                applicationsPerPage={applicationsPerPage}
-                totalApplications={totalFilteredApplications}
-                paginate={paginate}
-                currentPage={currentPage}
-            />
           </div>
 
-          {/* --- MODALS --- (Omitted for brevity, keep in actual file) */}
+          <PSAApplicationModal 
+            isOpen={isApplicationModalOpen}
+            onClose={() => setIsApplicationModalOpen(false)}
+            psaDocs={psaDocs}
+            refreshData={fetchInquiries}
+          />
+
+          {/* --- MODALS --- */}
+
           {/* 1. View Inquiry Modal */}
           {isInquiryModalOpen && selectedInquiry && (
             <PSAInquiryModal
@@ -724,8 +600,6 @@ const PSASerbilis = () => {
                 }}
             />
           )}
-          {/* --- END MODALS --- */}
-
 
         </div>
       </main>

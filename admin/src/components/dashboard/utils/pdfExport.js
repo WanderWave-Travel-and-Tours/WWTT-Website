@@ -1,5 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+// Import logo as module
+import logo from '../../../assets/Logo.png';
 
 export const exportToPDF = (stats, trendData, topPackages) => {
     try {
@@ -7,149 +9,191 @@ export const exportToPDF = (stats, trendData, topPackages) => {
         const pageWidth = doc.internal.pageSize.width;
         const pageHeight = doc.internal.pageSize.height;
         
-        // ===== HEADER =====
+        const addWatermark = () => {
+            try {
+                const size = 120;
+                const x = (pageWidth - size) / 2;
+                const y = (pageHeight - size) / 2;
+                
+                doc.saveGraphicsState();
+                doc.setGState(new doc.GState({ opacity: 0.1 }));
+                doc.addImage(logo, 'PNG', x, y, size, size);
+                doc.restoreGraphicsState();
+            } catch (e) {
+                console.log('Watermark skipped:', e.message);
+            }
+        };
+        
+        addWatermark();
+        
         doc.setFillColor(255, 255, 255);
         doc.rect(0, 0, pageWidth, 35, 'F');
         
-        // Company Name
         doc.setTextColor(0, 31, 63);
         doc.setFontSize(24);
         doc.setFont('helvetica', 'bold');
         doc.text('WANDERWAVE TRAVEL', 14, 20);
         
-        // Subtitle
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
         doc.text('Executive Performance Report', 14, 28);
         
-        // Date on right
         doc.setFontSize(9);
         doc.setTextColor(80, 80, 80);
         const currentDate = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
         doc.text('Generated: ' + currentDate, pageWidth - 14, 20, { align: 'right' });
         doc.text('Period: Last 6 Months', pageWidth - 14, 26, { align: 'right' });
         
-        // Line separator
         doc.setDrawColor(200, 200, 200);
         doc.setLineWidth(0.5);
         doc.line(14, 32, pageWidth - 14, 32);
         
         let yPos = 42;
         
-        // ===== 1. EXECUTIVE SUMMARY =====
         doc.setFillColor(245, 247, 250);
         doc.rect(14, yPos, pageWidth - 28, 8, 'F');
-        
         doc.setFillColor(255, 140, 66);
         doc.rect(14, yPos, 3, 8, 'F');
-        
         doc.setTextColor(0, 31, 63);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('1. EXECUTIVE SUMMARY', 20, yPos + 5.5);
-        
         yPos += 12;
         
-        // Summary boxes
-        const summaryBoxWidth = 44;
-        const summaryGap = 3;
-        
-        // Box 1 - Total Revenue
+        const bw = 34.5, gap = 2.375;
         let xPos = 14;
+        
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
-        doc.rect(xPos, yPos, summaryBoxWidth, 20);
-        doc.setFontSize(8);
+        doc.rect(xPos, yPos, bw, 20);
+        doc.setFontSize(6.5);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text('TOTAL REVENUE', xPos + summaryBoxWidth / 2, yPos + 8, { align: 'center' });
-        doc.setFontSize(16);
+        doc.text('COMBINED REVENUE', xPos + bw/2, yPos + 7, { align: 'center' });
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 31, 63);
-        doc.text('P' + (stats.totalRevenue / 1000000).toFixed(2) + 'M', xPos + summaryBoxWidth / 2, yPos + 16, { align: 'center' });
+        doc.setTextColor(139, 92, 246);
+        doc.text('P' + ((stats.combinedTotalRevenue || 0) / 1000000).toFixed(2) + 'M', xPos + bw/2, yPos + 15, { align: 'center' });
         
-        // Box 2 - Total Bookings
-        xPos += summaryBoxWidth + summaryGap;
-        doc.rect(xPos, yPos, summaryBoxWidth, 20);
-        doc.setFontSize(8);
+        xPos += bw + gap;
+        doc.rect(xPos, yPos, bw, 20);
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text('TOTAL BOOKINGS', xPos + summaryBoxWidth / 2, yPos + 8, { align: 'center' });
-        doc.setFontSize(16);
+        doc.text('BOOKINGS', xPos + bw/2, yPos + 7, { align: 'center' });
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 31, 63);
-        doc.text(String(stats.totalBookings), xPos + summaryBoxWidth / 2, yPos + 16, { align: 'center' });
+        doc.setTextColor(59, 130, 246);
+        doc.text('P' + ((stats.totalRevenue || 0) / 1000000).toFixed(2) + 'M', xPos + bw/2, yPos + 15, { align: 'center' });
         
-        // Box 3 - Profit Margin
-        xPos += summaryBoxWidth + summaryGap;
-        doc.rect(xPos, yPos, summaryBoxWidth, 20);
-        doc.setFontSize(8);
+        xPos += bw + gap;
+        doc.rect(xPos, yPos, bw, 20);
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text('PROFIT MARGIN', xPos + summaryBoxWidth / 2, yPos + 8, { align: 'center' });
-        doc.setFontSize(16);
+        doc.text('SERVICES', xPos + bw/2, yPos + 7, { align: 'center' });
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 31, 63);
-        doc.text(stats.profitMargin + '%', xPos + summaryBoxWidth / 2, yPos + 16, { align: 'center' });
+        doc.setTextColor(16, 185, 129);
+        doc.text('P' + ((stats.totalInquiriesRevenue || 0) / 1000000).toFixed(2) + 'M', xPos + bw/2, yPos + 15, { align: 'center' });
         
-        // Box 4 - Active Packages
-        xPos += summaryBoxWidth + summaryGap;
-        doc.rect(xPos, yPos, summaryBoxWidth, 20);
-        doc.setFontSize(8);
+        xPos += bw + gap;
+        doc.rect(xPos, yPos, bw, 20);
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text('ACTIVE PACKAGES', xPos + summaryBoxWidth / 2, yPos + 8, { align: 'center' });
-        doc.setFontSize(16);
+        doc.text('BOOKINGS COUNT', xPos + bw/2, yPos + 7, { align: 'center' });
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 31, 63);
-        doc.text(String(stats.totalPackages), xPos + summaryBoxWidth / 2, yPos + 16, { align: 'center' });
+        doc.text(String(stats.totalBookings || 0), xPos + bw/2, yPos + 15, { align: 'center' });
+        
+        xPos += bw + gap;
+        doc.rect(xPos, yPos, bw, 20);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('SERVICES DONE', xPos + bw/2, yPos + 7, { align: 'center' });
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 31, 63);
+        doc.text(String(stats.completedInquiries || 0), xPos + bw/2, yPos + 15, { align: 'center' });
         
         yPos += 28;
         
-        // ===== 2. FINANCIAL OVERVIEW =====
         doc.setFillColor(245, 247, 250);
         doc.rect(14, yPos, pageWidth - 28, 8, 'F');
-        
         doc.setFillColor(255, 140, 66);
         doc.rect(14, yPos, 3, 8, 'F');
-        
         doc.setTextColor(0, 31, 63);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('2. FINANCIAL OVERVIEW', 20, yPos + 5.5);
-        
+        doc.text('2. REVENUE BREAKDOWN', 20, yPos + 5.5);
         yPos += 12;
         
-        // Financial Table
-        const financialData = [
-            ['Total Gross Sales', stats.totalSales.toLocaleString('en-US', { minimumFractionDigits: 0 }), 'Total value of confirmed bookings'],
-            ['Total Seller Cost', stats.totalSellerCost.toLocaleString('en-US', { minimumFractionDigits: 0 }), 'Payable to suppliers/partners'],
-            ['Net Profit (Markup)', stats.totalMarkup.toLocaleString('en-US', { minimumFractionDigits: 0 }), 'Net Earnings']
-        ];
+        const totalCombined = (stats.totalRevenue || 0) + (stats.totalInquiriesRevenue || 0);
+        const bookingsShare = totalCombined > 0 ? (((stats.totalRevenue || 0) / totalCombined) * 100).toFixed(1) : 0;
+        const servicesShare = totalCombined > 0 ? (((stats.totalInquiriesRevenue || 0) / totalCombined) * 100).toFixed(1) : 0;
+        
+        autoTable(doc, {
+            startY: yPos,
+            head: [['Revenue Source', 'Amount (PHP)', 'Volume', 'Share']],
+            body: [
+                ['Package Bookings', (stats.totalRevenue || 0).toLocaleString(), (stats.confirmedBookings || 0) + ' bookings', bookingsShare + '%'],
+                ['Travel Services', (stats.totalInquiriesRevenue || 0).toLocaleString(), (stats.completedInquiries || 0) + ' services', servicesShare + '%'],
+                ['TOTAL', totalCombined.toLocaleString(), ((stats.confirmedBookings || 0) + (stats.completedInquiries || 0)) + ' total', '100%']
+            ],
+            theme: 'plain',
+            // Siguraduhin na ang margin ay pareho sa header (14)
+            margin: { left: 14, right: 14 }, 
+            headStyles: { fillColor: [0, 31, 63], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
+            alternateRowStyles: { fillColor: [250, 250, 250] },
+            columnStyles: {
+                0: { cellWidth: 'auto', fontStyle: 'bold' }, // Gawing 'auto' para mag-adjust sa text
+                1: { halign: 'right', cellWidth: 40 },
+                2: { halign: 'center', cellWidth: 40, fontSize: 8, textColor: [100, 100, 100] },
+                3: { halign: 'center', cellWidth: 30, fontStyle: 'bold' }
+            },
+            margin: { left: 14, right: 14 },
+            didParseCell: function(data) {
+                if (data.row.index === 2 && data.section === 'body') {
+                    data.cell.styles.fillColor = [245, 247, 250];
+                    data.cell.styles.fontStyle = 'bold';
+                    if (data.column.index === 1) data.cell.styles.textColor = [139, 92, 246];
+                }
+            }
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+        
+        doc.setFillColor(245, 247, 250);
+        doc.rect(14, yPos, pageWidth - 28, 8, 'F');
+        doc.setFillColor(255, 140, 66);
+        doc.rect(14, yPos, 3, 8, 'F');
+        doc.setTextColor(0, 31, 63);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('3. FINANCIAL OVERVIEW (Bookings)', 20, yPos + 5.5);
+        yPos += 12;
         
         autoTable(doc, {
             startY: yPos,
             head: [['Metric', 'Amount (PHP)', 'Note']],
-            body: financialData,
+            body: [
+                ['Total Gross Sales', (stats.totalSales || 0).toLocaleString(), 'Total value of confirmed bookings'],
+                ['Total Seller Cost', (stats.totalSellerCost || 0).toLocaleString(), 'Payable to suppliers/partners'],
+                ['Net Profit (Markup)', (stats.totalMarkup || 0).toLocaleString(), 'Net Earnings from bookings']
+            ],
             theme: 'plain',
-            headStyles: { 
-                fillColor: [0, 31, 63],
-                textColor: [255, 255, 255],
-                fontSize: 10,
-                fontStyle: 'bold'
-            },
-            bodyStyles: {
-                fontSize: 9,
-                textColor: [60, 60, 60]
-            },
-            alternateRowStyles: {
-                fillColor: [250, 250, 250]
-            },
+            margin: { left: 14, right: 14 }, // Pantay dapat sa 14
+            headStyles: { fillColor: [0, 31, 63], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
             columnStyles: {
-                0: { cellWidth: 60, fontStyle: 'bold' },
+                0: { cellWidth: 50, fontStyle: 'bold' },
                 1: { halign: 'right', cellWidth: 40 },
-                2: { textColor: [100, 100, 100], fontSize: 8 }
+                2: { cellWidth: 'auto', textColor: [100, 100, 100], fontSize: 8 } // 'auto' para kainin ang tira na space
             },
             margin: { left: 14, right: 14 },
             didParseCell: function(data) {
@@ -164,132 +208,136 @@ export const exportToPDF = (stats, trendData, topPackages) => {
         });
         
         yPos = doc.lastAutoTable.finalY + 15;
+        if (yPos > pageHeight - 80) {
+            doc.addPage();
+            addWatermark(); 
+            yPos = 20;
+        }
         
-        // ===== 3. PERFORMANCE ANALYTICS =====
         doc.setFillColor(245, 247, 250);
         doc.rect(14, yPos, pageWidth - 28, 8, 'F');
-        
         doc.setFillColor(255, 140, 66);
         doc.rect(14, yPos, 3, 8, 'F');
-        
         doc.setTextColor(0, 31, 63);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('3. PERFORMANCE ANALYTICS', 20, yPos + 5.5);
-        
+        doc.text('4. PERFORMANCE ANALYTICS', 20, yPos + 5.5);
         yPos += 12;
         
-        // Revenue Trajectory
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
-        doc.text('REVENUE TRAJECTORY', 14, yPos + 5);
+        doc.text('COMBINED REVENUE TRAJECTORY', 14, yPos + 5);
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        trendData.forEach((data, index) => {
-            doc.text(data.month + ': P' + data.revenue.toLocaleString(), 18, yPos + 12 + (index * 5));
+        trendData.forEach((data, i) => {
+            const br = data.bookingsRevenue ? 'P' + (data.bookingsRevenue/1000).toFixed(0) + 'k' : 'P0';
+            const sr = data.inquiriesRevenue ? 'P' + (data.inquiriesRevenue/1000).toFixed(0) + 'k' : 'P0';
+            const tr = data.totalRevenue ? 'P' + (data.totalRevenue/1000).toFixed(0) + 'k' : 'P0';
+            
+            doc.setTextColor(60, 60, 60);
+            doc.setFont('helvetica', 'bold');
+            doc.text(data.month + ':', 18, yPos + 12 + (i * 5));
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(59, 130, 246);
+            doc.text('B:' + br, 32, yPos + 12 + (i * 5));
+            doc.setTextColor(16, 185, 129);
+            doc.text('S:' + sr, 50, yPos + 12 + (i * 5));
+            doc.setTextColor(139, 92, 246);
+            doc.setFont('helvetica', 'bold');
+            doc.text('T:' + tr, 68, yPos + 12 + (i * 5));
         });
         
-        // Booking Composition
-        const rightColX = pageWidth / 2 + 5;
+        const rcx = pageWidth / 2 + 5;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
-        doc.text('BOOKING COMPOSITION', rightColX, yPos + 5);
+        doc.text('STATUS BREAKDOWN', rcx, yPos + 5);
         
-        const confirmedPercent = stats.totalBookings > 0 ? ((stats.confirmedBookings / stats.totalBookings) * 100).toFixed(0) : 0;
-        const pendingPercent = stats.totalBookings > 0 ? ((stats.pendingBookings / stats.totalBookings) * 100).toFixed(0) : 0;
-        const cancelledPercent = stats.totalBookings > 0 ? ((stats.cancelledBookings / stats.totalBookings) * 100).toFixed(0) : 0;
+        doc.setFontSize(9);
+        doc.setTextColor(59, 130, 246);
+        doc.text('BOOKINGS:', rcx + 5, yPos + 13);
         
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
+        const cp = stats.totalBookings > 0 ? ((stats.confirmedBookings / stats.totalBookings) * 100).toFixed(0) : 0;
+        const pp = stats.totalBookings > 0 ? ((stats.pendingBookings / stats.totalBookings) * 100).toFixed(0) : 0;
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(72, 187, 120);
-        doc.text('Confirmed ' + confirmedPercent + '%', rightColX + 5, yPos + 15);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text('(' + stats.confirmedBookings + ' bookings)', rightColX + 5, yPos + 20);
-        
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
+        doc.text('Confirmed: ' + (stats.confirmedBookings || 0) + ' (' + cp + '%)', rcx + 7, yPos + 19);
         doc.setTextColor(234, 179, 8);
-        doc.text('Pending ' + pendingPercent + '%', rightColX + 5, yPos + 28);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text('(' + stats.pendingBookings + ' bookings)', rightColX + 5, yPos + 33);
-        
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
+        doc.text('Pending: ' + (stats.pendingBookings || 0) + ' (' + pp + '%)', rcx + 7, yPos + 24);
         doc.setTextColor(239, 68, 68);
-        doc.text('Cancelled ' + cancelledPercent + '%', rightColX + 5, yPos + 41);
+        doc.text('Cancelled: ' + (stats.cancelledBookings || 0), rcx + 7, yPos + 29);
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(16, 185, 129);
+        doc.text('SERVICES:', rcx + 5, yPos + 37);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text('(' + stats.cancelledBookings + ' bookings)', rightColX + 5, yPos + 46);
+        doc.setTextColor(72, 187, 120);
+        doc.text('Completed: ' + (stats.completedInquiries || 0), rcx + 7, yPos + 43);
+        doc.setTextColor(234, 179, 8);
+        doc.text('Pending: ' + (stats.pendingInquiries || 0), rcx + 7, yPos + 48);
         
         yPos += 55;
+        if (yPos > pageHeight - 60) {
+            doc.addPage();
+            addWatermark(); 
+            yPos = 20;
+        }
         
-        // ===== 4. TOP PERFORMING PACKAGES =====
         doc.setFillColor(245, 247, 250);
         doc.rect(14, yPos, pageWidth - 28, 8, 'F');
-        
         doc.setFillColor(255, 140, 66);
         doc.rect(14, yPos, 3, 8, 'F');
-        
         doc.setTextColor(0, 31, 63);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('4. TOP PERFORMING PACKAGES', 20, yPos + 5.5);
-        
+        doc.text('5. TOP PERFORMING PACKAGES', 20, yPos + 5.5);
         yPos += 12;
-        
-        // Packages Table
-        const packagesData = topPackages.map(pkg => [
-            pkg.name,
-            String(pkg.bookings),
-            pkg.revenue
-        ]);
         
         autoTable(doc, {
             startY: yPos,
             head: [['Package Name', 'Bookings', 'Revenue Generated']],
-            body: packagesData,
+            body: topPackages.map(p => [p.name, String(p.bookings), p.revenue]),
             theme: 'plain',
-            headStyles: { 
-                fillColor: [0, 31, 63],
-                textColor: [255, 255, 255],
-                fontSize: 10,
-                fontStyle: 'bold'
-            },
-            bodyStyles: {
-                fontSize: 9,
-                textColor: [60, 60, 60]
-            },
-            alternateRowStyles: {
-                fillColor: [250, 250, 250]
-            },
+            margin: { left: 14, right: 14 },
+            headStyles: { fillColor: [0, 31, 63], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
             columnStyles: {
+                0: { cellWidth: 'auto' }, // Hahaba ito base sa pangalan ng package
                 1: { halign: 'center', cellWidth: 30 },
                 2: { halign: 'right', cellWidth: 50, fontStyle: 'bold' }
-            },
-            margin: { left: 14, right: 14 }
+            }
         });
         
-        // Footer
-        const footerY = pageHeight - 15;
+        yPos = doc.lastAutoTable.finalY + 8;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Legend: B = Bookings Revenue | S = Services Revenue | T = Total Combined Revenue', 14, yPos);
+        
+        const fy = pageHeight - 15;
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(150, 150, 150);
-        doc.text('Confidential Internal Document | WanderWave Travel & Tours', pageWidth / 2, footerY, { align: 'center' });
+        doc.text('Confidential Internal Document | WanderWave Travel & Tours', pageWidth / 2, fy, { align: 'center' });
         
-        // Save
+        const pc = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pc; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Page ' + i + ' of ' + pc, pageWidth - 14, fy, { align: 'right' });
+        }
+        
         doc.save('WanderWave_Executive_Report_' + new Date().toISOString().split('T')[0] + '.pdf');
         
     } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert('Error generating PDF: ' + error.message);
+        console.error('PDF Error:', error);
+        alert('PDF Error: ' + error.message);
     }
 };
