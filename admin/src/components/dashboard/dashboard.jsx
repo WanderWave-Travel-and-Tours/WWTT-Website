@@ -7,8 +7,8 @@ import FinancialOverview from "./components/FinancialOverview";
 import ChartsSection from "./components/ChartsSection";
 import RecentBookings from "./components/RecentBookings";
 import TopPackages from "./components/TopPackages";
-//import QuickActions from "./components/QuickActions";
-//import FooterStats from "./components/FooterStats";
+import QuickActions from "./components/QuickActions";
+import FooterStats from "./components/FooterStats";
 import RevenueAnalytics from "./components/RevenueAnalytics";
 import { exportToPDF } from "./utils/pdfExport";
 import "./dashboard.css";
@@ -31,9 +31,11 @@ const Dashboard = () => {
     totalMarkup: 0,
     totalSales: 0,
     profitMargin: 0,
+    // NEW: Inquiries Revenue Stats
     totalInquiriesRevenue: 0,
     completedInquiries: 0,
     pendingInquiries: 0,
+    // NEW: Combined Revenue Stats
     combinedTotalRevenue: 0,
     todayRevenue: 0,
     thisMonthRevenue: 0,
@@ -151,6 +153,7 @@ const Dashboard = () => {
       testimonials = [];
     }
 
+    // ✅ FIX: Fetch Inquiries Data with proper response handling
     try {
       const inquiriesRes = await fetch(
         "http://localhost:5000/api/inquiries"
@@ -159,6 +162,7 @@ const Dashboard = () => {
         throw new Error(`HTTP error! status: ${inquiriesRes.status}`);
       const inquiriesData = await inquiriesRes.json();
       
+      // Extract data array from response (your API returns { success: true, data: [...] })
       inquiries = inquiriesData.data || inquiriesData || [];
       console.log('📊 Fetched Inquiries Count:', inquiries.length);
       if (inquiries.length > 0) {
@@ -177,6 +181,7 @@ const Dashboard = () => {
       console.log('🔍 Processing inquiries array:', Array.isArray(inquiries));
       console.log('🔍 Total inquiries to process:', inquiries.length);
 
+      // BOOKINGS CALCULATIONS
       const confirmed = bookings.filter((b) => b.status === "confirmed").length;
       const pending = bookings.filter((b) => b.status === "pending").length;
       const cancelled = bookings.filter((b) => b.status === "cancelled").length;
@@ -294,14 +299,17 @@ const Dashboard = () => {
         totalMarkup: financialStats.totalMarkup,
         totalSales: financialStats.totalSales,
         profitMargin: profitMargin,
+        // NEW: Inquiries Stats
         totalInquiriesRevenue: inquiriesRevenue,
         completedInquiries: completedInquiries.length,
         pendingInquiries: pendingInquiriesCount,
+        // NEW: Combined Stats
         combinedTotalRevenue: combinedRevenue,
         todayRevenue: todayTotalRevenue,
         thisMonthRevenue: monthTotalRevenue,
       });
 
+      // TREND DATA (6 months) - Combined Revenue
       const trendData = [];
       for (let i = 5; i >= 0; i--) {
         const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -350,6 +358,7 @@ const Dashboard = () => {
       }
       setTrendData(trendData);
 
+      // DAILY REVENUE BREAKDOWN (Last 7 days)
       const dailyBreakdown = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
@@ -380,6 +389,7 @@ const Dashboard = () => {
         });
       }
 
+      // MONTHLY REVENUE BREAKDOWN (Last 6 months)
       const monthlyBreakdown = trendData.map(month => ({
         month: month.month,
         bookingsRevenue: month.bookingsRevenue,
@@ -392,6 +402,7 @@ const Dashboard = () => {
         monthly: monthlyBreakdown,
       });
 
+      // RECENT BOOKINGS (unchanged)
       const formatted = bookings
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 5)
@@ -409,6 +420,7 @@ const Dashboard = () => {
         }));
       setRecentBookings(formatted);
 
+      // TOP PACKAGES (unchanged)
       const packageStats = {};
       bookings.forEach((b) => {
         const pkg = b.packageName || "Unknown";
@@ -489,6 +501,7 @@ const Dashboard = () => {
 
           <StatsCards stats={stats} />
 
+          {/* NEW: Revenue Analytics Component */}
           <RevenueAnalytics 
             stats={stats}
             revenueBreakdown={revenueBreakdown}
@@ -509,13 +522,11 @@ const Dashboard = () => {
             />
 
             <TopPackages packages={topPackages} />
-            {/*
+
             <QuickActions navigate={navigate} />
-            */}
           </div>
-          {/*
+
           <FooterStats stats={stats} />
-          */}
         </div>
       </main>
     </div>
