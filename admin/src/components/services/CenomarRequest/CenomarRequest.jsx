@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from 'axios';
 import Sidebar from "../../sidebar/sidebar"; 
-// Added Search to the imports
-import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen, ChevronLeft, ChevronRight, Search } from "lucide-react"; 
-// Import ang modals mula sa CenomarModals.jsx
+import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen, ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react"; 
 import { InquiryModal, ServiceListModal, ServiceEditorModal, ContactRemarksModal } from "./CenomarModals"; 
 import "./CenomarRequest.css";
+import { CenomarApplicationModal } from "./CenomarApplicationModal";
 
-// --- PAGINATION COMPONENT ---
 const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -15,7 +13,6 @@ const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => 
 
   const getPageNumbers = () => {
     const pageNumbers = [];
-    // Ensure all pages are shown if 5 or less
     if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
     } else {
@@ -37,10 +34,8 @@ const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => 
       }
     }
     return pageNumbers.filter((value, index, self) => 
-      // Filter out duplicate '...' and ensure current page isn't duplicated
       self.indexOf(value) === index || value === currentPage
     ).filter((value, index, self) => 
-      // Filter out '...' if it is immediately next to a number
       !(value === '...' && self[index - 1] === '...')
     );
   };
@@ -84,15 +79,12 @@ const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => 
 };
 
 const CenomarRequest = () => {
-  // --- LAYOUT & MAIN DATA ---
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [cenomarDocs, setCenomarDocs] = useState([]);
   const [inquiries, setInquiries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- SEARCH AND FILTER STATES (NEW) ---
   const [searchTerm, setSearchTerm] = useState("");
-  // 'ALL' is the required state for "All Items"
   const [filterStatus, setFilterStatus] = useState("ALL"); 
   
   // --- PAGINATION STATES ---
@@ -108,6 +100,7 @@ const CenomarRequest = () => {
   const [contactEvidence, setContactEvidence] = useState(null);
   const [showDeliverDocs, setShowDeliverDocs] = useState(false);
   const [deliveryFiles, setDeliveryFiles] = useState([]);
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
 
   // --- CMS STATES ---
   const [isCENOMARFormsOpen, setIsCENOMARFormsOpen] = useState(false);
@@ -415,7 +408,19 @@ const CenomarRequest = () => {
           
           <div className="cenomar-header">
             <div className="cenomar-title"><h1>CENOMAR Request</h1><p>Certificate of No Marriage Applications</p></div>
-            <button className="cenomar-btn-add" onClick={handleManageService}><FolderOpen size={18} /> Manage Service</button>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    className="cenomar-btn-add" 
+                    style={{ background: '#0f172a' }} // Dark Blue for manual entry
+                    onClick={() => setIsApplicationModalOpen(true)}
+                  >
+                    <UserPlus size={18} /> Add Applicant
+                  </button>
+                  
+                  <button className="cenomar-btn-add" onClick={handleManageService}>
+                    <FolderOpen size={18} /> Manage Service
+                  </button>
+              </div>
           </div>
 
           <div className="cenomar-stats-grid">
@@ -444,7 +449,6 @@ const CenomarRequest = () => {
                       {statusOptions.map(status => (
                           <button
                               key={status}
-                              // Dynamically apply active class based on filterStatus
                               className={`filter-btn ${filterStatus === status ? getFilterClassName(status) : ''}`}
                               onClick={() => setFilterStatus(status)}
                           >
@@ -454,8 +458,6 @@ const CenomarRequest = () => {
                   </div>
               </div>
           </div>
-          {/* --- END SEARCH AND FILTER CARD (NEW) --- */}
-
 
           <div className="cenomar-table-container">
             <table className="cenomar-table">
@@ -491,6 +493,13 @@ const CenomarRequest = () => {
           </div>
         </div>
       </main>
+
+      <CenomarApplicationModal 
+            isOpen={isApplicationModalOpen}
+            onClose={() => setIsApplicationModalOpen(false)}
+            refreshData={fetchInquiries}
+            cenomarDocs={cenomarDocs}
+      />
 
       {/* MODALS */}
       {isInquiryModalOpen && selectedInquiry && (
