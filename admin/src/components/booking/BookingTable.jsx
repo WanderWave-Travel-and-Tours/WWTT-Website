@@ -152,30 +152,10 @@ const BookingTable = ({
                                 </button>
 
                                 {/* Optional: Confirm button only for pending */}
-                                {!isArchived && booking.status === 'pending' && (
-                                    <button
-                                        className="bkm-action-btn bkm-confirm-btn"
-                                        onClick={() => handleConfirm(booking)}
-                                        disabled={actionLoading}
-                                        title="Confirm booking"
-                                    >
-                                        <CheckIcon size={16} />
-                                        Confirm
-                                    </button>
-                                )}
+                                {!isArchived && booking.status === 'pending' }
 
                                 {/* Optional: Cancel button only for non-cancelled */}
-                                {!isArchived && booking.status !== 'cancelled' && booking.status !== 'confirmed' && (
-                                    <button
-                                        className="bkm-action-btn bkm-cancel-btn"
-                                        onClick={() => handleCancel(booking)}
-                                        disabled={actionLoading}
-                                        title="Cancel booking"
-                                    >
-                                        <XIcon size={16} />
-                                        Cancel
-                                    </button>
-                                )}
+                                {!isArchived && booking.status !== 'cancelled' && booking.status !== 'confirmed' }
                             </div>
                         </td>
                     </tr>
