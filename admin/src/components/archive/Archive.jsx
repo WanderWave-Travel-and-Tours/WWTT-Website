@@ -17,6 +17,9 @@ import { fetchArchivedBookings, restoreBooking } from './archiveFunctions/bookin
 import { fetchArchivedPackages, restorePackage } from './archiveFunctions/packageService';
 import { fetchArchivedTours, restoreTour } from './archiveFunctions/tourService';
 import { fetchArchivedTestimonials, restoreTestimonial } from './archiveFunctions/testimonialService';
+import { fetchArchivedPromos, restorePromo } from './archiveFunctions/promoService';
+// DINAGDAG: Poster Service
+import { fetchArchivedPosters, restorePoster } from './archiveFunctions/posterService';
 
 const ARCHIVE_IMAGES = {
     TOTAL_ITEMS: 'https://picsum.photos/seed/desk/800/600', 
@@ -117,21 +120,29 @@ const ArchiveComponent = () => {
         fetchArchivedBookings(),
         fetchArchivedPackages(),
         fetchArchivedTours(),
-        fetchArchivedTestimonials()
+        fetchArchivedTestimonials(),
+        fetchArchivedPromos(),
+        fetchArchivedPosters() // DINAGDAG: Fetch posters
       ]);
       
       const bookingsData = results[0].status === 'fulfilled' ? results[0].value : [];
       const packagesData = results[1].status === 'fulfilled' ? results[1].value : [];
       const toursData = results[2].status === 'fulfilled' ? results[2].value : [];
       const testimonialsData = results[3].status === 'fulfilled' ? results[3].value : [];
+      const promosData = results[4].status === 'fulfilled' ? results[4].value : [];
+      const postersData = results[5].status === 'fulfilled' ? results[5].value : []; // DINAGDAG
 
-      // Pagsamahin lahat ng data sources
-      const combinedData = [...bookingsData, ...packagesData, ...toursData, ...testimonialsData];
+      const combinedData = [
+        ...bookingsData, 
+        ...packagesData, 
+        ...toursData, 
+        ...testimonialsData,
+        ...promosData,
+        ...postersData // DINAGDAG
+      ];
       
-      // I-filter out ang mga lampas na sa retention policy
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
 
-      // Mapping logic: Sinisiguro na lilitaw ang itemName kahit title o fullName ang gamit sa DB
       const formatted = nonExpiredData.map((item, index) => {
         const archiveNumber = nonExpiredData.length - index;
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
@@ -141,13 +152,13 @@ const ArchiveComponent = () => {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber: archiveNumber,
-          // Support para sa title (Tours) at fullName (Bookings)
-          itemName: item.itemName || item.title || item.fullName || item.name || 'Unnamed Item', 
-          type: item.type || (item.title ? 'Tour' : 'Booking'), 
+          // Pinagsamang naming logic para sa iba't ibang models
+          itemName: item.itemName || item.title || item.fullName || item.name || item.code || 'Unnamed Item', 
+          type: item.type || 'Other', 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
-          reference: item.reference || item.referenceNumber || item.slug || item._id?.substring(0, 8) || 'N/A',
+          reference: item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
           status: item.status || 'Archived', 
           rawData: item
         };
@@ -207,10 +218,13 @@ const ArchiveComponent = () => {
     setActionLoading(true);
     try {
       let restored = false;
+      // Dito tinitingnan kung anong service ang gagamitin base sa Type
       if (item.type === 'Package') restored = await restorePackage(item.mongoId);
       else if (item.type === 'Booking') restored = await restoreBooking(item.mongoId);
       else if (item.type === 'Tour') restored = await restoreTour(item.mongoId);
       else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId);
+      else if (item.type === 'Promo') restored = await restorePromo(item.mongoId);
+      else if (item.type === 'Poster') restored = await restorePoster(item.mongoId); // DINAGDAG
       
       if (restored) {
         setArchiveItems(prev => prev.filter(i => i.mongoId !== item.mongoId));
@@ -238,6 +252,8 @@ const ArchiveComponent = () => {
         else if (item.type === 'Booking') await restoreBooking(item.mongoId);
         else if (item.type === 'Tour') await restoreTour(item.mongoId);
         else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
+        else if (item.type === 'Promo') await restorePromo(item.mongoId);
+        else if (item.type === 'Poster') await restorePoster(item.mongoId); // DINAGDAG
       }
       await fetchArchiveItems();
       alert('Selected items have been restored.');
@@ -346,4 +362,4 @@ const ArchiveComponent = () => {
   );
 };
 
-export default ArchiveComponent;  
+export default ArchiveComponent;
