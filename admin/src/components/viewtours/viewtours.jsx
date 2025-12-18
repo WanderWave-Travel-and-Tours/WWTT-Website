@@ -4,18 +4,17 @@ import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost:5000/api/tours';
-const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 const ViewTours = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
-
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
 
     // Check if admin is logged in
     useEffect(() => {
@@ -25,7 +24,7 @@ const ViewTours = () => {
         }
     }, [navigate]);
 
-    // Fetch all active tours (isArchive: "No")
+    // Fetch all active tours
     const fetchTours = async () => {
         try {
             setLoading(true);
@@ -51,7 +50,7 @@ const ViewTours = () => {
 
     // Archive Tour
     const handleArchive = async (id) => {
-        if (!window.confirm('Are you sure you want to archive this tour? It will no longer appear in the list.')) {
+        if (!window.confirm('Are you sure you want to archive this tour?')) {
             return;
         }
 
@@ -62,7 +61,6 @@ const ViewTours = () => {
             const result = await response.json();
 
             if (response.ok && result.status === 'ok') {
-                // Remove the archived tour from state (so it disappears immediately)
                 setTours(prevTours => prevTours.filter(tour => tour._id !== id));
                 alert('Tour archived successfully!');
             } else {
@@ -70,7 +68,7 @@ const ViewTours = () => {
             }
         } catch (err) {
             console.error('Archive error:', err);
-            alert('Failed to archive tour. Check your connection.');
+            alert('Failed to archive tour.');
         }
     };
 
@@ -86,42 +84,20 @@ const ViewTours = () => {
             });
             const result = await response.json();
 
-            if (response.ok && result.status === 'ok') {
+            if (result.status === 'ok') {
                 setTours(prevTours => prevTours.filter(tour => tour._id !== id));
-                alert('Tour deleted permanently!');
+                alert('✅ Tour deleted successfully!');
             } else {
-                alert('Error deleting tour: ' + (result.error || 'Unknown error'));
+                alert('❌ Error deleting tour: ' + (result.error || 'Unknown error'));
             }
         } catch (err) {
             console.error('Delete error:', err);
-            alert('Failed to delete tour.');
+            alert('❌ Error connecting to server');
         }
     };
 
-    // Placeholder for Edit (pwede mo i-route sa edit page later)
     const handleEdit = (id) => {
-        navigate(`/edit-tour/${id}`); // Example route, adjust as needed
-    };
-
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this tour?')) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
-                    method: 'DELETE',
-                });
-                const result = await response.json();
-                
-                if (result.status === 'ok') {
-                    setTours(tours.filter(tour => tour._id !== id));
-                    alert('✅ Tour deleted successfully!');
-                } else {
-                    alert('❌ Error deleting tour');
-                }
-            } catch (err) {
-                console.error('Delete error:', err);
-                alert('❌ Error connecting to server');
-            }
-        }
+        navigate(`/edit-tour/${id}`);
     };
 
     if (loading) {
@@ -189,22 +165,22 @@ const ViewTours = () => {
                                     </div>
                                     
                                     <div className="viewtours-card-body">
-                                        <h3 className="viewtours-card-title">{tour.title.toUpperCase()}</h3>
+                                        <h3 className="viewtours-card-title">{tour.title?.toUpperCase()}</h3>
                                         
                                         <div className="viewtours-card-info">
                                             <div className="viewtours-info-row">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                                                     <circle cx="12" cy="10" r="3"/>
                                                 </svg>
-                                                <span>{tour.destination.toUpperCase()}</span>
+                                                <span>{tour.destination?.toUpperCase()}</span>
                                             </div>
                                             <div className="viewtours-info-row">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <circle cx="12" cy="12" r="10"/>
                                                     <polyline points="12 6 12 12 16 14"/>
                                                 </svg>
-                                                <span>{tour.duration.toUpperCase()}</span>
+                                                <span>{tour.duration?.toUpperCase()}</span>
                                             </div>
                                         </div>
 
@@ -215,30 +191,13 @@ const ViewTours = () => {
                                             </div>
                                             
                                             <div className="viewtours-actions">
-                                                <button 
-                                                    className="viewtours-btn-action viewtours-btn-action--edit"
-                                                    onClick={() => handleEdit(tour._id)}
-                                                >
-                                                <button 
-                                                    className="viewtours-btn-action viewtours-btn-action--edit"
-                                                    onClick={() => navigate(`/edit-tour/${tour._id}`)}
-                                                >
+                                                <button className="viewtours-btn-action viewtours-btn-action--edit" onClick={() => handleEdit(tour._id)}>
                                                     Edit
                                                 </button>
-                                                <button 
-                                                    className="viewtours-btn-action viewtours-btn-action--delete"
-                                                    onClick={() => handleDelete(tour._id)}
-                                                >
-                                                <button 
-                                                    className="viewtours-btn-action viewtours-btn-action--archive"
-                                                    onClick={() => handleArchive(tour._id)}
-                                                >
+                                                <button className="viewtours-btn-action viewtours-btn-action--archive" onClick={() => handleArchive(tour._id)}>
                                                     Archive
                                                 </button>
-                                                <button 
-                                                    className="viewtours-btn-action viewtours-btn-action--delete"
-                                                    onClick={() => handleDelete(tour._id)}
-                                                >
+                                                <button className="viewtours-btn-action viewtours-btn-action--delete" onClick={() => handleDelete(tour._id)}>
                                                     Delete
                                                 </button>
                                             </div>
@@ -254,4 +213,4 @@ const ViewTours = () => {
     );
 };
 
-export default ViewTours; 
+export default ViewTours;
