@@ -1,0 +1,91 @@
+/* =========================
+   GALLERY STYLES
+========================= */
+.hotel-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+}
+
+.hotel-upload-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #f8fafc;
+    transition: all 0.2s ease;
+    color: #64748b;
+}
+
+.hotel-upload-box:hover {
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.hotel-upload-box svg {
+    margin-bottom: 4px;
+}
+
+.hotel-upload-box span {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.hotel-gallery-item {
+    position: relative;
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.hotel-gallery-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hotel-gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hotel-remove-image-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.hotel-remove-image-btn:hover {
+    background: rgba(239, 68, 68, 0.9);
+    transform: scale(1.1);
+}
+
+.hotel-gallery-helper {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 0.5rem;
+    text-align: right;
+}

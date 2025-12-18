@@ -1,53 +1,96 @@
+/* ================================================= */
+/* GLOBAL WRAPPERS & LAYOUT (promo- prefix)         */
+/* ================================================= */
+
 .promo-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc;
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    width: 100%;
+    position: relative;
 }
 
 .promo-main {
     flex: 1;
-    /* Default margin for uncollapsed sidebar (280px) */
-    margin-left: 280px; 
-    padding: 40px 120px; 
+    margin-left: 300px;
+    padding: 40px 80px;
     font-family: 'Segoe UI', Arial, sans-serif;
-    transition: margin-left 0.3s ease; /* Added transition for smooth effect */
+    transition: margin-left 0.3s ease;
+    width: 100%;
 }
 
-/* New CSS for collapsed state on desktop/large screens */
 .promo-main--collapsed {
-    /* Adjust margin for collapsed sidebar (typically 70px) */
-    margin-left: 70px;
-}
-
-.promo-main *,
-.promo-main *::before,
-.promo-main *::after {
-    box-sizing: border-box;
+    margin-left: 90px;
 }
 
 .promo-container {
-    max-width: 1200px;
+    max-width: 1320px;
     margin: 0 auto;
+    width: 100%;
 }
 
+/* --- PROMO HEADER WITH BACKGROUND IMAGE --- */
 .promo-header {
-    margin-bottom: 32px;
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    display: flex;
+    align-items: center;
+    min-height: 180px;
+}
+
+.promo-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, 
+        rgba(0, 31, 63, 0.92) 0%, 
+        rgba(0, 31, 63, 0.75) 50%, 
+        rgba(255, 140, 66, 0.3) 100%);
+    z-index: 1;
+}
+
+.promo-header-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
 }
 
 .promo-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 900;
-    color: #001F3F;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    margin-bottom: 8px;
 }
 
 .promo-subtitle {
-    font-size: 14px;
-    color: #64748b;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
+.promo-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #FF8C42 0%, transparent 100%);
+    display: inline-block;
+}
+
+/* --- GRID LAYOUT --- */
 .promo-grid {
     display: grid;
     grid-template-columns: 1fr 380px;
@@ -61,12 +104,23 @@
     gap: 24px;
 }
 
+.promo-right {
+    position: sticky;
+    top: 40px;
+}
+
+/* --- SECTION STYLING --- */
 .promo-section {
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 32px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    transition: all 0.2s ease;
+}
+
+.promo-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.08);
 }
 
 .promo-section-title {
@@ -74,20 +128,32 @@
     font-size: 13px;
     font-weight: 900;
     color: #001F3F;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
     margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
+.promo-section-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, #FF8C42 0%, #ff6b1a 100%);
+    border-radius: 2px;
+}
+
+/* --- FORM FIELDS --- */
 .promo-fields {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
+    gap: 20px;
 }
 
 .promo-field {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .promo-field--full {
@@ -96,23 +162,39 @@
 
 .promo-field label {
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     color: #1e293b;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.promo-field label::after {
+    content: '•';
+    color: #FF8C42;
+    font-size: 16px;
 }
 
 .promo-field input,
 .promo-field textarea,
 .promo-field select {
-    padding: 12px 16px;
+    padding: 14px 18px;
     font-size: 14px;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #1e293b;
     background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    border: 2px solid #e2e8f0;
     border-radius: 8px;
     transition: all 0.2s ease;
+}
+
+.promo-field input:hover,
+.promo-field textarea:hover,
+.promo-field select:hover {
+    border-color: #cbd5e1;
+    background: #fff;
 }
 
 .promo-field input:focus,
@@ -137,6 +219,11 @@
 
 .promo-field select {
     cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
 }
 
 .promo-input-custom {
@@ -156,21 +243,23 @@
     }
 }
 
+/* --- ACTIONS BUTTONS --- */
 .promo-actions {
     display: flex;
     gap: 12px;
-    justify-content: flex-end;
-    padding: 0 32px 32px 32px;
+    margin-top: 20px;
 }
 
 .promo-btn {
-    padding: 12px 32px;
+    flex: 1;
+    padding: 16px 24px;
     font-size: 14px;
     font-weight: 700;
-    font-family: 'Segoe UI', Arial, sans-serif;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     border: none;
 }
 
@@ -187,47 +276,78 @@
 
 .promo-btn--submit {
     color: #fff;
-    background: #FF8C42;
-    box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
 }
 
 .promo-btn--submit:hover {
-    background: #e57a35;
-    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
 }
 
-.promo-btn--submit:active {
-    transform: translateY(0);
+.promo-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
-.promo-right {
-    position: sticky;
-    top: 40px;
-}
-
+/* --- PREVIEW CARD --- */
 .promo-preview {
-    background: linear-gradient(135deg, #001F3F 0%, #002850 100%);
-    border-radius: 12px;
+    background: linear-gradient(135deg, #001F3F 0%, #003d7a 100%);
+    border-radius: 16px;
     padding: 28px;
-    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.2);
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.promo-preview::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 140, 66, 0.08) 0%, transparent 70%);
+    animation: rotatePreview 25s linear infinite;
+}
+
+@keyframes rotatePreview {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .promo-preview-label {
-    display: block;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 900;
     color: #FF8C42;
     letter-spacing: 2px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+}
+
+.promo-preview-label::before {
+    content: '👁';
+    font-size: 16px;
 }
 
 .promo-card {
+    position: relative;
+    z-index: 1;
     background: #fff;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.promo-card:hover {
+    transform: translateY(-4px);
 }
 
 .promo-card-header {
@@ -318,744 +438,116 @@
 }
 
 .promo-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    position: relative;
+    z-index: 1;
+    display: flex;
     gap: 12px;
     margin-top: 24px;
 }
 
 .promo-stat {
+    flex: 1;
     text-align: center;
-    padding: 16px 12px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 8px;
-    backdrop-filter: blur(10px);
-    transition: all 0.2s ease;
-}
-
-.promo-stat:hover {
-    background: rgba(255,255,255,0.12);
-    transform: translateY(-2px);
+    padding: 16px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
 }
 
 .promo-stat strong {
     display: block;
-    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 20px;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 22px;
     font-weight: 900;
     color: #FF8C42;
-    margin-bottom: 4px;
 }
 
 .promo-stat span {
     font-size: 10px;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-weight: 700;
 }
 
-@media (min-width: 1440px) {
-    .promo-container {
-        max-width: 1400px;
-    }
+/* ================================================= */
+/* RESPONSIVENESS                                     */
+/* ================================================= */
 
-    .promo-grid {
-        grid-template-columns: 1fr 420px;
-        gap: 40px;
-    }
+@media (max-width: 1100px) {
+    .promo-grid { grid-template-columns: 1fr; }
+    .promo-right { position: static; order: 2; margin-top: 24px; }
 }
 
-@media (max-width: 1439px) and (min-width: 1200px) {
-    /* Adjust collapsed margin for these screen sizes */
-    .promo-main--collapsed {
-        margin-left: 70px;
-    }
-    .promo-container {
-        max-width: 1100px;
-    }
-}
-
-@media (max-width: 1199px) and (min-width: 1025px) {
-    .promo-main {
-        padding: 32px 40px;
-        /* Default margin for uncollapsed sidebar is still 280px */
-    }
-
-    /* Collapsed margin for these screen sizes */
-    .promo-main--collapsed {
-        margin-left: 70px;
+@media (max-width: 768px) {
+    .promo-main, .promo-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
     }
     
-    .promo-container {
-        max-width: 1000px;
-    }
-
-    .promo-grid {
-        grid-template-columns: 1fr 360px;
-        gap: 28px;
-    }
-}
-
-/* From 1024px down, the layout switches to 1 column, and the sidebar width changes based on the size of 901px.
-   If the sidebar is expected to stay at 280px until 900px, the following media query should be updated.
-   Assuming the sidebar is 280px down to 901px, then 70px from 900px down (if uncollapsed), and then 0 on small screen.
-   Based on the original file:
-    - @media (max-width: 1024px) and (min-width: 901px): promo-main has margin-left: 280px;
-    - @media (max-width: 900px) and (min-width: 769px): promo-main has margin-left: 70px; (This means the sidebar is collapsed or narrow by default here)
-    - @media (max-width: 768px) and (min-width: 641px): promo-main has margin-left: 70px;
-    - @media (max-width: 640px) and (min-width: 481px): promo-main has margin-left: 0; (Sidebar disappears or floats)
-
-   Let's ensure the collapsed state is handled for all relevant desktop/tablet sizes where the sidebar is present.
-*/
-
-/* Fix for 1024px to 901px where the default margin is 280px but the grid is 1 column (if the sidebar is collapsed to 70px) */
-@media (max-width: 1024px) and (min-width: 901px) {
-    .promo-main {
-        margin-left: 280px; /* Default margin for uncollapsed sidebar in this range */
-        padding: 28px 32px;
+    .promo-header { padding: 45px 40px; margin-bottom: 32px; }
+    
+    .promo-actions {
+        position: fixed;
+        bottom: 0; left: 90px; right: 0;
+        background: #fff;
+        padding: 10px 14px;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+        z-index: 100;
+        width: calc(100% - 90px);
+        gap: 10px;
     }
     
-    .promo-main--collapsed {
-        margin-left: 70px; /* Collapsed margin for this range */
-    }
-
-    .promo-grid {
-        grid-template-columns: 1fr;
-        gap: 32px;
-    }
-
-    .promo-right {
-        position: static;
-        order: -1;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-
-    .promo-preview {
-        padding: 32px;
-    }
-}
-
-/* Fix for 900px to 769px where the default margin is 70px (suggesting the sidebar is narrow here by default) */
-@media (max-width: 900px) and (min-width: 769px) {
-    .promo-main {
-        margin-left: 70px; /* Assumed narrow sidebar default for this range */
-        padding: 24px 28px;
-    }
-    
-    /* If the sidebar is already narrow (70px) by default, the collapsed class may not need to change the margin,
-       but we keep the rule for explicit control in case 'Sidebar' logic makes it narrower than 70px.
-       For this fix, we'll assume 'collapsed' and 'default' are the same here, or the sidebar is just 'narrow'.
-    */
-    .promo-main--collapsed {
-        margin-left: 70px; 
-    }
-
-    .promo-grid {
-        grid-template-columns: 1fr;
-        gap: 28px;
-    }
-
-    .promo-right {
-        position: static;
-        order: -1;
-        max-width: 480px;
-        margin: 0 auto;
-    }
-
-    .promo-section {
-        padding: 28px;
-    }
-
-    .promo-fields {
-        gap: 20px;
-    }
-}
-
-/* Fix for 768px to 641px where the default margin is 70px (suggesting the sidebar is narrow here by default) */
-@media (max-width: 768px) and (min-width: 641px) {
-    .promo-main {
-        margin-left: 70px;
-        padding: 20px;
-    }
-
-    .promo-main--collapsed {
-        margin-left: 70px; /* Keep the margin at 70px or adjust if sidebar gets hidden */
-    }
-
-    .promo-header {
-        margin-bottom: 24px;
-    }
-
-    .promo-title {
-        font-size: 1.75rem;
-    }
-
-    .promo-subtitle {
-        font-size: 13px;
-    }
-
-    .promo-grid {
-        grid-template-columns: 1fr;
-        gap: 24px;
-    }
-
-    .promo-right {
-        position: static;
-        order: -1;
-        max-width: 100%;
-    }
-
-    .promo-section {
-        padding: 24px;
-    }
-
-    .promo-fields {
-        grid-template-columns: 1fr;
-        gap: 18px;
-    }
-
-    .promo-actions {
-        padding: 0 24px 24px 24px;
-        gap: 10px;
-    }
-
-    .promo-btn {
-        padding: 11px 24px;
-        font-size: 13px;
-    }
-
-    .promo-preview {
-        padding: 24px;
-    }
-
-    .promo-card-header {
-        padding: 20px;
-    }
-
-    .promo-card-body {
-        padding: 20px;
-    }
-
-    .promo-card-discount {
-        font-size: 28px;
-    }
-
-    .promo-stats {
-        gap: 10px;
-    }
-
-    .promo-stat {
-        padding: 14px 10px;
-    }
-
-    .promo-stat strong {
-        font-size: 18px;
-    }
-}
-
-/* For screens where sidebar is hidden (margin-left: 0) */
-@media (max-width: 640px) and (min-width: 481px) {
-    .promo-main {
-        margin-left: 0;
-        padding: 16px;
-    }
-
-    .promo-main--collapsed {
-        margin-left: 0; /* Ensures no unintended margin */
-    }
-
-    .promo-header {
-        margin-bottom: 20px;
-    }
-
-    .promo-title {
-        font-size: 1.5rem;
-        letter-spacing: 0.5px;
-    }
-
-    .promo-subtitle {
-        font-size: 12px;
-    }
-
-    .promo-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-
-    .promo-right {
-        position: static;
-        order: -1;
-        max-width: 100%;
-    }
-
-    .promo-section {
-        padding: 20px;
-        border-radius: 10px;
-    }
-
-    .promo-section-title {
-        font-size: 12px;
-        margin-bottom: 18px;
-    }
-
-    .promo-fields {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .promo-field label {
-        font-size: 11px;
-    }
-
-    .promo-field input,
-    .promo-field textarea,
-    .promo-field select {
-        padding: 11px 14px;
-        font-size: 13px;
-    }
-
-    .promo-actions {
-        flex-direction: column;
-        padding: 0 20px 20px 20px;
-        gap: 10px;
-    }
-
-    .promo-btn {
-        width: 100%;
-        padding: 12px 20px;
-        font-size: 13px;
-    }
-
-    .promo-preview {
-        padding: 20px;
-        border-radius: 10px;
-    }
-
-    .promo-preview-label {
-        font-size: 10px;
-        margin-bottom: 16px;
-    }
-
-    .promo-card {
-        border-radius: 10px;
-    }
-
-    .promo-card-header {
-        padding: 18px;
-    }
-
-    .promo-card-icon {
-        width: 46px;
-        height: 46px;
-    }
-
-    .promo-card-icon svg {
-        width: 22px;
-        height: 22px;
-    }
-
-    .promo-card-discount {
-        font-size: 26px;
-    }
-
-    .promo-card-body {
-        padding: 18px;
-    }
-
-    .promo-card-code {
-        font-size: 16px;
-        padding: 8px 16px;
-        letter-spacing: 1.5px;
-    }
-
-    .promo-card-category {
-        font-size: 10px;
-        padding: 3px 10px;
-    }
-
-    .promo-card-desc {
-        font-size: 12px;
-        min-height: 38px;
-    }
-
-    .promo-card-validity {
-        font-size: 10px;
-        padding-top: 14px;
-    }
-
-    .promo-stats {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-top: 16px;
-    }
-
-    .promo-stat {
-        padding: 12px 8px;
-    }
-
-    .promo-stat strong {
-        font-size: 16px;
-    }
-
-    .promo-stat span {
-        font-size: 9px;
-    }
-}
-
-@media (max-width: 480px) and (min-width: 376px) {
-    .promo-main {
-        margin-left: 0;
-        padding: 14px;
-    }
-
-    .promo-main--collapsed {
-        margin-left: 0;
-    }
-
-    .promo-header {
-        margin-bottom: 18px;
-    }
-
-    .promo-title {
-        font-size: 1.35rem;
-        letter-spacing: 0.5px;
-    }
-
-    .promo-subtitle {
-        font-size: 11px;
-    }
-
-    .promo-grid {
-        gap: 18px;
-    }
-
-    .promo-section {
-        padding: 18px;
-        border-radius: 8px;
-    }
-
-    .promo-section-title {
-        font-size: 11px;
-        margin-bottom: 16px;
-    }
-
-    .promo-fields {
-        gap: 14px;
-    }
-
-    .promo-field label {
-        font-size: 10px;
-    }
-
-    .promo-field input,
-    .promo-field textarea,
-    .promo-field select {
-        padding: 10px 12px;
-        font-size: 12px;
-        border-radius: 6px;
-    }
-
-    .promo-actions {
-        padding: 0 18px 18px 18px;
-        gap: 8px;
-    }
-
     .promo-btn {
         padding: 11px 18px;
         font-size: 12px;
-        border-radius: 6px;
+        letter-spacing: 0.8px;
     }
-
-    .promo-preview {
-        padding: 18px;
-        border-radius: 8px;
-    }
-
-    .promo-preview-label {
-        font-size: 9px;
-        margin-bottom: 14px;
-    }
-
-    .promo-card {
-        border-radius: 8px;
-    }
-
-    .promo-card-header {
-        padding: 16px;
-    }
-
-    .promo-card-icon {
-        width: 42px;
-        height: 42px;
-    }
-
-    .promo-card-icon svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    .promo-card-discount {
-        font-size: 24px;
-    }
-
-    .promo-card-body {
-        padding: 16px;
-    }
-
-    .promo-card-code {
-        font-size: 15px;
-        padding: 7px 14px;
-        letter-spacing: 1.2px;
-        border-radius: 6px;
-    }
-
-    .promo-card-category {
-        font-size: 9px;
-        padding: 3px 9px;
-    }
-
-    .promo-card-desc {
-        font-size: 11px;
-        min-height: 35px;
-    }
-
-    .promo-card-validity {
-        font-size: 9px;
-        padding-top: 12px;
-        gap: 6px;
-    }
-
-    .promo-card-validity svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    .promo-stats {
-        gap: 6px;
-        margin-top: 14px;
-    }
-
-    .promo-stat {
-        padding: 10px 6px;
-        border-radius: 6px;
-    }
-
-    .promo-stat strong {
-        font-size: 15px;
-    }
-
-    .promo-stat span {
-        font-size: 8px;
+    
+    .promo-right { margin-bottom: 70px; }
+    
+    .promo-fields {
+        gap: 16px;
     }
 }
 
-@media (max-width: 375px) {
-    .promo-main {
-        margin-left: 0;
-        padding: 12px;
-    }
-
-    .promo-main--collapsed {
-        margin-left: 0;
-    }
-
-    .promo-header {
-        margin-bottom: 16px;
-    }
-
-    .promo-title {
-        font-size: 1.25rem;
-        letter-spacing: 0.3px;
-    }
-
-    .promo-subtitle {
-        font-size: 10px;
-    }
-
-    .promo-grid {
-        gap: 16px;
-    }
-
-    .promo-section {
-        padding: 16px;
-        border-radius: 8px;
-    }
-
-    .promo-section-title {
-        font-size: 10px;
-        margin-bottom: 14px;
-        letter-spacing: 1px;
-    }
-
+@media (max-width: 640px) {
     .promo-fields {
-        gap: 12px;
+        grid-template-columns: 1fr;
+        gap: 14px;
     }
-
+    
     .promo-field label {
-        font-size: 9px;
-        letter-spacing: 0.3px;
+        font-size: 11px;
     }
-
+    
     .promo-field input,
     .promo-field textarea,
     .promo-field select {
-        padding: 9px 11px;
-        font-size: 11px;
-        border-radius: 6px;
-    }
-
-    .promo-field textarea {
-        min-height: 80px;
-    }
-
-    .promo-actions {
-        padding: 0 16px 16px 16px;
-        gap: 8px;
-    }
-
-    .promo-btn {
-        padding: 10px 16px;
-        font-size: 11px;
-        border-radius: 6px;
-    }
-
-    .promo-preview {
-        padding: 16px;
-        border-radius: 8px;
-    }
-
-    .promo-preview-label {
-        font-size: 9px;
-        margin-bottom: 12px;
-        letter-spacing: 1.5px;
-    }
-
-    .promo-card {
-        border-radius: 8px;
-    }
-
-    .promo-card-header {
-        padding: 14px;
-    }
-
-    .promo-card-icon {
-        width: 38px;
-        height: 38px;
-    }
-
-    .promo-card-icon svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .promo-card-discount {
-        font-size: 22px;
-    }
-
-    .promo-card-body {
-        padding: 14px;
-    }
-
-    .promo-card-code {
-        font-size: 14px;
-        padding: 6px 12px;
-        letter-spacing: 1px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-    }
-
-    .promo-card-category {
-        font-size: 8px;
-        padding: 2px 8px;
-        margin-bottom: 8px;
-    }
-
-    .promo-card-desc {
-        font-size: 10px;
-        min-height: 32px;
-        margin-bottom: 12px;
-        line-height: 1.5;
-    }
-
-    .promo-card-validity {
-        font-size: 9px;
-        padding-top: 10px;
-        gap: 6px;
-    }
-
-    .promo-card-validity svg {
-        width: 13px;
-        height: 13px;
-    }
-
-    .promo-stats {
-        gap: 6px;
-        margin-top: 12px;
-    }
-
-    .promo-stat {
-        padding: 9px 5px;
-        border-radius: 6px;
-    }
-
-    .promo-stat strong {
-        font-size: 14px;
-        margin-bottom: 2px;
-    }
-
-    .promo-stat span {
-        font-size: 7px;
-        letter-spacing: 0.3px;
+        padding: 12px 14px;
+        font-size: 13px;
     }
 }
 
-@media (max-height: 500px) and (orientation: landscape) {
-    .promo-main {
-        padding: 12px;
+@media (max-width: 480px) {
+    .promo-title { font-size: 1.8rem; }
+    .promo-header { padding: 35px 25px; }
+    .promo-actions { left: 90px; width: calc(100% - 90px); }
+    
+    .promo-field label {
+        font-size: 10px;
+        letter-spacing: 0.8px;
     }
-
-    .promo-main--collapsed {
-        /* Assuming a typical landscape behavior where sidebar may be hidden or narrow */
-        margin-left: 0; /* Adjust this if the sidebar is still visible at 70px */
+    
+    .promo-field label::after {
+        font-size: 14px;
     }
-
-    .promo-header {
-        margin-bottom: 12px;
-    }
-
-    .promo-title {
-        font-size: 1.25rem;
-    }
-
-    .promo-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-    }
-
-    .promo-right {
-        order: 0;
-        max-width: 100%;
-    }
-
-    .promo-section {
-        padding: 16px;
-    }
-
-    .promo-fields {
-        gap: 12px;
-    }
-
-    .promo-preview {
-        padding: 16px;
-    }
-
-    .promo-card-header,
-    .promo-card-body {
-        padding: 12px;
-    }
-
-    .promo-stats {
-        margin-top: 12px;
+    
+    .promo-field input,
+    .promo-field textarea,
+    .promo-field select {
+        padding: 11px 13px;
+        font-size: 12px;
     }
 }

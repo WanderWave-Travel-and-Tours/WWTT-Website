@@ -1,0 +1,205 @@
+/* =========================
+   UPLOAD STYLES
+========================= */
+.svc-upload-options {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.svc-upload-click {
+    display: block;
+    cursor: pointer;
+}
+
+.svc-upload-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 52px 24px;
+    border: 3px dashed #cbd5e1;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.svc-upload-empty::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 140, 66, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.svc-upload-empty:hover::before {
+    left: 100%;
+}
+
+.svc-upload-empty:hover {
+    border-color: #FF8C42;
+    background: linear-gradient(135deg, #fffaf6 0%, #fff4ec 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(255, 140, 66, 0.15);
+}
+
+.svc-upload-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border: 2px solid #e2e8f0;
+    border-radius: 50%;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.svc-upload-empty:hover .svc-upload-icon {
+    transform: scale(1.1) rotate(5deg);
+    border-color: #FF8C42;
+    background: linear-gradient(135deg, #fff4ec 0%, #ffe8d9 100%);
+}
+
+.svc-upload-icon svg {
+    width: 32px;
+    height: 32px;
+    color: #94a3b8;
+    transition: all 0.3s ease;
+}
+
+.svc-upload-empty:hover .svc-upload-icon svg {
+    color: #FF8C42;
+}
+
+.svc-upload-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.svc-upload-hint {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.svc-upload-preview-container {
+    width: 100%;
+}
+
+.svc-upload-preview {
+    position: relative;
+    height: 260px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.1);
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.svc-upload-preview:hover {
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.15);
+}
+
+.svc-upload-preview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.svc-upload-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.svc-upload-preview:hover img {
+    transform: scale(1.05);
+}
+
+.svc-upload-actions {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    gap: 10px;
+    z-index: 2;
+}
+
+.svc-upload-change-btn,
+.svc-upload-remove-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(8px);
+}
+
+.svc-upload-change-btn {
+    background: rgba(0, 31, 63, 0.85);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.svc-upload-change-btn:hover {
+    background: rgba(0, 31, 63, 0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.svc-upload-remove-btn {
+    background: rgba(220, 38, 38, 0.9);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.svc-upload-remove-btn:hover {
+    background: rgba(220, 38, 38, 1);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+    .svc-upload-preview {
+        height: 220px;
+    }
+
+    .svc-upload-actions {
+        flex-wrap: wrap;
+        bottom: 12px;
+        right: 12px;
+        left: 12px;
+    }
+
+    .svc-upload-change-btn,
+    .svc-upload-remove-btn {
+        flex: 1;
+        justify-content: center;
+        min-width: 100px;
+    }
+}

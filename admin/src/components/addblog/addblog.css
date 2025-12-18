@@ -1,47 +1,96 @@
+/* ================================================= */
+/* GLOBAL WRAPPERS & LAYOUT (blog- prefix)          */
+/* ================================================= */
+
 .blog-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc;
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    width: 100%;
+    position: relative;
 }
 
-/* Default state: Sidebar is open (280px wide) */
 .blog-main {
     flex: 1;
-    margin-left: 280px; /* Initial margin for open sidebar */
-    padding: 40px 48px;
+    margin-left: 300px;
+    padding: 40px 80px;
     font-family: 'Segoe UI', Arial, sans-serif;
-    transition: margin-left 0.3s ease; /* Add transition for smooth animation */
+    transition: margin-left 0.3s ease;
+    width: 100%;
 }
 
-/* Collapsed state: Sidebar is closed (e.g., 70px wide) */
 .blog-main--collapsed {
-    margin-left: 70px; /* Adjust margin for collapsed sidebar width */
+    margin-left: 90px;
 }
 
 .blog-container {
-    max-width: 1200px;
+    max-width: 1320px;
     margin: 0 auto;
+    width: 100%;
 }
 
-/* Header */
+/* --- HEADER WITH BG IMAGE (Mala-Promo Style) --- */
 .blog-header {
-    margin-bottom: 32px;
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    display: flex;
+    align-items: center;
+    min-height: 180px;
+}
+
+.blog-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, 
+        rgba(0, 31, 63, 0.92) 0%, 
+        rgba(0, 31, 63, 0.75) 50%, 
+        rgba(255, 140, 66, 0.3) 100%);
+    z-index: 1;
+}
+
+.blog-header-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
 }
 
 .blog-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 900;
-    color: #001F3F;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+    color: #FFFFFF;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    margin: 0 0 8px 0;
 }
 
 .blog-subtitle {
-    font-size: 14px;
-    color: #64748b;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
+.blog-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #FF8C42 0%, transparent 100%);
+    display: inline-block;
+}
+
+/* --- GRID LAYOUT --- */
 .blog-grid {
     display: grid;
     grid-template-columns: 1fr 380px;
@@ -55,245 +104,249 @@
     gap: 24px;
 }
 
+.blog-right {
+    position: sticky;
+    top: 40px;
+}
+
+/* --- SECTION STYLING --- */
 .blog-section {
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 32px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
 }
 
 .blog-section-title {
-    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-family: 'Arial Black', sans-serif;
     font-size: 13px;
     font-weight: 900;
     color: #001F3F;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
     margin-bottom: 24px;
-}
-
-.blog-fields {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-}
-
-.blog-field {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 8px;
 }
 
-.blog-field--full {
-    grid-column: 1 / -1;
+.blog-section-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, #FF8C42 0%, #ff6b1a 100%);
+    border-radius: 2px;
 }
+
+/* --- BLOG COVER IMAGE (POSTER STYLE) --- */
+.b-upload-zone-wrapper { 
+    border: 3px dashed #cbd5e1; 
+    border-radius: 12px; 
+    background: #f8fafc; 
+    padding: 40px 20px; 
+    text-align: center; 
+    cursor: pointer; 
+    transition: 0.3s; 
+}
+
+.b-upload-zone-wrapper:hover { 
+    border-color: #FF8C42; 
+    background: #fffaf6; 
+}
+
+.b-upload-icon-box { 
+    width: 64px; 
+    height: 64px; 
+    background: #fff; 
+    border: 2px solid #e2e8f0; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin: 0 auto 15px; 
+    color: #94a3b8;
+}
+
+.b-upload-zone-wrapper:hover .b-upload-icon-box {
+    color: #FF8C42;
+    border-color: #FF8C42;
+}
+
+.b-upload-preview-box { 
+    position: relative; 
+    height: 300px; 
+    border-radius: 12px; 
+    overflow: hidden; 
+    border: 2px solid #e2e8f0; 
+}
+
+.b-upload-preview-box img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+}
+
+.b-upload-actions { 
+    position: absolute; 
+    bottom: 15px; 
+    right: 15px; 
+    display: flex; 
+    gap: 10px; 
+}
+
+.b-upload-change-btn, .b-upload-remove-btn { 
+    padding: 8px 16px; 
+    font-size: 12px; 
+    font-weight: 700; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    color: #fff; 
+    border: none;
+}
+
+.b-upload-change-btn { background: rgba(0, 31, 63, 0.8); }
+.b-upload-remove-btn { background: rgba(220, 38, 38, 0.8); }
+
+/* --- FORM FIELDS --- */
+.blog-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.blog-field { display: flex; flex-direction: column; gap: 10px; }
+.blog-field--full { grid-column: 1 / -1; }
 
 .blog-field label {
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     color: #1e293b;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.blog-field input,
-.blog-field textarea,
-.blog-field select {
-    padding: 12px 16px;
+.blog-field label::after {
+    content: '•';
+    color: #FF8C42;
+    font-size: 16px;
+}
+
+.blog-field input, .blog-field textarea, .blog-field select {
+    padding: 14px 18px;
     font-size: 14px;
     color: #1e293b;
     background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    border: 2px solid #e2e8f0;
     border-radius: 8px;
     transition: all 0.2s ease;
 }
 
-.blog-field input:focus,
-.blog-field textarea:focus,
-.blog-field select:focus {
+.blog-field input:focus, .blog-field textarea:focus, .blog-field select:focus {
     outline: none;
     border-color: #FF8C42;
     background: #fff;
     box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
 
-.b-upload-zone { width: 100%; }
-
-.b-upload-label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 150px;
-    border: 2px dashed #cbd5e1;
-    border-radius: 12px;
-    background-color: #f8fafc;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.b-upload-label:hover {
-    border-color: #FF8C42;
-    background-color: #fff7ed;
-}
-
-.b-upload-icon { color: #94a3b8; margin-bottom: 8px; }
-.b-upload-label:hover .b-upload-icon { color: #FF8C42; }
-
-.b-upload-text { font-size: 14px; font-weight: 600; color: #334155; }
-.b-upload-subtext { font-size: 11px; color: #94a3b8; margin-top: 4px; }
-
-.b-image-preview-container {
-    position: relative;
-    width: 100%;
-    height: 200px;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #e2e8f0;
-}
-
-.b-uploaded-image { width: 100%; height: 100%; object-fit: cover; }
-
-.b-remove-image-btn {
-    position: absolute;
-    top: 10px; right: 10px;
-    background: rgba(255, 255, 255, 0.9);
-    border: none; color: #ef4444;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex; align-items: center; gap: 4px;
-}
-
-.blog-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    padding: 0 32px 32px 32px;
-}
-
-.blog-btn {
-    padding: 12px 32px;
-    font-size: 14px;
-    font-weight: 700;
-    border-radius: 8px;
-    cursor: pointer;
-    border: none;
-}
-
-.blog-btn--cancel { background: #fff; border: 2px solid #e2e8f0; color: #64748b; }
-.blog-btn--cancel:hover { background: #f8fafc; border-color: #94a3b8; }
-
-.blog-btn--submit { background: #FF8C42; color: #fff; box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3); }
-.blog-btn--submit:hover { background: #e57a35; transform: translateY(-1px); }
-
-.blog-right { position: sticky; top: 40px; }
-
+/* --- PREVIEW CARD --- */
 .blog-preview-card {
-    background: linear-gradient(135deg, #001F3F 0%, #002850 100%);
-    border-radius: 12px;
+    background: linear-gradient(135deg, #001F3F 0%, #003d7a 100%);
+    border-radius: 16px;
     padding: 28px;
-    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.2);
-    color: white;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
 }
 
 .blog-preview-label {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-family: 'Arial Black', sans-serif;
     font-size: 11px;
     font-weight: 900;
     color: #FF8C42;
     letter-spacing: 2px;
-    margin-bottom: 20px;
-    text-align: center;
+    margin-bottom: 24px;
 }
 
 .bp-card {
     background: #fff;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
 }
 
-.bp-image-wrapper {
-    height: 160px;
-    background: #e2e8f0;
-    position: relative;
-}
-
+.bp-image-wrapper { height: 180px; background: #e2e8f0; position: relative; }
 .bp-image-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-
-.bp-placeholder {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    color: #cbd5e1;
-}
-
-.bp-category-tag {
-    position: absolute;
-    top: 12px; left: 12px;
-    background: #FF8C42;
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 4px;
-    text-transform: uppercase;
-}
-
-.bp-content { padding: 16px; }
-
-.bp-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: #001F3F;
-    line-height: 1.4;
-    margin-bottom: 8px;
-}
-
-.bp-meta {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    color: #64748b;
-    margin-bottom: 12px;
-}
-
+.bp-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #cbd5e1; }
+.bp-category-tag { position: absolute; top: 12px; left: 12px; background: #FF8C42; color: white; font-size: 10px; font-weight: 800; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; }
+.bp-content { padding: 20px; }
+.bp-title { font-size: 18px; font-weight: 800; color: #001F3F; margin-bottom: 10px; }
+.bp-meta { display: flex; gap: 10px; font-size: 12px; color: #64748b; margin-bottom: 12px; }
 .bp-meta-item { display: flex; align-items: center; gap: 4px; }
+.bp-excerpt { font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 15px; }
+.bp-readmore { font-weight: 700; color: #FF8C42; font-size: 12px; }
 
-.bp-excerpt {
-    font-size: 12px;
-    color: #475569;
-    line-height: 1.6;
-    margin-bottom: 16px;
+/* --- ACTIONS BUTTONS --- */
+.blog-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
 }
 
-.bp-readmore {
-    font-size: 12px;
+.blog-btn {
+    flex: 1;
+    padding: 16px 24px;
+    font-size: 14px;
     font-weight: 700;
-    color: #FF8C42;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
     text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
 }
 
-@media (max-width: 1024px) {
-    /* On smaller screens, the margin is always 70px as the sidebar likely shifts from a full-size display to a collapsed one */
-    .blog-main { margin-left: 70px; padding: 20px; }
-    /* The collapsed state doesn't need to be defined here since the base class already covers the collapsed size for this breakpoint. 
-       If your Sidebar component has logic to completely hide itself on mobile, you might need a different rule, but based on the current media query, this is the expected behavior. */
-    /* .blog-main--collapsed { margin-left: 70px; } */ 
+.blog-btn--cancel { color: #64748b; background: #fff; border: 2px solid #e2e8f0; }
+.blog-btn--submit { color: #fff; background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%); box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3); }
 
+/* ================================================= */
+/* RESPONSIVENESS (MATCHED TO POSTER)               */
+/* ================================================= */
+
+@media (max-width: 1100px) {
     .blog-grid { grid-template-columns: 1fr; }
-    .blog-right { position: static; max-width: 400px; margin: 0 auto; }
+    .blog-right { position: static; order: 2; margin-top: 24px; }
 }
 
-@media (max-width: 640px) {
-    /* On mobile, the main content should take up the full width, ignoring the sidebar margin */
-    .blog-main { margin-left: 0; }
-    .blog-grid { grid-template-columns: 1fr; }
-    .blog-actions { flex-direction: column; }
-    .blog-btn { width: 100%; }
+@media (max-width: 768px) {
+    .blog-main {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+    }
+    
+    .blog-header { padding: 45px 40px; margin-bottom: 32px; }
+    
+    .blog-actions {
+        position: fixed;
+        bottom: 0; left: 90px; right: 0;
+        background: #fff;
+        padding: 10px 14px;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+        z-index: 100;
+        width: calc(100% - 90px);
+        gap: 10px;
+    }
+    
+    .blog-btn { padding: 11px 18px; font-size: 10px; }
+    .blog-right { margin-bottom: 80px; }
+}
+
+@media (max-width: 480px) {
+    .blog-title { font-size: 1.8rem; }
+    .blog-fields { grid-template-columns: 1fr; }
+    .blog-actions { left: 90px; width: calc(100% - 90px); }
 }

@@ -1,0 +1,212 @@
+/* =========================
+   FIELD STYLES
+========================= */
+.hotel-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.hotel-field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hotel-field--full {
+    grid-column: 1 / -1;
+}
+
+.hotel-field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hotel-field label::after {
+    content: '•';
+    color: #FF8C42;
+    font-size: 16px;
+}
+
+.hotel-field input,
+.hotel-field select {
+    padding: 14px 18px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.hotel-field input:hover,
+.hotel-field select:hover {
+    border-color: #cbd5e1;
+    background: #fff;
+}
+
+.hotel-field input:focus,
+.hotel-field select:focus {
+    outline: none;
+    border-color: #FF8C42;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.hotel-field input::placeholder {
+    color: #94a3b8;
+}
+
+.hotel-field select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+.hotel-field-hint {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+/* =========================
+   SPECIAL INPUT STATES
+========================= */
+.hotel-input--loading {
+    background-color: #f1f5f9 !important;
+    padding: 0.75rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.hotel-input--error {
+    background-color: #fee2e2 !important;
+    padding: 0.75rem 1rem;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #dc2626;
+}
+
+.hotel-retry-btn {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.hotel-retry-btn:hover {
+    background-color: #2563eb;
+}
+
+/* =========================
+   CALCULATION BOX
+========================= */
+.hotel-calculation-box {
+    padding: 1rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.hotel-calculation-header {
+    font-size: 0.875rem;
+    color: #475569;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hotel-calculation-header svg {
+    display: inline;
+    flex-shrink: 0;
+}
+
+.hotel-calculation-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.hotel-calculation-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background-color: white;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.hotel-calculation-guests {
+    color: #64748b;
+}
+
+.hotel-calculation-price {
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+    .hotel-fields {
+        gap: 16px;
+    }
+
+    .hotel-field input,
+    .hotel-field select {
+        padding: 12px 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .hotel-fields {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .hotel-field label {
+        font-size: 11px;
+    }
+
+    .hotel-field input,
+    .hotel-field select {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hotel-field label {
+        font-size: 10px;
+        letter-spacing: 0.8px;
+    }
+
+    .hotel-field label::after {
+        font-size: 14px;
+    }
+
+    .hotel-field input,
+    .hotel-field select {
+        padding: 11px 13px;
+        font-size: 12px;
+    }
+}
