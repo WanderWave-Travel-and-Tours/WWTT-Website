@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import './addtestimonial.css';
+import { User, Quote, Camera, Loader2 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
+import './addtestimonial.css';
 
 const AddTestimonial = () => {
     // --- SIDEBAR LOGIC START ---
@@ -17,6 +18,7 @@ const AddTestimonial = () => {
     });
     const [pictureFile, setPictureFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -29,8 +31,19 @@ const AddTestimonial = () => {
         if (file) setPreviewUrl(URL.createObjectURL(file));
     };
 
+    const handleCancel = () => {
+        setTestimonialDetails({
+            name: '',
+            feedback: '',
+            source: '',
+        });
+        setPictureFile(null);
+        setPreviewUrl(null);
+    };
+
     const handleSubmit = async (e) => { 
         e.preventDefault();
+        setIsSubmitting(true);
         const formData = new FormData();
 
         formData.append('customerName', testimonialDetails.name); 
@@ -43,43 +56,36 @@ const AddTestimonial = () => {
 
         try {
             const response = await fetch('http://localhost:5000/api/testimonials', {
-                    method: 'POST',
+                method: 'POST',
                 body: formData, 
             });
 
             if (response.ok) {
-                const result = await response.json();
                 alert(`Testimonial from ${testimonialDetails.name} added successfully!`);
-                
-                setTestimonialDetails({
-                    name: '',
-                    feedback: '',
-                    source: '',
-                });
-                setPictureFile(null);
+                handleCancel();
                 e.target.reset();
             } else {
-                console.error("Failed to submit");
                 alert("Error submitting testimonial.");
             }
-
         } catch (error) {
             console.error("Error:", error);
             alert("Something went wrong with the server.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     return (
         <div className="testi-page">
-            {/* Sidebar component updated with props */}
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
-            {/* Main content area updated with conditional class */}
             <main className={`testi-main ${isSidebarCollapsed ? "testi-main--collapsed" : ""}`}>
                 <div className="testi-container">
                     <header className="testi-header">
-                        <h1 className="testi-title">NEW TESTIMONIAL</h1>
-                        <p className="testi-subtitle">Add a customer testimonial to display on your website</p>
+                        <div className="testi-header-content">
+                            <h1 className="testi-title">NEW TESTIMONIAL</h1>
+                            <p className="testi-subtitle">Add a customer testimonial to display on your website gallery</p>
+                        </div>
                     </header>
 
                     <form onSubmit={handleSubmit} className="testi-form">
@@ -87,26 +93,27 @@ const AddTestimonial = () => {
                             <div className="testi-left">
                                 <section className="testi-section">
                                     <h2 className="testi-section-title">CUSTOMER PHOTO</h2>
-                                    <label className="testi-upload">
-                                        <input type="file" accept="image/*" onChange={handleFileChange} hidden />
-                                        {previewUrl ? (
-                                            <div className="testi-upload-preview">
-                                                <img src={previewUrl} alt="Preview" />
-                                                <span className="testi-upload-change">Change Photo</span>
-                                            </div>
-                                        ) : (
-                                            <div className="testi-upload-empty">
-                                                <div className="testi-upload-icon">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                        <circle cx="12" cy="7" r="4"/>
-                                                    </svg>
+                                    <div className="testi-upload-area">
+                                        <label className="testi-upload-label-poster">
+                                            <input type="file" accept="image/*" onChange={handleFileChange} hidden />
+                                            {!previewUrl ? (
+                                                <div className="testi-upload-placeholder">
+                                                    <div className="testi-upload-icon-box">
+                                                        <Camera size={32} />
+                                                    </div>
+                                                    <p style={{ fontWeight: '700', color: '#1e293b', margin: '0' }}>Click to upload photo</p>
+                                                    <span style={{ fontSize: '12px', color: '#64748b' }}>JPG, PNG • Max 2MB</span>
                                                 </div>
-                                                <p>Click to upload photo</p>
-                                                <span>JPG, PNG • Max 2MB</span>
-                                            </div>
-                                        )}
-                                    </label>
+                                            ) : (
+                                                <div className="testi-upload-preview-box">
+                                                    <img src={previewUrl} alt="Preview" />
+                                                    <div className="testi-upload-overlay">
+                                                        <span>Change Photo</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </label>
+                                    </div>
                                 </section>
 
                                 <section className="testi-section">
@@ -146,27 +153,20 @@ const AddTestimonial = () => {
                                                 value={testimonialDetails.feedback}
                                                 onChange={handleChange}
                                                 placeholder="Enter the full quote or review here..."
-                                                rows="5"
+                                                rows="6"
                                                 required
                                             ></textarea>
                                         </div>
                                     </div>
                                 </section>
-
-                                <div className="testi-actions">
-                                    <button type="button" className="testi-btn testi-btn--cancel">Cancel</button>
-                                    <button type="submit" className="testi-btn testi-btn--submit">Submit Testimonial</button>
-                                </div>
                             </div>
 
                             <aside className="testi-right">
-                                <div className="testi-preview">
-                                    <span className="testi-preview-label">PREVIEW</span>
+                                <div className="testi-preview-card">
+                                    <span className="testi-preview-label">LIVE PREVIEW</span>
                                     <div className="testi-card">
                                         <div className="testi-card-quote">
-                                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
-                                            </svg>
+                                            <Quote size={32} />
                                         </div>
                                         <p className="testi-card-feedback">
                                             {testimonialDetails.feedback || 'Customer feedback will appear here...'}
@@ -176,10 +176,7 @@ const AddTestimonial = () => {
                                                 {previewUrl ? (
                                                     <img src={previewUrl} alt="Avatar" />
                                                 ) : (
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-                                                        <circle cx="12" cy="7" r="4"/>
-                                                    </svg>
+                                                    <User size={24} />
                                                 )}
                                             </div>
                                             <div className="testi-card-info">
@@ -203,6 +200,24 @@ const AddTestimonial = () => {
                                             <span>Photo</span>
                                         </div>
                                     </div>
+                                </div>
+
+                                <div className="testi-actions">
+                                    <button 
+                                        type="button" 
+                                        className="testi-btn testi-btn--cancel" 
+                                        onClick={handleCancel}
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className="testi-btn testi-btn--submit"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submit...' : 'Submit'}
+                                    </button>
                                 </div>
                             </aside>
                         </div>

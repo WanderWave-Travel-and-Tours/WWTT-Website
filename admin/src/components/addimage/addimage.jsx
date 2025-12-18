@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2 } from 'lucide-react';
+import { Upload, Trash2, ImageIcon, Info, Loader2 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './addimage.css';
 
 const AddImage = () => {
-    // --- SIDEBAR LOGIC START ---
+    // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR LOGIC END ---
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -59,14 +58,14 @@ const AddImage = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert('Image uploaded successfully!');
+                alert('✅ Image uploaded successfully!');
                 removeImage(); 
             } else {
-                alert(`Error: ${data.message || 'Failed to upload'}`);
+                alert(`❌ Error: ${data.message || 'Failed to upload'}`);
             }
         } catch (error) {
             console.error('Upload Error:', error);
-            alert('Failed to connect to server.');
+            alert('❌ Failed to connect to server.');
         } finally {
             setIsSubmitting(false);
         }
@@ -75,49 +74,123 @@ const AddImage = () => {
     return (
         <div className="ai-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            
             <main className={`ai-main ${isSidebarCollapsed ? "ai-main--collapsed" : ""}`}>
                 <div className="ai-container">
+                    
                     <header className="ai-header">
-                        <h1 className="ai-title">UPLOAD IMAGE</h1>
-                        <p className="ai-subtitle">Add new images to your gallery list</p>
+                        <div className="ai-header-content">
+                            <h1 className="ai-title">GALLERY UPLOAD</h1>
+                            <p className="ai-subtitle">Manage and expand your website's visual assets</p>
+                        </div>
                     </header>
 
-                    <div className="ai-upload-section">
-                        <div className="ai-field">
-                            {!imagePreview ? (
-                                <div className="ai-upload-zone">
-                                    <input 
-                                        type="file" 
-                                        id="gallery-upload" 
-                                        accept="image/*" 
-                                        onChange={handleImageChange} 
-                                        hidden 
-                                    />
-                                    <label htmlFor="gallery-upload" className="ai-upload-label">
-                                        <div className="ai-upload-icon"><Upload size={40} /></div>
-                                        <span className="ai-upload-text">Click to Upload Image</span>
-                                        <span className="ai-upload-subtext">Supports JPG, PNG</span>
-                                    </label>
+                    <div className="ai-grid">
+                        <div className="ai-left">
+                            <section className="ai-section">
+                                <h2 className="ai-section-title">IMAGE UPLOAD</h2>
+                                
+                                {!imagePreview ? (
+                                    <div className="ai-upload-zone-container">
+                                        <input 
+                                            type="file" 
+                                            id="gallery-upload" 
+                                            accept="image/*" 
+                                            onChange={handleImageChange} 
+                                            hidden 
+                                        />
+                                        <label htmlFor="gallery-upload" className="ai-upload-label-poster">
+                                            <div className="ai-upload-icon-box">
+                                                <Upload size={32} />
+                                            </div>
+                                            <p style={{ fontWeight: '700', color: '#1e293b', margin: '0' }}>Click to select image</p>
+                                            <span style={{ fontSize: '12px', color: '#64748b' }}>JPG, PNG or WebP allowed</span>
+                                        </label>
+                                    </div>
+                                ) : (
+                                    <div className="ai-upload-preview-box">
+                                        <img src={imagePreview} alt="Preview" />
+                                        <div className="ai-upload-actions">
+                                            <label className="ai-upload-change-btn">
+                                                <input type="file" onChange={handleImageChange} accept="image/*" hidden />
+                                                Change
+                                            </label>
+                                            <button type="button" className="ai-upload-remove-btn" onClick={removeImage}>
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
+
+                            <section className="ai-section">
+                                <h2 className="ai-section-title">FILE INFORMATION</h2>
+                                <div className="ai-info-box">
+                                    <div className="ai-info-item">
+                                        <Info size={16} />
+                                        <span>Images uploaded here will be visible in the public gallery.</span>
+                                    </div>
+                                    <div className="ai-info-item">
+                                        <Info size={16} />
+                                        <span>Recommended resolution: 1920x1080 for best quality.</span>
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="ai-preview-wrapper">
-                                    <img src={imagePreview} alt="Preview" className="ai-preview-img" />
-                                    <button onClick={removeImage} className="ai-remove-btn">
-                                        <Trash2 size={16} /> Remove
-                                    </button>
-                                </div>
-                            )}
+                            </section>
                         </div>
 
-                        <div className="ai-actions">
-                            <button 
-                                className="ai-btn-submit" 
-                                onClick={handleSubmit} 
-                                disabled={isSubmitting || !imageFile}
-                            >
-                                {isSubmitting ? 'Uploading...' : 'Upload to Gallery'}
-                            </button>
-                        </div>
+                        <aside className="ai-right">
+                            <div className="ai-preview-card">
+                                <span className="ai-preview-label">LIVE PREVIEW</span>
+                                
+                                <div className="ai-card-mock">
+                                    <div className="ai-card-img-wrapper">
+                                        {imagePreview ? (
+                                            <img src={imagePreview} alt="Preview" />
+                                        ) : (
+                                            <div className="ai-card-placeholder">
+                                                <ImageIcon size={48} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="ai-card-body">
+                                        <h4 className="ai-card-filename">
+                                            {imageFile ? imageFile.name : 'No image selected'}
+                                        </h4>
+                                        <span className="ai-card-tag">Gallery Asset</span>
+                                    </div>
+                                </div>
+
+                                <div className="ai-stats">
+                                    <div className="ai-stat">
+                                        <strong>Type</strong>
+                                        <span>{imageFile ? imageFile.type.split('/')[1].toUpperCase() : '--'}</span>
+                                    </div>
+                                    <div className="ai-stat">
+                                        <strong>Size</strong>
+                                        <span>{imageFile ? (imageFile.size / 1024 / 1024).toFixed(2) + ' MB' : '--'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="ai-actions-group">
+                                <button 
+                                    className="ai-btn-cancel" 
+                                    onClick={removeImage}
+                                    disabled={!imageFile || isSubmitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    className="ai-btn-submit-styled" 
+                                    onClick={handleSubmit} 
+                                    disabled={isSubmitting || !imageFile}
+                                >
+                                    {isSubmitting ? (
+                                        <><Loader2 className="ai-spinner" size={18} /> Uploading...</>
+                                    ) : 'Upload'}
+                                </button>
+                            </div>
+                        </aside>
                     </div>
                 </div>
             </main>

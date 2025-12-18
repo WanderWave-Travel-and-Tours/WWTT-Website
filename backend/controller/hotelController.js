@@ -1,10 +1,11 @@
 const Hotel = require('../models/hotel');
 
+// GET ALL HOTELS
 exports.getAllHotels = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit = 100,
       city,
       location,
       country,
@@ -72,9 +73,12 @@ exports.getAllHotels = async (req, res) => {
       .sort(sort)
       .skip(skip)
       .limit(Number(limit))
-      .select('-__v');
+      .select('-__v')
+      .lean();
 
     const total = await Hotel.countDocuments(filter);
+
+    console.log(`✅ Fetched ${hotels.length} hotels out of ${total} total`);
 
     res.status(200).json({
       success: true,
@@ -85,7 +89,7 @@ exports.getAllHotels = async (req, res) => {
       data: hotels
     });
   } catch (error) {
-    console.error('Error fetching hotels:', error);
+    console.error('❌ Error fetching hotels:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching hotels',
@@ -94,9 +98,10 @@ exports.getAllHotels = async (req, res) => {
   }
 };
 
+// GET HOTEL BY ID
 exports.getHotelById = async (req, res) => {
   try {
-    const hotel = await Hotel.findById(req.params.id).select('-__v');
+    const hotel = await Hotel.findById(req.params.id).select('-__v').lean();
 
     if (!hotel) {
       return res.status(404).json({
@@ -105,12 +110,14 @@ exports.getHotelById = async (req, res) => {
       });
     }
 
+    console.log(`✅ Fetched hotel: ${hotel.name}`);
+
     res.status(200).json({
       success: true,
       data: hotel
     });
   } catch (error) {
-    console.error('Error fetching hotel:', error);
+    console.error('❌ Error fetching hotel:', error);
     
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
@@ -127,13 +134,32 @@ exports.getHotelById = async (req, res) => {
   }
 };
 
+// CREATE HOTEL
 exports.createHotel = async (req, res) => {
   try {
+    console.log('📝 Creating new hotel...');
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('Hotel name:', req.body.name);
+    console.log('Hotel location:', req.body.location);
+    console.log('Hotel price:', req.body.price);
+    console.log('Has mainImage:', !!req.body.mainImage);
+    console.log('Images count:', req.body.images?.length || 0);
+
     if (req.user) {
       req.body.createdBy = req.user.id;
     }
 
+    // Validation
+    if (!req.body.name || !req.body.location) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name and location are required'
+      });
+    }
+
     const hotel = await Hotel.create(req.body);
+
+    console.log(`✅ Hotel created successfully: ${hotel.name} (ID: ${hotel._id})`);
 
     res.status(201).json({
       success: true,
@@ -141,7 +167,7 @@ exports.createHotel = async (req, res) => {
       data: hotel
     });
   } catch (error) {
-    console.error('Error creating hotel:', error);
+    console.error('❌ Error creating hotel:', error);
 
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(err => err.message);
@@ -149,6 +175,13 @@ exports.createHotel = async (req, res) => {
         success: false,
         message: 'Validation Error',
         errors: messages
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'A hotel with this name already exists'
       });
     }
 
@@ -160,8 +193,11 @@ exports.createHotel = async (req, res) => {
   }
 };
 
+// UPDATE HOTEL
 exports.updateHotel = async (req, res) => {
   try {
+    console.log(`📝 Updating hotel ${req.params.id}...`);
+
     let hotel = await Hotel.findById(req.params.id);
 
     if (!hotel) {
@@ -180,13 +216,15 @@ exports.updateHotel = async (req, res) => {
       }
     );
 
+    console.log(`✅ Hotel updated: ${hotel.name}`);
+
     res.status(200).json({
       success: true,
       message: 'Hotel updated successfully',
       data: hotel
     });
   } catch (error) {
-    console.error('Error updating hotel:', error);
+    console.error('❌ Error updating hotel:', error);
 
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
@@ -212,6 +250,7 @@ exports.updateHotel = async (req, res) => {
   }
 };
 
+// DELETE HOTEL (SOFT DELETE)
 exports.deleteHotel = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
@@ -226,13 +265,15 @@ exports.deleteHotel = async (req, res) => {
     hotel.isActive = false;
     await hotel.save();
 
+    console.log(`🗑️ Hotel soft-deleted: ${hotel.name}`);
+
     res.status(200).json({
       success: true,
       message: 'Hotel deleted successfully',
       data: {}
     });
   } catch (error) {
-    console.error('Error deleting hotel:', error);
+    console.error('❌ Error deleting hotel:', error);
 
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
@@ -249,6 +290,7 @@ exports.deleteHotel = async (req, res) => {
   }
 };
 
+// PERMANENT DELETE
 exports.permanentDeleteHotel = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
@@ -262,13 +304,15 @@ exports.permanentDeleteHotel = async (req, res) => {
 
     await hotel.deleteOne();
 
+    console.log(`🗑️ Hotel permanently deleted: ${hotel.name}`);
+
     res.status(200).json({
       success: true,
       message: 'Hotel permanently deleted',
       data: {}
     });
   } catch (error) {
-    console.error('Error permanently deleting hotel:', error);
+    console.error('❌ Error permanently deleting hotel:', error);
 
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
@@ -285,6 +329,7 @@ exports.permanentDeleteHotel = async (req, res) => {
   }
 };
 
+// TOGGLE FEATURED
 exports.toggleFeatured = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
@@ -299,13 +344,15 @@ exports.toggleFeatured = async (req, res) => {
     hotel.featured = !hotel.featured;
     await hotel.save();
 
+    console.log(`⭐ Hotel ${hotel.featured ? 'featured' : 'unfeatured'}: ${hotel.name}`);
+
     res.status(200).json({
       success: true,
       message: `Hotel ${hotel.featured ? 'featured' : 'unfeatured'} successfully`,
       data: hotel
     });
   } catch (error) {
-    console.error('Error toggling featured status:', error);
+    console.error('❌ Error toggling featured status:', error);
 
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
@@ -322,6 +369,7 @@ exports.toggleFeatured = async (req, res) => {
   }
 };
 
+// GET FEATURED HOTELS
 exports.getFeaturedHotels = async (req, res) => {
   try {
     const { limit = 6 } = req.query;
@@ -332,7 +380,10 @@ exports.getFeaturedHotels = async (req, res) => {
     })
       .sort({ rating: -1, createdAt: -1 })
       .limit(Number(limit))
-      .select('-__v');
+      .select('-__v')
+      .lean();
+
+    console.log(`✅ Fetched ${hotels.length} featured hotels`);
 
     res.status(200).json({
       success: true,
@@ -340,7 +391,7 @@ exports.getFeaturedHotels = async (req, res) => {
       data: hotels
     });
   } catch (error) {
-    console.error('Error fetching featured hotels:', error);
+    console.error('❌ Error fetching featured hotels:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching featured hotels',
@@ -349,6 +400,7 @@ exports.getFeaturedHotels = async (req, res) => {
   }
 };
 
+// GET HOTELS BY CITY
 exports.getHotelsByCity = async (req, res) => {
   try {
     const { city } = req.params;
@@ -366,7 +418,8 @@ exports.getHotelsByCity = async (req, res) => {
       .sort({ rating: -1 })
       .skip(skip)
       .limit(Number(limit))
-      .select('-__v');
+      .select('-__v')
+      .lean();
 
     const total = await Hotel.countDocuments({ 
       $or: [
@@ -375,6 +428,8 @@ exports.getHotelsByCity = async (req, res) => {
       ],
       isActive: true 
     });
+
+    console.log(`✅ Fetched ${hotels.length} hotels for city: ${city}`);
 
     res.status(200).json({
       success: true,
@@ -385,7 +440,7 @@ exports.getHotelsByCity = async (req, res) => {
       data: hotels
     });
   } catch (error) {
-    console.error('Error fetching hotels by city:', error);
+    console.error('❌ Error fetching hotels by city:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching hotels by city',
@@ -394,6 +449,7 @@ exports.getHotelsByCity = async (req, res) => {
   }
 };
 
+// UPDATE RATING
 exports.updateRating = async (req, res) => {
   try {
     const { rating } = req.body;
@@ -420,13 +476,15 @@ exports.updateRating = async (req, res) => {
 
     await hotel.save();
 
+    console.log(`⭐ Rating updated for: ${hotel.name}`);
+
     res.status(200).json({
       success: true,
       message: 'Rating updated successfully',
       data: hotel
     });
   } catch (error) {
-    console.error('Error updating rating:', error);
+    console.error('❌ Error updating rating:', error);
 
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
@@ -443,6 +501,7 @@ exports.updateRating = async (req, res) => {
   }
 };
 
+// GET HOTEL STATS
 exports.getHotelStats = async (req, res) => {
   try {
     const totalHotels = await Hotel.countDocuments({ isActive: true });
@@ -465,18 +524,22 @@ exports.getHotelStats = async (req, res) => {
       { $limit: 10 }
     ]);
 
+    const stats = {
+      totalHotels,
+      featuredHotels,
+      averageRating: avgRating[0]?.avgRating || 0,
+      averagePrice: avgPrice[0]?.avgPrice || 0,
+      hotelsByCity
+    };
+
+    console.log('📊 Hotel stats:', stats);
+
     res.status(200).json({
       success: true,
-      data: {
-        totalHotels,
-        featuredHotels,
-        averageRating: avgRating[0]?.avgRating || 0,
-        averagePrice: avgPrice[0]?.avgPrice || 0,
-        hotelsByCity
-      }
+      data: stats
     });
   } catch (error) {
-    console.error('Error fetching hotel stats:', error);
+    console.error('❌ Error fetching hotel stats:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching hotel statistics',
@@ -485,6 +548,7 @@ exports.getHotelStats = async (req, res) => {
   }
 };
 
+// UPDATE ROOM TYPES
 exports.updateRoomTypes = async (req, res) => {
   try {
     const { roomTypes } = req.body;
@@ -500,6 +564,8 @@ exports.updateRoomTypes = async (req, res) => {
     
     hotel.roomTypes = roomTypes;
     await hotel.save();
+
+    console.log(`🛏️ Room types updated for: ${hotel.name}`);
     
     res.status(200).json({
       success: true,
@@ -507,7 +573,7 @@ exports.updateRoomTypes = async (req, res) => {
       data: hotel
     });
   } catch (error) {
-    console.error('Error updating room types:', error);
+    console.error('❌ Error updating room types:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating room types',
@@ -516,18 +582,22 @@ exports.updateRoomTypes = async (req, res) => {
   }
 };
 
-// --- UPDATED FUNCTION ---
+// GET ROOM TYPES BY LOCATION
 exports.getRoomTypesByLocation = async (req, res) => {
   try {
     const { location } = req.params;
     
+    console.log(`🔍 Searching for hotels in location: ${location}`);
+
     const hotels = await Hotel.find({ 
       $or: [
         { city: new RegExp(location, 'i') },
         { location: new RegExp(location, 'i') }
       ],
       isActive: true 
-    });
+    }).lean();
+
+    console.log(`✅ Found ${hotels.length} hotels in ${location}`);
 
     if (!hotels || hotels.length === 0) {
       return res.status(200).json({
@@ -541,19 +611,17 @@ exports.getRoomTypesByLocation = async (req, res) => {
     const allRoomTypes = [];
     const seenTypes = new Set();
     
-    // Sort hotels by price ascending
-    hotels.sort((a, b) => a.price - b.price);
+    hotels.sort((a, b) => (a.price || 0) - (b.price || 0));
     
     hotels.forEach(hotel => {
       if (hotel.roomTypes && hotel.roomTypes.length > 0) {
         
-        // Extract images from DB
         const hotelImages = hotel.images && hotel.images.length > 0 
           ? hotel.images.map(img => img.url) 
           : [];
 
         if (hotel.mainImage && !hotelImages.includes(hotel.mainImage)) {
-            hotelImages.unshift(hotel.mainImage);
+          hotelImages.unshift(hotel.mainImage);
         }
 
         hotel.roomTypes.forEach(room => {
@@ -569,14 +637,11 @@ exports.getRoomTypesByLocation = async (req, res) => {
               description: room.description,
               hotelName: hotel.name, 
               hotelId: hotel._id,
-              // Pass images array
-              images: hotelImages, 
+              images: hotelImages,
               hotelImage: hotel.mainImage || (hotelImages.length > 0 ? hotelImages[0] : null),
-              
-              // --- NEW DB FIELDS PASSED TO FRONTEND ---
-              hotelLocation: hotel.location || hotel.city, // Pass precise location
-              hotelRating: hotel.rating || 0,              // Pass rating
-              amenities: hotel.amenities                   // Pass amenities object
+              hotelLocation: hotel.location || hotel.city,
+              hotelRating: hotel.rating || 0,
+              amenities: hotel.amenities || {}
             });
           }
         });
@@ -585,6 +650,8 @@ exports.getRoomTypesByLocation = async (req, res) => {
 
     allRoomTypes.sort((a, b) => a.price - b.price);
 
+    console.log(`✅ Returning ${allRoomTypes.length} unique room types`);
+
     res.status(200).json({
       success: true,
       location: location,
@@ -592,7 +659,7 @@ exports.getRoomTypesByLocation = async (req, res) => {
       data: allRoomTypes
     });
   } catch (error) {
-    console.error('Error fetching room types by location:', error);
+    console.error('❌ Error fetching room types by location:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching room types',

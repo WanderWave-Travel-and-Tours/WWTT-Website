@@ -1,93 +1,180 @@
 .apkg-preview {
-    background: #001F3F;
-    border-radius: 10px;
-    padding: 24px;
-    margin-bottom: 16px;
-}
-
-.apkg-preview-label {
-    display: block;
-    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 11px;
-    font-weight: 900;
-    color: #FF8C42;
-    letter-spacing: 2px;
+    background: linear-gradient(135deg, #001F3F 0%, #003d7a 100%);
+    border-radius: 16px;
+    padding: 28px;
     margin-bottom: 20px;
-}
-
-.apkg-card {
-    background: #fff;
-    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
+    position: relative;
     overflow: hidden;
 }
 
+.apkg-preview::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 140, 66, 0.08) 0%, transparent 70%);
+    animation: rotate 25s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.apkg-preview-label {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    color: #FF8C42;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+}
+
+.apkg-preview-label::before {
+    content: '👁';
+    font-size: 16px;
+}
+
+.apkg-card {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.apkg-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
 .apkg-card-image {
-    height: 160px;
-    background: #f1f5f9;
+    height: 180px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.apkg-card-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+    z-index: 1;
 }
 
 .apkg-card-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.apkg-card:hover .apkg-card-image img {
+    transform: scale(1.1);
 }
 
 .apkg-card-image span {
-    font-size: 13px;
-    color: #94a3b8;
+    position: relative;
+    z-index: 2;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.apkg-card-image span::before {
+    content: '📷';
+    font-size: 24px;
 }
 
 .apkg-card-body {
-    padding: 20px;
+    padding: 24px;
 }
 
 .apkg-card-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 800;
     color: #FF8C42;
-    background: #fff4ec;
-    padding: 4px 8px;
-    border-radius: 4px;
+    background: linear-gradient(135deg, #fff4ec 0%, #ffe8d9 100%);
+    padding: 6px 12px;
+    border-radius: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    border: 1px solid #ffd4b8;
+}
+
+.apkg-card-badge::before {
+    content: '✈';
+    font-size: 12px;
 }
 
 .apkg-card-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 900;
     color: #001F3F;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .apkg-card-location {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-size: 13px;
     color: #64748b;
+    font-weight: 500;
 }
 
 .apkg-card-location svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    color: #FF8C42;
+    flex-shrink: 0;
 }
 
 .apkg-card-divider {
-    height: 1px;
-    background: #e2e8f0;
-    margin: 16px 0;
+    height: 2px;
+    background: linear-gradient(90deg, #e2e8f0 0%, transparent 100%);
+    margin: 18px 0;
 }
 
 .apkg-card-meta {
     display: flex;
     justify-content: space-between;
+    gap: 16px;
+}
+
+.apkg-card-meta > div {
+    flex: 1;
 }
 
 .apkg-card-meta > div span {
@@ -95,14 +182,16 @@
     font-size: 10px;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    font-weight: 700;
 }
 
 .apkg-card-meta > div strong {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 900;
     color: #001F3F;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
 }
 
 .apkg-card-meta > div:first-child strong {
@@ -110,30 +199,297 @@
 }
 
 .apkg-stats {
+    position: relative;
+    z-index: 1;
     display: flex;
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 24px;
 }
 
 .apkg-stat {
     flex: 1;
     text-align: center;
-    padding: 14px 8px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 6px;
+    padding: 16px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+
+.apkg-stat:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 140, 66, 0.5);
+    transform: translateY(-2px);
 }
 
 .apkg-stat strong {
     display: block;
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 900;
     color: #FF8C42;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
 }
 
 .apkg-stat span {
     font-size: 10px;
-    color: rgba(255,255,255,0.5);
+    color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+/* ================== RESPONSIVE ================== */
+
+/* Tablet */
+@media (max-width: 900px) {
+    .apkg-preview {
+        padding: 24px;
+    }
+    
+    .apkg-card-image {
+        height: 160px;
+    }
+    
+    .apkg-card-body {
+        padding: 22px;
+    }
+}
+
+/* Mobile Large */
+@media (max-width: 768px) {
+    .apkg-preview {
+        padding: 22px;
+        margin-bottom: 16px;
+    }
+    
+    .apkg-preview-label {
+        font-size: 11px;
+        margin-bottom: 20px;
+    }
+    
+    .apkg-preview-label::before {
+        font-size: 14px;
+    }
+    
+    .apkg-card-image {
+        height: 150px;
+    }
+    
+    .apkg-card-body {
+        padding: 20px;
+    }
+    
+    .apkg-card-title {
+        font-size: 16px;
+    }
+    
+    .apkg-card-location {
+        font-size: 12px;
+    }
+    
+    .apkg-card-meta > div strong {
+        font-size: 15px;
+    }
+    
+    .apkg-stats {
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .apkg-stat {
+        padding: 14px 8px;
+    }
+    
+    .apkg-stat strong {
+        font-size: 20px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .apkg-preview {
+        padding: 20px;
+        border-radius: 12px;
+    }
+    
+    .apkg-preview-label {
+        font-size: 10px;
+        letter-spacing: 1.5px;
+    }
+    
+    .apkg-card {
+        border-radius: 10px;
+    }
+    
+    .apkg-card-image {
+        height: 140px;
+    }
+    
+    .apkg-card-image span {
+        font-size: 13px;
+    }
+    
+    .apkg-card-image span::before {
+        font-size: 20px;
+    }
+    
+    .apkg-card-body {
+        padding: 18px;
+    }
+    
+    .apkg-card-badge {
+        font-size: 9px;
+        padding: 5px 10px;
+    }
+    
+    .apkg-card-badge::before {
+        font-size: 11px;
+    }
+    
+    .apkg-card-title {
+        font-size: 15px;
+        margin-bottom: 8px;
+    }
+    
+    .apkg-card-location {
+        font-size: 11px;
+        gap: 6px;
+    }
+    
+    .apkg-card-location svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .apkg-card-divider {
+        margin: 14px 0;
+    }
+    
+    .apkg-card-meta {
+        gap: 12px;
+    }
+    
+    .apkg-card-meta > div span {
+        font-size: 9px;
+        margin-bottom: 5px;
+    }
+    
+    .apkg-card-meta > div strong {
+        font-size: 14px;
+    }
+    
+    .apkg-stats {
+        gap: 8px;
+        margin-top: 16px;
+    }
+    
+    .apkg-stat {
+        padding: 12px 6px;
+        border-radius: 8px;
+    }
+    
+    .apkg-stat strong {
+        font-size: 18px;
+    }
+    
+    .apkg-stat span {
+        font-size: 9px;
+    }
+}
+
+/* Mobile Small */
+@media (max-width: 480px) {
+    .apkg-preview {
+        padding: 16px;
+    }
+    
+    .apkg-preview-label {
+        font-size: 9px;
+        margin-bottom: 16px;
+    }
+    
+    .apkg-card-image {
+        height: 130px;
+    }
+    
+    .apkg-card-body {
+        padding: 16px;
+    }
+    
+    .apkg-card-badge {
+        font-size: 8px;
+        padding: 4px 9px;
+    }
+    
+    .apkg-card-title {
+        font-size: 14px;
+    }
+    
+    .apkg-card-location {
+        font-size: 10px;
+    }
+    
+    .apkg-card-location svg {
+        width: 13px;
+        height: 13px;
+    }
+    
+    .apkg-card-divider {
+        margin: 12px 0;
+    }
+    
+    .apkg-card-meta > div span {
+        font-size: 8px;
+    }
+    
+    .apkg-card-meta > div strong {
+        font-size: 13px;
+    }
+    
+    .apkg-stats {
+        gap: 6px;
+        margin-top: 14px;
+    }
+    
+    .apkg-stat {
+        padding: 10px 5px;
+    }
+    
+    .apkg-stat strong {
+        font-size: 16px;
+    }
+    
+    .apkg-stat span {
+        font-size: 8px;
+    }
+}
+
+/* Mobile Extra Small */
+@media (max-width: 360px) {
+    .apkg-preview {
+        padding: 14px;
+    }
+    
+    .apkg-card-image {
+        height: 120px;
+    }
+    
+    .apkg-card-body {
+        padding: 14px;
+    }
+    
+    .apkg-card-title {
+        font-size: 13px;
+    }
+    
+    .apkg-card-meta > div strong {
+        font-size: 12px;
+    }
+    
+    .apkg-stat strong {
+        font-size: 15px;
+    }
 }

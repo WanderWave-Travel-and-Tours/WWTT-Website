@@ -1,0 +1,389 @@
+/* Toast.css */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 500px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(10px);
+  animation: slideIn 0.3s ease-out;
+  pointer-events: auto;
+  min-width: 400px;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: currentColor;
+}
+
+/* Success Toast - Green */
+.toast--success {
+  background: linear-gradient(135deg, #d1f4e0 0%, #a8e6cf 100%);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: #166534;
+}
+
+.toast--success .toast__icon {
+  color: #16a34a;
+}
+
+/* Error Toast - Red */
+.toast--error {
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #991b1b;
+}
+
+.toast--error .toast__icon {
+  color: #dc2626;
+}
+
+/* Warning Toast - Yellow */
+.toast--warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #92400e;
+}
+
+.toast--warning .toast__icon {
+  color: #d97706;
+}
+
+/* Info Toast - Blue */
+.toast--info {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #1e3a8a;
+}
+
+.toast--info .toast__icon {
+  color: #3b82f6;
+}
+
+.toast__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast__title {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.toast__message {
+  font-size: 14px;
+  opacity: 0.85;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.toast__close {
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: currentColor;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.toast__close:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+.toast__close:active {
+  transform: scale(0.95);
+}
+
+/* ===============================================
+   RESPONSIVE STYLES - ALL SCREEN SIZES
+   =============================================== */
+
+/* Large Tablets & Small Desktops (1024px - 1200px) */
+@media (max-width: 1200px) {
+  .toast-container {
+    max-width: 450px;
+  }
+
+  .toast {
+    min-width: 380px;
+  }
+}
+
+/* Tablets (768px - 1024px) */
+@media (max-width: 1024px) {
+  .toast-container {
+    top: 15px;
+    right: 15px;
+    max-width: 420px;
+    gap: 10px;
+  }
+
+  .toast {
+    min-width: 350px;
+    padding: 14px 18px;
+    gap: 10px;
+  }
+
+  .toast__title {
+    font-size: 14px;
+  }
+
+  .toast__message {
+    font-size: 13px;
+  }
+
+  .toast__icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .toast__close {
+    width: 26px;
+    height: 26px;
+  }
+
+  .toast__close svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Mobile Landscape & Small Tablets (600px - 768px) */
+@media (max-width: 768px) {
+  .toast-container {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+    gap: 10px;
+  }
+
+  .toast {
+    min-width: auto;
+    width: 100%;
+    padding: 12px 16px;
+    gap: 10px;
+    border-radius: 12px;
+  }
+
+  .toast::before {
+    width: 3px;
+  }
+
+  .toast__icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .toast__title {
+    font-size: 14px;
+    margin-bottom: 1px;
+  }
+
+  .toast__message {
+    font-size: 13px;
+  }
+
+  .toast__close {
+    width: 24px;
+    height: 24px;
+  }
+
+  .toast__close svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-100px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* Mobile Portrait (480px - 600px) */
+@media (max-width: 600px) {
+  .toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .toast {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .toast__title {
+    font-size: 13px;
+  }
+
+  .toast__message {
+    font-size: 12px;
+  }
+}
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+  .toast-container {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    gap: 8px;
+  }
+
+  .toast {
+    padding: 10px 12px;
+    gap: 8px;
+    border-radius: 10px;
+  }
+
+  .toast::before {
+    width: 2px;
+  }
+
+  .toast__icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .toast__title {
+    font-size: 13px;
+  }
+
+  .toast__message {
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .toast__close {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+  }
+
+  .toast__close svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Extra Small Mobile (< 320px) */
+@media (max-width: 320px) {
+  .toast-container {
+    top: 5px;
+    right: 5px;
+    left: 5px;
+  }
+
+  .toast {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .toast__icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .toast__title {
+    font-size: 12px;
+  }
+
+  .toast__message {
+    font-size: 11px;
+  }
+
+  .toast__close {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Landscape Mode for Mobile Devices */
+@media (max-height: 500px) and (orientation: landscape) {
+  .toast-container {
+    top: 8px;
+    right: 8px;
+    left: auto;
+    max-width: 350px;
+  }
+
+  .toast {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .toast__title {
+    font-size: 12px;
+  }
+
+  .toast__message {
+    font-size: 11px;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+}

@@ -6,12 +6,10 @@ import { useNavigate } from 'react-router-dom';
 const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 const ViewTours = () => {
-    // --- SIDEBAR LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR LOGIC END ---
 
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -47,12 +45,31 @@ const ViewTours = () => {
         fetchTours();
     }, []);
 
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this tour?')) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
+                    method: 'DELETE',
+                });
+                const result = await response.json();
+                
+                if (result.status === 'ok') {
+                    setTours(tours.filter(tour => tour._id !== id));
+                    alert('✅ Tour deleted successfully!');
+                } else {
+                    alert('❌ Error deleting tour');
+                }
+            } catch (err) {
+                console.error('Delete error:', err);
+                alert('❌ Error connecting to server');
+            }
+        }
+    };
+
     if (loading) {
         return (
             <div className="viewtours-page">
-                {/* Sidebar updated */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* main updated */}
                 <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-loader">
                         <div className="viewtours-spinner"></div>
@@ -66,9 +83,7 @@ const ViewTours = () => {
     if (error) {
         return (
             <div className="viewtours-page">
-                {/* Sidebar updated */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* main updated */}
                 <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-error">
                         <span className="viewtours-error-icon">⚠️</span>
@@ -81,9 +96,7 @@ const ViewTours = () => {
 
     return (
         <div className="viewtours-page">
-            {/* Sidebar updated */}
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            {/* main updated */}
             <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                 <div className="viewtours-container">
                     <header className="viewtours-header">
@@ -92,7 +105,7 @@ const ViewTours = () => {
                             <p className="viewtours-subtitle">Manage your travel packages ({tours.length} total)</p>
                         </div>
                         <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
-                            + Add New Package
+                            + Add New Tour
                         </button>
                     </header>
 
@@ -144,10 +157,16 @@ const ViewTours = () => {
                                             </div>
                                             
                                             <div className="viewtours-actions">
-                                                <button className="viewtours-btn-action viewtours-btn-action--edit">
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--edit"
+                                                    onClick={() => navigate(`/edit-tour/${tour._id}`)}
+                                                >
                                                     Edit
                                                 </button>
-                                                <button className="viewtours-btn-action viewtours-btn-action--delete">
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--delete"
+                                                    onClick={() => handleDelete(tour._id)}
+                                                >
                                                     Delete
                                                 </button>
                                             </div>

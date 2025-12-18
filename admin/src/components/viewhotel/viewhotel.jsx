@@ -3,7 +3,9 @@ import Sidebar from '../sidebar/sidebar';
 import './viewhotel.css';
 import { Edit, Trash2, MapPin, Star, Plus, Search, Filter, RefreshCw, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import ViewHotelModal from './ViewHotelModal'; // Import the new modal
+import ViewHotelModal from './ViewHotelModal';
+
+const API_BASE_URL = 'http://localhost:5000';
 
 const ViewHotels = () => {
   const navigate = useNavigate();
@@ -13,7 +15,6 @@ const ViewHotels = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCity, setFilterCity] = useState('');
   
-  // Modal State
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
@@ -34,21 +35,28 @@ const ViewHotels = () => {
       setLoading(true);
       setError('');
 
-      // Fetch all hotels without pagination for the list
-      const response = await fetch('http://localhost:5000/api/hotels?limit=100');
-      const data = await response.json();
+      console.log('Fetching hotels from:', `${API_BASE_URL}/api/hotels`);
 
-      console.log('Hotels fetched:', data);
+      const response = await fetch(`${API_BASE_URL}/api/hotels?limit=100`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Hotels response:', data);
 
       if (data.success && Array.isArray(data.data)) {
+        console.log(`Loaded ${data.data.length} hotels`);
         setHotels(data.data);
-        setStats(prev => ({ ...prev, total: data.total }));
+        setStats(prev => ({ ...prev, total: data.total || data.data.length }));
       } else {
+        console.error('Invalid response format:', data);
         setError('Invalid response format from server');
       }
     } catch (error) {
       console.error('Error fetching hotels:', error);
-      setError('Failed to load hotels: ' + error.message);
+      setError(`Failed to load hotels: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -56,15 +64,15 @@ const ViewHotels = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/hotels/stats');
+      const response = await fetch(`${API_BASE_URL}/api/hotels/stats`);
       const data = await response.json();
 
       if (data.success) {
         setStats({
-          total: data.data.totalHotels,
-          featured: data.data.featuredHotels,
-          avgRating: data.data.averageRating.toFixed(1),
-          avgPrice: Math.round(data.data.averagePrice)
+          total: data.data.totalHotels || 0,
+          featured: data.data.featuredHotels || 0,
+          avgRating: (data.data.averageRating || 0).toFixed(1),
+          avgPrice: Math.round(data.data.averagePrice || 0)
         });
       }
     } catch (error) {
@@ -73,12 +81,12 @@ const ViewHotels = () => {
   };
 
   const handleDelete = async (hotelId, hotelName) => {
-    if (!window.confirm(`Are you sure you want to delete "${hotelName}"?`)) {
+    if (!window.confirm(`Are you sure you want to delete "${hotelName}"?\n\nThis will mark the hotel as inactive.`)) {
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/hotels/${hotelId}`, {
         method: 'DELETE'
       });
 
@@ -86,13 +94,14 @@ const ViewHotels = () => {
 
       if (data.success) {
         alert('Hotel deleted successfully!');
-        fetchHotels(); // Refresh list
+        fetchHotels();
+        fetchStats();
       } else {
         alert('Error deleting hotel: ' + data.message);
       }
     } catch (error) {
       console.error('Error deleting hotel:', error);
-      alert('Failed to delete hotel');
+      alert('Failed to delete hotel: ' + error.message);
     }
   };
 
@@ -100,49 +109,67 @@ const ViewHotels = () => {
     navigate(`/edit-hotel/${hotelId}`);
   };
 
-  // OPEN VIEW MODAL
   const handleView = (hotel) => {
+    console.log('Viewing hotel:', hotel);
     setSelectedHotel(hotel);
     setIsViewModalOpen(true);
   };
 
   const handleToggleFeatured = async (hotelId, currentStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}/featured`, {
+      const response = await fetch(`${API_BASE_URL}/api/hotels/${hotelId}/featured`, {
         method: 'PATCH'
       });
 
       const data = await response.json();
 
       if (data.success) {
-        fetchHotels(); // Refresh list
-        fetchStats(); // Refresh stats
+        fetchHotels();
+        fetchStats();
       } else {
         alert('Error updating featured status: ' + data.message);
       }
     } catch (error) {
       console.error('Error toggling featured:', error);
-      alert('Failed to update featured status');
+      alert('Failed to update featured status: ' + error.message);
     }
   };
 
-  // Filter hotels based on search and city
   const filteredHotels = hotels.filter(hotel => {
-    const matchesSearch = hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          hotel.location?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = hotel.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          hotel.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          hotel.city?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCity = filterCity === '' || hotel.city?.toLowerCase().includes(filterCity.toLowerCase());
     return matchesSearch && matchesCity;
   });
 
-  // Get unique cities for filter
-  const uniqueCities = [...new Set(hotels.map(h => h.city).filter(Boolean))];
+  const uniqueCities = [...new Set(hotels.map(h => h.city).filter(Boolean))].sort();
+
+  const getImageUrl = (hotel) => {
+    if (hotel.mainImage) {
+      if (hotel.mainImage.startsWith('data:image')) {
+        return hotel.mainImage;
+      }
+      if (hotel.mainImage.startsWith('blob:')) {
+        return hotel.mainImage;
+      }
+      if (hotel.mainImage.startsWith('http')) {
+        return hotel.mainImage;
+      }
+    }
+    
+    if (hotel.images && hotel.images.length > 0 && hotel.images[0].url) {
+      return hotel.images[0].url;
+    }
+    
+    return null;
+  };
 
   return (
     <div className="hotel-page">
       <Sidebar />
       <main className="hotel-main">
         <div className="hotel-container">
-          {/* Header */}
           <header className="hotel-header flex-between">
             <div>
               <h1 className="hotel-title">HOTEL LIST</h1>
@@ -153,7 +180,6 @@ const ViewHotels = () => {
             </button>
           </header>
 
-          {/* Stats Cards */}
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-label">Total Hotels</div>
@@ -176,7 +202,6 @@ const ViewHotels = () => {
             </div>
           </div>
 
-          {/* Filters */}
           <div className="filters-section">
             <div className="search-box">
               <Search size={18} />
@@ -196,21 +221,15 @@ const ViewHotels = () => {
                 ))}
               </select>
             </div>
-            <button className="btn-refresh" onClick={fetchHotels} disabled={loading}>
-              <RefreshCw size={18} className={loading ? 'spinning' : ''} />
-              Refresh
-            </button>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="error-message">
-              {error}
+              <strong>Error:</strong> {error}
               <button onClick={fetchHotels} style={{ marginLeft: '1rem' }}>Retry</button>
             </div>
           )}
 
-          {/* Loading State */}
           {loading && (
             <div className="loading-container">
               <div className="spinner"></div>
@@ -218,7 +237,6 @@ const ViewHotels = () => {
             </div>
           )}
 
-          {/* Empty State */}
           {!loading && !error && filteredHotels.length === 0 && (
             <div className="empty-state">
               <div className="empty-icon">🏨</div>
@@ -236,7 +254,6 @@ const ViewHotels = () => {
             </div>
           )}
 
-          {/* Hotels Table */}
           {!loading && !error && filteredHotels.length > 0 && (
             <div className="hotel-table-container">
               <table className="hotel-table">
@@ -245,6 +262,7 @@ const ViewHotels = () => {
                     <th>Hotel Name</th>
                     <th>Location</th>
                     <th>Max Capacity</th>
+                    <th>Price</th>
                     <th>Amenities</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -252,16 +270,11 @@ const ViewHotels = () => {
                 </thead>
                 <tbody>
                   {filteredHotels.map((hotel) => {
-                    const amenitiesCount = Object.values(hotel.amenities || {}).filter(Boolean).length;
+                    const amenitiesCount = hotel.amenities 
+                      ? Object.values(hotel.amenities).filter(Boolean).length 
+                      : 0;
                     
-                    // Check if mainImage is a blob URL or base64
-                    const imageUrl = hotel.mainImage && hotel.mainImage.startsWith('blob:') 
-                      ? hotel.mainImage 
-                      : hotel.mainImage && hotel.mainImage.startsWith('data:image')
-                      ? hotel.mainImage
-                      : hotel.images && hotel.images.length > 0 && hotel.images[0].url
-                      ? hotel.images[0].url
-                      : null;
+                    const imageUrl = getImageUrl(hotel);
                     
                     return (
                       <tr key={hotel._id}>
@@ -275,7 +288,8 @@ const ViewHotels = () => {
                                 onError={(e) => {
                                   console.log('Image failed to load:', imageUrl);
                                   e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'flex';
+                                  const placeholder = e.target.nextSibling;
+                                  if (placeholder) placeholder.style.display = 'flex';
                                 }}
                               />
                             ) : null}
@@ -283,7 +297,7 @@ const ViewHotels = () => {
                               className="hotel-thumb" 
                               style={{ display: imageUrl ? 'none' : 'flex' }}
                             >
-                              {hotel.name.charAt(0).toUpperCase()}
+                              {hotel.name?.charAt(0).toUpperCase() || 'H'}
                             </div>
                             <div>
                               <span className="font-bold">{hotel.name}</span>
@@ -296,11 +310,14 @@ const ViewHotels = () => {
                         <td className="text-muted">
                           <div className="flex-align">
                             <MapPin size={14} style={{ marginRight: '4px' }} />
-                            {hotel.location || hotel.city}
+                            {hotel.location || hotel.city || 'N/A'}
                           </div>
                         </td>
                         <td className="text-center">
                           {hotel.maxCapacity || 4} persons
+                        </td>
+                        <td className="text-center">
+                          ₱{(hotel.price || 0).toLocaleString()}
                         </td>
                         <td className="text-center">
                           <span className="amenities-badge">
@@ -314,7 +331,6 @@ const ViewHotels = () => {
                         </td>
                         <td>
                           <div className="action-group">
-                            {/* View Button */}
                             <button 
                               className="action-btn view" 
                               onClick={() => handleView(hotel)}
@@ -330,6 +346,7 @@ const ViewHotels = () => {
                             >
                               <Edit size={16} />
                             </button>
+                            
                             <button 
                               className={`action-btn ${hotel.featured ? 'featured' : 'star'}`}
                               onClick={() => handleToggleFeatured(hotel._id, hotel.featured)}
@@ -337,6 +354,7 @@ const ViewHotels = () => {
                             >
                               <Star size={16} fill={hotel.featured ? "#f59e0b" : "none"} />
                             </button>
+                            
                             <button 
                               className="action-btn delete" 
                               onClick={() => handleDelete(hotel._id, hotel.name)}
@@ -354,7 +372,6 @@ const ViewHotels = () => {
             </div>
           )}
 
-          {/* Results Count */}
           {!loading && !error && filteredHotels.length > 0 && (
             <div className="results-footer">
               Showing {filteredHotels.length} of {hotels.length} hotels
@@ -363,14 +380,17 @@ const ViewHotels = () => {
         </div>
       </main>
 
-      {/* RENDER THE VIEW MODAL */}
-      {isViewModalOpen && (
+      {isViewModalOpen && selectedHotel && (
         <ViewHotelModal 
           hotel={selectedHotel} 
-          onClose={() => setIsViewModalOpen(false)} 
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setSelectedHotel(null);
+          }} 
           onEdit={(id) => {
-            setIsViewModalOpen(false); // Close modal
-            navigate(`/edit-hotel/${id}`); // Navigate to edit page
+            setIsViewModalOpen(false);
+            setSelectedHotel(null);
+            navigate(`/edit-hotel/${id}`);
           }}
         />
       )}
