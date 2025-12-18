@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   FolderOpen,
   CheckCircle,
-  Search, // Added Search icon for the input field
+  UserPlus,
 } from "lucide-react";
 import "./PSASerbilis.css";
 // IMPORT THE NEW MODALS
@@ -16,6 +16,8 @@ import {
   PSAServiceListModal,
   PSAServiceEditorModal
 } from "./PSAModals";
+//import { FolderOpen, UserPlus, FileText, AlertTriangle, CheckCircle } from "lucide-react"; // Dagdag UserPlus
+import PSAApplicationModal from "./PSAApplicationModal";
 
 // =========================================================================
 // PAGINATION COMPONENT (Updated with ellipsis logic)
@@ -173,8 +175,7 @@ const PSASerbilis = () => {
   const [showDeliverDocs, setShowDeliverDocs] = useState(false);
   const [deliveryFiles, setDeliveryFiles] = useState([]);
 
-  // List of all possible unique statuses for filters (ensure 'ALL' is first)
-  const statusOptions = ['ALL', 'PENDING', 'PAYMENT_PENDING', 'CONTACTED', 'CONFIRMED', 'PAID', 'COMPLETED', 'CANCELLED'];
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false); // New State
 
   const stats = [
     { label: "Total Requests", value: inquiries.length, icon: <FileText size={24} /> },
@@ -533,9 +534,19 @@ const PSASerbilis = () => {
               <h1>PSA Serbilis</h1>
               <p>Birth, Marriage, Death Certificate Processing</p>
             </div>
-            <button className="psa-btn-add" onClick={handleManageService}>
-              <FolderOpen size={18} style={{ marginRight: "8px" }} /> Manage Service
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                className="psa-btn-add" 
+                style={{ background: '#0f172a' }} // Dark blue like Visa
+                onClick={() => setIsApplicationModalOpen(true)}
+              >
+                <UserPlus size={18} style={{ marginRight: "8px" }} /> Add Requester
+              </button>
+              
+              <button className="psa-btn-add" onClick={handleManageService}>
+                <FolderOpen size={18} style={{ marginRight: "8px" }} /> Manage Service
+              </button>
+            </div>
           </div>
 
           <div className="psa-stats-grid">
@@ -645,14 +656,14 @@ const PSASerbilis = () => {
               </tbody>
             </table>
 
-            {/* Render Pagination */}
-            <Pagination 
-                applicationsPerPage={applicationsPerPage}
-                totalApplications={totalFilteredApplications}
-                paginate={paginate}
-                currentPage={currentPage}
-            />
-          </div>
+          <PSAApplicationModal 
+            isOpen={isApplicationModalOpen}
+            onClose={() => setIsApplicationModalOpen(false)}
+            psaDocs={psaDocs}
+            refreshData={fetchInquiries}
+          />
+
+          {/* --- MODALS --- */}
 
           {/* --- MODALS --- (Omitted for brevity, keep in actual file) */}
           {/* 1. View Inquiry Modal */}

@@ -51,12 +51,12 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
 
   return (
     <div className="dash-grid">
-      {/* SECTION 1: TRENDS (Full Width) */}
+      {/* SECTION 1: TRENDS (Full Width) - NOW WITH COMBINED REVENUE */}
       <section className="dash-section dash-section--wide">
         <div className="dash-section-header">
           <div>
-            <h2 className="dash-section-title">Bookings & Revenue Trends</h2>
-            <p className="dash-section-subtitle">Overview of performance over time</p>
+            <h2 className="dash-section-title">Combined Revenue Trends</h2>
+            <p className="dash-section-subtitle">Bookings + Services revenue over 6 months</p>
           </div>
           <div className="icon-wrapper">
             <Activity size={20} />
@@ -67,40 +67,56 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                <linearGradient id="colorTotalRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                 </linearGradient>
-                <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="colorBookingsRevenue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorInquiriesRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-              <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-              <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+              <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ paddingTop: '20px' }} />
+              
+              {/* Total Revenue Line (Main) */}
               <Area
-                yAxisId="left"
                 type="monotone"
-                dataKey="bookings"
+                dataKey="totalRevenue"
+                stroke="#8b5cf6"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#colorTotalRevenue)"
+                name="Total Revenue (₱)"
+              />
+              
+              {/* Bookings Revenue */}
+              <Area
+                type="monotone"
+                dataKey="bookingsRevenue"
                 stroke="#3b82f6"
                 strokeWidth={2}
                 fillOpacity={1}
-                fill="url(#colorBookings)"
-                name="Bookings"
+                fill="url(#colorBookingsRevenue)"
+                name="Bookings Revenue (₱)"
               />
+              
+              {/* Inquiries Revenue */}
               <Area
-                yAxisId="right"
                 type="monotone"
-                dataKey="revenue"
+                dataKey="inquiriesRevenue"
                 stroke="#10b981"
                 strokeWidth={2}
                 fillOpacity={1}
-                fill="url(#colorRevenue)"
-                name="Revenue (₱)"
+                fill="url(#colorInquiriesRevenue)"
+                name="Services Revenue (₱)"
               />
             </AreaChart>
           </ResponsiveContainer>

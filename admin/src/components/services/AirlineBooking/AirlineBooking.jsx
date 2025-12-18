@@ -12,11 +12,12 @@ import {
     CreditCard, 
     ChevronLeft, 
     ChevronRight, 
-    Search // Added Search icon
+    Search,
+    UserPlus
 } from 'lucide-react';
 import './AirlineBooking.css';
+import AirlineApplicationModal from './AirlineApplicationModal'; 
 
-// Pagination Constant
 const ITEMS_PER_PAGE = 10;
 
 const AirlineBooking = () => {
@@ -35,7 +36,7 @@ const AirlineBooking = () => {
     
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    
+    const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
     // Filtering and Searching Logic - NEW
     const filteredBookings = useMemo(() => {
         let filtered = bookings;
@@ -320,12 +321,19 @@ const AirlineBooking = () => {
                 <div className="airline-container">
                     <div className="airline-header">
                         <div className="airline-title">
-                            <h1>Airline Ticketing</h1>
+                            <h1>Airline Booking</h1>
                             <p>Domestic and international flight booking inquiries.</p>
                         </div>
-                        <button className="airline-btn-add">
-                            <Plus size={18} style={{marginRight:'8px'}}/> New Inquiry
-                        </button>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            {/* NEW WALK-IN BUTTON */}
+                            <button 
+                                className="airline-btn-primary" 
+                                style={{ backgroundColor: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                onClick={() => setIsApplicationModalOpen(true)}
+                            >
+                                <UserPlus size={18} /> Add Walk-in
+                            </button>
+                        </div>
                     </div>
 
                     <div className="airline-stats-grid">
@@ -440,6 +448,12 @@ const AirlineBooking = () => {
                     </div>
                 </div>
             </main>
+
+            <AirlineApplicationModal 
+                        isOpen={isApplicationModalOpen}
+                        onClose={() => setIsApplicationModalOpen(false)}
+                        refreshData={fetchFlightBookings}
+                    />
 
             {/* View Booking Details Modal */}
             {isModalOpen && selectedBooking && (
