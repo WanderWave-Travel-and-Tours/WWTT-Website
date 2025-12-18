@@ -25,8 +25,13 @@ const PromoSchema = new mongoose.Schema({
         type: Date, 
         required: true 
     },
-    
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    // Dinagdag ang isArchive property dito
+    isArchive: { 
+        type: String, 
+        enum: ['No', 'Yes'], 
+        default: 'No' 
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Promo', PromoSchema);
