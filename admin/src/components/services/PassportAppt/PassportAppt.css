@@ -142,6 +142,22 @@
 
 /* Desktop/Tablet Layout (768px and up) - Adjusted to 1024px for better fit with main layout */
 @media (min-width: 1024px) {
+    .passport-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .passport-header > div {
+        width: 100%;
+        flex-wrap: wrap; /* Para mag-wrap ang 3 buttons */
+    }
+
+    .passport-btn-add {
+        flex: 1; /* Para maging pantay ang laki nila */
+        justify-content: center;
+        font-size: 12px;
+        padding: 8px 12px;
+    }
     .search-filter-wrapper {
         flex-direction: row;
         align-items: center;
