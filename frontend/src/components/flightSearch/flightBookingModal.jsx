@@ -239,6 +239,41 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     }
     priceAmount = parseFloat(priceAmount) || 0;
 
+    // Prepare Booking Data
+    const bookingData = {
+      serviceName: 'Airline Booking',
+      inquiryType: 'FLIGHT_BOOKING',
+      fullName: contactInfo.fullName,
+      email: contactInfo.email,
+      contactNumber: contactInfo.phone,
+      address: contactInfo.address,
+      message: `Flight Booking Request: ${flight.departure.iataCode} ➝ ${flight.arrival.iataCode} on ${flight.departure.time}`,
+      
+      estimatedPrice: priceAmount, // ✅ Now guaranteed to be a number
+      
+      flightDetails: {
+        origin: flight.departure.iataCode,
+        destination: flight.arrival.iataCode,
+        departureDate: flight.departure.time,
+        arrivalDate: flight.arrival.time,
+        airline: flight.airline.name,
+        flightNumber: flight.airline.flightNumber || 'N/A',
+        cabinClass: searchParams.cabinType,
+        duration: flight.duration,
+        stops: flight.stops
+      },
+      
+      passengers: allPassengers // ✅ Already an array, will be sent as JSON
+    };
+
+    console.log("📤 Submitting Booking Data:", JSON.stringify(bookingData, null, 2));
+
+    try {
+      const res = await axios.post('http://localhost:5000/api/inquiries', bookingData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     // Prepare Booking Data (omitted for brevity)
     const bookingData = { 
         flightDetails: flight,

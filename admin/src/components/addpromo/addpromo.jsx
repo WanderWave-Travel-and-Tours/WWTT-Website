@@ -269,6 +269,7 @@ const AddPromo = () => {
 
         try {
             const response = await fetch('http://localhost:5000/api/promos/add', {
+            const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -338,13 +339,16 @@ const AddPromo = () => {
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
+            <main className={`promo-main ${isSidebarCollapsed ? "promo-main--collapsed" : ""}`}>
             <main className={`promo-main ${
                 isSidebarCollapsed ? "promo-main--collapsed" : ""
             }`}>
                 <div className="promo-container">
                     <header className="promo-header">
-                        <h1 className="promo-title">NEW PROMO CODE</h1>
-                        <p className="promo-subtitle">Create a new promotional code for your packages</p>
+                        <div className="promo-header-content">
+                            <h1 className="promo-title">PROMO CODE</h1>
+                            <p className="promo-subtitle">Create a new promotional code for your packages</p>
+                        </div>
                     </header>
 
                     <div className="promo-grid">
@@ -478,25 +482,6 @@ const AddPromo = () => {
                                     </div>
                                 </div>
                             </section>
-
-                            <div className="promo-actions">
-                                <button 
-                                    type="button" 
-                                    className="promo-btn promo-btn--cancel" 
-                                    onClick={handleCancel}
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    type="button" 
-                                    className="promo-btn promo-btn--submit"
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Creating...' : 'Create Promo'}
-                                </button>
-                            </div>
                         </div>
 
                         <aside className="promo-right">
@@ -561,6 +546,25 @@ const AddPromo = () => {
                                         <span>Duration</span>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="promo-actions">
+                                <button 
+                                    type="button" 
+                                    className="promo-btn promo-btn--cancel" 
+                                    onClick={handleCancel}
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="promo-btn promo-btn--submit"
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Creating...' : 'Create'}
+                                </button>
                             </div>
                         </aside>
                     </div>

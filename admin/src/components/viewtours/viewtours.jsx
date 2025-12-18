@@ -4,14 +4,13 @@ import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost:5000/api/tours';
+const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 const ViewTours = () => {
-    // --- SIDEBAR LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR LOGIC END ---
 
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -104,6 +103,27 @@ const ViewTours = () => {
         navigate(`/edit-tour/${id}`); // Example route, adjust as needed
     };
 
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this tour?')) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
+                    method: 'DELETE',
+                });
+                const result = await response.json();
+                
+                if (result.status === 'ok') {
+                    setTours(tours.filter(tour => tour._id !== id));
+                    alert('✅ Tour deleted successfully!');
+                } else {
+                    alert('❌ Error deleting tour');
+                }
+            } catch (err) {
+                console.error('Delete error:', err);
+                alert('❌ Error connecting to server');
+            }
+        }
+    };
+
     if (loading) {
         return (
             <div className="viewtours-page">
@@ -143,7 +163,7 @@ const ViewTours = () => {
                             <p className="viewtours-subtitle">Manage your travel packages ({tours.length} active)</p>
                         </div>
                         <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
-                            + Add New Package
+                            + Add New Tour
                         </button>
                     </header>
 
@@ -199,8 +219,16 @@ const ViewTours = () => {
                                                     className="viewtours-btn-action viewtours-btn-action--edit"
                                                     onClick={() => handleEdit(tour._id)}
                                                 >
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--edit"
+                                                    onClick={() => navigate(`/edit-tour/${tour._id}`)}
+                                                >
                                                     Edit
                                                 </button>
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--delete"
+                                                    onClick={() => handleDelete(tour._id)}
+                                                >
                                                 <button 
                                                     className="viewtours-btn-action viewtours-btn-action--archive"
                                                     onClick={() => handleArchive(tour._id)}

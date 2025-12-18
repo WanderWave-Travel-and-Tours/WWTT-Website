@@ -1,12 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../sidebar/sidebar';
+import HotelImageUpload from './HotelImageUpload';
+import HotelDetails from './HotelDetails';
+import HotelAmenities from './HotelAmenities';
+import HotelGallery from './HotelGallery';
+import HotelPreview from './HotelPreview';
+import { useToast } from '../toast/ToastManager'; // 👈 ADD THIS LINE
 import './addhotel.css'; // Assuming this CSS file contains necessary styles
 import toast, { Toaster } from 'react-hot-toast';
-import { MapPin, Wifi, Car, Dumbbell, UtensilsCrossed, Waves, Wind, BellRing, Shirt, Wine, Users, ImagePlus, X } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000'; 
+const API_BASE_URL = 'http://localhost:5000';
 
 const AddHotel = () => {
+  const navigate = useNavigate();
+  const toast = useToast(); // 👈 ADD THIS LINE
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
   const [hotelDetails, setHotelDetails] = useState({
     name: '',
     destination: '',
@@ -28,31 +39,11 @@ const AddHotel = () => {
 
   const [destinations, setDestinations] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Main Image State
-  const [previewUrl, setPreviewUrl] = useState(null);
   const [file, setFile] = useState(null);
-  
-  // Gallery Images State (Multiple)
-  const [galleryFiles, setGalleryFiles] = useState([]); // Stores objects: { file, preview }
-
-  const pasteAreaRef = useRef(null);
-  const [isPasteActive, setIsPasteActive] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [galleryFiles, setGalleryFiles] = useState([]);
   const [type, setType] = useState("Budget");
   const [loading, setLoading] = useState(true);
-
-  const amenitiesList = [
-    { id: 'wifi', label: 'Free Wifi', icon: <Wifi size={14} /> },
-    { id: 'parking', label: 'Parking', icon: <Car size={14} /> },
-    { id: 'pool', label: 'Pool', icon: <Waves size={14} /> },
-    { id: 'gym', label: 'Gym', icon: <Dumbbell size={14} /> },
-    { id: 'restaurant', label: 'Restaurant', icon: <UtensilsCrossed size={14} /> },
-    { id: 'spa', label: 'Spa', icon: <Waves size={14} /> },
-    { id: 'airConditioning', label: 'A/C', icon: <Wind size={14} /> },
-    { id: 'roomService', label: 'Room Service', icon: <BellRing size={14} /> },
-    { id: 'laundry', label: 'Laundry', icon: <Shirt size={14} /> },
-    { id: 'bar', label: 'Bar', icon: <Wine size={14} /> }
-  ];
 
   const showToastError = (message) => {
     toast.error(message, {
@@ -108,26 +99,19 @@ const AddHotel = () => {
         throw new Error('Response is not JSON! Got non-JSON content instead.');
       }
       
+      const response = await fetch(`${API_BASE_URL}/api/packages/all`);
       const data = await response.json();
       
       if (data.status === 'ok' && Array.isArray(data.data)) {
         const uniqueDestinations = [...new Set(
-          data.data
-            .map(pkg => pkg.destination)
-            .filter(dest => dest && dest.trim() !== '')
+          data.data.map(pkg => pkg.destination).filter(dest => dest && dest.trim() !== '')
         )];
-        
         setDestinations(uniqueDestinations);
-        
-        if (uniqueDestinations.length === 0) {
-          showToastError('No destinations found in packages.');
-        }
-      } else {
-        showToastError('Invalid data format from server.');
       }
     } catch (error) {
       console.error('Error fetching destinations:', error);
       showToastError(`Failed to load destinations: ${error.message}`);
+      toast.error('Failed to load destinations', 'Connection Error'); // 👈 ADD THIS LINE
     } finally {
       setLoading(false);
     }
@@ -278,6 +262,8 @@ const AddHotel = () => {
     if (pasteAreaRef.current) {
       pasteAreaRef.current.focus();
     }
+  const updateField = (field, value) => {
+    setHotelDetails(prev => ({ ...prev, [field]: value }));
   };
 
   const handleAmenityChange = (amenityId) => {
@@ -290,6 +276,28 @@ const AddHotel = () => {
     }));
   };
 
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onload = () => resolve(fileReader.result);
+      fileReader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!hotelDetails.name || !hotelDetails.destination || !hotelDetails.price) {
+      toast.error('Please fill in all required fields', 'Validation Error'); // 👈 ADD THIS LINE
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    if (isNaN(hotelDetails.price) || Number(hotelDetails.price) <= 0) {
+      toast.error('Please enter a valid price', 'Validation Error'); // 👈 ADD THIS LINE
+      window.scrollTo(0, 0);
   const handleSubmit = async () => {
     // 1. Basic Field Validation
     if (!hotelDetails.name || !hotelDetails.destination) {
@@ -321,12 +329,29 @@ const AddHotel = () => {
     setIsSubmitting(true);
 
     try {
-      // Convert main image to base64
       let mainImageBase64 = '';
       if (file) {
         mainImageBase64 = await convertToBase64(file);
+        console.log('Main image converted to base64, length:', mainImageBase64.length);
       }
 
+      const galleryImagesBase64 = [];
+      for (const item of galleryFiles) {
+        try {
+          const base64 = await convertToBase64(item.file);
+          galleryImagesBase64.push({ 
+            url: base64, 
+            caption: item.caption || '' 
+          });
+        } catch (err) {
+          console.error('Error converting gallery image:', err);
+        }
+      }
+
+      console.log('Gallery images converted:', galleryImagesBase64.length);
+
+      // Extract city from destination
+      const cityName = hotelDetails.destination.split(',')[0].trim();
       // Convert gallery images to base64 array
       const galleryImagesPromises = galleryFiles.map(async (item) => {
         const base64 = await convertToBase64(item.file);
@@ -340,24 +365,24 @@ const AddHotel = () => {
       
       const galleryImagesBase64 = await Promise.all(galleryImagesPromises);
 
-      const formData = {
+      const hotelPayload = {
         name: hotelDetails.name,
         location: hotelDetails.destination,
-        address: hotelDetails.destination,
-        city: hotelDetails.destination.split(',')[0].trim(),
-        country: 'Philippines',
+        city: cityName,
         description: `${type} accommodation in ${hotelDetails.destination}`,
         price: numericPrice, 
-        priceUnit: 'per night',
         maxCapacity: numericCapacity, 
-        rating: 0,
         amenities: hotelDetails.amenities,
-        mainImage: mainImageBase64 || '', 
-        images: galleryImagesBase64, // Array of {url: base64, caption: string}
+        mainImage: mainImageBase64,
+        images: galleryImagesBase64,
         featured: false,
         isActive: true,
         roomTypes: [{
           type: type,
+          capacity: Number(hotelDetails.maxCapacity) || 4,
+          price: Number(hotelDetails.price),
+          available: 5,
+          description: `Standard ${type} room`
           capacity: numericCapacity, 
           price: numericPrice,
           available: 10, // Default value for availability
@@ -365,23 +390,67 @@ const AddHotel = () => {
         }]
       };
 
+      console.log('Sending hotel payload:', {
+        ...hotelPayload,
+        mainImage: mainImageBase64 ? `[BASE64 ${mainImageBase64.length} chars]` : 'none',
+        images: `[${galleryImagesBase64.length} images]`
+      });
+
       const response = await fetch(`${API_BASE_URL}/api/hotels`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        headers: { 
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(hotelPayload)
       });
 
       const data = await response.json();
+      console.log('Server response:', data);
 
       if (data.success) {
         showToastSuccess('Hotel added successfully!');
         // Reset Form
         handleCancel(); // Re-use handleCancel for reset logic
+        toast.success(`${hotelDetails.name} has been added successfully!`, 'Hotel Added'); // 👈 ADD THIS LINE
+        window.scrollTo(0, 0);
+        
+        // Reset form
+        setHotelDetails({
+          name: '',
+          destination: '',
+          price: '',
+          maxCapacity: 4,
+          amenities: {
+            wifi: false,
+            parking: false,
+            pool: false,
+            gym: false,
+            restaurant: false,
+            spa: false,
+            airConditioning: false,
+            roomService: false,
+            laundry: false,
+            bar: false
+          }
+        });
+        setFile(null);
+        setPreviewUrl(null);
+        setGalleryFiles([]);
+        setType("Budget");
+
+        // 👇 COMMENT OUT OR REMOVE THESE 3 LINES TO STOP REDIRECT
+        // setTimeout(() => {
+        //   navigate('/view-hotels');
+        // }, 1500);
       } else {
+        toast.error(data.message || 'Failed to save hotel', 'Save Failed'); // 👈 ADD THIS LINE
+        window.scrollTo(0, 0);
         showToastError(data.message || 'Error creating hotel.');
       }
+    } catch (err) {
+      console.error('Error saving hotel:', err);
+      toast.error('Please check if your backend is running', 'Connection Error'); // 👈 ADD THIS LINE
+      window.scrollTo(0, 0);
     } catch (error) {
       console.error('Error creating hotel:', error);
       showToastError('Failed to create hotel. Please check your network and try again.');
@@ -391,6 +460,10 @@ const AddHotel = () => {
   };
 
   const handleCancel = () => {
+    if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+      navigate('/view-hotels');
+    }
+  };
     // Clear hotel details
     setHotelDetails({
       name: '',
@@ -439,15 +512,48 @@ const AddHotel = () => {
   }));
 
   return (
-    <div className="hotel-page">
-      <Sidebar />
+    <div className="atour-page">
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <Toaster /> 
-      <main className="hotel-main">
-        <div className="hotel-container">
-          <header className="hotel-header">
-            <h1 className="hotel-title">ADD NEW HOTEL</h1>
-            <p className="hotel-subtitle">Register a new accommodation partner</p>
+      <main className={`atour-main ${isSidebarCollapsed ? 'atour-collapsed' : ''}`}>
+        <div className="atour-container">
+          <header className="atour-header">
+            <div className="atour-header-content">
+              <h1 className="atour-title">NEW HOTEL</h1>
+              <p className="atour-subtitle">Register a new accommodation partner to your catalog</p>
+            </div>
           </header>
+
+          <form onSubmit={handleSubmit}>
+            <div className="atour-grid">
+              <div className="atour-left">
+                <HotelImageUpload
+                  file={file}
+                  setFile={setFile}
+                  previewUrl={previewUrl}
+                  setPreviewUrl={setPreviewUrl}
+                />
+
+                <HotelDetails
+                  hotelDetails={hotelDetails}
+                  updateField={updateField}
+                  type={type}
+                  setType={setType}
+                  destinations={destinations}
+                  loading={loading}
+                  fetchDestinations={fetchDestinations}
+                />
+
+                <HotelGallery
+                  galleryFiles={galleryFiles}
+                  setGalleryFiles={setGalleryFiles}
+                />
+
+                <HotelAmenities
+                  amenities={hotelDetails.amenities}
+                  handleAmenityChange={handleAmenityChange}
+                />
+              </div>
 
           <div className="hotel-grid">
             <div className="hotel-left">
@@ -910,6 +1016,32 @@ const AddHotel = () => {
               </div>
             </aside>
           </div>
+              <aside className="atour-right">
+                <HotelPreview
+                  hotelDetails={hotelDetails}
+                  previewUrl={previewUrl}
+                  type={type}
+                />
+                <div className="atour-actions">
+                  <button 
+                    type="button" 
+                    className="atour-btn atour-btn--cancel" 
+                    onClick={handleCancel}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="atour-btn atour-btn--submit" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Publishing...' : 'Publish Hotel'}
+                  </button>
+                </div>
+              </aside>
+            </div>
+          </form>
         </div>
       </main>
     </div>

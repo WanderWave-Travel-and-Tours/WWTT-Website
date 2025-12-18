@@ -1,71 +1,121 @@
 .apkg-section {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 28px;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    transition: all 0.2s ease;
+}
+
+.apkg-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.08);
 }
 
 .apkg-section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f1f5f9;
 }
 
 .apkg-section-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 900;
     color: #001F3F;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.apkg-section-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, #FF8C42 0%, #ff6b1a 100%);
+    border-radius: 2px;
 }
 
 .apkg-count {
     font-size: 12px;
-    font-weight: 500;
-    color: #94a3b8;
-    background: #f1f5f9;
-    padding: 4px 10px;
+    font-weight: 600;
+    color: #FF8C42;
+    background: linear-gradient(135deg, #fff4ec 0%, #ffe8d9 100%);
+    padding: 6px 14px;
     border-radius: 20px;
+    border: 1px solid #ffd4b8;
 }
 
 .apkg-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 14px;
+    margin-bottom: 20px;
 }
 
 .apkg-list-item {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    padding: 4px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.apkg-list-item:hover {
+    background: #f8fafc;
 }
 
 .apkg-bullet {
-    width: 8px;
-    height: 8px;
-    background: #FF8C42;
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
     border-radius: 50%;
     flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(255, 140, 66, 0.3);
+    animation: bulletPulse 2s ease-in-out infinite;
+}
+
+@keyframes bulletPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 6px rgba(255, 140, 66, 0.3);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(255, 140, 66, 0.5);
+    }
 }
 
 .apkg-list-item input {
     flex: 1;
-    padding: 14px 16px;
+    padding: 14px 18px;
     font-size: 14px;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #1e293b;
     background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    transition: 0.15s ease;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.apkg-list-item input:hover {
+    border-color: #cbd5e1;
+    background: #fff;
 }
 
 .apkg-list-item input:focus {
     outline: none;
     border-color: #FF8C42;
     background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.apkg-list-item input::placeholder {
+    color: #94a3b8;
 }
 
 .apkg-remove {
@@ -74,15 +124,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none;
-    border: none;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
     cursor: pointer;
     color: #94a3b8;
-    transition: 0.15s ease;
+    transition: all 0.15s ease;
 }
 
 .apkg-remove:hover {
-    color: #dc2626;
+    color: #fff;
+    background: #dc2626;
+    border-color: #dc2626;
+    transform: scale(1.05);
 }
 
 .apkg-remove svg {
@@ -96,21 +150,27 @@
     justify-content: center;
     gap: 8px;
     width: 100%;
-    padding: 14px;
+    padding: 16px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #64748b;
-    background: none;
-    border: 2px dashed #e2e8f0;
-    border-radius: 6px;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
     cursor: pointer;
-    transition: 0.15s ease;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .apkg-add-btn:hover {
     color: #FF8C42;
+    background: #fffaf6;
     border-color: #FF8C42;
+    border-style: solid;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.15);
 }
 
 .apkg-add-btn svg {

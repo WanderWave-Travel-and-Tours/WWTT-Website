@@ -1,63 +1,83 @@
 .apkg-section {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 28px;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    transition: all 0.2s ease;
+}
+
+.apkg-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.08);
 }
 
 .apkg-section-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 900;
     color: #001F3F;
-    letter-spacing: 1.5px;
-    margin-bottom: 20px;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* --- COMMON FIELD STYLES (Copied for isolated component, or imported from a shared style file) --- */
+.apkg-section-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, #FF8C42 0%, #ff6b1a 100%);
+    border-radius: 2px;
+}
+
 .apkg-field {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .apkg-field label {
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     color: #1e293b;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     display: flex;
     align-items: center;
 }
 
 .apkg-field input {
-    padding: 14px 16px;
+    padding: 14px 18px;
     font-size: 14px;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #1e293b;
     background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    transition: 0.15s ease;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.apkg-field input:hover {
+    border-color: #cbd5e1;
+    background: #fff;
 }
 
 .apkg-field input:focus {
     outline: none;
     border-color: #FF8C42;
     background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
 
 .apkg-field input::placeholder {
     color: #94a3b8;
 }
-/* --- END COMMON FIELD STYLES --- */
-
 
 .apkg-pricing-layout {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 28px;
 }
 
 .apkg-pricing-inputs {
@@ -67,27 +87,30 @@
 }
 
 .apkg-markup-badge {
-    margin-left: 8px;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 0.75em;
-    font-weight: bold;
+    margin-left: 10px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
 }
 
 .apkg-markup-badge--percentage {
-    background: #fef3c7;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     color: #92400e;
+    border: 1px solid #fbbf24;
 }
 
 .apkg-markup-badge--peso {
-    background: #dcfce7;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
     color: #166534;
+    border: 1px solid #22c55e;
 }
 
 .apkg-field-with-toggle {
     position: relative;
     display: flex;
-    gap: 8px;
+    gap: 10px;
     align-items: center;
 }
 
@@ -99,26 +122,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     flex-shrink: 0;
 }
 
 .apkg-toggle-markup:hover {
     border-color: #FF8C42;
-    background: #fffaf6;
+    background: linear-gradient(135deg, #fffaf6 0%, #fff4ec 100%);
+    transform: scale(1.05);
 }
 
 .apkg-toggle-markup svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     color: #64748b;
-    transition: 0.15s ease;
+    transition: all 0.2s ease;
 }
 
 .apkg-toggle-markup:hover svg {
@@ -129,65 +153,94 @@
 /* ================== TOTAL PRICE BOX ================== */
 .apkg-total-price-box {
     background: linear-gradient(135deg, #001F3F 0%, #003d7a 100%);
-    border-radius: 12px;
-    padding: 28px;
-    box-shadow: 0 4px 20px rgba(0, 31, 63, 0.15);
+    border-radius: 16px;
+    padding: 36px;
+    box-shadow: 0 8px 24px rgba(0, 31, 63, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+.apkg-total-price-box::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 140, 66, 0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .apkg-total-price-content {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 
 .apkg-total-price-label {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 900;
     color: #FF8C42;
     letter-spacing: 2px;
 }
 
 .apkg-total-price-label svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
 }
 
 .apkg-total-price-amount {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: 900;
     color: #fff;
-    letter-spacing: -1px;
+    letter-spacing: -2px;
     line-height: 1;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .apkg-total-price-breakdown {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 14px;
     color: rgba(255, 255, 255, 0.7);
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 16px;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .apkg-total-price-breakdown span {
     color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
 }
 
 .apkg-plus {
     color: #FF8C42 !important;
-    font-weight: 700;
-    font-size: 14px;
+    font-weight: 900;
+    font-size: 16px;
+    text-shadow: 0 2px 8px rgba(255, 140, 66, 0.5);
 }
 
 .apkg-breakdown-empty {
     font-style: italic;
     color: rgba(255, 255, 255, 0.5) !important;
+    font-weight: 400;
 }
 
 @media (max-width: 640px) {
@@ -195,7 +248,11 @@
         grid-template-columns: 1fr;
     }
     
+    .apkg-total-price-box {
+        padding: 28px;
+    }
+    
     .apkg-total-price-amount {
-        font-size: 2rem;
+        font-size: 2.25rem;
     }
 }

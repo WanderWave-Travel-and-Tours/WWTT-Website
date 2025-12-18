@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Upload, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Upload, Image as ImageIcon } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast'; // Import toast and Toaster
 import './addposter.css';
 import Sidebar from '../sidebar/sidebar';
@@ -36,13 +36,11 @@ const AddPoster = () => {
     const maxDate = useMemo(() => formatDate(addDays(new Date(), 366)), []);
     // --- DATE RESTRICTIONS LOGIC END ---
 
-    // --- SIDEBAR LOGIC START ---
+    // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
-    // --- SIDEBAR LOGIC END ---
+    const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
+    // --- STATE MANAGEMENT ---
     const [posterDetails, setPosterDetails] = useState({
         title: '',
         description: '',
@@ -57,9 +55,7 @@ const AddPoster = () => {
 
     useEffect(() => {
         return () => {
-            if (imagePreview) {
-                URL.revokeObjectURL(imagePreview);
-            }
+            if (imagePreview) URL.revokeObjectURL(imagePreview);
         };
     }, [imagePreview]);
 
@@ -105,6 +101,7 @@ const AddPoster = () => {
                 [name]: value
             }));
         }
+        setPosterDetails(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -118,7 +115,6 @@ const AddPoster = () => {
                 });
                 return;
             }
-            
             setImageFile(file);
             const objectUrl = URL.createObjectURL(file);
             setImagePreview(objectUrl);
@@ -133,7 +129,20 @@ const AddPoster = () => {
         }
     };
 
-    const handleSubmit = async () => {
+    const handleCancel = () => {
+        setPosterDetails({
+            title: '',
+            description: '',
+            startDate: '',
+            endDate: '',
+            status: 'Active'
+        });
+        setImageFile(null);
+        setImagePreview(null);
+    };
+
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
         // Validation check for title and image
         if (!posterDetails.title) {
             toast.error('Poster Title is required.', {
@@ -152,7 +161,6 @@ const AddPoster = () => {
         }
 
         setIsSubmitting(true);
-
         const formData = new FormData();
         formData.append('image', imageFile);
         formData.append('title', posterDetails.title);
@@ -163,30 +171,29 @@ const AddPoster = () => {
 
         try {
             const response = await fetch('http://localhost:5000/api/posters/add', {
+            const response = await fetch('http://localhost:5000/api/posters/add', {
                 method: 'POST',
                 body: formData,
             });
 
-            const data = await response.json();
-
             if (response.ok) {
                 // Success notification (using a different toast type for positive feedback)
-                toast.success('Poster uploaded successfully!', {
+                toast.success('✅ Poster uploaded successfully!', {
                     style: { border: '1px solid #10b981', color: '#10b981' },
                     iconTheme: { primary: '#10b981', secondary: '#fff' },
                 });
-                handleCancel(); // Reset form
+                handleCancel();
             } else {
+                const data = await response.json();
                 // Replace alert with toast notification for server error
-                toast.error(`Error: ${data.message || 'Failed to upload poster.'}`, {
+                toast.error(`❌ Error: ${data.message || 'Failed to upload poster.'}`, {
                     style: { border: '1px solid #ef4444', color: '#ef4444' },
                     iconTheme: { primary: '#ef4444', secondary: '#fff' },
                 });
             }
         } catch (error) {
-            console.error('Upload Error:', error);
             // Replace alert with toast notification for connection error
-            toast.error('Failed to connect to server. Please check your network.', {
+            toast.error('❌ Failed to connect to server. Please check your network.', {
                 style: { border: '1px solid #ef4444', color: '#ef4444' },
                 iconTheme: { primary: '#ef4444', secondary: '#fff' },
             });
@@ -212,60 +219,53 @@ const AddPoster = () => {
     };
 
     return (
-        <div className="poster-page">
+        <div className="apstr-page">
             {/* Toaster Component for Notifications */}
             <Toaster position="top-center" reverseOrder={false} />
             
-            {/* 1. Pass the state and toggle function to Sidebar */}
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            /> 
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
-            {/* 2. Apply conditional class to the main content */}
-            <main className={`poster-main ${
-                isSidebarCollapsed ? "poster-main--collapsed" : ""
-            }`}>
-                <div className="poster-container">
-                    <header className="poster-header">
-                        <h1 className="poster-title">ADD PROMO POSTER</h1>
-                        <p className="poster-subtitle">Upload marketing banners for your website or app</p>
+            <main className={`apstr-main ${isSidebarCollapsed ? "apstr-main--collapsed" : ""}`}>
+                <div className="apstr-container">
+                    {/* HEADER MATCHED TO PROMO WITH DESTINATION FEEL */}
+                    <header className="apstr-header">
+                        <div className="apstr-header-content">
+                            <h1 className="apstr-title">NEW POSTER</h1>
+                            <p className="apstr-subtitle">Upload marketing banners for your website or app</p>
+                        </div>
                     </header>
 
-                    <div className="poster-grid">
-                        <div className="poster-left">
-                            <section className="poster-section">
-                                <h2 className="poster-section-title">POSTER DETAILS</h2>
-                                <div className="poster-fields">
-                                    <div className="poster-field poster-field--full">
-                                        <label>Upload Image</label>
-                                        
-                                        {!imagePreview ? (
-                                            <div className="upload-zone">
-                                                <input 
-                                                    type="file" 
-                                                    id="poster-upload" 
-                                                    accept="image/*" 
-                                                    onChange={handleImageChange}
-                                                    hidden 
-                                                />
-                                                <label htmlFor="poster-upload" className="upload-label">
-                                                    <div className="upload-icon-wrapper">
-                                                        <Upload size={32} />
-                                                    </div>
-                                                    <span className="upload-text">Click to Upload Poster</span>
-                                                    <span className="upload-subtext">Supports JPG, PNG, GIF (Max 5MB)</span>
+                    <form onSubmit={handleSubmit}>
+                        <div className="apstr-grid">
+                            <div className="apstr-left">
+                                <section className="pstr-section">
+                                    <h2 className="pstr-section-title">POSTER IMAGE</h2>
+                                    {!imagePreview ? (
+                                        <div className="apstr-upload-empty">
+                                            <label className="apstr-upload-label" style={{ cursor: 'pointer' }}>
+                                                <input type="file" accept="image/*" onChange={handleImageChange} hidden />
+                                                <div className="apstr-upload-icon-box">
+                                                    <Upload size={32} />
+                                                </div>
+                                                <p style={{ fontWeight: '700', color: '#1e293b' }}>Click to upload poster</p>
+                                                <span style={{ fontSize: '12px', color: '#64748b' }}>JPG, PNG or WebP (Max 5MB)</span>
+                                            </label>
+                                        </div>
+                                    ) : (
+                                        <div className="apstr-upload-preview-box">
+                                            <img src={imagePreview} alt="Preview" />
+                                            <div className="apstr-upload-actions">
+                                                <label className="apstr-upload-change-btn">
+                                                    <input type="file" onChange={handleImageChange} accept="image/*" hidden />
+                                                    Change
                                                 </label>
-                                            </div>
-                                        ) : (
-                                            <div className="image-preview-container">
-                                                <img src={imagePreview} alt="Preview" className="uploaded-image" />
-                                                <button type="button" className="remove-image-btn" onClick={removeImage}>
-                                                    <Trash2 size={16} /> Remove
+                                                <button type="button" className="apstr-upload-remove-btn" onClick={removeImage}>
+                                                    Remove
                                                 </button>
                                             </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    )}
+                                </section>
 
                                     <div className="poster-field poster-field--full">
                                         <label>Poster Title</label>
@@ -345,54 +345,109 @@ const AddPoster = () => {
                                 >
                                     {isSubmitting ? 'Uploading...' : 'Upload Poster'}
                                 </button>
-                            </div>
-                        </div>
-
-                        <aside className="poster-right">
-                            <div className="poster-preview-card">
-                                <span className="poster-preview-label">LIVE PREVIEW</span>
-                                
-                                <div className="phone-mockup">
-                                    <div className="phone-screen">
-                                        <div className="phone-header">
-                                            <div className="phone-brand">Wanderwave</div>
+                                <section className="pstr-section">
+                                    <h2 className="pstr-section-title">POSTER DETAILS</h2>
+                                    <div className="pstr-fields">
+                                        <div className="pstr-field pstr-field--full">
+                                            <label>Poster Title</label>
+                                            <input
+                                                type="text"
+                                                name="title"
+                                                placeholder="e.g. Summer Sale 2024"
+                                                value={posterDetails.title}
+                                                onChange={handleChange}
+                                                required
+                                            />
                                         </div>
+                                        <div className="pstr-field pstr-field--full">
+                                            <label>Description / Caption</label>
+                                            <textarea
+                                                name="description"
+                                                placeholder="Optional caption for the poster..."
+                                                value={posterDetails.description}
+                                                onChange={handleChange}
+                                                rows="4"
+                                            ></textarea>
+                                        </div>
+                                        <div className="pstr-field">
+                                            <label>Start Display Date</label>
+                                            <input type="date" name="startDate" value={posterDetails.startDate} onChange={handleChange} />
+                                        </div>
+                                        <div className="pstr-field">
+                                            <label>End Display Date</label>
+                                            <input type="date" name="endDate" value={posterDetails.endDate} onChange={handleChange} />
+                                        </div>
+                                        <div className="pstr-field pstr-field--full">
+                                            <label>Status</label>
+                                            <select name="status" value={posterDetails.status} onChange={handleChange}>
+                                                <option value="Active">Active (Visible)</option>
+                                                <option value="Inactive">Inactive (Hidden)</option>
+                                                <option value="Scheduled">Scheduled</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
 
-                                        <div className="phone-content">
-                                            {imagePreview ? (
-                                                <div className="preview-hero">
-                                                    <img src={imagePreview} alt="Banner Preview" />
-                                                    <div className="preview-overlay">
-                                                        {posterDetails.title && <h3>{posterDetails.title}</h3>}
+                            <aside className="apstr-right">
+                                <div className="pstr-preview-card">
+                                    <span className="pstr-preview-label">LIVE PREVIEW</span>
+                                    <div className="pstr-phone-mockup">
+                                        <div className="pstr-phone-screen">
+                                            <div className="pstr-phone-header">
+                                                <div className="pstr-phone-brand">Wanderwave</div>
+                                            </div>
+                                            <div className="pstr-phone-content">
+                                                {imagePreview ? (
+                                                    <div className="pstr-preview-hero">
+                                                        <img src={imagePreview} alt="Hero" />
+                                                        <div className="pstr-preview-overlay">
+                                                            {posterDetails.title && <h3>{posterDetails.title}</h3>}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                <div className="empty-state-preview">
-                                                    <ImageIcon size={40} />
-                                                    <p>Upload an image to see preview</p>
-                                                </div>
-                                            )}
-                                            
-                                            <div className="fake-item" style={{width: '80%'}}></div>
-                                            <div className="fake-item" style={{width: '90%'}}></div>
-                                            <div className="fake-item" style={{width: '60%'}}></div>
+                                                ) : (
+                                                    <div className="pstr-empty-state">
+                                                        <ImageIcon size={40} />
+                                                        <p>Upload an image to see preview</p>
+                                                    </div>
+                                                )}
+                                                <div className="pstr-fake-item"></div>
+                                                <div className="pstr-fake-item"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="pstr-stats">
+                                        <div className="pstr-stat">
+                                            <strong>Type</strong>
+                                            <span>{imageFile ? imageFile.type.split('/')[1].toUpperCase() : '--'}</span>
+                                        </div>
+                                        <div className="pstr-stat">
+                                            <strong>Size</strong>
+                                            <span>{imageFile ? (imageFile.size / 1024 / 1024).toFixed(2) + ' MB' : '--'}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="poster-stats">
-                                    <div className="p-stat">
-                                        <strong>Type</strong>
-                                        <span>{imageFile ? imageFile.type.split('/')[1].toUpperCase() : '--'}</span>
-                                    </div>
-                                    <div className="p-stat">
-                                        <strong>Size</strong>
-                                        <span>{imageFile ? (imageFile.size / 1024 / 1024).toFixed(2) + ' MB' : '--'}</span>
-                                    </div>
+                                <div className="apstr-actions">
+                                    <button 
+                                        type="button" 
+                                        className="apstr-btn apstr-btn--cancel" 
+                                        onClick={handleCancel}
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className="apstr-btn apstr-btn--submit" 
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Uploading...' : 'Upload'}
+                                    </button>
                                 </div>
-                            </div>
-                        </aside>
-                    </div>
+                            </aside>
+                        </div>
+                    </form>
                 </div>
             </main>
         </div>

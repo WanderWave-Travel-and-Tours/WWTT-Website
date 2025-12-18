@@ -13,6 +13,7 @@ const customErrorToastStyle = {
     iconTheme: { primary: '#ef4444', secondary: '#fff' },
 };
 // --- END Custom Toast Styles ---
+const API_BASE_URL = 'http://localhost:5000/api/auth'; 
 
 // --- OTP Verification Form Component (Modal) ---
 const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading, error }) => {

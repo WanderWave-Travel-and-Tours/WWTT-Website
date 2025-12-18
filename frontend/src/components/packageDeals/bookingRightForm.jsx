@@ -57,6 +57,41 @@ const BookingRightForm = ({ pkg }) => {
 
   // Check if returning from flight search with selected flight
   useEffect(() => {
+    const checkPendingBooking = async () => {
+      const bookingData = sessionStorage.getItem('pendingBookingData');
+      console.log('Checking for pending booking data:', bookingData);
+      
+      if (!bookingData) return;
+      
+      try {
+        const data = JSON.parse(bookingData);
+        
+        if (data.selectedFlight && data.packageId === pkg._id) {
+          console.log('Found selected flight for this package:', data.selectedFlight);
+          
+          setSelectedFlight(data.selectedFlight);
+          setBookingWithAirfare(true);
+          setSelectedDate(data.selectedDate);
+          setQuantities(data.quantities);
+          setCurrentMonth(new Date(data.currentMonth));
+          
+          // Clear session storage
+          sessionStorage.removeItem('pendingBookingData');
+          
+          toast.success(`✈️ Flight Added! ${data.selectedFlight.airline.name}`, { duration: 3000 });
+          
+          // Open booking form modal after a short delay
+          setTimeout(() => {
+            setPassengerStep(1);
+            setShowModal(true);
+          }, 500);
+        }
+      } catch (error) {
+        console.error('Error parsing booking data:', error);
+      }
+    };
+    
+    checkPendingBooking();
     const bookingData = sessionStorage.getItem('pendingBookingData');
     console.log('Checking for pending booking data:', bookingData);
     
@@ -470,6 +505,54 @@ const BookingRightForm = ({ pkg }) => {
       // ===========================================
       // API CALL 1: SAVE BOOKING DATA
       // ===========================================
+      const bookingRes = await axios.post(
+        'http://localhost:5000/api/bookings', 
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      if (!bookingRes.data.success) {
+        throw new Error(bookingRes.data.message || 'Booking creation failed');
+      }
+
+      if (!bookingRes.data.data || !bookingRes.data.data._id) {
+        console.error('❌ Invalid response structure');
+        throw new Error('Booking ID not found in response');
+      }
+
+      const createdBooking = bookingRes.data.data;
+      const bookingId = createdBooking._id;
+
+      // ===========================================
+      // API CALL 2: CREATE PAYMENT INTENT
+      // ===========================================
+      const paymentRes = await axios.post(
+        'http://localhost:5000/api/payment/create-intent',
+        { bookingId: bookingId.toString() },
+        {
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      if (!paymentRes.data.success) {
+        throw new Error(paymentRes.data.message || 'Payment intent creation failed');
+      }
+
+      // Success - navigate to payment page
+      const paymentUrl = paymentRes.data.data.checkoutUrl;
+      toast.success('Booking created! Redirecting to payment...', { duration: 2000 });
+      
+      setTimeout(() => {
+        window.location.href = paymentUrl;
+      }, 2000);
+
+    } catch (error) {
+      console.error('❌ Booking Error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create booking. Please try again.';
       const bookingResponse = await axios.post('http://localhost:5000/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });

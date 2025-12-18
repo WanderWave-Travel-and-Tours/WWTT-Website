@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar"; // Ensure this path is correct
 import "./AddPackage.css";
 
-// Import the new sub-components
+// Import the sub-components
 import BasicInfo from "./BasicInfo";
 import ImageUpload from "./ImageUpload";
 import PricingCalculator from "./PricingCalculator";
@@ -209,7 +209,6 @@ const AddPackage = () => {
             .filter((day) => day.activities.some((act) => act.trim() !== ""))
             .map((day) => ({
                 day: day.day,
-                // Clean the title by removing "Day N: " prefix
                 title: day.title.replace(/^Day \d+:? /, "") || day.title.trim(),
                 activities: day.activities.filter((act) => act.trim() !== ""),
             }));
@@ -254,7 +253,6 @@ const AddPackage = () => {
             const data = await response.json();
             if (response.ok) {
                 alert("✅ Package Added Successfully!");
-                // Reset states
                 setTitle("");
                 setDestination("");
                 setSupplierRate("");
@@ -286,16 +284,17 @@ const AddPackage = () => {
             <main className={`apkg-main ${isSidebarCollapsed ? 'collapsed-main' : ''}`}>
                 <div className="apkg-container">
                     <header className="apkg-header">
-                        <h1 className="apkg-title">NEW PACKAGE</h1>
-                        <p className="apkg-subtitle">
-                            Fill in the details below to create a new tour package
-                        </p>
+                        <div className="apkg-header-content">
+                            <h1 className="apkg-title">NEW PACKAGE</h1>
+                            <p className="apkg-subtitle">
+                                Fill in the details below to create a new tour package
+                            </p>
+                        </div>
                     </header>
 
                     <form onSubmit={handleSubmit} className="apkg-form">
                         <div className="apkg-grid">
                             <div className="apkg-left">
-                                
                                 <ImageUpload
                                     previewUrl={previewUrl}
                                     handleFileChange={handleFileChange}
@@ -304,18 +303,12 @@ const AddPackage = () => {
                                     activatePasteArea={activatePasteArea}
                                     pasteAreaRef={pasteAreaRef}
                                 />
-
                                 <BasicInfo
-                                    title={title}
-                                    setTitle={setTitle}
-                                    destination={destination}
-                                    setDestination={setDestination}
-                                    duration={duration}
-                                    setDuration={setDuration}
-                                    category={category}
-                                    setCategory={setCategory}
+                                    title={title} setTitle={setTitle}
+                                    destination={destination} setDestination={setDestination}
+                                    duration={duration} setDuration={setDuration}
+                                    category={category} setCategory={setCategory}
                                 />
-
                                 <PricingCalculator
                                     supplierRate={supplierRate}
                                     handleSupplierRateChange={handleSupplierRateChange}
@@ -325,14 +318,12 @@ const AddPackage = () => {
                                     toggleMarkupType={toggleMarkupType}
                                     price={price}
                                 />
-
                                 <InclusionsList
                                     inclusions={inclusions}
                                     handleIncChange={handleIncChange}
                                     addInclusion={addInclusion}
                                     removeInclusion={removeInclusion}
                                 />
-
                                 <ItineraryBuilder
                                     itinerary={itinerary}
                                     handleDayTitle={handleDayTitle}
@@ -343,29 +334,16 @@ const AddPackage = () => {
                                     removeDay={removeDay}
                                 />
                             </div>
-
                             <aside className="apkg-right">
                                 <PackagePreview
-                                    previewUrl={previewUrl}
-                                    category={category}
-                                    title={title}
-                                    destination={destination}
-                                    price={price}
-                                    duration={duration}
-                                    inclusions={inclusions}
-                                    itinerary={itinerary}
+                                    previewUrl={previewUrl} category={category}
+                                    title={title} destination={destination}
+                                    price={price} duration={duration}
+                                    inclusions={inclusions} itinerary={itinerary}
                                 />
                                 <div className="apkg-actions">
-                                    <button
-                                        type="button"
-                                        className="apkg-btn apkg-btn--cancel"
-                                        onClick={() => navigate(-1)}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button type="submit" className="apkg-btn apkg-btn--submit">
-                                        Publish
-                                    </button>
+                                    <button type="button" className="apkg-btn apkg-btn--cancel" onClick={() => navigate(-1)}>Cancel</button>
+                                    <button type="submit" className="apkg-btn apkg-btn--submit">Publish</button>
                                 </div>
                             </aside>
                         </div>

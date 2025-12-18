@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 import DashboardHeader from "./components/DashboardHeader";
@@ -14,6 +14,7 @@ import "./dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const TIMEOUT_IN_MS = 15 * 60 * 1000; // 15 Minutes
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [stats, setStats] = useState({
     totalBookings: 0,
@@ -35,6 +36,37 @@ const Dashboard = () => {
   const [topPackages, setTopPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trendData, setTrendData] = useState([]);
+
+  const handleAutoLogout = useCallback(() => {
+    console.warn("Admin session expired due to inactivity.");
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminData");
+    alert("⚠️ Security Alert: Your session has expired due to inactivity. Please log in again.");
+    navigate("/admin"); 
+  }, [navigate]);
+
+  useEffect(() => {
+    let timeoutId;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleAutoLogout, TIMEOUT_IN_MS);
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    resetTimer();
+
+    activityEvents.forEach(event => {
+        window.addEventListener(event, resetTimer);
+    });
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [handleAutoLogout]);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("adminToken");

@@ -1,0 +1,209 @@
+/* =========================
+   FIELD STYLES
+========================= */
+.svc-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.svc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.svc-field--full {
+    grid-column: 1 / -1;
+}
+
+.svc-field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.svc-field label::after {
+    content: '•';
+    color: #FF8C42;
+    font-size: 16px;
+}
+
+.svc-field input,
+.svc-field select,
+.svc-textarea {
+    padding: 14px 18px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.svc-textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+.svc-field input:hover,
+.svc-field select:hover,
+.svc-textarea:hover {
+    border-color: #cbd5e1;
+    background: #fff;
+}
+
+.svc-field input:focus,
+.svc-field select:focus,
+.svc-textarea:focus {
+    outline: none;
+    border-color: #FF8C42;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.svc-field input::placeholder,
+.svc-textarea::placeholder {
+    color: #94a3b8;
+}
+
+.svc-field select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+/* =========================
+   SERVICE STATUS RADIOS
+========================= */
+.svc-status-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.svc-status-radio-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 14px 18px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: #fff;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.svc-status-radio-group label::after {
+    content: none;
+}
+
+.svc-status-radio-group label:hover {
+    border-color: #FF8C42;
+    background: #fffbf7;
+}
+
+.svc-status-radio-group label:has(input:checked) {
+    border-color: #FF8C42;
+    background: linear-gradient(135deg, #fff4ec 0%, #ffe8d9 100%);
+    font-weight: 600;
+    color: #001F3F;
+}
+
+.svc-status-radio-group label input[type="radio"] {
+    margin-right: 12px;
+    width: 18px;
+    height: 18px;
+    accent-color: #FF8C42;
+    cursor: pointer;
+}
+
+/* =========================
+   CHECKBOX STYLING
+========================= */
+.svc-field input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #FF8C42;
+    cursor: pointer;
+    margin-right: 0;
+}
+
+.svc-field label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    color: #374151;
+}
+
+.svc-field label:has(input[type="checkbox"])::after {
+    content: none;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+    .svc-fields {
+        gap: 16px;
+    }
+
+    .svc-field input,
+    .svc-field select,
+    .svc-textarea {
+        padding: 12px 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .svc-fields {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .svc-field label {
+        font-size: 11px;
+    }
+
+    .svc-field input,
+    .svc-field select,
+    .svc-textarea {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .svc-field label {
+        font-size: 10px;
+        letter-spacing: 0.8px;
+    }
+
+    .svc-field label::after {
+        font-size: 14px;
+    }
+
+    .svc-field input,
+    .svc-field select,
+    .svc-textarea {
+        padding: 11px 13px;
+        font-size: 12px;
+    }
+}
