@@ -12,118 +12,375 @@
 }
 .tour-container { max-width: 1600px; width: 100%; margin: 0 auto; }
 
-.tour-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
-.tour-title h1 { font-family: 'Arial Black', sans-serif; font-size: 30px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: -0.5px; margin: 0; }
-.tour-title p { color: #64748b; font-size: 14px; margin: 4px 0 0 0; }
+.tour-header { 
+    display: flex; 
+    justify-content: space-between; /* Magkalayo ang title at button */
+    align-items: center; 
+    margin-bottom: 32px; 
+    flex-wrap: wrap; /* Para mag-wrap kapag lumiit ang screen */
+    gap: 16px; /* Gap sa pagitan ng title block at button */
+}
 
-.tour-btn-add { background-color: #06b6d4; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(6, 182, 212, 0.2); }
-.tour-btn-add:hover { background-color: #0891b2; transform: translateY(-1px); }
+/* Title Styling */
+.tour-title h1 { 
+    font-family: 'Arial Black', 'Arial Bold', sans-serif; 
+    font-size: 25px; /* Default large size */
+    font-weight: 900; 
+    color: #0f172a; 
+    text-transform: uppercase; 
+    letter-spacing: -0.5px; 
+    margin: 0; 
+}
+
+/* Subtitle Styling */
+.tour-title p { 
+    color: #64748b; 
+    font-size: 14px; 
+    margin: 4px 0 0 0; 
+}
+
+.tour-btn-add { background-color: #059669; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2); }
+.tour-btn-add:hover { background-color: #047857; transform: translateY(-1px); }
 
 .tour-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
 .tour-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
 .tour-card h2 { font-size: 32px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }
 .tour-card span { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-.tour-card-icon { color: #06b6d4; opacity: 0.8; }
+.tour-card-icon { color: #059669; opacity: 0.8; }
 
-.tour-table-container { 
-    background: white; 
-    border-radius: 12px; 
-    border: 1px solid #e2e8f0; 
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
-    padding: 0; /* Important: Removed padding for full-width table/pagination */
-    overflow: hidden; 
-    width: 100%; 
-    overflow-x: auto; 
-    position: relative; /* Needed for sticky pagination */
-}
-.tour-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.tour-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); padding: 0; overflow: hidden; width: 100%; overflow-x: auto; }
+.tour-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
 .tour-table th { background-color: #0f172a; color: white; text-align: left; padding: 18px 24px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
 .tour-table td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px; font-weight: 500; vertical-align: middle; white-space: nowrap; }
 .tour-table tr:hover td { background-color: #f8fafc; }
 
-.tour-action-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: white; border: 1px solid #e2e8f0; color: #06b6d4; transition: all 0.2s; }
-.tour-action-btn:hover { background: #ecfeff; border-color: #06b6d4; }
+.status-pill { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.status-confirmed { background: #dcfce7; color: #059669; }
+.status-pending { background: #ffedd5; color: #f59e0b; }
+.status-cancelled { background: #fee2e2; color: #ef4444; }
 
-@media (max-width: 1024px) { .tour-main, .tour-main.expanded { padding: 30px; } .tour-stats-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { .tour-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } .tour-stats-grid { grid-template-columns: 1fr; } .tour-header { flex-direction: column; align-items: flex-start; } .tour-btn-add { width: 100%; justify-content: center; } }
+.tour-action-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: white; border: 1px solid #e2e8f0; color: #059669; transition: all 0.2s; }
+.tour-action-btn:hover { background: #dcfce7; border-color: #059669; }
 
-
-/* --- PAGINATION STYLES (New) --- */
-.pagination-nav {
-    /* Aligns with the table container's style */
-    margin-top: 0;
-    padding: 16px 24px;
-    background-color: white;
-    border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
-    position: sticky; 
-    bottom: 0;
-    z-index: 5;
-    
-    display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .tour-table-container */
-    border-radius: 0 0 12px 12px; 
-}
-
-.pagination-list {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
-    align-items: center;
-}
-
-.pagination-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
+/* --- Search and Filter Styles --- */
+.search-filter-card {
     background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 32px;
     border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
-    transition: all 0.2s;
-    min-width: 40px; 
-    text-align: center;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.search-filter-wrapper {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
-.pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
-    border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
+@media (min-width: 768px) {
+    .search-filter-wrapper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .search-box {
+        max-width: 400px; 
+        flex-shrink: 0;
+    }
+    
+    .filter-buttons {
+        flex: 1;
+        justify-content: flex-end;
+    }
 }
 
-.pagination-btn.active {
-    background-color: #0f172a; /* Primary dark color background for active page */
-    border-color: #0f172a;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
+.search-box {
+    flex: 1;
+    position: relative;
+    width: 100%; 
 }
 
-.pagination-btn.active:hover {
-    background-color: #1e293b; /* Slightly darker primary on hover */
-    border-color: #1e293b;
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8; 
+    pointer-events: none;
+    z-index: 1;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem; 
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    background: #f8fafc;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #059669; 
+    background: white;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 0.75rem; 
+    flex-wrap: wrap; 
+    justify-content: flex-start;
+}
+
+.filter-btn {
+    padding: 0.75rem 1.25rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #ffffff; 
+    color: #475569; 
+    white-space: nowrap;
+    flex-grow: 0;
+    flex-shrink: 1;
+}
+
+.filter-btn:hover {
+    background: #f1f5f9;
     transform: translateY(-1px);
 }
 
-.pagination-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background-color: #f8fafc;
+/* Active Filter Status Styles */
+.filter-btn.active {
+    background-color: #0f172a; 
+    border-color: #0f172a;
+    color: white;
+    box-shadow: 0 4px 8px rgba(15, 23, 42, 0.2);
 }
 
-/* For previous/next buttons */
-.pagination-btn:first-child,
-.pagination-btn:last-child {
-    font-weight: 700;
-    text-transform: uppercase;
+.filter-btn.filter-confirmed-active {
+    background: #10b981; 
+    border-color: #10b981;
+    color: white;
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
 }
+.filter-btn.filter-confirmed-active:hover { background: #059669; }
+
+.filter-btn.filter-pending-active {
+    background: #f59e0b; 
+    border-color: #f59e0b;
+    color: white;
+    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.2);
+}
+.filter-btn.filter-pending-active:hover { background: #d97706; }
+
+.filter-btn.filter-cancelled-active {
+    background: #ef4444; 
+    border-color: #ef4444;
+    color: white;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
+}
+.filter-btn.filter-cancelled-active:hover { background: #dc2626; }
+
+
+/* --- Tablet Responsiveness (Max-width 768px) --- */
+@media (max-width: 768px) {
+    .search-filter-card {
+        padding: 1rem;
+    }
+    
+    .search-filter-wrapper {
+        flex-direction: column; /* Stack vertically */
+    }
+    
+    .filter-buttons {
+        width: 100%;
+        gap: 0.5rem;
+        flex-wrap: wrap; 
+        justify-content: center; /* Center buttons when wrapping */
+    }
+    
+    .filter-btn {
+        /* Distribute buttons almost equally across two columns */
+        flex: 1 1 calc(50% - 0.25rem); 
+        font-size: 0.8rem; /* Further reduced font size */
+        padding: 0.6rem 1rem; /* Further reduced padding */
+    }
+}
+
+/* --- Small Mobile Responsiveness (Max-width 480px) --- */
+@media (max-width: 480px) {
+    .search-filter-card {
+        padding: 0.875rem;
+    }
+    
+    .search-input {
+        font-size: 0.875rem;
+        padding: 0.6rem 0.875rem 0.6rem 2.5rem;
+    }
+    
+    .search-icon {
+        left: 0.875rem;
+        transform: translateY(-50%) scale(0.9);
+    }
+    
+    .filter-buttons {
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    
+    .filter-btn {
+        min-width: calc(50% - 0.25rem); /* Two columns */
+        font-size: 0.75rem;
+        padding: 0.6rem 1rem;
+    }
+}
+
+/* --- GENERAL MEDIA QUERIES --- */
+@media (max-width: 1024px) { 
+    .tour-main, .tour-main.expanded { padding: 30px; } 
+    .tour-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+    .tour-main { padding: 20px 16px; }
+    .tour-stats-grid { grid-template-columns: 1fr; }
+    .tour-header { flex-direction: column; align-items: flex-start; }
+    .tour-btn-add { width: 100%; justify-content: center; }
+}
+
+/* --- PAGINATION STYLES START --- */
+
+.bills-pagination-container {
+.tour-header { 
+        flex-direction: column; /* I-stack ang title at button (vertical) */
+        align-items: flex-start; /* I-align ang lahat sa kaliwa */
+        gap: 12px; 
+    }
+    
+    .tour-title h1 {
+        font-size: 24px; /* Maliit na size para magkasya sa mobile */
+    }
+    
+    .tour-btn-add { 
+        width: 100%; /* Gawing full-width ang button */
+        justify-content: center; /* I-center ang text at icon sa button */
+    }
+}
+
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pagination-btn {
+    background-color: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 5px;
+}
+
+.page-number-btn {
+    background-color: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.page-number-btn:hover:not(.active-page) {
+    background-color: #ffc107;
+}
+
+.page-number-btn.active-page {
+    background-color: #0f172a;
+    color: white;
+    border-color: #0f172a;
+}
+
+.page-ellipsis {
+    color: #94a3b8;
+    padding: 0 5px;
+    font-size: 16px;
+    align-self: center;
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 768px) {
+    .pagination-wrapper {
+        gap: 5px;
+    }
+    .pagination-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .page-number-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+    .pagination-text {
+        display: none; /* Hide 'Previous' and 'Next' text on smaller screens */
+    }
+}
+
+
+/* --- GENERAL MEDIA QUERIES --- */
+@media (max-width: 1024px) { 
+    /* Changed .bills-main to .ferry-main to match component name */
+    .ferry-main, .ferry-main.expanded { padding: 30px; } 
+    /* Changed .bills-stats-grid to .ferry-stats-grid to match component name */
+    .ferry-stats-grid { grid-template-columns: repeat(2, 1fr); } 
+    .search-filter-wrapper { flex-direction: column; align-items: stretch; }
+    .search-box { max-width: 100%; }
+    .filter-buttons { justify-content: center; }
+}
+
+@media (max-width: 640px) { 
+    /* Changed .bills-main to .ferry-main to match component name */
+    .ferry-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } 
+    /* Changed .bills-stats-grid to .ferry-stats-grid to match component name */
+    .ferry-stats-grid { grid-template-columns: 1fr; } 
+    /* Changed .bills-header to .ferry-header to match component name */
+    .ferry-header { flex-direction: column; align-items: flex-start; } 
+    /* Changed .bills-btn-add to .ferry-btn-add to match component name */
+    .ferry-btn-add { width: 100%; justify-content: center; } 
+}
+
+/* --- PAGINATION STYLES END --- */

@@ -385,6 +385,7 @@ const AirlineBooking = () => {
                                 <table className="airline-table">
                                     <thead>
                                         <tr>
+                                            <th>#</th> {/* ADDED INDEX COLUMN */}
                                             <th>Reference</th>
                                             <th>Client Name</th>
                                             <th>Email</th>
@@ -395,8 +396,13 @@ const AirlineBooking = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {currentBookings.map((booking) => (
+                                        {currentBookings.map((booking, index) => ( // ADDED index
                                             <tr key={booking._id}>
+                                                {/* ADDED ROW NUMBER */}
+                                                <td style={{ fontWeight: '700', color: '#0f172a' }}>
+                                                    {indexOfFirstBooking + index + 1} 
+                                                </td>
+                                                {/* REFERENCE ID */}
                                                 <td style={{ fontWeight: '700', color: '#0f172a' }}>
                                                     {booking._id.slice(-6).toUpperCase()}
                                                 </td>

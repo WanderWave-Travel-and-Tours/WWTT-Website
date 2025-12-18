@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Sidebar from '../../sidebar/sidebar';
-import { Plus, Receipt, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Receipt, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import './BillsPayment.css';
 
 // Dummy data generator for testing pagination
@@ -26,14 +26,14 @@ const generateDummyData = (count) => {
     return data;
 };
 
-// Main data: initial two items + 8 dummy items to reach 10 total
+// Main data: initial two items + 8 dummy items to reach 11 total
 const initialData = [
     { id: 'BP-1001', client: 'Wanderwave Office', biller: 'Meralco', acctNo: '1234567890', amount: '₱15,000.00', dueDate: 'Nov 30, 2025', status: 'Paid' },
     { id: 'BP-1002', client: 'Client: Juan', biller: 'PLDT', acctNo: '0288881234', amount: '₱1,699.00', dueDate: 'Dec 05, 2025', status: 'Unpaid' },
-    { id: 'BP-1002', client: 'Client: Juan', biller: 'PLDT', acctNo: '0288881234', amount: '₱1,699.00', dueDate: 'Dec 05, 2025', status: 'Unpaid' },
+    { id: 'BP-1003', client: 'Client: Maria', biller: 'Globe', acctNo: '09175551234', amount: '₱2,100.00', dueDate: 'Dec 15, 2025', status: 'Pending' },
 ];
 
-const allData = [...initialData, ...generateDummyData(8)]; // 10 items total
+const allData = [...initialData, ...generateDummyData(8)]; // 11 items total
 
 // --- Pagination Component ---
 const Pagination = ({ totalPages, currentPage, onPageChange }) => {
@@ -86,7 +86,9 @@ const Pagination = ({ totalPages, currentPage, onPageChange }) => {
 const BillsPayment = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10; // Set to 10 as requested
+    const [searchTerm, setSearchTerm] = useState(''); 
+    const [activeStatusFilter, setActiveStatusFilter] = useState('All'); 
+    const itemsPerPage = 10; 
 
     const stats = [
         { label: 'Total Transactions', value: allData.length.toLocaleString(), icon: <Receipt size={24}/> },
@@ -95,16 +97,75 @@ const BillsPayment = () => {
         { label: 'Failed', value: allData.filter(d => d.status === 'Failed' || d.status === 'Unpaid').length, icon: <AlertTriangle size={24}/> },
     ];
 
-    // Pagination logic
-    const totalPages = Math.ceil(allData.length / itemsPerPage);
+    // Determine all unique statuses for filter buttons
+    const allStatuses = useMemo(() => {
+        const statuses = new Set(allData.map(d => d.status));
+        return ['All', ...Array.from(statuses)];
+    }, []);
+
+    // Filtering and Searching Logic
+    const filteredData = useMemo(() => {
+        return allData.filter(item => {
+            // 1. Status Filter
+            const statusMatch = activeStatusFilter === 'All' || item.status === activeStatusFilter;
+
+            // 2. Search Term Filter (Case-insensitive match on ID, Client, Biller, Account No.)
+            const lowerCaseSearchTerm = searchTerm.toLowerCase();
+            const searchMatch = item.id.toLowerCase().includes(lowerCaseSearchTerm) ||
+                                item.client.toLowerCase().includes(lowerCaseSearchTerm) ||
+                                item.biller.toLowerCase().includes(lowerCaseSearchTerm) ||
+                                item.acctNo.includes(lowerCaseSearchTerm);
+
+            return statusMatch && searchMatch;
+        });
+    }, [activeStatusFilter, searchTerm]);
+
+    // Pagination logic uses filteredData
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = allData.slice(indexOfFirstItem, indexOfLastItem);
+    const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
     const handlePageChange = (pageNumber) => {
         if (pageNumber < 1 || pageNumber > totalPages) return;
         setCurrentPage(pageNumber);
     };
+
+    const handleFilterChange = (status) => {
+        setActiveStatusFilter(status);
+        setCurrentPage(1); // Reset to first page on filter change
+    };
+    
+    // Reset page to 1 when search term changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    // Helper to map data status to CSS status class and apply size style
+    const getFilterButtonProps = (status) => {
+        let statusClass = '';
+        if (status === 'All') {
+            statusClass = activeStatusFilter === 'All' ? 'active' : '';
+        } else {
+            // Mapping data status ('Paid', 'Unpaid', 'Pending') to provided CSS class names
+            if (status === 'Paid') {
+                statusClass = activeStatusFilter === status ? 'confirmed-active' : '';
+            } else if (status === 'Pending') {
+                statusClass = activeStatusFilter === status ? 'pending-active' : '';
+            } else if (status === 'Unpaid' || status === 'Failed') {
+                statusClass = activeStatusFilter === status ? 'cancelled-active' : '';
+            }
+        }
+        
+        // Custom style to make filter buttons smaller, as requested
+        const smallerStyle = { padding: '0.6rem 1.1rem', fontSize: '0.85rem', borderRadius: '8px' };
+
+        return { 
+            className: `filter-btn ${statusClass}`,
+            style: smallerStyle
+        };
+    };
+
 
     return (
         <div className="bills-page">
@@ -128,10 +189,46 @@ const BillsPayment = () => {
                         ))}
                     </div>
 
+                    {/* Search and Filter Card */}
+                    <div className="search-filter-card">
+                        <div className="search-filter-wrapper">
+                            {/* Search Box */}
+                            <div className="search-box">
+                                <Search size={20} className="search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by ID, Client, or Account No..."
+                                    className="search-input"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Filter Buttons */}
+                            <div className="filter-buttons">
+                                {allStatuses.map(status => {
+                                    const props = getFilterButtonProps(status);
+                                    return (
+                                        <button
+                                            key={status}
+                                            {...props}
+                                            onClick={() => handleFilterChange(status)}
+                                        >
+                                            {/* Display 'Unpaid/Failed' for the Unpaid status button if needed */}
+                                            {status === 'Unpaid' ? 'Unpaid/Failed' : status}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                    {/* END Search and Filter Card */}
+
                     <div className="bills-table-container">
                         <table className="bills-table">
                             <thead>
                                 <tr>
+                                    <th>No.</th> {/* Added for numbering */}
                                     <th>Trans ID</th>
                                     <th>Client/Ref</th>
                                     <th>Biller</th>
@@ -143,8 +240,11 @@ const BillsPayment = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {currentItems.map((item) => (
-                                    <tr key={item.id}>
+                                {/* Loop over currentItems which are filtered and paginated */}
+                                {currentItems.map((item, index) => (
+                                    <tr key={item.id + index}>
+                                        {/* Serial number calculation */}
+                                        <td style={{fontWeight:'400', color:'#6b7280'}}>{indexOfFirstItem + index + 1}</td> 
                                         <td style={{fontWeight:'700', color:'#0f172a'}}>{item.id}</td>
                                         <td>{item.client}</td>
                                         <td style={{fontWeight:'700'}}>{item.biller}</td>
@@ -160,8 +260,8 @@ const BillsPayment = () => {
                                 {/* Display a row if no data is present */}
                                 {currentItems.length === 0 && (
                                     <tr>
-                                        <td colSpan="8" style={{ textAlign: 'center', padding: '30px' }}>
-                                            No bills transactions found.
+                                        <td colSpan="9" style={{ textAlign: 'center', padding: '30px' }}> {/* colSpan increased to 9 */}
+                                            No bills transactions found matching your criteria.
                                         </td>
                                     </tr>
                                 )}
@@ -175,6 +275,12 @@ const BillsPayment = () => {
                                 currentPage={currentPage} 
                                 onPageChange={handlePageChange} 
                             />
+                        )}
+                        {/* Optional message for filtered results when not using pagination */}
+                        {totalPages <= 1 && filteredData.length > 0 && filteredData.length < allData.length && (
+                            <div style={{textAlign: 'center', marginTop: '1rem', color: '#667eea', fontWeight: '500'}}>
+                                Displaying {filteredData.length} results.
+                            </div>
                         )}
                     </div>
                 </div>

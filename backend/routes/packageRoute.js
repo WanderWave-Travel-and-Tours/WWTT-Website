@@ -14,96 +14,105 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-router.get('/all', async (req, res) => {
+// INITIALIZE ARCHIVE STATUS
+router.get('/init-archive', async (req, res) => {
     try {
-        const packages = await Package.find().sort({ _id: -1 });
-
-        return res.status(200).json({
-            status: 'ok',
-            data: packages,
+        const result = await Package.updateMany(
+            { isArchive: { $exists: false } },
+            { $set: { isArchive: 'No' } }
+        );
+        res.status(200).json({ 
+            status: 'ok', 
+            message: `Success! ${result.modifiedCount} documents updated.` 
         });
-
     } catch (error) {
-        console.error('Error fetching packages:', error);
-        return res.status(500).json({
-            status: 'error',
-            error: 'Failed to retrieve packages from the database.',
-        });
+        res.status(500).json({ status: 'error', error: error.message });
     }
 });
 
+// FETCH ALL ACTIVE (Dito mo sinet na "No" lang ang lalabas)
+router.get('/all', async (req, res) => {
+    try {
+        // Sinisiguro na ang kinukuha lang ay isArchive: "No"
+        const packages = await Package.find({ isArchive: 'No' }).sort({ _id: -1 });
+        return res.status(200).json({ status: 'ok', data: packages });
+    } catch (error) {
+        return res.status(500).json({ status: 'error', error: 'Failed to retrieve packages.' });
+    }
+});
+
+// FETCH ARCHIVED
+router.get('/archived-list', async (req, res) => {
+    try {
+        const archived = await Package.find({ isArchive: 'Yes' }).sort({ _id: -1 });
+        return res.status(200).json({ status: 'ok', data: archived });
+    } catch (error) {
+        return res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+// FETCH SINGLE
 router.get('/:id', async (req, res) => {
     try {
-        const packageId = req.params.id;
-        const pkg = await Package.findById(packageId);
-
-        if (!pkg) {
-            return res.status(404).json({ status: 'error', error: 'Package not found.' });
-        }
-
+        const pkg = await Package.findById(req.params.id);
+        if (!pkg) return res.status(404).json({ status: 'error', error: 'Package not found.' });
         return res.status(200).json({ status: 'ok', data: pkg });
     } catch (error) {
-        console.error('Error fetching package by ID:', error);
         return res.status(500).json({ status: 'error', error: 'Failed to retrieve package data.' });
     }
 });
 
+// EDIT PACKAGE
 router.put('/edit/:id', upload.single('image'), async (req, res) => {
     try {
-        const packageId = req.params.id;
-        
         const { 
-            title, 
-            destination, 
-            price, 
-            duration, 
-            category, 
-            existingImage,
-            inclusions,
-            itinerary
+            title, destination, sellerPrice, markup, duration, 
+            category, existingImage, inclusions, itinerary 
         } = req.body;
         
-        const parsedInclusions = inclusions ? JSON.parse(inclusions) : [];
-        const parsedItinerary = itinerary ? JSON.parse(itinerary) : [];
-
-        let updateData = {
+        const updateData = {
             title,
             destination,
-            price,
+            sellerPrice: Number(sellerPrice),
+            markup: Number(markup),
+            price: Number(sellerPrice) + Number(markup),
             duration,
             category,
-            inclusions: parsedInclusions,
-            itinerary: parsedItinerary,
+            inclusions: inclusions ? JSON.parse(inclusions) : [],
+            itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
 
         if (req.file) {
             updateData.image = req.file.filename;
-
             if (existingImage && existingImage !== 'placeholder.png') { 
-                const oldImagePath = path.join(__dirname, '../uploads', existingImage);
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
-                }
+                const oldPath = path.join(__dirname, '../uploads', existingImage);
+                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
             }
         } else {
             updateData.image = existingImage;
         }
 
-        const updatedPackage = await Package.findByIdAndUpdate(
-            packageId,
-            updateData, 
-            { new: true, runValidators: true } 
-        );
-
-        if (!updatedPackage) {
-            return res.status(404).json({ status: 'error', error: 'Package not found for update.' });
-        }
-
+        await Package.findByIdAndUpdate(req.params.id, updateData, { new: true });
         res.json({ status: 'ok', message: 'Package updated successfully!' });
-
     } catch (err) {
-        console.error('Error updating package:', err);
         res.status(500).json({ status: 'error', error: err.message });
+    }
+});
+
+// ARCHIVE TOGGLE (Eto ang magpapalit ng status sa "Yes")
+router.post('/:id/archive', async (req, res) => {
+    try {
+        const pkg = await Package.findById(req.params.id);
+        if (!pkg) return res.status(404).json({ status: "error", message: "Not found" });
+
+        // Kapag pinindot ang Archive, gagawin nating "Yes" ang status
+        const newStatus = pkg.isArchive === 'Yes' ? 'No' : 'Yes';
+        pkg.isArchive = newStatus;
+        await pkg.save();
+
+        res.json({ status: "ok", message: `Package status updated to ${newStatus}`, isArchive: newStatus });
+    } catch (err) {
+        res.status(500).json({ status: "error", error: err.message });
     }
 });
 

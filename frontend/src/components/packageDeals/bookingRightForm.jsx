@@ -42,6 +42,12 @@ const BookingRightForm = ({ pkg }) => {
   const requiresPassport = isInternationalFlight;
   const requiresID = selectedFlight && !isInternationalFlight;
 
+  // --- CONSTANTS ---
+  const MAX_PAX = 9; // Maximum number of passengers allowed
+  const TODAY = new Date();
+  TODAY.setHours(0, 0, 0, 0); // Normalize to start of day for comparison
+  // -------------------
+
   const calculateRoomsNeeded = () => {
     if (!selectedRoomType) return 1;
     return Math.ceil(totalPassengers / (selectedRoomType.capacity || 4));
@@ -86,6 +92,34 @@ const BookingRightForm = ({ pkg }) => {
     };
     
     checkPendingBooking();
+    const bookingData = sessionStorage.getItem('pendingBookingData');
+    console.log('Checking for pending booking data:', bookingData);
+    
+    if (bookingData) {
+      const data = JSON.parse(bookingData);
+      console.log('Parsed booking data:', data);
+      
+      if (data.selectedFlight && data.packageId === pkg._id) {
+        console.log('Found selected flight for this package:', data.selectedFlight);
+        
+        setSelectedFlight(data.selectedFlight);
+        setBookingWithAirfare(true);
+        setSelectedDate(data.selectedDate);
+        setQuantities(data.quantities);
+        setCurrentMonth(new Date(data.currentMonth));
+        
+        // Clear session storage
+        sessionStorage.removeItem('pendingBookingData');
+        
+        toast.success(`✈️ Flight Added! ${data.selectedFlight.airline.name}`, { duration: 3000 });
+        
+        // Open booking form modal after a short delay
+        setTimeout(() => {
+          setPassengerStep(1);
+          setShowModal(true);
+        }, 500);
+      }
+    }
   }, [pkg._id]);
 
   // Fetch Hotel Data
@@ -197,21 +231,51 @@ const BookingRightForm = ({ pkg }) => {
     return selectedDate + durationDays - 1;
   };
 
+  // NEW: Function to check if a specific day is in the past
+  const isPastDate = (day) => {
+    const dateToCheck = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    return dateToCheck < TODAY;
+  };
+  
+  // NEW: Check if navigating to a previous month is allowed (only if that month is in the past)
+  const isPreviousMonthInPast = () => {
+    const prevMonthDate = new Date(currentMonth);
+    prevMonthDate.setMonth(currentMonth.getMonth() - 1);
+    // Check if the 1st of the previous month is before today
+    prevMonthDate.setDate(1); 
+    return prevMonthDate < TODAY;
+  };
+
   const handleQuantity = (type, delta) => {
     setQuantities(prev => ({
       ...prev,
-      [type]: Math.max(1, Math.min(20, (prev[type] || 1) + delta))
+      // Updated: Limit the maximum to MAX_PAX (9)
+      [type]: Math.max(1, Math.min(MAX_PAX, (prev[type] || 1) + delta))
     }));
   };
 
   const changeMonth = (offset) => {
+    // Prevent navigating to previous months if they are entirely in the past
+    if (offset < 0 && isPreviousMonthInPast()) {
+      toast.error("Cannot select a month that is entirely in the past.");
+      return;
+    }
     const newDate = new Date(currentMonth.setMonth(currentMonth.getMonth() + offset));
     setCurrentMonth(new Date(newDate));
+    setSelectedDate(null); // Clear selected date when month changes
   };
 
   const handleRoomTypeChange = (roomType) => {
     setSelectedRoomType(roomType);
     toast.success(`Selected: ${roomType.type} at ${roomType.hotelName}`, { duration: 2000 });
+  };
+  
+  const handleDateSelect = (day) => {
+    if (isPastDate(day)) {
+        toast.error("You cannot select a past date for booking.");
+        return;
+    }
+    setSelectedDate(day);
   };
 
   const handleBookClick = () => {
@@ -489,6 +553,52 @@ const BookingRightForm = ({ pkg }) => {
     } catch (error) {
       console.error('❌ Booking Error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to create booking. Please try again.';
+      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (bookingResponse.data.success) {
+        const bookingId = bookingResponse.data.bookingId;
+        
+        console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
+        toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
+        
+        // ===========================================
+        // API CALL 2: CREATE PAYMENT LINK (Final Redirect)
+        // ===========================================
+        // The /create-intent route expects { bookingId: '...' } in the body
+        const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
+            bookingId: bookingId
+        });
+        
+        if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
+            const checkoutUrl = paymentResponse.data.checkoutUrl;
+            toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
+            setShowModal(false);
+            
+            // CRITICAL FIX: REDIRECT TO PAYMONGO URL
+            window.location.href = checkoutUrl; 
+            return;
+            
+        } else {
+             // If payment link creation fails, redirect to dashboard/pending page
+             const redirectId = bookingResponse.data.bookingId || bookingResponse.data.data._id; 
+             toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
+             setTimeout(() => {
+                 navigate('/dashboard');
+             }, 1500);
+        }
+      } else {
+         throw new Error(bookingResponse.data.message || 'Booking submission failed on server.');
+      }
+    } catch (error) {
+      console.error('Booking/Payment Error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking. Please try again.';
+      
+      if (error.response?.data?.error) {
+          console.error("Payment API Error Details:", error.response.data.error);
+      }
+      
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -503,7 +613,17 @@ const BookingRightForm = ({ pkg }) => {
 
   return (
     <div className="brf-container">
-      <Toaster position="top-center" />
+      {/* 💥 ULTIMATE FIX: Increased zIndex to an extreme value and added a 'top' offset.
+          This guarantees the toast container starts 70 pixels below the screen's top edge, 
+          which should clear most fixed headers.
+      */}
+      <Toaster 
+        position="top-center" 
+        containerStyle={{ 
+          zIndex: 999999,
+          top: 150, // Added top offset to push it below the fixed header
+        }} 
+      />
       
       {/* Header Section */}
       <div className="brf-header">
@@ -515,7 +635,12 @@ const BookingRightForm = ({ pkg }) => {
       <div className="brf-calendar-wrapper">
         <div className="brf-calendar-box">
           <div className="brf-calendar-header">
-            <button onClick={() => changeMonth(-1)} className="brf-month-nav">
+            {/* Disabled month navigation if the previous month is in the past */}
+            <button 
+              onClick={() => changeMonth(-1)} 
+              className="brf-month-nav"
+              disabled={isPreviousMonthInPast()}
+            >
               <ChevronLeft size={20} />
             </button>
             <h3 className="brf-month-year">
@@ -550,12 +675,15 @@ const BookingRightForm = ({ pkg }) => {
               const isStartDate = selectedDate === day;
               const isInRange = isInSelectedRange(day);
               const isEndDate = selectedDate && day === getEndDate();
+              // NEW: Check if day is in the past
+              const isDisabled = isPastDate(day);
               
               return (
                 <button
                   key={day}
-                  onClick={() => setSelectedDate(day)}
-                  className={`brf-calendar-day ${isStartDate ? 'brf-selected' : ''} ${isInRange && !isStartDate ? 'brf-in-range' : ''} ${isEndDate ? 'brf-end-date' : ''}`}
+                  onClick={() => handleDateSelect(day)} // Updated handler
+                  disabled={isDisabled} // Disabled past dates
+                  className={`brf-calendar-day ${isStartDate ? 'brf-selected' : ''} ${isInRange && !isStartDate ? 'brf-in-range' : ''} ${isEndDate ? 'brf-end-date' : ''} ${isDisabled ? 'brf-disabled-date' : ''}`}
                 >
                   {day}
                 </button>
@@ -572,7 +700,7 @@ const BookingRightForm = ({ pkg }) => {
             <div style={{display:'flex', alignItems:'center'}}>
               <span className="brf-quantity-label">Standard Pax</span>
             </div>
-            <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
+            <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>Max {MAX_PAX} persons, 3+ years old</div>
           </div>
           
           <div className="brf-quantity-controls">
@@ -580,6 +708,7 @@ const BookingRightForm = ({ pkg }) => {
               onClick={() => handleQuantity('adult', -1)} 
               className="brf-quantity-btn"
               type="button"
+              disabled={quantities.adult <= 1} // Disable when at minimum (1)
             >
               <Minus 
                 size={18} 
@@ -593,6 +722,7 @@ const BookingRightForm = ({ pkg }) => {
               onClick={() => handleQuantity('adult', 1)} 
               className="brf-quantity-btn"
               type="button"
+              disabled={quantities.adult >= MAX_PAX} // Disable when at maximum (9)
             >
               <Plus 
                 size={18} 

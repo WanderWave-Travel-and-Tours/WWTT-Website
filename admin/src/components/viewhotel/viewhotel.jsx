@@ -64,6 +64,7 @@ const ViewHotels = () => {
 
   const fetchStats = async () => {
     try {
+      const response = await fetch('http://localhost:5000/api/hotels/stats');
       const response = await fetch(`${API_BASE_URL}/api/hotels/stats`);
       const data = await response.json();
 
@@ -86,6 +87,7 @@ const ViewHotels = () => {
     }
 
     try {
+      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}`, {
       const response = await fetch(`${API_BASE_URL}/api/hotels/${hotelId}`, {
         method: 'DELETE'
       });
@@ -117,6 +119,7 @@ const ViewHotels = () => {
 
   const handleToggleFeatured = async (hotelId, currentStatus) => {
     try {
+      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}/featured`, {
       const response = await fetch(`${API_BASE_URL}/api/hotels/${hotelId}/featured`, {
         method: 'PATCH'
       });
@@ -259,6 +262,7 @@ const ViewHotels = () => {
               <table className="hotel-table">
                 <thead>
                   <tr>
+                    <th style={{ width: '50px' }}>#</th> {/* Added column for numbering */}
                     <th>Hotel Name</th>
                     <th>Location</th>
                     <th>Max Capacity</th>
@@ -269,7 +273,7 @@ const ViewHotels = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredHotels.map((hotel) => {
+                  {filteredHotels.map((hotel, index) => { // Use index for numbering
                     const amenitiesCount = hotel.amenities 
                       ? Object.values(hotel.amenities).filter(Boolean).length 
                       : 0;
@@ -278,6 +282,7 @@ const ViewHotels = () => {
                     
                     return (
                       <tr key={hotel._id}>
+                        <td className="text-muted font-bold">{index + 1}</td> {/* Display index + 1 */}
                         <td>
                           <div className="hotel-cell-name">
                             {imageUrl ? (

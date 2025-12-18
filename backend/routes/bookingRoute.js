@@ -475,4 +475,76 @@ router.get('/stats/summary', async (req, res) => {
   }
 });
 
+// INITIALIZE ARCHIVE STATUS (para sa mga existing bookings na walang isArchive field pa)
+router.get('/init-archive', async (req, res) => {
+    try {
+        const result = await Booking.updateMany(
+            { isArchive: { $exists: false } },
+            { $set: { isArchive: 'No' } }
+        );
+        res.status(200).json({ 
+            status: 'ok', 
+            message: `Success! ${result.modifiedCount} booking documents updated to isArchive: 'No'.` 
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+// FETCH ALL ACTIVE BOOKINGS (default view sa admin)
+router.get('/active', async (req, res) => {
+    try {
+        const bookings = await Booking.find({ isArchive: 'No' }).sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            count: bookings.length,
+            bookings: bookings
+        });
+    } catch (error) {
+        console.error('Error fetching active bookings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch active bookings'
+        });
+    }
+});
+
+// FETCH ARCHIVED BOOKINGS
+router.get('/archived', async (req, res) => {
+    try {
+        const archived = await Booking.find({ isArchive: 'Yes' }).sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            count: archived.length,
+            bookings: archived
+        });
+    } catch (error) {
+        console.error('Error fetching archived bookings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch archived bookings'
+        });
+    }
+});
+
+// TOGGLE ARCHIVE STATUS
+router.post('/:id/archive', async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ status: "error", message: "Booking not found" });
+
+        const newStatus = booking.isArchive === 'Yes' ? 'No' : 'Yes';
+        booking.isArchive = newStatus;
+        await booking.save();
+
+        res.json({ 
+            status: "ok", 
+            message: `Booking archive status updated to ${newStatus}`, 
+            isArchive: newStatus 
+        });
+    } catch (err) {
+        res.status(500).json({ status: "error", error: err.message });
+    }
+});
+
 module.exports = router;

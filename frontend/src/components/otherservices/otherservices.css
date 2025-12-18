@@ -1420,3 +1420,72 @@ html, body {
     cursor: not-allowed;
     box-shadow: none;
 }
+
+/* otherservices.css - Add this for toast styles */
+
+/* ... KEEP ALL EXISTING STYLES ABOVE THIS NEW BLOCK ... */
+/* --- UPDATED CSS for Toast Notification (Top Center Styling) --- */
+.toast-notification {
+  /* Positioning: Top Center */
+  position: fixed;
+  top: 20px;
+  left: 50%; 
+  transform: translateX(-50%); /* Center horizontally */
+  
+  padding: 12px 18px;
+  border-radius: 8px;
+  color: #333; /* Default text color */
+  z-index: 10000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 300px;
+  max-width: 90%;
+  animation: slideInTop 0.5s forwards;
+  background-color: white; /* Clean background */
+}
+
+.toast-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast-message {
+  font-weight: 500;
+  margin-left: 5px; /* Spacing after icon */
+}
+
+/* Success Toast Styling */
+.toast-success {
+  border: 1px solid #4CAF50; /* Green border */
+  /* Icon is colored by the component using the lucide-react CheckCircle component */
+}
+/* Error Toast Styling (Matches your requested styling for errorToast) */
+.toast-error {
+  border: 1px solid #ef4444; /* Red border */
+  /* Icon is colored by the component using the lucide-react AlertTriangle component */
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  color: #999;
+  margin-left: 15px;
+  cursor: pointer;
+  padding: 0;
+  display: flex; /* Centers the X icon */
+  align-items: center;
+}
+
+.toast-close-btn:hover {
+  color: #333;
+}
+
+/* Keyframe for Top-Center Slide In */
+@keyframes slideInTop {
+  from { transform: translate(-50%, -100%); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+/* --- END UPDATED CSS --- */

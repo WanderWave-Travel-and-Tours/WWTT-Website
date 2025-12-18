@@ -1,15 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import toast, { Toaster } from 'react-hot-toast'; // Tama na ang import
 import './userLogin.css';
 // Import icons (assuming you have a dependency like lucide-react or similar)
-import { Mail, Key, User, Lock, CheckCircle, XCircle } from 'lucide-react'; 
+import { Mail, Key, User, Lock, CheckCircle, XCircle } from 'lucide-react';
 
+const API_BASE_URL = 'http://localhost:5000/api/auth';
+
+// --- Custom Toast Styles (based on your request) ---
+const customErrorToastStyle = {
+    style: { border: '1px solid #ef4444', color: '#ef4444' },
+    iconTheme: { primary: '#ef4444', secondary: '#fff' },
+};
+// --- END Custom Toast Styles ---
 const API_BASE_URL = 'http://localhost:5000/api/auth'; 
 
 // --- OTP Verification Form Component (Modal) ---
 const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading, error }) => {
     const [otpCode, setOtpCode] = useState('');
-    
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (otpCode.length === 6) {
@@ -43,7 +52,7 @@ const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading, e
                             style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '1.2rem' }}
                         />
                     </div>
-                    
+
                     {error && <p className="error-message otp-error"><XCircle size={16}/> {error}</p>}
 
                     <div className="otp-actions">
@@ -84,15 +93,15 @@ const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading, e
 const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [isSignup, setIsSignup] = useState(false);
     const [email, setEmail] = useState('');
-    const [username, setUsername] = useState(''); 
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
-    const [errorMessage, setErrorMessage] = useState(''); 
-    
+    const [errorMessage, setErrorMessage] = useState('');
+
     // NEW STATES for OTP flow
     const [isOtpFormVisible, setIsOtpFormVisible] = useState(false);
     const [tempEmailForVerification, setTempEmailForVerification] = useState('');
@@ -150,12 +159,12 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const handleRecaptchaChange = (token) => {
         setRecaptchaToken(token);
     };
-    
+
     // New function for Resend OTP API call
     const handleResendOtpFetch = async () => {
         setIsLoading(true);
         setOtpError('');
-        
+
         try {
             const res = await fetch(`${API_BASE_URL}/resend-otp`, {
                 method: 'POST',
@@ -168,18 +177,22 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             });
 
             const data = await res.json();
-            
+
             if (res.ok) {
                 // Success: New OTP sent
-                alert(data.message || 'New verification code has been sent!');
+                toast.success(data.message || 'New verification code has been sent!', { position: 'top-center' });
             } else {
                 // Error during resend request
-                setOtpError(data.message || 'Failed to resend code. Please try again.');
+                const errorMsg = data.message || 'Failed to resend code. Please try again.';
+                setOtpError(errorMsg);
+                toast.error(errorMsg, { position: 'top-center', ...customErrorToastStyle });
             }
 
         } catch (error) {
             console.error('Resend OTP fetch error:', error);
-            setOtpError('Network error. Could not connect to the server.');
+            const errorMsg = 'Network error. Could not connect to the server.';
+            setOtpError(errorMsg);
+            toast.error(errorMsg, { position: 'top-center', ...customErrorToastStyle });
         } finally {
             setIsLoading(false);
         }
@@ -195,14 +208,14 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             setErrorMessage('Please complete the reCAPTCHA verification');
             return;
         }
-        
+
         if (password !== confirmPassword) {
             setErrorMessage('Passwords do not match');
             return;
         }
 
         setIsLoading(true);
-        
+
         try {
             const res = await fetch(`${API_BASE_URL}/signup`, {
                 method: 'POST',
@@ -212,7 +225,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                 body: JSON.stringify({
                     fullName,
                     email,
-                    username, 
+                    username,
                     password,
                     confirmPassword,
                     recaptchaToken,
@@ -220,24 +233,28 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             });
 
             const data = await res.json();
-            
+
             if (res.ok) {
                 // Success: OTP Sent. Show verification form.
-                alert(data.message);
+                toast.success(data.message || 'Verification code sent to your email!', { position: 'top-center' });
                 setTempEmailForVerification(email);
                 setIsOtpFormVisible(true);
                 // Clear password fields on the main form for security
-                setPassword(''); 
+                setPassword('');
                 setConfirmPassword('');
 
             } else {
                 // Error during initial signup/OTP request
-                setErrorMessage(data.message || 'Signup request failed. Please try again.');
+                const errorMsg = data.message || 'Signup request failed. Please try again.';
+                setErrorMessage(errorMsg);
+                toast.error(errorMsg, { position: 'top-center', ...customErrorToastStyle });
             }
 
         } catch (error) {
             console.error('Signup fetch error:', error);
-            setErrorMessage('Network error. Could not connect to the server.');
+            const errorMsg = 'Network error. Could not connect to the server.';
+            setErrorMessage(errorMsg);
+            toast.error(errorMsg, { position: 'top-center', ...customErrorToastStyle });
         } finally {
             setIsLoading(false);
             if (recaptchaRef.current) {
@@ -246,12 +263,12 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             }
         }
     };
-    
+
     // 2. OTP Verification and Final Registration
     const handleOtpVerification = async (otpCode) => {
         setIsLoading(true);
         setOtpError('');
-        
+
         try {
             const res = await fetch(`${API_BASE_URL}/verify-otp`, {
                 method: 'POST',
@@ -265,24 +282,31 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             });
 
             const data = await res.json();
-            
+
             if (res.ok) {
                 // Success: Account registered. Reset and switch to login page.
-                alert(data.message || 'Account successfully created and verified!');
-                
-                setIsSignup(false); 
-                setIsOtpFormVisible(false);
-                setTempEmailForVerification('');
-                resetForm(); // Clear all fields
+                toast.success(data.message || 'Account successfully created and verified! You may now log in.', { position: 'top-center' });
+
+                // --- FIXED: Added delay before redirect/form reset ---
+                setTimeout(() => {
+                    setIsSignup(false);
+                    setIsOtpFormVisible(false);
+                    setTempEmailForVerification('');
+                    resetForm(); // Clear all fields
+                }, 1500); // 1.5 seconds delay
 
             } else {
                 // Error during OTP verification/registration
-                setOtpError(data.message || 'OTP verification failed. Please try again.');
+                const errorMsg = data.message || 'OTP verification failed. Please try again.';
+                setOtpError(errorMsg);
+                toast.error(errorMsg, { position: 'top-center', ...customErrorToastStyle });
             }
 
         } catch (error) {
             console.error('OTP verification fetch error:', error);
-            setOtpError('Network error. Could not connect to the server.');
+            const errorMsg = 'Network error. Could not connect to the server.';
+            setOtpError(errorMsg);
+            toast.error(errorMsg, { position: 'top-center', ...customErrorToastStyle });
         } finally {
             setIsLoading(false);
         }
@@ -292,19 +316,19 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const handleResendOtp = (e) => {
          handleResendOtpFetch();
     }
-    
-    // Existing Login Logic
+
+    // Existing Login Logic (with localStorage.setItem for successful login)
     const handleLogin = async (e) => {
         e.preventDefault();
         setErrorMessage('');
-        
+
         if (!recaptchaToken) {
             setErrorMessage('Please complete the reCAPTCHA verification');
             return;
         }
 
         setIsLoading(true);
-        
+
         try {
             const res = await fetch(`http://localhost:5000/api/auth/login`, {
                 method: 'POST',
@@ -317,16 +341,27 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             const data = await res.json();
 
             if (res.ok) {
-                alert(data.message || 'Welcome back!');
+                // Success Login Toast - Display this first
+                toast.success(data.message || 'Welcome back! Login successful.', { position: 'top-center' });
+
                 if (data.user && onLoginSuccess) {
-                    localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
-                    onLoginSuccess(data.user);
+                    // --- FIXED: Added delay before redirect/call onLoginSuccess ---
+                    setTimeout(() => {
+                        // Corrected localStorage usage and delayed onLoginSuccess call
+                        localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
+                        onLoginSuccess(data.user);
+                    }, 1500); // 1.5 seconds delay
+                    // --- END FIXED ---
                 }
             } else {
-                setErrorMessage(data.message || 'Login failed. Please check your credentials.');
+                const errorMsg = data.message || 'Login failed. Please check your credentials.';
+                setErrorMessage(errorMsg);
+                toast.error(errorMsg, { position: 'top-center', ...customErrorToastStyle });
             }
         } catch (err) {
-            setErrorMessage('Cannot connect to server. Please try again.');
+            const errorMsg = 'Cannot connect to server. Please try again.';
+            setErrorMessage(errorMsg);
+            toast.error(errorMsg, { position: 'top-center', ...customErrorToastStyle });
         } finally {
             setIsLoading(false);
             if (recaptchaRef.current) {
@@ -352,24 +387,27 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
     return (
         <div className="user-login-wrapper">
-            
+
+            {/* Toaster Component for notifications */}
+            <Toaster position="top-center" reverseOrder={false} />
+
             {/* Conditional OTP Modal/Popup */}
             {isOtpFormVisible && (
-                <OtpVerificationForm 
+                <OtpVerificationForm
                     email={tempEmailForVerification}
                     onVerify={handleOtpVerification}
                     onCancel={() => {
                         setIsOtpFormVisible(false);
                         setIsLoading(false);
                         setOtpError('');
-                        resetForm(); 
+                        resetForm();
                     }}
                     onResend={handleResendOtp}
                     isLoading={isLoading}
                     error={otpError}
                 />
             )}
-            
+
             <div className={`user-login-container ${isOtpFormVisible ? 'blur-background' : ''}`}>
                 <div className="slideshow-panel">
                     <div className="slideshow-container">
@@ -408,7 +446,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                 alt="WanderWave Logo"
                                 className="logo-img"
                             />
-                            
+
                             <div className="header-text-col title-col">
                                 <span className="title-line">{isSignup ? 'Create' : 'Welcome'}</span>
                                 <span className="title-line">{isSignup ? 'Account' : 'Back'}</span>
@@ -455,7 +493,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                     disabled={isLoading}
                                 />
                             </div>
-                            
+
                             {/* Username */}
                             {isSignup && (
                                 <div className="input-group">
@@ -514,8 +552,8 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                 />
                             </div>
 
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 className="login-button"
                                 disabled={isLoading || !recaptchaToken}
                             >
@@ -525,7 +563,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
                         <p className="switch-page-text">
                             {isSignup ? 'Already have an account?' : "Don't have an account?"}
-                            <span 
+                            <span
                                 className="switch-page-link"
                                 onClick={() => {
                                     setIsSignup(!isSignup);

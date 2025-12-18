@@ -13,6 +13,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 .visa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
 .visa-title h1 { font-family: 'Arial Black', sans-serif; font-size: 30px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; }
 .visa-title p { color: #64748b; font-size: 14px; margin: 4px 0 0 0; }
+.header-actions { display: flex; gap: 12px; } 
 .visa-btn-edit-req { background-color: white; color: #0f172a; border: 1px solid #e2e8f0; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
 .visa-btn-edit-req:hover { background-color: #f1f5f9; border-color: #cbd5e1; }
 
@@ -44,7 +45,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 .visa-badge { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 .badge-pending { background: #ffedd5; color: #9a3412; }
 .badge-contacted { background: #dbeafe; color: #1e40af; }
-.badge-payment_pending { background: #fef3c7; color: #b45309; }
+.badge-payment-pending { background: #fef3c7; color: #b45309; } 
 .badge-paid { background: #dcfce7; color: #15803d; }
 .badge-completed { background: #dcfce7; color: #166534; }
 .badge-cancelled { background: #fee2e2; color: #991b1b; }
@@ -68,3 +69,139 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 /* RESPONSIVE */
 @media (max-width: 1024px) { .visa-main { padding: 30px; } .visa-stats-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .visa-main { margin-left: 0 !important; width: 100% !important; padding: 20px; } .visa-stats-grid { grid-template-columns: 1fr; } .visa-header { flex-direction: column; align-items: flex-start; } }
+
+/* --- Search and Filter --- */
+
+.search-filter-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.search-filter-wrapper {
+    display: flex;
+    flex-direction: column; 
+    gap: 1rem;
+    flex-wrap: wrap; 
+    align-items: flex-end; 
+}
+
+/* Desktop/Tablet Layout (768px and up) */
+@media (min-width: 768px) {
+    .search-filter-wrapper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end; /* Align everything to the right */
+        width: 100%;
+    }
+    
+    .search-box {
+        width: 300px; 
+        flex-shrink: 0;
+        margin-right: 1.5rem; /* Space between search and filter buttons */
+    }
+    
+    .filter-buttons {
+        flex: 0 1 auto; 
+        justify-content: flex-end; 
+    }
+}
+
+/* Search Box Container */
+.search-box {
+    position: relative;
+    width: 100%; 
+    max-width: 350px; 
+    flex-shrink: 0;
+}
+
+/* Search Icon Styling (from Lucide React) */
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0; 
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Search Input Field */
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem; 
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background: #f7fafc; 
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea; 
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Filter Buttons Container */
+.filter-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap; 
+    justify-content: flex-start;
+}
+
+/* Individual Filter Button - MADE SMALLER */
+.filter-btn {
+    padding: 0.5rem 1rem; 
+    border: none;
+    border-radius: 10px; 
+    font-weight: 600;
+    font-size: 0.85rem; 
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f7fafc;
+    color: #4a5568;
+    white-space: nowrap;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.filter-btn:hover {
+    background: #edf2f7;
+    transform: translateY(-1px);
+}
+
+/* Active Status Styles */
+.filter-btn.active { /* General 'All Items' active state */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2); 
+}
+
+.filter-btn.confirmed-active { /* COMPLETED (using confirmed-active) */
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); /* Green */
+    color: white;
+}
+
+.filter-btn.pending-active { /* PENDING */
+    background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%); /* Yellow */
+    color: white;
+}
+
+/* Custom Status for CONTACTED */
+.filter-btn.contacted-active {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); /* Blue/Cyan */
+    color: white;
+}
+
+/* Custom Status for PAYMENT PENDING (New Style) */
+.filter-btn.payment-pending-active {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); /* Orange */
+    color: white;
+}

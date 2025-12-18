@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../sidebar/sidebar"; 
-import { FolderOpen, Clock, CheckCircle, RefreshCw, FileText, UserPlus } from "lucide-react";
+import { FolderOpen, Clock, CheckCircle, RefreshCw, FileText, UserPlus, Search } from "lucide-react"; 
 import "./VisaProcessing.css"; 
 
 import VisaInquiryModal from "./VisaInquiryModal";
@@ -51,6 +51,9 @@ const VisaStats = ({ stats }) => (
 const VisaProcessing = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
+  const [searchTerm, setSearchTerm] = useState(""); 
+  const [currentFilter, setCurrentFilter] = useState("ALL"); 
 
   const [visaForms, setVisaForms] = useState([]);
   const [inquiries, setInquiries] = useState([]);
@@ -123,6 +126,24 @@ const VisaProcessing = () => {
     fetchInquiries();
   }, []);
 
+  // Helper function to get the specific active class for filter buttons
+  const getActiveClass = (status) => {
+    switch(status.toUpperCase()) {
+      case 'ALL':
+        return 'active';
+      case 'PENDING':
+        return 'pending-active';
+      case 'COMPLETED':
+        return 'confirmed-active'; // Using confirmed-active for completed
+      case 'CONTACTED':
+        return 'contacted-active'; // Custom class
+      case 'PAYMENT PENDING':
+        return 'payment-pending-active'; // New class for payment pending
+      default:
+        return 'active';
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -145,9 +166,34 @@ const VisaProcessing = () => {
     _original: inquiry 
   }));
 
+  // Define the fixed list of status buttons
+  const FILTER_BUTTONS = ['ALL', 'PENDING', 'CONTACTED', 'COMPLETED', 'PAYMENT PENDING'];
+
+  // 1. Apply Search and Filter
+  const filteredApplications = allApplications.filter(app => {
+    // Normalize status: replace underscores with spaces for accurate comparison with filter button text
+    const normalizedAppStatus = app.status ? app.status.replace(/_/g, ' ').toUpperCase() : '';
+    const normalizedFilter = currentFilter.toUpperCase();
+    
+    // Filter by Status (Checking against normalized status)
+    const statusMatch = currentFilter === "ALL" || (normalizedAppStatus === normalizedFilter);
+
+    // Filter by Search Term (Ref ID, Client, Country, Visa Type)
+    const searchMatch = app.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        app.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        app.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        app.type.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return statusMatch && searchMatch;
+  });
+
   const indexOfLastApplication = currentPage * applicationsPerPage;
   const indexOfFirstApplication = indexOfLastApplication - applicationsPerPage;
-  const currentApplications = allApplications.slice(indexOfFirstApplication, indexOfLastApplication);
+  const currentApplications = filteredApplications.slice(indexOfFirstApplication, indexOfLastApplication);
+
+  // Calculation for the base index of the current page
+  const pageBaseIndex = (currentPage - 1) * applicationsPerPage;
+
 
   const stats = [
     { label: "Total Visas Configured", value: visaForms.length, icon: <FolderOpen size={28} /> },
@@ -182,10 +228,55 @@ const VisaProcessing = () => {
 
           <VisaStats stats={stats} />
 
+          {/* New Search and Filter Card */}
+          <div className="search-filter-card">
+            <div className="search-filter-wrapper">
+              <div className="search-box">
+                <Search className="search-icon" size={20} />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search by client name, Ref ID, or country..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1); // Reset to page 1 on search
+                  }}
+                />
+              </div>
+              <div className="filter-buttons">
+                <button
+                  className={`filter-btn ${currentFilter === 'ALL' ? 'active' : ''}`}
+                  onClick={() => {
+                    setCurrentFilter('ALL');
+                    setCurrentPage(1);
+                  }}
+                >
+                  All Items
+                </button>
+                {FILTER_BUTTONS.filter(status => status !== 'ALL').map(status => (
+                  <button
+                    key={status}
+                    className={`filter-btn ${currentFilter === status ? getActiveClass(status) : ''}`}
+                    onClick={() => {
+                      setCurrentFilter(status);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {/* Capitalize first letter of each word (e.g., Payment Pending) */}
+                    {status.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* End New Search and Filter Card */}
+
           <div className="visa-table-container">
             <table className="visa-table">
               <thead>
                 <tr>
+                  <th>S. No.</th>
                   <th>Ref ID</th>
                   <th>Applicant</th>
                   <th>Country</th>
@@ -196,8 +287,9 @@ const VisaProcessing = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentApplications.map((app) => (
+                {currentApplications.map((app, index) => (
                   <tr key={app.id}>
+                    <td>{pageBaseIndex + index + 1}</td>
                     <td>{app.id}</td>
                     <td>{app.client}</td>
                     <td>
@@ -215,7 +307,8 @@ const VisaProcessing = () => {
                     <td>{app.type}</td>
                     <td>{app.date}</td>
                     <td>
-                      <span className={`visa-badge badge-${app.status.toLowerCase()}`}>{app.status}</span>
+                      {/* Using regex to replace spaces and underscores with hyphens for badge class */}
+                      <span className={`visa-badge badge-${app.status.toLowerCase().replace(/[\s_]/g, '-')}`}>{app.status}</span>
                     </td>
                     <td>
                       <button className="visa-action-btn visa-view-btn" onClick={() => setSelectedInquiry(app._original)}>
@@ -230,7 +323,7 @@ const VisaProcessing = () => {
             
             <Pagination 
                 applicationsPerPage={applicationsPerPage} 
-                totalApplications={allApplications.length} 
+                totalApplications={filteredApplications.length} 
                 paginate={setCurrentPage} 
                 currentPage={currentPage}
             />
