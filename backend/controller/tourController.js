@@ -15,7 +15,8 @@ exports.createTour = async (req, res) => {
       category, 
       sellerPrice, 
       markup, 
-      inclusions 
+      inclusions,
+      isArchive // Idinagdag dito
     } = req.body;
 
     // Validate required fields
@@ -78,7 +79,8 @@ exports.createTour = async (req, res) => {
       markup: mkup,
       price: totalPrice,
       inclusions: parsedInclusions,
-      image: req.file.filename
+      image: req.file.filename,
+      isArchive: isArchive || 'No' // Default sa 'No' kung walang pinasa
     });
 
     // Save to database
@@ -95,7 +97,6 @@ exports.createTour = async (req, res) => {
   } catch (error) {
     console.error('Error creating tour:', error);
     
-    // If there was an error and a file was uploaded, delete it
     if (req.file) {
       const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
       if (fs.existsSync(filePath)) {
@@ -103,7 +104,6 @@ exports.createTour = async (req, res) => {
       }
     }
 
-    // Handle mongoose validation errors
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({ 
@@ -175,10 +175,10 @@ exports.updateTour = async (req, res) => {
       category, 
       sellerPrice, 
       markup, 
-      inclusions 
+      inclusions,
+      isArchive // Idinagdag dito
     } = req.body;
 
-    // Find existing tour
     const existingTour = await Tour.findById(id);
     if (!existingTour) {
       return res.status(404).json({ 
@@ -187,7 +187,6 @@ exports.updateTour = async (req, res) => {
       });
     }
 
-    // Parse inclusions if it's a string
     let parsedInclusions = existingTour.inclusions;
     if (inclusions) {
       try {
@@ -199,12 +198,10 @@ exports.updateTour = async (req, res) => {
       }
     }
 
-    // Calculate new price if seller price or markup changed
     const sPrice = parseFloat(sellerPrice) || existingTour.sellerPrice;
     const mkup = parseFloat(markup) || existingTour.markup;
     const totalPrice = sPrice + mkup;
 
-    // Update fields
     const updateData = {
       title: title || existingTour.title,
       destination: destination || existingTour.destination,
@@ -213,12 +210,11 @@ exports.updateTour = async (req, res) => {
       sellerPrice: sPrice,
       markup: mkup,
       price: totalPrice,
-      inclusions: parsedInclusions
+      inclusions: parsedInclusions,
+      isArchive: isArchive || existingTour.isArchive // I-update o panatilihin ang dati
     };
 
-    // If new image uploaded, delete old one and update
     if (req.file) {
-      // Delete old image
       const oldImagePath = path.join(__dirname, '..', 'uploads', existingTour.image);
       if (fs.existsSync(oldImagePath)) {
         fs.unlinkSync(oldImagePath);
@@ -226,7 +222,6 @@ exports.updateTour = async (req, res) => {
       updateData.image = req.file.filename;
     }
 
-    // Update tour
     const updatedTour = await Tour.findByIdAndUpdate(
       id, 
       updateData, 
@@ -249,37 +244,23 @@ exports.updateTour = async (req, res) => {
 };
 
 // Delete tour
-exports.deleteTour = async (req, res) => {
-  try {
-    const { id } = req.params;
+// Idagdag ito sa iyong tourController.js
+exports.archiveTour = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Ina-update ang isArchive field base sa iyong Tour Schema
+        const updatedTour = await Tour.findByIdAndUpdate(
+            id, 
+            { isArchive: 'Yes' }, 
+            { new: true }
+        );
 
-    const tour = await Tour.findById(id);
-    if (!tour) {
-      return res.status(404).json({ 
-        status: 'error',
-        error: 'Tour not found' 
-      });
+        if (!updatedTour) {
+            return res.status(404).json({ status: 'error', error: 'Tour not found' });
+        }
+
+        res.json({ status: 'ok', data: updatedTour });
+    } catch (err) {
+        res.status(500).json({ status: 'error', error: err.message });
     }
-
-    // Delete associated image file
-    const imagePath = path.join(__dirname, '..', 'uploads', tour.image);
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
-    }
-
-    // Delete tour from database
-    await Tour.findByIdAndDelete(id);
-
-    res.status(200).json({ 
-      status: 'ok', 
-      message: 'Tour deleted successfully' 
-    });
-
-  } catch (error) {
-    console.error('Error deleting tour:', error);
-    res.status(500).json({ 
-      status: 'error',
-      error: error.message || 'Error deleting tour' 
-    });
-  }
 };

@@ -9,7 +9,9 @@ const tourSchema = new mongoose.Schema({
   markup: { type: Number, required: true },
   price: { type: Number, required: true }, 
   inclusions: { type: [String], default: [] },
-  image: { type: String, required: true }
+  image: { type: String, required: true },
+  // Bagong field na may default na "No"
+  isArchive: { type: String, enum: ['Yes', 'No'], default: 'No' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Tour', tourSchema);

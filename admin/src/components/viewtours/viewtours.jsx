@@ -30,7 +30,9 @@ const ViewTours = () => {
                 const result = await response.json();
 
                 if (result.status === 'ok') {
-                    setTours(result.data);
+                    // FILTER: Display lang ang mga tour na may isArchive: "No"
+                    const activeTours = result.data.filter(tour => tour.isArchive === 'No');
+                    setTours(activeTours);
                 } else {
                     setError('Error: ' + (result.error || 'Failed to fetch data.'));
                 }
@@ -45,22 +47,24 @@ const ViewTours = () => {
         fetchTours();
     }, []);
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this tour?')) {
+    const handleArchive = async (id) => {
+        if (window.confirm('Are you sure you want to archive this tour?')) {
             try {
-                const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
-                    method: 'DELETE',
+                const response = await fetch(`${API_BASE_URL}/archive/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' }
                 });
                 const result = await response.json();
                 
                 if (result.status === 'ok') {
+                    // Tanggalin sa state array para mawala sa UI agad
                     setTours(tours.filter(tour => tour._id !== id));
-                    alert('✅ Tour deleted successfully!');
+                    alert('✅ Tour archived successfully!');
                 } else {
-                    alert('❌ Error deleting tour');
+                    alert('❌ Error archiving tour');
                 }
             } catch (err) {
-                console.error('Delete error:', err);
+                console.error('Archive error:', err);
                 alert('❌ Error connecting to server');
             }
         }
@@ -102,7 +106,7 @@ const ViewTours = () => {
                     <header className="viewtours-header">
                         <div className="viewtours-header-left">
                             <h1 className="viewtours-title">TOUR LISTS</h1>
-                            <p className="viewtours-subtitle">Manage your travel packages ({tours.length} total)</p>
+                            <p className="viewtours-subtitle">Manage your active packages ({tours.length} total)</p>
                         </div>
                         <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
                             + Add New Tour
@@ -112,11 +116,8 @@ const ViewTours = () => {
                     {tours.length === 0 ? (
                         <div className="viewtours-empty">
                             <span className="viewtours-empty-icon">📍</span>
-                            <h3>No tours yet</h3>
-                            <p>Start by creating your first tour destination</p>
-                            <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
-                                + Add Tour
-                            </button>
+                            <h3>No active tours</h3>
+                            <p>All tours are archived or none exist.</p>
                         </div>
                     ) : (
                         <div className="viewtours-grid">
@@ -165,9 +166,9 @@ const ViewTours = () => {
                                                 </button>
                                                 <button 
                                                     className="viewtours-btn-action viewtours-btn-action--delete"
-                                                    onClick={() => handleDelete(tour._id)}
+                                                    onClick={() => handleArchive(tour._id)}
                                                 >
-                                                    Delete
+                                                    Archive
                                                 </button>
                                             </div>
                                         </div>
