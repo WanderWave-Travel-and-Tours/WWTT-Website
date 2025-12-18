@@ -19,6 +19,14 @@ const upload = multer({ storage: storage });
 router.post('/login', async (req, res) => {
     const username = sanitize(req.body.username); 
     const password = sanitize(req.body.password);
+    const recaptchaToken = req.body;
+
+    if (!recaptchaToken) {
+        return res.status(400).json({ 
+            status: "error", 
+            message: "reCAPTCHA verification is required." 
+        });
+    }
 
     if (typeof username !== 'string' || typeof password !== 'string') {
         return res.status(400).json({ 
