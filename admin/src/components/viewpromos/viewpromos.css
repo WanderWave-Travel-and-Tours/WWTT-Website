@@ -1,116 +1,163 @@
+/* ================================================= */
+/* GLOBAL WRAPPERS & LAYOUT (vpromos- prefix)       */
+/* ================================================= */
+
 .vpromos-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc;
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    width: 100%;
+    position: relative;
 }
 
 .vpromos-main {
     flex: 1;
-    /* Margin for the open sidebar (280px) */
-    margin-left: 280px; 
-    padding: 40px 48px;
+    margin-left: 300px;
+    padding: 40px 80px;
     font-family: 'Segoe UI', Arial, sans-serif;
-    transition: margin-left 0.3s ease; /* Added transition for smooth change */
+    transition: margin-left 0.3s ease;
+    width: 100%;
 }
 
-/* New style for when the sidebar is collapsed (70px) */
 .vpromos-main--collapsed {
-    margin-left: 70px;
-}
-
-.vpromos-main *,
-.vpromos-main *::before,
-.vpromos-main *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+    margin-left: 90px;
 }
 
 .vpromos-container {
-    max-width: 1200px;
+    max-width: 1320px;
     margin: 0 auto;
+    width: 100%;
 }
 
+/* --- HEADER WITH BACKGROUND IMAGE --- */
 .vpromos-header {
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 32px;
+    justify-content: space-between;
+    min-height: 180px;
+    gap: 24px;
+}
+
+.vpromos-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, 
+        rgba(0, 31, 63, 0.92) 0%, 
+        rgba(0, 31, 63, 0.75) 50%, 
+        rgba(255, 140, 66, 0.3) 100%);
+    z-index: 1;
+}
+
+.vpromos-header-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
 }
 
 .vpromos-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 900;
-    color: #001F3F;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    margin-bottom: 8px;
 }
 
 .vpromos-subtitle {
-    font-size: 14px;
-    color: #64748b;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vpromos-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #FF8C42 0%, transparent 100%);
+    display: inline-block;
 }
 
 .vpromos-btn {
+    position: relative;
+    z-index: 2;
     padding: 14px 28px;
     font-size: 14px;
     font-weight: 700;
     font-family: 'Segoe UI', Arial, sans-serif;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: 0.15s ease;
+    transition: all 0.2s ease;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .vpromos-btn--add {
     color: #fff;
-    background: #FF8C42;
-    border: none;
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
 }
 
 .vpromos-btn--add:hover {
-    background: #e57a35;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
 }
 
+/* --- EMPTY STATE --- */
 .vpromos-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 50vh;
-    gap: 12px;
+    min-height: 50vh;
+    gap: 16px;
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 60px;
-    margin-top: 20px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
 }
 
 .vpromos-empty-icon {
-    font-size: 56px;
+    font-size: 64px;
     margin-bottom: 8px;
 }
 
 .vpromos-empty h3 {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 900;
     color: #001F3F;
 }
 
 .vpromos-empty p {
     color: #64748b;
-    font-size: 14px;
-    margin-bottom: 16px;
+    font-size: 15px;
+    margin-bottom: 20px;
 }
 
+/* --- TABLE WRAPPER & TABLE --- */
 .vpromos-table-wrapper {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    overflow-x: auto; /* Keep auto for responsiveness */
-    /* Add this to contain the sticky pagination */
-    position: relative; 
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
 }
 
 .vpromos-table {
@@ -119,21 +166,21 @@
 }
 
 .vpromos-table thead {
-    background: #001F3F;
+    background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
 }
 
 .vpromos-table th {
-    padding: 16px 20px;
+    padding: 18px 20px;
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
     font-size: 11px;
     font-weight: 900;
     color: #fff;
     text-align: left;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
 }
 
 .vpromos-table td {
-    padding: 16px 20px;
+    padding: 18px 20px;
     font-size: 14px;
     color: #1e293b;
     border-bottom: 1px solid #e2e8f0;
@@ -144,21 +191,25 @@
     border-bottom: none;
 }
 
+.vpromos-table tbody tr {
+    transition: all 0.15s ease;
+}
+
 .vpromos-table tbody tr:hover {
     background: #f8fafc;
 }
 
 .vpromos-code {
     display: inline-block;
-    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-family: 'Courier New', monospace;
     font-size: 13px;
-    font-weight: 900;
+    font-weight: 700;
     color: #001F3F;
-    background: #f1f5f9;
-    padding: 6px 12px;
-    border-radius: 4px;
-    letter-spacing: 1px;
-    border: 2px dashed #e2e8f0;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    padding: 8px 14px;
+    border-radius: 6px;
+    letter-spacing: 1.5px;
+    border: 2px dashed #cbd5e1;
 }
 
 .vpromos-discount {
@@ -180,11 +231,12 @@
     width: 16px;
     height: 16px;
     color: #94a3b8;
+    flex-shrink: 0;
 }
 
 .vpromos-status {
     display: inline-block;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 700;
@@ -207,204 +259,170 @@
 .vpromos-desc {
     color: #64748b;
     font-size: 13px;
-    max-width: 200px;
+    max-width: 250px;
     display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.5;
 }
 
+/* --- ACTION BUTTONS --- */
 .vpromos-actions {
     display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 .vpromos-action-btn {
     padding: 8px 14px;
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 600;
     font-family: 'Segoe UI', Arial, sans-serif;
     border-radius: 6px;
     cursor: pointer;
-    transition: 0.15s ease;
-    border: none;
-}
-
-.vpromos-action-btn--edit {
-    color: #fff;
-    background: #001F3F;
-}
-
-.vpromos-action-btn--edit:hover {
-    background: #003366;
-}
-
-.vpromos-action-btn--delete {
-    color: #dc2626;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-}
-
-.vpromos-action-btn--delete:hover {
-    background: #dc2626;
-    color: #fff;
-    border-color: #dc2626;
-}
-
-.vpromos-stats {
-    display: flex;
-    gap: 16px;
-    margin-top: 24px;
-}
-
-.vpromos-stat {
-    flex: 1;
-    background: #fff;
+    transition: all 0.2s ease;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    background: white;
 }
 
-.vpromos-stat strong {
-    display: block;
-    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 28px;
-    font-weight: 900;
-    color: #FF8C42;
-    margin-bottom: 4px;
+/* VIEW BUTTON - White default, Navy on hover */
+.vpromos-action-btn--view {
+    color: #0f172a;
+    border-color: #e2e8f0;
 }
 
-.vpromos-stat span {
-    font-size: 12px;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.vpromos-action-btn--view:hover {
+    background: #0f172a;
+    color: white;
+    border-color: #0f172a;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
 }
 
-@media (max-width: 1024px) {
+/* ARCHIVE BUTTON - White always, no hover background change */
+.vpromos-action-btn--archive {
+    color: #0f172a;
+    border-color: #e2e8f0;
+}
+
+.vpromos-action-btn--archive:hover {
+    background: white;
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ================================================= */
+/* RESPONSIVENESS                                     */
+/* ================================================= */
+
+@media (max-width: 1100px) {
     .vpromos-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 20px;
+        gap: 16px;
+        padding: 40px;
+    }
+
+    .vpromos-btn--add {
+        width: 100%;
+        text-align: center;
     }
 
     .vpromos-table-wrapper {
-        /* overflow-x: auto; - Already applied above */
+        overflow-x: auto;
     }
 
     .vpromos-table {
-        min-width: 800px;
-    }
-    
-    /* Ensure the media query respects the collapsed state when the screen is wide enough to show the sidebar */
-    .vpromos-main:not(.vpromos-main--collapsed) {
-        margin-left: 280px;
+        min-width: 1000px;
     }
 }
 
-/* Original rule for collapsed sidebar at 900px breakpoint */
-@media (max-width: 900px) {
-    .vpromos-main {
-        margin-left: 70px; /* Applies to both collapsed and open states below 900px */
-        padding: 24px;
+@media (max-width: 768px) {
+    .vpromos-main, .vpromos-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
     }
-    /* Remove the specific collapsed class rule here as 70px is the desired behavior below 900px */
-    .vpromos-main--collapsed {
-        margin-left: 70px;
+
+    .vpromos-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .vpromos-title {
+        font-size: 2rem;
+    }
+
+    .vpromos-action-btn {
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+
+    .vpromos-action-btn svg {
+        width: 14px;
+        height: 14px;
     }
 }
 
 @media (max-width: 640px) {
-    .vpromos-main {
-        padding: 16px;
-    }
-
     .vpromos-title {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
+        letter-spacing: 2px;
     }
 
-    .vpromos-stats {
-        flex-direction: column;
+    .vpromos-subtitle {
+        font-size: 13px;
+    }
+
+    .vpromos-header {
+        padding: 30px 24px;
+    }
+
+    .vpromos-empty {
+        padding: 40px 24px;
+    }
+
+    .vpromos-actions {
+        gap: 6px;
+    }
+
+    .vpromos-action-btn {
+        padding: 6px 10px;
+        font-size: 11px;
     }
 }
 
-/* --- PAGINATION STYLES (New) --- */
-.pagination-nav {
-    /* Aligns with the table container's style */
-    margin-top: 0;
-    padding: 16px 24px;
-    background-color: white;
-    border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
-    position: sticky; 
-    bottom: 0;
-    z-index: 5;
-    
-    display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .vpromos-table-wrapper (10px) */
-    border-radius: 0 0 10px 10px; 
-}
+@media (max-width: 480px) {
+    .vpromos-title {
+        font-size: 1.4rem;
+    }
 
-.pagination-list {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
-    align-items: center;
-}
+    .vpromos-header {
+        padding: 28px 20px;
+    }
 
-.pagination-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
-    transition: all 0.2s;
-    min-width: 40px; 
-    text-align: center;
-    /* Keeping original font stack from the file, adjusting the one provided */
-    font-family: 'Segoe UI', Arial, sans-serif; 
-}
+    .vpromos-btn {
+        padding: 12px 20px;
+        font-size: 12px;
+    }
 
-.pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
-    border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
-}
+    .vpromos-actions {
+        gap: 4px;
+    }
 
-.pagination-btn.active {
-    /* Using the primary dark color for consistency: #001F3F */
-    background-color: #001F3F; 
-    border-color: #001F3F;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(0, 31, 63, 0.2);
-}
+    .vpromos-action-btn span {
+        display: none;
+    }
 
-.pagination-btn.active:hover {
-    background-color: #003366; /* Slightly darker primary on hover */
-    border-color: #003366;
-    transform: translateY(-1px);
-}
+    .vpromos-action-btn {
+        padding: 8px;
+        min-width: 36px;
+        justify-content: center;
+    }
 
-.pagination-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background-color: #f8fafc;
-}
-
-/* For previous/next buttons */
-.pagination-btn:first-child,
-.pagination-btn:last-child {
-    font-weight: 700;
-    text-transform: uppercase;
+    .vpromos-action-btn svg {
+        width: 16px;
+        height: 16px;
+    }
 }
