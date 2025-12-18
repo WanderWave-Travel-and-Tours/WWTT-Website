@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, Users, Search, TrendingUp, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
   ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, Trash2, RotateCcw, Package, Wrench, List,
-    ArrowUpDown
+  ArrowUpDown
 } from 'lucide-react';
 import './Archive.css';
 import Sidebar from '../sidebar/sidebar';
@@ -16,7 +16,6 @@ import PaginationControls from '../booking/PaginationControls';
 import { fetchArchivedBookings, restoreBooking } from './archiveFunctions/bookingService';
 import { fetchArchivedPackages, restorePackage } from './archiveFunctions/packageService';
 import { fetchArchivedTours, restoreTour } from './archiveFunctions/tourService';
-// Idinagdag na testimonial service
 import { fetchArchivedTestimonials, restoreTestimonial } from './archiveFunctions/testimonialService';
 
 const ARCHIVE_IMAGES = {
@@ -88,7 +87,7 @@ const ArchiveComponent = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
-  const [sortDirection, setSortDirection] = useState('asc'); 
+  const [sortDirection, setSortDirection] = useState('desc'); 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
   const handleSort = () => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -118,7 +117,7 @@ const ArchiveComponent = () => {
         fetchArchivedBookings(),
         fetchArchivedPackages(),
         fetchArchivedTours(),
-        fetchArchivedTestimonials() // Idinagdag ang pag-fetch
+        fetchArchivedTestimonials()
       ]);
       
       const bookingsData = results[0].status === 'fulfilled' ? results[0].value : [];
@@ -126,24 +125,29 @@ const ArchiveComponent = () => {
       const toursData = results[2].status === 'fulfilled' ? results[2].value : [];
       const testimonialsData = results[3].status === 'fulfilled' ? results[3].value : [];
 
+      // Pagsamahin lahat ng data sources
       const combinedData = [...bookingsData, ...packagesData, ...toursData, ...testimonialsData];
       
+      // I-filter out ang mga lampas na sa retention policy
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
 
+      // Mapping logic: Sinisiguro na lilitaw ang itemName kahit title o fullName ang gamit sa DB
       const formatted = nonExpiredData.map((item, index) => {
         const archiveNumber = nonExpiredData.length - index;
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
-        
+        const dateRaw = item.archivedAt || item.updatedAt || item.createdAt || new Date().toISOString();
+
         return {
           id: archiveId,
-          mongoId: item._id,
+          mongoId: item._id || item.mongoId,
           archiveNumber: archiveNumber,
-          itemName: item.title || item.name || item.fullName || 'No Name', 
-          type: item.type || 'Booking', 
-          dateArchived: new Date(item.archivedAt || item.updatedAt).toLocaleDateString('en-CA'),
-          archivedAtISO: item.archivedAt || item.updatedAt,
-          daysRemaining: getDaysRemaining(item.archivedAt || item.updatedAt),
-          reference: item.referenceNumber || item.slug || item.destination || 'N/A',
+          // Support para sa title (Tours) at fullName (Bookings)
+          itemName: item.itemName || item.title || item.fullName || item.name || 'Unnamed Item', 
+          type: item.type || (item.title ? 'Tour' : 'Booking'), 
+          dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
+          archivedAtISO: dateRaw,
+          daysRemaining: getDaysRemaining(dateRaw),
+          reference: item.reference || item.referenceNumber || item.slug || item._id?.substring(0, 8) || 'N/A',
           status: item.status || 'Archived', 
           rawData: item
         };
@@ -162,7 +166,7 @@ const ArchiveComponent = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = archiveItems;
+    let filtered = [...archiveItems];
     const lowerSearchTerm = searchTerm.toLowerCase();
     
     if (filterType === 'Archived List') {
@@ -188,12 +192,16 @@ const ArchiveComponent = () => {
       );
     }
     
-    const sorted = [...filtered].sort((a, b) => sortDirection === 'asc' ? a.archiveNumber - b.archiveNumber : b.archiveNumber - a.archiveNumber);
+    const sorted = [...filtered].sort((a, b) => {
+        const dateA = new Date(a.archivedAtISO);
+        const dateB = new Date(b.archivedAtISO);
+        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
     setFilteredArchiveItems(sorted);
     setCurrentPage(1); 
   }, [searchTerm, filterType, filterSubtype, filterListSubtype, filterUserSubtype, archiveItems, sortDirection]);
 
-  // Restore Function - Pinagana na ang Testimonial case
   const handleRestore = async (item) => { 
     if (!window.confirm(`Are you sure you want to restore ${item.itemName}?`)) return;
     setActionLoading(true);
@@ -202,7 +210,7 @@ const ArchiveComponent = () => {
       if (item.type === 'Package') restored = await restorePackage(item.mongoId);
       else if (item.type === 'Booking') restored = await restoreBooking(item.mongoId);
       else if (item.type === 'Tour') restored = await restoreTour(item.mongoId);
-      else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId); // Dinagdag
+      else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId);
       
       if (restored) {
         setArchiveItems(prev => prev.filter(i => i.mongoId !== item.mongoId));
@@ -210,7 +218,7 @@ const ArchiveComponent = () => {
         setSelectedItem(null);
         alert(`Successfully restored: ${item.itemName}`);
       } else {
-        throw new Error('Restore operation failed on the server.');
+        throw new Error('Restore operation failed.');
       }
     } catch (error) {
       alert(`Error: ${error.message}`);
@@ -229,9 +237,9 @@ const ArchiveComponent = () => {
         if (item.type === 'Package') await restorePackage(item.mongoId);
         else if (item.type === 'Booking') await restoreBooking(item.mongoId);
         else if (item.type === 'Tour') await restoreTour(item.mongoId);
-        else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId); // Dinagdag
+        else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
       }
-      fetchArchiveItems();
+      await fetchArchiveItems();
       alert('Selected items have been restored.');
     } catch (error) {
       alert('An error occurred during bulk restore.');
@@ -338,4 +346,4 @@ const ArchiveComponent = () => {
   );
 };
 
-export default ArchiveComponent;
+export default ArchiveComponent;  

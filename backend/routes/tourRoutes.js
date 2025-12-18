@@ -10,12 +10,11 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); 
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
-// File filter to only accept images
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -31,7 +30,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ 
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 } 
 });
 
 // Routes
@@ -39,6 +38,8 @@ router.post('/add', upload.single('image'), tourController.createTour);
 router.get('/all', tourController.getAllTours);
 router.get('/:id', tourController.getTourById);
 router.put('/update/:id', upload.single('image'), tourController.updateTour);
-router.delete('/delete/:id', tourController.deleteTour);
 
-module.exports = router;
+// PINALITAN: Mula .delete('/delete/:id') ginawang .patch('/archive/:id')
+router.patch('/archive/:id', tourController.archiveTour);
+
+module.exports = router;  
