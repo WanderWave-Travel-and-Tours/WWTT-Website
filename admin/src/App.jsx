@@ -106,6 +106,8 @@ function App() {
         <Route path="/view-hotels" element={<ViewHotels />} />
 
         {/* --- SERVICE MANAGEMENT ROUTES --- */}
+        <Route path="/add-service" element={<AddService />} />
+        <Route path="/view-services" element={<ViewServices />} />
         <Route path="/services/visa" element={<VisaProcessing />} />
         <Route path="/services/psa" element={<PSASerbilis />} />
         <Route path="/services/cenomar" element={<CenomarRequest />} />

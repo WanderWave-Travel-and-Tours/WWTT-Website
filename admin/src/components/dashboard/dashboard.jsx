@@ -522,11 +522,12 @@ const Dashboard = () => {
             />
 
             <TopPackages packages={topPackages} />
-
+            {/*}
             <QuickActions navigate={navigate} />
+            */}
           </div>
-
-          <FooterStats stats={stats} />
+{/*}
+          <FooterStats stats={stats} />*/}
         </div>
       </main>
     </div>

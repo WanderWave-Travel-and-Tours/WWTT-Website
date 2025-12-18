@@ -4,6 +4,15 @@
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; overflow-x: hidden; }
 
+.psa-btn-walkin {
+  background-color: #0f172a; /* Dark Blue from Visa theme */
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+}
+
+.psa-btn-walkin:hover {
+  background-color: #1e293b;
+}
+
 /* --- MAIN LAYOUT --- */
 .psa-page {
   font-family: 'Plus Jakarta Sans', sans-serif;
