@@ -3,6 +3,8 @@ const AdminModel = require('../models/admin');
 const multer = require('multer');
 const path = require('path');
 const bcrypt = require('bcrypt');
+const sanitize = require('mongo-sanitize');
+const jwt = require('jsonwebtoken'); 
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -15,7 +17,15 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body; 
+    const username = sanitize(req.body.username); 
+    const password = sanitize(req.body.password);
+
+    if (typeof username !== 'string' || typeof password !== 'string') {
+        return res.status(400).json({ 
+            status: "error", 
+            message: "Invalid input types. Credentials must be strings." 
+        });
+    }
 
     try {
         const admin = await AdminModel.findOne({ username });
@@ -27,9 +37,17 @@ router.post('/login', async (req, res) => {
         const isMatch = await admin.comparePassword(password); 
 
         if (isMatch) {
+
+            const token = jwt.sign(
+                { id: admin._id, username: admin.username, role: 'admin' }, 
+                'wanderwaveph_admin25', 
+                { expiresIn: '1h' }
+            );
+
             res.json({ 
                 status: "ok", 
                 message: "Login Success!",
+                token: token, 
                 data: {
                     username: admin.username,
                     businessName: admin.businessName,

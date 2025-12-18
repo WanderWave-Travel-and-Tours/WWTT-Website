@@ -4,6 +4,7 @@ import './userDashboard.css';
 import TopNavbar from './TopNavbar';
 import Sidebar from './Sidebar';
 import ApplicationDetails from './ApplicationDetails';
+import AccountSettings from './AccountSettings'; 
 import * as Icons from './Icons'; 
 
 const UserDashboard = ({ user, onLogout }) => {
@@ -13,8 +14,7 @@ const UserDashboard = ({ user, onLogout }) => {
     const [visaDetails, setVisaDetails] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    
-    // --- HISTORY TRACKING (Critical for Sidebar Logic) ---
+    const [currentView, setCurrentView] = useState('applications'); 
     const [viewedHistory, setViewedHistory] = useState({});
 
     // File Upload State
@@ -27,12 +27,10 @@ const UserDashboard = ({ user, onLogout }) => {
         if (user) {
             localStorage.setItem('wanderwave_user', JSON.stringify(user));
         }
-        // Load history form local storage
         const storedHistory = JSON.parse(localStorage.getItem('wanderwave_viewed_history') || '{}');
         setViewedHistory(storedHistory);
     }, [user]);
 
-    // --- HELPER: Update History State ---
     const updateHistory = (inquiryId, updates) => {
         const currentRecord = viewedHistory[inquiryId] || {};
         const newRecord = { 
@@ -46,45 +44,38 @@ const UserDashboard = ({ user, onLogout }) => {
         localStorage.setItem('wanderwave_viewed_history', JSON.stringify(newHistory));
     };
 
-    // --- HELPER: FETCH INQUIRIES & BOOKINGS ---
     const fetchUserData = async () => {
         if (!user?.email) return;
 
         try {
-            // 1. Fetch Inquiries (Services)
             const inquiriesPromise = fetch(`http://localhost:5000/api/inquiries/email/${user.email}`).then(res => res.json());
             
-            // 2. Fetch Bookings (Flights/Packages)
             const bookingsPromise = fetch(`http://localhost:5000/api/bookings/user/${user.email}`).then(res => res.json());
 
             const [inquiriesData, bookingsData] = await Promise.all([inquiriesPromise, bookingsPromise]);
             
             let combinedData = [];
 
-            // Process Inquiries
             if (inquiriesData.success) {
                 combinedData = [...combinedData, ...inquiriesData.data];
             }
 
-            // Process Bookings & Map to Inquiry Format for Sidebar
             if (bookingsData.success) {
                 const formattedBookings = bookingsData.data.map(booking => ({
                     ...booking,
-                    serviceName: booking.packageName, // Use package name as service name
-                    inquiryType: 'BOOKING', // Tag explicitly as booking for filter
-                    status: booking.status ? booking.status.toUpperCase() : 'PENDING', // Ensure UpperCase for Sidebar logic
-                    estimatedPrice: booking.totalAmount, // Map price
+                    serviceName: booking.packageName, 
+                    inquiryType: 'BOOKING', 
+                    status: booking.status ? booking.status.toUpperCase() : 'PENDING', 
+                    estimatedPrice: booking.totalAmount, 
                     message: booking.message || `Booking for ${booking.packageName}`
                 }));
                 combinedData = [...combinedData, ...formattedBookings];
             }
 
-            // Sort by Date (Newest first)
             combinedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
             setInquiries(combinedData);
 
-            // Keep selected inquiry in sync with updates
             if (selectedInquiry) {
                 const updatedSelected = combinedData.find(i => i._id === selectedInquiry._id);
                 if (updatedSelected) setSelectedInquiry(updatedSelected);
@@ -97,17 +88,15 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     };
 
-    // --- INITIAL LOAD ---
     useEffect(() => {
         if (user?.email) {
             setIsLoading(true);
             fetchUserData();
-            const interval = setInterval(fetchUserData, 30000); // Auto-refresh every 30s
+            const interval = setInterval(fetchUserData, 30000); 
             return () => clearInterval(interval);
         }
     }, [user]);
 
-    // ... (Payment Verification Logic) ...
     useEffect(() => {
         const queryParams = new URLSearchParams(window.location.search);
         const isSuccess = queryParams.get('success');
@@ -131,7 +120,6 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     }, []);
 
-    // ... (Visa Details Fetcher) ...
     useEffect(() => {
         const fetchVisaDetails = async () => {
             if (selectedInquiry?.visaId) {
@@ -154,16 +142,12 @@ const UserDashboard = ({ user, onLogout }) => {
         setSelectedInquiry(inquiry);
         setMobileMenuOpen(false); 
         
-        // Mark as "Seen" (adds to local history but doesn't complete it yet)
         if (inquiry.status !== 'COMPLETED') {
             updateHistory(inquiry._id, { status: inquiry.status });
         }
     };
 
-    // --- ACTION: Handle Download (MOVES TO HISTORY) ---
     const handleDownloadAction = (inquiryId) => {
-        // This sets 'downloaded: true'. 
-        // Sidebar checks this flag. If COMPLETED + DOWNLOADED = HISTORY.
         updateHistory(inquiryId, { downloaded: true, status: 'COMPLETED' });
     };
 
@@ -194,7 +178,6 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     };
 
-    // --- File Handling ---
     const handleFiles = async (files, section) => { 
         setIsUploading(true);
         for (let i = 0; i <= 100; i += 20) {
@@ -249,23 +232,32 @@ const UserDashboard = ({ user, onLogout }) => {
             <TopNavbar 
                 user={user} 
                 onLogout={handleLogout}
+                onNavigateSettings={() => {
+                    setCurrentView('settings');
+                    setSelectedInquiry(null); 
+                }}
+                onNavigateHome={() => setCurrentView('applications')}
                 mobileMenuOpen={mobileMenuOpen} 
                 setMobileMenuOpen={setMobileMenuOpen} 
             />
-            
+                        
             <div className="ud-layout-body">
                 <Sidebar 
                     inquiries={inquiries} 
                     selectedInquiry={selectedInquiry} 
-                    onSelectInquiry={handleSelectInquiry} 
+                    onSelectInquiry={(inquiry) => {
+                        handleSelectInquiry(inquiry);
+                        setCurrentView('applications'); 
+                    }}
                     mobileMenuOpen={mobileMenuOpen} 
                     isLoading={isLoading}
-                    // Pass viewedHistory so Sidebar knows what has been downloaded
                     userInteractions={viewedHistory} 
                 />
 
                 <main className="ud-main-content">
-                    {selectedInquiry ? (
+                    {currentView === 'settings' ? (
+                    <AccountSettings user={user} />
+                    ) : selectedInquiry ? (
                         <ApplicationDetails 
                             inquiry={selectedInquiry}
                             visaDetails={visaDetails}
@@ -277,7 +269,6 @@ const UserDashboard = ({ user, onLogout }) => {
                             submitDocuments={submitDocuments}
                             isUploading={isUploading}
                             uploadProgress={uploadProgress}
-                            // Pass the trigger to Details
                             onDownloadComplete={handleDownloadAction}
                         />
                     ) : (
