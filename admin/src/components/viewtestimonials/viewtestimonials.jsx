@@ -31,7 +31,7 @@ const ViewTestimonials = () => {
 
     // MODIFIED: handleDelete ay naging handleArchive na ngayon
     const handleArchive = async (id, name) => {
-        if (window.confirm(`Sigurado ka bang gusto mong i-archive ang testimonial ni ${name}?`)) {
+        if (window.confirm(`Are you sure you want to archive the testimonial of ${name}?`)) {
             try {
                 // Tatawag sa PATCH route na ginawa natin sa itaas
                 const response = await fetch(`http://localhost:5000/api/testimonials/${id}`, {
@@ -47,9 +47,9 @@ const ViewTestimonials = () => {
                     setTestimonials(prev => prev.map(t => 
                         t._id === id ? { ...t, isArchive: "Yes" } : t
                     ));
-                    alert(`Ang testimonial ni ${name} ay matagumpay na nai-archive.`);
+                    alert(`The testimonial of ${name} has been successfully archived.`);
                 } else {
-                    alert("Nagkaroon ng error sa pag-archive.");
+                    alert("Error archiving testimonial");
                 }
             } catch (error) {
                 console.error("Error archiving testimonial:", error);

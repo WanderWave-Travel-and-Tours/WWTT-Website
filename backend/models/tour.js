@@ -14,4 +14,4 @@ const tourSchema = new mongoose.Schema({
   isArchive: { type: String, enum: ['Yes', 'No'], default: 'No' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Tour', tourSchema);
+module.exports = mongoose.model('Tour', tourSchema); 

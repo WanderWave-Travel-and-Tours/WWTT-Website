@@ -42,4 +42,4 @@ router.put('/update/:id', upload.single('image'), tourController.updateTour);
 // PINALITAN: Mula .delete('/delete/:id') ginawang .patch('/archive/:id')
 router.patch('/archive/:id', tourController.archiveTour);
 
-module.exports = router;
+module.exports = router;  

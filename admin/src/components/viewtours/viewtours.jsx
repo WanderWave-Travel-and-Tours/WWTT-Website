@@ -183,4 +183,4 @@ const ViewTours = () => {
     );
 };
 
-export default ViewTours;
+export default ViewTours; 
