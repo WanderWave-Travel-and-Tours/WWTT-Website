@@ -330,16 +330,12 @@
 }
 
 .pkg-btn--delete {
-    color: #dc2626;
-    background: #fef2f2;
+    background: #dc2626;
+    color: #fef2f2;
     border: 1px solid #fecaca;
 }
 
-.pkg-btn--delete:hover {
-    background: #dc2626;
-    color: #fff;
-    border-color: #dc2626;
-}
+
 
 @media (max-width: 1024px) {
     .packages-header {

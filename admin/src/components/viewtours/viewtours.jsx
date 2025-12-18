@@ -18,6 +18,7 @@ const ViewTours = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+    // Check if admin is logged in
     useEffect(() => {
         const isLoggedIn = localStorage.getItem('adminToken');
         if (!isLoggedIn) {
@@ -25,34 +26,88 @@ const ViewTours = () => {
         }
     }, [navigate]);
 
-    useEffect(() => {
-        const fetchTours = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/all`);
-                const result = await response.json();
+    // Fetch all active tours (isArchive: "No")
+    const fetchTours = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_BASE_URL}/all`);
+            const result = await response.json();
 
-                if (result.status === 'ok') {
-                    setTours(result.data);
-                } else {
-                    setError('Error: ' + (result.error || 'Failed to fetch data.'));
-                }
-            } catch (err) {
-                console.error('Fetch error:', err);
-                setError('Network error: Could not connect to the server.');
-            } finally {
-                setLoading(false);
+            if (result.status === 'ok') {
+                setTours(result.data);
+            } else {
+                setError('Error: ' + (result.error || 'Failed to fetch data.'));
             }
-        };
+        } catch (err) {
+            console.error('Fetch error:', err);
+            setError('Network error: Could not connect to the server.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchTours();
     }, []);
+
+    // Archive Tour
+    const handleArchive = async (id) => {
+        if (!window.confirm('Are you sure you want to archive this tour? It will no longer appear in the list.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/archive/${id}`, {
+                method: 'PATCH',
+            });
+            const result = await response.json();
+
+            if (response.ok && result.status === 'ok') {
+                // Remove the archived tour from state (so it disappears immediately)
+                setTours(prevTours => prevTours.filter(tour => tour._id !== id));
+                alert('Tour archived successfully!');
+            } else {
+                alert('Error archiving tour: ' + (result.error || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error('Archive error:', err);
+            alert('Failed to archive tour. Check your connection.');
+        }
+    };
+
+    // Delete Tour (permanent)
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to PERMANENTLY delete this tour? This cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
+                method: 'DELETE',
+            });
+            const result = await response.json();
+
+            if (response.ok && result.status === 'ok') {
+                setTours(prevTours => prevTours.filter(tour => tour._id !== id));
+                alert('Tour deleted permanently!');
+            } else {
+                alert('Error deleting tour: ' + (result.error || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error('Delete error:', err);
+            alert('Failed to delete tour.');
+        }
+    };
+
+    // Placeholder for Edit (pwede mo i-route sa edit page later)
+    const handleEdit = (id) => {
+        navigate(`/edit-tour/${id}`); // Example route, adjust as needed
+    };
 
     if (loading) {
         return (
             <div className="viewtours-page">
-                {/* Sidebar updated */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* main updated with collapsed class */}
                 <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-loader">
                         <div className="viewtours-spinner"></div>
@@ -66,9 +121,7 @@ const ViewTours = () => {
     if (error) {
         return (
             <div className="viewtours-page">
-                {/* Sidebar updated */}
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                {/* main updated with collapsed class */}
                 <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                     <div className="viewtours-error">
                         <span className="viewtours-error-icon">⚠️</span>
@@ -81,15 +134,13 @@ const ViewTours = () => {
 
     return (
         <div className="viewtours-page">
-            {/* Sidebar updated */}
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            {/* main updated with collapsed class */}
             <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
                 <div className="viewtours-container">
                     <header className="viewtours-header">
                         <div className="viewtours-header-left">
                             <h1 className="viewtours-title">TOUR LISTS</h1>
-                            <p className="viewtours-subtitle">Manage your travel packages ({tours.length} total)</p>
+                            <p className="viewtours-subtitle">Manage your travel packages ({tours.length} active)</p>
                         </div>
                         <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
                             + Add New Package
@@ -99,7 +150,7 @@ const ViewTours = () => {
                     {tours.length === 0 ? (
                         <div className="viewtours-empty">
                             <span className="viewtours-empty-icon">📍</span>
-                            <h3>No tours yet</h3>
+                            <h3>No active tours</h3>
                             <p>Start by creating your first tour destination</p>
                             <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
                                 + Add Tour
@@ -144,10 +195,22 @@ const ViewTours = () => {
                                             </div>
                                             
                                             <div className="viewtours-actions">
-                                                <button className="viewtours-btn-action viewtours-btn-action--edit">
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--edit"
+                                                    onClick={() => handleEdit(tour._id)}
+                                                >
                                                     Edit
                                                 </button>
-                                                <button className="viewtours-btn-action viewtours-btn-action--delete">
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--archive"
+                                                    onClick={() => handleArchive(tour._id)}
+                                                >
+                                                    Archive
+                                                </button>
+                                                <button 
+                                                    className="viewtours-btn-action viewtours-btn-action--delete"
+                                                    onClick={() => handleDelete(tour._id)}
+                                                >
                                                     Delete
                                                 </button>
                                             </div>
@@ -163,4 +226,4 @@ const ViewTours = () => {
     );
 };
 
-export default ViewTours;
+export default ViewTours; 

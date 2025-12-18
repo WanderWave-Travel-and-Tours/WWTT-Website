@@ -16,7 +16,9 @@ const PackageSchema = new mongoose.Schema({
     category: { type: String, enum: ['Local', 'International', 'Internation Tour'], default: 'Local' },
     image: { type: String },
     inclusions: [{ type: String }],
-    itinerary: [ItineraryItemSchema] 
+    itinerary: [ItineraryItemSchema],
+    // Eto ang default definition
+    isArchive: { type: String, default: 'No' } 
 });
 
 PackageSchema.pre('save', function(next) {
