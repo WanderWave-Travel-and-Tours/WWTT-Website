@@ -34,10 +34,15 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
+            // Kinukuha ang lahat ng posters mula sa backend
             const response = await fetch('http://localhost:5000/api/posters');
             if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
-            setPosters(data);
+            
+            // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
+            const nonArchivedPosters = data.filter(poster => poster.isArchive === "No");
+            setPosters(nonArchivedPosters);
+            
             setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching posters:', error);
@@ -49,11 +54,16 @@ const ViewPoster = () => {
     const handleArchive = async (id, title) => {
         if (window.confirm(`Are you sure you want to archive "${title}"?`)) {
             try {
-                const response = await fetch(`http://localhost:5000/api/posters/${id}`, { 
-                    method: 'DELETE' 
+                // UPDATE: Binago ang endpoint patungong /status at method patungong PUT
+                // Pinapasa natin ang { isArchive: 'Yes' } para i-update ang field sa database
+                const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, { 
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isArchive: 'Yes' }) 
                 });
 
                 if (response.ok) {
+                    // Alisin sa UI ang poster na na-archive na para mawala sa table
                     const updatedPosters = posters.filter(poster => poster._id !== id);
                     setPosters(updatedPosters);
                     alert('Poster archived successfully');
@@ -62,6 +72,9 @@ const ViewPoster = () => {
                     if (currentPage > maxPage && maxPage > 0) {
                         setCurrentPage(maxPage);
                     }
+                    
+                    // Isara ang modal kung ito ay nakabukas
+                    if (showDetailModal) setShowDetailModal(false);
                 } else {
                     alert('Failed to archive poster');
                 }
@@ -111,7 +124,7 @@ const ViewPoster = () => {
         });
     };
 
-    // Filter and search logic
+    // Filter at search logic para sa table
     const filteredPosters = posters.filter(poster => {
         const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === 'ALL' || poster.status === filterStatus;
@@ -144,7 +157,6 @@ const ViewPoster = () => {
                         </button>
                     </header>
 
-                    {/* POSTER FILTERS */}
                     <PosterFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}

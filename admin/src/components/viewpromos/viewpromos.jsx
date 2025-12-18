@@ -252,4 +252,4 @@ const ViewPromos = () => {
     );
 };
 
-export default ViewPromos;
+export default ViewPromos; 

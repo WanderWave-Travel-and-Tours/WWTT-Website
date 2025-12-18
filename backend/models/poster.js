@@ -25,6 +25,12 @@ const posterSchema = new mongoose.Schema({
         type: String,
         enum: ['Active', 'Inactive', 'Scheduled'],
         default: 'Active'
+    },
+    // New field added here
+    isArchive: {
+        type: String,
+        enum: ['No', 'Yes'],
+        default: 'No'
     }
 }, {
     timestamps: true

@@ -1,8 +1,11 @@
 const Poster = require('../models/poster');
+const fs = require('fs');
+const path = require('path');
 
+// Magdagdag ng bagong poster
 const addPoster = async (req, res) => {
     try {
-        const { title, description, startDate, endDate, status } = req.body;
+        const { title, description, startDate, endDate, status, isArchive } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'Please upload an image.' });
@@ -16,11 +19,11 @@ const addPoster = async (req, res) => {
             imageUrl, 
             startDate,
             endDate,
-            status
+            status,
+            isArchive: isArchive || 'No'
         });
 
         await newPoster.save();
-
         res.status(201).json({ message: 'Poster added successfully!', poster: newPoster });
 
     } catch (error) {
@@ -29,6 +32,7 @@ const addPoster = async (req, res) => {
     }
 };
 
+// Kunin ang lahat ng posters (Gagamitin sa Archive fetching)
 const getAllPosters = async (req, res) => {
     try {
         const posters = await Poster.find().sort({ createdAt: -1 });
@@ -38,20 +42,18 @@ const getAllPosters = async (req, res) => {
     }
 };
 
+// Kunin ang mga active at hindi naka-archive
 const getActivePosters = async (req, res) => {
     try {
-        const activePosters = await Poster.find({ status: 'Active' }).select('imageUrl');
-        const urls = activePosters.map(p => p.imageUrl);
-        res.status(200).json(urls);
+        const posters = await Poster.find({ status: 'Active', isArchive: 'No' }).sort({ createdAt: -1 });
+        res.status(200).json(posters);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
 };
 
-const fs = require('fs');
-const path = require('path');
-
-const deletePosterFixed = async (req, res) => {
+// Burahin ang poster (Permanent)
+const deletePoster = async (req, res) => {
     try {
         const poster = await Poster.findById(req.params.id);
         if (!poster) return res.status(404).json({ message: 'Poster not found' });
@@ -68,12 +70,26 @@ const deletePosterFixed = async (req, res) => {
     }
 };
 
-const updatePosterStatusFixed = async (req, res) => {
+// I-update ang Status o Archive status (Gagamitin sa Restore)
+const updatePosterStatus = async (req, res) => {
     try {
-        const { status } = req.body;
-        const poster = await Poster.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        const { status, isArchive } = req.body;
+        const updateData = {};
+        
+        if (status) updateData.status = status;
+        if (isArchive) updateData.isArchive = isArchive;
+
+        const poster = await Poster.findByIdAndUpdate(
+            req.params.id, 
+            updateData, 
+            { new: true }
+        );
+
+        if (!poster) return res.status(404).json({ message: 'Poster not found' });
+        
         res.status(200).json(poster);
     } catch (error) {
+        console.error('Error updating poster status:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -82,6 +98,6 @@ module.exports = {
     addPoster,
     getAllPosters,
     getActivePosters,
-    deletePoster: deletePosterFixed,
-    updatePosterStatus: updatePosterStatusFixed
+    deletePoster,
+    updatePosterStatus
 };
