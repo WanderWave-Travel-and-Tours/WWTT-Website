@@ -4,9 +4,6 @@ import toast, { Toaster } from 'react-hot-toast'; // Tama na ang import
 import './userLogin.css';
 // Import icons (assuming you have a dependency like lucide-react or similar)
 import { Mail, Key, User, Lock, CheckCircle, XCircle } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5000/api/auth';
-
 // --- Custom Toast Styles (based on your request) ---
 const customErrorToastStyle = {
     style: { border: '1px solid #ef4444', color: '#ef4444' },

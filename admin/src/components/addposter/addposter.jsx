@@ -1,41 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, Image as ImageIcon } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast'; // Import toast and Toaster
 import './addposter.css';
 import Sidebar from '../sidebar/sidebar';
 
-// Helper function to format a date object to YYYY-MM-DD string
-const formatDate = (date) => {
-    const d = new Date(date);
-    let month = '' + (d.getMonth() + 1);
-    let day = '' + d.getDate();
-    const year = d.getFullYear();
-
-    if (month.length < 2) 
-        month = '0' + month;
-    if (day.length < 2) 
-        day = '0' + day;
-
-    return [year, month, day].join('-');
-};
-
-// Helper function to get a date a certain number of days from a reference date
-const addDays = (date, days) => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-};
-
-
 const AddPoster = () => {
-    // --- DATE RESTRICTIONS LOGIC START ---
-    // Minimum date: Tomorrow's date (Today + 1 day)
-    const minStartDate = useMemo(() => formatDate(addDays(new Date(), 1)), []);
-
-    // Maximum date: One year from tomorrow (Today + 366 days)
-    const maxDate = useMemo(() => formatDate(addDays(new Date(), 366)), []);
-    // --- DATE RESTRICTIONS LOGIC END ---
-
     // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -44,7 +12,7 @@ const AddPoster = () => {
     const [posterDetails, setPosterDetails] = useState({
         title: '',
         description: '',
-        startDate: minStartDate, // Set initial value to tomorrow
+        startDate: '',
         endDate: '',
         status: 'Active'
     });
@@ -59,48 +27,8 @@ const AddPoster = () => {
         };
     }, [imagePreview]);
 
-    // Use useMemo to dynamically calculate the minimum end date
-    const minEndDate = useMemo(() => {
-        if (posterDetails.startDate) {
-            // Minimum end date is 7 days after the selected start date
-            return formatDate(addDays(new Date(posterDetails.startDate), 7));
-        }
-        // If no start date is selected, minimum is 7 days from tomorrow
-        return formatDate(addDays(new Date(), 8)); 
-    }, [posterDetails.startDate]);
-
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
-        // Custom logic to handle date changes
-        if (name === 'startDate') {
-            const newStartDate = value;
-            let newEndDate = posterDetails.endDate;
-
-            // 1. Calculate the absolute minimum end date based on the new start date (Start + 7 days)
-            const absoluteMinEndDate = formatDate(addDays(new Date(newStartDate), 7));
-
-            // 2. If the current end date is earlier than the new absolute minimum,
-            //    reset the end date to the new absolute minimum.
-            if (newEndDate && new Date(newEndDate) < new Date(absoluteMinEndDate)) {
-                newEndDate = absoluteMinEndDate;
-            } else if (!newEndDate) {
-                // Optionally pre-select the min end date if none is set
-                // newEndDate = absoluteMinEndDate;
-            }
-
-
-            setPosterDetails(prev => ({
-                ...prev,
-                startDate: newStartDate,
-                endDate: newEndDate
-            }));
-        } else {
-            setPosterDetails(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
         setPosterDetails(prev => ({ ...prev, [name]: value }));
     };
 
@@ -108,11 +36,7 @@ const AddPoster = () => {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
-                // Replace alert with toast notification for invalid file type
-                toast.error('Please upload a valid image file (JPG, PNG, GIF).', {
-                    style: { border: '1px solid #ef4444', color: '#ef4444' },
-                    iconTheme: { primary: '#ef4444', secondary: '#fff' },
-                });
+                alert('Please upload a valid image file (JPG, PNG).');
                 return;
             }
             setImageFile(file);
@@ -124,9 +48,6 @@ const AddPoster = () => {
     const removeImage = () => {
         setImageFile(null);
         setImagePreview(null);
-        if (imagePreview) {
-            URL.revokeObjectURL(imagePreview);
-        }
     };
 
     const handleCancel = () => {
@@ -143,20 +64,8 @@ const AddPoster = () => {
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
-        // Validation check for title and image
-        if (!posterDetails.title) {
-            toast.error('Poster Title is required.', {
-                style: { border: '1px solid #ef4444', color: '#ef4444' },
-                iconTheme: { primary: '#ef4444', secondary: '#fff' },
-            });
-            return;
-        }
-        
-        if (!imageFile) {
-            toast.error('Please upload an image for the poster.', {
-                style: { border: '1px solid #ef4444', color: '#ef4444' },
-                iconTheme: { primary: '#ef4444', secondary: '#fff' },
-            });
+        if (!posterDetails.title || !imageFile) {
+            alert('Please provide a title and upload an image.');
             return;
         }
 
@@ -171,58 +80,26 @@ const AddPoster = () => {
 
         try {
             const response = await fetch('http://localhost:5000/api/posters/add', {
-            const response = await fetch('http://localhost:5000/api/posters/add', {
                 method: 'POST',
                 body: formData,
             });
 
             if (response.ok) {
-                // Success notification (using a different toast type for positive feedback)
-                toast.success('✅ Poster uploaded successfully!', {
-                    style: { border: '1px solid #10b981', color: '#10b981' },
-                    iconTheme: { primary: '#10b981', secondary: '#fff' },
-                });
+                alert('✅ Poster uploaded successfully!');
                 handleCancel();
             } else {
                 const data = await response.json();
-                // Replace alert with toast notification for server error
-                toast.error(`❌ Error: ${data.message || 'Failed to upload poster.'}`, {
-                    style: { border: '1px solid #ef4444', color: '#ef4444' },
-                    iconTheme: { primary: '#ef4444', secondary: '#fff' },
-                });
+                alert(`❌ Error: ${data.message || 'Failed to upload'}`);
             }
         } catch (error) {
-            // Replace alert with toast notification for connection error
-            toast.error('❌ Failed to connect to server. Please check your network.', {
-                style: { border: '1px solid #ef4444', color: '#ef4444' },
-                iconTheme: { primary: '#ef4444', secondary: '#fff' },
-            });
+            alert('❌ Failed to connect to server.');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleCancel = () => {
-        setPosterDetails({
-            title: '',
-            description: '',
-            startDate: minStartDate, // Reset to tomorrow
-            endDate: '',
-            status: 'Active'
-        });
-        setImageFile(null);
-        // Important: Revoke the object URL when canceling to free up memory
-        if (imagePreview) {
-            URL.revokeObjectURL(imagePreview);
-        }
-        setImagePreview(null);
-    };
-
     return (
         <div className="apstr-page">
-            {/* Toaster Component for Notifications */}
-            <Toaster position="top-center" reverseOrder={false} />
-            
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
             <main className={`apstr-main ${isSidebarCollapsed ? "apstr-main--collapsed" : ""}`}>
@@ -267,84 +144,6 @@ const AddPoster = () => {
                                     )}
                                 </section>
 
-                                    <div className="poster-field poster-field--full">
-                                        <label>Poster Title</label>
-                                        <input
-                                            type="text"
-                                            name="title"
-                                            value={posterDetails.title}
-                                            onChange={handleChange}
-                                            placeholder="e.g., Summer Sale Banner"
-                                        />
-                                    </div>
-
-                                    <div className="poster-field poster-field--full">
-                                        <label>Description / Caption</label>
-                                        <textarea
-                                            name="description"
-                                            value={posterDetails.description}
-                                            onChange={handleChange}
-                                            placeholder="Optional caption for the poster..."
-                                            rows="3"
-                                        ></textarea>
-                                    </div>
-
-                                    <div className="poster-field">
-                                        <label>Start Display Date</label>
-                                        <input
-                                            type="date"
-                                            name="startDate"
-                                            value={posterDetails.startDate}
-                                            onChange={handleChange}
-                                            min={minStartDate} // Minimum is tomorrow
-                                            max={maxDate}      // Maximum is 1 year from tomorrow
-                                        />
-                                    </div>
-
-                                    <div className="poster-field">
-                                        <label>End Display Date</label>
-                                        <input
-                                            type="date"
-                                            name="endDate"
-                                            value={posterDetails.endDate}
-                                            onChange={handleChange}
-                                            min={minEndDate}   // Minimum is 7 days after Start Date
-                                            max={maxDate}      // Maximum is 1 year from tomorrow
-                                        />
-                                    </div>
-
-                                    <div className="poster-field poster-field--full">
-                                        <label>Status</label>
-                                        <select
-                                            name="status"
-                                            value={posterDetails.status}
-                                            onChange={handleChange}
-                                        >
-                                            <option value="Active">Active (Visible)</option>
-                                            <option value="Inactive">Inactive (Hidden)</option>
-                                            <option value="Scheduled">Scheduled</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <div className="poster-actions">
-                                <button 
-                                    type="button" 
-                                    className="poster-btn poster-btn--cancel" 
-                                    onClick={handleCancel}
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    type="button" 
-                                    className="poster-btn poster-btn--submit"
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Uploading...' : 'Upload Poster'}
-                                </button>
                                 <section className="pstr-section">
                                     <h2 className="pstr-section-title">POSTER DETAILS</h2>
                                     <div className="pstr-fields">
