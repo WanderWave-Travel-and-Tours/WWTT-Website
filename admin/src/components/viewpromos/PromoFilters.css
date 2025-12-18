@@ -1,0 +1,184 @@
+/* ================================================
+   PROMO FILTERS CARD (prf- prefix)
+   ================================================ */
+
+.prf-filter-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 20px; 
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); 
+    position: relative;
+    overflow: hidden;
+}
+
+.prf-filter-wrapper {
+    display: flex;
+    gap: 16px; 
+    align-items: center;
+    flex-wrap: wrap;
+    padding-top: 0;
+    flex-direction: row; 
+    justify-content: flex-start;
+}
+
+/* Branding Label - ORDER 1 */
+.prf-brand-label {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #0f172a; 
+    flex-shrink: 0;
+    white-space: nowrap;
+    line-height: 1; 
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.prf-brand-label span {
+    color: #f59e0b;
+    font-weight: 800;
+}
+
+/* Filter Buttons - ORDER 2 */
+.prf-filter-buttons {
+    display: flex;
+    gap: 8px; 
+    flex-wrap: wrap;
+    flex-shrink: 0; 
+    order: 2; 
+}
+
+.prf-filter-btn {
+    padding: 10px 18px; 
+    border-radius: 10px; 
+    font-size: 14px; 
+    font-weight: 600;
+    cursor: pointer;
+    background: #f8fafc;
+    border: none; 
+    color: #334155; 
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-transform: capitalize; 
+    height: 44px; 
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.prf-filter-btn:hover:not(.prf-active-navy) {
+    background: #f1f5f9;
+}
+
+/* Active State - Navy Blue */
+.prf-filter-btn.prf-active-navy { 
+    background: #0f172a;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
+}
+
+/* Search Box - ORDER 3 */
+.prf-search-box {
+    position: relative;
+    order: 3; 
+    background: white; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 12px; 
+    flex: 1; 
+    min-width: 250px; 
+    max-width: 400px;
+    height: 44px; 
+    padding: 0;
+    margin-left: auto;
+    transition: all 0.2s ease;
+}
+
+.prf-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.prf-search-input {
+    width: 100%;
+    height: 100%;
+    background: #f8fafc; 
+    border: none; 
+    border-radius: 11px;
+    font-size: 14px;
+    color: #0f172a;
+    padding: 0 12px 0 40px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.prf-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.prf-search-input:focus {
+    outline: none;
+}
+
+.prf-search-box:focus-within {
+    border-color: #f59e0b; 
+    box-shadow: 0 0 0 1px #f59e0b; 
+}
+
+/* ================================================
+   RESPONSIVE
+   ================================================ */
+
+@media (max-width: 960px) {
+    .prf-filter-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .prf-brand-label {
+        order: 1; 
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e2e8f0;
+        justify-content: flex-start;
+    }
+    
+    .prf-filter-buttons {
+        order: 2; 
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .prf-search-box {
+        order: 3; 
+        min-width: 100%;
+        max-width: 100%;
+        height: 48px; 
+        margin-left: 0; 
+    }
+    
+    .prf-filter-btn {
+        flex: 1 1 30%;
+        padding: 12px 10px; 
+        font-size: 13px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 600px) {
+    .prf-filter-buttons {
+        flex-direction: column;
+    }
+    
+    .prf-filter-btn {
+        width: 100%;
+    }
+}
