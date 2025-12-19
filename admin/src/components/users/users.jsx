@@ -3,14 +3,12 @@ import Sidebar from '../sidebar/sidebar';
 import './users.css';
 
 // =========================================================================
-// PAGINATION COMPONENT (New)
+// PAGINATION COMPONENT
 // =========================================================================
 const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentPage }) => {
   const pageNumbers = [];
   const totalPages = Math.ceil(totalApplications / applicationsPerPage);
 
-  // Determine which page numbers to show (e.g., current, and a few around it)
-  // Simple approach: show all pages. For a real app, use a range logic.
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
@@ -41,7 +39,6 @@ const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentP
             Previous
           </button>
         </li>
-        {/* Render page number buttons */}
         {pageNumbers.map(number => (
           <li key={number} className="page-item">
             <button 
@@ -65,22 +62,14 @@ const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentP
     </nav>
   );
 };
-// =========================================================================
-// END PAGINATION COMPONENT
-// =========================================================================
-
 
 const USERS_PER_PAGE = 10;
 
 const Users = () => {
-
-// --- SIDEBAR TOGGLE LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR TOGGLE LOGIC END ---
-
 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -126,29 +115,30 @@ const Users = () => {
         });
     };
 
-    const handleDelete = async (id, username) => {
-        if (window.confirm(`Are you sure you want to delete user: ${username}?`)) {
+    // BINAGO: Mula handleDelete, ginawa nating handleArchive
+    const handleArchive = async (id, username) => {
+        if (window.confirm(`Are you sure you want to ARCHIVE user: ${username}?`)) {
             try {
-                const response = await fetch(`${API_URL}/${id}`, {
-                    method: 'DELETE',
+                // Tumatawag sa bagong /archive route gamit ang PUT method
+                const response = await fetch(`${API_URL}/archive/${id}`, {
+                    method: 'PUT',
                 });
 
                 if (response.ok) {
                     const updatedUsers = users.filter(user => user._id !== id);
                     setUsers(updatedUsers);
                     
-                    // Logic to stay on the correct page after deletion
                     if (currentPage > Math.ceil(updatedUsers.length / USERS_PER_PAGE)) {
                         setCurrentPage(Math.max(1, currentPage - 1));
                     }
-                    alert(`User ${username} has been deleted.`);
+                    alert(`User ${username} has been archived.`);
                 } else {
                     const errorData = await response.json();
-                    alert(`Failed to delete user: ${errorData.message || response.statusText}`);
+                    alert(`Failed to archive user: ${errorData.message || response.statusText}`);
                 }
             } catch (error) {
-                console.error("Error deleting:", error);
-                alert("Server error during deletion.");
+                console.error("Error archiving:", error);
+                alert("Server error during archiving.");
             }
         }
     };
@@ -166,16 +156,12 @@ const Users = () => {
     };
 
     const activeUsers = users.filter(u => getStatus(u.isActive) === 'Active').length;
-
     const mainClasses = `vusers-main ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`;
 
     if (loading) {
         return (
             <div className="vusers-page">
-                <Sidebar 
-                    isCollapsed={isSidebarCollapsed} 
-                    toggleSidebar={toggleSidebar} 
-                />
+                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
                 <main className={mainClasses}>
                     <div className="vusers-container loading-state">Loading users...</div>
                 </main>
@@ -186,10 +172,7 @@ const Users = () => {
     if (error) {
         return (
             <div className="vusers-page">
-                <Sidebar 
-                    isCollapsed={isSidebarCollapsed} 
-                    toggleSidebar={toggleSidebar} 
-                />
+                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
                 <main className={mainClasses}>
                     <div className="vusers-container error-state">{error}</div>
                 </main>
@@ -199,10 +182,7 @@ const Users = () => {
 
     return (
         <div className="vusers-page">
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             <main className={mainClasses}>
                 <div className="vusers-container">
                     <header className="vusers-header">
@@ -239,20 +219,10 @@ const Users = () => {
                                         return (
                                             <tr key={user._id}>
                                                 <td>{itemNumber}</td>
-                                                <td>
-                                                    <span className="vusers-name">{user.fullName}</span>
-                                                </td>
+                                                <td><span className="vusers-name">{user.fullName}</span></td>
                                                 <td>{user.email}</td>
-                                                <td>
-                                                    <span className={`vusers-role vusers-role--${user.role}`}>
-                                                        {user.role}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className={`vusers-status vusers-status--${status.toLowerCase()}`}>
-                                                        {status}
-                                                    </span>
-                                                </td>
+                                                <td><span className={`vusers-role vusers-role--${user.role}`}>{user.role}</span></td>
+                                                <td><span className={`vusers-status vusers-status--${status.toLowerCase()}`}>{status}</span></td>
                                                 <td>
                                                     <div className="vusers-date">
                                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -266,11 +236,13 @@ const Users = () => {
                                                 </td>
                                                 <td>
                                                     <div className="vusers-actions">
+                                                        {/* BINAGO: Mula "Delete", naging "Archive" na ang button at handleArchive ang function */}
                                                         <button 
-                                                            className="vusers-action-btn vusers-action-btn--delete"
-                                                            onClick={() => handleDelete(user._id, user.fullName)}
+                                                            className="vusers-action-btn vusers-action-btn--archive"
+                                                            style={{ backgroundColor: '#f39c12', color: 'white' }} // Orange/Yellow para sa archive
+                                                            onClick={() => handleArchive(user._id, user.fullName)}
                                                         >
-                                                            Delete
+                                                            Archive
                                                         </button>
                                                     </div>
                                                 </td>
@@ -279,19 +251,14 @@ const Users = () => {
                                     })}
                                 </tbody>
                             </table>
-                            {/* NEW: Use the comprehensive Pagination component here */}
                             <Pagination
                                 applicationsPerPage={USERS_PER_PAGE}
                                 totalApplications={totalUsers}
                                 paginate={paginate}
                                 currentPage={currentPage}
                             />
-                            {/* END NEW */}
                         </div>
                     )}
-
-                    {/* OLD pagination buttons removed, as they are now handled by the Pagination component */}
-                    
                 </div>
             </main>
         </div>

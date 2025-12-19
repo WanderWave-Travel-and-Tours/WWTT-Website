@@ -20,7 +20,8 @@ import { fetchArchivedPromos, restorePromo } from './archiveFunctions/promoServi
 import { fetchArchivedPosters, restorePoster } from './archiveFunctions/posterService';
 import { fetchArchivedInquiries, restoreInquiry } from './archiveFunctions/inquiryService';
 import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'; 
-import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; // INIDAGDAG
+import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; 
+import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService'; // INIDAGDAG
 
 const ARCHIVE_IMAGES = {
     TOTAL_ITEMS: 'https://picsum.photos/seed/desk/800/600', 
@@ -70,9 +71,8 @@ const LIST_ARCHIVE_ITEMS = [
 
 const USER_ARCHIVE_ITEMS = [
     'ALL Users',
-    'Inactive Users',
-    'Suspended Users',
-    'Deleted Accounts',
+    'User',      // Binago para mag-match sa role field ng User model
+    'Admin',     // Binago para mag-match sa role field ng User model
 ];
 
 const ArchiveComponent = () => {
@@ -126,7 +126,8 @@ const ArchiveComponent = () => {
         fetchArchivedPosters(),
         fetchArchivedInquiries(),
         fetchArchivedBlogs(),
-        fetchArchivedImages() // INIDAGDAG
+        fetchArchivedImages(),
+        fetchArchivedUsers() // INIDAGDAG (Index 9)
       ]);
       
       const bookingsData = results[0].status === 'fulfilled' ? results[0].value : [];
@@ -137,7 +138,8 @@ const ArchiveComponent = () => {
       const postersData = results[5].status === 'fulfilled' ? results[5].value : []; 
       const inquiriesData = results[6].status === 'fulfilled' ? results[6].value : []; 
       const blogsData = results[7].status === 'fulfilled' ? results[7].value : [];
-      const imagesData = results[8].status === 'fulfilled' ? results[8].value : []; // INIDAGDAG
+      const imagesData = results[8].status === 'fulfilled' ? results[8].value : []; 
+      const usersData = results[9].status === 'fulfilled' ? results[9].value : []; // INIDAGDAG
 
       const combinedData = [
         ...bookingsData, 
@@ -148,7 +150,8 @@ const ArchiveComponent = () => {
         ...postersData,
         ...inquiriesData,
         ...blogsData,
-        ...imagesData // INIDAGDAG
+        ...imagesData,
+        ...usersData // INIDAGDAG
       ];
       
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
@@ -160,6 +163,11 @@ const ArchiveComponent = () => {
 
         let displayType = item.type || 'Other';
         
+        // Logic para ma-identify kung ang item ay isang User
+        if (item.role) {
+            displayType = item.role.charAt(0).toUpperCase() + item.role.slice(1); // Gagawin itong 'User' o 'Admin'
+        }
+
         if (item.inquiryType) {
            switch(item.inquiryType) {
              case 'VISA': displayType = 'VISA Processing'; break;
@@ -175,13 +183,15 @@ const ArchiveComponent = () => {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber: archiveNumber,
-          itemName: item.imageName || item.title || item.fullName || item.itemName || item.name || item.code || 'Unnamed Item', 
+          // Gagamit ng fullName kung user, title kung package/blog, etc.
+          itemName: item.fullName || item.imageName || item.title || item.itemName || item.name || item.code || 'Unnamed Item', 
           type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
-          reference: item.imageUrl || item.author || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
-          status: item.status || 'Archived', 
+          // Email ang reference para sa users, imageUrl para sa gallery
+          reference: item.email || item.imageUrl || item.author || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
+          status: item.isArchive === "Yes" ? 'Archived' : (item.status || 'Archived'), 
           rawData: item
         };
       });
@@ -211,7 +221,8 @@ const ArchiveComponent = () => {
         filtered = filtered.filter(item => serviceSubtypeNames.includes(item.type));
         if (filterSubtype !== 'ALL Services') filtered = filtered.filter(item => item.type === filterSubtype);
     } else if (filterType === 'Archived Users') {
-        const userSubtypeNames = USER_ARCHIVE_ITEMS.slice(1);
+        // I-filter ang mga items na may type 'User' o 'Admin'
+        const userSubtypeNames = ['User', 'Admin'];
         filtered = filtered.filter(item => userSubtypeNames.includes(item.type));
         if (filterUserSubtype !== 'ALL Users') filtered = filtered.filter(item => item.type === filterUserSubtype);
     }
@@ -240,14 +251,18 @@ const ArchiveComponent = () => {
     setActionLoading(true);
     try {
       let restored = false;
-      if (item.type === 'Package') restored = await restorePackage(item.mongoId);
+      // Identify if the item is a User/Admin type
+      if (item.type === 'User' || item.type === 'Admin') {
+          restored = await restoreUser(item.mongoId);
+      }
+      else if (item.type === 'Package') restored = await restorePackage(item.mongoId);
       else if (item.type === 'Booking') restored = await restoreBooking(item.mongoId);
       else if (item.type === 'Tour') restored = await restoreTour(item.mongoId);
       else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId);
       else if (item.type === 'Promo') restored = await restorePromo(item.mongoId);
       else if (item.type === 'Poster') restored = await restorePoster(item.mongoId);
       else if (item.type === 'Blog') restored = await restoreBlog(item.mongoId);
-      else if (item.type === 'Image Gallery') restored = await restoreImage(item.mongoId); // INIDAGDAG
+      else if (item.type === 'Image Gallery') restored = await restoreImage(item.mongoId);
       else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
         restored = await restoreInquiry(item.mongoId);
       }
@@ -272,14 +287,15 @@ const ArchiveComponent = () => {
     setActionLoading(true);
     try {
       for (const item of filteredArchiveItems) {
-        if (item.type === 'Package') await restorePackage(item.mongoId);
+        if (item.type === 'User' || item.type === 'Admin') await restoreUser(item.mongoId);
+        else if (item.type === 'Package') await restorePackage(item.mongoId);
         else if (item.type === 'Booking') await restoreBooking(item.mongoId);
         else if (item.type === 'Tour') await restoreTour(item.mongoId);
         else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
         else if (item.type === 'Promo') await restorePromo(item.mongoId);
         else if (item.type === 'Poster') await restorePoster(item.mongoId);
         else if (item.type === 'Blog') await restoreBlog(item.mongoId);
-        else if (item.type === 'Image Gallery') await restoreImage(item.mongoId); // INIDAGDAG
+        else if (item.type === 'Image Gallery') await restoreImage(item.mongoId);
         else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(item.mongoId);
       }
       await fetchArchiveItems();
@@ -306,13 +322,13 @@ const ArchiveComponent = () => {
   const stats = useMemo(() => {
     const serviceSubtypeNames = SERVICE_SUBTYPES_LIST.slice(1);
     const listSubtypeNames = LIST_ARCHIVE_ITEMS.slice(1);
-    const userSubtypeNames = USER_ARCHIVE_ITEMS.slice(1);
+    const userTypes = ['User', 'Admin'];
 
     return [
       { label: "Total Archived", value: archiveItems.length, icon: <Archive size={24} />, image: ARCHIVE_IMAGES.TOTAL_ITEMS },
       { label: "Archived List Items", value: archiveItems.filter(i => listSubtypeNames.includes(i.type)).length, icon: <List size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_LIST },
       { label: "Archived Services", value: archiveItems.filter(i => serviceSubtypeNames.includes(i.type)).length, icon: <Wrench size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_SERVICES },
-      { label: "Archived Users", value: archiveItems.filter(i => userSubtypeNames.includes(i.type)).length, icon: <Users size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_USERS },
+      { label: "Archived Users", value: archiveItems.filter(i => userTypes.includes(i.type)).length, icon: <Users size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_USERS },
     ];
   }, [archiveItems]);
 
