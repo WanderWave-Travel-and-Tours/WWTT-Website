@@ -100,7 +100,7 @@ const createInquiry = async (req, res) => {
       console.error('❌ User Creation/Lookup Error:', userError);
     }
 
-const inquiryDoc = {
+    const inquiryDoc = {
       _id: new mongoose.Types.ObjectId(),
       serviceId: serviceId || null,
       serviceName: String(serviceName).trim(),
@@ -118,7 +118,7 @@ const inquiryDoc = {
       cenomarDocument: cenomarDocument || null,
       cenomarId: cenomarId || null,
       status: 'PENDING',
-      isArchive: "No", // DEFAULT ADDED HERE
+      isArchive: "No", // ✅ DEFAULT ADDED HERE
       remarks: '',
       evidenceUrl: '',
       evidenceName: '',
@@ -266,7 +266,7 @@ const createInquiryWithUploads = async (req, res) => {
             visaCountry: visaCountry || 'Japan',
             estimatedPrice: estimatedPrice || 0,
             status: 'PENDING',
-            isArchive: "No", // DEFAULT ADDED HERE
+            isArchive: "No", // ✅ DEFAULT ADDED HERE
             deliveredDocuments: uploadedDocs 
         });
 
@@ -281,21 +281,13 @@ const createInquiryWithUploads = async (req, res) => {
     }
 };
 
-// SA IYONG inquiryController.js
 const getAllInquiries = async (req, res) => {
   try {
-    // Kinukuha ang isArchive mula sa URL query (?isArchive=Yes o ?isArchive=No)
     const { isArchive } = req.query; 
-    
     let filter = {};
     
-    // ✅ DITO ANG PAG-AAYOS:
-    // Kung may isArchive na pinasa, gamitin yun. 
-    // Kung wala, default tayo sa "No" para hindi magpakita ang archive sa regular list.
+    // Default sa "No" para hindi magpakita ang archive sa regular list kung walang query.
     filter.isArchive = isArchive ? isArchive : "No"; 
-    
-    // Opsyonal: Kung gusto mong i-filter din na "VISA" lang ang lumabas sa VisaProcessing page
-    // if (req.query.type === 'VISA') filter.inquiryType = 'VISA';
 
     const inquiries = await Inquiry.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: inquiries });
@@ -597,11 +589,10 @@ const getInquiriesByDateRange = async (req, res) => {
   }
 };
 
-// NEW FUNCTION: Toggle Archive
 const toggleArchive = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isArchive } = req.body; // Expects "Yes" or "No"
+    const { isArchive } = req.body; 
 
     if (!['Yes', 'No'].includes(isArchive)) {
       return res.status(400).json({ success: false, message: 'Invalid value for isArchive' });
