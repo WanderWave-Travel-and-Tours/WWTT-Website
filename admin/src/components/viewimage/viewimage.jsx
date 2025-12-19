@@ -42,7 +42,11 @@ const ViewImage = () => {
             
             const data = await response.json();
             console.log('📸 Fetched images:', data);
-            setImages(data);
+            
+            // FILTER: I-set lamang sa state ang mga images na "No" ang isArchive status
+            const activeImages = data.filter(img => img.isArchive === "No");
+            setImages(activeImages);
+            
             setCurrentPage(1);
         } catch (error) {
             console.error('❌ Error fetching images:', error);
@@ -52,14 +56,21 @@ const ViewImage = () => {
         }
     };
 
+    // UPDATED: Ang function na ito ay nagpapalit na ngayon ng isArchive status sa "Yes"
     const handleArchive = async (id, imageName) => {
         if (window.confirm(`Are you sure you want to archive "${imageName || 'this image'}"?`)) {
             try {
+                // Gagamit tayo ng PATCH/PUT para i-update ang field sa database
                 const response = await fetch(`http://localhost:5000/api/images/${id}`, {
-                    method: 'DELETE'
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ isArchive: 'Yes' })
                 });
                 
                 if (response.ok) {
+                    // I-remove sa UI state ang image dahil "Yes" na ang status nito
                     const updatedImages = images.filter(img => img._id !== id);
                     setImages(updatedImages);
                     alert('Image archived successfully');
@@ -92,7 +103,7 @@ const ViewImage = () => {
         });
     };
 
-    // Filter and search logic
+    // Filter and search logic (Still based on active images in state)
     const filteredImages = images.filter(image => {
         const matchesSearch = (image.imageName || '').toLowerCase().includes(searchTerm.toLowerCase());
         
@@ -119,7 +130,7 @@ const ViewImage = () => {
                         <div className="vi-header-content">
                             <h1 className="vi-title">IMAGE GALLERY</h1>
                             <p className="vi-subtitle">
-                                Managing {images.length} images in your gallery
+                                Managing {images.length} active images in your gallery
                             </p>
                         </div>
                         <button className="vi-btn vi-btn--add" onClick={() => window.location.href='/upload-image'}>
@@ -145,8 +156,8 @@ const ViewImage = () => {
                     ) : images.length === 0 ? (
                         <div className="vi-empty">
                             <span className="vi-empty-icon">🖼️</span>
-                            <h3>No images yet</h3>
-                            <p>Start by uploading your first image</p>
+                            <h3>No active images</h3>
+                            <p>All images are archived or none have been uploaded yet.</p>
                         </div>
                     ) : filteredImages.length === 0 ? (
                         <div className="vi-empty">

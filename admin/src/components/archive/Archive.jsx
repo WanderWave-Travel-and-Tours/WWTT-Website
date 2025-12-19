@@ -19,7 +19,8 @@ import { fetchArchivedTestimonials, restoreTestimonial } from './archiveFunction
 import { fetchArchivedPromos, restorePromo } from './archiveFunctions/promoService';
 import { fetchArchivedPosters, restorePoster } from './archiveFunctions/posterService';
 import { fetchArchivedInquiries, restoreInquiry } from './archiveFunctions/inquiryService';
-import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'; // INIDAGDAG
+import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'; 
+import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; // INIDAGDAG
 
 const ARCHIVE_IMAGES = {
     TOTAL_ITEMS: 'https://picsum.photos/seed/desk/800/600', 
@@ -29,7 +30,7 @@ const ARCHIVE_IMAGES = {
     ITEMS_RESTORED: 'https://picsum.photos/seed/folder/800/600' 
 };
 
-const ARCHIVE_RETENTION_DAYS = 90;
+const ARCHIVE_RETENTION_DAYS = 30;
 
 const ARCHIVE_TYPES = [
     'ALL',
@@ -61,7 +62,7 @@ const LIST_ARCHIVE_ITEMS = [
     'Tour', 
     'Promo', 
     'Poster', 
-    'Blog', // Nandito na ang Blog
+    'Blog',
     'Hotel', 
     'Testimonial', 
     'Image Gallery'
@@ -124,7 +125,8 @@ const ArchiveComponent = () => {
         fetchArchivedPromos(),
         fetchArchivedPosters(),
         fetchArchivedInquiries(),
-        fetchArchivedBlogs() // INIDAGDAG
+        fetchArchivedBlogs(),
+        fetchArchivedImages() // INIDAGDAG
       ]);
       
       const bookingsData = results[0].status === 'fulfilled' ? results[0].value : [];
@@ -134,7 +136,8 @@ const ArchiveComponent = () => {
       const promosData = results[4].status === 'fulfilled' ? results[4].value : [];
       const postersData = results[5].status === 'fulfilled' ? results[5].value : []; 
       const inquiriesData = results[6].status === 'fulfilled' ? results[6].value : []; 
-      const blogsData = results[7].status === 'fulfilled' ? results[7].value : []; // INIDAGDAG
+      const blogsData = results[7].status === 'fulfilled' ? results[7].value : [];
+      const imagesData = results[8].status === 'fulfilled' ? results[8].value : []; // INIDAGDAG
 
       const combinedData = [
         ...bookingsData, 
@@ -144,7 +147,8 @@ const ArchiveComponent = () => {
         ...promosData,
         ...postersData,
         ...inquiriesData,
-        ...blogsData // INIDAGDAG
+        ...blogsData,
+        ...imagesData // INIDAGDAG
       ];
       
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
@@ -171,12 +175,12 @@ const ArchiveComponent = () => {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber: archiveNumber,
-          itemName: item.title || item.fullName || item.itemName || item.name || item.code || 'Unnamed Item', 
+          itemName: item.imageName || item.title || item.fullName || item.itemName || item.name || item.code || 'Unnamed Item', 
           type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
-          reference: item.author || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
+          reference: item.imageUrl || item.author || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
           status: item.status || 'Archived', 
           rawData: item
         };
@@ -242,7 +246,8 @@ const ArchiveComponent = () => {
       else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId);
       else if (item.type === 'Promo') restored = await restorePromo(item.mongoId);
       else if (item.type === 'Poster') restored = await restorePoster(item.mongoId);
-      else if (item.type === 'Blog') restored = await restoreBlog(item.mongoId); // INIDAGDAG
+      else if (item.type === 'Blog') restored = await restoreBlog(item.mongoId);
+      else if (item.type === 'Image Gallery') restored = await restoreImage(item.mongoId); // INIDAGDAG
       else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
         restored = await restoreInquiry(item.mongoId);
       }
@@ -273,7 +278,8 @@ const ArchiveComponent = () => {
         else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
         else if (item.type === 'Promo') await restorePromo(item.mongoId);
         else if (item.type === 'Poster') await restorePoster(item.mongoId);
-        else if (item.type === 'Blog') await restoreBlog(item.mongoId); // INIDAGDAG
+        else if (item.type === 'Blog') await restoreBlog(item.mongoId);
+        else if (item.type === 'Image Gallery') await restoreImage(item.mongoId); // INIDAGDAG
         else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(item.mongoId);
       }
       await fetchArchiveItems();
