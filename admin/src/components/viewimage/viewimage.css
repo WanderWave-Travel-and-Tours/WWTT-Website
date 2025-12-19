@@ -1,102 +1,480 @@
-.vi-page { display: flex; min-height: 100vh; background: #f8fafc; }
+/* ================================================= */
+/* GLOBAL WRAPPERS & LAYOUT (vi- prefix)            */
+/* ================================================= */
 
-.vi-main { 
-    flex: 1; 
-    /* This margin matches your expanded sidebar width (280px) */
-    margin-left: 280px; 
-    padding: 40px; 
-    font-family: 'Segoe UI', sans-serif; 
-    /* Added: This makes the transition smooth */
-    transition: margin-left 0.3s ease-in-out;
-}
-
-/* Added: New class to adjust main content width when sidebar is collapsed */
-.vi-main.vi-main-collapsed {
-    /* Set to the width of your collapsed sidebar (e.g., 80px for an icon-only sidebar) */
-    margin-left: 80px; 
-}
-
-.vi-container { max-width: 1200px; margin: 0 auto; }
-
-.vi-header { text-align: center; margin-bottom: 40px; }
-.vi-title { font-size: 2rem; font-weight: 900; color: #001F3F; margin-bottom: 5px; }
-.vi-subtitle { font-size: 14px; color: #64748b; }
-
-.vi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.vi-card {
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
-    background: #fff;
-}
-.vi-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.15); }
-
-.vi-image-wrapper {
-    position: relative;
-    width: 100%;
-    height: 200px;
-    background: #e2e8f0;
-}
-
-.vi-image-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.vi-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 31, 63, 0.6);
+.vi-page {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    width: 100%;
+    position: relative;
 }
 
-.vi-card:hover .vi-overlay {
-    opacity: 1;
+.vi-main {
+    flex: 1;
+    margin-left: 300px;
+    padding: 40px 80px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    transition: margin-left 0.3s ease;
+    width: 100%;
+}
+
+.vi-main--collapsed {
+    margin-left: 90px;
+}
+
+.vi-container {
+    max-width: 1320px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* --- HEADER WITH BACKGROUND IMAGE --- */
+.vi-header {
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 180px;
+    gap: 24px;
+}
+
+.vi-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, 
+        rgba(0, 31, 63, 0.92) 0%, 
+        rgba(0, 31, 63, 0.75) 50%, 
+        rgba(59, 130, 246, 0.3) 100%);
+    z-index: 1;
+}
+
+.vi-header-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+}
+
+.vi-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    margin-bottom: 8px;
+}
+
+.vi-subtitle {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vi-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6 0%, transparent 100%);
+    display: inline-block;
 }
 
 .vi-btn {
-    background: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 8px;
+    position: relative;
+    z-index: 2;
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: background 0.2s, transform 0.2s;
+    transition: all 0.2s ease;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
 }
 
-.vi-btn:hover {
-    transform: scale(1.05);
+.vi-btn--add {
+    color: #fff;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
 }
 
-.vi-copy { color: #007bff; }
-.vi-copy:hover { background: #e6f0ff; }
-.vi-delete { color: #dc3545; }
-.vi-delete:hover { background: #f8d7da; }
+.vi-btn--add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
 
-.vi-empty, .vi-loading {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 50px;
-    font-size: 18px;
-    color: #64748b;
+/* --- LOADING STATE --- */
+.vi-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 20px;
     background: #fff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+}
+
+.vi-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.vi-loading p {
+    color: #64748b;
+    font-size: 15px;
+    font-style: italic;
+}
+
+/* --- EMPTY STATE --- */
+.vi-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 60px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+}
+
+.vi-empty-icon {
+    font-size: 64px;
+    margin-bottom: 8px;
+}
+
+.vi-empty h3 {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #001F3F;
+}
+
+.vi-empty p {
+    color: #64748b;
+    font-size: 15px;
+}
+
+/* --- TABLE WRAPPER & TABLE --- */
+.vi-table-wrapper {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+}
+
+.vi-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.vi-table thead {
+    background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
+}
+
+.vi-table th {
+    padding: 18px 20px;
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    color: #fff;
+    text-align: left;
+    letter-spacing: 1.5px;
+}
+
+.vi-table td {
+    padding: 18px 20px;
+    font-size: 14px;
+    color: #1e293b;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.vi-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.vi-table tbody tr {
+    transition: all 0.15s ease;
+}
+
+.vi-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* --- IMAGE PREVIEW IN TABLE --- */
+.vi-image-preview {
+    width: 80px;
+    height: 50px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.vi-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.vi-table tbody tr:hover .vi-image-preview img {
+    transform: scale(1.1);
+}
+
+.vi-image-name {
+    font-weight: 700;
+    color: #001F3F;
+    font-size: 14px;
+}
+
+.vi-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.vi-date svg {
+    width: 14px;
+    height: 14px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.vi-file-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+}
+
+.vi-file-type svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* --- ACTION BUTTONS --- */
+.vi-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.vi-action-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    background: white;
+}
+
+/* VIEW BUTTON - White default, Navy on hover */
+.vi-action-btn--view {
+    color: #0f172a;
+    border-color: #e2e8f0;
+}
+
+.vi-action-btn--view:hover {
+    background: #0f172a;
+    color: white;
+    border-color: #0f172a;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+/* COPY BUTTON - White default, Blue on hover */
+.vi-action-btn--copy {
+    color: #0f172a;
+    border-color: #e2e8f0;
+}
+
+.vi-action-btn--copy:hover {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* ARCHIVE BUTTON - White always, no hover background change */
+.vi-action-btn--archive {
+    color: #0f172a;
+    border-color: #e2e8f0;
+}
+
+.vi-action-btn--archive:hover {
+    background: white;
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ================================================= */
+/* RESPONSIVENESS                                     */
+/* ================================================= */
+
+@media (max-width: 1100px) {
+    .vi-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
+    }
+
+    .vi-btn--add {
+        width: 100%;
+        text-align: center;
+    }
+
+    .vi-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .vi-table {
+        min-width: 1000px;
+    }
+}
+
+@media (max-width: 768px) {
+    .vi-main, .vi-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+    }
+
+    .vi-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .vi-title {
+        font-size: 2rem;
+    }
+
+    .vi-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .vi-action-btn {
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+
+    .vi-action-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+@media (max-width: 640px) {
+    .vi-title {
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .vi-subtitle {
+        font-size: 13px;
+    }
+
+    .vi-header {
+        padding: 30px 24px;
+    }
+
+    .vi-empty {
+        padding: 40px 24px;
+    }
+
+    .vi-image-preview {
+        width: 60px;
+        height: 40px;
+    }
+
+    .vi-actions {
+        gap: 6px;
+    }
+
+    .vi-action-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .vi-title {
+        font-size: 1.4rem;
+    }
+
+    .vi-header {
+        padding: 28px 20px;
+    }
+
+    .vi-btn {
+        padding: 12px 20px;
+        font-size: 12px;
+    }
+
+    .vi-actions {
+        gap: 4px;
+    }
+
+    .vi-action-btn span {
+        display: none;
+    }
+
+    .vi-action-btn {
+        padding: 8px;
+        min-width: 36px;
+        justify-content: center;
+    }
+
+    .vi-action-btn svg {
+        width: 16px;
+        height: 16px;
+    }
 }

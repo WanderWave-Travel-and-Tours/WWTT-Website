@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { Trash2, Eye, Calendar, MapPin, Tag, Clock, Search } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
+import TourDetailModal from './TourDetailModal';
+import TourPagination from './TourPagination';
+import TourFilters from './TourFilters';
 import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,43 +11,34 @@ const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 const ViewTours = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
+    const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterCategory, setFilterCategory] = useState('ALL');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedTour, setSelectedTour] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const isLoggedIn = localStorage.getItem('adminToken');
-        if (!isLoggedIn) {
-            navigate('/');
-        }
-    }, [navigate]);
-
-    useEffect(() => {
         const fetchTours = async () => {
+            setLoading(true);
             try {
                 const response = await fetch(`${API_BASE_URL}/all`);
                 const result = await response.json();
-
                 if (result.status === 'ok') {
-                    // FILTER: Display lang ang mga tour na may isArchive: "No"
                     const activeTours = result.data.filter(tour => tour.isArchive === 'No');
                     setTours(activeTours);
-                } else {
-                    setError('Error: ' + (result.error || 'Failed to fetch data.'));
                 }
             } catch (err) {
                 console.error('Fetch error:', err);
-                setError('Network error: Could not connect to the server.');
             } finally {
                 setLoading(false);
             }
         };
-
         fetchTours();
     }, []);
 
@@ -54,133 +49,110 @@ const ViewTours = () => {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' }
                 });
-                const result = await response.json();
-                
-                if (result.status === 'ok') {
-                    // Tanggalin sa state array para mawala sa UI agad
-                    setTours(tours.filter(tour => tour._id !== id));
-                    alert('✅ Tour archived successfully!');
-                } else {
-                    alert('❌ Error archiving tour');
+                if ((await response.json()).status === 'ok') {
+                    setTours(tours.filter(t => t._id !== id));
                 }
             } catch (err) {
-                console.error('Archive error:', err);
                 alert('❌ Error connecting to server');
             }
         }
     };
 
-    if (loading) {
-        return (
-            <div className="viewtours-page">
-                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
-                    <div className="viewtours-loader">
-                        <div className="viewtours-spinner"></div>
-                        <p>Loading tours...</p>
-                    </div>
-                </main>
-            </div>
-        );
-    }
+    const categories = ['ALL', ...new Set(tours.map(t => t.category))];
 
-    if (error) {
-        return (
-            <div className="viewtours-page">
-                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
-                    <div className="viewtours-error">
-                        <span className="viewtours-error-icon">⚠️</span>
-                        <p>{error}</p>
-                    </div>
-                </main>
-            </div>
-        );
-    }
+    const filteredTours = tours.filter(tour => {
+        const matchesSearch = tour.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             tour.destination.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = filterCategory === 'ALL' || tour.category === filterCategory;
+        return matchesSearch && matchesCategory;
+    });
+
+    const currentTours = filteredTours.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
-        <div className="viewtours-page">
+        <div className="vt-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            <main className={`viewtours-main ${isSidebarCollapsed ? "viewtours-main--collapsed" : ""}`}>
-                <div className="viewtours-container">
-                    <header className="viewtours-header">
-                        <div className="viewtours-header-left">
-                            <h1 className="viewtours-title">TOUR LISTS</h1>
-                            <p className="viewtours-subtitle">Manage your active packages ({tours.length} total)</p>
+            <main className={`vt-main ${isSidebarCollapsed ? 'vt-main--collapsed' : ''}`}>
+                <div className="vt-container">
+                    <header className="vt-header">
+                        <div className="vt-header-content">
+                            <h1 className="vt-title">TOUR PACKAGES</h1>
+                            <p className="vt-subtitle">Managing {tours.length} active tours • {filteredTours.length} filtered</p>
                         </div>
-                        <button className="viewtours-btn viewtours-btn--add" onClick={() => navigate('/add-tour')}>
-                            + Add New Tour
-                        </button>
+                        <button className="vt-btn vt-btn--add" onClick={() => navigate('/add-tour')}>+ Add New Tour</button>
                     </header>
 
-                    {tours.length === 0 ? (
-                        <div className="viewtours-empty">
-                            <span className="viewtours-empty-icon">📍</span>
-                            <h3>No active tours</h3>
-                            <p>All tours are archived or none exist.</p>
-                        </div>
-                    ) : (
-                        <div className="viewtours-grid">
-                            {tours.map((tour) => (
-                                <div key={tour._id} className="viewtours-card">
-                                    <div className="viewtours-card-image">
-                                        <img 
-                                            src={`http://localhost:5000/uploads/${tour.image}`} 
-                                            alt={tour.title} 
-                                        />
-                                        <span className="viewtours-card-category">{tour.category}</span>
-                                    </div>
-                                    
-                                    <div className="viewtours-card-body">
-                                        <h3 className="viewtours-card-title">{tour.title.toUpperCase()}</h3>
-                                        
-                                        <div className="viewtours-card-info">
-                                            <div className="viewtours-info-row">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                                    <circle cx="12" cy="10" r="3"/>
-                                                </svg>
-                                                <span>{tour.destination.toUpperCase()}</span>
-                                            </div>
-                                            <div className="viewtours-info-row">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <circle cx="12" cy="12" r="10"/>
-                                                    <polyline points="12 6 12 12 16 14"/>
-                                                </svg>
-                                                <span>{tour.duration.toUpperCase()}</span>
-                                            </div>
-                                        </div>
+                    <TourFilters 
+                        searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+                        filterCategory={filterCategory} setFilterCategory={setFilterCategory}
+                        categories={categories}
+                    />
 
-                                        <div className="viewtours-card-footer">
-                                            <div className="viewtours-price">
-                                                <span className="viewtours-price-label">PRICE</span>
-                                                <span className="viewtours-price-value">₱{tour.price ? tour.price.toLocaleString() : "0"}</span>
-                                            </div>
-                                            
-                                            <div className="viewtours-actions">
-                                                <button 
-                                                    className="viewtours-btn-action viewtours-btn-action--edit"
-                                                    onClick={() => navigate(`/edit-tour/${tour._id}`)}
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button 
-                                                    className="viewtours-btn-action viewtours-btn-action--delete"
-                                                    onClick={() => handleArchive(tour._id)}
-                                                >
-                                                    Archive
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                    {loading ? (
+                        <div className="vt-loading"><div className="vt-spinner"></div><p>Loading tours...</p></div>
+                    ) : filteredTours.length === 0 ? (
+                        <div className="vt-empty"><h3>No tours found</h3></div>
+                    ) : (
+                        <div className="vt-table-wrapper">
+                            <table className="vt-table">
+                                <thead>
+                                    <tr>
+                                        <th>TOUR PACKAGE</th>
+                                        <th>DESTINATION</th>
+                                        <th>DURATION/CAT</th>
+                                        <th>PRICE</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentTours.map((tour) => (
+                                        <tr key={tour._id}>
+                                            <td>
+                                                <div className="vt-customer-cell">
+                                                    <div className="vt-image-preview">
+                                                        <img src={`http://localhost:5000/uploads/${tour.image}`} alt="" />
+                                                    </div>
+                                                    <span className="vt-customer-name">{tour.title.toUpperCase()}</span>
+                                                </div>
+                                            </td>
+                                            <td><div className="vt-source"><MapPin size={14}/> {tour.destination.toUpperCase()}</div></td>
+                                            <td>
+                                                <div className="vt-meta-cell">
+                                                    <div className="vt-source"><Clock size={14}/> {tour.duration}</div>
+                                                    <div className="vt-date"><Tag size={14}/> {tour.category}</div>
+                                                </div>
+                                            </td>
+                                            <td><span className="vt-rating">₱{tour.price?.toLocaleString()}</span></td>
+                                            <td>
+                                                <div className="vt-actions">
+                                                    <button className="vt-action-btn vt-action-btn--view" onClick={() => {setSelectedTour(tour); setShowDetailModal(true)}}>
+                                                        <Eye size={16}/> View
+                                                    </button>
+                                                    <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(tour._id)}>
+                                                        <Trash2 size={16}/> Archive
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <TourPagination 
+                                totalItems={filteredTours.length} itemsPerPage={itemsPerPage} 
+                                currentPage={currentPage} onPageChange={setCurrentPage} 
+                            />
                         </div>
                     )}
                 </div>
             </main>
+            {showDetailModal && (
+                <TourDetailModal 
+                    tour={selectedTour} close={() => setShowDetailModal(false)} 
+                    onArchive={handleArchive} navigate={navigate}
+                />
+            )}
         </div>
     );
 };
 
-export default ViewTours; 
+export default ViewTours;

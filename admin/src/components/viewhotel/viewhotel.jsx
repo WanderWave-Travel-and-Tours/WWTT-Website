@@ -1,87 +1,77 @@
 import React, { useState, useEffect } from 'react';
+import { Archive, Eye, MapPin, Users, Home, CheckCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
-import './viewhotel.css';
-import { Edit, Trash2, MapPin, Star, Plus, Search, Filter, RefreshCw, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import ViewHotelModal from './ViewHotelModal';
+import HotelPagination from './HotelPagination';
+import HotelFilters from './HotelFilters';
+import './viewhotel.css';
 
 const API_BASE_URL = 'http://localhost:5000';
 
 const ViewHotels = () => {
-  const navigate = useNavigate();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   const [hotels, setHotels] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCity, setFilterCity] = useState('');
-  
+  const [filterCity, setFilterCity] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const [stats, setStats] = useState({
-    total: 0,
-    featured: 0,
-    avgRating: 0,
-    avgPrice: 0
-  });
+  // Get unique cities from hotels
+  const getCities = () => {
+    const cities = ['ALL'];
+    const uniqueCities = [...new Set(hotels.map(hotel => hotel.city).filter(Boolean))];
+    return [...cities, ...uniqueCities.sort()];
+  };
 
-  useEffect(() => {
-    fetchHotels();
-    fetchStats();
-  }, []);
+  const cityOptions = getCities();
+  const statusOptions = ['ALL', 'Active', 'Inactive', 'Featured'];
 
   const fetchHotels = async () => {
     try {
       setLoading(true);
-      setError('');
-
-      console.log('Fetching hotels from:', `${API_BASE_URL}/api/hotels`);
-
-      const response = await fetch(`${API_BASE_URL}/api/hotels?limit=100`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(`${API_BASE_URL}/api/hotels?limit=100`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const data = await response.json();
-      console.log('Hotels response:', data);
-
       if (data.success && Array.isArray(data.data)) {
-        console.log(`Loaded ${data.data.length} hotels`);
         setHotels(data.data);
-        setStats(prev => ({ ...prev, total: data.total || data.data.length }));
-      } else {
-        console.error('Invalid response format:', data);
-        setError('Invalid response format from server');
+        setCurrentPage(1);
       }
     } catch (error) {
-      console.error('Error fetching hotels:', error);
-      setError(`Failed to load hotels: ${error.message}`);
+      if (error.name === 'AbortError') {
+        console.error('Request timeout - server too slow');
+        alert('Server is taking too long to respond. Please check your connection.');
+      } else {
+        console.error('Error fetching hotels:', error);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchStats = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/hotels/stats`);
-      const data = await response.json();
-
-      if (data.success) {
-        setStats({
-          total: data.data.totalHotels || 0,
-          featured: data.data.featuredHotels || 0,
-          avgRating: (data.data.averageRating || 0).toFixed(1),
-          avgPrice: Math.round(data.data.averagePrice || 0)
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
+  useEffect(() => {
+    fetchHotels();
+  }, []);
 
   const handleDelete = async (hotelId, hotelName) => {
-    if (!window.confirm(`Are you sure you want to delete "${hotelName}"?\n\nThis will mark the hotel as inactive.`)) {
+    if (!window.confirm(`Are you sure you want to archive "${hotelName}"?\n\nThis will mark the hotel as inactive.`)) {
       return;
     }
 
@@ -93,67 +83,31 @@ const ViewHotels = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert('Hotel deleted successfully!');
+        alert('Hotel archived successfully!');
         fetchHotels();
-        fetchStats();
       } else {
-        alert('Error deleting hotel: ' + data.message);
+        alert('Error archiving hotel: ' + data.message);
       }
     } catch (error) {
-      console.error('Error deleting hotel:', error);
-      alert('Failed to delete hotel: ' + error.message);
+      console.error('Error archiving hotel:', error);
+      alert('Failed to archive hotel: ' + error.message);
     }
   };
 
   const handleEdit = (hotelId) => {
-    navigate(`/edit-hotel/${hotelId}`);
+    window.location.href = `/edit-hotel/${hotelId}`;
   };
 
-  const handleView = (hotel) => {
-    console.log('Viewing hotel:', hotel);
+  const handleViewDetails = (hotel) => {
     setSelectedHotel(hotel);
-    setIsViewModalOpen(true);
+    setShowDetailModal(true);
   };
-
-  const handleToggleFeatured = async (hotelId, currentStatus) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/hotels/${hotelId}/featured`, {
-        method: 'PATCH'
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        fetchHotels();
-        fetchStats();
-      } else {
-        alert('Error updating featured status: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error toggling featured:', error);
-      alert('Failed to update featured status: ' + error.message);
-    }
-  };
-
-  const filteredHotels = hotels.filter(hotel => {
-    const matchesSearch = hotel.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          hotel.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          hotel.city?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCity = filterCity === '' || hotel.city?.toLowerCase().includes(filterCity.toLowerCase());
-    return matchesSearch && matchesCity;
-  });
-
-  const uniqueCities = [...new Set(hotels.map(h => h.city).filter(Boolean))].sort();
 
   const getImageUrl = (hotel) => {
     if (hotel.mainImage) {
-      if (hotel.mainImage.startsWith('data:image')) {
-        return hotel.mainImage;
-      }
-      if (hotel.mainImage.startsWith('blob:')) {
-        return hotel.mainImage;
-      }
-      if (hotel.mainImage.startsWith('http')) {
+      if (hotel.mainImage.startsWith('data:image') || 
+          hotel.mainImage.startsWith('blob:') || 
+          hotel.mainImage.startsWith('http')) {
         return hotel.mainImage;
       }
     }
@@ -165,111 +119,107 @@ const ViewHotels = () => {
     return null;
   };
 
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP'
+    }).format(price);
+  };
+
+  // Filter and search logic
+  const filteredHotels = hotels.filter(hotel => {
+    const matchesSearch = hotel.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          hotel.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          hotel.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCity = filterCity === 'ALL' || hotel.city === filterCity;
+    
+    let matchesStatus = true;
+    if (filterStatus === 'Active') {
+      matchesStatus = hotel.isActive === true;
+    } else if (filterStatus === 'Inactive') {
+      matchesStatus = hotel.isActive === false;
+    } else if (filterStatus === 'Featured') {
+      matchesStatus = hotel.featured === true;
+    }
+    
+    return matchesSearch && matchesCity && matchesStatus;
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentHotels = filteredHotels.slice(indexOfFirstItem, indexOfLastItem);
+
+  const activeHotels = hotels.filter(h => h.isActive).length;
+  const featuredHotels = hotels.filter(h => h.featured).length;
+
+  const mainClass = `vh-main ${isSidebarCollapsed ? 'vh-main--collapsed' : ''}`;
+
   return (
-    <div className="hotel-page">
-      <Sidebar />
-      <main className="hotel-main">
-        <div className="hotel-container">
-          <header className="hotel-header flex-between">
-            <div>
-              <h1 className="hotel-title">HOTEL LIST</h1>
-              <p className="hotel-subtitle">Manage your accommodation partners</p>
+    <div className="vh-page">
+      <Sidebar 
+        isCollapsed={isSidebarCollapsed} 
+        toggleSidebar={toggleSidebar} 
+      />
+      <main className={mainClass}>
+        <div className="vh-container">
+          <header className="vh-header">
+            <div className="vh-header-content">
+              <h1 className="vh-title">HOTEL LIST</h1>
+              <p className="vh-subtitle">
+                Managing {hotels.length} properties • {activeHotels} active • {featuredHotels} featured
+              </p>
             </div>
-            <button className="btn-submit flex-center" onClick={() => navigate('/add-hotel')}>
-              <Plus size={18} style={{ marginRight: '8px' }} /> Add Hotel
+            <button className="vh-btn vh-btn--add" onClick={() => window.location.href='/add-hotel'}>
+              + Add New Hotel
             </button>
           </header>
 
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-label">Total Hotels</div>
-              <div className="stat-value">{stats.total}</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Featured</div>
-              <div className="stat-value">{stats.featured}</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Avg Rating</div>
-              <div className="stat-value">
-                <Star size={18} fill="#f59e0b" color="#f59e0b" style={{ display: 'inline', marginRight: '4px' }} />
-                {stats.avgRating}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Avg Price</div>
-              <div className="stat-value">₱{stats.avgPrice.toLocaleString()}</div>
-            </div>
-          </div>
+          <HotelFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterCity={filterCity}
+            setFilterCity={setFilterCity}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            cityOptions={cityOptions}
+            statusOptions={statusOptions}
+          />
 
-          <div className="filters-section">
-            <div className="search-box">
-              <Search size={18} />
-              <input
-                type="text"
-                placeholder="Search hotels by name or location..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          {loading ? (
+            <div className="vh-loading">
+              <div className="vh-spinner"></div>
+              <p>Loading hotels from database...</p>
             </div>
-            <div className="filter-group">
-              <Filter size={18} />
-              <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)}>
-                <option value="">All Cities</option>
-                {uniqueCities.map(city => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
+          ) : hotels.length === 0 ? (
+            <div className="vh-empty">
+              <span className="vh-empty-icon">🏨</span>
+              <h3>No hotels yet</h3>
+              <p>Start by adding your first hotel</p>
             </div>
-          </div>
-
-          {error && (
-            <div className="error-message">
-              <strong>Error:</strong> {error}
-              <button onClick={fetchHotels} style={{ marginLeft: '1rem' }}>Retry</button>
+          ) : filteredHotels.length === 0 ? (
+            <div className="vh-empty">
+              <span className="vh-empty-icon">🔍</span>
+              <h3>No hotels found</h3>
+              <p>Try adjusting your search or filter criteria</p>
             </div>
-          )}
-
-          {loading && (
-            <div className="loading-container">
-              <div className="spinner"></div>
-              <p>Loading hotels...</p>
-            </div>
-          )}
-
-          {!loading && !error && filteredHotels.length === 0 && (
-            <div className="empty-state">
-              <div className="empty-icon">🏨</div>
-              <h3>No Hotels Found</h3>
-              <p>
-                {searchTerm || filterCity
-                  ? 'Try adjusting your filters'
-                  : 'Start by adding your first hotel'}
-              </p>
-              {!searchTerm && !filterCity && (
-                <button className="btn-submit" onClick={() => navigate('/add-hotel')}>
-                  <Plus size={18} /> Add Your First Hotel
-                </button>
-              )}
-            </div>
-          )}
-
-          {!loading && !error && filteredHotels.length > 0 && (
-            <div className="hotel-table-container">
-              <table className="hotel-table">
+          ) : (
+            <div className="vh-table-wrapper">
+              <table className="vh-table">
                 <thead>
                   <tr>
-                    <th>Hotel Name</th>
-                    <th>Location</th>
-                    <th>Max Capacity</th>
-                    <th>Price</th>
-                    <th>Amenities</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>PREVIEW</th>
+                    <th>HOTEL NAME</th>
+                    <th>LOCATION</th>
+                    <th>CAPACITY</th>
+                    <th>PRICE</th>
+                    <th>AMENITIES</th>
+                    <th>STATUS</th>
+                    <th>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredHotels.map((hotel) => {
+                  {currentHotels.map((hotel) => {
                     const amenitiesCount = hotel.amenities 
                       ? Object.values(hotel.amenities).filter(Boolean).length 
                       : 0;
@@ -279,88 +229,89 @@ const ViewHotels = () => {
                     return (
                       <tr key={hotel._id}>
                         <td>
-                          <div className="hotel-cell-name">
+                          <div className="vh-image-preview">
                             {imageUrl ? (
                               <img 
                                 src={imageUrl} 
                                 alt={hotel.name}
-                                className="hotel-thumb-img"
-                                onError={(e) => {
-                                  console.log('Image failed to load:', imageUrl);
-                                  e.target.style.display = 'none';
-                                  const placeholder = e.target.nextSibling;
-                                  if (placeholder) placeholder.style.display = 'flex';
-                                }}
+                                onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250'; }}
                               />
-                            ) : null}
-                            <div 
-                              className="hotel-thumb" 
-                              style={{ display: imageUrl ? 'none' : 'flex' }}
-                            >
-                              {hotel.name?.charAt(0).toUpperCase() || 'H'}
-                            </div>
-                            <div>
-                              <span className="font-bold">{hotel.name}</span>
-                              {hotel.featured && (
-                                <span className="badge badge-featured">Featured</span>
-                              )}
-                            </div>
+                            ) : (
+                              <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#f1f5f9',
+                                color: '#94a3b8'
+                              }}>
+                                <Home size={20} />
+                              </div>
+                            )}
                           </div>
                         </td>
-                        <td className="text-muted">
-                          <div className="flex-align">
-                            <MapPin size={14} style={{ marginRight: '4px' }} />
-                            {hotel.location || hotel.city || 'N/A'}
+                        <td>
+                          <span className="vh-hotel-name">{hotel.name}</span>
+                          {hotel.featured && (
+                            <span style={{
+                              marginLeft: '8px',
+                              fontSize: '10px',
+                              padding: '2px 8px',
+                              background: '#fef3c7',
+                              color: '#d97706',
+                              borderRadius: '6px',
+                              fontWeight: '700',
+                              textTransform: 'uppercase'
+                            }}>
+                              ⭐ Featured
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="vh-location-cell">
+                            <MapPin size={14} />
+                            <span>{hotel.location || hotel.city || 'N/A'}</span>
                           </div>
                         </td>
-                        <td className="text-center">
-                          {hotel.maxCapacity || 4} persons
-                        </td>
-                        <td className="text-center">
-                          ₱{(hotel.price || 0).toLocaleString()}
-                        </td>
-                        <td className="text-center">
-                          <span className="amenities-badge">
-                            {amenitiesCount} amenities
+                        <td>
+                          <span className="vh-capacity-badge">
+                            <Users size={12} />
+                            {hotel.maxCapacity || 4} Pax
                           </span>
                         </td>
                         <td>
-                          <span className={`badge ${hotel.isActive ? 'badge-active' : 'badge-inactive'}`}>
+                          <span className="vh-price-value">{formatPrice(hotel.price || 0)}</span>
+                        </td>
+                        <td>
+                          <span className="vh-amenities-badge">
+                            <CheckCircle size={12} />
+                            {amenitiesCount} Amenities
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`vh-status vh-status--${hotel.isActive ? 'active' : 'inactive'}`}>
+                            <Home size={12} />
                             {hotel.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td>
-                          <div className="action-group">
+                          <div className="vh-actions">
                             <button 
-                              className="action-btn view" 
-                              onClick={() => handleView(hotel)}
+                              className="vh-action-btn vh-action-btn--view"
+                              onClick={() => handleViewDetails(hotel)}
                               title="View Details"
                             >
                               <Eye size={16} />
+                              <span>View</span>
                             </button>
-                            
                             <button 
-                              className="action-btn edit" 
-                              onClick={() => handleEdit(hotel._id)}
-                              title="Edit"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            
-                            <button 
-                              className={`action-btn ${hotel.featured ? 'featured' : 'star'}`}
-                              onClick={() => handleToggleFeatured(hotel._id, hotel.featured)}
-                              title={hotel.featured ? 'Unfeature' : 'Feature'}
-                            >
-                              <Star size={16} fill={hotel.featured ? "#f59e0b" : "none"} />
-                            </button>
-                            
-                            <button 
-                              className="action-btn delete" 
+                              className="vh-action-btn vh-action-btn--delete"
                               onClick={() => handleDelete(hotel._id, hotel.name)}
-                              title="Delete"
+                              title="Archive"
                             >
-                              <Trash2 size={16} />
+                              <Archive size={16} />
+                              <span>Archive</span>
                             </button>
                           </div>
                         </td>
@@ -369,29 +320,23 @@ const ViewHotels = () => {
                   })}
                 </tbody>
               </table>
-            </div>
-          )}
-
-          {!loading && !error && filteredHotels.length > 0 && (
-            <div className="results-footer">
-              Showing {filteredHotels.length} of {hotels.length} hotels
+              
+              <HotelPagination
+                totalItems={filteredHotels.length}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           )}
         </div>
       </main>
 
-      {isViewModalOpen && selectedHotel && (
-        <ViewHotelModal 
-          hotel={selectedHotel} 
-          onClose={() => {
-            setIsViewModalOpen(false);
-            setSelectedHotel(null);
-          }} 
-          onEdit={(id) => {
-            setIsViewModalOpen(false);
-            setSelectedHotel(null);
-            navigate(`/edit-hotel/${id}`);
-          }}
+      {showDetailModal && selectedHotel && (
+        <ViewHotelModal
+          hotel={selectedHotel}
+          onClose={() => setShowDetailModal(false)}
+          onEdit={handleEdit}
         />
       )}
     </div>

@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Copy, Check } from 'lucide-react';
+import { Archive, Calendar, Eye, Image as ImageIcon } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
+import ImageDetailModal from './ImageDetailModal';
+import ImagePagination from './ImagePagination';
+import ImageFilters from './ImageFilters';
 import './viewimage.css';
 
 const ViewImage = () => {
-
-    // --- SIDEBAR TOGGLE LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR TOGGLE LOGIC END ---
 
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [copiedId, setCopiedId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterFileType, setFilterFileType] = useState('ALL');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+
+    const fileTypeOptions = ['ALL', 'JPG', 'PNG', 'GIF', 'WEBP', 'SVG'];
+
+    const getFilterClassName = (type) => {
+        return filterFileType === type ? 'if-active-navy' : '';
+    };
 
     useEffect(() => {
         fetchImages();
@@ -24,87 +35,213 @@ const ViewImage = () => {
         setLoading(true);
         try {
             const response = await fetch('http://localhost:5000/api/images');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
+            console.log('📸 Fetched images:', data);
             setImages(data);
+            setCurrentPage(1);
         } catch (error) {
-            console.error('Error fetching images:', error);
+            console.error('❌ Error fetching images:', error);
+            alert('Failed to load images. Make sure the backend is running.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Delete this image?')) {
+    const handleArchive = async (id, imageName) => {
+        if (window.confirm(`Are you sure you want to archive "${imageName || 'this image'}"?`)) {
             try {
                 const response = await fetch(`http://localhost:5000/api/images/${id}`, {
                     method: 'DELETE'
                 });
+                
                 if (response.ok) {
-                    setImages(images.filter(img => img._id !== id));
+                    const updatedImages = images.filter(img => img._id !== id);
+                    setImages(updatedImages);
+                    alert('Image archived successfully');
+                    
+                    const maxPage = Math.ceil(updatedImages.length / itemsPerPage);
+                    if (currentPage > maxPage && maxPage > 0) {
+                        setCurrentPage(maxPage);
+                    }
                 } else {
-                    console.error('Failed to delete image');
+                    alert('Failed to archive image');
                 }
             } catch (error) {
-                console.error('Error deleting image:', error);
+                console.error('Error archiving:', error);
+                alert('Server error while archiving');
             }
         }
     };
 
-    const copyUrl = (url, id) => {
-        navigator.clipboard.writeText(url).then(() => {
-            setCopiedId(id);
-            setTimeout(() => setCopiedId(null), 1500);
-        }).catch(err => {
-            console.error('Could not copy text: ', err);
+    const handleViewDetails = (image) => {
+        setSelectedImage(image);
+        setShowDetailModal(true);
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
         });
     };
 
+    // Filter and search logic
+    const filteredImages = images.filter(image => {
+        const matchesSearch = (image.imageName || '').toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // Get file extension from image name
+        const fileExtension = (image.imageName?.split('.').pop() || '').toUpperCase();
+        const matchesFileType = filterFileType === 'ALL' || fileExtension === filterFileType;
+        
+        return matchesSearch && matchesFileType;
+    });
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentImages = filteredImages.slice(indexOfFirstItem, indexOfLastItem);
+
     return (
         <div className="vi-page">
-            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            {/* The main content now gets a class when the sidebar is collapsed */}
-            <main className={`vi-main ${isSidebarCollapsed ? 'vi-main-collapsed' : ''}`}>
+            <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
+            <main className={`vi-main ${isSidebarCollapsed ? 'vi-main--collapsed' : ''}`}>
                 <div className="vi-container">
                     <header className="vi-header">
-                        <h1 className="vi-title">Your Image Gallery</h1>
-                        <p className="vi-subtitle">All your uploaded images in one place.</p>
+                        <div className="vi-header-content">
+                            <h1 className="vi-title">IMAGE GALLERY</h1>
+                            <p className="vi-subtitle">
+                                Managing {images.length} images in your gallery
+                            </p>
+                        </div>
+                        <button className="vi-btn vi-btn--add" onClick={() => window.location.href='/upload-image'}>
+                            + Upload New Image
+                        </button>
                     </header>
 
+                    {/* IMAGE FILTERS */}
+                    <ImageFilters
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        filterFileType={filterFileType}
+                        setFilterFileType={setFilterFileType}
+                        fileTypeOptions={fileTypeOptions}
+                        getFilterClassName={getFilterClassName}
+                    />
+
                     {loading ? (
-                        <div className="vi-loading">Loading images...</div>
+                        <div className="vi-loading">
+                            <div className="vi-spinner"></div>
+                            <p>Loading images from database...</p>
+                        </div>
+                    ) : images.length === 0 ? (
+                        <div className="vi-empty">
+                            <span className="vi-empty-icon">🖼️</span>
+                            <h3>No images yet</h3>
+                            <p>Start by uploading your first image</p>
+                        </div>
+                    ) : filteredImages.length === 0 ? (
+                        <div className="vi-empty">
+                            <span className="vi-empty-icon">🔍</span>
+                            <h3>No images found</h3>
+                            <p>Try adjusting your search criteria</p>
+                        </div>
                     ) : (
-                        <div className="vi-grid">
-                            {images.length > 0 ? (
-                                images.map((img) => (
-                                    <div key={img._id} className="vi-card">
-                                        <div className="vi-image-wrapper">
-                                            <img src={img.imageUrl} alt={img.imageName} />
-                                            <div className="vi-overlay">
-                                                <button 
-                                                    className="vi-btn vi-copy" 
-                                                    onClick={() => copyUrl(img.imageUrl, img._id)}
-                                                    title="Copy URL"
-                                                >
-                                                    {copiedId === img._id ? <Check size={18} /> : <Copy size={18} />}
-                                                </button>
-                                                <button 
-                                                    className="vi-btn vi-delete" 
-                                                    onClick={() => handleDelete(img._id)}
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="vi-empty">No images found.</div>
-                            )}
+                        <div className="vi-table-wrapper">
+                            <table className="vi-table">
+                                <thead>
+                                    <tr>
+                                        <th>PREVIEW</th>
+                                        <th>FILE NAME</th>
+                                        <th>FILE TYPE</th>
+                                        <th>UPLOAD DATE</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentImages.map((image) => (
+                                        <tr key={image._id}>
+                                            <td>
+                                                <div className="vi-image-preview">
+                                                    <img 
+                                                        src={image.imageUrl} 
+                                                        alt={image.imageName || 'Gallery image'}
+                                                        onError={(e) => {
+                                                            console.error('Image load error:', image.imageUrl);
+                                                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage not found%3C/text%3E%3C/svg%3E';
+                                                        }}
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="vi-image-name">{image.imageName || 'Untitled'}</span>
+                                            </td>
+                                            <td>
+                                                <span className="vi-file-type">
+                                                    <ImageIcon size={12} />
+                                                    {image.imageName?.split('.').pop()?.toUpperCase() || 'IMAGE'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="vi-date">
+                                                    <Calendar size={14} />
+                                                    <span>
+                                                        {image.createdAt ? formatDate(image.createdAt) : '--'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="vi-actions">
+                                                    <button 
+                                                        className="vi-action-btn vi-action-btn--view"
+                                                        onClick={() => handleViewDetails(image)}
+                                                        title="View Details"
+                                                    >
+                                                        <Eye size={16} />
+                                                        <span>View</span>
+                                                    </button>
+                                                    <button 
+                                                        className="vi-action-btn vi-action-btn--archive"
+                                                        onClick={() => handleArchive(image._id, image.imageName)}
+                                                        title="Archive Image"
+                                                    >
+                                                        <Archive size={16} />
+                                                        <span>Archive</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            
+                            <ImagePagination
+                                totalItems={filteredImages.length}
+                                itemsPerPage={itemsPerPage}
+                                currentPage={currentPage}
+                                onPageChange={setCurrentPage}
+                            />
                         </div>
                     )}
                 </div>
             </main>
+
+            {showDetailModal && selectedImage && (
+                <ImageDetailModal
+                    showModal={showDetailModal}
+                    selectedImage={selectedImage}
+                    setShowModal={setShowDetailModal}
+                    handleArchive={handleArchive}
+                />
+            )}
         </div>
     );
 };
