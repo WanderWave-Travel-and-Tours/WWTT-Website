@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { addImage, getAllImages, deleteImage } = require('../controller/imageController');
+// Siguraduhin na archiveImage ang naka-import dito
+const { addImage, getAllImages, archiveImage } = require('../controller/imageController');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -33,6 +34,8 @@ const upload = multer({
 
 router.post('/add', upload.single('image'), addImage);
 router.get('/', getAllImages);
-router.delete('/:id', deleteImage);
+
+// Gagamit ng PATCH dahil update operation ito
+router.patch('/:id', archiveImage); 
 
 module.exports = router;

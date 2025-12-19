@@ -13,7 +13,8 @@ import {
     ChevronLeft, 
     ChevronRight, 
     Search,
-    UserPlus
+    UserPlus,
+    Archive
 } from 'lucide-react';
 import './AirlineBooking.css';
 import AirlineApplicationModal from './AirlineApplicationModal'; 
@@ -69,23 +70,23 @@ const AirlineBooking = () => {
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     // Fetch flight booking inquiries from database
-    const fetchFlightBookings = async () => {
-        try {
-            const response = await axios.get('http://localhost:5000/api/inquiries');
-            if (response.data.success) {
-                const flightRequests = response.data.data.filter(inq => 
-                    inq.inquiryType === 'FLIGHT_BOOKING'
-                );
-                
-                setBookings(flightRequests);
-                console.log('✅ Flight Bookings loaded:', flightRequests.length);
-            }
-        } catch (error) {
-            console.error('Error fetching flight bookings:', error);
-        } finally {
-            setIsLoading(false);
+const fetchFlightBookings = async () => {
+    setIsLoading(true);
+    try {
+        const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
+        if (response.data.success) {
+            // Filter: Flight Booking lang at hindi naka-archive
+            const filtered = response.data.data.filter(inq => 
+                inq.inquiryType === 'FLIGHT_BOOKING' && inq.isArchive === 'No'
+            );
+            setBookings(filtered);
         }
-    };
+    } catch (error) {
+        console.error('Error fetching:', error);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     useEffect(() => {
         fetchFlightBookings();
@@ -197,6 +198,24 @@ const AirlineBooking = () => {
     const initiateContactStatus = () => {
         setShowContactRemarks(true);
     };
+
+const handleArchiveBooking = async (id) => {
+    if (window.confirm('Are you sure you want to archive this inquiry?')) {
+        try {
+            const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+                isArchive: 'Yes'
+            });
+
+            if (response.data.success) {
+                alert('Inquiry archived successfully!');
+                fetchFlightBookings(); // I-refresh ang listahan
+            }
+        } catch (error) {
+            console.error('Error archiving:', error);
+            alert('Failed to archive inquiry.');
+        }
+    }
+};
 
     // Submit contact with remarks
     const submitContactWithRemarks = async () => {
@@ -437,6 +456,15 @@ const AirlineBooking = () => {
                                                     >
                                                         <Eye size={14} style={{marginRight:'4px'}}/> View Details
                                                     </button>
+
+<button 
+    className="airline-action-btn" 
+    style={{ color: '#ef4444', borderColor: '#ef4444' }}
+    onClick={() => handleArchiveBooking(booking._id)}
+>
+    <Archive size={14}/> Archive
+</button>
+
                                                 </td>
                                             </tr>
                                         ))}

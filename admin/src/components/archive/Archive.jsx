@@ -19,6 +19,8 @@ import { fetchArchivedTestimonials, restoreTestimonial } from './archiveFunction
 import { fetchArchivedPromos, restorePromo } from './archiveFunctions/promoService';
 import { fetchArchivedPosters, restorePoster } from './archiveFunctions/posterService';
 import { fetchArchivedInquiries, restoreInquiry } from './archiveFunctions/inquiryService';
+import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'; 
+import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; // INIDAGDAG
 
 const ARCHIVE_IMAGES = {
     TOTAL_ITEMS: 'https://picsum.photos/seed/desk/800/600', 
@@ -28,7 +30,7 @@ const ARCHIVE_IMAGES = {
     ITEMS_RESTORED: 'https://picsum.photos/seed/folder/800/600' 
 };
 
-const ARCHIVE_RETENTION_DAYS = 90;
+const ARCHIVE_RETENTION_DAYS = 30;
 
 const ARCHIVE_TYPES = [
     'ALL',
@@ -37,15 +39,14 @@ const ARCHIVE_TYPES = [
     'Archived Users',
 ];
 
-// DAPAT MATCH ITO SA DISPLAY TYPES NA NASA FETCH LOGIC
 const SERVICE_SUBTYPES_LIST = [ 
     'ALL Services', 
     'Manage Services', 
     'VISA Processing',
     'PSA Serbilis',
     'CENOMAR',
-    'Passport Appt', // <--- Siguraduhing nandito ito
-    'Airline Booking', // <--- Para sa FLIGHT_BOOKING
+    'Passport Appt', 
+    'Airline Booking', 
     'Hotel Booking',
     'Tour Arrangements',
     'Ferry Booking',
@@ -61,7 +62,7 @@ const LIST_ARCHIVE_ITEMS = [
     'Tour', 
     'Promo', 
     'Poster', 
-    'Blog', 
+    'Blog',
     'Hotel', 
     'Testimonial', 
     'Image Gallery'
@@ -123,7 +124,9 @@ const ArchiveComponent = () => {
         fetchArchivedTestimonials(),
         fetchArchivedPromos(),
         fetchArchivedPosters(),
-        fetchArchivedInquiries() 
+        fetchArchivedInquiries(),
+        fetchArchivedBlogs(),
+        fetchArchivedImages() // INIDAGDAG
       ]);
       
       const bookingsData = results[0].status === 'fulfilled' ? results[0].value : [];
@@ -133,6 +136,8 @@ const ArchiveComponent = () => {
       const promosData = results[4].status === 'fulfilled' ? results[4].value : [];
       const postersData = results[5].status === 'fulfilled' ? results[5].value : []; 
       const inquiriesData = results[6].status === 'fulfilled' ? results[6].value : []; 
+      const blogsData = results[7].status === 'fulfilled' ? results[7].value : [];
+      const imagesData = results[8].status === 'fulfilled' ? results[8].value : []; // INIDAGDAG
 
       const combinedData = [
         ...bookingsData, 
@@ -141,7 +146,9 @@ const ArchiveComponent = () => {
         ...testimonialsData,
         ...promosData,
         ...postersData,
-        ...inquiriesData
+        ...inquiriesData,
+        ...blogsData,
+        ...imagesData // INIDAGDAG
       ];
       
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
@@ -151,7 +158,6 @@ const ArchiveComponent = () => {
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
         const dateRaw = item.archivedAt || item.updatedAt || item.createdAt || new Date().toISOString();
 
-        // Pinahusay na Logic para sa Mapping ng Inquiry Types sa Service Subtypes
         let displayType = item.type || 'Other';
         
         if (item.inquiryType) {
@@ -159,8 +165,8 @@ const ArchiveComponent = () => {
              case 'VISA': displayType = 'VISA Processing'; break;
              case 'PSA': displayType = 'PSA Serbilis'; break;
              case 'CENOMAR': displayType = 'CENOMAR'; break;
-             case 'PASSPORT': displayType = 'Passport Appt'; break; // <--- FIX: Mapping for Passport
-             case 'FLIGHT_BOOKING': displayType = 'Airline Booking'; break; // <--- FIX: Mapping for Flight
+             case 'PASSPORT': displayType = 'Passport Appt'; break; 
+             case 'FLIGHT_BOOKING': displayType = 'Airline Booking'; break;
              default: displayType = item.inquiryType;
            }
         }
@@ -169,12 +175,12 @@ const ArchiveComponent = () => {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber: archiveNumber,
-          itemName: item.fullName || item.itemName || item.title || item.name || item.code || 'Unnamed Item', 
+          itemName: item.imageName || item.title || item.fullName || item.itemName || item.name || item.code || 'Unnamed Item', 
           type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
-          reference: item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
+          reference: item.imageUrl || item.author || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
           status: item.status || 'Archived', 
           rawData: item
         };
@@ -192,7 +198,6 @@ const ArchiveComponent = () => {
     fetchArchiveItems(); 
   }, []);
 
-  // Filtering Logic
   useEffect(() => {
     let filtered = [...archiveItems];
     const lowerSearchTerm = searchTerm.toLowerCase();
@@ -203,7 +208,6 @@ const ArchiveComponent = () => {
         if (filterListSubtype !== 'ALL List Items') filtered = filtered.filter(item => item.type === filterListSubtype);
     } else if (filterType === 'Archived Services') {
         const serviceSubtypeNames = SERVICE_SUBTYPES_LIST.slice(1);
-        // Ngayon, ang 'Passport Appt' at 'Airline Booking' ay kasama na dito
         filtered = filtered.filter(item => serviceSubtypeNames.includes(item.type));
         if (filterSubtype !== 'ALL Services') filtered = filtered.filter(item => item.type === filterSubtype);
     } else if (filterType === 'Archived Users') {
@@ -231,9 +235,6 @@ const ArchiveComponent = () => {
     setCurrentPage(1); 
   }, [searchTerm, filterType, filterSubtype, filterListSubtype, filterUserSubtype, archiveItems, sortDirection]);
 
-  // Rest of the component (handleRestore, handleRestoreAll, return statement) 
-  // nananatiling pareho dahil ang main fix ay nasa display mapping at list definitions sa itaas.
-  
   const handleRestore = async (item) => { 
     if (!window.confirm(`Are you sure you want to restore ${item.itemName}?`)) return;
     setActionLoading(true);
@@ -245,6 +246,8 @@ const ArchiveComponent = () => {
       else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId);
       else if (item.type === 'Promo') restored = await restorePromo(item.mongoId);
       else if (item.type === 'Poster') restored = await restorePoster(item.mongoId);
+      else if (item.type === 'Blog') restored = await restoreBlog(item.mongoId);
+      else if (item.type === 'Image Gallery') restored = await restoreImage(item.mongoId); // INIDAGDAG
       else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
         restored = await restoreInquiry(item.mongoId);
       }
@@ -275,6 +278,8 @@ const ArchiveComponent = () => {
         else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
         else if (item.type === 'Promo') await restorePromo(item.mongoId);
         else if (item.type === 'Poster') await restorePoster(item.mongoId);
+        else if (item.type === 'Blog') await restoreBlog(item.mongoId);
+        else if (item.type === 'Image Gallery') await restoreImage(item.mongoId); // INIDAGDAG
         else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(item.mongoId);
       }
       await fetchArchiveItems();

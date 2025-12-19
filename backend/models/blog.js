@@ -25,6 +25,12 @@ const blogSchema = new mongoose.Schema({
         type: String,
         enum: ['Published', 'Draft'],
         default: 'Published'
+    },
+    // New Field Added
+    isArchive: {
+        type: String,
+        enum: ['Yes', 'No'],
+        default: 'No'
     }
 }, {
     timestamps: true // Auto adds createdAt and updatedAt
