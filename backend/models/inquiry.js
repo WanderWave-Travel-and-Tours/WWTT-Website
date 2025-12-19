@@ -160,6 +160,13 @@ const inquirySchema = new mongoose.Schema({
     default: 'PENDING'
   },
   
+  // ARCHIVE FIELD
+  isArchive: {
+    type: String,
+    enum: ['Yes', 'No'],
+    default: 'No'
+  },
+  
   remarks: {
     type: String,
     default: ''
@@ -192,7 +199,6 @@ const inquirySchema = new mongoose.Schema({
     default: null
   },
 
-  // PAYMENT CONFIRMATION FIELDS
   paymentConfirmedAt: {
     type: Date,
     default: null
@@ -202,7 +208,6 @@ const inquirySchema = new mongoose.Schema({
     default: null
   },
 
-  // DOCUMENT DELIVERY FIELDS
   deliveredDocuments: [{
     fileName: String,
     fileUrl: String,
@@ -229,5 +234,6 @@ const inquirySchema = new mongoose.Schema({
 inquirySchema.index({ email: 1, createdAt: -1 });
 inquirySchema.index({ status: 1, createdAt: -1 });
 inquirySchema.index({ serviceName: 1, createdAt: -1 });
+inquirySchema.index({ isArchive: 1 });
 
 module.exports = mongoose.model('Inquiry', inquirySchema);
