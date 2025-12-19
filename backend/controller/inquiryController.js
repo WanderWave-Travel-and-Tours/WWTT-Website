@@ -11,10 +11,10 @@ const generateTempPassword = () => {
   const randomSpecialChar = specialChars.charAt(Math.floor(Math.random() * specialChars.length));
   return `Wander_${numbers}${randomSpecialChar}`;
 };
-
+ 
 const createInquiry = async (req, res) => {
   try {
-    console.log('📥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
+    console.log('🔥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
 
     let {
       serviceId,
@@ -100,7 +100,6 @@ const createInquiry = async (req, res) => {
       console.error('❌ User Creation/Lookup Error:', userError);
     }
 
-    // ✅✅✅ CRITICAL FIX: Use insertOne to bypass Mongoose casting
     const inquiryDoc = {
       _id: new mongoose.Types.ObjectId(),
       serviceId: serviceId || null,
@@ -119,6 +118,7 @@ const createInquiry = async (req, res) => {
       cenomarDocument: cenomarDocument || null,
       cenomarId: cenomarId || null,
       status: 'PENDING',
+      isArchive: "No", // ✅ DEFAULT ADDED HERE
       remarks: '',
       evidenceUrl: '',
       evidenceName: '',
@@ -133,7 +133,6 @@ const createInquiry = async (req, res) => {
       updatedAt: new Date()
     };
 
-    // ✅ Process flightDetails
     if (flightDetails) {
       if (typeof flightDetails === 'string') {
         try {
@@ -148,7 +147,6 @@ const createInquiry = async (req, res) => {
       inquiryDoc.flightDetails = {};
     }
 
-    // ✅ Process passportDetails
     if (passportDetails) {
       if (typeof passportDetails === 'string') {
         try {
@@ -163,10 +161,8 @@ const createInquiry = async (req, res) => {
       inquiryDoc.passportDetails = {};
     }
 
-    // ✅ Process passengers - THE FIX
     let passengersArray = [];
     if (passengers) {
-      // Parse if string
       if (typeof passengers === 'string') {
         try {
           passengers = JSON.parse(passengers);
@@ -176,10 +172,8 @@ const createInquiry = async (req, res) => {
         }
       }
       
-      // Ensure array
       if (Array.isArray(passengers)) {
         passengersArray = passengers.map(p => {
-          // If p is string, parse it
           if (typeof p === 'string') {
             try {
               p = JSON.parse(p);
@@ -202,15 +196,11 @@ const createInquiry = async (req, res) => {
     }
 
     inquiryDoc.passengers = passengersArray;
-
     console.log('💾 Final Document to Insert:', JSON.stringify(inquiryDoc, null, 2));
 
-    // ✅ USE DIRECT MONGODB INSERT - BYPASSES MONGOOSE VALIDATION
     const result = await mongoose.connection.db.collection('inquiries').insertOne(inquiryDoc);
-    
     console.log('✅ Inquiry Inserted Successfully:', result.insertedId);
 
-    // Fetch the created document
     const createdInquiry = await Inquiry.findById(result.insertedId);
 
     res.status(201).json({ 
@@ -231,13 +221,8 @@ const createInquiry = async (req, res) => {
   }
 };
 
-// --- NEW FUNCTION: Create Inquiry with Multi-File Uploads ---
 const createInquiryWithUploads = async (req, res) => {
     try {
-        console.log("📥 Received Application Upload");
-        console.log("Body:", req.body);
-        console.log("Files:", req.files ? req.files.length : 0);
-
         const {
             serviceName, 
             inquiryType,
@@ -281,6 +266,7 @@ const createInquiryWithUploads = async (req, res) => {
             visaCountry: visaCountry || 'Japan',
             estimatedPrice: estimatedPrice || 0,
             status: 'PENDING',
+            isArchive: "No", // ✅ DEFAULT ADDED HERE
             deliveredDocuments: uploadedDocs 
         });
 
@@ -289,7 +275,6 @@ const createInquiryWithUploads = async (req, res) => {
             message: 'Application submitted successfully',
             data: newInquiry
         });
-
     } catch (error) {
         console.error('❌ Application Upload Error:', error);
         res.status(500).json({ success: false, message: 'Server error processing application' });
@@ -298,17 +283,22 @@ const createInquiryWithUploads = async (req, res) => {
 
 const getAllInquiries = async (req, res) => {
   try {
-    const inquiries = await Inquiry.find().sort({ createdAt: -1 });
+    const { isArchive } = req.query; 
+    let filter = {};
+    
+    // Default sa "No" para hindi magpakita ang archive sa regular list kung walang query.
+    filter.isArchive = isArchive ? isArchive : "No"; 
+
+    const inquiries = await Inquiry.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: inquiries });
   } catch (error) {
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const getInquiry = async (req, res) => {
   try {
-    const inquiry = await Inquiry.findById(req.params.id)
-      .populate('serviceId visaId psaId cenomarId');
+    const inquiry = await Inquiry.findById(req.params.id).populate('serviceId visaId psaId cenomarId');
     if (!inquiry) return res.status(404).json({ success: false });
     res.json({ success: true, data: inquiry });
   } catch (error) {
@@ -320,7 +310,6 @@ const updateInquiryStatus = async (req, res) => {
   try {
     const { status, adminNotes, contactedBy, remarks } = req.body;
     const evidenceFile = req.file;
-
     const updateData = { status, adminNotes, updatedAt: Date.now() };
     if (remarks) updateData.remarks = remarks;
     if (evidenceFile) {
@@ -331,7 +320,6 @@ const updateInquiryStatus = async (req, res) => {
       updateData.contactedAt = Date.now();
       updateData.contactedBy = contactedBy;
     }
-
     const updated = await Inquiry.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json({ success: true, data: updated });
   } catch (error) {
@@ -369,7 +357,6 @@ const getInquiryStats = async (req, res) => {
 const markAsPaid = async (req, res) => {
   try {
     const { id } = req.params;
-
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       {
@@ -486,6 +473,145 @@ const deliverDocuments = async (req, res) => {
   }
 };
 
+const getInquiryAnalytics = async (req, res) => {
+  try {
+    const inquiries = await Inquiry.find();
+    const completedInquiries = inquiries.filter(i => i.status === 'COMPLETED');
+    const totalRevenue = completedInquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const todayRevenue = completedInquiries
+      .filter(i => {
+        const updated = new Date(i.updatedAt);
+        return updated >= today && updated < tomorrow;
+      })
+      .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+
+    const monthRevenue = completedInquiries
+      .filter(i => {
+        const updated = new Date(i.updatedAt);
+        return updated >= startOfMonth && updated <= endOfMonth;
+      })
+      .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+    
+    const revenueByService = {};
+    completedInquiries.forEach(inquiry => {
+      const service = inquiry.serviceName || 'Other';
+      if (!revenueByService[service]) {
+        revenueByService[service] = {
+          count: 0,
+          revenue: 0
+        };
+      }
+      revenueByService[service].count += 1;
+      revenueByService[service].revenue += inquiry.estimatedPrice || 0;
+    });
+    
+    const statusBreakdown = {
+      completed: completedInquiries.length,
+      pending: inquiries.filter(i => i.status === 'PENDING').length,
+      processing: inquiries.filter(i => i.status === 'PROCESSING' || i.status === 'CONTACTED').length,
+      paid: inquiries.filter(i => i.status === 'PAID' || i.status === 'CONFIRMED').length,
+      cancelled: inquiries.filter(i => i.status === 'CANCELLED').length,
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        totalInquiries: inquiries.length,
+        completedCount: completedInquiries.length,
+        totalRevenue,
+        todayRevenue,
+        monthRevenue,
+        revenueByService,
+        statusBreakdown,
+        recentInquiries: inquiries.slice(0, 10)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching inquiries analytics:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching analytics', 
+      error: error.message 
+    });
+  }
+};
+
+const getInquiriesByDateRange = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Start date and end date are required' 
+      });
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    const inquiries = await Inquiry.find({
+      updatedAt: {
+        $gte: start,
+        $lte: end
+      },
+      status: 'COMPLETED'
+    });
+    
+    const totalRevenue = inquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+    
+    res.json({
+      success: true,
+      data: {
+        count: inquiries.length,
+        totalRevenue,
+        inquiries
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching inquiries by date range:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching inquiries', 
+      error: error.message 
+    });
+  }
+};
+
+const toggleArchive = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isArchive } = req.body; 
+
+    if (!['Yes', 'No'].includes(isArchive)) {
+      return res.status(400).json({ success: false, message: 'Invalid value for isArchive' });
+    }
+
+    const inquiry = await Inquiry.findByIdAndUpdate(
+      id,
+      { isArchive, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    if (!inquiry) return res.status(404).json({ success: false, message: 'Inquiry not found' });
+
+    res.json({ success: true, message: `Inquiry archive status set to ${isArchive}`, data: inquiry });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   createInquiry,
   createInquiryWithUploads, 
@@ -497,5 +623,8 @@ module.exports = {
   getInquiryStats,
   markAsPaid,
   confirmPayment,
-  deliverDocuments
+  deliverDocuments,
+  getInquiryAnalytics,
+  getInquiriesByDateRange,
+  toggleArchive
 };

@@ -1,28 +1,22 @@
 const router = require('express').Router();
 const Promo = require('../models/promo');
 
+// CREATE: Add new promo
 router.post('/add', async (req, res) => {
     try {
         const newPromo = new Promo({
-            code: req.body.code,
-            description: req.body.description,
-            category: req.body.category,
-            discountType: req.body.discountType,
-            discountValue: req.body.discountValue,
-            startDate: req.body.startDate,
-            durationType: req.body.durationType,
-            validUntil: req.body.validUntil, 
-            isActive: true
+            ...req.body,
+            isArchive: "No"
         });
-
         const savedPromo = await newPromo.save();
-        res.status(200).json({ status: "ok", message: "Promo created successfully!", data: savedPromo });
+        res.status(200).json({ status: "ok", data: savedPromo });
     } catch (err) {
         res.status(500).json({ status: "error", message: err.message });
     }
 });
 
-router.get('/', async (req, res) => {
+// READ: Kunin lahat ng Promo (ginagamit ng Archive at View)
+router.get('/all', async (req, res) => {
     try {
         const promos = await Promo.find().sort({ createdAt: -1 });
         res.status(200).json(promos);
@@ -31,12 +25,29 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+// READ: View Promos (Filter default isArchive: "No")
+router.get('/', async (req, res) => {
     try {
-        await Promo.findByIdAndDelete(req.params.id);
-        res.status(200).json({ status: "ok", message: "Promo deleted." });
+        const promos = await Promo.find({ isArchive: "No" }).sort({ createdAt: -1 });
+        res.status(200).json(promos);
     } catch (err) {
         res.status(500).json(err);
+    }
+});
+
+// UPDATE ARCHIVE STATUS (Ito ang fix sa 404)
+// URL: PUT http://localhost:5000/api/promos/:id
+router.put('/:id', async (req, res) => {
+    try {
+        const updatedPromo = await Promo.findByIdAndUpdate(
+            req.params.id,
+            { isArchive: req.body.isArchive },
+            { new: true }
+        );
+        if (!updatedPromo) return res.status(404).json({ message: "Promo not found" });
+        res.status(200).json({ status: "ok", data: updatedPromo });
+    } catch (err) {
+        res.status(500).json({ status: "error", message: err.message });
     }
 });
 

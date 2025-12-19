@@ -9,6 +9,7 @@ import RecentBookings from "./components/RecentBookings";
 import TopPackages from "./components/TopPackages";
 import QuickActions from "./components/QuickActions";
 import FooterStats from "./components/FooterStats";
+import RevenueAnalytics from "./components/RevenueAnalytics";
 import { exportToPDF } from "./utils/pdfExport";
 import "./dashboard.css";
 
@@ -30,12 +31,24 @@ const Dashboard = () => {
     totalMarkup: 0,
     totalSales: 0,
     profitMargin: 0,
+    // NEW: Inquiries Revenue Stats
+    totalInquiriesRevenue: 0,
+    completedInquiries: 0,
+    pendingInquiries: 0,
+    // NEW: Combined Revenue Stats
+    combinedTotalRevenue: 0,
+    todayRevenue: 0,
+    thisMonthRevenue: 0,
   });
 
   const [recentBookings, setRecentBookings] = useState([]);
   const [topPackages, setTopPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trendData, setTrendData] = useState([]);
+  const [revenueBreakdown, setRevenueBreakdown] = useState({
+    daily: [],
+    monthly: []
+  });
 
   const handleAutoLogout = useCallback(() => {
     console.warn("Admin session expired due to inactivity.");
@@ -84,6 +97,7 @@ const Dashboard = () => {
     let blogs = [];
     let promos = [];
     let testimonials = [];
+    let inquiries = [];
 
     try {
       const bookingsRes = await fetch(
@@ -139,23 +153,47 @@ const Dashboard = () => {
       testimonials = [];
     }
 
+    // ✅ FIX: Fetch Inquiries Data with proper response handling
+    try {
+      const inquiriesRes = await fetch(
+        "http://localhost:5000/api/inquiries"
+      );
+      if (!inquiriesRes.ok)
+        throw new Error(`HTTP error! status: ${inquiriesRes.status}`);
+      const inquiriesData = await inquiriesRes.json();
+      
+      // Extract data array from response (your API returns { success: true, data: [...] })
+      inquiries = inquiriesData.data || inquiriesData || [];
+      console.log('📊 Fetched Inquiries Count:', inquiries.length);
+      if (inquiries.length > 0) {
+        console.log('📋 Sample Inquiry Status:', inquiries[0].status);
+        console.log('📋 Sample Inquiry Price:', inquiries[0].estimatedPrice);
+      }
+    } catch (err) {
+      console.error("Error fetching inquiries:", err);
+      inquiries = [];
+    }
+
     try {
       if (!Array.isArray(bookings)) bookings = [];
+      if (!Array.isArray(inquiries)) inquiries = [];
 
+      console.log('🔍 Processing inquiries array:', Array.isArray(inquiries));
+      console.log('🔍 Total inquiries to process:', inquiries.length);
+
+      // BOOKINGS CALCULATIONS
       const confirmed = bookings.filter((b) => b.status === "confirmed").length;
       const pending = bookings.filter((b) => b.status === "pending").length;
       const cancelled = bookings.filter((b) => b.status === "cancelled").length;
-      const revenue = bookings
-        .filter((b) => b.status === "confirmed")
-        .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-
+      
       const confirmedBookings = bookings.filter(
         (b) => b.status === "confirmed"
       );
-      const totalRevenue = confirmedBookings.reduce(
+      const bookingsRevenue = confirmedBookings.reduce(
         (sum, b) => sum + (b.totalAmount || 0),
         0
       );
+
       const financialStats = confirmedBookings.reduce(
         (acc, booking) => {
           const pax =
@@ -172,6 +210,71 @@ const Dashboard = () => {
         { totalSellerCost: 0, totalMarkup: 0, totalSales: 0 }
       );
 
+      // INQUIRIES CALCULATIONS
+      const completedInquiries = inquiries.filter(
+        (i) => i.status === "COMPLETED"
+      );
+      console.log('✅ Completed Inquiries:', completedInquiries.length);
+      
+      const pendingInquiriesCount = inquiries.filter(
+        (i) => i.status !== "COMPLETED"
+      ).length;
+      console.log('⏳ Pending Inquiries:', pendingInquiriesCount);
+      
+      const inquiriesRevenue = completedInquiries.reduce(
+        (sum, i) => sum + (i.estimatedPrice || 0),
+        0
+      );
+      console.log('💰 Inquiries Revenue:', inquiriesRevenue);
+
+      // COMBINED REVENUE CALCULATIONS
+      const combinedRevenue = bookingsRevenue + inquiriesRevenue;
+      console.log('💵 Combined Revenue:', combinedRevenue);
+
+      // TODAY'S REVENUE (Bookings + Inquiries)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const todayBookingsRevenue = confirmedBookings
+        .filter((b) => {
+          const created = new Date(b.createdAt);
+          return created >= today && created < tomorrow;
+        })
+        .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+      const todayInquiriesRevenue = completedInquiries
+        .filter((i) => {
+          const updated = new Date(i.updatedAt);
+          return updated >= today && updated < tomorrow;
+        })
+        .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+
+      const todayTotalRevenue = todayBookingsRevenue + todayInquiriesRevenue;
+      console.log('📅 Today Revenue - Bookings:', todayBookingsRevenue, 'Inquiries:', todayInquiriesRevenue);
+
+      // THIS MONTH'S REVENUE
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+
+      const monthBookingsRevenue = confirmedBookings
+        .filter((b) => {
+          const created = new Date(b.createdAt);
+          return created >= startOfMonth && created <= endOfMonth;
+        })
+        .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+      const monthInquiriesRevenue = completedInquiries
+        .filter((i) => {
+          const updated = new Date(i.updatedAt);
+          return updated >= startOfMonth && updated <= endOfMonth;
+        })
+        .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+
+      const monthTotalRevenue = monthBookingsRevenue + monthInquiriesRevenue;
+
+      // PROFIT MARGIN CALCULATION
       const profitMargin =
         financialStats.totalSales > 0
           ? (
@@ -185,7 +288,7 @@ const Dashboard = () => {
         confirmedBookings: confirmed,
         pendingBookings: pending,
         cancelledBookings: cancelled,
-        totalRevenue: revenue,
+        totalRevenue: bookingsRevenue,
         totalPackages: Array.isArray(packages) ? packages.length : 0,
         totalBlogs: Array.isArray(blogs) ? blogs.length : 0,
         totalPromos: Array.isArray(promos) ? promos.length : 0,
@@ -196,11 +299,18 @@ const Dashboard = () => {
         totalMarkup: financialStats.totalMarkup,
         totalSales: financialStats.totalSales,
         profitMargin: profitMargin,
+        // NEW: Inquiries Stats
+        totalInquiriesRevenue: inquiriesRevenue,
+        completedInquiries: completedInquiries.length,
+        pendingInquiries: pendingInquiriesCount,
+        // NEW: Combined Stats
+        combinedTotalRevenue: combinedRevenue,
+        todayRevenue: todayTotalRevenue,
+        thisMonthRevenue: monthTotalRevenue,
       });
 
-      const today = new Date();
+      // TREND DATA (6 months) - Combined Revenue
       const trendData = [];
-
       for (let i = 5; i >= 0; i--) {
         const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const monthName = date.toLocaleString("default", { month: "short" });
@@ -217,21 +327,82 @@ const Dashboard = () => {
           );
         });
 
-        const confirmedCount = confirmedThisMonth.length;
-        const revenueThisMonth = confirmedThisMonth.reduce(
+        const completedInquiriesThisMonth = inquiries.filter((i) => {
+          const updated = new Date(i.updatedAt);
+          return (
+            i.status === "COMPLETED" &&
+            updated >= startOfMonth &&
+            updated <= endOfMonth
+          );
+        });
+
+        const bookingsCount = confirmedThisMonth.length;
+        const bookingsRevenue = confirmedThisMonth.reduce(
           (sum, b) => sum + (b.totalAmount || 0),
+          0
+        );
+        const inquiriesCount = completedInquiriesThisMonth.length;
+        const inquiriesRevenue = completedInquiriesThisMonth.reduce(
+          (sum, i) => sum + (i.estimatedPrice || 0),
           0
         );
 
         trendData.push({
           month: monthName,
-          bookings: confirmedCount,
-          revenue: revenueThisMonth,
+          bookings: bookingsCount,
+          bookingsRevenue: bookingsRevenue,
+          inquiries: inquiriesCount,
+          inquiriesRevenue: inquiriesRevenue,
+          totalRevenue: bookingsRevenue + inquiriesRevenue,
+        });
+      }
+      setTrendData(trendData);
+
+      // DAILY REVENUE BREAKDOWN (Last 7 days)
+      const dailyBreakdown = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        const dayBookingsRevenue = confirmedBookings
+          .filter((b) => {
+            const created = new Date(b.createdAt);
+            return created >= date && created < nextDay;
+          })
+          .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+        const dayInquiriesRevenue = completedInquiries
+          .filter((i) => {
+            const updated = new Date(i.updatedAt);
+            return updated >= date && updated < nextDay;
+          })
+          .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+
+        dailyBreakdown.push({
+          date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          bookingsRevenue: dayBookingsRevenue,
+          inquiriesRevenue: dayInquiriesRevenue,
+          totalRevenue: dayBookingsRevenue + dayInquiriesRevenue,
         });
       }
 
-      setTrendData(trendData);
+      // MONTHLY REVENUE BREAKDOWN (Last 6 months)
+      const monthlyBreakdown = trendData.map(month => ({
+        month: month.month,
+        bookingsRevenue: month.bookingsRevenue,
+        inquiriesRevenue: month.inquiriesRevenue,
+        totalRevenue: month.totalRevenue,
+      }));
 
+      setRevenueBreakdown({
+        daily: dailyBreakdown,
+        monthly: monthlyBreakdown,
+      });
+
+      // RECENT BOOKINGS (unchanged)
       const formatted = bookings
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 5)
@@ -249,6 +420,7 @@ const Dashboard = () => {
         }));
       setRecentBookings(formatted);
 
+      // TOP PACKAGES (unchanged)
       const packageStats = {};
       bookings.forEach((b) => {
         const pkg = b.packageName || "Unknown";
@@ -329,6 +501,12 @@ const Dashboard = () => {
 
           <StatsCards stats={stats} />
 
+          {/* NEW: Revenue Analytics Component */}
+          <RevenueAnalytics 
+            stats={stats}
+            revenueBreakdown={revenueBreakdown}
+          />
+
           <FinancialOverview stats={stats} />
 
           <ChartsSection
@@ -344,11 +522,12 @@ const Dashboard = () => {
             />
 
             <TopPackages packages={topPackages} />
-
+            {/*}
             <QuickActions navigate={navigate} />
+            */}
           </div>
-
-          <FooterStats stats={stats} />
+{/*}
+          <FooterStats stats={stats} />*/}
         </div>
       </main>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../sidebar/sidebar"; 
-import { FolderOpen, Clock, CheckCircle, RefreshCw, FileText, UserPlus, Search } from "lucide-react"; 
+import { FolderOpen, Clock, CheckCircle, RefreshCw, FileText, UserPlus, Search, Archive } from "lucide-react"; 
 import "./VisaProcessing.css"; 
 
 import VisaInquiryModal from "./VisaInquiryModal";
@@ -108,11 +108,12 @@ const VisaProcessing = () => {
 
   const fetchInquiries = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/inquiries');
+      // Nagpasa tayo ng query param na isArchive=No para sa initial fetch
+      const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
       if (response.data.success) {
+        // Dito natin ifi-filter para siguradong inquiryType: "VISA" lang at isArchive: "No" ang lalabas
         const visaRequests = response.data.data.filter(inq => 
-            (inq.serviceName && inq.serviceName.toUpperCase().includes('VISA')) ||
-            inq.visaCountry 
+            (inq.inquiryType === 'VISA') && inq.isArchive === 'No'
         );
         setInquiries(visaRequests);
       }
@@ -121,26 +122,37 @@ const VisaProcessing = () => {
     }
   };
 
+  // BAGONG FUNCTION: Para sa Pag-archive
+  const handleArchive = async (id) => {
+    if (window.confirm("Are you sure you want to archive this inquiry?")) {
+      try {
+        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+          isArchive: "Yes"
+        });
+        if (response.data.success) {
+          alert("Inquiry archived successfully.");
+          fetchInquiries(); // I-refresh ang listahan
+        }
+      } catch (error) {
+        console.error("Error archiving inquiry:", error);
+        alert("Failed to archive inquiry.");
+      }
+    }
+  };
+
   useEffect(() => {
     fetchVisas();
     fetchInquiries();
   }, []);
 
-  // Helper function to get the specific active class for filter buttons
   const getActiveClass = (status) => {
     switch(status.toUpperCase()) {
-      case 'ALL':
-        return 'active';
-      case 'PENDING':
-        return 'pending-active';
-      case 'COMPLETED':
-        return 'confirmed-active'; // Using confirmed-active for completed
-      case 'CONTACTED':
-        return 'contacted-active'; // Custom class
-      case 'PAYMENT PENDING':
-        return 'payment-pending-active'; // New class for payment pending
-      default:
-        return 'active';
+      case 'ALL': return 'active';
+      case 'PENDING': return 'pending-active';
+      case 'COMPLETED': return 'confirmed-active';
+      case 'CONTACTED': return 'contacted-active';
+      case 'PAYMENT PENDING': return 'payment-pending-active';
+      default: return 'active';
     }
   };
 
@@ -156,6 +168,7 @@ const VisaProcessing = () => {
 
   const allApplications = inquiries.map((inquiry) => ({
     id: inquiry._id.slice(-8).toUpperCase(),
+    mongoId: inquiry._id, // Itatago natin ang full ID para sa archive function
     client: inquiry.fullName,
     country: inquiry.visaCountry || 'N/A',
     flagCode: inquiry.visaCountry ? getCountryCode(inquiry.visaCountry) : null,
@@ -166,34 +179,23 @@ const VisaProcessing = () => {
     _original: inquiry 
   }));
 
-  // Define the fixed list of status buttons
   const FILTER_BUTTONS = ['ALL', 'PENDING', 'CONTACTED', 'COMPLETED', 'PAYMENT PENDING'];
 
-  // 1. Apply Search and Filter
   const filteredApplications = allApplications.filter(app => {
-    // Normalize status: replace underscores with spaces for accurate comparison with filter button text
     const normalizedAppStatus = app.status ? app.status.replace(/_/g, ' ').toUpperCase() : '';
     const normalizedFilter = currentFilter.toUpperCase();
-    
-    // Filter by Status (Checking against normalized status)
     const statusMatch = currentFilter === "ALL" || (normalizedAppStatus === normalizedFilter);
-
-    // Filter by Search Term (Ref ID, Client, Country, Visa Type)
     const searchMatch = app.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         app.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         app.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         app.type.toLowerCase().includes(searchTerm.toLowerCase());
-
     return statusMatch && searchMatch;
   });
 
   const indexOfLastApplication = currentPage * applicationsPerPage;
   const indexOfFirstApplication = indexOfLastApplication - applicationsPerPage;
   const currentApplications = filteredApplications.slice(indexOfFirstApplication, indexOfLastApplication);
-
-  // Calculation for the base index of the current page
   const pageBaseIndex = (currentPage - 1) * applicationsPerPage;
-
 
   const stats = [
     { label: "Total Visas Configured", value: visaForms.length, icon: <FolderOpen size={28} /> },
@@ -205,10 +207,8 @@ const VisaProcessing = () => {
   return (
     <div className="visa-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-
       <div className={`visa-main ${isSidebarCollapsed ? "expanded" : ""}`}>
         <div className="visa-container">
-          
           <div className="visa-header">
             <div className="visa-title">
               <h1>Visa Processing</h1>
@@ -216,19 +216,16 @@ const VisaProcessing = () => {
             </div>
             <div className="header-actions">
               <button className="visa-btn-edit-req" onClick={() => setIsApplicationModalOpen(true)}>
-                <UserPlus size={18} />
-                Add Applicant
+                <UserPlus size={18} /> Add Applicant
               </button>
               <button className="visa-btn-edit-req" onClick={() => setIsSettingsOpen(true)}>
-                <FileText size={18} />
-                Manage Visa Forms
+                <FileText size={18} /> Manage Visa Forms
               </button>
             </div>
           </div>
 
           <VisaStats stats={stats} />
 
-          {/* New Search and Filter Card */}
           <div className="search-filter-card">
             <div className="search-filter-wrapper">
               <div className="search-box">
@@ -238,19 +235,13 @@ const VisaProcessing = () => {
                   className="search-input"
                   placeholder="Search by client name, Ref ID, or country..."
                   value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1); // Reset to page 1 on search
-                  }}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 />
               </div>
               <div className="filter-buttons">
                 <button
                   className={`filter-btn ${currentFilter === 'ALL' ? 'active' : ''}`}
-                  onClick={() => {
-                    setCurrentFilter('ALL');
-                    setCurrentPage(1);
-                  }}
+                  onClick={() => { setCurrentFilter('ALL'); setCurrentPage(1); }}
                 >
                   All Items
                 </button>
@@ -258,19 +249,14 @@ const VisaProcessing = () => {
                   <button
                     key={status}
                     className={`filter-btn ${currentFilter === status ? getActiveClass(status) : ''}`}
-                    onClick={() => {
-                      setCurrentFilter(status);
-                      setCurrentPage(1);
-                    }}
+                    onClick={() => { setCurrentFilter(status); setCurrentPage(1); }}
                   >
-                    {/* Capitalize first letter of each word (e.g., Payment Pending) */}
                     {status.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                   </button>
                 ))}
               </div>
             </div>
           </div>
-          {/* End New Search and Filter Card */}
 
           <div className="visa-table-container">
             <table className="visa-table">
@@ -296,7 +282,7 @@ const VisaProcessing = () => {
                       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                         <div className="visa-flag-circle-small">
                           {app.flagCode ? (
-                            <img className="visa-flag-img" src={`https://flagcdn.com/w40/${app.flagCode.toLowerCase()}.png`} alt={app.country} onError={(e) => { e.target.style.display = "none"; }} />
+                            <img className="visa-flag-img" src={`https://flagcdn.com/w40/${app.flagCode.toLowerCase()}.png`} alt={app.country} />
                           ) : (
                             <span>{app.flag}</span>
                           )}
@@ -307,14 +293,20 @@ const VisaProcessing = () => {
                     <td>{app.type}</td>
                     <td>{app.date}</td>
                     <td>
-                      {/* Using regex to replace spaces and underscores with hyphens for badge class */}
                       <span className={`visa-badge badge-${app.status.toLowerCase().replace(/[\s_]/g, '-')}`}>{app.status}</span>
                     </td>
                     <td>
                       <button className="visa-action-btn visa-view-btn" onClick={() => setSelectedInquiry(app._original)}>
                         View
                       </button>
-                      <button className="visa-action-btn">Delete</button>
+                      {/* BINAGONG BUTTON: Delete naging Archive */}
+                      <button 
+                        className="visa-action-btn" 
+                        style={{ backgroundColor: '#f39c12', color: 'white', marginLeft: '5px' }}
+                        onClick={() => handleArchive(app.mongoId)}
+                      >
+                        Archive
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -353,7 +345,6 @@ const VisaProcessing = () => {
             refreshData={fetchInquiries} 
             visaForms={visaForms} 
           />
-
         </div>
       </div>
     </div>

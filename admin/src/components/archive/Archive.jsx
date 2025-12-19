@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Calendar, Users, Search, TrendingUp, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
-  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, Trash2, RotateCcw, Package, Wrench, List,
-  ArrowUpDown
+  Users, Search, Eye, RotateCcw, Archive, ChevronLeft, ChevronRight, 
+  Wrench, List, ArrowUpDown
 } from 'lucide-react';
 import './Archive.css';
 import Sidebar from '../sidebar/sidebar';
@@ -17,6 +16,9 @@ import { fetchArchivedBookings, restoreBooking } from './archiveFunctions/bookin
 import { fetchArchivedPackages, restorePackage } from './archiveFunctions/packageService';
 import { fetchArchivedTours, restoreTour } from './archiveFunctions/tourService';
 import { fetchArchivedTestimonials, restoreTestimonial } from './archiveFunctions/testimonialService';
+import { fetchArchivedPromos, restorePromo } from './archiveFunctions/promoService';
+import { fetchArchivedPosters, restorePoster } from './archiveFunctions/posterService';
+import { fetchArchivedInquiries, restoreInquiry } from './archiveFunctions/inquiryService';
 
 const ARCHIVE_IMAGES = {
     TOTAL_ITEMS: 'https://picsum.photos/seed/desk/800/600', 
@@ -117,37 +119,58 @@ const ArchiveComponent = () => {
         fetchArchivedBookings(),
         fetchArchivedPackages(),
         fetchArchivedTours(),
-        fetchArchivedTestimonials()
+        fetchArchivedTestimonials(),
+        fetchArchivedPromos(),
+        fetchArchivedPosters(),
+        fetchArchivedInquiries() // Ito ang kukuha ng isArchive = "Yes"
       ]);
       
       const bookingsData = results[0].status === 'fulfilled' ? results[0].value : [];
       const packagesData = results[1].status === 'fulfilled' ? results[1].value : [];
       const toursData = results[2].status === 'fulfilled' ? results[2].value : [];
       const testimonialsData = results[3].status === 'fulfilled' ? results[3].value : [];
+      const promosData = results[4].status === 'fulfilled' ? results[4].value : [];
+      const postersData = results[5].status === 'fulfilled' ? results[5].value : []; 
+      const inquiriesData = results[6].status === 'fulfilled' ? results[6].value : []; 
 
-      // Pagsamahin lahat ng data sources
-      const combinedData = [...bookingsData, ...packagesData, ...toursData, ...testimonialsData];
+      const combinedData = [
+        ...bookingsData, 
+        ...packagesData, 
+        ...toursData, 
+        ...testimonialsData,
+        ...promosData,
+        ...postersData,
+        ...inquiriesData
+      ];
       
-      // I-filter out ang mga lampas na sa retention policy
+      // I-filter out ang mga lampas na sa retention period
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
 
-      // Mapping logic: Sinisiguro na lilitaw ang itemName kahit title o fullName ang gamit sa DB
       const formatted = nonExpiredData.map((item, index) => {
         const archiveNumber = nonExpiredData.length - index;
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
         const dateRaw = item.archivedAt || item.updatedAt || item.createdAt || new Date().toISOString();
 
+        // LOGIC PARA SA INQUIRY TYPES:
+        // Inaayos ang display type para mag-match sa filter categories
+        let displayType = item.type;
+        if (item.inquiryType) {
+           // Halimbawa: kung inquiryType ay "VISA", gagawin nating "VISA Processing" para mag-match sa SERVICE_SUBTYPES_LIST
+           if (item.inquiryType === 'VISA') displayType = 'VISA Processing';
+           else if (item.inquiryType === 'PSA') displayType = 'PSA Serbilis';
+           else displayType = item.inquiryType;
+        }
+
         return {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber: archiveNumber,
-          // Support para sa title (Tours) at fullName (Bookings)
-          itemName: item.itemName || item.title || item.fullName || item.name || 'Unnamed Item', 
-          type: item.type || (item.title ? 'Tour' : 'Booking'), 
+          itemName: item.fullName || item.itemName || item.title || item.name || item.code || 'Unnamed Item', 
+          type: displayType || 'Other', 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
-          reference: item.reference || item.referenceNumber || item.slug || item._id?.substring(0, 8) || 'N/A',
+          reference: item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
           status: item.status || 'Archived', 
           rawData: item
         };
@@ -165,6 +188,7 @@ const ArchiveComponent = () => {
     fetchArchiveItems(); 
   }, []);
 
+  // Filtering Logic
   useEffect(() => {
     let filtered = [...archiveItems];
     const lowerSearchTerm = searchTerm.toLowerCase();
@@ -207,18 +231,24 @@ const ArchiveComponent = () => {
     setActionLoading(true);
     try {
       let restored = false;
+      
+      // Determine which service to call based on type
       if (item.type === 'Package') restored = await restorePackage(item.mongoId);
       else if (item.type === 'Booking') restored = await restoreBooking(item.mongoId);
       else if (item.type === 'Tour') restored = await restoreTour(item.mongoId);
       else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId);
+      else if (item.type === 'Promo') restored = await restorePromo(item.mongoId);
+      else if (item.type === 'Poster') restored = await restorePoster(item.mongoId);
+      // RESTORE LOGIC PARA SA INQUIRIES (Services)
+      else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
+        restored = await restoreInquiry(item.mongoId);
+      }
       
       if (restored) {
         setArchiveItems(prev => prev.filter(i => i.mongoId !== item.mongoId));
         setShowModal(false);
         setSelectedItem(null);
         alert(`Successfully restored: ${item.itemName}`);
-      } else {
-        throw new Error('Restore operation failed.');
       }
     } catch (error) {
       alert(`Error: ${error.message}`);
@@ -238,6 +268,9 @@ const ArchiveComponent = () => {
         else if (item.type === 'Booking') await restoreBooking(item.mongoId);
         else if (item.type === 'Tour') await restoreTour(item.mongoId);
         else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
+        else if (item.type === 'Promo') await restorePromo(item.mongoId);
+        else if (item.type === 'Poster') await restorePoster(item.mongoId);
+        else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(item.mongoId);
       }
       await fetchArchiveItems();
       alert('Selected items have been restored.');
@@ -346,4 +379,4 @@ const ArchiveComponent = () => {
   );
 };
 
-export default ArchiveComponent;  
+export default ArchiveComponent;

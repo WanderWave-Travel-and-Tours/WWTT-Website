@@ -37,7 +37,11 @@ const ViewPromos = () => {
                 throw new Error('Failed to fetch promos');
             }
             const data = await response.json();
-            setPromos(data);
+            
+            // FILTER: I-display lang ang mga promo na isArchive === "No"
+            const nonArchivedPromos = data.filter(promo => promo.isArchive === "No");
+            
+            setPromos(nonArchivedPromos);
             setCurrentPage(1);
         } catch (error) {
             console.error("Error loading promos:", error);
@@ -58,14 +62,21 @@ const ViewPromos = () => {
         });
     };
 
+    // BAGONG FUNCTION: Archive sa halip na Delete
     const handleArchive = async (id, code) => {
         if (window.confirm(`Are you sure you want to archive promo code ${code}?`)) {
             try {
+                // Gumamit ng PUT o PATCH dahil i-uupdate natin ang isArchive property
                 const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
-                    method: 'DELETE',
+                    method: 'PUT', // Maaari ring 'PATCH' depende sa setup ng backend mo
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ isArchive: 'Yes' }),
                 });
 
                 if (response.ok) {
+                    // Alisin sa local state para mawala sa UI agad
                     const updatedPromos = promos.filter(promo => promo._id !== id);
                     setPromos(updatedPromos);
                     alert(`Promo Code ${code} has been archived.`);
@@ -124,7 +135,6 @@ const ViewPromos = () => {
                         </button>
                     </header>
 
-                    {/* PROMO FILTERS */}
                     <PromoFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -165,9 +175,7 @@ const ViewPromos = () => {
                                                 <td>
                                                     <span className="vpromos-code">{promo.code}</span>
                                                 </td>
-                                                <td>
-                                                    {promo.category}
-                                                </td>
+                                                <td>{promo.category}</td>
                                                 <td>
                                                     <span className="vpromos-discount">
                                                         {promo.discountType === 'Percentage' 
@@ -244,4 +252,4 @@ const ViewPromos = () => {
     );
 };
 
-export default ViewPromos;
+export default ViewPromos; 

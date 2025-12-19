@@ -63,74 +63,65 @@ import Users from './components/users/users.jsx';
 function App() {
   return (
     <BrowserRouter basename="/">
-      {/* 👇 WRAP EVERYTHING WITH TOASTPROVIDER */}
-      <ToastProvider>
-        <Routes>
-          {/* Main Authentication & Core Pages */}
-          <Route path="/admin" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/booking" element={<Booking />} />
-          <Route path="/archive" element={<Archive />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/users" element={<Users />} />
+      <Routes>
+        <Route path="/admin" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/booking" element={<Booking />} />
+        <Route path="/archive" element={<Archive />} /> {/* NEW ARCHIVE ROUTE */}
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/users" element={<Users />} />
 
-          {/* Packages */}
-          <Route path="/add-package" element={<AddPackage />} />
-          <Route path="/view-packages" element={<ViewPackages />} />
-          <Route path="/edit-package" element={<EditPackage />} />
-          
-          {/* Tours */}
-          <Route path="/add-tour" element={<AddTour />} />
-          <Route path="/view-tours" element={<ViewTours />} />
+        {/* Packages */}
+        <Route path="/add-package" element={<AddPackage />} />
+        <Route path="/view-packages" element={<ViewPackages />} />
+        <Route path="/edit-package" element={<EditPackage />} />
+        
+        {/* Tours */}
+        <Route path="/add-tour" element={<AddTour />} />
+        <Route path="/view-tours" element={<ViewTours />} />
 
-          {/* Promos & Posters */}
-          <Route path="/add-promo" element={<AddPromo />} />
-          <Route path="/view-promos" element={<ViewPromos />} />
-          <Route path="/add-poster" element={<AddPoster />} />       
-          <Route path="/view-posters" element={<ViewPoster />} /> 
+        {/* Promos & Posters */}
+        <Route path="/add-promo" element={<AddPromo />} />
+        <Route path="/view-promos" element={<ViewPromos />} />
+        <Route path="/add-poster" element={<AddPoster />} />       
+        <Route path="/view-posters" element={<ViewPoster />} /> 
 
-          {/* Blogs */}
-          <Route path="/add-blog" element={<AddBlog />} />
-          <Route path="/view-blogs" element={<ViewBlog />} />
+        {/* Blogs */}
+        <Route path="/add-blog" element={<AddBlog />} />
+        <Route path="/view-blogs" element={<ViewBlog />} />
 
-          {/* Image Gallery */}
-          <Route path="/add-image" element={<AddImage />} />
-          <Route path="/view-images" element={<ViewImage />} />
+        {/* Image Gallery */}
+        <Route path="/add-image" element={<AddImage />} />
+        <Route path="/view-images" element={<ViewImage />} />
 
-          {/* Deals */}
-          <Route path="/add-deals" element={<AddDeal />} />
-          <Route path="/view-deals" element={<ViewDeal />} />
-          
-          {/* Testimonials */}
-          <Route path="/view-testimonials" element={<ViewTestimonials />} />
-          <Route path="/add-testimonial" element={<AddTestimonial />} />
-          
-          {/* Hotel Inventory Management */}
-          <Route path="/add-hotel" element={<AddHotel />} />
-          <Route path="/view-hotels" element={<ViewHotels />} />
+        {/* Deals */}
+        <Route path="/add-deals" element={<AddDeal />} />
+        <Route path="/view-deals" element={<ViewDeal />} />
+        
+        {/* Testimonials */}
+        <Route path="/view-testimonials" element={<ViewTestimonials />} />
+        <Route path="/add-testimonial" element={<AddTestimonial />} />
+        
+        {/* Hotel Inventory Management */}
+        <Route path="/add-hotel" element={<AddHotel />} />
+        <Route path="/view-hotels" element={<ViewHotels />} />
 
-          {/* --- DYNAMIC SERVICE MANAGEMENT ROUTES (FIXED) --- */}
-          <Route path="/add-service" element={<AddService />} />
-          <Route path="/view-services" element={<ViewServices />} />
+        {/* --- SERVICE MANAGEMENT ROUTES --- */}
+        <Route path="/add-service" element={<AddService />} />
+        <Route path="/view-services" element={<ViewServices />} />
+        <Route path="/services/visa" element={<VisaProcessing />} />
+        <Route path="/services/psa" element={<PSASerbilis />} />
+        <Route path="/services/cenomar" element={<CenomarRequest />} />
+        <Route path="/services/passport" element={<PassportAppt />} />
+        <Route path="/services/airlinebooking" element={<AirlineBooking />} />
+        <Route path="/services/hotelbooking" element={<HotelBooking />} />
+        <Route path="/services/tourarrangements" element={<TourArrangements />} />
+        <Route path="/services/ferrybooking" element={<FerryBooking />} />
+        <Route path="/services/marriagecert" element={<MarriageCertificate />} />
+        <Route path="/services/travelinsurance" element={<TravelInsurance />} />
+        <Route path="/services/billspayment" element={<BillsPayment />} />
 
-          {/* --- SPECIFIC SERVICE DETAIL ROUTES --- */}
-          <Route path="/services/visa" element={<VisaProcessing />} />
-          <Route path="/services/psa" element={<PSASerbilis />} />
-          <Route path="/services/cenomar" element={<CenomarRequest />} />
-          <Route path="/services/passport" element={<PassportAppt />} />
-          <Route path="/services/airlinebooking" element={<AirlineBooking />} />
-          <Route path="/services/hotelbooking" element={<HotelBooking />} />
-          <Route path="/services/tourarrangements" element={<TourArrangements />} />
-          <Route path="/services/ferrybooking" element={<FerryBooking />} />
-          <Route path="/services/marriagecert" element={<MarriageCertificate />} />
-          <Route path="/services/travelinsurance" element={<TravelInsurance />} />
-          <Route path="/services/billspayment" element={<BillsPayment />} />
-
-          {/* Fallback for undefined routes (Optional but recommended) */}
-          <Route path="*" element={<div style={{padding: '20px'}}>404 - Page Not Found</div>} />
-        </Routes>
-      </ToastProvider>
-      {/* 👆 CLOSE TOASTPROVIDER */}
+      </Routes>
     </BrowserRouter>
   );
 }

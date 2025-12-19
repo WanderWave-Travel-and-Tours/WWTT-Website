@@ -10,7 +10,10 @@ const {
   getInquiryStats,
   markAsPaid,
   confirmPayment,
-  deliverDocuments
+  deliverDocuments,
+  getInquiryAnalytics,
+  getInquiriesByDateRange,
+  toggleArchive // Imported new function
 } = require('../controller/inquiryController');
 const multer = require('multer');
 const path = require('path');
@@ -46,20 +49,25 @@ const uploadDocuments = multer({
 });
 
 const upload = multer({ storage: documentStorage });
-
 const router = express.Router();
+
+router.get('/analytics', getInquiryAnalytics);
+router.get('/by-date-range', getInquiriesByDateRange);
+router.get('/stats', getInquiryStats);
 
 router.post('/', createInquiry);
 router.post('/upload-application', upload.any(), createInquiryWithUploads); 
 
 router.get('/email/:email', getInquiriesByEmail);
 router.get('/', getAllInquiries);
-router.get('/stats', getInquiryStats);
 router.get('/:id', getInquiry);
 router.delete('/:id', deleteInquiry);
+
+// ✅ ARCHIVE ROUTE ADDED
+router.put('/:id/archive', toggleArchive); 
+
 router.put('/:id/status', uploadEvidence.single('evidence'), updateInquiryStatus);
 router.put('/:id/pay', markAsPaid);
-
 router.put('/:id/confirm-payment', confirmPayment);
 router.put('/:id/deliver-documents', uploadDocuments.array('documents', 10), deliverDocuments);
 
