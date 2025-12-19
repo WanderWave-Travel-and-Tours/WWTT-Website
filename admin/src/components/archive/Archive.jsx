@@ -37,14 +37,15 @@ const ARCHIVE_TYPES = [
     'Archived Users',
 ];
 
+// DAPAT MATCH ITO SA DISPLAY TYPES NA NASA FETCH LOGIC
 const SERVICE_SUBTYPES_LIST = [ 
     'ALL Services', 
     'Manage Services', 
     'VISA Processing',
     'PSA Serbilis',
     'CENOMAR',
-    'Passport Appt',
-    'Airline Booking',
+    'Passport Appt', // <--- Siguraduhing nandito ito
+    'Airline Booking', // <--- Para sa FLIGHT_BOOKING
     'Hotel Booking',
     'Tour Arrangements',
     'Ferry Booking',
@@ -122,7 +123,7 @@ const ArchiveComponent = () => {
         fetchArchivedTestimonials(),
         fetchArchivedPromos(),
         fetchArchivedPosters(),
-        fetchArchivedInquiries() // Ito ang kukuha ng isArchive = "Yes"
+        fetchArchivedInquiries() 
       ]);
       
       const bookingsData = results[0].status === 'fulfilled' ? results[0].value : [];
@@ -143,7 +144,6 @@ const ArchiveComponent = () => {
         ...inquiriesData
       ];
       
-      // I-filter out ang mga lampas na sa retention period
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
 
       const formatted = nonExpiredData.map((item, index) => {
@@ -151,14 +151,18 @@ const ArchiveComponent = () => {
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
         const dateRaw = item.archivedAt || item.updatedAt || item.createdAt || new Date().toISOString();
 
-        // LOGIC PARA SA INQUIRY TYPES:
-        // Inaayos ang display type para mag-match sa filter categories
-        let displayType = item.type;
+        // Pinahusay na Logic para sa Mapping ng Inquiry Types sa Service Subtypes
+        let displayType = item.type || 'Other';
+        
         if (item.inquiryType) {
-           // Halimbawa: kung inquiryType ay "VISA", gagawin nating "VISA Processing" para mag-match sa SERVICE_SUBTYPES_LIST
-           if (item.inquiryType === 'VISA') displayType = 'VISA Processing';
-           else if (item.inquiryType === 'PSA') displayType = 'PSA Serbilis';
-           else displayType = item.inquiryType;
+           switch(item.inquiryType) {
+             case 'VISA': displayType = 'VISA Processing'; break;
+             case 'PSA': displayType = 'PSA Serbilis'; break;
+             case 'CENOMAR': displayType = 'CENOMAR'; break;
+             case 'PASSPORT': displayType = 'Passport Appt'; break; // <--- FIX: Mapping for Passport
+             case 'FLIGHT_BOOKING': displayType = 'Airline Booking'; break; // <--- FIX: Mapping for Flight
+             default: displayType = item.inquiryType;
+           }
         }
 
         return {
@@ -166,7 +170,7 @@ const ArchiveComponent = () => {
           mongoId: item._id || item.mongoId,
           archiveNumber: archiveNumber,
           itemName: item.fullName || item.itemName || item.title || item.name || item.code || 'Unnamed Item', 
-          type: displayType || 'Other', 
+          type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
@@ -199,6 +203,7 @@ const ArchiveComponent = () => {
         if (filterListSubtype !== 'ALL List Items') filtered = filtered.filter(item => item.type === filterListSubtype);
     } else if (filterType === 'Archived Services') {
         const serviceSubtypeNames = SERVICE_SUBTYPES_LIST.slice(1);
+        // Ngayon, ang 'Passport Appt' at 'Airline Booking' ay kasama na dito
         filtered = filtered.filter(item => serviceSubtypeNames.includes(item.type));
         if (filterSubtype !== 'ALL Services') filtered = filtered.filter(item => item.type === filterSubtype);
     } else if (filterType === 'Archived Users') {
@@ -226,20 +231,20 @@ const ArchiveComponent = () => {
     setCurrentPage(1); 
   }, [searchTerm, filterType, filterSubtype, filterListSubtype, filterUserSubtype, archiveItems, sortDirection]);
 
+  // Rest of the component (handleRestore, handleRestoreAll, return statement) 
+  // nananatiling pareho dahil ang main fix ay nasa display mapping at list definitions sa itaas.
+  
   const handleRestore = async (item) => { 
     if (!window.confirm(`Are you sure you want to restore ${item.itemName}?`)) return;
     setActionLoading(true);
     try {
       let restored = false;
-      
-      // Determine which service to call based on type
       if (item.type === 'Package') restored = await restorePackage(item.mongoId);
       else if (item.type === 'Booking') restored = await restoreBooking(item.mongoId);
       else if (item.type === 'Tour') restored = await restoreTour(item.mongoId);
       else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId);
       else if (item.type === 'Promo') restored = await restorePromo(item.mongoId);
       else if (item.type === 'Poster') restored = await restorePoster(item.mongoId);
-      // RESTORE LOGIC PARA SA INQUIRIES (Services)
       else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
         restored = await restoreInquiry(item.mongoId);
       }
