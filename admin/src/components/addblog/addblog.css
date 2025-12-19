@@ -116,6 +116,11 @@
     border-radius: 12px;
     padding: 32px;
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    transition: all 0.2s ease;
+}
+
+.blog-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 31, 63, 0.08);
 }
 
 .blog-section-title {
@@ -237,11 +242,17 @@
 .blog-field input, .blog-field textarea, .blog-field select {
     padding: 14px 18px;
     font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
     color: #1e293b;
     background: #f8fafc;
     border: 2px solid #e2e8f0;
     border-radius: 8px;
     transition: all 0.2s ease;
+}
+
+.blog-field input:hover, .blog-field textarea:hover, .blog-field select:hover {
+    border-color: #cbd5e1;
+    background: #fff;
 }
 
 .blog-field input:focus, .blog-field textarea:focus, .blog-field select:focus {
@@ -251,6 +262,25 @@
     box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
 
+.blog-field input::placeholder, .blog-field textarea::placeholder {
+    color: #94a3b8;
+}
+
+.blog-field textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+}
+
+.blog-field select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
 /* --- PREVIEW CARD --- */
 .blog-preview-card {
     background: linear-gradient(135deg, #001F3F 0%, #003d7a 100%);
@@ -258,9 +288,29 @@
     padding: 28px;
     margin-bottom: 20px;
     box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.blog-preview-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 140, 66, 0.08) 0%, transparent 70%);
+    animation: rotatePreview 25s linear infinite;
+}
+
+@keyframes rotatePreview {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .blog-preview-label {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -273,9 +323,17 @@
 }
 
 .bp-card {
+    position: relative;
+    z-index: 1;
     background: #fff;
     border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.bp-card:hover {
+    transform: translateY(-4px);
 }
 
 .bp-image-wrapper { height: 180px; background: #e2e8f0; position: relative; }
@@ -307,13 +365,29 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .blog-btn--cancel { color: #64748b; background: #fff; border: 2px solid #e2e8f0; }
+.blog-btn--cancel:hover { border-color: #94a3b8; background: #f8fafc; }
 .blog-btn--submit { color: #fff; background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%); box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3); }
+.blog-btn--submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4); }
+.blog-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.vb-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
 
 /* ================================================= */
-/* RESPONSIVENESS (MATCHED TO POSTER)               */
+/* RESPONSIVENESS (MATCHED TO PROMO)                */
 /* ================================================= */
 
 @media (max-width: 1100px) {
@@ -322,7 +396,7 @@
 }
 
 @media (max-width: 768px) {
-    .blog-main {
+    .blog-main, .blog-main--collapsed {
         margin-left: 90px !important;
         padding: 24px 16px !important;
         width: calc(100% - 90px) !important;
@@ -332,7 +406,9 @@
     
     .blog-actions {
         position: fixed;
-        bottom: 0; left: 90px; right: 0;
+        bottom: 0; 
+        left: 90px; 
+        right: 0;
         background: #fff;
         padding: 10px 14px;
         box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
@@ -341,12 +417,80 @@
         gap: 10px;
     }
     
-    .blog-btn { padding: 11px 18px; font-size: 10px; }
-    .blog-right { margin-bottom: 80px; }
+    .blog-btn { 
+        padding: 11px 18px; 
+        font-size: 12px;
+        letter-spacing: 0.8px;
+    }
+    
+    .blog-right { margin-bottom: 70px; }
+    
+    .blog-fields {
+        gap: 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .blog-fields {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+    
+    .blog-field label {
+        font-size: 11px;
+    }
+    
+    .blog-field input,
+    .blog-field textarea,
+    .blog-field select {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+    
+    .b-upload-zone-wrapper {
+        padding: 30px 15px;
+    }
+    
+    .b-upload-icon-box {
+        width: 56px;
+        height: 56px;
+    }
 }
 
 @media (max-width: 480px) {
     .blog-title { font-size: 1.8rem; }
-    .blog-fields { grid-template-columns: 1fr; }
+    .blog-header { padding: 35px 25px; }
     .blog-actions { left: 90px; width: calc(100% - 90px); }
+    
+    .blog-field label {
+        font-size: 10px;
+        letter-spacing: 0.8px;
+    }
+    
+    .blog-field label::after {
+        font-size: 14px;
+    }
+    
+    .blog-field input,
+    .blog-field textarea,
+    .blog-field select {
+        padding: 11px 13px;
+        font-size: 12px;
+    }
+    
+    .blog-section {
+        padding: 24px 20px;
+    }
+    
+    .b-upload-zone-wrapper {
+        padding: 25px 12px;
+    }
+    
+    .bp-title {
+        font-size: 16px;
+    }
+    
+    .bp-excerpt {
+        font-size: 12px;
+    }
 }

@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import {
   X, MapPin, Star, Wifi, Car, Waves, Dumbbell, UtensilsCrossed,
   Wind, BellRing, Shirt, Wine, CheckCircle, AlertCircle, Edit,
-  Calendar, Users, DollarSign, Image as ImageIcon
+  Calendar, Users, DollarSign, Image as ImageIcon, Briefcase, Mail
 } from "lucide-react";
 import "./ViewHotelModal.css";
 
-// --- HELPER: Amenity Icon Mapper ---
 const getAmenityConfig = (key) => {
   const config = {
     wifi: { label: "Free Wifi", icon: <Wifi size={14} /> },
@@ -26,7 +25,6 @@ const getAmenityConfig = (key) => {
 const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
   const [activeHeroImage, setActiveHeroImage] = useState(null);
 
-  // Reset active image when hotel changes
   useEffect(() => {
     if (hotel) {
       const main = hotel.mainImage || (hotel.images && hotel.images.length > 0 ? hotel.images[0].url : null);
@@ -36,7 +34,6 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
 
   if (!hotel) return null;
 
-  // Format Currency
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
@@ -44,217 +41,152 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
     }).format(price);
   };
 
-  // Get Active Amenities
   const activeAmenities = Object.entries(hotel.amenities || {})
     .filter(([_, isActive]) => isActive)
     .map(([key]) => key);
 
-  // Get Gallery Images (ensure it's an array)
-  const getGalleryImages = () => {
-    if (Array.isArray(hotel.images)) return hotel.images;
-    return [];
-  };
-
-  const galleryImages = getGalleryImages();
+  const galleryImages = Array.isArray(hotel.images) ? hotel.images : [];
 
   return (
     <div className="vhm-overlay" onClick={onClose}>
       <div className="vhm-modal" onClick={(e) => e.stopPropagation()}>
         
-        {/* === HEADER === */}
+        {/* === HEADER (Inspired by Image Header) === */}
         <div className="vhm-header">
-          <div className="vhm-header-content">
-            <div className="vhm-title-group">
-              <h2 className="vhm-title">{hotel.name}</h2>
-              <div className="vhm-meta">
-                <MapPin size={14} />
-                <span>{hotel.location || hotel.city}</span>
-                <span className="vhm-divider">•</span>
-                <span className={`vhm-status ${hotel.isActive ? 'active' : 'inactive'}`}>
-                  {hotel.isActive ? 'Active Listing' : 'Inactive'}
-                </span>
+          <div className="vhm-header-left">
+            <h2 className="vhm-main-title">Hotel Details</h2>
+            <div className="vhm-ref-tag">
+              REF: #{hotel._id?.substring(0, 8).toUpperCase()} <span className="vhm-dot">•</span> {new Date(hotel.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+          </div>
+          
+          <div className="vhm-header-right">
+            <div className={`vhm-status-pill ${hotel.isActive ? 'completed' : 'inactive'}`}>
+              <CheckCircle size={16} />
+              <div className="vhm-status-text">
+                <span className="vhm-status-label">{hotel.isActive ? 'ACTIVE' : 'INACTIVE'}</span>
+                <span className="vhm-status-subtext">{hotel.isActive ? 'Listing is live' : 'Hidden from users'}</span>
               </div>
             </div>
-            
-            {/* Featured Badge */}
-            {hotel.featured && (
-              <div className="vhm-badge-featured">
-                <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                <span>Featured</span>
-              </div>
-            )}
+            <button className="vhm-close-x" onClick={onClose}><X size={18} /></button>
           </div>
-          <button className="vhm-close-btn" onClick={onClose} aria-label="Close">
-            <X size={20} />
-          </button>
         </div>
 
-        {/* === BODY === */}
         <div className="vhm-body">
+          
+          {/* 1. MEDIA SECTION (Centered Image Card style) */}
+          <div className="vhm-media-container">
+            <div className="vhm-media-card">
+               <div className="vhm-processing-bar">
+                 <CheckCircle size={18} className="vhm-icon-green" />
+                 <span>Property Media & Assets</span>
+               </div>
+               
+               <div className="vhm-image-box">
+                 {activeHeroImage ? (
+                    <img src={activeHeroImage} alt={hotel.name} className="vhm-hero-img" />
+                 ) : (
+                    <div className="vhm-no-image"><ImageIcon size={40} /><span>No image provided</span></div>
+                 )}
+                 <div className="vhm-image-info">
+                   <div className="vhm-file-pill">
+                     <ImageIcon size={14} className="vhm-icon-green" />
+                     <span>{hotel.name}_Primary_View.jpg</span>
+                   </div>
+                   <button className="vhm-view-link">View Gallery</button>
+                 </div>
+               </div>
 
-          {/* 1. MEDIA SECTION (Grid Layout: Hero + Side Thumbnails) */}
-          <div className="vhm-media-grid">
-            
-            {/* Left: Main Hero Image */}
-            <div className="vhm-hero-wrapper">
-              {activeHeroImage ? (
-                <img src={activeHeroImage} alt={hotel.name} className="vhm-hero-img" />
-              ) : (
-                <div className="vhm-placeholder-img">
-                  <ImageIcon size={48} />
-                  <span>No Images Available</span>
-                </div>
-              )}
-              <div className="vhm-price-tag">
-                <span className="vhm-price-amount">{formatPrice(hotel.price)}</span>
-                <span className="vhm-price-unit">/ night</span>
-              </div>
-            </div>
-
-            {/* Right: Vertical Thumbnail Strip */}
-            <div className="vhm-thumbnail-col">
-              {/* Always show main image as first thumbnail */}
-              {hotel.mainImage && (
-                <div 
-                  className={`vhm-thumb-item ${activeHeroImage === hotel.mainImage ? 'active' : ''}`}
-                  onClick={() => setActiveHeroImage(hotel.mainImage)}
-                >
-                  <img src={hotel.mainImage} alt="Main" />
-                </div>
-              )}
-              
-              {/* Show gallery images */}
-              {galleryImages.map((img, idx) => (
-                <div 
-                  key={idx} 
-                  className={`vhm-thumb-item ${activeHeroImage === (img.url || img) ? 'active' : ''}`}
-                  onClick={() => setActiveHeroImage(img.url || img)}
-                >
-                  <img 
-                    src={img.url || img} 
-                    alt={`Gallery ${idx}`}
-                    onError={(e) => e.target.style.display = 'none'} 
-                  />
-                </div>
-              ))}
+               <div className="vhm-gallery-strip">
+                  {galleryImages.map((img, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`vhm-thumb ${activeHeroImage === (img.url || img) ? 'active' : ''}`}
+                      onClick={() => setActiveHeroImage(img.url || img)}
+                    >
+                      <img src={img.url || img} alt="Gallery" onError={(e) => e.target.style.display = 'none'} />
+                    </div>
+                  ))}
+               </div>
             </div>
           </div>
 
-          <div className="vhm-content-grid">
-            
-            {/* 2. GENERAL INFO CARD */}
-            <div className="vhm-card">
-              <div className="vhm-card-header">
-                <h3>General Information</h3>
+          {/* 2. HOTEL INFORMATION (Grid like Client Information) */}
+          <div className="vhm-section-card">
+            <h3 className="vhm-section-title">HOTEL INFORMATION</h3>
+            <div className="vhm-info-grid">
+              <div className="vhm-info-box">
+                <div className="vhm-box-icon yellow"><Users size={18} /></div>
+                <div className="vhm-box-content">
+                  <label>HOTEL NAME</label>
+                  <p>{hotel.name}</p>
+                </div>
               </div>
-              <div className="vhm-info-grid">
-                <div className="vhm-info-item">
-                  <div className="vhm-icon-box"><DollarSign size={18} /></div>
-                  <div>
-                    <label>Base Price</label>
-                    <p>{formatPrice(hotel.price)}</p>
-                  </div>
+              <div className="vhm-info-box">
+                <div className="vhm-box-icon blue"><MapPin size={18} /></div>
+                <div className="vhm-box-content">
+                  <label>CITY / LOCATION</label>
+                  <p>{hotel.city || hotel.location}</p>
                 </div>
-                <div className="vhm-info-item">
-                  <div className="vhm-icon-box"><Users size={18} /></div>
-                  <div>
-                    <label>Max Capacity</label>
-                    <p>{hotel.maxCapacity || 4} Guests</p>
-                  </div>
+              </div>
+              <div className="vhm-info-box">
+                <div className="vhm-box-icon green"><DollarSign size={18} /></div>
+                <div className="vhm-box-content">
+                  <label>BASE AMOUNT</label>
+                  <p className="vhm-amount-text">{formatPrice(hotel.price)}</p>
                 </div>
-                <div className="vhm-info-item">
-                  <div className="vhm-icon-box"><Star size={18} /></div>
-                  <div>
-                    <label>Rating</label>
-                    <p>{hotel.rating || 0} / 5.0</p>
-                  </div>
-                </div>
-                <div className="vhm-info-item">
-                  <div className="vhm-icon-box"><Calendar size={18} /></div>
-                  <div>
-                    <label>Added On</label>
-                    <p>{new Date(hotel.createdAt || Date.now()).toLocaleDateString()}</p>
-                  </div>
+              </div>
+              <div className="vhm-info-box">
+                <div className="vhm-box-icon orange"><Calendar size={18} /></div>
+                <div className="vhm-box-content">
+                  <label>DATE ADDED</label>
+                  <p>{new Date(hotel.createdAt || Date.now()).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* 3. AMENITIES CARD */}
-            <div className="vhm-card">
-              <div className="vhm-card-header">
-                <h3>Amenities</h3>
-                <span className="vhm-count-badge">{activeAmenities.length}</span>
-              </div>
-              {activeAmenities.length > 0 ? (
-                <div className="vhm-amenities-list">
+          {/* 3. DESCRIPTION (Message style) */}
+          <div className="vhm-section-card">
+            <h3 className="vhm-section-title">HOTEL DESCRIPTION</h3>
+            <div className="vhm-message-area">
+              <p>{hotel.description || "I would like to inquiry about Cenomar. Processing time: 5-7 business days."}</p>
+            </div>
+          </div>
+
+          {/* 4. AMENITIES & ROOMS */}
+          <div className="vhm-section-card">
+             <div className="vhm-title-flex">
+               <h3 className="vhm-section-title">AMENITIES & REQUIREMENTS</h3>
+               <span className="vhm-count-pill">{activeAmenities.length} ITEMS</span>
+             </div>
+             {activeAmenities.length > 0 ? (
+                <div className="vhm-pills-container">
                   {activeAmenities.map((key) => {
                     const { label, icon } = getAmenityConfig(key);
                     return (
-                      <div key={key} className="vhm-amenity-pill">
+                      <div key={key} className="vhm-modern-pill">
                         {icon} <span>{label}</span>
                       </div>
                     );
                   })}
                 </div>
-              ) : (
+             ) : (
                 <div className="vhm-empty-state">
-                  <AlertCircle size={20} />
-                  <span>No amenities listed</span>
+                   <div className="vhm-empty-icon">📂</div>
+                   <p>No Requirements Yet</p>
                 </div>
-              )}
-            </div>
-
+             )}
           </div>
-
-          {/* 4. DESCRIPTION */}
-          <div className="vhm-card">
-            <div className="vhm-card-header">
-              <h3>Description</h3>
-            </div>
-            <div className="vhm-description-box">
-              {hotel.description || "No description available for this hotel."}
-            </div>
-          </div>
-
-          {/* 5. ROOM TYPES (Updated: No Available Column) */}
-          {hotel.roomTypes && hotel.roomTypes.length > 0 && (
-            <div className="vhm-card">
-              <div className="vhm-card-header">
-                <h3>Room Configuration</h3>
-              </div>
-              <div className="vhm-table-wrapper">
-                <table className="vhm-table">
-                  <thead>
-                    <tr>
-                      <th>Type</th>
-                      <th>Capacity</th>
-                      <th>Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {hotel.roomTypes.map((room, idx) => (
-                      <tr key={idx}>
-                        <td className="fw-bold">{room.type}</td>
-                        <td>{room.capacity} Pax</td>
-                        <td className="text-green">{formatPrice(room.price)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
 
         </div>
 
         {/* === FOOTER === */}
         <div className="vhm-footer">
-          <button className="vhm-btn vhm-btn-secondary" onClick={onClose}>
-            Close
-          </button>
-          <button className="vhm-btn vhm-btn-primary" onClick={() => onEdit && onEdit(hotel._id)}>
+          <button className="vhm-btn-close" onClick={onClose}>Close</button>
+          <button className="vhm-btn-edit" onClick={() => onEdit && onEdit(hotel._id)}>
             <Edit size={16} />
-            <span>Edit Hotel Details</span>
+            Edit Hotel Details
           </button>
         </div>
 

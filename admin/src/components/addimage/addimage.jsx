@@ -4,7 +4,6 @@ import Sidebar from '../sidebar/sidebar';
 import './addimage.css';
 
 const AddImage = () => {
-    // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -24,7 +23,7 @@ const AddImage = () => {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
-                alert('Please upload a valid image file (JPG, PNG).');
+                alert('Please upload a valid image file (JPG, PNG, WebP).');
                 return;
             }
             setImageFile(file);
@@ -33,6 +32,9 @@ const AddImage = () => {
     };
 
     const removeImage = () => {
+        if (imagePreview) {
+            URL.revokeObjectURL(imagePreview);
+        }
         setImageFile(null);
         setImagePreview(null);
     };
@@ -65,7 +67,7 @@ const AddImage = () => {
             }
         } catch (error) {
             console.error('Upload Error:', error);
-            alert('❌ Failed to connect to server.');
+            alert('❌ Failed to connect to server. Make sure the backend is running.');
         } finally {
             setIsSubmitting(false);
         }
