@@ -2,9 +2,10 @@ const Blog = require('../models/blog');
 const fs = require('fs');
 const path = require('path');
 
+// 1. ADD BLOG
 const addBlog = async (req, res) => {
     try {
-        const { title, author, category, content, status } = req.body;
+        const { title, author, category, content, status, isArchive } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'Please upload a cover image.' });
@@ -18,7 +19,8 @@ const addBlog = async (req, res) => {
             category,
             content,
             imageUrl,
-            status
+            status,
+            isArchive: isArchive || 'No' 
         });
 
         await newBlog.save();
@@ -30,15 +32,17 @@ const addBlog = async (req, res) => {
     }
 };
 
+// 2. GET ALL ACTIVE BLOGS (isArchive: 'No')
 const getAllBlogs = async (req, res) => {
     try {
-        const blogs = await Blog.find().sort({ createdAt: -1 });
+        const blogs = await Blog.find({ isArchive: 'No' }).sort({ createdAt: -1 });
         res.status(200).json(blogs);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
 };
 
+// 3. GET BLOG BY ID
 const getBlogById = async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
@@ -49,28 +53,38 @@ const getBlogById = async (req, res) => {
     }
 };
 
+// 4. ARCHIVE BLOG (Soft Delete)
 const deleteBlog = async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
         if (!blog) return res.status(404).json({ message: 'Blog not found' });
 
-        if (blog.imageUrl) {
-            const filename = blog.imageUrl.replace('uploads/', '');
-            const filePath = path.join(__dirname, '../uploads', filename);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        }
+        // MODIFIED: Change isArchive to "Yes" instead of deleting
+        blog.isArchive = 'Yes';
+        await blog.save();
 
-        await Blog.findByIdAndDelete(req.params.id);
-        res.status(200).json({ message: 'Blog post deleted' });
+        res.status(200).json({ message: 'Blog post archived successfully' });
+    } catch (error) {
+        console.error('Error archiving blog:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// 5. GET ALL ARCHIVED BLOGS
+const getArchivedBlogs = async (req, res) => {
+    try {
+        const blogs = await Blog.find({ isArchive: 'Yes' }).sort({ updatedAt: -1 });
+        res.status(200).json(blogs);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
 };
 
+// 6. UPDATE BLOG
 const updateBlog = async (req, res) => {
     try {
-        const { title, author, category, content, status } = req.body;
-        let updateData = { title, author, category, content, status };
+        const { title, author, category, content, status, isArchive } = req.body;
+        let updateData = { title, author, category, content, status, isArchive };
 
         if (req.file) {
             const blog = await Blog.findById(req.params.id);
@@ -90,14 +104,17 @@ const updateBlog = async (req, res) => {
 
         res.status(200).json({ message: 'Blog updated!', blog: updatedBlog });
     } catch (error) {
+        console.error('Error updating blog:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
 
+// ISANG module.exports LANG SA DULO PARA SA LAHAT NG FUNCTIONS
 module.exports = {
     addBlog,
     getAllBlogs,
     getBlogById,
     deleteBlog,
-    updateBlog
+    updateBlog,
+    getArchivedBlogs
 };
