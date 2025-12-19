@@ -1,9 +1,9 @@
 import React from 'react';
-import { X, Eye, EyeOff, Calendar, Image, FileText, Archive } from 'lucide-react';
+import { X, Eye, EyeOff, Calendar, Image as ImageIcon, FileText, Archive, CheckCircle, ExternalLink } from 'lucide-react';
 import './PosterDetailModal.css';
 
 const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "Not set";
     return new Date(dateString).toLocaleDateString("en-US", {
         year: "numeric", month: "short", day: "numeric",
     });
@@ -22,15 +22,14 @@ const PosterDetailModal = ({
 
     const getStatusConfig = (status) => {
         const configs = {
-            ACTIVE: { color: "green", icon: Eye, label: "Active", description: "Currently displayed on website" },
-            INACTIVE: { color: "gray", icon: EyeOff, label: "Inactive", description: "Hidden from website" },
+            ACTIVE: { color: "active", label: "ACTIVE", description: "Listing is live" },
+            INACTIVE: { color: "inactive", label: "INACTIVE", description: "Hidden from website" },
         };
         return configs[status.toUpperCase()] || configs.INACTIVE;
     };
 
     const status = (selectedPoster.status || 'INACTIVE').toUpperCase();
     const statusConfig = getStatusConfig(status);
-    const StatusIcon = statusConfig.icon;
 
     const handleToggleStatus = () => {
         toggleStatus(selectedPoster._id, selectedPoster.status);
@@ -45,120 +44,120 @@ const PosterDetailModal = ({
     return (
         <div className="pdm-overlay" onClick={closeModal}>
             <div className="pdm-content" onClick={(e) => e.stopPropagation()}>
+                
+                {/* HEADER SECTION */}
                 <div className="pdm-header">
-                    <div className="pdm-header-content">
-                        <div className="pdm-title-group">
-                            <h2 className="pdm-title">Poster Details</h2>
-                            <div className="pdm-meta">
-                                <span className="pdm-ref">ID: #{selectedPoster._id.slice(-8)}</span>
-                                <span className="pdm-divider">•</span>
-                                <span className="pdm-date">Created: {formatDate(selectedPoster.createdAt)}</span>
-                            </div>
-                        </div>
-                        <div className={`pdm-status-badge pdm-status-${statusConfig.color}`}>
-                            <div className="pdm-status-icon"><StatusIcon size={16} /></div>
-                            <div className="pdm-status-content">
-                                <span className="pdm-status-label">{statusConfig.label}</span>
-                                <span className="pdm-status-desc">{statusConfig.description}</span>
-                            </div>
+                    <div className="pdm-header-left">
+                        <h2 className="pdm-main-title">Poster Details</h2>
+                        <div className="pdm-ref-tag">
+                            REF: #{selectedPoster._id.slice(-8).toUpperCase()} <span className="pdm-dot">•</span> {formatDate(selectedPoster.createdAt)}
                         </div>
                     </div>
-                    <button className="pdm-close" onClick={closeModal} aria-label="Close modal">
-                        <X size={20} />
-                    </button>
-                </div>
-                
-                <div className="pdm-body">
-                    <div className="pdm-card">
-                        <div className="pdm-card-header">
-                            <h3 className="pdm-card-title">Poster Preview</h3>
+                    
+                    <div className="pdm-header-right">
+                        <div className={`pdm-status-pill ${statusConfig.color}`}>
+                            <CheckCircle size={16} />
+                            <div className="pdm-status-text">
+                                <span className="pdm-status-label">{statusConfig.label}</span>
+                                <span className="pdm-status-subtext">{statusConfig.description}</span>
+                            </div>
                         </div>
-                        <div className="pdm-image-container">
+                        <button className="pdm-close-x" onClick={closeModal}><X size={18} /></button>
+                    </div>
+                </div>
+
+                <div className="pdm-body">
+                    
+                    {/* MEDIA SECTION */}
+                    <div className="pdm-section-card dashed-border">
+                        <div className="pdm-processing-bar">
+                            <CheckCircle size={18} className="pdm-icon-green" />
+                            <span>Poster Media & Schedule</span>
+                        </div>
+                        
+                        <div className="pdm-image-box">
                             <img 
                                 src={`http://localhost:5000/${selectedPoster.imageUrl}`} 
                                 alt={selectedPoster.title}
                                 className="pdm-poster-image"
+                                onError={(e) => { e.target.src = 'https://via.placeholder.com/800x400'; }}
                             />
+                            <div className="pdm-image-info">
+                                <div className="pdm-file-pill">
+                                    <ImageIcon size={14} className="pdm-icon-green" />
+                                    <span>{selectedPoster.imageUrl?.split('/').pop() || 'poster_image.jpg'}</span>
+                                </div>
+                                <button className="pdm-view-link" onClick={() => window.open(`http://localhost:5000/${selectedPoster.imageUrl}`, '_blank')}>
+                                    View Full Image
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="pdm-url-pill">
+                            <ExternalLink size={14} />
+                            <span>{selectedPoster.imageUrl}</span>
                         </div>
                     </div>
 
-                    <div className="pdm-card">
-                        <div className="pdm-card-header">
-                            <h3 className="pdm-card-title">Poster Information</h3>
-                        </div>
-                        <div className="pdm-grid">
-                            <div className="pdm-info-item">
-                                <div className="pdm-info-icon"><FileText size={18} /></div>
-                                <div className="pdm-info-content">
-                                    <label className="pdm-info-label">Title</label>
-                                    <span className="pdm-info-value">{selectedPoster.title}</span>
+                    {/* INFORMATION GRID */}
+                    <div className="pdm-section-card">
+                        <h3 className="pdm-section-title">POSTER INFORMATION</h3>
+                        <div className="pdm-info-grid">
+                            <div className="pdm-info-box">
+                                <div className="pdm-box-icon blue"><FileText size={18} /></div>
+                                <div className="pdm-box-content">
+                                    <label>TITLE</label>
+                                    <p>{selectedPoster.title}</p>
                                 </div>
                             </div>
-                            <div className="pdm-info-item">
-                                <div className="pdm-info-icon"><Image size={18} /></div>
-                                <div className="pdm-info-content">
-                                    <label className="pdm-info-label">Image URL</label>
-                                    <span className="pdm-info-value pdm-val-url">{selectedPoster.imageUrl}</span>
+                            <div className="pdm-info-box">
+                                <div className="pdm-box-icon yellow"><CheckCircle size={18} /></div>
+                                <div className="pdm-box-content">
+                                    <label>STATUS</label>
+                                    <p>{selectedPoster.status}</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="pdm-card">
-                        <div className="pdm-card-header">
-                            <h3 className="pdm-card-title">Display Schedule</h3>
-                        </div>
-                        <div className="pdm-grid">
-                            <div className="pdm-info-item">
-                                <div className="pdm-info-icon"><Calendar size={18} /></div>
-                                <div className="pdm-info-content">
-                                    <label className="pdm-info-label">Start Date</label>
-                                    <span className="pdm-info-value">
-                                        {selectedPoster.startDate ? formatDate(selectedPoster.startDate) : 'Not set'}
-                                    </span>
+                            <div className="pdm-info-box">
+                                <div className="pdm-box-icon green"><Calendar size={18} /></div>
+                                <div className="pdm-box-content">
+                                    <label>START DATE</label>
+                                    <p>{formatDate(selectedPoster.startDate)}</p>
                                 </div>
                             </div>
-                            <div className="pdm-info-item">
-                                <div className="pdm-info-icon"><Calendar size={18} /></div>
-                                <div className="pdm-info-content">
-                                    <label className="pdm-info-label">End Date</label>
-                                    <span className="pdm-info-value">
-                                        {selectedPoster.endDate ? formatDate(selectedPoster.endDate) : 'Not set'}
-                                    </span>
+                            <div className="pdm-info-box">
+                                <div className="pdm-box-icon orange"><Calendar size={18} /></div>
+                                <div className="pdm-box-content">
+                                    <label>END DATE</label>
+                                    <p>{formatDate(selectedPoster.endDate)}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    {/* DESCRIPTION SECTION */}
                     {selectedPoster.description && (
-                        <div className="pdm-card">
-                            <div className="pdm-card-header">
-                                <h3 className="pdm-card-title">Description</h3>
-                            </div>
-                            <div className="pdm-message-box">
-                                {selectedPoster.description}
+                        <div className="pdm-section-card">
+                            <h3 className="pdm-section-title">POSTER DESCRIPTION</h3>
+                            <div className="pdm-message-area">
+                                <p>{selectedPoster.description}</p>
                             </div>
                         </div>
                     )}
                 </div>
 
+                {/* FOOTER SECTION */}
                 <div className="pdm-footer">
-                    <button className="pdm-btn pdm-btn-ghost" onClick={closeModal}>Close</button>
+                    <button className="pdm-btn-close" onClick={closeModal}>Close</button>
                     <button 
-                        className={`pdm-btn ${status === 'ACTIVE' ? 'pdm-btn-warning' : 'pdm-btn-success'}`}
+                        className={`pdm-btn-action ${status === 'ACTIVE' ? 'deactivate' : 'activate'}`}
                         onClick={handleToggleStatus}
                     >
-                        {status === 'ACTIVE' ? (
-                            <><EyeOff size={16} /> Deactivate</>
-                        ) : (
-                            <><Eye size={16} /> Activate</>
-                        )}
+                        {status === 'ACTIVE' ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                     </button>
-                    <button 
-                        className="pdm-btn pdm-btn-danger pdm-btn-outline"
-                        onClick={handleArchiveClick}
-                    >
-                        <Archive size={16} /> Archive Poster
+                    <button className="pdm-btn-danger" onClick={handleArchiveClick}>
+                        <Archive size={16} />
+                        Archive
                     </button>
                 </div>
             </div>

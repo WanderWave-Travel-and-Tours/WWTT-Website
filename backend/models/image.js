@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 
 const imageSchema = new mongoose.Schema({
-    title: {
+    imageName: {  // ✅ CORRECT
         type: String,
-        required: false 
+        required: false,
+        default: 'Untitled Image'
     },
     imageUrl: {
         type: String,

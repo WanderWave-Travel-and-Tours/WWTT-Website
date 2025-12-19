@@ -1,169 +1,252 @@
-import React, { useState, useEffect } from 'react'; 
-import Sidebar from '../sidebar/sidebar'; //
-import './viewtestimonials.css'; //
+import React, { useState, useEffect } from 'react';
+import { Trash2, Eye, Calendar, User, Star, MessageSquare } from 'lucide-react';
+import Sidebar from '../sidebar/sidebar';
+import TestimonialDetailModal from './TestimonialDetailModal';
+import TestimonialPagination from './TestimonialPagination';
+import TestimonialFilters from './TestimonialFilters';
+import './viewtestimonials.css';
 
 const ViewTestimonials = () => {
-
-    // --- SIDEBAR TOGGLE LOGIC (Existing) ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
-    }; //
+    };
 
-    const [testimonials, setTestimonials] = useState([]); //
+    const [testimonials, setTestimonials] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterSource, setFilterSource] = useState('ALL');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedTestimonial, setSelectedTestimonial] = useState(null);
+    
+    const API_BASE_URL = 'http://localhost:5000';
+
+    const getSources = () => {
+        const sources = ['ALL'];
+        const uniqueSources = [...new Set(testimonials.map(t => t.source).filter(Boolean))];
+        return [...sources, ...uniqueSources];
+    };
+
+    const sourceOptions = getSources();
+
+    const getFilterClassName = (source) => {
+        return filterSource === source ? 'tf-active-navy' : '';
+    };
 
     const fetchTestimonials = async () => {
+        setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/testimonials');
+            const response = await fetch(`${API_BASE_URL}/api/testimonials`);
             if (!response.ok) {
-                throw new Error('Failed to fetch');
+                throw new Error('Failed to fetch testimonials');
             }
             const data = await response.json();
-            setTestimonials(data);
+            // Siguraduhing array ang data bago i-set
+            setTestimonials(Array.isArray(data) ? data : []);
+            setCurrentPage(1);
         } catch (error) {
-            console.error("Error fetching testimonials:", error);
+            console.error('Error fetching testimonials:', error);
+        } finally {
+            setLoading(false);
         }
-    }; //
+    };
 
     useEffect(() => {
         fetchTestimonials();
-    }, []); //
+    }, []);
 
-    // MODIFIED: handleDelete ay naging handleArchive na ngayon
     const handleArchive = async (id, name) => {
-        if (window.confirm(`Are you sure you want to archive the testimonial of ${name}?`)) {
+        if (window.confirm(`Are you sure you want to archive ${name}'s testimonial?`)) {
             try {
-                // Tatawag sa PATCH route na ginawa natin sa itaas
-                const response = await fetch(`http://localhost:5000/api/testimonials/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`, {
                     method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ isArchive: "Yes" }),
                 });
 
                 if (response.ok) {
-                    // I-update ang UI list
-                    setTestimonials(prev => prev.map(t => 
-                        t._id === id ? { ...t, isArchive: "Yes" } : t
-                    ));
-                    alert(`The testimonial of ${name} has been successfully archived.`);
+                    // I-update ang local state para mawala agad sa listahan pagka-archive
+                    setTestimonials(prev => prev.map(t => t._id === id ? { ...t, isArchive: "Yes" } : t));
+                    alert('Testimonial archived successfully');
                 } else {
-                    alert("Error archiving testimonial");
+                    alert('Failed to archive testimonial');
                 }
             } catch (error) {
-                console.error("Error archiving testimonial:", error);
+                console.error('Error archiving testimonial:', error);
             }
         }
     };
 
-    const getSourceClass = (source) => {
-        if (!source) return 'default';
-        const s = source.toLowerCase();
-        if (s.includes('facebook')) return 'facebook';
-        if (s.includes('website')) return 'website';
-        if (s.includes('email')) return 'email';
-        return 'default';
-    }; //
+    const handleViewDetails = (testimonial) => {
+        setSelectedTestimonial(testimonial);
+        setShowDetailModal(true);
+    };
 
-    // --- LOGIC: Filter para mga naka isArchive === "No" lang ang ididisplay ---
-    const activeTestimonials = testimonials.filter(t => t.isArchive === "No");
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return 'https://via.placeholder.com/150';
+        return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}/uploads/${imagePath}`;
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric'
+        });
+    };
+
+    // FIX: Mas malawak na filtering para tanggapin ang "0" o "No"
+    const filteredTestimonials = testimonials.filter(testimonial => {
+        // Ituturing na Active kung ang isArchive ay "No", "0", false, o wala pang value
+        const isNotArchived = 
+            testimonial.isArchive === "No" || 
+            testimonial.isArchive === "0" || 
+            !testimonial.isArchive || 
+            testimonial.isArchive === false;
+
+        const matchesSearch = 
+            (testimonial.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (testimonial.feedback || "").toLowerCase().includes(searchTerm.toLowerCase());
+            
+        const matchesSource = filterSource === 'ALL' || testimonial.source === filterSource;
+        
+        return isNotArchived && matchesSearch && matchesSource;
+    });
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentTestimonials = filteredTestimonials.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Counter para sa header
+    const activeTestimonialsCount = testimonials.filter(t => t.isArchive === "No" || t.isArchive === "0" || !t.isArchive).length;
 
     return (
-        <div className="vtest-page">
-             <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
-            <main className="vtest-main">
-                <div className="vtest-container">
-                    <header className="vtest-header">
-                        <div className="vtest-header-left">
-                            <h1 className="vtest-title">TESTIMONIALS</h1>
-                            <p className="vtest-subtitle">
-                                Managing {activeTestimonials.length} active customer reviews
+        <div className="vt-page">
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            <main className={`vt-main ${isSidebarCollapsed ? 'vt-main--collapsed' : ''}`}>
+                <div className="vt-container">
+                    <header className="vt-header">
+                        <div className="vt-header-content">
+                            <h1 className="vt-title">TESTIMONIALS</h1>
+                            <p className="vt-subtitle">
+                                Managing {testimonials.length} testimonials • {activeTestimonialsCount} active
                             </p>
                         </div>
-                        <button className="vtest-btn vtest-btn--add" onClick={() => window.location.href='/add-testimonial'}>
-                            + Add Testimonial
+                        <button className="vt-btn vt-btn--add" onClick={() => window.location.href='/add-testimonial'}>
+                            + Add New Testimonial
                         </button>
                     </header>
 
-                    {activeTestimonials.length === 0 ? (
-                        <div className="vtest-empty">
-                            <span className="vtest-empty-icon">⭐</span>
-                            <h3>No active testimonials</h3>
-                            <p>Customer reviews will appear here</p>
+                    <TestimonialFilters
+                        searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+                        filterSource={filterSource} setFilterSource={setFilterSource}
+                        sourceOptions={sourceOptions} getFilterClassName={getFilterClassName}
+                    />
+
+                    {loading ? (
+                        <div className="vt-loading">
+                            <div className="vt-spinner"></div>
+                            <p>Loading testimonials from database...</p>
+                        </div>
+                    ) : filteredTestimonials.length === 0 ? (
+                        <div className="vt-empty">
+                            <span className="vt-empty-icon">{testimonials.length === 0 ? '💬' : '🔍'}</span>
+                            <h3>{testimonials.length === 0 ? 'No testimonials yet' : 'No testimonials found'}</h3>
+                            <p>{testimonials.length === 0 ? 'Start by adding your first customer testimonial' : 'Try adjusting your search or filter criteria'}</p>
                         </div>
                     ) : (
-                        <div className="vtest-grid">
-                            {activeTestimonials.map(t => (
-                                <div key={t._id} className="vtest-card">
-                                    <div className="vtest-card-header">
-                                        <img 
-                                            src={
-                                                t.customerImage 
-                                                ? `http://localhost:5000/uploads/${t.customerImage}` 
-                                                : 'https://via.placeholder.com/150?text=No+Img'
-                                            } 
-                                            alt={`Profile of ${t.customerName}`} 
-                                            className="vtest-avatar" 
-                                            onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
-                                        />
-                                        <div className="vtest-user">
-                                            <h3 className="vtest-name">{t.customerName}</h3>
-                                            <span className={`vtest-source vtest-source--${getSourceClass(t.source)}`}>
-                                                {t.source}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="vtest-card-body">
-                                        <svg className="vtest-quote-icon" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
-                                        </svg>
-                                        <p className="vtest-feedback">{t.feedback}</p>
-                                    </div>
-
-                                    <div className="vtest-card-footer">
-                                        <div className="vtest-rating">
-                                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                                        </div>
-                                        {/* MODIFIED: Archive Button */}
-                                        <button 
-                                            className="vtest-delete-btn"
-                                            style={{ backgroundColor: '#f39c12', color: 'white' }} 
-                                            onClick={() => handleArchive(t._id, t.customerName)}
-                                        >
-                                            Archive
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="vt-table-wrapper">
+                            <table className="vt-table">
+                                <thead>
+                                    <tr>
+                                        <th>CUSTOMER</th>
+                                        <th>FEEDBACK</th>
+                                        <th>SOURCE & DATE</th>
+                                        <th>RATING</th>
+                                        <th>STATUS</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentTestimonials.map((testimonial) => (
+                                        <tr key={testimonial._id}>
+                                            <td>
+                                                <div className="vt-customer-cell">
+                                                    <div className="vt-image-preview">
+                                                        <img 
+                                                            src={getImageUrl(testimonial.customerImage)} 
+                                                            alt=""
+                                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
+                                                        />
+                                                    </div>
+                                                    <span className="vt-customer-name">{testimonial.customerName}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="vt-excerpt">
+                                                    {testimonial.feedback?.substring(0, 80)}...
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="vt-meta-cell">
+                                                    <div className="vt-source">
+                                                        <MessageSquare size={14} />
+                                                        <span>{testimonial.source}</span>
+                                                    </div>
+                                                    <div className="vt-date">
+                                                        <Calendar size={14} />
+                                                        <span>{formatDate(testimonial.createdAt)}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="vt-rating">
+                                                    <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                                                    5.0 Stars
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="vt-status vt-status--active">
+                                                    <MessageSquare size={12} />
+                                                    Active
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="vt-actions">
+                                                    <button className="vt-action-btn vt-action-btn--view" onClick={() => handleViewDetails(testimonial)}>
+                                                        <Eye size={16} /> <span>View</span>
+                                                    </button>
+                                                    <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(testimonial._id, testimonial.customerName)}>
+                                                        <Trash2 size={16} /> <span>Archive</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            
+                            <TestimonialPagination
+                                totalItems={filteredTestimonials.length}
+                                itemsPerPage={itemsPerPage}
+                                currentPage={currentPage}
+                                onPageChange={setCurrentPage}
+                            />
                         </div>
                     )}
-
-                    {/* Stats Computed based on Active Testimonials */}
-                    <div className="vtest-stats">
-                        <div className="vtest-stat">
-                            <strong>{activeTestimonials.length}</strong>
-                            <span>Active Reviews</span>
-                        </div>
-                        <div className="vtest-stat">
-                            <strong>{activeTestimonials.filter(t => t.source && t.source.toLowerCase().includes('facebook')).length}</strong>
-                            <span>Facebook</span>
-                        </div>
-                        <div className="vtest-stat">
-                            <strong>{activeTestimonials.filter(t => t.source && t.source.toLowerCase().includes('website')).length}</strong>
-                            <span>Website</span>
-                        </div>
-                        <div className="vtest-stat">
-                            <strong>{activeTestimonials.filter(t => t.source && t.source.toLowerCase().includes('email')).length}</strong>
-                            <span>Email</span>
-                        </div>
-                    </div>
                 </div>
             </main>
+
+            {showDetailModal && selectedTestimonial && (
+                <TestimonialDetailModal
+                    showModal={showDetailModal}
+                    selectedTestimonial={selectedTestimonial}
+                    setShowModal={setShowDetailModal}
+                    handleArchive={handleArchive}
+                    getImageUrl={getImageUrl}
+                />
+            )}
         </div>
     );
 };
