@@ -30,8 +30,6 @@ function CurrencyModal({ isOpen, onClose, currency, setCurrency }) {
           </div>
           <h2 className="receipt-title">TRAVEL NOTICE</h2>
           <div className="receipt-subtitle">International Bookings Advisory</div>
-
-          {/* --- CURRENCY TOGGLE (Placed here for high visibility) --- */}
           {setCurrency && (
             <div className="modal-currency-wrapper">
                 <span className="modal-currency-label">View prices in:</span>
@@ -51,7 +49,6 @@ function CurrencyModal({ isOpen, onClose, currency, setCurrency }) {
                 </div>
             </div>
           )}
-          {/* ------------------------------------------------------- */}
 
         </div>
         <div className="receipt-body">
@@ -63,6 +60,7 @@ function CurrencyModal({ isOpen, onClose, currency, setCurrency }) {
             <p className="notice-subtext">
               Transaction fees may also apply depending on your chosen payment method.
             </p>
+            
           </div>
         </div>
         <div className="receipt-footer">

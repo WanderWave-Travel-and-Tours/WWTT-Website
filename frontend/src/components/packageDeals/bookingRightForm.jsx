@@ -17,7 +17,7 @@ const BookingRightForm = ({ pkg }) => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(null);
   const [quantities, setQuantities] = useState({ adult: 1 });
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10)); // November 2025 based on context
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); 
   
@@ -51,41 +51,34 @@ const BookingRightForm = ({ pkg }) => {
 
   // Check if returning from flight search with selected flight
   useEffect(() => {
-    const checkPendingBooking = async () => {
-      const bookingData = sessionStorage.getItem('pendingBookingData');
-      console.log('Checking for pending booking data:', bookingData);
-      
-      if (!bookingData) return;
-      
-      try {
-        const data = JSON.parse(bookingData);
-        
-        if (data.selectedFlight && data.packageId === pkg._id) {
-          console.log('Found selected flight for this package:', data.selectedFlight);
-          
-          setSelectedFlight(data.selectedFlight);
-          setBookingWithAirfare(true);
-          setSelectedDate(data.selectedDate);
-          setQuantities(data.quantities);
-          setCurrentMonth(new Date(data.currentMonth));
-          
-          // Clear session storage
-          sessionStorage.removeItem('pendingBookingData');
-          
-          toast.success(`✈️ Flight Added! ${data.selectedFlight.airline.name}`, { duration: 3000 });
-          
-          // Open booking form modal after a short delay
-          setTimeout(() => {
-            setPassengerStep(1);
-            setShowModal(true);
-          }, 500);
-        }
-      } catch (error) {
-        console.error('Error parsing booking data:', error);
-      }
-    };
+    const bookingData = sessionStorage.getItem('pendingBookingData');
+    console.log('Checking for pending booking data:', bookingData);
     
-    checkPendingBooking();
+    if (bookingData) {
+      const data = JSON.parse(bookingData);
+      console.log('Parsed booking data:', data);
+      
+      if (data.selectedFlight && data.packageId === pkg._id) {
+        console.log('Found selected flight for this package:', data.selectedFlight);
+        
+        setSelectedFlight(data.selectedFlight);
+        setBookingWithAirfare(true);
+        setSelectedDate(data.selectedDate);
+        setQuantities(data.quantities);
+        setCurrentMonth(new Date(data.currentMonth));
+        
+        // Clear session storage
+        sessionStorage.removeItem('pendingBookingData');
+        
+        toast.success(`✈️ Flight Added! ${data.selectedFlight.airline.name}`, { duration: 3000 });
+        
+        // Open booking form modal after a short delay
+        setTimeout(() => {
+          setPassengerStep(1);
+          setShowModal(true);
+        }, 500);
+      }
+    }
   }, [pkg._id]);
 
   // Fetch Hotel Data
@@ -101,7 +94,7 @@ const BookingRightForm = ({ pkg }) => {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com0/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -258,7 +251,7 @@ const BookingRightForm = ({ pkg }) => {
     console.log('Saving booking data with returnPath:', bookingData.returnPath);
 
     // Navigate to flight search page
-    navigate('/flight-search', {
+    navigate('/flights', {
       state: {
         fromBooking: true,
         packageData: {
@@ -441,54 +434,52 @@ const BookingRightForm = ({ pkg }) => {
       // ===========================================
       // API CALL 1: SAVE BOOKING DATA
       // ===========================================
-      const bookingRes = await axios.post(
-        'http://localhost:5000/api/bookings', 
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com0/api/bookings', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (bookingResponse.data.success) {
+        const bookingId = bookingResponse.data.bookingId;
+        
+        console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
+        toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
+        
+        // ===========================================
+        // API CALL 2: CREATE PAYMENT LINK (Final Redirect)
+        // ===========================================
+        // The /create-intent route expects { bookingId: '...' } in the body
+        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com0/api/payment/create-intent', {
+            bookingId: bookingId
+        });
+        
+        if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
+            const checkoutUrl = paymentResponse.data.checkoutUrl;
+            toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
+            setShowModal(false);
+            
+            // CRITICAL FIX: REDIRECT TO PAYMONGO URL
+            window.location.href = checkoutUrl; 
+            return;
+            
+        } else {
+             // If payment link creation fails, redirect to dashboard/pending page
+             const redirectId = bookingResponse.data.bookingId || bookingResponse.data.data._id; 
+             toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
+             setTimeout(() => {
+                 navigate('/dashboard');
+             }, 1500);
         }
-      );
-
-      if (!bookingRes.data.success) {
-        throw new Error(bookingRes.data.message || 'Booking creation failed');
+      } else {
+         throw new Error(bookingResponse.data.message || 'Booking submission failed on server.');
       }
-
-      if (!bookingRes.data.data || !bookingRes.data.data._id) {
-        console.error('❌ Invalid response structure');
-        throw new Error('Booking ID not found in response');
-      }
-
-      const createdBooking = bookingRes.data.data;
-      const bookingId = createdBooking._id;
-
-      // ===========================================
-      // API CALL 2: CREATE PAYMENT INTENT
-      // ===========================================
-      const paymentRes = await axios.post(
-        'http://localhost:5000/api/payment/create-intent',
-        { bookingId: bookingId.toString() },
-        {
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-
-      if (!paymentRes.data.success) {
-        throw new Error(paymentRes.data.message || 'Payment intent creation failed');
-      }
-
-      // Success - navigate to payment page
-      const paymentUrl = paymentRes.data.data.checkoutUrl;
-      toast.success('Booking created! Redirecting to payment...', { duration: 2000 });
-      
-      setTimeout(() => {
-        window.location.href = paymentUrl;
-      }, 2000);
-
     } catch (error) {
-      console.error('❌ Booking Error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to create booking. Please try again.';
+      console.error('Booking/Payment Error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking. Please try again.';
+      
+      if (error.response?.data?.error) {
+          console.error("Payment API Error Details:", error.response.data.error);
+      }
+      
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -547,6 +538,13 @@ const BookingRightForm = ({ pkg }) => {
             {[...Array(firstDay)].map((_, i) => <div key={`empty-${i}`} />)}
             {[...Array(daysInMonth)].map((_, i) => {
               const day = i + 1;
+              const dateToCheck = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+              dateToCheck.setHours(0, 0, 0, 0);
+              
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const isPastDate = dateToCheck < today;
+
               const isStartDate = selectedDate === day;
               const isInRange = isInSelectedRange(day);
               const isEndDate = selectedDate && day === getEndDate();
@@ -554,8 +552,14 @@ const BookingRightForm = ({ pkg }) => {
               return (
                 <button
                   key={day}
-                  onClick={() => setSelectedDate(day)}
-                  className={`brf-calendar-day ${isStartDate ? 'brf-selected' : ''} ${isInRange && !isStartDate ? 'brf-in-range' : ''} ${isEndDate ? 'brf-end-date' : ''}`}
+                  disabled={isPastDate} 
+                  onClick={() => !isPastDate && setSelectedDate(day)}
+                  className={`brf-calendar-day 
+                    ${isStartDate ? 'brf-selected' : ''} 
+                    ${isInRange && !isStartDate ? 'brf-in-range' : ''} 
+                    ${isEndDate ? 'brf-end-date' : ''} 
+                    ${isPastDate ? 'brf-disabled-date' : ''} 
+                  `}
                 >
                   {day}
                 </button>

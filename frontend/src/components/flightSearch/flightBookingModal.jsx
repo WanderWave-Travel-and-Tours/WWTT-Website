@@ -122,7 +122,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     console.log("📤 Submitting Booking Data:", JSON.stringify(bookingData, null, 2));
 
     try {
-      const res = await axios.post('http://localhost:5000/api/inquiries', bookingData, {
+      const res = await axios.post('https://wanderwaveph-backend.onrender.com0/api/inquiries', bookingData, {
         headers: {
           'Content-Type': 'application/json'
         }

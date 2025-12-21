@@ -5,9 +5,8 @@ import PackageBooking from './packageBooking';
 import './packageDeals.css';
 import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
-import toast, { Toaster } from 'react-hot-toast'; // <--- NEW IMPORT
+import toast, { Toaster } from 'react-hot-toast';
 
-// NEW: Login Notice Component (NO CHANGE HERE)
 const LoginNoticeModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
@@ -73,47 +72,40 @@ function PackageDeals() {
   const [showModal, setShowModal] = useState(false);
   const [hasShownModal, setHasShownModal] = useState(false);
   
-  // UPDATED: Login State initialized to false
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
   const [showLoginNotice, setShowLoginNotice] = useState(false);
+
+  const [currency, setCurrency] = useState('PHP');        
+  const exchangeRate = 58; 
   
   const handleLoginRequired = () => {
     setShowLoginNotice(true);
   };
   
-  // NEW: useEffect to check login status from localStorage
   useEffect(() => {
     const checkLoginStatus = () => {
-      // Tinitingnan kung may 'wanderwave_user' item sa localStorage
       const user = localStorage.getItem('wanderwave_user');
-      // Set to true if user exists, false otherwise
       setIsLoggedIn(!!user); 
     };
     
-    // Check on initial load
     checkLoginStatus(); 
 
-    // Add event listener para sa pagbabago ng storage (e.g., login/logout sa ibang tab)
     const handleStorageChange = () => {
       checkLoginStatus();
     };
 
     window.addEventListener('storage', handleStorageChange);
 
-    // Cleanup
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
-  // END NEW LOGIN CHECK LOGIC
 
-  // Existing useEffect for scrolling
   useEffect(() => {
     if (hasShownModal) return;
 
     const handleScroll = () => {
       if (window.scrollY > 150) {
-        // console.log("User scrolled down! Opening Modal...");
         setShowModal(true);
         setHasShownModal(true);
         window.removeEventListener('scroll', handleScroll);
@@ -222,11 +214,10 @@ function PackageDeals() {
     },
   ];
 
-  // Existing useEffect for fetching packages (NO CHANGE HERE)
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/packages/all'); 
+        const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/packages/all'); 
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -249,7 +240,7 @@ function PackageDeals() {
             discount: 30,
             rating: 4.5,
             reviews: 100, 
-            image: pkg.image ? `http://localhost:5000/uploads/${pkg.image}` : 'https://default-image-url.jpg', 
+            image: pkg.image ? `https://wanderwaveph-backend.onrender.com0/uploads/${pkg.image}` : 'https://default-image-url.jpg', 
             inclusions: pkg.inclusions || [], 
             itinerary: pkg.itinerary || [], 
             excludes: [], 
@@ -283,11 +274,8 @@ function PackageDeals() {
   }
   
   if (currentView === 'booking' && selectedPackageForBooking) {
-    // If you use the hypothetical PackageBooking.jsx above, the toast will work here.
-    return <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} />;
+    return <PackageBooking pkg={selectedPackageForBooking} onGoBack={handleGoBack} currency={currency} exchangeRate={exchangeRate} />;
   }
-
-  // ... (rest of filtering logic) ...
 
   const selectedCategory = mostVisitedCategories.find(c => c.id === selectedFilter);
 
@@ -335,16 +323,12 @@ function PackageDeals() {
     filteredPackages = filteredPackages.filter(pkg => selectedDestinations.includes(pkg.location));
   }
 
-  // BEGIN UPDATED: ASYNC toggleFavorite function with API CALL and TOAST
   const toggleFavorite = async (packageId) => {
-    
-    // Ang login check ay ginagawa na sa packageCard.jsx, pero idadagdag ko rin dito para sigurado.
     if (!isLoggedIn) {
       handleLoginRequired();
       return;
     }
 
-    // 1. KUNIN ANG USER ID (user_id) MULA SA LOCAL STORAGE
     const userJSON = localStorage.getItem('wanderwave_user');
     if (!userJSON) {
       handleLoginRequired();
@@ -353,15 +337,11 @@ function PackageDeals() {
     
     try {
       const user = JSON.parse(userJSON);
-      const userId = user._id; // Kukunin ang _id na galing sa User Collection
-
+      const userId = user._id;
       const isCurrentlyFavorite = favorites.includes(packageId);
-      
-      // Gagamitin ang POST method para sa pag-add at pag-remove (Toggle)
       const method = 'POST'; 
-      const url = `http://localhost:5000/api/favorites`;
+      const url = `https://wanderwaveph-backend.onrender.com0/api/favorites`;
 
-      // Optimistic UI update: I-update muna ang state bago mag-API call
       const previousState = favorites;
       setFavorites(prev => 
         isCurrentlyFavorite
@@ -369,24 +349,18 @@ function PackageDeals() {
           : [...prev, packageId]
       );
       
-      // 2. I-BATTO ANG USER ID AT PROMO ID SA COLLECTION FAVORITE SA BACKEND
       const response = await fetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
-          // Kung kailangan ng Authorization Token, idadagdag mo dito
-          // 'Authorization': `Bearer ${user.token}`,
         },
         body: JSON.stringify({ 
-          promo_id: packageId, // Mula sa Promo Collection
+          promo_id: packageId,
         }),
       });
 
       if (!response.ok) {
-        // I-revert ang state kung failed ang API call
         setFavorites(previousState);
-        
-        // **TOAST NOTIFICATION FOR API ERROR**
         toast.error('Failed to update wishlist. Please try again.', {
           style: { border: '1px solid #ef4444', color: '#ef4444' },
           iconTheme: { primary: '#ef4444', secondary: '#fff' },
@@ -396,7 +370,6 @@ function PackageDeals() {
         throw new Error('Failed to update favorites on server.');
       }
       
-      // Optional: Success toast
       const successMessage = isCurrentlyFavorite 
           ? 'Package removed from wishlist.' 
           : 'Package added to wishlist!';
@@ -410,7 +383,6 @@ function PackageDeals() {
 
     } catch (err) {
       console.error('Error toggling favorite:', err);
-      // Catch-all toast for unexpected errors (e.g., network failure)
       if (!err.message.includes('Failed to update favorites on server.')) {
         toast.error('Network error. Could not connect to the server.', {
           style: { border: '1px solid #ef4444', color: '#ef4444' },
@@ -420,7 +392,6 @@ function PackageDeals() {
       }
     }
   };
-  // END UPDATED toggleFavorite
 
   const scrollToPackages = () => {
     if (packagesRef.current) {
@@ -437,16 +408,15 @@ function PackageDeals() {
 
   return (
     <div className="package-deals-page">
-      
-      {/* NEW: Toaster for showing notifications at the top center */}
       <Toaster position="top-center" />
       
-      <CurrencyModal 
+       <CurrencyModal 
         isOpen={showModal} 
-        onClose={() => setShowModal(false)} 
+        onClose={() => setShowModal(false)}
+        currency={currency}
+        setCurrency={setCurrency}
       />
       
-      {/* Login Notice Modal */}
       <LoginNoticeModal 
         isOpen={showLoginNotice} 
         onClose={() => setShowLoginNotice(false)} 
@@ -472,7 +442,7 @@ function PackageDeals() {
             packages={filteredPackages}
             categoryName={headerTitle} 
             favorites={favorites}
-            onToggleFavorite={toggleFavorite} // Gagamitin ang bagong async function
+            onToggleFavorite={toggleFavorite} 
             onBookNow={handleBookNow}
             packagesRef={packagesRef}
             scopeFilter={scopeFilter}
@@ -487,13 +457,14 @@ function PackageDeals() {
             selectedDestinations={selectedDestinations}
             setSelectedDestinations={setSelectedDestinations}
             allLocations={allLocations}
-            // MAHALAGA: Ipasa ang status at handler
             isLoggedIn={isLoggedIn}
             onLoginRequired={handleLoginRequired}
+            currency={currency}           
+            exchangeRate={exchangeRate}     
+            setCurrency={setCurrency}  
           />
         </div>
       </section>
-
     </div>
   );
 }

@@ -57,7 +57,7 @@ const PaymentSuccess = () => {
   // Fetch Booking Data
   const fetchBookingDetails = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/bookings/${id}`);
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com0/api/bookings/${id}`);
       const data = await response.json();
       if (data.success) {
         setDetails({
@@ -81,7 +81,7 @@ const PaymentSuccess = () => {
   // Fetch Inquiry Data
   const fetchInquiryDetails = async (id) => {
     try {
-        const response = await fetch(`http://localhost:5000/api/inquiries/${id}`);
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com0/api/inquiries/${id}`);
         const data = await response.json();
         
         if (data.success) {

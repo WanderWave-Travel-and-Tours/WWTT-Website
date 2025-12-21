@@ -111,7 +111,7 @@ const PassportAppt = () => {
 
     const fetchPassportDetails = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/passports');
+            const res = await axios.get('https://wanderwaveph-backend.onrender.com0/api/passports');
             if (res.data.success && res.data.data.length > 0) {
                 const data = res.data.data[0];
                 setPassportData(data);
@@ -129,7 +129,7 @@ const PassportAppt = () => {
 const fetchInquiries = async () => {
     setIsLoading(true);
     try {
-        const response = await axios.get('http://localhost:5000/api/inquiries');
+        const response = await axios.get('https://wanderwaveph-backend.onrender.com0/api/inquiries');
         if (response.data.success) {
             // FILTER: Dapat inquiryType ay CENOMAR at isArchive ay "No"
             const cenomarRequests = response.data.data.filter(inq => 
@@ -151,7 +151,7 @@ const handleArchiveInquiry = async (id) => {
     if (!window.confirm("Sigurado ka bang i-archive ang CENOMAR inquiry na ito?")) return;
     try {
         // Tatawagin ang archive endpoint at ise-set ang isArchive sa "Yes"
-        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, { 
+        const response = await axios.put(`https://wanderwaveph-backend.onrender.com0/api/inquiries/${id}/archive`, { 
             isArchive: "Yes" 
         });
         
@@ -167,7 +167,7 @@ const handleArchiveInquiry = async (id) => {
 
     const fetchDocuments = async (inquiryId) => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+            const response = await axios.get(`https://wanderwaveph-backend.onrender.com0/api/documents/inquiry/${inquiryId}`);
             if (response.data.success) {
                 setDocuments(response.data.documents || []);
             }
@@ -195,7 +195,7 @@ const handleArchiveInquiry = async (id) => {
             if (contactEvidence) formData.append('evidence', contactEvidence);
 
             const response = await axios.put(
-                `http://localhost:5000/api/inquiries/${selectedAppointment._id}/status`,
+                `https://wanderwaveph-backend.onrender.com0/api/inquiries/${selectedAppointment._id}/status`,
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );
@@ -227,7 +227,7 @@ const handleArchiveInquiry = async (id) => {
 
     const handleUpdateStatus = async (id, newStatus) => {
         try {
-            const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/status`, { status: newStatus });
+            const response = await axios.put(`https://wanderwaveph-backend.onrender.com0/api/inquiries/${id}/status`, { status: newStatus });
             if (response.data.success) {
                 alert(`Status updated to ${newStatus}`);
                 fetchInquiries();
@@ -268,7 +268,7 @@ const handleArchiveInquiry = async (id) => {
                 additionalDocuments: editorData.additionalDocuments.map(cat => ({ ...cat, items: cat.items.filter(i => i.trim() !== "") })),
                 stepsProcess: editorData.stepsProcess.filter(s => s.trim() !== "")
             };
-            const res = await axios.put(`http://localhost:5000/api/passports/${passportData._id}`, cleanedData);
+            const res = await axios.put(`https://wanderwaveph-backend.onrender.com0/api/passports/${passportData._id}`, cleanedData);
             if (res.data.success) {
                 setPassportData(res.data.data);
                 alert("Requirements updated successfully!");
@@ -636,8 +636,8 @@ const handleArchiveInquiry = async (id) => {
                                                                 <div><p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', margin: '0 0 4px 0' }}>{doc.originalName}</p><p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>{formatFileSize(doc.fileSize)} • {new Date(doc.uploadDate).toLocaleDateString()}</p></div>
                                                             </div>
                                                             <div style={{ display: 'flex', gap: '8px' }}>
-                                                                <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="passport-action-btn" style={{ fontSize: '11px', padding: '6px 12px', textDecoration:'none' }}>View</a>
-                                                                <a href={`http://localhost:5000${doc.fileUrl}`} download={doc.originalName} className="passport-action-btn" style={{ fontSize: '11px', padding: '6px 12px', textDecoration:'none' }}><Download size={12}/></a>
+                                                                <a href={`https://wanderwaveph-backend.onrender.com0${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="passport-action-btn" style={{ fontSize: '11px', padding: '6px 12px', textDecoration:'none' }}>View</a>
+                                                                <a href={`https://wanderwaveph-backend.onrender.com0${doc.fileUrl}`} download={doc.originalName} className="passport-action-btn" style={{ fontSize: '11px', padding: '6px 12px', textDecoration:'none' }}><Download size={12}/></a>
                                                             </div>
                                                         </div>
                                                     ))}

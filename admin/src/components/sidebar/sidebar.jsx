@@ -34,7 +34,9 @@ import {
   Ship,       
   ShieldCheck,
   Briefcase,
-    Archive as ArchiveIcon // Import Archive Icon
+  TrendingUp, 
+  DollarSign,
+    Archive as ArchiveIcon 
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -233,6 +235,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Bills Payment', path: '/services/billspayment', icon: FileText },
               ]}
             />
+            <MenuItem path="/seller-rate" icon={TrendingUp} label="Supplier Rate" />
             <MenuItem path="/users" icon={Users} label="Users" />
             <MenuItem path="/archive" icon={ArchiveIcon} label="Archive" /> {/* Inilipat sa ilalim ng Users */}
             <MenuItem path="/settings" icon={Settings} label="Settings" />
