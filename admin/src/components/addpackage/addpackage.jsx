@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar"; // Ensure this path is correct
-import "./AddPackage.css";
+import "./addpackage.css";
 
 // Import the sub-components
 import BasicInfo from "./BasicInfo";
