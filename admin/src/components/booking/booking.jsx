@@ -3,7 +3,7 @@ import {
   Calendar, Users, Search, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
   ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw
 } from 'lucide-react';
-import './Booking.css';
+import './booking.css';
 import Sidebar from '../sidebar/sidebar';
 import BookingStats from './BookingStats';
 import BookingFilters from './BookingFilters';
