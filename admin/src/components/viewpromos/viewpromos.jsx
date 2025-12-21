@@ -32,7 +32,7 @@ const ViewPromos = () => {
 
     const fetchPromos = async () => {
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/promos');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
             if (!response.ok) {
                 throw new Error('Failed to fetch promos');
             }
@@ -67,7 +67,7 @@ const ViewPromos = () => {
         if (window.confirm(`Are you sure you want to archive promo code ${code}?`)) {
             try {
                 // Gumamit ng PUT o PATCH dahil i-uupdate natin ang isArchive property
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com0/api/promos/${id}`, {
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
                     method: 'PUT', // Maaari ring 'PATCH' depende sa setup ng backend mo
                     headers: {
                         'Content-Type': 'application/json',

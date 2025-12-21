@@ -79,7 +79,7 @@ const AddPoster = () => {
         formData.append('status', posterDetails.status);
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/posters/add', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters/add', {
                 method: 'POST',
                 body: formData,
             });

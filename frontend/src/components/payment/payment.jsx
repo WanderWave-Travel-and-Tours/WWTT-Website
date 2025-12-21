@@ -28,7 +28,7 @@ const Payment = () => {
     try {
       console.log('💳 Creating payment for booking:', bookingData._id);
       
-      const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/payment/create-intent', {
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

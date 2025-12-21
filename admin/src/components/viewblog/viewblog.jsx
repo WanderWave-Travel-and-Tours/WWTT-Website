@@ -22,7 +22,7 @@ const ViewBlog = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedBlog, setSelectedBlog] = useState(null);
     
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com0';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
     const getCategories = () => {
         const categories = ['ALL'];

@@ -29,7 +29,7 @@ const PackageDetailModal = ({ showModal, selectedPackage, setShowModal, handleAr
                 <div className="tdm-body">
                     <div className="tdm-section-card dashed-border">
                         <div className="tdm-image-box">
-                            <img src={`https://wanderwaveph-backend.onrender.com0/uploads/${selectedPackage.image}`} className="tdm-customer-image" alt="" />
+                            <img src={`https://wanderwaveph-backend.onrender.com/uploads/${selectedPackage.image}`} className="tdm-customer-image" alt="" />
                         </div>
                     </div>
 
