@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, Tag, Percent, DollarSign, FileText } from 'lucide-react';
+import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import './PromoDetailModal.css';
 
 const formatDate = (dateString) => {
@@ -27,15 +27,14 @@ const PromoDetailModal = ({
 
     const getStatusConfig = (status) => {
         const configs = {
-            ACTIVE: { color: "green", icon: Tag, label: "Active", description: "Currently available for use" },
-            EXPIRED: { color: "red", icon: Tag, label: "Expired", description: "No longer valid" },
+            ACTIVE: { color: "active", label: "ACTIVE", description: "Currently available for use" },
+            EXPIRED: { color: "inactive", label: "EXPIRED", description: "No longer valid" },
         };
         return configs[status.toUpperCase()] || configs.EXPIRED;
     };
 
     const status = getStatus(selectedPromo.validUntil).toUpperCase();
     const statusConfig = getStatusConfig(status);
-    const StatusIcon = statusConfig.icon;
 
     const handleArchiveClick = () => {
         handleArchive(selectedPromo._id, selectedPromo.code);
@@ -45,108 +44,97 @@ const PromoDetailModal = ({
     return (
         <div className="prdm-overlay" onClick={closeModal}>
             <div className="prdm-content" onClick={(e) => e.stopPropagation()}>
+                
+                {/* HEADER SECTION */}
                 <div className="prdm-header">
-                    <div className="prdm-header-content">
-                        <div className="prdm-title-group">
-                            <h2 className="prdm-title">Promo Code Details</h2>
-                            <div className="prdm-meta">
-                                <span className="prdm-ref">ID: #{selectedPromo._id.slice(-8)}</span>
-                                <span className="prdm-divider">•</span>
-                                <span className="prdm-date">Created: {formatDate(selectedPromo.createdAt)}</span>
-                            </div>
-                        </div>
-                        <div className={`prdm-status-badge prdm-status-${statusConfig.color}`}>
-                            <div className="prdm-status-icon"><StatusIcon size={16} /></div>
-                            <div className="prdm-status-content">
-                                <span className="prdm-status-label">{statusConfig.label}</span>
-                                <span className="prdm-status-desc">{statusConfig.description}</span>
-                            </div>
+                    <div className="prdm-header-left">
+                        <h2 className="prdm-main-title">Promo Code Details</h2>
+                        <div className="prdm-ref-tag">
+                            REF: #{selectedPromo._id.slice(-8).toUpperCase()} <span className="prdm-dot">•</span> {formatDate(selectedPromo.createdAt)}
                         </div>
                     </div>
-                    <button className="prdm-close" onClick={closeModal} aria-label="Close modal">
-                        <X size={20} />
-                    </button>
+                    
+                    <div className="prdm-header-right">
+                        <div className={`prdm-status-pill ${statusConfig.color}`}>
+                            {statusConfig.color === 'active' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                            <div className="prdm-status-text">
+                                <span className="prdm-status-label">{statusConfig.label}</span>
+                                <span className="prdm-status-subtext">{statusConfig.description}</span>
+                            </div>
+                        </div>
+                        <button className="prdm-close-x" onClick={closeModal}><X size={18} /></button>
+                    </div>
                 </div>
-                
+
                 <div className="prdm-body">
-                    {/* PROMO CODE CARD */}
-                    <div className="prdm-card prdm-card-highlight">
-                        <div className="prdm-code-display">
-                            <div className="prdm-code-icon">
+                    
+                    {/* HIGHLIGHT: PROMO CODE DISPLAY */}
+                    <div className="prdm-section-card dashed-border">
+                        <div className="prdm-processing-bar">
+                            <Tag size={18} className="prdm-icon-gold" />
+                            <span>Voucher Asset & Redemption Code</span>
+                        </div>
+                        
+                        <div className="prdm-code-hero">
+                            <div className="prdm-hero-icon">
                                 <Tag size={32} />
                             </div>
-                            <div className="prdm-code-content">
-                                <label className="prdm-code-label">Promo Code</label>
-                                <span className="prdm-code-value">{selectedPromo.code}</span>
+                            <div className="prdm-hero-content">
+                                <label>REDEEMABLE CODE</label>
+                                <span className="prdm-hero-value">{selectedPromo.code}</span>
                             </div>
+                            <div className="prdm-hero-badge">OFFICIAL VOUCHER</div>
                         </div>
                     </div>
 
-                    {/* PROMO INFORMATION */}
-                    <div className="prdm-card">
-                        <div className="prdm-card-header">
-                            <h3 className="prdm-card-title">Promo Information</h3>
-                        </div>
-                        <div className="prdm-grid">
-                            <div className="prdm-info-item">
-                                <div className="prdm-info-icon"><FileText size={18} /></div>
-                                <div className="prdm-info-content">
-                                    <label className="prdm-info-label">Category</label>
-                                    <span className="prdm-info-value">{selectedPromo.category}</span>
+                    {/* PROMO INFORMATION GRID */}
+                    <div className="prdm-section-card">
+                        <h3 className="prdm-section-title">VOUCHER INFORMATION</h3>
+                        <div className="prdm-info-grid">
+                            <div className="prdm-info-box">
+                                <div className="prdm-box-icon blue"><FileText size={18} /></div>
+                                <div className="prdm-box-content">
+                                    <label>CATEGORY</label>
+                                    <p>{selectedPromo.category}</p>
                                 </div>
                             </div>
-                            <div className="prdm-info-item">
-                                <div className="prdm-info-icon">
+                            <div className="prdm-info-box">
+                                <div className="prdm-box-icon green">
                                     {selectedPromo.discountType === 'Percentage' ? <Percent size={18} /> : <DollarSign size={18} />}
                                 </div>
-                                <div className="prdm-info-content">
-                                    <label className="prdm-info-label">Discount</label>
-                                    <span className="prdm-info-value prdm-val-discount">
+                                <div className="prdm-box-content">
+                                    <label>DISCOUNT VALUE</label>
+                                    <p className="prdm-amount-text">
                                         {selectedPromo.discountType === 'Percentage' 
                                             ? `${selectedPromo.discountValue}%` 
                                             : `₱${selectedPromo.discountValue.toLocaleString()}`
                                         }
-                                    </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="prdm-info-box">
+                                <div className="prdm-box-icon yellow"><Calendar size={18} /></div>
+                                <div className="prdm-box-content">
+                                    <label>START DATE</label>
+                                    <p>{selectedPromo.startDate ? formatDate(selectedPromo.startDate) : 'Not set'}</p>
+                                </div>
+                            </div>
+                            <div className="prdm-info-box">
+                                <div className="prdm-box-icon orange"><Calendar size={18} /></div>
+                                <div className="prdm-box-content">
+                                    <label>EXPIRATION DATE</label>
+                                    <p>{selectedPromo.validUntil ? formatDate(selectedPromo.validUntil) : 'Not set'}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* VALIDITY PERIOD */}
-                    <div className="prdm-card">
-                        <div className="prdm-card-header">
-                            <h3 className="prdm-card-title">Validity Period</h3>
-                        </div>
-                        <div className="prdm-grid">
-                            <div className="prdm-info-item">
-                                <div className="prdm-info-icon"><Calendar size={18} /></div>
-                                <div className="prdm-info-content">
-                                    <label className="prdm-info-label">Start Date</label>
-                                    <span className="prdm-info-value">
-                                        {selectedPromo.startDate ? formatDate(selectedPromo.startDate) : 'Not set'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="prdm-info-item">
-                                <div className="prdm-info-icon"><Calendar size={18} /></div>
-                                <div className="prdm-info-content">
-                                    <label className="prdm-info-label">End Date</label>
-                                    <span className="prdm-info-value">
-                                        {selectedPromo.validUntil ? formatDate(selectedPromo.validUntil) : 'Not set'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* DESCRIPTION */}
+                    {/* DESCRIPTION SECTION */}
                     {selectedPromo.description && (
-                        <div className="prdm-card">
-                            <div className="prdm-card-header">
-                                <h3 className="prdm-card-title">Description</h3>
-                            </div>
-                            <div className="prdm-message-box">
-                                {selectedPromo.description}
+                        <div className="prdm-section-card">
+                            <h3 className="prdm-section-title">VOUCHER DESCRIPTION</h3>
+                            <div className="prdm-message-area">
+                                <p>{selectedPromo.description}</p>
                             </div>
                         </div>
                     )}
@@ -154,11 +142,9 @@ const PromoDetailModal = ({
 
                 {/* FOOTER ACTIONS */}
                 <div className="prdm-footer">
-                    <button className="prdm-btn prdm-btn-ghost" onClick={closeModal}>Close</button>
-                    <button 
-                        className="prdm-btn prdm-btn-danger prdm-btn-outline"
-                        onClick={handleArchiveClick}
-                    >
+                    <button className="prdm-btn-close" onClick={closeModal}>Close</button>
+                    <button className="prdm-btn-danger" onClick={handleArchiveClick}>
+                        <Trash2 size={16} />
                         Archive Promo
                     </button>
                 </div>

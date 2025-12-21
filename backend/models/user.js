@@ -38,6 +38,12 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // BAGONG FIELD: Default is "No", limited to "No" or "Yes"
+  isArchive: {
+    type: String,
+    enum: ['No', 'Yes'],
+    default: 'No'
+  },
   lastLogin: {
     type: Date
   },

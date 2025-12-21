@@ -1,0 +1,27 @@
+.tf-filter-card {
+    background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 12px 20px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.tf-filter-wrapper { display: flex; gap: 16px; align-items: center; }
+.tf-brand-label { font-size: 14px; font-weight: 700; color: #0f172a; }
+.tf-brand-label span { color: #f59e0b; }
+
+.tf-filter-buttons { display: flex; gap: 8px; }
+.tf-filter-btn {
+    padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    background: #f8fafc; border: none; cursor: pointer; transition: all 0.2s;
+}
+
+.tf-active-navy { background: #0f172a !important; color: white !important; }
+
+.tf-search-box {
+    position: relative; margin-left: auto; width: 300px;
+}
+
+.tf-search-input {
+    width: 100%; padding: 10px 12px 10px 40px; background: #f8fafc;
+    border: 1px solid #cbd5e1; border-radius: 11px;
+}
+
+.tf-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }

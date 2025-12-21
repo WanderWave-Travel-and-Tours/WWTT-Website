@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from 'axios';
 import Sidebar from "../../sidebar/sidebar"; 
-import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen, ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react"; 
+import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen, ChevronLeft, ChevronRight, Search, UserPlus, Archive } from "lucide-react"; 
 import { InquiryModal, ServiceListModal, ServiceEditorModal, ContactRemarksModal } from "./CenomarModals"; 
 import "./CenomarRequest.css";
 import { CenomarApplicationModal } from "./CenomarApplicationModal";
@@ -136,22 +136,37 @@ const CenomarRequest = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/inquiries');
       if (response.data.success) {
+        // FILTER: inquiryType ay CENOMAR at isArchive ay No
         const cenomarRequests = response.data.data.filter(inq => 
-          inq.cenomarDocument || (inq.serviceName && inq.serviceName.toUpperCase().includes('CENOMAR'))
+          inq.inquiryType === 'CENOMAR' && inq.isArchive === 'No'
         );
         setInquiries(cenomarRequests);
       }
     } catch (error) { console.error('Error fetching inquiries:', error); }
   };
 
-  // --- FILTERING LOGIC (NEW) ---
+  // --- ARCHIVE FUNCTION ---
+  const handleArchiveInquiry = async (id) => {
+    if (!window.confirm("Sigurado ka bang gusto mong i-archive ang request na ito?")) return;
+    try {
+      const res = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, { isArchive: "Yes" });
+      if (res.data.success) {
+        alert("Inquiry archived successfully!");
+        fetchInquiries(); // Refresh listahan
+      }
+    } catch (error) {
+      console.error("Archive error:", error);
+      alert("Failed to archive inquiry.");
+    }
+  };
+
+  // --- FILTERING LOGIC ---
   const filteredInquiries = useMemo(() => {
     let list = inquiries;
     const lowerSearchTerm = searchTerm.toLowerCase();
 
     // 1. Filter by Status
     if (filterStatus !== "ALL") {
-      // Use inq.status || 'PENDING' to default status for old/uninitialized records
       list = list.filter(inq => (inq.status || 'PENDING') === filterStatus);
     }
 
@@ -161,17 +176,15 @@ const CenomarRequest = () => {
         inq.fullName.toLowerCase().includes(lowerSearchTerm) ||
         (inq.cenomarDocument || inq.serviceName || '').toLowerCase().includes(lowerSearchTerm) ||
         (inq.message || '').toLowerCase().includes(lowerSearchTerm) ||
-        (inq._id || '').slice(-6).toLowerCase().includes(lowerSearchTerm) // Search by Ref No.
+        (inq._id || '').slice(-6).toLowerCase().includes(lowerSearchTerm) 
       );
     }
     
-    // Auto-correct page if current page is now out of bounds due to filtering
     if (currentPage > Math.ceil(list.length / itemsPerPage) && list.length > 0) {
       setCurrentPage(1);
     } else if (list.length === 0 && currentPage !== 1) {
       setCurrentPage(1);
     }
-
 
     return list;
   }, [inquiries, searchTerm, filterStatus, itemsPerPage, currentPage]);
@@ -183,7 +196,6 @@ const CenomarRequest = () => {
     { label: "Paid/Confirming", value: inquiries.filter(i => i.status === 'PAID').length, icon: <CheckCircle size={24} /> },
   ];
 
-  // Map CENOMAR Status to the provided CSS classes
   const getFilterClassName = (status) => {
     switch(status) {
       case 'PENDING':
@@ -197,16 +209,12 @@ const CenomarRequest = () => {
       case 'CANCELLED':
         return 'cancelled-active';
       default:
-        return 'active'; // Fallback for 'ALL'
+        return 'active'; 
     }
   }
 
-  // List of all unique statuses for the filter buttons
   const statusOptions = useMemo(() => {
-    // Get all unique statuses, default to 'PENDING' if status is null/undefined
     const statuses = new Set(inquiries.map(i => i.status || 'PENDING')); 
-    
-    // Order the statuses logically for the buttons (using a master list)
     const allPossibleStatuses = [
       'PENDING', 
       'CONTACTED', 
@@ -216,11 +224,7 @@ const CenomarRequest = () => {
       'COMPLETED',
       'CANCELLED'
     ];
-    
-    // Filter the master list to only include statuses present in the data
     const sortedStatuses = allPossibleStatuses.filter(status => statuses.has(status));
-
-    // Return the required "ALL Items" button, followed by the unique statuses
     return ['ALL', ...sortedStatuses];
   }, [inquiries]);
 
@@ -241,7 +245,6 @@ const CenomarRequest = () => {
     } catch (error) { console.error('Error fetching documents:', error); setDocuments([]); }
   };
 
-  // FIX: Open modal IMMEDIATELY, then fetch data
   const handleViewInquiry = (inquiry) => {
     setSelectedInquiry(inquiry);
     setIsInquiryModalOpen(true); 
@@ -308,41 +311,23 @@ const CenomarRequest = () => {
   const handleDeliverDocuments = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (deliveryFiles.length === 0) return alert('Select files first');
-
     const formData = new FormData();
     deliveryFiles.forEach(file => formData.append('documents', file));
-    
-    // NOTE: Siguraduhin sa backend na sine-save nito ang 'uploader': 'ADMIN'
-    // formData.append('uploader', 'ADMIN'); 
-
     try {
       const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
         headers: { 'Content-Type': 'multipart/form-data' } 
       });
-
       if (response.data.success) {
         alert('Documents sent successfully!');
-
-        // 1. Refresh ang main table
         fetchInquiries(); 
-
-        // 2. Update local state para maging COMPLETED agad ang itsura
         setSelectedInquiry({ ...selectedInquiry, status: 'COMPLETED' });
-
-        // 3. ITO ANG KULANG DATI: Fetch ulit ang documents para makuha yung kakasend mo lang
         await fetchDocuments(selectedInquiry._id);
-
-        // 4. Clear ang input selection
         setDeliveryFiles([]);
-        
-        // 5. Wag isara ang modal/section para makita mo yung result
         setShowDeliverDocs(true); 
       }
-    } catch (error) { 
-      console.error(error); 
-      alert('Failed to send documents'); 
-    }
+    } catch (error) { console.error(error); alert('Failed to send documents'); }
   };
+
   // --- CMS HANDLERS ---
   const handleManageService = () => setIsCENOMARFormsOpen(true);
 
@@ -407,20 +392,23 @@ const CenomarRequest = () => {
         <div className="cenomar-container">
           
           <div className="cenomar-header">
-            <div className="cenomar-title"><h1>CENOMAR Request</h1><p>Certificate of No Marriage Applications</p></div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                  <button 
-                    className="cenomar-btn-add" 
-                    style={{ background: '#0f172a' }} // Dark Blue for manual entry
-                    onClick={() => setIsApplicationModalOpen(true)}
-                  >
-                    <UserPlus size={18} /> Add Applicant
-                  </button>
-                  
-                  <button className="cenomar-btn-add" onClick={handleManageService}>
-                    <FolderOpen size={18} /> Manage Service
-                  </button>
-              </div>
+            <div className="cenomar-title">
+                <h1>CENOMAR Request</h1>
+                <p>Active Certificate of No Marriage Applications</p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  className="cenomar-btn-add" 
+                  style={{ background: '#0f172a' }} 
+                  onClick={() => setIsApplicationModalOpen(true)}
+                >
+                  <UserPlus size={18} /> Add Applicant
+                </button>
+                
+                <button className="cenomar-btn-add" onClick={handleManageService}>
+                  <FolderOpen size={18} /> Manage Service
+                </button>
+            </div>
           </div>
 
           <div className="cenomar-stats-grid">
@@ -432,7 +420,6 @@ const CenomarRequest = () => {
             ))}
           </div>
           
-          {/* --- SEARCH AND FILTER CARD (NEW) --- */}
           <div className="search-filter-card">
               <div className="search-filter-wrapper">
                   <div className="search-box">
@@ -440,7 +427,7 @@ const CenomarRequest = () => {
                       <input
                           type="text"
                           className="search-input"
-                          placeholder="Search by Requester, Document, Ref No., or Purpose..."
+                          placeholder="Search by Requester, Ref No..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                       />
@@ -452,7 +439,7 @@ const CenomarRequest = () => {
                               className={`filter-btn ${filterStatus === status ? getFilterClassName(status) : ''}`}
                               onClick={() => setFilterStatus(status)}
                           >
-                              {status === 'ALL' ? 'All Requests' : status.replace('_', ' ')}
+                              {status === 'ALL' ? 'All Active' : status.replace('_', ' ')}
                           </button>
                       ))}
                   </div>
@@ -462,21 +449,35 @@ const CenomarRequest = () => {
           <div className="cenomar-table-container">
             <table className="cenomar-table">
               <thead>
-                <tr><th>Ref No.</th><th>Requester</th><th>Document</th><th>Purpose</th><th>Status</th><th style={{ textAlign: "right" }}>Actions</th></tr>
+                <tr>
+                  <th>Ref No.</th>
+                  <th>Requester</th>
+                  <th>Document</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
+                </tr>
               </thead>
               <tbody>
                 {currentInquiries.length === 0 ? (
-                  <tr><td colSpan="6" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>{isLoading ? 'Loading...' : 'No CENOMAR requests found'}</td></tr>
+                  <tr><td colSpan="5" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>{isLoading ? 'Loading...' : 'No active CENOMAR requests found'}</td></tr>
                 ) : (
                   currentInquiries.map((row) => (
                     <tr key={row._id}>
                       <td style={{ fontWeight: "700" }}>{row._id.slice(-6).toUpperCase()}</td>
                       <td>{row.fullName}</td>
                       <td><span className="doc-badge">CNM</span>{row.cenomarDocument || row.serviceName}</td>
-                      <td><div className="truncate-text">{row.message}</div></td>
                       <td><span className={`cenomar-badge badge-${(row.status || 'PENDING').toLowerCase()}`}>{row.status || 'PENDING'}</span></td>
                       <td style={{ textAlign: "right" }}>
-                        <button className="cenomar-action-btn cenomar-view-btn" onClick={() => handleViewInquiry(row)}>View</button>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button className="cenomar-action-btn cenomar-view-btn" onClick={() => handleViewInquiry(row)}>View</button>
+                            <button 
+                                className="cenomar-action-btn" 
+                                style={{ backgroundColor: '#ef4444', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                onClick={() => handleArchiveInquiry(row._id)}
+                            >
+                                <Archive size={14} /> Archive
+                            </button>
+                        </div>
                       </td>
                     </tr>
                   ))

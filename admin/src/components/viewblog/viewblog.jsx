@@ -1,24 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Edit, Search, Calendar, User, FileText, Loader2 } from 'lucide-react';
+// MODIFIED: Pinalitan ang Trash2 ng Archive icon mula sa lucide-react
+import { Archive, Eye, Calendar, User, FolderOpen, FileText } from 'lucide-react'; 
 import Sidebar from '../sidebar/sidebar';
+import BlogDetailModal from './BlogDetailModal';
+import BlogPagination from './BlogPagination';
+import BlogFilters from './BlogFilters';
 import './viewblog.css';
 
 const ViewBlog = () => {
-
-    // --- SIDEBAR TOGGLE LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR TOGGLE LOGIC END ---
 
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterCategory, setFilterCategory] = useState('ALL');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedBlog, setSelectedBlog] = useState(null);
     
-    const API_BASE_URL = 'http://localhost:5000'; 
+    const API_BASE_URL = 'http://localhost:5000';
+
+    const getCategories = () => {
+        const categories = ['ALL'];
+        const uniqueCategories = [...new Set(blogs.map(blog => blog.category))];
+        return [...categories, ...uniqueCategories];
+    };
+
+    const categoryOptions = getCategories();
+
+    const getFilterClassName = (category) => {
+        return filterCategory === category ? 'bf-active-navy' : '';
+    };
 
     const fetchBlogs = async () => {
+        setLoading(true);
         try {
             const response = await fetch(`${API_BASE_URL}/api/blogs`);
             if (!response.ok) {
@@ -26,9 +45,10 @@ const ViewBlog = () => {
             }
             const data = await response.json();
             setBlogs(data);
-            setLoading(false);
+            setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching blogs:', error);
+        } finally {
             setLoading(false);
         }
     };
@@ -37,35 +57,36 @@ const ViewBlog = () => {
         fetchBlogs();
     }, []);
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this blog post?')) {
+    // MODIFIED: Pinalitan ang confirmation message at logic name patungong Archive
+    const handleArchive = async (id) => {
+        if (window.confirm('Are you sure you want to archive this blog post?')) {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/blogs/${id}`, {
-                    method: 'DELETE',
+                    method: 'DELETE', // Ginagamit pa rin ang endpoint pero archive na ang effect
                 });
 
                 if (response.ok) {
-                    setBlogs(blogs.filter(blog => blog._id !== id));
-                    alert('Blog deleted successfully');
+                    const updatedBlogs = blogs.filter(blog => blog._id !== id);
+                    setBlogs(updatedBlogs);
+                    alert('Blog archived successfully');
+                    
+                    const maxPage = Math.ceil(updatedBlogs.length / itemsPerPage);
+                    if (currentPage > maxPage && maxPage > 0) {
+                        setCurrentPage(maxPage);
+                    }
                 } else {
-                    alert('Failed to delete blog');
+                    alert('Failed to archive blog');
                 }
             } catch (error) {
-                console.error('Error deleting blog:', error);
-                alert('An error occurred while deleting.');
+                console.error('Error archiving blog:', error);
+                alert('An error occurred while archiving.');
             }
         }
     };
 
-    const filteredBlogs = blogs.filter(blog => 
-        blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        blog.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric'
-        });
+    const handleViewDetails = (blog) => {
+        setSelectedBlog(blog);
+        setShowDetailModal(true);
     };
 
     const getImageUrl = (imagePath) => {
@@ -76,97 +97,180 @@ const ViewBlog = () => {
         return imagePath;
     };
 
-    // Construct the class name for the main content
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    const filteredBlogs = blogs.filter(blog => {
+        const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            blog.category.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = filterCategory === 'ALL' || blog.category === filterCategory;
+        return matchesSearch && matchesCategory;
+    });
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentBlogs = filteredBlogs.slice(indexOfFirstItem, indexOfLastItem);
+
+    const publishedBlogs = blogs.filter(b => (b.status || 'Published').toLowerCase() === 'published').length;
+
     const mainClass = `vb-main ${isSidebarCollapsed ? 'vb-main--collapsed' : ''}`;
 
     return (
         <div className="vb-page">
-                        <Sidebar 
+            <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
             <main className={mainClass}>
                 <div className="vb-container">
                     <header className="vb-header">
-                        <div>
+                        <div className="vb-header-content">
                             <h1 className="vb-title">BLOG LIST</h1>
-                            <p className="vb-subtitle">Manage and edit your articles</p>
+                            <p className="vb-subtitle">
+                                Managing {blogs.length} active articles • {publishedBlogs} published
+                            </p>
                         </div>
-                        <div className="vb-search-box">
-                            <Search size={18} className="vb-search-icon" />
-                            <input 
-                                type="text" 
-                                placeholder="Search title or category..." 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
+                        <button className="vb-btn vb-btn--add" onClick={() => window.location.href='/add-blog'}>
+                            + Add New Blog
+                        </button>
                     </header>
+
+                    <BlogFilters
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        filterCategory={filterCategory}
+                        setFilterCategory={setFilterCategory}
+                        categoryOptions={categoryOptions}
+                        getFilterClassName={getFilterClassName}
+                    />
 
                     {loading ? (
                         <div className="vb-loading">
-                            <Loader2 className="vb-spinner" size={48} />
-                            <p>Loading articles...</p>
+                            <div className="vb-spinner"></div>
+                            <p>Loading articles from database...</p>
+                        </div>
+                    ) : blogs.length === 0 ? (
+                        <div className="vb-empty">
+                            <span className="vb-empty-icon">📝</span>
+                            <h3>No blogs yet</h3>
+                            <p>Start by adding your first blog article</p>
+                        </div>
+                    ) : filteredBlogs.length === 0 ? (
+                        <div className="vb-empty">
+                            <span className="vb-empty-icon">🔍</span>
+                            <h3>No blogs found</h3>
+                            <p>Try adjusting your search or filter criteria</p>
                         </div>
                     ) : (
-                        <div className="vb-grid">
-                            {filteredBlogs.length > 0 ? (
-                                filteredBlogs.map((blog) => (
-                                    <div key={blog._id} className="vb-card">
-                                        <div className={`vb-status ${blog.status ? blog.status.toLowerCase() : 'published'}`}>
-                                            {blog.status || 'Published'}
-                                        </div>
-
-                                        <div className="vb-image-wrapper">
-                                            <img 
-                                                src={getImageUrl(blog.imageUrl)} 
-                                                alt={blog.title} 
-                                                onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250'; }} // Fallback
-                                            />
-                                            <div className="vb-category">{blog.category}</div>
-                                        </div>
-
-                                        <div className="vb-content">
-                                            <h3 className="vb-card-title">{blog.title}</h3>
-                                            
-                                            <div className="vb-meta">
-                                                <div className="vb-meta-item">
-                                                    <User size={14} /> <span>{blog.author}</span>
+                        <div className="vb-table-wrapper">
+                            <table className="vb-table">
+                                <thead>
+                                    <tr>
+                                        <th>PREVIEW</th>
+                                        <th>TITLE</th>
+                                        <th>EXCERPT</th>
+                                        <th>AUTHOR & DATE</th>
+                                        <th>CATEGORY</th>
+                                        <th>STATUS</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentBlogs.map((blog) => (
+                                        <tr key={blog._id}>
+                                            <td>
+                                                <div className="vb-image-preview">
+                                                    <img 
+                                                        src={getImageUrl(blog.imageUrl)} 
+                                                        alt={blog.title}
+                                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250'; }}
+                                                    />
                                                 </div>
-                                                <div className="vb-meta-item">
-                                                    <Calendar size={14} /> <span>{formatDate(blog.createdAt)}</span>
+                                            </td>
+                                            <td>
+                                                <span className="vb-blog-title">{blog.title}</span>
+                                            </td>
+                                            <td>
+                                                <span className="vb-excerpt">
+                                                    {blog.content.substring(0, 100)}...
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="vb-meta-cell">
+                                                    <div className="vb-author">
+                                                        <User size={14} />
+                                                        <span>{blog.author}</span>
+                                                    </div>
+                                                    <div className="vb-date">
+                                                        <Calendar size={14} />
+                                                        <span>{formatDate(blog.createdAt)}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-
-                                            <p className="vb-excerpt">
-                                                {blog.content.substring(0, 100)}...
-                                            </p>
-                                        </div>
-
-                                        <div className="vb-actions">
-                                            <button className="vb-btn-edit" title="Edit Blog">
-                                                <Edit size={16} /> Edit
-                                            </button>
-                                            <button 
-                                                className="vb-btn-delete" 
-                                                onClick={() => handleDelete(blog._id)}
-                                                title="Delete Blog"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="vb-empty">
-                                    <FileText size={48} />
-                                    <p>No blog posts found.</p>
-                                </div>
-                            )}
+                                            </td>
+                                            <td>
+                                                <span className="vb-category">
+                                                    <FolderOpen size={12} />
+                                                    {blog.category}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`vb-status vb-status--${(blog.status || 'Published').toLowerCase()}`}>
+                                                    <FileText size={12} />
+                                                    {blog.status || 'Published'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="vb-actions">
+                                                    <button 
+                                                        className="vb-action-btn vb-action-btn--view"
+                                                        onClick={() => handleViewDetails(blog)}
+                                                        title="View Details"
+                                                    >
+                                                        <Eye size={16} />
+                                                        <span>View</span>
+                                                    </button>
+                                                    {/* MODIFIED: Pinalitan ang Delete Button patungong Archive Button */}
+                                                    <button 
+                                                        className="vb-action-btn vb-action-btn--delete"
+                                                        onClick={() => handleArchive(blog._id)}
+                                                        title="Archive Blog"
+                                                    >
+                                                        <Archive size={16} />
+                                                        <span>Archive</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            
+                            <BlogPagination
+                                totalItems={filteredBlogs.length}
+                                itemsPerPage={itemsPerPage}
+                                currentPage={currentPage}
+                                onPageChange={setCurrentPage}
+                            />
                         </div>
                     )}
                 </div>
             </main>
+
+            {showDetailModal && selectedBlog && (
+                <BlogDetailModal
+                    showModal={showDetailModal}
+                    selectedBlog={selectedBlog}
+                    setShowModal={setShowDetailModal}
+                    handleDelete={handleArchive} // I-pass ang archive function dito
+                    getImageUrl={getImageUrl}
+                />
+            )}
         </div>
     );
 };

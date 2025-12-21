@@ -12,7 +12,8 @@ const {
   confirmPayment,
   deliverDocuments,
   getInquiryAnalytics,
-  getInquiriesByDateRange
+  getInquiriesByDateRange,
+  toggleArchive // Imported new function
 } = require('../controller/inquiryController');
 const multer = require('multer');
 const path = require('path');
@@ -61,6 +62,9 @@ router.get('/email/:email', getInquiriesByEmail);
 router.get('/', getAllInquiries);
 router.get('/:id', getInquiry);
 router.delete('/:id', deleteInquiry);
+
+// ✅ ARCHIVE ROUTE ADDED
+router.put('/:id/archive', toggleArchive); 
 
 router.put('/:id/status', uploadEvidence.single('evidence'), updateInquiryStatus);
 router.put('/:id/pay', markAsPaid);

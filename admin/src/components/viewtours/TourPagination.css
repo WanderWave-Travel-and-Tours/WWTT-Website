@@ -1,0 +1,18 @@
+.tp-pagination-nav {
+    padding: 16px 24px; background: white; border-top: 1px solid #e2e8f0;
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+.tp-pagination-showing { font-size: 14px; color: #64748b; }
+
+.tp-pagination-jump { display: flex; align-items: center; gap: 12px; }
+
+.tp-jump-arrow {
+    width: 36px; height: 36px; border: 1px solid #e2e8f0; border-radius: 6px;
+    background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+.tp-jump-input {
+    width: 50px; height: 36px; border: 1px solid #e2e8f0; border-radius: 6px;
+    text-align: center; font-weight: 600;
+}

@@ -7,20 +7,19 @@ import {
   FolderOpen,
   CheckCircle,
   UserPlus,
+  Archive, // Inimport ang Archive icon
 } from "lucide-react";
 import "./PSASerbilis.css";
-// IMPORT THE NEW MODALS
 import {
   PSAInquiryModal,
   PSAContactRemarksModal,
   PSAServiceListModal,
   PSAServiceEditorModal
 } from "./PSAModals";
-//import { FolderOpen, UserPlus, FileText, AlertTriangle, CheckCircle } from "lucide-react"; // Dagdag UserPlus
 import PSAApplicationModal from "./PSAApplicationModal";
 
 // =========================================================================
-// PAGINATION COMPONENT (New)
+// PAGINATION COMPONENT
 // =========================================================================
 const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentPage }) => {
   const pageNumbers = [];
@@ -79,9 +78,6 @@ const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentP
     </nav>
   );
 };
-// =========================================================================
-// END PAGINATION COMPONENT
-// =========================================================================
 
 const PSASerbilis = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -89,10 +85,10 @@ const PSASerbilis = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   // Modal States
-  const [isPSAFormsOpen, setIsPSAFormsOpen] = useState(false); // Manage Services List
-  const [isEditorOpen, setIsEditorOpen] = useState(false); // Add/Edit Service
-  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false); // View Inquiry
-  const [showContactRemarks, setShowContactRemarks] = useState(false); // Report Issue
+  const [isPSAFormsOpen, setIsPSAFormsOpen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [showContactRemarks, setShowContactRemarks] = useState(false);
 
   // Data States
   const [selectedPSA, setSelectedPSA] = useState(null);
@@ -121,12 +117,13 @@ const PSASerbilis = () => {
   const [contactRemarks, setContactRemarks] = useState("");
   const [contactEvidence, setContactEvidence] = useState(null);
 
-  // Delivery States (New)
+  // Delivery States
   const [showDeliverDocs, setShowDeliverDocs] = useState(false);
   const [deliveryFiles, setDeliveryFiles] = useState([]);
 
-  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false); // New State
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
 
+  // Stats filter (Optional: you might want these to only reflect PSA non-archived too)
   const stats = [
     { label: "Total Requests", value: inquiries.length, icon: <FileText size={24} /> },
     { label: "To Process", value: inquiries.filter(i => i.status === 'PENDING').length, icon: <AlertTriangle size={24} /> },
@@ -161,15 +158,32 @@ const PSASerbilis = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/inquiries');
       if (response.data.success) {
+        // Filter: inquiryType ay PSA at isArchive ay No
         const psaRequests = response.data.data.filter(inq => 
-            inq.psaDocument || 
-            (inq.serviceName && inq.serviceName.toUpperCase().includes('PSA')) ||
-            (inq.serviceName && inq.serviceName.toUpperCase().includes('CERTIFICATE'))
+            inq.inquiryType === 'PSA' && inq.isArchive === 'No'
         );
         setInquiries(psaRequests);
       }
     } catch (error) {
       console.error('Error fetching inquiries:', error);
+    }
+  };
+
+  // ARCHIVE FUNCTION (Pumalit sa Delete)
+  const handleArchiveInquiry = async (id) => {
+    if (window.confirm("Are you sure you want to archive this request?")) {
+      try {
+        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+          isArchive: "Yes"
+        });
+        if (response.data.success) {
+          alert("Inquiry archived successfully.");
+          fetchInquiries(); // Refresh the list
+        }
+      } catch (error) {
+        console.error("Error archiving inquiry:", error);
+        alert("Failed to archive inquiry.");
+      }
     }
   };
 
@@ -265,17 +279,11 @@ const PSASerbilis = () => {
       alert("Please select files to upload.");
       return;
     }
-    
-    // Logic to upload final documents and complete request
-    // Note: You need a backend endpoint for this (e.g. /api/inquiries/:id/complete)
-    // For now, we simulate completion
     if(window.confirm("This will send the files to the user and mark the request as COMPLETED. Proceed?")) {
         await handleUpdateInquiryStatus(selectedInquiry._id, 'COMPLETED');
-        // Add file upload logic here when backend is ready
     }
   };
 
-  // --- SERVICE EDITOR HANDLERS ---
   const toggleAccordion = (section) => {
     setAccordionState((prev) => ({ ...prev, [section]: !prev[section] }));
   };
@@ -309,7 +317,7 @@ const PSASerbilis = () => {
     
     const loadedForms = (psa.downloadForms || []).map((form) => ({ 
         id: Math.random(), 
-        label: form.label, // mapped to name in UI
+        label: form.label,
         name: form.label,
         fileName: form.fileName, 
         fileUrl: form.fileUrl 
@@ -378,16 +386,13 @@ const PSASerbilis = () => {
     }
   };
 
-  // Helper functions for editor lists
   const addCategory = () => setRequirements([...requirements, { id: Date.now(), title: "", items: [] }]);
   const removeCategory = (id) => setRequirements(requirements.filter(c => c.id !== id));
   const handleCategoryTitleChange = (id, v) => setRequirements(requirements.map(c => c.id === id ? { ...c, title: v } : c));
   const addRequirement = (cId) => setRequirements(requirements.map(c => c.id === cId ? { ...c, items: [...c.items, { id: Date.now(), label: "" }] } : c));
   const removeRequirement = (cId, iId) => setRequirements(requirements.map(c => c.id === cId ? { ...c, items: c.items.filter(i => i.id !== iId) } : c));
   const handleLabelChange = (cId, iId, v) => setRequirements(requirements.map(c => c.id === cId ? { ...c, items: c.items.map(i => i.id === iId ? { ...i, label: v } : i) } : c));
-  
   const removeDownloadForm = (id) => setDownloadForms(downloadForms.filter(f => f.id !== id));
-  
   const addStep = () => setStepsProcess([...stepsProcess, { id: Date.now(), label: "" }]);
   const removeStep = (id) => setStepsProcess(stepsProcess.filter(s => s.id !== id));
   const handleStepChange = (id, v) => setStepsProcess(stepsProcess.map(s => s.id === id ? { ...s, label: v } : s));
@@ -437,7 +442,7 @@ const PSASerbilis = () => {
             <div style={{ display: 'flex', gap: '12px' }}>
               <button 
                 className="psa-btn-add" 
-                style={{ background: '#0f172a' }} // Dark blue like Visa
+                style={{ background: '#0f172a' }}
                 onClick={() => setIsApplicationModalOpen(true)}
               >
                 <UserPlus size={18} style={{ marginRight: "8px" }} /> Add Requester
@@ -476,7 +481,7 @@ const PSASerbilis = () => {
               <tbody>
                 {inquiries.length === 0 ? (
                     <tr>
-                    <td colSpan="6" style={{textAlign: 'center', padding: '20px'}}>No PSA requests found.</td>
+                    <td colSpan="6" style={{textAlign: 'center', padding: '20px'}}>No Active PSA requests found.</td>
                     </tr>
                 ) : (
                     inquiries.map((row) => (
@@ -506,12 +511,21 @@ const PSASerbilis = () => {
                         </span>
                         </td>
                         <td style={{ textAlign: "right" }}>
-                        <div style={{display:'flex', justifyContent: 'flex-end'}}>
+                        <div style={{display:'flex', justifyContent: 'flex-end', gap: '8px'}}>
                             <button 
                                 className="psa-action-btn psa-view-btn" 
                                 onClick={() => handleViewInquiry(row)}
                             >
                                 View
+                            </button>
+                            {/* ARCHIVE BUTTON */}
+                            <button 
+                                className="psa-action-btn" 
+                                style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' }}
+                                onClick={() => handleArchiveInquiry(row._id)}
+                                title="Archive Request"
+                            >
+                                <Archive size={16} />
                             </button>
                         </div>
                         </td>
@@ -529,9 +543,7 @@ const PSASerbilis = () => {
             refreshData={fetchInquiries}
           />
 
-          {/* --- MODALS --- */}
-
-          {/* 1. View Inquiry Modal */}
+          {/* MODALS */}
           {isInquiryModalOpen && selectedInquiry && (
             <PSAInquiryModal
                 inquiry={selectedInquiry}
@@ -549,7 +561,6 @@ const PSASerbilis = () => {
             />
           )}
 
-          {/* 2. Contact Remarks Modal */}
           {showContactRemarks && (
             <PSAContactRemarksModal
                 remarks={contactRemarks}
@@ -560,7 +571,6 @@ const PSASerbilis = () => {
             />
           )}
 
-          {/* 3. Manage Services List Modal */}
           {isPSAFormsOpen && (
             <PSAServiceListModal
                 services={psaDocs}
@@ -571,7 +581,6 @@ const PSASerbilis = () => {
             />
           )}
 
-          {/* 4. Edit/Create Service Modal */}
           {isEditorOpen && (
             <PSAServiceEditorModal
                 isEditorOpen={isEditorOpen}
@@ -600,7 +609,6 @@ const PSASerbilis = () => {
                 }}
             />
           )}
-
         </div>
       </main>
     </div>

@@ -5,7 +5,7 @@ import {
     BookOpen, Calendar, CheckCircle, RotateCcw,
     FileText, Settings, RefreshCw, X, CreditCard, User,
     ChevronDown, Trash2, PlusCircle, Save, ClipboardList, ListPlus, Download,
-    ChevronLeft, ChevronRight, Search, UserPlus
+    ChevronLeft, ChevronRight, Search, UserPlus, Archive
 } from 'lucide-react';
 import './PassportAppt.css';
 import PassportApplicationModal from './PassportApplicationModal';
@@ -126,25 +126,44 @@ const PassportAppt = () => {
         }
     };
 
-    const fetchInquiries = async () => {
-        setIsLoading(true);
-        try {
-            const response = await axios.get('http://localhost:5000/api/inquiries');
-            if (response.data.success) {
-                const passportRequests = response.data.data.filter(inq =>
-                    inq.inquiryType === 'PASSPORT' ||
-                    (inq.serviceName && inq.serviceName.toUpperCase().includes('PASSPORT'))
-                );
-                passportRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                setAppointments(passportRequests);
-                setCurrentPage(1); // Reset to first page after fetching new data
-            }
-        } catch (error) {
-            console.error('Error fetching inquiries:', error);
-        } finally {
-            setIsLoading(false);
+const fetchInquiries = async () => {
+    setIsLoading(true);
+    try {
+        const response = await axios.get('http://localhost:5000/api/inquiries');
+        if (response.data.success) {
+            // FILTER: Dapat inquiryType ay CENOMAR at isArchive ay "No"
+            const cenomarRequests = response.data.data.filter(inq => 
+                inq.inquiryType === 'PASSPORT' && 
+                (inq.isArchive === "No" || !inq.isArchive)
+            );
+            
+            cenomarRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setAppointments(cenomarRequests);
         }
-    };
+    } catch (error) {
+        console.error('Error fetching inquiries:', error);
+    } finally {
+        setIsLoading(false);
+    }
+};
+
+const handleArchiveInquiry = async (id) => {
+    if (!window.confirm("Sigurado ka bang i-archive ang CENOMAR inquiry na ito?")) return;
+    try {
+        // Tatawagin ang archive endpoint at ise-set ang isArchive sa "Yes"
+        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, { 
+            isArchive: "Yes" 
+        });
+        
+        if (response.data.success) {
+            alert("Inquiry archived successfully!");
+            fetchInquiries(); // Refresh ang listahan
+        }
+    } catch (error) {
+        console.error("Error archiving inquiry:", error);
+        alert("Failed to archive inquiry.");
+    }
+};
 
     const fetchDocuments = async (inquiryId) => {
         try {
@@ -437,6 +456,14 @@ const PassportAppt = () => {
                                                     <td><span className={`visa-badge ${getStatusBadgeClass(item.status)}`}>{item.status}</span></td>
                                                     <td style={{textAlign:'right'}}>
                                                         <button className="passport-action-btn" onClick={() => handleViewAppointment(item)}>View</button>
+         {/* ITO ANG PALIT SA DELETE BUTTON */}
+    <button 
+        className="passport-action-btn" 
+        onClick={() => handleArchiveInquiry(item._id)}
+        style={{backgroundColor: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0'}}
+    >
+        <Archive size={14} style={{marginRight: '4px'}}/> Archive
+    </button>                                               
                                                     </td>
                                                 </tr>
                                             )) : (<tr><td colSpan="7" style={{textAlign:'center', padding:'30px', color:'#64748b'}}>No Passport appointments found matching your criteria.</td></tr>)}

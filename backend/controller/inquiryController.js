@@ -11,7 +11,7 @@ const generateTempPassword = () => {
   const randomSpecialChar = specialChars.charAt(Math.floor(Math.random() * specialChars.length));
   return `Wander_${numbers}${randomSpecialChar}`;
 };
-
+ 
 const createInquiry = async (req, res) => {
   try {
     console.log('🔥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
@@ -118,6 +118,7 @@ const createInquiry = async (req, res) => {
       cenomarDocument: cenomarDocument || null,
       cenomarId: cenomarId || null,
       status: 'PENDING',
+      isArchive: "No", // ✅ DEFAULT ADDED HERE
       remarks: '',
       evidenceUrl: '',
       evidenceName: '',
@@ -265,6 +266,7 @@ const createInquiryWithUploads = async (req, res) => {
             visaCountry: visaCountry || 'Japan',
             estimatedPrice: estimatedPrice || 0,
             status: 'PENDING',
+            isArchive: "No", // ✅ DEFAULT ADDED HERE
             deliveredDocuments: uploadedDocs 
         });
 
@@ -281,17 +283,22 @@ const createInquiryWithUploads = async (req, res) => {
 
 const getAllInquiries = async (req, res) => {
   try {
-    const inquiries = await Inquiry.find().sort({ createdAt: -1 });
+    const { isArchive } = req.query; 
+    let filter = {};
+    
+    // Default sa "No" para hindi magpakita ang archive sa regular list kung walang query.
+    filter.isArchive = isArchive ? isArchive : "No"; 
+
+    const inquiries = await Inquiry.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: inquiries });
   } catch (error) {
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const getInquiry = async (req, res) => {
   try {
-    const inquiry = await Inquiry.findById(req.params.id)
-      .populate('serviceId visaId psaId cenomarId');
+    const inquiry = await Inquiry.findById(req.params.id).populate('serviceId visaId psaId cenomarId');
     if (!inquiry) return res.status(404).json({ success: false });
     res.json({ success: true, data: inquiry });
   } catch (error) {
@@ -303,7 +310,6 @@ const updateInquiryStatus = async (req, res) => {
   try {
     const { status, adminNotes, contactedBy, remarks } = req.body;
     const evidenceFile = req.file;
-
     const updateData = { status, adminNotes, updatedAt: Date.now() };
     if (remarks) updateData.remarks = remarks;
     if (evidenceFile) {
@@ -314,7 +320,6 @@ const updateInquiryStatus = async (req, res) => {
       updateData.contactedAt = Date.now();
       updateData.contactedBy = contactedBy;
     }
-
     const updated = await Inquiry.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json({ success: true, data: updated });
   } catch (error) {
@@ -584,6 +589,29 @@ const getInquiriesByDateRange = async (req, res) => {
   }
 };
 
+const toggleArchive = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isArchive } = req.body; 
+
+    if (!['Yes', 'No'].includes(isArchive)) {
+      return res.status(400).json({ success: false, message: 'Invalid value for isArchive' });
+    }
+
+    const inquiry = await Inquiry.findByIdAndUpdate(
+      id,
+      { isArchive, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    if (!inquiry) return res.status(404).json({ success: false, message: 'Inquiry not found' });
+
+    res.json({ success: true, message: `Inquiry archive status set to ${isArchive}`, data: inquiry });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   createInquiry,
   createInquiryWithUploads, 
@@ -597,5 +625,6 @@ module.exports = {
   confirmPayment,
   deliverDocuments,
   getInquiryAnalytics,
-  getInquiriesByDateRange
+  getInquiriesByDateRange,
+  toggleArchive
 };
