@@ -34,7 +34,7 @@ const ViewImage = () => {
     const fetchImages = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/images');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/images');
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -61,7 +61,7 @@ const ViewImage = () => {
         if (window.confirm(`Are you sure you want to archive "${imageName || 'this image'}"?`)) {
             try {
                 // Gagamit tayo ng PATCH/PUT para i-update ang field sa database
-                const response = await fetch(`http://localhost:5000/api/images/${id}`, {
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com0/api/images/${id}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json'

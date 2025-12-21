@@ -6,7 +6,7 @@ import HotelPagination from './HotelPagination';
 import HotelFilters from './HotelFilters';
 import './viewhotel.css';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com0';
 
 const ViewHotels = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);

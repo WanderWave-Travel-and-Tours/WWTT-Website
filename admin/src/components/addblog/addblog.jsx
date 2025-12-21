@@ -26,7 +26,7 @@ const AddBlog = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const API_BASE_URL = 'http://localhost:5000'; 
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com0'; 
 
     useEffect(() => {
         return () => {

@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api/promos';
+const API_URL = 'https://wanderwaveph-backend.onrender.com0/api/promos';
 
 export const fetchArchivedPromos = async () => {
     try {
