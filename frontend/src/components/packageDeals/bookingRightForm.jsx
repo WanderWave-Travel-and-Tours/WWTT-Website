@@ -17,7 +17,7 @@ const BookingRightForm = ({ pkg }) => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(null);
   const [quantities, setQuantities] = useState({ adult: 1 });
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10)); // November 2025 based on context
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); 
   
@@ -538,6 +538,13 @@ const BookingRightForm = ({ pkg }) => {
             {[...Array(firstDay)].map((_, i) => <div key={`empty-${i}`} />)}
             {[...Array(daysInMonth)].map((_, i) => {
               const day = i + 1;
+              const dateToCheck = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+              dateToCheck.setHours(0, 0, 0, 0);
+              
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const isPastDate = dateToCheck < today;
+
               const isStartDate = selectedDate === day;
               const isInRange = isInSelectedRange(day);
               const isEndDate = selectedDate && day === getEndDate();
@@ -545,8 +552,14 @@ const BookingRightForm = ({ pkg }) => {
               return (
                 <button
                   key={day}
-                  onClick={() => setSelectedDate(day)}
-                  className={`brf-calendar-day ${isStartDate ? 'brf-selected' : ''} ${isInRange && !isStartDate ? 'brf-in-range' : ''} ${isEndDate ? 'brf-end-date' : ''}`}
+                  disabled={isPastDate} 
+                  onClick={() => !isPastDate && setSelectedDate(day)}
+                  className={`brf-calendar-day 
+                    ${isStartDate ? 'brf-selected' : ''} 
+                    ${isInRange && !isStartDate ? 'brf-in-range' : ''} 
+                    ${isEndDate ? 'brf-end-date' : ''} 
+                    ${isPastDate ? 'brf-disabled-date' : ''} 
+                  `}
                 >
                   {day}
                 </button>
