@@ -63,6 +63,7 @@ import SellerRate from './components/SellerRate/SellerRate.jsx'
 function App() {
   return (
     <BrowserRouter basename="/">
+      <ToastProvider>
       <Routes>
         <Route path="/admin" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -123,6 +124,7 @@ function App() {
 
         <Route path="/seller-rate" element={<SellerRate />} />
       </Routes>
+      </ToastProvider>
     </BrowserRouter>
   );
 }
