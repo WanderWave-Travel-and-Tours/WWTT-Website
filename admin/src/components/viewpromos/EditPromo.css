@@ -1,4 +1,5 @@
-/* EDIT PROMO - MATCHING TRAVEL & TOURS PREMIUM UI (epr- prefix) */
+/* EDIT PROMO - MATCHING TESTIMONIAL RESPONSIVENESS (epr- prefix) */
+
 .epr-page {
     display: flex;
     min-height: 100vh;
@@ -9,9 +10,9 @@
 
 .epr-main {
     flex: 1;
-    margin-left: 300px;
-    transition: margin-left 0.3s ease;
+    margin-left: 300px; /* Sidebar width */
     padding: 40px 80px;
+    transition: margin-left 0.3s ease;
     width: 100%;
 }
 
@@ -32,7 +33,7 @@
     padding: 45px 50px;
     border-radius: 16px;
     overflow: hidden;
-    /* Using a business/travel abstract background to match the theme */
+    /* Business/Travel abstract background */
     background: url('https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2032&auto=format&fit=crop') center/cover;
     box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
     min-height: 180px;
@@ -193,7 +194,7 @@
     color: #94a3b8;
 }
 
-/* RADIO GROUP (Custom for Promo) */
+/* RADIO GROUP (Specific to Promo) */
 .epr-radio-group {
     display: flex;
     gap: 12px;
@@ -222,7 +223,7 @@
 }
 
 .epr-radio-label.active {
-    background: #fff7ed; /* Light orange tint */
+    background: #fff7ed;
     border-color: #FF8C42;
     color: #c2410c;
 }
@@ -280,10 +281,15 @@
     box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
 }
 
+/* STRICT DISABLED STATE (AS REQUESTED) */
 .epr-btn--submit:disabled {
-    opacity: 0.7;
+    background: #cbd5e1; /* Flat gray */
+    color: #94a3b8;
+    box-shadow: none;
     cursor: not-allowed;
     transform: none;
+    pointer-events: none; /* COMPLETELY DISABLES HOVER & CLICKS */
+    opacity: 1; /* Keep it solid gray, not transparent */
 }
 
 /* LOADING STATE */
@@ -309,15 +315,103 @@
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* RESPONSIVE (Copied from EditTour logic) */
-@media (max-width: 900px) {
-    .epr-main { margin-left: 0 !important; padding: 24px 16px !important; }
-    .epr-main--collapsed { margin-left: 0 !important; }
-    .epr-header { padding: 28px 20px !important; min-height: 140px; flex-direction: column; align-items: flex-start; gap: 16px; }
-    .epr-form-grid { grid-template-columns: 1fr; }
+/* ================================================= */
+/* RESPONSIVENESS - MATCHING TESTIMONIAL PAGE EXACTLY */
+/* ================================================= */
+
+@media (max-width: 1100px) {
+    .epr-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
+    }
+
+    .epr-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Critical Sidebar Logic */
+    .epr-main, .epr-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+    }
+
+    .epr-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .epr-title {
+        font-size: 2rem;
+    }
+
+    .epr-section {
+        padding: 24px 20px;
+    }
 }
 
 @media (max-width: 640px) {
-    .epr-form-actions { flex-direction: column; }
-    .epr-btn { width: 100%; justify-content: center; }
+    .epr-title {
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .epr-subtitle {
+        font-size: 13px;
+    }
+
+    .epr-header {
+        padding: 30px 24px;
+    }
+
+    .epr-section {
+        padding: 20px 16px;
+    }
+
+    .epr-form-actions {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .epr-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .epr-radio-group {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .epr-title {
+        font-size: 1.4rem;
+    }
+
+    .epr-header {
+        padding: 28px 20px;
+    }
+
+    .epr-btn {
+        padding: 12px 20px;
+        font-size: 12px;
+    }
+
+    .epr-back-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    .epr-section {
+        padding: 16px 12px;
+    }
+
+    .epr-input, .epr-textarea, .epr-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
 }

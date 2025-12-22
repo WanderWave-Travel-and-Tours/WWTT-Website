@@ -46,9 +46,8 @@ const TourDetailModal = ({ tour, close, onArchive, navigate }) => {
                     </div>
                 </div>
                 <div className="tdm-footer">
-                    <button className="tdm-btn-close" onClick={close}>Close</button>
                     <button className="tdm-btn-edit" onClick={() => navigate(`/edit-tour/${tour._id}`)}>
-                        <Edit size={16}/> Edit Tour
+                        <Edit size={16}/> Edit
                     </button>
                     <button className="tdm-btn-danger" onClick={() => {onArchive(tour._id); close();}}>
                         <Trash2 size={16}/> Archive

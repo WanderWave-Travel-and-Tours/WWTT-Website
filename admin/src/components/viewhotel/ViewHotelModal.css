@@ -11,6 +11,7 @@
   align-items: center;
   padding: 20px;
   font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  box-sizing: border-box;
 }
 
 .vhm-modal {
@@ -32,6 +33,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
+}
+
+.vhm-header-left {
+  min-width: 0;
 }
 
 .vhm-main-title {
@@ -45,6 +51,7 @@
   font-size: 13px;
   color: #94a3b8;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .vhm-dot { margin: 0 8px; color: #e2e8f0; }
@@ -53,6 +60,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-shrink: 0;
 }
 
 .vhm-status-pill {
@@ -79,7 +87,9 @@
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; color: #64748b;
+  transition: 0.2s;
 }
+.vhm-close-x:hover { background: #e2e8f0; }
 
 /* Body Styling */
 .vhm-body {
@@ -124,6 +134,18 @@
   object-fit: cover;
 }
 
+.vhm-no-image {
+  height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .vhm-image-info {
   padding: 12px 16px;
   display: flex;
@@ -140,12 +162,10 @@
   font-size: 13px;
   font-weight: 700;
   color: #15803d;
-}
-
-.vhm-view-link {
-  background: none; border: none;
-  color: #15803d; font-size: 13px; font-weight: 800;
-  text-decoration: underline; cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 60%;
 }
 
 .vhm-gallery-strip {
@@ -162,6 +182,7 @@
   overflow: hidden;
   cursor: pointer;
   border: 2px solid transparent;
+  flex-shrink: 0;
 }
 
 .vhm-thumb.active { border-color: #22c55e; }
@@ -194,12 +215,16 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  background: #fcfcfc;
+  padding: 10px;
+  border-radius: 12px;
 }
 
 .vhm-box-icon {
   width: 44px; height: 44px;
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 
 .vhm-box-icon.yellow { background: #fef9c3; color: #ca8a04; }
@@ -207,6 +232,7 @@
 .vhm-box-icon.green { background: #dcfce7; color: #16a34a; }
 .vhm-box-icon.orange { background: #ffedd5; color: #ea580c; }
 
+.vhm-box-content { min-width: 0; }
 .vhm-box-content label {
   display: block;
   font-size: 11px;
@@ -220,6 +246,9 @@
   font-size: 15px;
   font-weight: 700;
   color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vhm-amount-text { color: #22c55e !important; }
@@ -257,6 +286,12 @@
   border-radius: 10px;
 }
 
+.vhm-pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .vhm-modern-pill {
   display: inline-flex;
   align-items: center;
@@ -268,7 +303,6 @@
   font-size: 13px;
   font-weight: 600;
   color: #475569;
-  margin: 0 8px 8px 0;
 }
 
 .vhm-empty-state {
@@ -276,11 +310,10 @@
   flex-direction: column;
   align-items: center;
   padding: 20px 0;
-  color: #1e293b;
-  font-weight: 800;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 14px;
 }
-
-.vhm-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
 
 /* Footer Styling */
 .vhm-footer {
@@ -289,29 +322,28 @@
   justify-content: flex-end;
   gap: 12px;
   background: white;
-}
-
-.vhm-btn-close {
-  background: #f1f5f9;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 700;
-  color: #64748b;
-  cursor: pointer;
+  border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
 }
 
 .vhm-btn-edit {
-  background: #0f172a;
-  border: none;
+  background: #eff6ff; /* Match other modals light blue */
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
   padding: 12px 24px;
   border-radius: 12px;
   font-weight: 700;
-  color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  transition: all 0.2s;
+}
+
+.vhm-btn-edit:hover {
+  background: #dbeafe;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
 }
 
 .vhm-btn-archive {
@@ -324,17 +356,65 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: all 0.2s;
-  font-family: inherit; /* Ensure font matches */
+  font-family: inherit;
 }
 
 .vhm-btn-archive:hover {
   background: #fecaca;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
 }
 
-.vhm-btn-archive:active {
-  transform: translateY(0);
+/* ================================================= */
+/* RESPONSIVE MEDIA QUERIES                          */
+/* ================================================= */
+
+@media (max-width: 640px) {
+    .vhm-content {
+        max-height: 98vh;
+        width: 100%;
+    }
+
+    /* Header Stack */
+    .vhm-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px 24px;
+    }
+
+    .vhm-header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Compact Body */
+    .vhm-body {
+        padding: 0 20px 20px 20px;
+        gap: 16px;
+    }
+
+    /* Single Column Grid */
+    .vhm-info-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Shorter Image */
+    .vhm-hero-img {
+        height: 180px;
+    }
+
+    /* Stack Footer Buttons */
+    .vhm-footer {
+        padding: 16px 20px;
+        flex-direction: column-reverse;
+    }
+
+    .vhm-btn-edit, .vhm-btn-archive {
+        width: 100%;
+        padding: 14px;
+    }
 }

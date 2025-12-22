@@ -317,9 +317,7 @@
     color: #ea580c;
 }
 
-/* ======================================================== */
-/* GALLERY GRID STYLES (NEW) */
-/* ======================================================== */
+/* GALLERY GRID STYLES */
 .eho-gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -327,7 +325,6 @@
     margin-top: 10px;
 }
 
-/* Add Button Box */
 .eho-add-box {
     border: 2px dashed #cbd5e1;
     border-radius: 10px;
@@ -351,7 +348,6 @@
     color: #ea580c;
 }
 
-/* Gallery Item */
 .eho-gallery-item {
     position: relative;
     height: 120px;
@@ -366,7 +362,6 @@
     object-fit: cover;
 }
 
-/* Badges for New/Saved */
 .eho-badge-existing,
 .eho-badge-new {
     position: absolute;
@@ -391,7 +386,6 @@
     color: #fff;
 }
 
-/* Remove Button */
 .eho-remove-btn {
     position: absolute;
     top: 4px;
@@ -407,11 +401,11 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
-    opacity: 0; /* Hidden by default */
+    opacity: 0;
 }
 
 .eho-gallery-item:hover .eho-remove-btn {
-    opacity: 1; /* Show on hover */
+    opacity: 1;
 }
 
 .eho-remove-btn:hover {
@@ -473,6 +467,7 @@
 .eho-btn--submit:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+    transform: none;
 }
 
 /* LOADING */
@@ -495,9 +490,139 @@
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* RESPONSIVE */
-@media (max-width: 900px) {
-    .eho-main { margin-left: 0 !important; padding: 20px !important; }
-    .eho-form-grid, .eho-form-grid-3 { grid-template-columns: 1fr; }
-    .eho-header { flex-direction: column; align-items: flex-start; padding: 30px; gap: 20px; }
+/* ================================================= */
+/* RESPONSIVENESS - EXACT COPY FROM TESTIMONIALS    */
+/* ================================================= */
+
+@media (max-width: 1100px) {
+    .eho-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
+    }
+
+    .eho-form-grid, .eho-form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .eho-amenities-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .eho-main, .eho-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+    }
+
+    .eho-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .eho-title {
+        font-size: 2rem;
+    }
+
+    .eho-section {
+        padding: 24px 20px;
+    }
+
+    .eho-image-preview, .eho-upload-placeholder {
+        height: 250px;
+    }
+
+    .eho-gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+    }
+
+    .eho-gallery-item, .eho-add-box {
+        height: 100px;
+    }
+}
+
+@media (max-width: 640px) {
+    .eho-title {
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .eho-subtitle {
+        font-size: 13px;
+    }
+
+    .eho-header {
+        padding: 30px 24px;
+    }
+
+    .eho-section {
+        padding: 20px 16px;
+    }
+
+    .eho-image-preview, .eho-upload-placeholder {
+        height: 200px;
+    }
+
+    .eho-form-actions {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .eho-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .eho-amenities-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .eho-gallery-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .eho-title {
+        font-size: 1.4rem;
+    }
+
+    .eho-header {
+        padding: 28px 20px;
+    }
+
+    .eho-btn {
+        padding: 12px 20px;
+        font-size: 12px;
+    }
+
+    .eho-back-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    .eho-section {
+        padding: 16px 12px;
+    }
+
+    .eho-image-preview, .eho-upload-placeholder {
+        height: 180px;
+    }
+
+    .eho-input, .eho-textarea, .eho-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .eho-gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .eho-gallery-item, .eho-add-box {
+        height: 90px;
+    }
 }

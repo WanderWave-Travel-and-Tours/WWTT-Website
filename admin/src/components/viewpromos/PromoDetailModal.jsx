@@ -1,6 +1,6 @@
 import React from 'react';
-import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react'; // Added Edit icon
-import { useNavigate } from 'react-router-dom'; // Added useNavigate
+import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './PromoDetailModal.css';
 
 const formatDate = (dateString) => {
@@ -16,7 +16,7 @@ const PromoDetailModal = ({
     setShowModal,
     handleArchive
 }) => {
-    const navigate = useNavigate(); // Hook for navigation
+    const navigate = useNavigate();
 
     if (!showModal || !selectedPromo) return null;
 
@@ -30,7 +30,7 @@ const PromoDetailModal = ({
 
     const getStatusConfig = (status) => {
         const configs = {
-            ACTIVE: { color: "active", label: "ACTIVE", description: "Currently available for use" },
+            ACTIVE: { color: "active", label: "ACTIVE", description: "Currently available" },
             EXPIRED: { color: "inactive", label: "EXPIRED", description: "No longer valid" },
         };
         return configs[status.toUpperCase()] || configs.EXPIRED;
@@ -44,7 +44,7 @@ const PromoDetailModal = ({
         closeModal();
     };
 
-    // New Function: Redirect to dedicated Edit Page
+    // Redirect to Edit Page
     const handleEditClick = () => {
         navigate(`/edit-promo/${selectedPromo._id}`);
     };
@@ -150,12 +150,10 @@ const PromoDetailModal = ({
 
                 {/* FOOTER ACTIONS */}
                 <div className="prdm-footer">
-                    <button className="prdm-btn-close" onClick={closeModal}>Close</button>
                     
-                    {/* NEW EDIT BUTTON */}
                     <button className="prdm-btn-edit" onClick={handleEditClick}>
                         <Edit size={16} />
-                        Edit Details
+                        Edit
                     </button>
 
                     <button className="prdm-btn-danger" onClick={handleArchiveClick}>

@@ -1,4 +1,5 @@
-/* EDIT POSTER - MATCHING TRAVEL & TOURS PREMIUM UI (epo- prefix) */
+/* EDIT POSTER - MATCHING TESTIMONIAL & BLOG RESPONSIVENESS (epo- prefix) */
+
 .epo-page {
     display: flex;
     min-height: 100vh;
@@ -9,9 +10,9 @@
 
 .epo-main {
     flex: 1;
-    margin-left: 300px;
-    transition: margin-left 0.3s ease;
+    margin-left: 300px; /* Sidebar width */
     padding: 40px 80px;
+    transition: margin-left 0.3s ease;
     width: 100%;
 }
 
@@ -193,7 +194,7 @@
     color: #94a3b8;
 }
 
-/* IMAGE UPLOAD SECTION (Copied from EditTour) */
+/* IMAGE UPLOAD SECTION */
 .epo-upload-area {
     width: 100%;
 }
@@ -322,10 +323,15 @@
     box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
 }
 
+/* STRICT DISABLED STATE (Grayed Out & No Hover) */
 .epo-btn--submit:disabled {
-    opacity: 0.7;
+    background: #cbd5e1; /* Flat gray */
+    color: #94a3b8;
+    box-shadow: none;
     cursor: not-allowed;
     transform: none;
+    pointer-events: none; /* COMPLETELY DISABLES HOVER & CLICKS */
+    opacity: 1; /* Keep it solid gray, not transparent */
 }
 
 /* LOADING STATE */
@@ -351,16 +357,111 @@
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* RESPONSIVE */
-@media (max-width: 900px) {
-    .epo-main { margin-left: 0 !important; padding: 24px 16px !important; }
-    .epo-main--collapsed { margin-left: 0 !important; }
-    .epo-header { padding: 28px 20px !important; min-height: 140px; flex-direction: column; align-items: flex-start; gap: 16px; }
-    .epo-form-grid { grid-template-columns: 1fr; }
-    .epo-image-preview, .epo-upload-placeholder { height: 250px; }
+/* ================================================= */
+/* RESPONSIVENESS - EXACT MATCH TO OTHER EDIT PAGES */
+/* ================================================= */
+
+@media (max-width: 1100px) {
+    .epo-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
+    }
+
+    .epo-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Critical Sidebar Logic */
+    .epo-main, .epo-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+    }
+
+    .epo-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .epo-title {
+        font-size: 2rem;
+    }
+
+    .epo-section {
+        padding: 24px 20px;
+    }
+
+    .epo-image-preview, .epo-upload-placeholder {
+        height: 300px;
+    }
 }
 
 @media (max-width: 640px) {
-    .epo-form-actions { flex-direction: column; }
-    .epo-btn { width: 100%; justify-content: center; }
+    .epo-title {
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .epo-subtitle {
+        font-size: 13px;
+    }
+
+    .epo-header {
+        padding: 30px 24px;
+    }
+
+    .epo-section {
+        padding: 20px 16px;
+    }
+
+    .epo-image-preview, .epo-upload-placeholder {
+        height: 250px;
+    }
+
+    .epo-form-actions {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .epo-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .epo-title {
+        font-size: 1.4rem;
+    }
+
+    .epo-header {
+        padding: 28px 20px;
+    }
+
+    .epo-btn {
+        padding: 12px 20px;
+        font-size: 12px;
+    }
+
+    .epo-back-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    .epo-section {
+        padding: 16px 12px;
+    }
+
+    .epo-image-preview, .epo-upload-placeholder {
+        height: 200px;
+    }
+
+    .epo-input, .epo-textarea, .epo-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
 }

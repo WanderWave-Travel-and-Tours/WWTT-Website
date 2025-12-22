@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // ADDED THIS
+import { useNavigate } from 'react-router-dom';
 import { X, User, Calendar, MessageSquare, Star, Edit, Trash2, CheckCircle, ImageIcon } from 'lucide-react';
 import './TestimonialDetailModal.css';
 
@@ -17,7 +17,7 @@ const TestimonialDetailModal = ({
     handleArchive,
     getImageUrl
 }) => {
-    const navigate = useNavigate(); // ADDED THIS
+    const navigate = useNavigate();
 
     if (!showModal || !selectedTestimonial) return null;
 
@@ -28,7 +28,7 @@ const TestimonialDetailModal = ({
         closeModal();
     };
 
-    // New Edit Function
+    // Edit Navigation
     const handleEditClick = () => {
         navigate(`/edit-testimonial/${selectedTestimonial._id}`);
     };
@@ -79,9 +79,11 @@ const TestimonialDetailModal = ({
                             <div className="tdm-image-info">
                                 <div className="tdm-file-pill">
                                     <ImageIcon size={14} className="tdm-icon-green" />
-                                    <span>customer_profile_image.jpg</span>
+                                    <span>{selectedTestimonial.customerImage ? selectedTestimonial.customerImage.split(/[/\\]/).pop() : 'customer.jpg'}</span>
                                 </div>
-                                <button className="tdm-view-link">Preview Image</button>
+                                <button className="tdm-view-link" onClick={() => window.open(getImageUrl(selectedTestimonial.customerImage), '_blank')}>
+                                    Preview Image
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -132,12 +134,9 @@ const TestimonialDetailModal = ({
 
                 {/* FOOTER SECTION */}
                 <div className="tdm-footer">
-                    <button className="tdm-btn-close" onClick={closeModal}>Close</button>
-                    
-                    {/* UPDATED EDIT BUTTON */}
                     <button className="tdm-btn-edit" onClick={handleEditClick}>
                         <Edit size={16} />
-                        Edit Testimonial
+                        Edit
                     </button>
                     
                     <button className="tdm-btn-danger" onClick={handleArchiveClick}>

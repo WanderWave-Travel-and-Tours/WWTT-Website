@@ -1,4 +1,5 @@
-/* EDIT BLOG - MATCHING TRAVEL & TOURS PREMIUM UI (ebl- prefix) */
+/* EDIT BLOG - MATCHING TESTIMONIAL & PROMO RESPONSIVENESS (ebl- prefix) */
+
 .ebl-page {
     display: flex;
     min-height: 100vh;
@@ -9,9 +10,9 @@
 
 .ebl-main {
     flex: 1;
-    margin-left: 300px;
-    transition: margin-left 0.3s ease;
+    margin-left: 300px; /* Sidebar width */
     padding: 40px 80px;
+    transition: margin-left 0.3s ease;
     width: 100%;
 }
 
@@ -32,7 +33,7 @@
     padding: 45px 50px;
     border-radius: 16px;
     overflow: hidden;
-    /* Writing/Journaling background */
+    /* Blog/Journaling background */
     background: url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=2070&auto=format&fit=crop') center/cover;
     box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
     min-height: 180px;
@@ -323,10 +324,15 @@
     box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
 }
 
+/* STRICT DISABLED STATE (Grayed Out & No Hover) */
 .ebl-btn--submit:disabled {
-    opacity: 0.7;
+    background: #cbd5e1; /* Flat gray */
+    color: #94a3b8;
+    box-shadow: none;
     cursor: not-allowed;
     transform: none;
+    pointer-events: none; /* COMPLETELY DISABLES HOVER & CLICKS */
+    opacity: 1; /* Keep it solid gray, not transparent */
 }
 
 /* LOADING STATE */
@@ -352,16 +358,119 @@
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* RESPONSIVE */
-@media (max-width: 900px) {
-    .ebl-main { margin-left: 0 !important; padding: 24px 16px !important; }
-    .ebl-main--collapsed { margin-left: 0 !important; }
-    .ebl-header { padding: 28px 20px !important; min-height: 140px; flex-direction: column; align-items: flex-start; gap: 16px; }
-    .ebl-form-grid { grid-template-columns: 1fr; }
-    .ebl-image-preview, .ebl-upload-placeholder { height: 250px; }
+/* ================================================= */
+/* RESPONSIVENESS - EXACT MATCH TO TESTIMONIAL PAGE */
+/* ================================================= */
+
+@media (max-width: 1100px) {
+    .ebl-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
+    }
+
+    .ebl-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Critical Sidebar Logic */
+    .ebl-main, .ebl-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+    }
+
+    .ebl-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .ebl-title {
+        font-size: 2rem;
+    }
+
+    .ebl-section {
+        padding: 24px 20px;
+    }
+
+    .ebl-image-preview, .ebl-upload-placeholder {
+        height: 250px;
+    }
 }
 
 @media (max-width: 640px) {
-    .ebl-form-actions { flex-direction: column; }
-    .ebl-btn { width: 100%; justify-content: center; }
+    .ebl-title {
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .ebl-subtitle {
+        font-size: 13px;
+    }
+
+    .ebl-header {
+        padding: 30px 24px;
+    }
+
+    .ebl-section {
+        padding: 20px 16px;
+    }
+
+    .ebl-image-preview, .ebl-upload-placeholder {
+        height: 220px;
+    }
+
+    .ebl-form-actions {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .ebl-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ebl-textarea {
+        min-height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ebl-title {
+        font-size: 1.4rem;
+    }
+
+    .ebl-header {
+        padding: 28px 20px;
+    }
+
+    .ebl-btn {
+        padding: 12px 20px;
+        font-size: 12px;
+    }
+
+    .ebl-back-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    .ebl-section {
+        padding: 16px 12px;
+    }
+
+    .ebl-image-preview, .ebl-upload-placeholder {
+        height: 200px;
+    }
+
+    .ebl-input, .ebl-textarea, .ebl-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .ebl-textarea {
+        min-height: 180px;
+    }
 }

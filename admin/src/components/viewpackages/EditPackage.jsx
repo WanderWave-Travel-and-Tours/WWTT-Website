@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, X, Plus, Trash2 } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
 import "./editpackage.css";
 
 const EditPackage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const packageId = location.state?.packageId;
+  const { id } = useParams(); // Get ID from URL params
+  const packageId = id;
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -38,14 +38,18 @@ const EditPackage = () => {
   // Fetch package data
   useEffect(() => {
     if (!packageId) {
+      console.error("No package ID provided");
       navigate("/view-packages");
       return;
     }
 
     const fetchPackageData = async () => {
       try {
+        console.log("Fetching package with ID:", packageId);
         const response = await fetch(`${API_BASE_URL}/${packageId}`);
         const result = await response.json();
+
+        console.log("API Response:", result);
 
         if (result.status === "ok") {
           const pkg = result.data;
@@ -86,10 +90,15 @@ const EditPackage = () => {
           if (pkg.image) {
             setImagePreview(`http://localhost:5000/uploads/${pkg.image}`);
           }
+        } else {
+          console.error("Error in response:", result.error);
+          alert("Failed to load package data: " + result.error);
+          navigate("/view-packages");
         }
       } catch (err) {
         console.error("Error fetching package:", err);
-        alert("Failed to load package data");
+        alert("Failed to load package data. Please try again.");
+        navigate("/view-packages");
       } finally {
         setLoading(false);
       }
@@ -225,12 +234,16 @@ const EditPackage = () => {
         formDataToSend.append("image", imageFile);
       }
 
+      console.log("Submitting update for package ID:", packageId);
+
       const response = await fetch(`${API_BASE_URL}/edit/${packageId}`, {
         method: "PUT",
         body: formDataToSend,
       });
 
       const result = await response.json();
+
+      console.log("Update response:", result);
 
       if (result.status === "ok") {
         alert("Package updated successfully!");

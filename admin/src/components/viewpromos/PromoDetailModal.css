@@ -11,6 +11,7 @@
     align-items: center;
     padding: 20px;
     font-family: 'Inter', sans-serif;
+    box-sizing: border-box;
 }
 
 .prdm-content {
@@ -32,6 +33,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+}
+
+.prdm-header-left {
+    min-width: 0;
 }
 
 .prdm-main-title {
@@ -46,6 +52,7 @@
     color: #94a3b8;
     font-weight: 600;
     margin-top: 4px;
+    white-space: nowrap;
 }
 
 .prdm-dot { margin: 0 8px; color: #e2e8f0; }
@@ -54,6 +61,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    flex-shrink: 0;
 }
 
 .prdm-status-pill {
@@ -78,7 +86,9 @@
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: #64748b;
+    transition: 0.2s;
 }
+.prdm-close-x:hover { background: #e2e8f0; }
 
 /* Body */
 .prdm-body {
@@ -122,6 +132,7 @@
     align-items: center;
     gap: 20px;
     position: relative;
+    overflow: hidden; /* Contains elements */
 }
 
 .prdm-hero-icon {
@@ -131,6 +142,11 @@
     border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 4px 10px rgba(245, 158, 11, 0.1);
+    flex-shrink: 0;
+}
+
+.prdm-hero-content {
+    min-width: 0; /* Text truncation fix */
 }
 
 .prdm-hero-content label {
@@ -147,6 +163,7 @@
     font-weight: 900;
     color: #1e293b;
     letter-spacing: 2px;
+    word-break: break-all; /* Ensures long codes wrap */
 }
 
 .prdm-hero-badge {
@@ -179,12 +196,16 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    background: #fcfcfc;
+    padding: 10px;
+    border-radius: 12px;
 }
 
 .prdm-box-icon {
     width: 44px; height: 44px;
     border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
 }
 
 .prdm-box-icon.yellow { background: #fef9c3; color: #ca8a04; }
@@ -192,6 +213,7 @@
 .prdm-box-icon.green { background: #dcfce7; color: #16a34a; }
 .prdm-box-icon.orange { background: #ffedd5; color: #ea580c; }
 
+.prdm-box-content { min-width: 0; }
 .prdm-box-content label {
     display: block;
     font-size: 11px;
@@ -205,6 +227,9 @@
     font-size: 15px;
     font-weight: 700;
     color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .prdm-amount-text { color: #f59e0b !important; }
@@ -232,6 +257,8 @@
     justify-content: flex-end;
     gap: 12px;
     background: white;
+    border-top: 1px solid #f1f5f9;
+    flex-wrap: wrap;
 }
 
 .prdm-btn-close {
@@ -244,21 +271,6 @@
     cursor: pointer;
 }
 
-.prdm-btn-danger {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* ADD THIS TO THE END OF PromoDetailModal.css */
-
 .prdm-btn-edit {
     background: #eff6ff;
     color: #1d4ed8;
@@ -269,6 +281,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     transition: all 0.2s ease;
 }
@@ -276,4 +289,82 @@
 .prdm-btn-edit:hover {
     background: #dbeafe;
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.prdm-btn-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.prdm-btn-danger:hover {
+    background: #fecaca;
+}
+
+/* ================================================= */
+/* RESPONSIVE MEDIA QUERIES (Critical Update)        */
+/* ================================================= */
+
+@media (max-width: 640px) {
+    .prdm-content {
+        max-height: 98vh;
+        width: 100%;
+    }
+
+    /* Header Stack */
+    .prdm-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px 24px;
+    }
+
+    .prdm-header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Compact Body */
+    .prdm-body {
+        padding: 0 20px 20px 20px;
+        gap: 16px;
+    }
+
+    /* Code Hero Adjustments */
+    .prdm-code-hero {
+        padding: 16px;
+        gap: 16px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .prdm-hero-value {
+        font-size: 24px; /* Smaller code font */
+    }
+
+    /* Single Column Grid */
+    .prdm-info-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Stack Footer Buttons */
+    .prdm-footer {
+        padding: 16px 20px;
+        flex-direction: column-reverse;
+    }
+
+    .prdm-btn-edit, .prdm-btn-danger, .prdm-btn-close {
+        width: 100%;
+        padding: 14px;
+    }
 }

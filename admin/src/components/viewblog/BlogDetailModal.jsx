@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // Added this
+import { useNavigate } from 'react-router-dom';
 import { X, FileText, User, Calendar, FolderOpen, Edit, Trash2, CheckCircle, ImageIcon } from 'lucide-react';
 import './BlogDetailModal.css';
 
@@ -17,7 +17,7 @@ const BlogDetailModal = ({
     handleDelete,
     getImageUrl
 }) => {
-    const navigate = useNavigate(); // Hook for navigation
+    const navigate = useNavigate();
 
     if (!showModal || !selectedBlog) return null;
 
@@ -39,7 +39,7 @@ const BlogDetailModal = ({
         closeModal();
     };
 
-    // New Edit Function
+    // Navigation to Edit Page
     const handleEditClick = () => {
         navigate(`/edit-blog/${selectedBlog._id}`);
     };
@@ -143,12 +143,9 @@ const BlogDetailModal = ({
 
                 {/* FOOTER SECTION */}
                 <div className="bdm-footer">
-                    <button className="bdm-btn-close" onClick={closeModal}>Close</button>
-                    
-                    {/* EDIT BUTTON UPDATED */}
                     <button className="bdm-btn-edit" onClick={handleEditClick}>
                         <Edit size={16} />
-                        Edit Blog
+                        Edit
                     </button>
 
                     <button className="bdm-btn-danger" onClick={handleDeleteClick}>

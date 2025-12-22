@@ -6,23 +6,20 @@ import {
 } from "lucide-react";
 import "./ViewHotelModal.css";
 
-const API_BASE_URL = 'http://localhost:5000'; // Siguraduhing tama ang port mo
+const API_BASE_URL = 'http://localhost:5000';
 
-// 👇 HELPER: Taga-ayos ng Image URL (Para hindi broken)
+// Helper: Fix Image URL
 const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     
-    // Kung object ang na-pass (e.g. galing sa gallery array), kunin ang .url
     const pathStr = typeof imagePath === 'object' ? imagePath.url : imagePath;
     
     if (!pathStr) return null;
     if (pathStr.startsWith('http') || pathStr.startsWith('data:')) return pathStr;
     
-    // Ayusin ang backslashes (Windows issue)
     let cleanPath = pathStr.replace(/\\/g, '/');
     if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
     
-    // Iwasan ang doble-dobleng 'uploads/'
     if (cleanPath.startsWith('uploads/')) {
          return `${API_BASE_URL}/${cleanPath}`;
     }
@@ -51,7 +48,6 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
 
   useEffect(() => {
     if (hotel) {
-      // 👇 LOGIC: Prioritize Main Image, then fallback to first gallery image
       let main = null;
       if (hotel.mainImage) {
           main = getImageUrl(hotel.mainImage);
@@ -75,7 +71,6 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
     .filter(([_, isActive]) => isActive)
     .map(([key]) => key);
 
-  // Ayusin lahat ng gallery URLs
   const galleryImages = Array.isArray(hotel.images) 
     ? hotel.images.map(img => getImageUrl(img))
     : [];
@@ -98,7 +93,7 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
               <CheckCircle size={16} />
               <div className="vhm-status-text">
                 <span className="vhm-status-label">{hotel.isActive ? 'ACTIVE' : 'INACTIVE'}</span>
-                <span className="vhm-status-subtext">{hotel.isActive ? 'Listing is live' : 'Hidden from users'}</span>
+                <span className="vhm-status-subtext">{hotel.isActive ? 'Listing is live' : 'Hidden'}</span>
               </div>
             </div>
             <button className="vhm-close-x" onClick={onClose}><X size={18} /></button>
@@ -133,15 +128,13 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
                  <div className="vhm-image-info">
                    <div className="vhm-file-pill">
                      <ImageIcon size={14} className="vhm-icon-green" />
-                     <span>{hotel.name}_Primary_View.jpg</span>
+                     <span>{hotel.name}_Primary.jpg</span>
                    </div>
-                   <button className="vhm-view-link">View Gallery</button>
                  </div>
                </div>
 
                {/* THUMBNAILS */}
                <div className="vhm-gallery-strip">
-                  {/* Ipakita muna ang Main Image bilang unang thumbnail kung meron */}
                   {hotel.mainImage && (
                       <div 
                         className={`vhm-thumb ${activeHeroImage === getImageUrl(hotel.mainImage) ? 'active' : ''}`}
@@ -151,7 +144,6 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
                       </div>
                   )}
 
-                  {/* Sunod ang Gallery Images */}
                   {galleryImages.map((imgUrl, idx) => (
                     <div 
                       key={idx} 
@@ -215,7 +207,7 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
           {/* 4. AMENITIES */}
           <div className="vhm-section-card">
              <div className="vhm-title-flex">
-               <h3 className="vhm-section-title">AMENITIES & REQUIREMENTS</h3>
+               <h3 className="vhm-section-title">AMENITIES</h3>
                <span className="vhm-count-pill">{activeAmenities.length} ITEMS</span>
              </div>
              {activeAmenities.length > 0 ? (
@@ -231,8 +223,7 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
                 </div>
              ) : (
                 <div className="vhm-empty-state">
-                   <div className="vhm-empty-icon">📂</div>
-                   <p>No Requirements Yet</p>
+                   <p>No Amenities Listed</p>
                 </div>
              )}
           </div>
@@ -241,8 +232,10 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
 
         {/* === FOOTER === */}
         <div className="vhm-footer">
-          <button className="vhm-btn-close" onClick={onClose}>Close</button>
-          
+          <button className="vhm-btn-edit" onClick={() => onEdit && onEdit(hotel._id)}>
+            <Edit size={16} />
+            Edit
+          </button>
           <button 
             className="vhm-btn-archive" 
             onClick={() => {
@@ -252,12 +245,7 @@ const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
             }}
           >
             <Archive size={16} />
-            Archive Hotel
-          </button>
-
-          <button className="vhm-btn-edit" onClick={() => onEdit && onEdit(hotel._id)}>
-            <Edit size={16} />
-            Edit Hotel Details
+            Archive
           </button>
         </div>
 

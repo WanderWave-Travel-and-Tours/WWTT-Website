@@ -150,12 +150,11 @@ const PosterDetailModal = ({
 
                 {/* FOOTER SECTION */}
                 <div className="pdm-footer">
-                    <button className="pdm-btn-close" onClick={closeModal}>Close</button>
                     
                     {/* EDIT BUTTON ADDED */}
                     <button className="pdm-btn-edit" onClick={handleEditClick}>
                         <Edit size={16} />
-                        Edit Details
+                        Edit
                     </button>
 
                     <button 

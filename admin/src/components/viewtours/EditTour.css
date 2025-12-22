@@ -543,100 +543,53 @@
     100% { transform: rotate(360deg); }
 }
 
-/* SCROLLBAR STYLING */
-.et-main::-webkit-scrollbar {
-    width: 8px;
-}
+/* ================================================= */
+/* RESPONSIVENESS - EXACT COPY FROM TESTIMONIALS    */
+/* ================================================= */
 
-.et-main::-webkit-scrollbar-track {
-    background: #f1f5f9;
-}
-
-.et-main::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-
-.et-main::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
-/* RESPONSIVE DESIGN */
-@media (max-width: 1440px) {
-    .et-main {
-        padding-left: 60px;
-        padding-right: 60px;
-    }
-}
-
-@media (max-width: 1200px) {
-    .et-main {
-        margin-left: 280px;
-        padding-left: 40px;
-        padding-right: 40px;
-    }
-
-    .et-main--collapsed {
-        margin-left: 80px;
-    }
-
-    .et-form-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* CRITICAL: TABLET AND MOBILE - SIDEBAR COMPLETELY HIDDEN */
-@media (max-width: 900px) {
-    .et-main {
-        margin-left: 0 !important;
-        padding: 24px 16px !important;
-    }
-
-    .et-main--collapsed {
-        margin-left: 0 !important;
-    }
-
+@media (max-width: 1100px) {
     .et-header {
-        padding: 28px 20px !important;
-        min-height: 140px;
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
-    }
-
-    .et-title {
-        font-size: 1.75rem;
+        padding: 40px;
     }
 
     .et-form-grid {
         grid-template-columns: 1fr;
-    }
-
-    .et-section {
-        padding: 20px;
-    }
-
-    .et-image-preview,
-    .et-upload-placeholder {
-        height: 280px;
     }
 }
 
 @media (max-width: 768px) {
-    .et-main {
-        margin-left: 0 !important;
-        padding: 20px 12px !important;
-    }
-
-    .et-main--collapsed {
-        margin-left: 0 !important;
+    .et-main, .et-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
     }
 
     .et-header {
-        padding: 24px 16px !important;
-        min-height: 130px;
+        padding: 35px 30px;
+        margin-bottom: 28px;
     }
 
+    .et-title {
+        font-size: 2rem;
+    }
+
+    .et-section {
+        padding: 24px 20px;
+    }
+
+    .et-image-preview, .et-upload-placeholder {
+        height: 280px;
+    }
+
+    .et-itinerary-day {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 640px) {
     .et-title {
         font-size: 1.6rem;
         letter-spacing: 2px;
@@ -646,27 +599,21 @@
         font-size: 13px;
     }
 
+    .et-header {
+        padding: 30px 24px;
+    }
+
     .et-section {
-        padding: 18px;
+        padding: 20px 16px;
     }
 
-    .et-section-title {
-        font-size: 12px;
-        letter-spacing: 1.2px;
-    }
-
-    .et-image-preview,
-    .et-upload-placeholder {
-        height: 260px;
-    }
-
-    .et-itinerary-day {
-        padding: 18px;
+    .et-image-preview, .et-upload-placeholder {
+        height: 240px;
     }
 
     .et-form-actions {
-        padding: 20px;
         flex-direction: column;
+        padding: 16px;
     }
 
     .et-btn {
@@ -674,70 +621,47 @@
         justify-content: center;
     }
 
-    .et-loading {
-        margin: 20px 12px;
+    .et-itinerary-day {
+        padding: 16px;
+    }
+
+    .et-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
 }
 
-@media (max-width: 640px) {
-    .et-main {
-        margin-left: 0 !important;
-        padding: 16px 10px !important;
+@media (max-width: 480px) {
+    .et-title {
+        font-size: 1.4rem;
     }
 
     .et-header {
-        padding: 20px 12px !important;
-        min-height: 110px;
+        padding: 28px 20px;
     }
 
-    .et-title {
-        font-size: 1.4rem;
-        letter-spacing: 1.5px;
-    }
-
-    .et-subtitle {
+    .et-btn {
+        padding: 12px 20px;
         font-size: 12px;
-    }
-
-    .et-subtitle::before {
-        width: 28px;
-        height: 2px;
     }
 
     .et-back-btn {
         padding: 8px 14px;
         font-size: 12px;
-        margin-bottom: 14px;
     }
 
     .et-section {
-        padding: 14px;
-        border-radius: 10px;
+        padding: 16px 12px;
     }
 
-    .et-section-title {
-        font-size: 11px;
-        margin-bottom: 18px;
-        padding-bottom: 10px;
-    }
-
-    .et-section-title::before {
-        width: 3px;
-        height: 16px;
-    }
-
-    .et-label {
-        font-size: 10px;
+    .et-image-preview, .et-upload-placeholder {
+        height: 200px;
     }
 
     .et-input {
         padding: 10px 12px;
         font-size: 13px;
-    }
-
-    .et-image-preview,
-    .et-upload-placeholder {
-        height: 200px;
     }
 
     .et-add-btn {
@@ -771,175 +695,5 @@
     .et-add-activity-btn {
         padding: 5px 10px;
         font-size: 10px;
-    }
-
-    .et-form-actions {
-        padding: 16px;
-        gap: 8px;
-    }
-
-    .et-btn {
-        padding: 11px 20px;
-        font-size: 13px;
-    }
-}
-
-@media (max-width: 480px) {
-    .et-main {
-        margin-left: 0 !important;
-        padding: 12px 8px !important;
-    }
-
-    .et-header {
-        padding: 16px 10px !important;
-        min-height: 100px;
-    }
-
-    .et-title {
-        font-size: 1.2rem;
-        letter-spacing: 1px;
-    }
-
-    .et-subtitle {
-        font-size: 11px;
-    }
-
-    .et-section {
-        padding: 12px;
-    }
-
-    .et-image-preview,
-    .et-upload-placeholder {
-        height: 180px;
-    }
-
-    .et-loading {
-        margin: 12px 8px;
-        min-height: 350px;
-    }
-
-    .et-spinner {
-        width: 36px;
-        height: 36px;
-        border-width: 3px;
-    }
-
-    .et-loading p {
-        font-size: 13px;
-    }
-}
-
-/* VERY SMALL SCREENS - EXTRA TIGHT PADDING */
-@media (max-width: 400px) {
-    .et-main {
-        margin-left: 0 !important;
-        padding: 10px 6px !important;
-    }
-
-    .et-header {
-        padding: 14px 8px !important;
-        min-height: 90px;
-    }
-
-    .et-title {
-        font-size: 1.1rem;
-    }
-
-    .et-section {
-        padding: 10px;
-    }
-
-    .et-form-actions {
-        padding: 12px;
-    }
-}
-
-/* TABLET LANDSCAPE */
-@media (min-width: 768px) and (max-width: 900px) and (orientation: landscape) {
-    .et-main {
-        margin-left: 0 !important;
-        padding: 24px 20px !important;
-    }
-
-    .et-header {
-        min-height: 130px;
-        padding: 28px 24px !important;
-    }
-
-    .et-form-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .et-image-preview,
-    .et-upload-placeholder {
-        height: 280px;
-    }
-}
-
-/* MOBILE LANDSCAPE */
-@media (max-width: 767px) and (orientation: landscape) {
-    .et-main {
-        margin-left: 0 !important;
-        padding: 20px 16px !important;
-    }
-
-    .et-header {
-        min-height: 110px;
-        padding: 20px 16px !important;
-    }
-
-    .et-title {
-        font-size: 1.4rem;
-    }
-
-    .et-image-preview,
-    .et-upload-placeholder {
-        height: 220px;
-    }
-
-    .et-form-actions {
-        flex-direction: row;
-    }
-}
-
-/* HIGH RESOLUTION DISPLAYS */
-@media (min-width: 1600px) {
-    .et-main {
-        padding-left: 100px;
-        padding-right: 100px;
-    }
-
-    .et-container {
-        max-width: 1400px;
-    }
-}
-
-/* PRINT STYLES */
-@media print {
-    .et-page {
-        background: #fff;
-    }
-
-    .et-main {
-        margin-left: 0 !important;
-    }
-
-    .et-header::before {
-        opacity: 0.3;
-    }
-
-    .et-back-btn,
-    .et-form-actions,
-    .et-add-btn,
-    .et-remove-btn,
-    .et-remove-day-btn,
-    .et-add-activity-btn {
-        display: none;
-    }
-
-    .et-section {
-        box-shadow: none;
-        border: 1px solid #ddd;
-        page-break-inside: avoid;
     }
 }
