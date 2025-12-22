@@ -1,0 +1,366 @@
+/* EDIT POSTER - MATCHING TRAVEL & TOURS PREMIUM UI (epo- prefix) */
+.epo-page {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    width: 100%;
+}
+
+.epo-main {
+    flex: 1;
+    margin-left: 300px;
+    transition: margin-left 0.3s ease;
+    padding: 40px 80px;
+    width: 100%;
+}
+
+.epo-main--collapsed {
+    margin-left: 90px;
+}
+
+.epo-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* HEADER DESIGN */
+.epo-header {
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    /* Poster themed background */
+    background: url('https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=2074&auto=format&fit=crop') center/cover;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.epo-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 31, 63, 0.92) 0%, rgba(0, 31, 63, 0.75) 100%);
+    z-index: 1;
+}
+
+.epo-header-content {
+    position: relative;
+    z-index: 2;
+}
+
+.epo-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+    position: relative;
+    z-index: 2;
+}
+
+.epo-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-4px);
+}
+
+.epo-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 0 0 8px 0;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.epo-subtitle {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.epo-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: #FF8C42;
+}
+
+/* FORM CONTAINER */
+.epo-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* SECTIONS */
+.epo-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.epo-section-title {
+    font-size: 13px;
+    font-weight: 900;
+    color: #001f3f;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.epo-section-title::before {
+    content: '';
+    width: 4px;
+    height: 22px;
+    background: #FF8C42;
+    border-radius: 2px;
+}
+
+/* FORM GRID */
+.epo-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.epo-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.epo-form-group--full {
+    grid-column: 1 / -1;
+}
+
+.epo-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.epo-input, .epo-textarea, .epo-select {
+    padding: 13px 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.2s;
+    background: #fff;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.epo-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.epo-input:focus, .epo-textarea:focus, .epo-select:focus {
+    outline: none;
+    border-color: #FF8C42;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.epo-input::placeholder {
+    color: #94a3b8;
+}
+
+/* IMAGE UPLOAD SECTION (Copied from EditTour) */
+.epo-upload-area {
+    width: 100%;
+}
+
+.epo-file-input {
+    display: none;
+}
+
+.epo-upload-label {
+    display: block;
+    cursor: pointer;
+}
+
+.epo-image-preview {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px dashed #cbd5e1;
+    background: #f8fafc;
+}
+
+.epo-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.epo-image-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 31, 63, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.epo-image-overlay span {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.epo-image-preview:hover .epo-image-overlay {
+    opacity: 1;
+}
+
+.epo-upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    height: 400px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #64748b;
+    transition: all 0.3s;
+}
+
+.epo-upload-placeholder:hover {
+    border-color: #FF8C42;
+    background: #fff5f0;
+    color: #FF8C42;
+}
+
+.epo-upload-placeholder span {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* FORM ACTIONS (STICKY FOOTER) */
+.epo-form-actions {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding: 24px 32px;
+    border-radius: 16px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border: 1px solid #e2e8f0;
+    z-index: 10;
+}
+
+.epo-btn {
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.epo-btn--cancel {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.epo-btn--cancel:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.epo-btn--submit {
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
+}
+
+.epo-btn--submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
+}
+
+.epo-btn--submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* LOADING STATE */
+.epo-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+    background: #fff;
+    border-radius: 16px;
+    margin: 80px;
+}
+
+.epo-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #FF8C42;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .epo-main { margin-left: 0 !important; padding: 24px 16px !important; }
+    .epo-main--collapsed { margin-left: 0 !important; }
+    .epo-header { padding: 28px 20px !important; min-height: 140px; flex-direction: column; align-items: flex-start; gap: 16px; }
+    .epo-form-grid { grid-template-columns: 1fr; }
+    .epo-image-preview, .epo-upload-placeholder { height: 250px; }
+}
+
+@media (max-width: 640px) {
+    .epo-form-actions { flex-direction: column; }
+    .epo-btn { width: 100%; justify-content: center; }
+}

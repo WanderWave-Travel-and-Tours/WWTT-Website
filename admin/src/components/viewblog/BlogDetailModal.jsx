@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // Added this
 import { X, FileText, User, Calendar, FolderOpen, Edit, Trash2, CheckCircle, ImageIcon } from 'lucide-react';
 import './BlogDetailModal.css';
 
@@ -16,6 +17,8 @@ const BlogDetailModal = ({
     handleDelete,
     getImageUrl
 }) => {
+    const navigate = useNavigate(); // Hook for navigation
+
     if (!showModal || !selectedBlog) return null;
 
     const closeModal = () => setShowModal(false);
@@ -34,6 +37,11 @@ const BlogDetailModal = ({
     const handleDeleteClick = () => {
         handleDelete(selectedBlog._id);
         closeModal();
+    };
+
+    // New Edit Function
+    const handleEditClick = () => {
+        navigate(`/edit-blog/${selectedBlog._id}`);
     };
 
     return (
@@ -80,9 +88,11 @@ const BlogDetailModal = ({
                             <div className="bdm-image-info">
                                 <div className="bdm-file-pill">
                                     <ImageIcon size={14} className="bdm-icon-green" />
-                                    <span>blog_featured_image.jpg</span>
+                                    <span>{selectedBlog.imageUrl ? selectedBlog.imageUrl.split(/[/\\]/).pop() : 'blog_image.jpg'}</span>
                                 </div>
-                                <button className="bdm-view-link">Preview Image</button>
+                                <button className="bdm-view-link" onClick={() => window.open(getImageUrl(selectedBlog.imageUrl), '_blank')}>
+                                    Preview Image
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -134,13 +144,16 @@ const BlogDetailModal = ({
                 {/* FOOTER SECTION */}
                 <div className="bdm-footer">
                     <button className="bdm-btn-close" onClick={closeModal}>Close</button>
-                    <button className="bdm-btn-edit" onClick={() => {}}>
+                    
+                    {/* EDIT BUTTON UPDATED */}
+                    <button className="bdm-btn-edit" onClick={handleEditClick}>
                         <Edit size={16} />
                         Edit Blog
                     </button>
+
                     <button className="bdm-btn-danger" onClick={handleDeleteClick}>
                         <Trash2 size={16} />
-                        Delete
+                        Archive
                     </button>
                 </div>
             </div>

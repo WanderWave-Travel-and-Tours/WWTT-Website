@@ -71,7 +71,7 @@ const PackageDetailModal = ({ showModal, selectedPackage, setShowModal, handleAr
                 <div className="tdm-footer">
                     <button className="tdm-btn-close" onClick={() => setShowModal(false)}>Close</button>
                     <button className="tdm-btn-edit" onClick={() => navigate('/edit-package', { state: { packageId: selectedPackage._id } })}>
-                        <Edit size={16} /> Edit Package
+                        <Edit size={16} /> Edit
                     </button>
                     <button className="tdm-btn-danger" onClick={() => { handleArchive(selectedPackage._id); setShowModal(false); }}>
                         <Trash2 size={16} /> Archive

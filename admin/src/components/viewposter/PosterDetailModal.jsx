@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Eye, EyeOff, Calendar, Image as ImageIcon, FileText, Archive, CheckCircle, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // ADDED THIS
+import { X, Eye, EyeOff, Calendar, Image as ImageIcon, FileText, Archive, CheckCircle, ExternalLink, Edit } from 'lucide-react'; // ADDED Edit icon
 import './PosterDetailModal.css';
 
 const formatDate = (dateString) => {
@@ -16,6 +17,8 @@ const PosterDetailModal = ({
     toggleStatus,
     handleArchive
 }) => {
+    const navigate = useNavigate(); // ADDED THIS
+
     if (!showModal || !selectedPoster) return null;
 
     const closeModal = () => setShowModal(false);
@@ -39,6 +42,11 @@ const PosterDetailModal = ({
     const handleArchiveClick = () => {
         handleArchive(selectedPoster._id, selectedPoster.title);
         closeModal();
+    };
+
+    // New Edit Function
+    const handleEditClick = () => {
+        navigate(`/edit-poster/${selectedPoster._id}`);
     };
 
     return (
@@ -92,11 +100,6 @@ const PosterDetailModal = ({
                                 </button>
                             </div>
                         </div>
-
-                        <div className="pdm-url-pill">
-                            <ExternalLink size={14} />
-                            <span>{selectedPoster.imageUrl}</span>
-                        </div>
                     </div>
 
                     {/* INFORMATION GRID */}
@@ -148,6 +151,13 @@ const PosterDetailModal = ({
                 {/* FOOTER SECTION */}
                 <div className="pdm-footer">
                     <button className="pdm-btn-close" onClick={closeModal}>Close</button>
+                    
+                    {/* EDIT BUTTON ADDED */}
+                    <button className="pdm-btn-edit" onClick={handleEditClick}>
+                        <Edit size={16} />
+                        Edit Details
+                    </button>
+
                     <button 
                         className={`pdm-btn-action ${status === 'ACTIVE' ? 'deactivate' : 'activate'}`}
                         onClick={handleToggleStatus}

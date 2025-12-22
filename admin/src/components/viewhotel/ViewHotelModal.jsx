@@ -1,10 +1,34 @@
 import React, { useState, useEffect } from "react";
 import {
-  X, MapPin, Star, Wifi, Car, Waves, Dumbbell, UtensilsCrossed,
-  Wind, BellRing, Shirt, Wine, CheckCircle, AlertCircle, Edit,
-  Calendar, Users, DollarSign, Image as ImageIcon, Briefcase, Mail
+  X, MapPin, Wifi, Car, Waves, Dumbbell, UtensilsCrossed,
+  Wind, BellRing, Shirt, Wine, CheckCircle, Edit,
+  Calendar, Users, DollarSign, Image as ImageIcon, Archive
 } from "lucide-react";
 import "./ViewHotelModal.css";
+
+const API_BASE_URL = 'http://localhost:5000'; // Siguraduhing tama ang port mo
+
+// 👇 HELPER: Taga-ayos ng Image URL (Para hindi broken)
+const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    
+    // Kung object ang na-pass (e.g. galing sa gallery array), kunin ang .url
+    const pathStr = typeof imagePath === 'object' ? imagePath.url : imagePath;
+    
+    if (!pathStr) return null;
+    if (pathStr.startsWith('http') || pathStr.startsWith('data:')) return pathStr;
+    
+    // Ayusin ang backslashes (Windows issue)
+    let cleanPath = pathStr.replace(/\\/g, '/');
+    if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+    
+    // Iwasan ang doble-dobleng 'uploads/'
+    if (cleanPath.startsWith('uploads/')) {
+         return `${API_BASE_URL}/${cleanPath}`;
+    }
+    
+    return `${API_BASE_URL}/uploads/${cleanPath}`;
+};
 
 const getAmenityConfig = (key) => {
   const config = {
@@ -22,12 +46,18 @@ const getAmenityConfig = (key) => {
   return config[key] || { label: key, icon: <CheckCircle size={14} /> };
 };
 
-const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
+const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
   const [activeHeroImage, setActiveHeroImage] = useState(null);
 
   useEffect(() => {
     if (hotel) {
-      const main = hotel.mainImage || (hotel.images && hotel.images.length > 0 ? hotel.images[0].url : null);
+      // 👇 LOGIC: Prioritize Main Image, then fallback to first gallery image
+      let main = null;
+      if (hotel.mainImage) {
+          main = getImageUrl(hotel.mainImage);
+      } else if (hotel.images && hotel.images.length > 0) {
+          main = getImageUrl(hotel.images[0]);
+      }
       setActiveHeroImage(main);
     }
   }, [hotel]);
@@ -45,13 +75,16 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
     .filter(([_, isActive]) => isActive)
     .map(([key]) => key);
 
-  const galleryImages = Array.isArray(hotel.images) ? hotel.images : [];
+  // Ayusin lahat ng gallery URLs
+  const galleryImages = Array.isArray(hotel.images) 
+    ? hotel.images.map(img => getImageUrl(img))
+    : [];
 
   return (
     <div className="vhm-overlay" onClick={onClose}>
       <div className="vhm-modal" onClick={(e) => e.stopPropagation()}>
         
-        {/* === HEADER (Inspired by Image Header) === */}
+        {/* === HEADER === */}
         <div className="vhm-header">
           <div className="vhm-header-left">
             <h2 className="vhm-main-title">Hotel Details</h2>
@@ -74,7 +107,7 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
 
         <div className="vhm-body">
           
-          {/* 1. MEDIA SECTION (Centered Image Card style) */}
+          {/* 1. MEDIA SECTION */}
           <div className="vhm-media-container">
             <div className="vhm-media-card">
                <div className="vhm-processing-bar">
@@ -82,9 +115,18 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
                  <span>Property Media & Assets</span>
                </div>
                
+               {/* MAIN HERO IMAGE */}
                <div className="vhm-image-box">
                  {activeHeroImage ? (
-                    <img src={activeHeroImage} alt={hotel.name} className="vhm-hero-img" />
+                    <img 
+                        src={activeHeroImage} 
+                        alt={hotel.name} 
+                        className="vhm-hero-img" 
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://via.placeholder.com/800x400?text=Image+Load+Error";
+                        }}
+                    />
                  ) : (
                     <div className="vhm-no-image"><ImageIcon size={40} /><span>No image provided</span></div>
                  )}
@@ -97,21 +139,37 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
                  </div>
                </div>
 
+               {/* THUMBNAILS */}
                <div className="vhm-gallery-strip">
-                  {galleryImages.map((img, idx) => (
+                  {/* Ipakita muna ang Main Image bilang unang thumbnail kung meron */}
+                  {hotel.mainImage && (
+                      <div 
+                        className={`vhm-thumb ${activeHeroImage === getImageUrl(hotel.mainImage) ? 'active' : ''}`}
+                        onClick={() => setActiveHeroImage(getImageUrl(hotel.mainImage))}
+                      >
+                        <img src={getImageUrl(hotel.mainImage)} alt="Main" onError={(e) => e.target.style.display = 'none'} />
+                      </div>
+                  )}
+
+                  {/* Sunod ang Gallery Images */}
+                  {galleryImages.map((imgUrl, idx) => (
                     <div 
                       key={idx} 
-                      className={`vhm-thumb ${activeHeroImage === (img.url || img) ? 'active' : ''}`}
-                      onClick={() => setActiveHeroImage(img.url || img)}
+                      className={`vhm-thumb ${activeHeroImage === imgUrl ? 'active' : ''}`}
+                      onClick={() => setActiveHeroImage(imgUrl)}
                     >
-                      <img src={img.url || img} alt="Gallery" onError={(e) => e.target.style.display = 'none'} />
+                      <img 
+                        src={imgUrl} 
+                        alt="Gallery" 
+                        onError={(e) => e.target.style.display = 'none'} 
+                      />
                     </div>
                   ))}
                </div>
             </div>
           </div>
 
-          {/* 2. HOTEL INFORMATION (Grid like Client Information) */}
+          {/* 2. HOTEL INFORMATION */}
           <div className="vhm-section-card">
             <h3 className="vhm-section-title">HOTEL INFORMATION</h3>
             <div className="vhm-info-grid">
@@ -146,15 +204,15 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
             </div>
           </div>
 
-          {/* 3. DESCRIPTION (Message style) */}
+          {/* 3. DESCRIPTION */}
           <div className="vhm-section-card">
             <h3 className="vhm-section-title">HOTEL DESCRIPTION</h3>
             <div className="vhm-message-area">
-              <p>{hotel.description || "I would like to inquiry about Cenomar. Processing time: 5-7 business days."}</p>
+              <p>{hotel.description || "No description provided."}</p>
             </div>
           </div>
 
-          {/* 4. AMENITIES & ROOMS */}
+          {/* 4. AMENITIES */}
           <div className="vhm-section-card">
              <div className="vhm-title-flex">
                <h3 className="vhm-section-title">AMENITIES & REQUIREMENTS</h3>
@@ -184,6 +242,19 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
         {/* === FOOTER === */}
         <div className="vhm-footer">
           <button className="vhm-btn-close" onClick={onClose}>Close</button>
+          
+          <button 
+            className="vhm-btn-archive" 
+            onClick={() => {
+              if (window.confirm('Are you sure you want to archive this hotel?')) {
+                onArchive && onArchive(hotel._id);
+              }
+            }}
+          >
+            <Archive size={16} />
+            Archive Hotel
+          </button>
+
           <button className="vhm-btn-edit" onClick={() => onEdit && onEdit(hotel._id)}>
             <Edit size={16} />
             Edit Hotel Details

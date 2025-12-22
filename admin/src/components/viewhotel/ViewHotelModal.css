@@ -313,3 +313,28 @@
   align-items: center;
   gap: 8px;
 }
+
+.vhm-btn-archive {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  color: #dc2626;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: inherit; /* Ensure font matches */
+}
+
+.vhm-btn-archive:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
+}
+
+.vhm-btn-archive:active {
+  transform: translateY(0);
+}

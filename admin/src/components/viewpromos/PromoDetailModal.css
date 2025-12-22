@@ -256,3 +256,24 @@
     align-items: center;
     gap: 8px;
 }
+
+/* ADD THIS TO THE END OF PromoDetailModal.css */
+
+.prdm-btn-edit {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.prdm-btn-edit:hover {
+    background: #dbeafe;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED THIS
 import { X, User, Calendar, MessageSquare, Star, Edit, Trash2, CheckCircle, ImageIcon } from 'lucide-react';
 import './TestimonialDetailModal.css';
 
@@ -16,6 +17,8 @@ const TestimonialDetailModal = ({
     handleArchive,
     getImageUrl
 }) => {
+    const navigate = useNavigate(); // ADDED THIS
+
     if (!showModal || !selectedTestimonial) return null;
 
     const closeModal = () => setShowModal(false);
@@ -23,6 +26,11 @@ const TestimonialDetailModal = ({
     const handleArchiveClick = () => {
         handleArchive(selectedTestimonial._id, selectedTestimonial.customerName);
         closeModal();
+    };
+
+    // New Edit Function
+    const handleEditClick = () => {
+        navigate(`/edit-testimonial/${selectedTestimonial._id}`);
     };
 
     const isActive = selectedTestimonial.isArchive === "No";
@@ -125,10 +133,13 @@ const TestimonialDetailModal = ({
                 {/* FOOTER SECTION */}
                 <div className="tdm-footer">
                     <button className="tdm-btn-close" onClick={closeModal}>Close</button>
-                    <button className="tdm-btn-edit" onClick={() => {}}>
+                    
+                    {/* UPDATED EDIT BUTTON */}
+                    <button className="tdm-btn-edit" onClick={handleEditClick}>
                         <Edit size={16} />
                         Edit Testimonial
                     </button>
+                    
                     <button className="tdm-btn-danger" onClick={handleArchiveClick}>
                         <Trash2 size={16} />
                         Archive

@@ -24,7 +24,7 @@ const TourDetailModal = ({ tour, close, onArchive, navigate }) => {
                         <img src={`http://localhost:5000/uploads/${tour.image}`} className="tdm-customer-image" alt="" />
                     </div>
                     <div className="tdm-section-card">
-                        <h3 className="tdm-section-title">PACKAGE INFORMATION</h3>
+                        <h3 className="tdm-section-title">TOUR INFORMATION</h3>
                         <div className="tdm-info-grid">
                             <div className="tdm-info-box">
                                 <div className="tdm-box-icon blue"><MapPin size={18}/></div>

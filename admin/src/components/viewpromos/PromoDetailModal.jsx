@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react'; // Added Edit icon
+import { useNavigate } from 'react-router-dom'; // Added useNavigate
 import './PromoDetailModal.css';
 
 const formatDate = (dateString) => {
@@ -15,6 +16,8 @@ const PromoDetailModal = ({
     setShowModal,
     handleArchive
 }) => {
+    const navigate = useNavigate(); // Hook for navigation
+
     if (!showModal || !selectedPromo) return null;
 
     const closeModal = () => setShowModal(false);
@@ -39,6 +42,11 @@ const PromoDetailModal = ({
     const handleArchiveClick = () => {
         handleArchive(selectedPromo._id, selectedPromo.code);
         closeModal();
+    };
+
+    // New Function: Redirect to dedicated Edit Page
+    const handleEditClick = () => {
+        navigate(`/edit-promo/${selectedPromo._id}`);
     };
 
     return (
@@ -143,9 +151,16 @@ const PromoDetailModal = ({
                 {/* FOOTER ACTIONS */}
                 <div className="prdm-footer">
                     <button className="prdm-btn-close" onClick={closeModal}>Close</button>
+                    
+                    {/* NEW EDIT BUTTON */}
+                    <button className="prdm-btn-edit" onClick={handleEditClick}>
+                        <Edit size={16} />
+                        Edit Details
+                    </button>
+
                     <button className="prdm-btn-danger" onClick={handleArchiveClick}>
                         <Trash2 size={16} />
-                        Archive Promo
+                        Archive
                     </button>
                 </div>
             </div>
