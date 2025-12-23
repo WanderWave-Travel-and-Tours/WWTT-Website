@@ -2,59 +2,32 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import Sidebar from "../../sidebar/sidebar";
 import {
-    BookOpen, Calendar, CheckCircle, RotateCcw,
-    FileText, Settings, RefreshCw, X, CreditCard, User,
-    ChevronDown, Trash2, PlusCircle, Save, ClipboardList, ListPlus, Download,
-    ChevronLeft, ChevronRight, Search, UserPlus, Archive
+    FileText, AlertTriangle, CreditCard, CheckCircle, 
+    ChevronLeft, ChevronRight, Search, UserPlus, 
+    FolderOpen, Mail, Eye, Archive
 } from 'lucide-react';
 import './PassportAppt.css';
 import PassportApplicationModal from './PassportApplicationModal';
+// Assuming you have these modal files created based on previous context
+import { 
+    AppointmentViewModal, 
+    PassportContactRemarksModal, 
+    PassportServiceListModal, 
+    PassportServiceEditorModal 
+} from './PassportModals'; 
 
-const PassportAppt = () => {
-    const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [activeTab, setActiveTab] = useState('appointments');
+// --- 1. DEFINE CONSTANTS & HELPERS FIRST ---
 
-    const [showContactRemarks, setShowContactRemarks] = useState(false);
-    const [contactRemarks, setContactRemarks] = useState("");
-    const [contactEvidence, setContactEvidence] = useState(null);
+const PASSPORT_STAT_IMAGES = {
+    TOTAL_REQUESTS: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800',
+    PENDING: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800',
+    PAYMENT_PENDING: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800',
+    PAID: 'https://images.unsplash.com/photo-1550565118-c974fb6c1377?auto=format&fit=crop&q=80&w=800'
+};
 
-    const [appointments, setAppointments] = useState([]);
-    const [passportData, setPassportData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+// --- 2. SUB-COMPONENTS (Must be outside the main component) ---
 
-    const [selectedAppointment, setSelectedAppointment] = useState(null);
-    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const [documents, setDocuments] = useState([]);
-
-    const [isEditorOpen, setIsEditorOpen] = useState(false);
-    const [editorData, setEditorData] = useState({
-        requirements: [],
-        additionalDocuments: [],
-        stepsProcess: []
-    });
-    const [accordionState, setAccordionState] = useState({
-        requirements: false,
-        additionalDocs: false,
-        stepsProcess: false
-    });
-
-    const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false); 
-    // --- SEARCH AND FILTER STATE ---
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState('ALL'); // Default to 'ALL'
-    // --- END SEARCH AND FILTER STATE ---
-
-    // --- FILTERING LOGIC (Use useMemo for efficient filtering) ---
-    const filteredAppointments = useMemo(() => {
-        let filtered = appointments;
-
-// Pagination Component
-const PassportPagination = ({
-  totalItems,
-  itemsPerPage,
-  currentPage,
-  onPageChange,
-}) => {
+const PassportPagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
   const [jumpPageInput, setJumpPageInput] = useState("");
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -75,21 +48,18 @@ const PassportPagination = ({
     <nav className="passport-pagination-nav">
       <div className="passport-pagination-info">
         <span className="passport-pagination-showing">
-          Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{" "}
+          Showing <strong>{totalItems === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1}</strong> to{" "}
           <strong>{Math.min(currentPage * itemsPerPage, totalItems)}</strong> of{" "}
           <strong>{totalItems}</strong> items
         </span>
       </div>
 
-      <div className="passport-pagination-controls passport-large-only"></div>
-
       <div className="passport-pagination-jump">
         <button
           type="button"
-          className="passport-jump-arrow passport-hide-on-large"
+          className="passport-jump-arrow"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          title="Previous page"
         >
           <ChevronLeft size={18} />
         </button>
@@ -105,17 +75,14 @@ const PassportPagination = ({
             max={totalPages}
             className="passport-jump-input"
           />
-          <span className="passport-pagination-jump-label">
-            of {totalPages}
-          </span>
+          <span className="passport-pagination-jump-label">of {totalPages}</span>
         </form>
 
         <button
           type="button"
-          className="passport-jump-arrow passport-hide-on-large"
+          className="passport-jump-arrow"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          title="Next page"
         >
           <ChevronRight size={18} />
         </button>
@@ -124,7 +91,6 @@ const PassportPagination = ({
   );
 };
 
-// Stats Component
 const PassportStats = ({ stats }) => {
   const getStatClass = (label) => {
     return label.toLowerCase().replace(/ /g, "-").replace("/", "-");
@@ -134,9 +100,7 @@ const PassportStats = ({ stats }) => {
     <div className="passport-stats-grid">
       {stats.map((s, i) => (
         <div
-          className={`passport-stat-card passport-stat-card-${getStatClass(
-            s.label
-          )}`}
+          className={`passport-stat-card passport-stat-card-${getStatClass(s.label)}`}
           key={i}
           style={{ backgroundImage: `url(${s.image})` }}
         >
@@ -151,15 +115,7 @@ const PassportStats = ({ stats }) => {
   );
 };
 
-// Filters Component
-const PassportFilters = ({
-  searchTerm,
-  setSearchTerm,
-  filterStatus,
-  setFilterStatus,
-  statusOptions,
-  getFilterClassName,
-}) => {
+const PassportFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus, statusOptions, getFilterClassName }) => {
   return (
     <div className="passport-filter-card">
       <div className="passport-filter-wrapper">
@@ -194,55 +150,26 @@ const PassportFilters = ({
   );
 };
 
-// Table Component (Added Archive Button)
-const PassportTable = ({
-  loading,
-  filteredInquiriesCount,
-  currentInquiries,
-  handleViewInquiry,
-  handleArchiveInquiry,
-  startIndex,
-}) => {
+const PassportTable = ({ loading, filteredInquiriesCount, currentInquiries, handleViewInquiry, handleArchiveInquiry, startIndex }) => {
   const getStatusBadgeClass = (status) => {
     const normalizedStatus = (status || "PENDING").toLowerCase();
     switch (normalizedStatus) {
-      case "pending":
-        return "passport-badge-pending";
-      case "contacted":
-        return "passport-badge-contacted";
-      case "payment_pending":
-        return "passport-badge-payment_pending";
-      case "paid":
-        return "passport-badge-paid";
-      case "confirmed":
-        return "passport-badge-confirmed";
-      case "completed":
-        return "passport-badge-completed";
-      case "cancelled":
-        return "passport-badge-cancelled";
-      case "archived":
-        return "passport-badge-cancelled"; // Style archived like cancelled
-      default:
-        return "passport-badge-pending";
+      case "pending": return "passport-badge-pending";
+      case "contacted": return "passport-badge-contacted";
+      case "payment_pending": return "passport-badge-payment_pending";
+      case "paid": return "passport-badge-paid";
+      case "confirmed": return "passport-badge-confirmed";
+      case "completed": return "passport-badge-completed";
+      case "cancelled": return "passport-badge-cancelled";
+      case "archived": return "passport-badge-cancelled";
+      default: return "passport-badge-pending";
     }
   };
 
   if (loading) {
     return (
       <tbody>
-        <tr>
-          <td
-            colSpan="7"
-            style={{
-              textAlign: "center",
-              padding: "60px",
-              color: "#64748b",
-              fontSize: "16px",
-            }}
-          >
-            Loading Passport appointments...
-          </td>
-        </tr>
+        <tr><td colSpan="7" style={{ textAlign: "center", padding: "60px", color: "#64748b" }}>Loading Passport appointments...</td></tr>
       </tbody>
     );
   }
@@ -250,19 +177,7 @@ const PassportTable = ({
   if (filteredInquiriesCount === 0) {
     return (
       <tbody>
-        <tr>
-          <td
-            colSpan="7"
-            style={{
-              textAlign: "center",
-              padding: "60px",
-              color: "#64748b",
-              fontSize: "16px",
-            }}
-          >
-            No Passport requests found
-          </td>
-        </tr>
+        <tr><td colSpan="7" style={{ textAlign: "center", padding: "60px", color: "#64748b" }}>No Passport requests found</td></tr>
       </tbody>
     );
   }
@@ -271,26 +186,15 @@ const PassportTable = ({
     <tbody>
       {currentInquiries.map((row, index) => (
         <tr key={row._id}>
-          <td
-            style={{ fontWeight: "700", color: "#0f172a", textAlign: "center" }}
-          >
-            {startIndex + index + 1}
-          </td>
-          <td className="passport-ref-cell">
-            {row._id.slice(-6).toUpperCase()}
-          </td>
+          <td style={{ fontWeight: "700", color: "#0f172a", textAlign: "center" }}>{startIndex + index + 1}</td>
+          <td className="passport-ref-cell">{row._id.slice(-6).toUpperCase()}</td>
           <td>
             <div className="passport-requester-name">{row.fullName}</div>
-            <div className="passport-requester-email">
-              <Mail size={13} />
-              <span>{row.email}</span>
-            </div>
+            <div className="passport-requester-email"><Mail size={13} /> <span>{row.email}</span></div>
           </td>
           <td>
             <span className="passport-doc-badge">PPT</span>
-            {row.passportDetails?.applicationType ||
-              row.serviceName ||
-              "Standard"}
+            {row.passportDetails?.applicationType || row.serviceName || "Standard"}
           </td>
           <td>
             <div className="passport-truncate-text">
@@ -298,31 +202,21 @@ const PassportTable = ({
             </div>
           </td>
           <td>
-            <span
-              className={`passport-table-badge ${getStatusBadgeClass(
-                row.status
-              )}`}
-            >
+            <span className={`passport-table-badge ${getStatusBadgeClass(row.status)}`}>
               {row.status || "PENDING"}
             </span>
           </td>
           <td style={{ textAlign: "right" }}>
             <div className="passport-action-group">
-              <button
-                className="passport-action-btn passport-view-btn"
-                onClick={() => handleViewInquiry(row)}
-                title="View Details"
-              >
-                <Eye size={16} />
-                View
+              <button className="passport-action-btn passport-view-btn" onClick={() => handleViewInquiry(row)}>
+                <Eye size={16} /> View
               </button>
-              <button
-                className="passport-action-btn passport-archive-btn"
+              <button 
+                className="passport-action-btn passport-archive-btn" 
+                style={{color: '#ef4444', borderColor: '#ef4444'}}
                 onClick={() => handleArchiveInquiry(row)}
-                title="Archive Request"
               >
-                <Archive size={16} />
-                Archive
+                <Archive size={16} /> Archive
               </button>
             </div>
           </td>
@@ -332,19 +226,21 @@ const PassportTable = ({
   );
 };
 
-// Main Component
+// --- 3. MAIN COMPONENT ---
+
 const PassportAppt = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [passportServices, setPassportServices] = useState([]);
   const [inquiries, setInquiries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Filter States
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Selected Item States
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [documents, setDocuments] = useState([]);
 
@@ -363,34 +259,27 @@ const PassportAppt = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
 
-  const [serviceForm, setServiceForm] = useState({
-    documentType: "",
-    desc: "",
-    price: "",
-  });
+  const [serviceForm, setServiceForm] = useState({ documentType: "", desc: "", price: "" });
   const [requirements, setRequirements] = useState([]);
   const [downloadForms, setDownloadForms] = useState([]);
   const [stepsProcess, setStepsProcess] = useState([]);
-  const [accordionState, setAccordionState] = useState({
-    requirements: true,
-    downloadForms: false,
-    stepsProcess: false,
-  });
+  const [accordionState, setAccordionState] = useState({ requirements: true, downloadForms: false, stepsProcess: false });
 
   useEffect(() => {
     fetchPassportServices();
     fetchInquiries();
   }, []);
 
+  // Reset page on filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
+
   const fetchPassportServices = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/passports");
       if (res.data.success) {
-        const mapped = res.data.data.map((d) => ({
-          ...d,
-          id: d._id,
-          desc: d.description,
-        }));
+        const mapped = res.data.data.map((d) => ({ ...d, id: d._id, desc: d.description }));
         setPassportServices(mapped);
       }
     } catch (error) {
@@ -401,23 +290,22 @@ const PassportAppt = () => {
   };
 
   const fetchInquiries = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get("http://localhost:5000/api/inquiries");
       if (response.data.success) {
-        // Filter for PASSPORT inquiries
+        // Filter for PASSPORT inquiries & Not Archived
         const pptRequests = response.data.data.filter(
-          (inq) =>
-            inq.inquiryType === "PASSPORT" ||
-            (inq.serviceName &&
-              inq.serviceName.toUpperCase().includes("PASSPORT"))
+          (inq) => (inq.inquiryType === "PASSPORT" || (inq.serviceName && inq.serviceName.toUpperCase().includes("PASSPORT"))) 
+          && inq.isArchive !== 'Yes'
         );
-        pptRequests.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
+        pptRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setInquiries(pptRequests);
       }
     } catch (error) {
       console.error("Error fetching inquiries:", error);
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -433,94 +321,41 @@ const PassportAppt = () => {
       list = list.filter(
         (inq) =>
           inq.fullName.toLowerCase().includes(lowerSearchTerm) ||
-          (inq.passportDetails?.applicationType || "")
-            .toLowerCase()
-            .includes(lowerSearchTerm) ||
+          (inq.passportDetails?.applicationType || "").toLowerCase().includes(lowerSearchTerm) ||
           (inq.message || "").toLowerCase().includes(lowerSearchTerm) ||
           (inq._id || "").slice(-6).toLowerCase().includes(lowerSearchTerm)
       );
     }
-
-    if (
-      currentPage > Math.ceil(list.length / itemsPerPage) &&
-      list.length > 0
-    ) {
-      setCurrentPage(1);
-    } else if (list.length === 0 && currentPage !== 1) {
-      setCurrentPage(1);
-    }
-
     return list;
-  }, [inquiries, searchTerm, filterStatus, itemsPerPage, currentPage]);
+  }, [inquiries, searchTerm, filterStatus]);
 
-  const stats = useMemo(
-    () => [
-      {
-        label: "Total Requests",
-        value: inquiries.length,
-        icon: <FileText size={24} />,
-        image: PASSPORT_STAT_IMAGES.TOTAL_REQUESTS,
-      },
-      {
-        label: "To Process",
-        value: inquiries.filter((i) => (i.status || "PENDING") === "PENDING")
-          .length,
-        icon: <AlertTriangle size={24} />,
-        image: PASSPORT_STAT_IMAGES.PENDING,
-      },
-      {
-        label: "Pending Payment",
-        value: inquiries.filter((i) => i.status === "PAYMENT_PENDING").length,
-        icon: <CreditCard size={24} />,
-        image: PASSPORT_STAT_IMAGES.PAYMENT_PENDING,
-      },
-      {
-        label: "Paid/Confirming",
-        value: inquiries.filter((i) => i.status === "PAID").length,
-        icon: <CheckCircle size={24} />,
-        image: PASSPORT_STAT_IMAGES.PAID,
-      },
-    ],
-    [inquiries]
+  const stats = useMemo(() => [
+      { label: "Total Requests", value: inquiries.length, icon: <FileText size={24} />, image: PASSPORT_STAT_IMAGES.TOTAL_REQUESTS },
+      { label: "To Process", value: inquiries.filter((i) => (i.status || "PENDING") === "PENDING").length, icon: <AlertTriangle size={24} />, image: PASSPORT_STAT_IMAGES.PENDING },
+      { label: "Pending Payment", value: inquiries.filter((i) => i.status === "PAYMENT_PENDING").length, icon: <CreditCard size={24} />, image: PASSPORT_STAT_IMAGES.PAYMENT_PENDING },
+      { label: "Paid/Confirming", value: inquiries.filter((i) => i.status === "PAID").length, icon: <CheckCircle size={24} />, image: PASSPORT_STAT_IMAGES.PAID },
+    ], [inquiries]
   );
 
-  const getFilterClassName = (status) => {
-    return status === filterStatus ? "passport-active-navy" : "";
-  };
+  const getFilterClassName = (status) => (status === filterStatus ? "passport-active-navy" : "");
 
   const statusOptions = useMemo(() => {
     const statuses = new Set(inquiries.map((i) => i.status || "PENDING"));
-    const allPossibleStatuses = [
-      "PENDING",
-      "CONTACTED",
-      "PAYMENT_PENDING",
-      "PAID",
-      "CONFIRMED",
-      "COMPLETED",
-      "CANCELLED",
-      "ARCHIVED",
-    ];
-    const sortedStatuses = allPossibleStatuses.filter((status) =>
-      statuses.has(status)
-    );
+    const allPossibleStatuses = ["PENDING", "CONTACTED", "PAYMENT_PENDING", "PAID", "CONFIRMED", "COMPLETED", "CANCELLED"];
+    const sortedStatuses = allPossibleStatuses.filter((status) => statuses.has(status));
     return ["ALL", ...sortedStatuses];
   }, [inquiries]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentInquiries = filteredInquiries.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
+  const currentInquiries = filteredInquiries.slice(indexOfFirstItem, indexOfLastItem);
   const totalItems = filteredInquiries.length;
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
   const startIndex = (currentPage - 1) * itemsPerPage;
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(
-        `http://localhost:5000/api/documents/inquiry/${inquiryId}`
-      );
+      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) setDocuments(response.data.documents || []);
     } catch (error) {
       console.error("Error fetching documents:", error);
@@ -535,22 +370,12 @@ const PassportAppt = () => {
   };
 
   const handleArchiveInquiry = async (inquiry) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to archive request #${inquiry._id
-          .slice(-6)
-          .toUpperCase()}?`
-      )
-    )
-      return;
-
+    if (!window.confirm(`Are you sure you want to archive request #${inquiry._id.slice(-6).toUpperCase()}?`)) return;
     try {
-      // Assuming endpoint for archiving, can be adjusted to your backend route
       const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${inquiry._id}/status`,
-        { status: "ARCHIVED" }
+        `http://localhost:5000/api/inquiries/${inquiry._id}/archive`,
+        { isArchive: 'Yes' }
       );
-
       if (response.data.success) {
         alert("Request archived successfully.");
         fetchInquiries();
@@ -577,15 +402,11 @@ const PassportAppt = () => {
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     if (!window.confirm(`Set status to ${newStatus}?`)) return;
     try {
-      const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${inquiryId}/status`,
-        { status: newStatus }
-      );
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, { status: newStatus });
       if (response.data.success) {
         alert("Status updated successfully!");
         fetchInquiries();
-        if (selectedInquiry && selectedInquiry._id === inquiryId)
-          setSelectedInquiry({ ...selectedInquiry, status: newStatus });
+        if (selectedInquiry && selectedInquiry._id === inquiryId) setSelectedInquiry({ ...selectedInquiry, status: newStatus });
       }
     } catch (error) {
       console.error(error);
@@ -596,10 +417,7 @@ const PassportAppt = () => {
   const handleRequestPayment = async () => {
     if (!window.confirm("Request payment from user?")) return;
     try {
-      const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`,
-        { status: "PAYMENT_PENDING" }
-      );
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, { status: "PAYMENT_PENDING" });
       if (response.data.success) {
         alert("Payment requested!");
         fetchInquiries();
@@ -612,13 +430,13 @@ const PassportAppt = () => {
   };
 
   const submitContactWithRemarks = async () => {
-    if (!selectedInquiry || !contactRemarks.trim())
-      return alert("Please enter remarks");
+    if (!selectedInquiry || !contactRemarks.trim()) return alert("Please enter remarks");
     try {
       const formData = new FormData();
       formData.append("status", "CONTACTED");
       formData.append("remarks", contactRemarks);
       if (contactEvidence) formData.append("evidence", contactEvidence);
+      
       const response = await axios.put(
         `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`,
         formData,
@@ -641,10 +459,7 @@ const PassportAppt = () => {
   const handleConfirmPayment = async () => {
     if (!window.confirm("Confirm payment received?")) return;
     try {
-      const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`,
-        { adminName: "Admin" }
-      );
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: "Admin" });
       if (response.data.success) {
         alert("Payment confirmed!");
         fetchInquiries();
@@ -659,7 +474,6 @@ const PassportAppt = () => {
   const handleDeliverDocuments = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (deliveryFiles.length === 0) return alert("Select files first");
-
     const formData = new FormData();
     deliveryFiles.forEach((file) => formData.append("documents", file));
 
@@ -667,11 +481,8 @@ const PassportAppt = () => {
       const response = await axios.put(
         `http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`,
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
-
       if (response.data.success) {
         alert("Documents sent successfully!");
         fetchInquiries();
@@ -686,6 +497,7 @@ const PassportAppt = () => {
     }
   };
 
+  // --- SERVICE CMS HANDLERS ---
   const handleManageService = () => setIsServiceListOpen(true);
 
   const handleAddNewService = () => {
@@ -697,11 +509,7 @@ const PassportAppt = () => {
     setRequirements([]);
     setDownloadForms([]);
     setStepsProcess([]);
-    setAccordionState({
-      requirements: true,
-      downloadForms: false,
-      stepsProcess: false,
-    });
+    setAccordionState({ requirements: true, downloadForms: false, stepsProcess: false });
   };
 
   const handleEditService = (service) => {
@@ -709,11 +517,7 @@ const PassportAppt = () => {
     setIsAddFormOpen(true);
     setIsEditorOpen(true);
     setSelectedService(service);
-    setServiceForm({
-      documentType: service.documentType,
-      desc: service.description || service.desc,
-      price: service.price,
-    });
+    setServiceForm({ documentType: service.documentType, desc: service.description || service.desc, price: service.price });
     setRequirements(service.requirements || []);
     setDownloadForms(service.downloadableForms || []);
     setStepsProcess(service.processSteps || []);
@@ -741,10 +545,7 @@ const PassportAppt = () => {
     };
     try {
       if (isEditorOpen && selectedService) {
-        await axios.put(
-          `http://localhost:5000/api/passports/${selectedService._id}`,
-          payload
-        );
+        await axios.put(`http://localhost:5000/api/passports/${selectedService._id}`, payload);
       } else {
         await axios.post(`http://localhost:5000/api/passports`, payload);
       }
@@ -758,55 +559,17 @@ const PassportAppt = () => {
     }
   };
 
-  // Helper functions for Editor Modal
-  const toggleAccordion = (section) =>
-    setAccordionState((prev) => ({ ...prev, [section]: !prev[section] }));
-  const addCategory = () =>
-    setRequirements([
-      ...requirements,
-      { id: Date.now(), title: "", items: [] },
-    ]);
-  const removeCategory = (id) =>
-    setRequirements(requirements.filter((c) => c.id !== id));
-  const handleCategoryTitleChange = (id, v) =>
-    setRequirements(
-      requirements.map((c) => (c.id === id ? { ...c, title: v } : c))
-    );
-  const addRequirement = (cId) =>
-    setRequirements(
-      requirements.map((c) =>
-        c.id === cId
-          ? { ...c, items: [...c.items, { id: Date.now(), label: "" }] }
-          : c
-      )
-    );
-  const removeRequirement = (cId, iId) =>
-    setRequirements(
-      requirements.map((c) =>
-        c.id === cId ? { ...c, items: c.items.filter((i) => i.id !== iId) } : c
-      )
-    );
-  const handleLabelChange = (cId, iId, v) =>
-    setRequirements(
-      requirements.map((c) =>
-        c.id === cId
-          ? {
-              ...c,
-              items: c.items.map((i) =>
-                i.id === iId ? { ...i, label: v } : i
-              ),
-            }
-          : c
-      )
-    );
-  const addStep = () =>
-    setStepsProcess([...stepsProcess, { id: Date.now(), label: "" }]);
-  const removeStep = (id) =>
-    setStepsProcess(stepsProcess.filter((s) => s.id !== id));
-  const handleStepChange = (id, v) =>
-    setStepsProcess(
-      stepsProcess.map((s) => (s.id === id ? { ...s, label: v } : s))
-    );
+  // Helper functions for Editor
+  const toggleAccordion = (section) => setAccordionState((prev) => ({ ...prev, [section]: !prev[section] }));
+  const addCategory = () => setRequirements([...requirements, { id: Date.now(), title: "", items: [] }]);
+  const removeCategory = (id) => setRequirements(requirements.filter((c) => c.id !== id));
+  const handleCategoryTitleChange = (id, v) => setRequirements(requirements.map((c) => (c.id === id ? { ...c, title: v } : c)));
+  const addRequirement = (cId) => setRequirements(requirements.map((c) => c.id === cId ? { ...c, items: [...c.items, { id: Date.now(), label: "" }] } : c));
+  const removeRequirement = (cId, iId) => setRequirements(requirements.map((c) => c.id === cId ? { ...c, items: c.items.filter((i) => i.id !== iId) } : c));
+  const handleLabelChange = (cId, iId, v) => setRequirements(requirements.map((c) => c.id === cId ? { ...c, items: c.items.map((i) => i.id === iId ? { ...i, label: v } : i) } : c));
+  const addStep = () => setStepsProcess([...stepsProcess, { id: Date.now(), label: "" }]);
+  const removeStep = (id) => setStepsProcess(stepsProcess.filter((s) => s.id !== id));
+  const handleStepChange = (id, v) => setStepsProcess(stepsProcess.map((s) => (s.id === id ? { ...s, label: v } : s)));
 
   const handleDirectFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -814,30 +577,19 @@ const PassportAppt = () => {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/upload",
-        formData
-      );
-      if (res.data.success)
-        setDownloadForms([
-          ...downloadForms,
-          { id: Date.now(), name: file.name, url: res.data.fileUrl },
-        ]);
+      const res = await axios.post("http://localhost:5000/api/upload", formData);
+      if (res.data.success) setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
     } catch (err) {
       console.error(err);
       alert("Upload failed");
     }
   };
 
-  const removeDownloadForm = (id) =>
-    setDownloadForms(downloadForms.filter((f) => f.id !== id));
+  const removeDownloadForm = (id) => setDownloadForms(downloadForms.filter((f) => f.id !== id));
 
   return (
     <div className="passport-page">
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)}
-      />
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
 
       <main className={`passport-main ${isSidebarCollapsed ? "expanded" : ""}`}>
         <div className="passport-container">
@@ -847,17 +599,10 @@ const PassportAppt = () => {
               <p>Appointment & Document Processing</p>
             </div>
             <div className="passport-header-actions">
-              <button
-                className="passport-btn-add passport-btn-dark"
-                onClick={() => setIsApplicationModalOpen(true)}
-              >
+              <button className="passport-btn-add passport-btn-dark" onClick={() => setIsApplicationModalOpen(true)}>
                 <UserPlus size={18} /> Add Applicant
               </button>
-
-              <button
-                className="passport-btn-add"
-                onClick={handleManageService}
-              >
+              <button className="passport-btn-add" onClick={handleManageService}>
                 <FolderOpen size={18} /> Manage Service
               </button>
             </div>
@@ -887,7 +632,6 @@ const PassportAppt = () => {
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
-
               <PassportTable
                 loading={isLoading}
                 filteredInquiriesCount={filteredInquiries.length}
@@ -899,15 +643,14 @@ const PassportAppt = () => {
             </table>
           </div>
 
-          {filteredInquiries.length > 0 &&
-            Math.ceil(filteredInquiries.length / itemsPerPage) > 1 && (
-              <PassportPagination
-                totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
-                currentPage={currentPage}
-                onPageChange={handlePageChange}
-              />
-            )}
+          {filteredInquiries.length > 0 && Math.ceil(filteredInquiries.length / itemsPerPage) > 1 && (
+            <PassportPagination
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
       </main>
 

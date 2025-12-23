@@ -3,7 +3,8 @@ import axios from "axios";
 import { X, CheckCircle, User, Mail, FileText, Upload, DollarSign } from "lucide-react";
 import "./PassportModals.css"; // Reuse your existing modal styles
 
-export const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportServices = [] }) => {
+// FIX: Tinanggal ko ang "export" dito
+const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportServices = [] }) => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -206,3 +207,6 @@ export const PassportApplicationModal = ({ isOpen, onClose, refreshData, passpor
     </div>
   );
 };
+
+// FIX: Nagdagdag ako ng default export sa dulo
+export default PassportApplicationModal;
