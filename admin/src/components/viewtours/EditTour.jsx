@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, X, Plus, Trash2 } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
-import "./edittour.css";
+import "./EditTour.css";
 
 const EditTour = () => {
   const navigate = useNavigate();
