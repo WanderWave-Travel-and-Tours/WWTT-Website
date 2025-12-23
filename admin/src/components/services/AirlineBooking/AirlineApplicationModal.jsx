@@ -75,7 +75,7 @@ const AirlineApplicationModal = ({ isOpen, onClose, refreshData }) => {
         message: `Walk-in Booking: ${formData.flightDetails.origin} to ${formData.flightDetails.destination}`
       };
 
-      const response = await axios.post('https://wanderwaveph-backend.onrender.com0/api/inquiries', payload);
+      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries', payload);
 
       if (response.data.success) {
         setStep(2);

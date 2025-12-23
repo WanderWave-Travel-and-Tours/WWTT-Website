@@ -1,4 +1,4 @@
-const API_URL = 'https://wanderwaveph-backend.onrender.com0/api/bookings';
+const API_URL = 'https://wanderwaveph-backend.onrender.com/api/bookings';
 
 export const fetchArchivedBookings = async () => {
   try {

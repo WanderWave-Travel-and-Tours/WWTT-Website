@@ -52,7 +52,7 @@ const AddImage = () => {
         formData.append('title', imageFile.name);
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/images/add', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/images/add', {
                 method: 'POST',
                 body: formData,
             });

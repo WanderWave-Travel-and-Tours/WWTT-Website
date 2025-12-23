@@ -60,7 +60,7 @@ const AddDeal = () => {
         formData.append('status', dealDetails.status);
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/deals/add', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/deals/add', {
                 method: 'POST',
                 body: formData,
             });

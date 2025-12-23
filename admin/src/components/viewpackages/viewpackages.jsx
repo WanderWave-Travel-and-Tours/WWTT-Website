@@ -19,7 +19,7 @@ const ViewPackages = () => {
     const [selectedPackage, setSelectedPackage] = useState(null);
     const navigate = useNavigate();
     
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com0/api/packages';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -130,7 +130,7 @@ const ViewPackages = () => {
                                             <td>
                                                 <div className="vt-customer-cell">
                                                     <div className="vt-image-preview">
-                                                        <img src={`https://wanderwaveph-backend.onrender.com0/uploads/${pkg.image}`} alt={pkg.title} />
+                                                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`} alt={pkg.title} />
                                                     </div>
                                                     <span className="vt-customer-name">{pkg.title}</span>
                                                 </div>

@@ -84,7 +84,7 @@ const AddPromo = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/promos/add', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
