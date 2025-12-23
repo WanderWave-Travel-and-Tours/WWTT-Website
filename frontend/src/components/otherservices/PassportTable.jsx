@@ -21,7 +21,7 @@ const PassportTable = ({ onSelectPassport }) => {
 
   const fetchPassportData = async () => {
     try {
-      const res = await axios.get('https://wanderwaveph-backend.onrender.com0/api/passports');
+      const res = await axios.get('https://wanderwaveph-backend.onrender.com/api/passports');
       
       if (res.data.success && res.data.data.length > 0) {
         setAllPassports(res.data.data);

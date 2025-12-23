@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
 });
 
 // UPDATE ARCHIVE STATUS (Ito ang fix sa 404)
-// URL: PUT https://wanderwaveph-backend.onrender.com0/api/promos/:id
+// URL: PUT https://wanderwaveph-backend.onrender.com/api/promos/:id
 router.put('/:id', async (req, res) => {
     try {
         const updatedPromo = await Promo.findByIdAndUpdate(

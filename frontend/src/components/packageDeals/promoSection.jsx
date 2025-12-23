@@ -32,7 +32,7 @@ function PromoSection({ onBookNow }) {
   useEffect(() => {
     const fetchPromos = async () => {
       try {
-        const response = await fetch('https://wanderwaveph-backend.onrender.com0/api/promos');
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
         const data = await response.json();
 
         if (Array.isArray(data)) {

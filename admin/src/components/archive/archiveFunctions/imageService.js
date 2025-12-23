@@ -1,7 +1,7 @@
 // imageService.js
 import axios from 'axios';
 
-const API_URL = 'https://wanderwaveph-backend.onrender.com0/api/images';
+const API_URL = 'https://wanderwaveph-backend.onrender.com/api/images';
 
 export const fetchArchivedImages = async () => {
     try {

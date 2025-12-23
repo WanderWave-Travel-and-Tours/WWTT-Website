@@ -21,7 +21,7 @@ const ViewTestimonials = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedTestimonial, setSelectedTestimonial] = useState(null);
     
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com0';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
     const getSources = () => {
         const sources = ['ALL'];

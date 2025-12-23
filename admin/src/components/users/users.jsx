@@ -76,7 +76,7 @@ const Users = () => {
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
 
-    const API_URL = 'https://wanderwaveph-backend.onrender.com0/api/users';
+    const API_URL = 'https://wanderwaveph-backend.onrender.com/api/users';
 
     const fetchUsers = async () => {
         try {

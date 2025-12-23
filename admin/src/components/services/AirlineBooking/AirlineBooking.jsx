@@ -73,7 +73,7 @@ const AirlineBooking = () => {
 const fetchFlightBookings = async () => {
     setIsLoading(true);
     try {
-        const response = await axios.get('https://wanderwaveph-backend.onrender.com0/api/inquiries?isArchive=No');
+        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries?isArchive=No');
         if (response.data.success) {
             // Filter: Flight Booking lang at hindi naka-archive
             const filtered = response.data.data.filter(inq => 
@@ -177,7 +177,7 @@ const fetchFlightBookings = async () => {
     const handleUpdateBookingStatus = async (bookingId, newStatus) => {
         try {
             const response = await axios.put(
-                `https://wanderwaveph-backend.onrender.com0/api/inquiries/${bookingId}/status`,
+                `https://wanderwaveph-backend.onrender.com/api/inquiries/${bookingId}/status`,
                 { status: newStatus }
             );
 
@@ -202,7 +202,7 @@ const fetchFlightBookings = async () => {
 const handleArchiveBooking = async (id) => {
     if (window.confirm('Are you sure you want to archive this inquiry?')) {
         try {
-            const response = await axios.put(`https://wanderwaveph-backend.onrender.com0/api/inquiries/${id}/archive`, {
+            const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
                 isArchive: 'Yes'
             });
 
@@ -231,7 +231,7 @@ const handleArchiveBooking = async (id) => {
             }
 
             const response = await axios.put(
-                `https://wanderwaveph-backend.onrender.com0/api/inquiries/${selectedBooking._id}/status`,
+                `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/status`,
                 formData,
                 {
                     headers: { 'Content-Type': 'multipart/form-data' }
@@ -264,7 +264,7 @@ const handleArchiveBooking = async (id) => {
         if (window.confirm('Send payment request to client?')) {
             try {
                 const response = await axios.post(
-                    `https://wanderwaveph-backend.onrender.com0/api/inquiries/${selectedBooking._id}/request-payment`
+                    `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/request-payment`
                 );
                 
                 if (response.data.success) {
@@ -535,7 +535,7 @@ const handleArchiveBooking = async (id) => {
                                     <div className="airline-detail-item full-width">
                                         <label>Evidence/Attachment</label>
                                         <a 
-                                            href={`https://wanderwaveph-backend.onrender.com0${selectedBooking.evidenceUrl}`}
+                                            href={`https://wanderwaveph-backend.onrender.com${selectedBooking.evidenceUrl}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="airline-evidence-link"
