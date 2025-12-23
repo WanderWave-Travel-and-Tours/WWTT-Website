@@ -163,16 +163,7 @@ export const ArchiveDetailModal = ({
                     </div>
 
                     {/* 3. FULL RAW DATA (For technical review) */}
-                    <div className="cnm-card">
-                        <div className="cnm-card-header">
-                            <h3 className="cnm-card-title">Full Archived Data (Original Item JSON)</h3>
-                        </div>
-                        <div className="cnm-message-box" style={{height: '150px', overflowY: 'auto'}}>
-                            <pre style={{ margin: 0, fontSize: '12px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                                {JSON.stringify(selectedItem.rawData, null, 2)}
-                            </pre>
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* FOOTER ACTIONS */}

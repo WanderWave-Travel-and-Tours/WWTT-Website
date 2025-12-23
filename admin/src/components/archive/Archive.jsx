@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Users, Search, Eye, RotateCcw, Archive, ChevronLeft, ChevronRight, 
-  Wrench, List, ArrowUpDown
+  Wrench, List, ArrowUpDown, HelpCircle, X
 } from 'lucide-react';
 import './Archive.css';
 import Sidebar from '../sidebar/sidebar';
@@ -10,6 +10,9 @@ import ArchiveFilters from './ArchiveFilters';
 import ArchiveTable from './ArchiveTable';
 import ArchiveDetailModal from './ArchiveDetailModal';
 import PaginationControls from '../booking/PaginationControls'; 
+
+// Import Toast Hook
+import { useToast } from '../toast/ToastManager';
 
 // Import separated functions
 import { fetchArchivedBookings, restoreBooking } from './archiveFunctions/bookingService';
@@ -21,7 +24,51 @@ import { fetchArchivedPosters, restorePoster } from './archiveFunctions/posterSe
 import { fetchArchivedInquiries, restoreInquiry } from './archiveFunctions/inquiryService';
 import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'; 
 import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; 
-import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService'; // INIDAGDAG
+import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService';
+
+// --- Custom Confirmation Modal ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ARCHIVE_IMAGES = {
     TOTAL_ITEMS: 'https://picsum.photos/seed/desk/800/600', 
@@ -71,11 +118,12 @@ const LIST_ARCHIVE_ITEMS = [
 
 const USER_ARCHIVE_ITEMS = [
     'ALL Users',
-    'User',      // Binago para mag-match sa role field ng User model
-    'Admin',     // Binago para mag-match sa role field ng User model
+    'User',      
+    'Admin',     
 ];
 
 const ArchiveComponent = () => {
+  const toast = useToast(); 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [archiveItems, setArchiveItems] = useState([]);
   const [filteredArchiveItems, setFilteredArchiveItems] = useState([]);
@@ -91,83 +139,89 @@ const ArchiveComponent = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
-  const [sortDirection, setSortDirection] = useState('desc'); 
+  
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
+  const [sortDirection, setSortDirection] = useState('asc'); 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-  const handleSort = () => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  const handleSort = () => setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
 
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
+
+  // Logic to check if item is past 30 days
   const isExpired = (archivedDate) => {
     if (!archivedDate) return false;
     const archived = new Date(archivedDate);
     const now = new Date();
-    const daysDiff = Math.floor((now - archived) / (1000 * 60 * 60 * 24));
-    return daysDiff >= ARCHIVE_RETENTION_DAYS;
+    const diffTime = now - archived;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays >= ARCHIVE_RETENTION_DAYS;
   };
 
+  // Core Reset Logic: Calculates remaining days strictly against the archived date
   const getDaysRemaining = (archivedDate) => {
     if (!archivedDate) return ARCHIVE_RETENTION_DAYS;
     const archived = new Date(archivedDate);
     const now = new Date();
-    const daysDiff = Math.floor((now - archived) / (1000 * 60 * 60 * 24));
-    const remaining = ARCHIVE_RETENTION_DAYS - daysDiff;
+    
+    // Difference in full days
+    const diffTime = now.getTime() - archived.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    const remaining = ARCHIVE_RETENTION_DAYS - diffDays;
     return remaining > 0 ? remaining : 0;
   };
 
   const fetchArchiveItems = async () => {
     try {
       setLoading(true);
-      
       const results = await Promise.allSettled([
-        fetchArchivedBookings(),
-        fetchArchivedPackages(),
-        fetchArchivedTours(),
-        fetchArchivedTestimonials(),
-        fetchArchivedPromos(),
-        fetchArchivedPosters(),
-        fetchArchivedInquiries(),
-        fetchArchivedBlogs(),
-        fetchArchivedImages(),
-        fetchArchivedUsers() // INIDAGDAG (Index 9)
+        fetchArchivedBookings(), fetchArchivedPackages(), fetchArchivedTours(),
+        fetchArchivedTestimonials(), fetchArchivedPromos(), fetchArchivedPosters(),
+        fetchArchivedInquiries(), fetchArchivedBlogs(), fetchArchivedImages(), fetchArchivedUsers()
       ]);
       
-      const bookingsData = results[0].status === 'fulfilled' ? results[0].value : [];
-      const packagesData = results[1].status === 'fulfilled' ? results[1].value : [];
-      const toursData = results[2].status === 'fulfilled' ? results[2].value : [];
-      const testimonialsData = results[3].status === 'fulfilled' ? results[3].value : [];
-      const promosData = results[4].status === 'fulfilled' ? results[4].value : [];
-      const postersData = results[5].status === 'fulfilled' ? results[5].value : []; 
-      const inquiriesData = results[6].status === 'fulfilled' ? results[6].value : []; 
-      const blogsData = results[7].status === 'fulfilled' ? results[7].value : [];
-      const imagesData = results[8].status === 'fulfilled' ? results[8].value : []; 
-      const usersData = results[9].status === 'fulfilled' ? results[9].value : []; // INIDAGDAG
-
-      const combinedData = [
-        ...bookingsData, 
-        ...packagesData, 
-        ...toursData, 
-        ...testimonialsData,
-        ...promosData,
-        ...postersData,
-        ...inquiriesData,
-        ...blogsData,
-        ...imagesData,
-        ...usersData // INIDAGDAG
-      ];
+      const combinedData = results.map(r => r.status === 'fulfilled' ? r.value : []).flat();
       
+      // Filter out items that are already expired based on backend timestamp
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
 
-      const formatted = nonExpiredData.map((item, index) => {
-        const archiveNumber = nonExpiredData.length - index;
+      const chronologicalData = [...nonExpiredData].sort((a, b) => {
+        return new Date(a.archivedAt || 0) - new Date(b.archivedAt || 0);
+      });
+
+      const formatted = chronologicalData.map((item, index) => {
+        const archiveNumber = index + 1; 
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
-        const dateRaw = item.archivedAt || item.updatedAt || item.createdAt || new Date().toISOString();
+        
+        /**
+         * RESET FIX: 
+         * Pinaprioritize ang 'archivedAt'. Kung wala nito (halimbawa nirestore at inarchive ulit),
+         * gagamit ito ng 'new Date()' para magsimula ulit sa saktong 30 days.
+         * Inalis ang fallback sa updatedAt/createdAt para hindi mabawasan ang days base sa lumang edits.
+         */
+        const dateRaw = item.archivedAt || new Date().toISOString();
 
         let displayType = item.type || 'Other';
-        
-        // Logic para ma-identify kung ang item ay isang User
-        if (item.role) {
-            displayType = item.role.charAt(0).toUpperCase() + item.role.slice(1); // Gagawin itong 'User' o 'Admin'
-        }
-
+        if (item.role) displayType = item.role.charAt(0).toUpperCase() + item.role.slice(1);
         if (item.inquiryType) {
            switch(item.inquiryType) {
              case 'VISA': displayType = 'VISA Processing'; break;
@@ -182,14 +236,12 @@ const ArchiveComponent = () => {
         return {
           id: archiveId,
           mongoId: item._id || item.mongoId,
-          archiveNumber: archiveNumber,
-          // Gagamit ng fullName kung user, title kung package/blog, etc.
+          archiveNumber,
           itemName: item.fullName || item.imageName || item.title || item.itemName || item.name || item.code || 'Unnamed Item', 
           type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
-          daysRemaining: getDaysRemaining(dateRaw),
-          // Email ang reference para sa users, imageUrl para sa gallery
+          daysRemaining: getDaysRemaining(dateRaw), // Ito ang magre-result sa 30 kung dateRaw is now
           reference: item.email || item.imageUrl || item.author || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
           status: item.isArchive === "Yes" ? 'Archived' : (item.status || 'Archived'), 
           rawData: item
@@ -199,14 +251,13 @@ const ArchiveComponent = () => {
       setArchiveItems(formatted);
     } catch (err) {
       console.error('Archive Fetch error:', err);
+      toast.error("Failed to load archived items.");
     } finally {
       setLoading(false);
     }
   };
   
-  useEffect(() => { 
-    fetchArchiveItems(); 
-  }, []);
+  useEffect(() => { fetchArchiveItems(); }, []);
 
   useEffect(() => {
     let filtered = [...archiveItems];
@@ -221,7 +272,6 @@ const ArchiveComponent = () => {
         filtered = filtered.filter(item => serviceSubtypeNames.includes(item.type));
         if (filterSubtype !== 'ALL Services') filtered = filtered.filter(item => item.type === filterSubtype);
     } else if (filterType === 'Archived Users') {
-        // I-filter ang mga items na may type 'User' o 'Admin'
         const userSubtypeNames = ['User', 'Admin'];
         filtered = filtered.filter(item => userSubtypeNames.includes(item.type));
         if (filterUserSubtype !== 'ALL Users') filtered = filtered.filter(item => item.type === filterUserSubtype);
@@ -236,25 +286,16 @@ const ArchiveComponent = () => {
       );
     }
     
-    const sorted = [...filtered].sort((a, b) => {
-        const dateA = new Date(a.archivedAtISO);
-        const dateB = new Date(b.archivedAtISO);
-        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
-    });
-
+    const sorted = [...filtered].sort((a, b) => sortDirection === 'asc' ? a.archiveNumber - b.archiveNumber : b.archiveNumber - a.archiveNumber);
     setFilteredArchiveItems(sorted);
     setCurrentPage(1); 
   }, [searchTerm, filterType, filterSubtype, filterListSubtype, filterUserSubtype, archiveItems, sortDirection]);
 
-  const handleRestore = async (item) => { 
-    if (!window.confirm(`Are you sure you want to restore ${item.itemName}?`)) return;
+  const performRestore = async (item) => {
     setActionLoading(true);
     try {
       let restored = false;
-      // Identify if the item is a User/Admin type
-      if (item.type === 'User' || item.type === 'Admin') {
-          restored = await restoreUser(item.mongoId);
-      }
+      if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(item.mongoId);
       else if (item.type === 'Package') restored = await restorePackage(item.mongoId);
       else if (item.type === 'Booking') restored = await restoreBooking(item.mongoId);
       else if (item.type === 'Tour') restored = await restoreTour(item.mongoId);
@@ -263,57 +304,64 @@ const ArchiveComponent = () => {
       else if (item.type === 'Poster') restored = await restorePoster(item.mongoId);
       else if (item.type === 'Blog') restored = await restoreBlog(item.mongoId);
       else if (item.type === 'Image Gallery') restored = await restoreImage(item.mongoId);
-      else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
-        restored = await restoreInquiry(item.mongoId);
-      }
+      else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(item.mongoId);
       
       if (restored) {
         setArchiveItems(prev => prev.filter(i => i.mongoId !== item.mongoId));
         setShowModal(false);
         setSelectedItem(null);
-        alert(`Successfully restored: ${item.itemName}`);
+        toast.success(`Successfully restored: ${item.itemName}. Cooldown reset.`);
       }
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      toast.error(`Error: ${error.message}`);
     } finally { 
       setActionLoading(false); 
     }
   };
 
-  const handleRestoreAll = async () => {
-    if (filteredArchiveItems.length === 0) return alert('No items to restore.');
-    if (!window.confirm(`Restore all ${filteredArchiveItems.length} filtered items?`)) return;
+  const handleRestore = (item) => { 
+    askConfirmation(
+      "Restore Item",
+      `Are you sure you want to restore ${item.itemName}? The 30-day archive cooldown will reset completely.`,
+      () => performRestore(item)
+    );
+  };
+
+  const handleRestoreAll = () => {
+    if (filteredArchiveItems.length === 0) return toast.warning('No items to restore.');
     
-    setActionLoading(true);
-    try {
-      for (const item of filteredArchiveItems) {
-        if (item.type === 'User' || item.type === 'Admin') await restoreUser(item.mongoId);
-        else if (item.type === 'Package') await restorePackage(item.mongoId);
-        else if (item.type === 'Booking') await restoreBooking(item.mongoId);
-        else if (item.type === 'Tour') await restoreTour(item.mongoId);
-        else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
-        else if (item.type === 'Promo') await restorePromo(item.mongoId);
-        else if (item.type === 'Poster') await restorePoster(item.mongoId);
-        else if (item.type === 'Blog') await restoreBlog(item.mongoId);
-        else if (item.type === 'Image Gallery') await restoreImage(item.mongoId);
-        else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(item.mongoId);
+    askConfirmation(
+      "Restore Filtered Items",
+      `Are you sure you want to restore all ${filteredArchiveItems.length} items? This resets their expiration timers.`,
+      async () => {
+        setActionLoading(true);
+        try {
+          for (const item of filteredArchiveItems) {
+            if (item.type === 'User' || item.type === 'Admin') await restoreUser(item.mongoId);
+            else if (item.type === 'Package') await restorePackage(item.mongoId);
+            else if (item.type === 'Booking') await restoreBooking(item.mongoId);
+            else if (item.type === 'Tour') await restoreTour(item.mongoId);
+            else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
+            else if (item.type === 'Promo') await restorePromo(item.mongoId);
+            else if (item.type === 'Poster') await restorePoster(item.mongoId);
+            else if (item.type === 'Blog') await restoreBlog(item.mongoId);
+            else if (item.type === 'Image Gallery') await restoreImage(item.mongoId);
+            else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(item.mongoId);
+          }
+          await fetchArchiveItems();
+          toast.success('Selected items restored and timers reset.');
+        } catch (error) {
+          toast.error('An error occurred during bulk restore.');
+        } finally { 
+          setActionLoading(false); 
+        }
       }
-      await fetchArchiveItems();
-      alert('Selected items have been restored.');
-    } catch (error) {
-      alert('An error occurred during bulk restore.');
-    } finally { 
-      setActionLoading(false); 
-    }
+    );
   };
   
-  const handleViewDetails = (item) => { 
-    setSelectedItem(item); 
-    setShowModal(true); 
-  };
+  const handleViewDetails = (item) => { setSelectedItem(item); setShowModal(true); };
 
   const totalPages = Math.ceil(filteredArchiveItems.length / itemsPerPage);
-  
   const currentArchiveItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredArchiveItems.slice(startIndex, startIndex + itemsPerPage);
@@ -323,7 +371,6 @@ const ArchiveComponent = () => {
     const serviceSubtypeNames = SERVICE_SUBTYPES_LIST.slice(1);
     const listSubtypeNames = LIST_ARCHIVE_ITEMS.slice(1);
     const userTypes = ['User', 'Admin'];
-
     return [
       { label: "Total Archived", value: archiveItems.length, icon: <Archive size={24} />, image: ARCHIVE_IMAGES.TOTAL_ITEMS },
       { label: "Archived List Items", value: archiveItems.filter(i => listSubtypeNames.includes(i.type)).length, icon: <List size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_LIST },
@@ -342,11 +389,7 @@ const ArchiveComponent = () => {
               <h1>Archive Management</h1>
               <p>View and restore archived items • Auto-delete after {ARCHIVE_RETENTION_DAYS} days</p>
             </div>
-            <button 
-                className="arc-btn-restore-all" 
-                onClick={handleRestoreAll} 
-                disabled={actionLoading || filteredArchiveItems.length === 0}
-            >
+            <button className="arc-btn-restore-all" onClick={handleRestoreAll} disabled={actionLoading || filteredArchiveItems.length === 0}>
               <RotateCcw size={18} /> Restore Filtered
             </button>
           </div>
@@ -365,41 +408,37 @@ const ArchiveComponent = () => {
 
           <div className="arc-table-container">
             <ArchiveTable
-              loading={loading} 
-              filteredArchiveItemsCount={filteredArchiveItems.length}
-              currentArchiveItems={currentArchiveItems} 
-              handleViewDetails={handleViewDetails}
-              handleRestore={handleRestore} 
-              actionLoading={actionLoading}
-              EyeIcon={Eye} 
-              RotateCcwIcon={RotateCcw}
-              sortDirection={sortDirection} 
-              handleSort={handleSort} 
-              ArrowUpDownIcon={ArrowUpDown}
+              loading={loading} filteredArchiveItemsCount={filteredArchiveItems.length}
+              currentArchiveItems={currentArchiveItems} handleViewDetails={handleViewDetails}
+              handleRestore={handleRestore} actionLoading={actionLoading}
+              EyeIcon={Eye} RotateCcwIcon={RotateCcw}
+              sortDirection={sortDirection} handleSort={handleSort} ArrowUpDownIcon={ArrowUpDown}
             />
           </div>
 
           {filteredArchiveItems.length > 0 && totalPages > 1 && (
             <PaginationControls 
-              totalItems={filteredArchiveItems.length} 
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage} 
-              onPageChange={(p) => setCurrentPage(p)}
-              ChevronLeftIcon={ChevronLeft} 
-              ChevronRightIcon={ChevronRight}
+              totalItems={filteredArchiveItems.length} itemsPerPage={itemsPerPage}
+              currentPage={currentPage} onPageChange={(p) => setCurrentPage(p)}
+              ChevronLeftIcon={ChevronLeft} ChevronRightIcon={ChevronRight}
             />
           )}
         </div>
       </main>
 
       <ArchiveDetailModal
-        showModal={showModal} 
-        selectedItem={selectedItem} 
-        setShowModal={setShowModal}
-        handleRestore={handleRestore} 
-        actionLoading={actionLoading}
-        RotateCcwIcon={RotateCcw} 
-        retentionDays={ARCHIVE_RETENTION_DAYS}
+        showModal={showModal} selectedItem={selectedItem} setShowModal={setShowModal}
+        handleRestore={handleRestore} actionLoading={actionLoading}
+        RotateCcwIcon={RotateCcw} retentionDays={ARCHIVE_RETENTION_DAYS}
+      />
+
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );
