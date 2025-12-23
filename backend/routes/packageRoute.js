@@ -1,17 +1,26 @@
 const router = require('express').Router();
 const Package = require('../models/package');
-const fs = require('fs');
 const multer = require('multer'); 
-const path = require('path');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/'); 
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
+// CLOUDINARY CONFIG
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// CLOUDINARY STORAGE
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'wanderwave/packages',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, height: 800, crop: 'limit' }]
     }
 });
+
 const upload = multer({ storage: storage });
 
 // INITIALIZE ARCHIVE STATUS
@@ -30,10 +39,9 @@ router.get('/init-archive', async (req, res) => {
     }
 });
 
-// FETCH ALL ACTIVE (Dito mo sinet na "No" lang ang lalabas)
+// FETCH ALL ACTIVE
 router.get('/all', async (req, res) => {
     try {
-        // Sinisiguro na ang kinukuha lang ay isArchive: "No"
         const packages = await Package.find({ isArchive: 'No' }).sort({ _id: -1 });
         return res.status(200).json({ status: 'ok', data: packages });
     } catch (error) {
@@ -62,12 +70,12 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// EDIT PACKAGE
+// EDIT PACKAGE (UPDATED FOR CLOUDINARY)
 router.put('/edit/:id', upload.single('image'), async (req, res) => {
     try {
         const { 
             title, destination, sellerPrice, markup, duration, 
-            category, existingImage, inclusions, itinerary 
+            category, existingImage, existingImagePublicId, inclusions, itinerary 
         } = req.body;
         
         const updateData = {
@@ -82,14 +90,22 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
 
+        // If new image uploaded
         if (req.file) {
-            updateData.image = req.file.filename;
-            if (existingImage && existingImage !== 'placeholder.png') { 
-                const oldPath = path.join(__dirname, '../uploads', existingImage);
-                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            updateData.image = req.file.path; // Cloudinary URL
+            updateData.imagePublicId = req.file.filename; // Cloudinary public_id
+            
+            // Delete old image from Cloudinary
+            if (existingImagePublicId) {
+                try {
+                    await cloudinary.uploader.destroy(existingImagePublicId);
+                } catch (err) {
+                    console.error('Failed to delete old image:', err);
+                }
             }
         } else {
             updateData.image = existingImage;
+            updateData.imagePublicId = existingImagePublicId;
         }
 
         await Package.findByIdAndUpdate(req.params.id, updateData, { new: true });
@@ -99,13 +115,12 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-// ARCHIVE TOGGLE (Eto ang magpapalit ng status sa "Yes")
+// ARCHIVE TOGGLE
 router.post('/:id/archive', async (req, res) => {
     try {
         const pkg = await Package.findById(req.params.id);
         if (!pkg) return res.status(404).json({ status: "error", message: "Not found" });
 
-        // Kapag pinindot ang Archive, gagawin nating "Yes" ang status
         const newStatus = pkg.isArchive === 'Yes' ? 'No' : 'Yes';
         pkg.isArchive = newStatus;
         await pkg.save();

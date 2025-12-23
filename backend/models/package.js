@@ -15,9 +15,12 @@ const PackageSchema = new mongoose.Schema({
     duration: { type: String, required: true },
     category: { type: String, enum: ['Local', 'International', 'Internation Tour'], default: 'Local' },
     image: { type: String },
+    imagePublicId: {
+        type: String,
+        default: ''
+    },
     inclusions: [{ type: String }],
     itinerary: [ItineraryItemSchema],
-    // Eto ang default definition
     isArchive: { type: String, default: 'No' } 
 });
 
