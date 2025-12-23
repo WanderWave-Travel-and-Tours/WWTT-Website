@@ -16,10 +16,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// ✅ UPDATED: Login with EMAIL instead of USERNAME
 router.post('/login', async (req, res) => {
-    const username = sanitize(req.body.username); 
+    const email = sanitize(req.body.email);  // ✅ Changed from username to email
     const password = sanitize(req.body.password);
-    const recaptchaToken = req.body;
+    const recaptchaToken = req.body.recaptchaToken;  // ✅ Fixed: was req.body only
 
     if (!recaptchaToken) {
         return res.status(400).json({ 
@@ -28,7 +29,8 @@ router.post('/login', async (req, res) => {
         });
     }
 
-    if (typeof username !== 'string' || typeof password !== 'string') {
+    // ✅ Validate email and password
+    if (typeof email !== 'string' || typeof password !== 'string') {
         return res.status(400).json({ 
             status: "error", 
             message: "Invalid input types. Credentials must be strings." 
@@ -36,42 +38,57 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        const admin = await AdminModel.findOne({ username });
+        // ✅ Find admin by EMAIL instead of username
+        const admin = await AdminModel.findOne({ email: email.toLowerCase() });
 
         if (!admin) {
-            return res.status(401).json({ status: "error", message: "Invalid credentials" });
+            console.log(`❌ No admin found with email: ${email}`);
+            return res.status(401).json({ 
+                status: "error", 
+                message: "Invalid email or password" 
+            });
         }
 
         const isMatch = await admin.comparePassword(password); 
 
         if (isMatch) {
-
             const token = jwt.sign(
-                { id: admin._id, username: admin.username, role: 'admin' }, 
+                { id: admin._id, email: admin.email, role: 'admin' },  // ✅ Include email in token
                 'wanderwaveph_admin25', 
                 { expiresIn: '1h' }
             );
+
+            console.log(`✅ Admin login successful: ${admin.email}`);
 
             res.json({ 
                 status: "ok", 
                 message: "Login Success!",
                 token: token, 
                 data: {
-                    username: admin.username,
+                    username: admin.username,  // Keep username for display
+                    email: admin.email,        // ✅ Include email in response
                     businessName: admin.businessName,
                     businessAddress: admin.businessAddress,
                     businessLogo: admin.businessLogo
                 }
             });
         } else {
-            res.status(401).json({ status: "error", message: "Invalid credentials" });
+            console.log(`❌ Password mismatch for email: ${email}`);
+            res.status(401).json({ 
+                status: "error", 
+                message: "Invalid email or password" 
+            });
         }
     } catch (err) {
-        console.error("Login Error:", err);
-        res.status(500).json({ status: "error", message: "Server error during login." });
+        console.error("❌ Login Error:", err);
+        res.status(500).json({ 
+            status: "error", 
+            message: "Server error during login." 
+        });
     }
 });
 
+// ✅ UPDATED: Include email in settings response
 router.get('/settings', async (req, res) => {
     try {
         const admin = await AdminModel.findOne(); 
@@ -84,6 +101,7 @@ router.get('/settings', async (req, res) => {
             status: "ok",
             data: {
                 username: admin.username,
+                email: admin.email,  // ✅ Include email
                 businessName: admin.businessName,
                 businessAddress: admin.businessAddress,
                 businessLogo: admin.businessLogo
@@ -119,7 +137,8 @@ router.put('/update-settings', upload.single('businessLogo'), async (req, res) =
             data: {
                 businessName: admin.businessName,
                 businessAddress: admin.businessAddress,
-                businessLogo: admin.businessLogo
+                businessLogo: admin.businessLogo,
+                email: admin.email  // ✅ Include email
             }
         });
 
