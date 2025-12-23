@@ -1,8 +1,6 @@
 const Poster = require('../models/poster');
-const fs = require('fs');
-const path = require('path');
+const { cloudinary } = require('../config/cloudinary');
 
-// Magdagdag ng bagong poster
 const addPoster = async (req, res) => {
     try {
         const { title, description, startDate, endDate, status, isArchive } = req.body;
@@ -11,12 +9,11 @@ const addPoster = async (req, res) => {
             return res.status(400).json({ message: 'Please upload an image.' });
         }
 
-        const imageUrl = `uploads/${req.file.filename}`;
-
         const newPoster = new Poster({
             title,
             description,
-            imageUrl, 
+            imageUrl: req.file.path,
+            imagePublicId: req.file.filename,
             startDate,
             endDate,
             status,
@@ -32,7 +29,6 @@ const addPoster = async (req, res) => {
     }
 };
 
-// Kunin ang lahat ng posters (Gagamitin sa Archive fetching)
 const getAllPosters = async (req, res) => {
     try {
         const posters = await Poster.find().sort({ createdAt: -1 });
@@ -42,7 +38,6 @@ const getAllPosters = async (req, res) => {
     }
 };
 
-// Kunin ang mga active at hindi naka-archive
 const getActivePosters = async (req, res) => {
     try {
         const posters = await Poster.find({ status: 'Active', isArchive: 'No' }).sort({ createdAt: -1 });
@@ -52,7 +47,6 @@ const getActivePosters = async (req, res) => {
     }
 };
 
-// --- NEW FUNCTION: Get Single Poster by ID (For Edit Page) ---
 const getPosterById = async (req, res) => {
     try {
         const poster = await Poster.findById(req.params.id);
@@ -63,10 +57,9 @@ const getPosterById = async (req, res) => {
     }
 };
 
-// --- NEW FUNCTION: Update Poster Details ---
 const updatePoster = async (req, res) => {
     try {
-        const { title, description, startDate, endDate, status } = req.body;
+        const { title, description, startDate, endDate, status, imagePublicId } = req.body;
         
         const updateData = {
             title,
@@ -76,11 +69,17 @@ const updatePoster = async (req, res) => {
             status
         };
 
-        // Kung may bagong image na inupload, palitan ang imageUrl
         if (req.file) {
-            updateData.imageUrl = `uploads/${req.file.filename}`;
-            
-            // Optional: Pwede mong i-delete ang old image dito kung gusto mo mag-clean up
+            // Delete old image
+            if (imagePublicId) {
+                try {
+                    await cloudinary.uploader.destroy(imagePublicId);
+                } catch (err) {
+                    console.error('Failed to delete old image:', err);
+                }
+            }
+            updateData.imageUrl = req.file.path;
+            updateData.imagePublicId = req.file.filename;
         }
 
         const updatedPoster = await Poster.findByIdAndUpdate(
@@ -98,17 +97,20 @@ const updatePoster = async (req, res) => {
     }
 };
 
-// Burahin ang poster (Permanent)
 const deletePoster = async (req, res) => {
     try {
         const poster = await Poster.findById(req.params.id);
         if (!poster) return res.status(404).json({ message: 'Poster not found' });
 
-        if (poster.imageUrl) {
-            const filename = poster.imageUrl.replace('uploads/', '');
-            const filePath = path.join(__dirname, '../uploads', filename);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        // Delete from Cloudinary
+        if (poster.imagePublicId) {
+            try {
+                await cloudinary.uploader.destroy(poster.imagePublicId);
+            } catch (err) {
+                console.error('Failed to delete image:', err);
+            }
         }
+
         await Poster.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: 'Poster deleted' });
     } catch (error) {
@@ -116,7 +118,6 @@ const deletePoster = async (req, res) => {
     }
 };
 
-// I-update ang Status o Archive status (Gagamitin sa Restore)
 const updatePosterStatus = async (req, res) => {
     try {
         const { status, isArchive } = req.body;
@@ -144,8 +145,8 @@ module.exports = {
     addPoster,
     getAllPosters,
     getActivePosters,
-    getPosterById,      // EXPORTED
-    updatePoster,       // EXPORTED
+    getPosterById,
+    updatePoster,
     deletePoster,
     updatePosterStatus
 };

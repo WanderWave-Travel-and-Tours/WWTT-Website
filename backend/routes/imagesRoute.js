@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-// Siguraduhin na archiveImage ang naka-import dito
 const { addImage, getAllImages, archiveImage } = require('../controller/imageController');
+const { uploadGallery } = require('../config/cloudinary');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -37,5 +37,8 @@ router.get('/', getAllImages);
 
 // Gagamit ng PATCH dahil update operation ito
 router.patch('/:id', archiveImage); 
+
+router.post('/add', uploadGallery.single('image'), addImage);
+router.put('/update/:id', uploadGallery.single('image'), addImage);
 
 module.exports = router;

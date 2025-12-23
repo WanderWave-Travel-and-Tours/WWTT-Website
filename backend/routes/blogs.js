@@ -9,6 +9,7 @@ const {
     deleteBlog, 
     updateBlog 
 } = require('../controller/blogController');
+const { uploadBlog } = require('../config/cloudinary');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'uploads/'),
@@ -16,7 +17,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-router.post('/add', upload.single('image'), addBlog);
+router.post('/add', uploadBlog.single('image'), addBlog);
+router.put('/update/:id', uploadBlog.single('image'), updateBlog);
+
+//router.post('/add', upload.single('image'), addBlog);
 router.get('/', getAllBlogs);
 router.get('/archived', getArchivedBlogs); // Route para sa archived items
 router.get('/:id', getBlogById);

@@ -9,6 +9,7 @@ const {
   updateDocumentStatus,
   getAllDocuments
 } = require('../controller/documentController');
+const { uploadDocument } = require('../config/cloudinary');
 
 const router = express.Router();
 router.post('/upload', upload.array('documents', 10), uploadDocuments);
@@ -18,5 +19,7 @@ router.delete('/:documentId', deleteDocument);
 router.get('/', getAllDocuments);
 router.delete('/:id', deleteDocument);
 router.put('/:id/status', updateDocumentStatus);
+router.post('/add', uploadDocument.single('image'), uploadDocuments);
+router.put('/update/:id', uploadDocument.single('image'), uploadDocuments);
 
 module.exports = router;

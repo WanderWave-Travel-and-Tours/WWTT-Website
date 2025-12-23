@@ -1,6 +1,5 @@
 const Blog = require('../models/blog');
-const fs = require('fs');
-const path = require('path');
+const { cloudinary } = require('../config/cloudinary');
 
 // 1. ADD BLOG
 const addBlog = async (req, res) => {
@@ -11,14 +10,13 @@ const addBlog = async (req, res) => {
             return res.status(400).json({ message: 'Please upload a cover image.' });
         }
 
-        const imageUrl = `uploads/${req.file.filename}`;
-
         const newBlog = new Blog({
             title,
             author,
             category,
             content,
-            imageUrl,
+            imageUrl: req.file.path, // Cloudinary URL
+            imagePublicId: req.file.filename, // Cloudinary public_id
             status,
             isArchive: isArchive || 'No' 
         });
@@ -32,7 +30,7 @@ const addBlog = async (req, res) => {
     }
 };
 
-// 2. GET ALL ACTIVE BLOGS (isArchive: 'No')
+// 2. GET ALL ACTIVE BLOGS
 const getAllBlogs = async (req, res) => {
     try {
         const blogs = await Blog.find({ isArchive: 'No' }).sort({ createdAt: -1 });
@@ -53,13 +51,12 @@ const getBlogById = async (req, res) => {
     }
 };
 
-// 4. ARCHIVE BLOG (Soft Delete)
+// 4. ARCHIVE BLOG
 const deleteBlog = async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
         if (!blog) return res.status(404).json({ message: 'Blog not found' });
 
-        // MODIFIED: Change isArchive to "Yes" instead of deleting
         blog.isArchive = 'Yes';
         await blog.save();
 
@@ -83,17 +80,20 @@ const getArchivedBlogs = async (req, res) => {
 // 6. UPDATE BLOG
 const updateBlog = async (req, res) => {
     try {
-        const { title, author, category, content, status, isArchive } = req.body;
+        const { title, author, category, content, status, isArchive, imagePublicId } = req.body;
         let updateData = { title, author, category, content, status, isArchive };
 
         if (req.file) {
-            const blog = await Blog.findById(req.params.id);
-            if (blog && blog.imageUrl) {
-                const oldFilename = blog.imageUrl.replace('uploads/', '');
-                const oldPath = path.join(__dirname, '../uploads', oldFilename);
-                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            // Delete old image from Cloudinary
+            if (imagePublicId) {
+                try {
+                    await cloudinary.uploader.destroy(imagePublicId);
+                } catch (err) {
+                    console.error('Failed to delete old image:', err);
+                }
             }
-            updateData.imageUrl = `uploads/${req.file.filename}`;
+            updateData.imageUrl = req.file.path;
+            updateData.imagePublicId = req.file.filename;
         }
 
         const updatedBlog = await Blog.findByIdAndUpdate(
@@ -109,7 +109,6 @@ const updateBlog = async (req, res) => {
     }
 };
 
-// ISANG module.exports LANG SA DULO PARA SA LAHAT NG FUNCTIONS
 module.exports = {
     addBlog,
     getAllBlogs,

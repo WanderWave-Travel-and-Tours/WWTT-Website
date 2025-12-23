@@ -1,6 +1,5 @@
 const Image = require('../models/image');
-const fs = require('fs');
-const path = require('path');
+const { cloudinary } = require('../config/cloudinary');
 
 const addImage = async (req, res) => {
     try {
@@ -8,13 +7,13 @@ const addImage = async (req, res) => {
             return res.status(400).json({ message: 'Please upload an image.' });
         }
 
-        const imageUrl = `https://wanderwaveph-backend.onrender.com/uploads/${req.file.filename}`;
         const imageName = req.body.title || req.file.originalname;
 
         const newImage = new Image({
             imageName,
-            imageUrl,
-            isArchive: 'No' // Default value kapag nag-add
+            imageUrl: req.file.path, // Cloudinary URL
+            imagePublicId: req.file.filename,
+            isArchive: 'No'
         });
 
         await newImage.save();
@@ -38,17 +37,9 @@ const getAllImages = async (req, res) => {
     }
 };
 
-/**
- * MODIFIED FUNCTION: archiveImage
- * Ginawa nating dynamic ang isArchive value.
- * Kapag req.body.isArchive = "No", ito ay gagana bilang RESTORE.
- * Kapag walang body (default), ito ay gagana bilang ARCHIVE ("Yes").
- */
 const archiveImage = async (req, res) => {
     try {
         const { id } = req.params;
-        
-        // Kinukuha ang value mula sa body, kung wala, default ay 'Yes'
         const newStatus = req.body.isArchive || 'Yes';
         
         const updatedImage = await Image.findByIdAndUpdate(
@@ -61,7 +52,6 @@ const archiveImage = async (req, res) => {
             return res.status(404).json({ message: 'Image not found' });
         }
 
-        // Log para malaman kung Archive o Restore ang nangyari
         const actionMessage = newStatus === 'Yes' ? 'archived' : 'restored';
         console.log(`📦 Image ${actionMessage}:`, updatedImage._id);
 
@@ -78,5 +68,5 @@ const archiveImage = async (req, res) => {
 module.exports = {
     addImage,
     getAllImages,
-    archiveImage // Naka-export para magamit sa imagesRoute.js
+    archiveImage
 };
