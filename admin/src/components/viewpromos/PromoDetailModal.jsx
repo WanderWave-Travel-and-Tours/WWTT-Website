@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react';
+import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2, Edit, ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './PromoDetailModal.css';
 
@@ -49,6 +49,11 @@ const PromoDetailModal = ({
         navigate(`/edit-promo/${selectedPromo._id}`);
     };
 
+    // Construct Image URL
+    const imageUrl = selectedPromo.image 
+        ? `http://localhost:5000/uploads/${selectedPromo.image}` 
+        : null;
+
     return (
         <div className="prdm-overlay" onClick={closeModal}>
             <div className="prdm-content" onClick={(e) => e.stopPropagation()}>
@@ -76,6 +81,18 @@ const PromoDetailModal = ({
 
                 <div className="prdm-body">
                     
+                    {/* NEW: PROMO IMAGE BANNER */}
+                    {imageUrl && (
+                        <div className="prdm-image-section">
+                            <div className="prdm-image-container">
+                                <img src={imageUrl} alt="Promo Asset" className="prdm-promo-img" />
+                                <div className="prdm-image-badge">
+                                    <ImageIcon size={14} /> PROMO ASSET
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* HIGHLIGHT: PROMO CODE DISPLAY */}
                     <div className="prdm-section-card dashed-border">
                         <div className="prdm-processing-bar">
@@ -150,7 +167,6 @@ const PromoDetailModal = ({
 
                 {/* FOOTER ACTIONS */}
                 <div className="prdm-footer">
-                    
                     <button className="prdm-btn-edit" onClick={handleEditClick}>
                         <Edit size={16} />
                         Edit

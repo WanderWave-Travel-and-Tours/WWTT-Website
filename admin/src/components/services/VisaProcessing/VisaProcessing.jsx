@@ -1,52 +1,230 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../sidebar/sidebar"; 
-import { FolderOpen, Clock, CheckCircle, RefreshCw, FileText, UserPlus, Search, Archive } from "lucide-react"; 
+import { FolderOpen, Clock, CheckCircle, RefreshCw, FileText, UserPlus, Search, Archive, ChevronLeft, ChevronRight, Mail, Eye } from "lucide-react"; 
 import "./VisaProcessing.css"; 
 
 import VisaInquiryModal from "./VisaInquiryModal";
 import VisaSettingsModal from "./VisaSettingsModal";
 import VisaApplicationModal from "./VisaApplicationModal"; 
 
-const Pagination = ({ applicationsPerPage, totalApplications, paginate, currentPage }) => {
-  const pageNumbers = [];
-  const totalPages = Math.ceil(totalApplications / applicationsPerPage);
-  for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+const VISA_STAT_IMAGES = {
+    TOTAL_CONFIGURED: 'https://picsum.photos/seed/visa-total/800/600',
+    PENDING: 'https://picsum.photos/seed/visa-pending/800/600',
+    CONTACTED: 'https://picsum.photos/seed/visa-contacted/800/600',
+    COMPLETED: 'https://picsum.photos/seed/visa-completed/800/600'
+};
 
-  if (totalApplications <= applicationsPerPage) return null;
+const VisaPagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
+  const [jumpPageInput, setJumpPageInput] = useState('');
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  if (totalPages <= 1) return null;
+
+  const handleJump = (e) => {
+      e.preventDefault();
+      const page = parseInt(jumpPageInput, 10);
+      if (page >= 1 && page <= totalPages) {
+          onPageChange(page);
+          setJumpPageInput('');
+      } else {
+          alert(`Please enter a page number between 1 and ${totalPages}.`);
+      }
+  };
 
   return (
-    <nav className="pagination-nav">
-      <ul className="pagination-list">
-        <li>
-          <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} className="pagination-btn">Previous</button>
-        </li>
-        {pageNumbers.map(number => (
-          <li key={number} className="page-item">
-            <button onClick={() => paginate(number)} className={`pagination-btn ${number === currentPage ? 'active' : ''}`}>{number}</button>
-          </li>
-        ))}
-        <li>
-          <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} className="pagination-btn">Next</button>
-        </li>
-      </ul>
+    <nav className="visa-pagination-nav">
+      <div className="visa-pagination-info">
+        <span className="visa-pagination-showing">
+          Showing <strong>{totalItems === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1}</strong> to{' '}
+          <strong>{Math.min(currentPage * itemsPerPage, totalItems)}</strong> of{' '}
+          <strong>{totalItems}</strong> items
+        </span>
+      </div>
+
+      <div className="visa-pagination-jump">
+        <button
+          type="button"
+          className="visa-jump-arrow"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft size={18} />
+        </button>
+        
+        <form onSubmit={handleJump} className="visa-pagination-jump-form">
+          <span className="visa-pagination-jump-label">Page</span>
+          <input 
+            type="number" 
+            value={jumpPageInput}
+            onChange={(e) => setJumpPageInput(e.target.value)}
+            placeholder={currentPage.toString()}
+            min="1" 
+            max={totalPages}
+            className="visa-jump-input"
+          />
+          <span className="visa-pagination-jump-label">of {totalPages}</span>
+        </form>
+        
+        <button
+          type="button"
+          className="visa-jump-arrow"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
     </nav>
   );
 };
 
-const VisaStats = ({ stats }) => (
-  <div className="visa-stats-grid">
-    {stats.map((stat, index) => (
-      <div key={index} className="visa-card">
-        <div className="visa-card-content">
-          <h2>{stat.value}</h2>
-          <span>{stat.label}</span>
+const VisaStats = ({ stats }) => {
+    const getStatClass = (label) => {
+        return label.toLowerCase().replace(/ /g, '-');
+    }
+    
+    return (
+        <div className="visa-stats-grid">
+            {stats.map((s, i) => (
+                <div 
+                    className={`visa-stat-card visa-stat-card-${getStatClass(s.label)}`} 
+                    key={i}
+                    style={{backgroundImage: `url(${s.image})`}}
+                >
+                    <div className="visa-stat-card-content">
+                        <h2>{s.value}</h2>
+                        <span>{s.label}</span>
+                    </div>
+                    <div className="visa-stat-card-icon">{s.icon}</div>
+                </div>
+            ))}
         </div>
-        <div className="visa-card-icon">{stat.icon}</div>
+    );
+};
+
+const VisaFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus, statusOptions, getFilterClassName }) => {
+  return (
+    <div className="visa-filter-card">
+      <div className="visa-filter-wrapper">
+        <div className="visa-brand-label">
+            VISA <span>FILTERS</span>
+        </div>
+        
+        <div className="visa-filter-buttons">
+          {statusOptions.map(status => (
+            <button
+              key={status}
+              className={`visa-filter-btn ${getFilterClassName(status)}`} 
+              onClick={() => setFilterStatus(status)}
+            >
+              {status === 'ALL' ? 'All Applications' : status.replace('_', ' ')}
+            </button>
+          ))}
+        </div>
+        
+        <div className="visa-search-box">
+          <Search size={18} className="visa-search-icon" /> 
+          <input
+            type="text"
+            className="visa-search-input"
+            placeholder="Search by Applicant, Country, Ref ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
-    ))}
-  </div>
-);
+    </div>
+  );
+};
+
+const VisaTable = ({ loading, filteredCount, currentApplications, handleViewInquiry, handleArchiveInquiry, startIndex, getCountryCode }) => {
+    const getStatusBadgeClass = (status) => {
+        const normalizedStatus = (status || 'PENDING').toLowerCase().replace(/[\s_]/g, '-');
+        return `visa-badge-${normalizedStatus}`;
+    };
+
+    if (loading) {
+        return (
+            <tbody>
+                <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                        Loading visa applications...
+                    </td>
+                </tr>
+            </tbody>
+        );
+    }
+
+    if (filteredCount === 0) {
+        return (
+            <tbody>
+                <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                        No visa applications found
+                    </td>
+                </tr>
+            </tbody>
+        );
+    }
+
+    return (
+        <tbody>
+            {currentApplications.map((app, index) => (
+                <tr key={app.id}>
+                    <td style={{ fontWeight: "700", color: '#0f172a', textAlign: 'center', width: '60px' }}>
+                        {startIndex + index + 1}
+                    </td>
+                    <td className="visa-ref-cell">{app.id}</td>
+                    <td>
+                        <div className="visa-applicant-name">{app.client}</div>
+                        <div className="visa-applicant-email">
+                            <Mail size={13} />
+                            <span>{app._original?.email || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <div className="visa-flag-circle-small">
+                                {app.flagCode ? (
+                                    <img className="visa-flag-img" src={`https://flagcdn.com/w40/${app.flagCode.toLowerCase()}.png`} alt={app.country} />
+                                ) : (
+                                    <span>{app.flag}</span>
+                                )}
+                            </div>
+                            <span>{app.country}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span className="visa-type-badge">VISA</span>
+                        {app.type}
+                    </td>
+                    <td>{app.date}</td>
+                    <td>
+                        <span className={`visa-table-badge ${getStatusBadgeClass(app.status)}`}>
+                            {app.status}
+                        </span>
+                    </td>
+                    <td>
+                        <div className="visa-action-group">
+                            <button className="visa-action-btn visa-view-btn" onClick={() => handleViewInquiry(app._original)}>
+                                <Eye size={16} />
+                                View
+                            </button>
+                            <button 
+                                className="visa-action-btn visa-archive-btn" 
+                                onClick={() => handleArchiveInquiry(app.mongoId)}
+                            >
+                                <Archive size={16} />
+                                Archive
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            ))}
+        </tbody>
+    );
+};
 
 const VisaProcessing = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -95,7 +273,7 @@ const VisaProcessing = () => {
 
   const fetchVisas = async () => {
     try {
-      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/visas");
+      const res = await axios.get("http://localhost:5000/api/visas");
       if (Array.isArray(res.data)) {
         setVisaForms(res.data.map((v) => ({ ...v, id: v._id, desc: v.description })));
       }
@@ -108,10 +286,8 @@ const VisaProcessing = () => {
 
   const fetchInquiries = async () => {
     try {
-      // Nagpasa tayo ng query param na isArchive=No para sa initial fetch
-      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries?isArchive=No');
+      const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
       if (response.data.success) {
-        // Dito natin ifi-filter para siguradong inquiryType: "VISA" lang at isArchive: "No" ang lalabas
         const visaRequests = response.data.data.filter(inq => 
             (inq.inquiryType === 'VISA') && inq.isArchive === 'No'
         );
@@ -122,16 +298,15 @@ const VisaProcessing = () => {
     }
   };
 
-  // BAGONG FUNCTION: Para sa Pag-archive
   const handleArchive = async (id) => {
     if (window.confirm("Are you sure you want to archive this inquiry?")) {
       try {
-        const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
+        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
           isArchive: "Yes"
         });
         if (response.data.success) {
           alert("Inquiry archived successfully.");
-          fetchInquiries(); // I-refresh ang listahan
+          fetchInquiries();
         }
       } catch (error) {
         console.error("Error archiving inquiry:", error);
@@ -145,15 +320,18 @@ const VisaProcessing = () => {
     fetchInquiries();
   }, []);
 
-  const getActiveClass = (status) => {
-    switch(status.toUpperCase()) {
-      case 'ALL': return 'active';
-      case 'PENDING': return 'pending-active';
-      case 'COMPLETED': return 'confirmed-active';
-      case 'CONTACTED': return 'contacted-active';
-      case 'PAYMENT PENDING': return 'payment-pending-active';
-      default: return 'active';
+  const getFilterClassName = (status) => {
+    if (currentFilter === status) {
+      switch(status.toUpperCase()) {
+        case 'ALL': return 'visa-active-navy';
+        case 'PENDING': return 'visa-active-navy';
+        case 'COMPLETED': return 'visa-active-navy';
+        case 'CONTACTED': return 'visa-active-navy';
+        case 'PAYMENT PENDING': return 'visa-active-navy';
+        default: return 'visa-active-navy';
+      }
     }
+    return '';
   };
 
   const formatDate = (dateString) => {
@@ -168,7 +346,7 @@ const VisaProcessing = () => {
 
   const allApplications = inquiries.map((inquiry) => ({
     id: inquiry._id.slice(-8).toUpperCase(),
-    mongoId: inquiry._id, // Itatago natin ang full ID para sa archive function
+    mongoId: inquiry._id,
     client: inquiry.fullName,
     country: inquiry.visaCountry || 'N/A',
     flagCode: inquiry.visaCountry ? getCountryCode(inquiry.visaCountry) : null,
@@ -198,155 +376,111 @@ const VisaProcessing = () => {
   const pageBaseIndex = (currentPage - 1) * applicationsPerPage;
 
   const stats = [
-    { label: "Total Visas Configured", value: visaForms.length, icon: <FolderOpen size={28} /> },
-    { label: "Pending Review", value: inquiries.filter(i => i.status === 'PENDING').length, icon: <Clock size={28} /> },
-    { label: "Contacted", value: inquiries.filter(i => i.status === 'CONTACTED').length, icon: <CheckCircle size={28} /> },
-    { label: "Completed", value: inquiries.filter(i => i.status === 'COMPLETED').length, icon: <RefreshCw size={28} /> },
+    { label: "Total Configured", value: visaForms.length, icon: <FolderOpen size={28} />, image: VISA_STAT_IMAGES.TOTAL_CONFIGURED },
+    { label: "Pending Review", value: inquiries.filter(i => i.status === 'PENDING').length, icon: <Clock size={28} />, image: VISA_STAT_IMAGES.PENDING },
+    { label: "Contacted", value: inquiries.filter(i => i.status === 'CONTACTED').length, icon: <CheckCircle size={28} />, image: VISA_STAT_IMAGES.CONTACTED },
+    { label: "Completed", value: inquiries.filter(i => i.status === 'COMPLETED').length, icon: <RefreshCw size={28} />, image: VISA_STAT_IMAGES.COMPLETED },
   ];
 
   return (
     <div className="visa-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      <div className={`visa-main ${isSidebarCollapsed ? "expanded" : ""}`}>
+      
+      <main className={`visa-main ${isSidebarCollapsed ? "expanded" : ""}`}>
         <div className="visa-container">
+          
           <div className="visa-header">
             <div className="visa-title">
-              <h1>Visa Processing</h1>
-              <p>Manage visa requirements and forms</p>
+                <h1>VISA PROCESSING</h1>
+                <p>Active Visa Applications & Requirements</p>
             </div>
-            <div className="header-actions">
-              <button className="visa-btn-edit-req" onClick={() => setIsApplicationModalOpen(true)}>
-                <UserPlus size={18} /> Add Applicant
-              </button>
-              <button className="visa-btn-edit-req" onClick={() => setIsSettingsOpen(true)}>
-                <FileText size={18} /> Manage Visa Forms
-              </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  className="visa-btn-add" 
+                  style={{ background: '#0f172a' }} 
+                  onClick={() => setIsApplicationModalOpen(true)}
+                >
+                  <UserPlus size={18} /> Add Applicant
+                </button>
+                
+                <button className="visa-btn-add" onClick={() => setIsSettingsOpen(true)}>
+                  <FolderOpen size={18} /> Manage Forms
+                </button>
             </div>
           </div>
 
           <VisaStats stats={stats} />
-
-          <div className="search-filter-card">
-            <div className="search-filter-wrapper">
-              <div className="search-box">
-                <Search className="search-icon" size={20} />
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search by client name, Ref ID, or country..."
-                  value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                />
-              </div>
-              <div className="filter-buttons">
-                <button
-                  className={`filter-btn ${currentFilter === 'ALL' ? 'active' : ''}`}
-                  onClick={() => { setCurrentFilter('ALL'); setCurrentPage(1); }}
-                >
-                  All Items
-                </button>
-                {FILTER_BUTTONS.filter(status => status !== 'ALL').map(status => (
-                  <button
-                    key={status}
-                    className={`filter-btn ${currentFilter === status ? getActiveClass(status) : ''}`}
-                    onClick={() => { setCurrentFilter(status); setCurrentPage(1); }}
-                  >
-                    {status.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          
+          <VisaFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterStatus={currentFilter}
+            setFilterStatus={(status) => { setCurrentFilter(status); setCurrentPage(1); }}
+            statusOptions={FILTER_BUTTONS}
+            getFilterClassName={getFilterClassName}
+          />
 
           <div className="visa-table-container">
             <table className="visa-table">
               <thead>
                 <tr>
-                  <th>S. No.</th>
+                  <th style={{ textAlign: 'center', width: '60px' }}>#</th>
                   <th>Ref ID</th>
                   <th>Applicant</th>
                   <th>Country</th>
                   <th>Visa Type</th>
-                  <th>Date Received</th>
+                  <th>Date</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {currentApplications.map((app, index) => (
-                  <tr key={app.id}>
-                    <td>{pageBaseIndex + index + 1}</td>
-                    <td>{app.id}</td>
-                    <td>{app.client}</td>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <div className="visa-flag-circle-small">
-                          {app.flagCode ? (
-                            <img className="visa-flag-img" src={`https://flagcdn.com/w40/${app.flagCode.toLowerCase()}.png`} alt={app.country} />
-                          ) : (
-                            <span>{app.flag}</span>
-                          )}
-                        </div>
-                        <span>{app.country}</span>
-                      </div>
-                    </td>
-                    <td>{app.type}</td>
-                    <td>{app.date}</td>
-                    <td>
-                      <span className={`visa-badge badge-${app.status.toLowerCase().replace(/[\s_]/g, '-')}`}>{app.status}</span>
-                    </td>
-                    <td>
-                      <button className="visa-action-btn visa-view-btn" onClick={() => setSelectedInquiry(app._original)}>
-                        View
-                      </button>
-                      {/* BINAGONG BUTTON: Delete naging Archive */}
-                      <button 
-                        className="visa-action-btn" 
-                        style={{ backgroundColor: '#f39c12', color: 'white', marginLeft: '5px' }}
-                        onClick={() => handleArchive(app.mongoId)}
-                      >
-                        Archive
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+              <VisaTable 
+                loading={isLoading}
+                filteredCount={filteredApplications.length}
+                currentApplications={currentApplications}
+                handleViewInquiry={(inquiry) => setSelectedInquiry(inquiry)}
+                handleArchiveInquiry={handleArchive}
+                startIndex={pageBaseIndex}
+                getCountryCode={getCountryCode}
+              />
             </table>
-            
-            <Pagination 
-                applicationsPerPage={applicationsPerPage} 
-                totalApplications={filteredApplications.length} 
-                paginate={setCurrentPage} 
-                currentPage={currentPage}
-            />
           </div>
 
-          <VisaSettingsModal 
-            isOpen={isSettingsOpen}
-            onClose={() => setIsSettingsOpen(false)}
-            visaForms={visaForms}
-            isLoading={isLoading}
-            countryCodes={countryCodes}
-            refreshData={fetchVisas} 
-          />
-
-          {selectedInquiry && (
-            <VisaInquiryModal
-              isOpen={!!selectedInquiry}
-              onClose={() => setSelectedInquiry(null)}
-              inquiry={selectedInquiry}
-              refreshData={fetchInquiries}
+          {filteredApplications.length > 0 && Math.ceil(filteredApplications.length / applicationsPerPage) > 1 && (
+            <VisaPagination
+              totalItems={filteredApplications.length}
+              itemsPerPage={applicationsPerPage}
+              currentPage={currentPage}
+              onPageChange={(page) => setCurrentPage(page)}
             />
           )}
-
-          <VisaApplicationModal
-            isOpen={isApplicationModalOpen}
-            onClose={() => setIsApplicationModalOpen(false)}
-            refreshData={fetchInquiries} 
-            visaForms={visaForms} 
-          />
         </div>
-      </div>
+      </main>
+
+      <VisaApplicationModal
+        isOpen={isApplicationModalOpen}
+        onClose={() => setIsApplicationModalOpen(false)}
+        refreshData={fetchInquiries} 
+        visaForms={visaForms} 
+      />
+
+      {selectedInquiry && (
+        <VisaInquiryModal
+          isOpen={!!selectedInquiry}
+          onClose={() => setSelectedInquiry(null)}
+          inquiry={selectedInquiry}
+          refreshData={fetchInquiries}
+        />
+      )}
+
+      <VisaSettingsModal 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        visaForms={visaForms}
+        isLoading={isLoading}
+        countryCodes={countryCodes}
+        refreshData={fetchVisas} 
+      />
     </div>
   );
 };

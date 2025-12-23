@@ -1,0 +1,420 @@
+/* ========================================
+   ACTIVITY LOGS DETAIL MODAL - STYLES
+   ======================================== */
+
+/* ===== ANIMATIONS ===== */
+@keyframes logFadeIn { 
+    from { opacity: 0; } 
+    to { opacity: 1; } 
+}
+
+@keyframes logSlideUp { 
+    from { opacity: 0; transform: translateY(30px) scale(0.96); } 
+    to { transform: translateY(0) scale(1); } 
+}
+
+/* ===== MODAL OVERLAY & CONTAINER ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.9));
+    backdrop-filter: blur(12px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    animation: logFadeIn 0.25s ease;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    animation: logSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+    max-width: 850px; 
+}
+
+/* ===== HEADER ===== */
+.modal-header {
+    padding: 28px 32px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: linear-gradient(to bottom, #ffffff, #fafbfc);
+    border-radius: 20px 20px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header .log-header-content { 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+    flex: 1; 
+    flex-wrap: wrap; 
+}
+
+.modal-header .log-title-group { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+    flex: 1; 
+    min-width: 200px; 
+}
+
+.modal-header h2 { 
+    font-size: 22px; 
+    font-weight: 800; 
+    color: #0f172a; 
+    margin: 0; 
+    letter-spacing: -0.02em; 
+}
+
+.modal-header .log-meta { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 13px; 
+    color: #64748b; 
+    font-weight: 500; 
+}
+
+.modal-header .log-ref { 
+    font-weight: 700; 
+    color: #475569; 
+    font-family: "Courier New", monospace; 
+}
+
+.modal-header .log-divider { 
+    color: #cbd5e1; 
+}
+
+.modal-header .log-date { 
+    color: #64748b; 
+}
+
+.modal-close {
+    background: #f1f5f9; 
+    border: none; 
+    border-radius: 10px; 
+    width: 40px; 
+    height: 40px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    cursor: pointer; 
+    color: #64748b; 
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+    flex-shrink: 0;
+}
+
+.modal-close:hover { 
+    background: #fee2e2; 
+    color: #dc2626; 
+    transform: scale(1.05); 
+}
+
+/* ===== SEVERITY BADGE - MODIFIED COLORS ===== */
+.log-severity-badge { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    padding: 12px 18px; 
+    border-radius: 12px; 
+    border: 2px solid; 
+    min-width: 200px; 
+}
+
+.log-severity-icon { 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 8px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    flex-shrink: 0; 
+}
+
+.log-severity-content { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 2px; 
+    flex: 1; 
+}
+
+.log-severity-label { 
+    font-size: 13px; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+}
+
+.log-severity-desc { 
+    font-size: 11px; 
+    opacity: 0.8; 
+    font-weight: 600; 
+}
+
+/* Severity Variants */
+.log-severity-blue { 
+    background: #eff6ff; 
+    border-color: #bfdbfe; 
+    color: #1e40af; 
+    margin-right: 15px; 
+}
+
+.log-severity-blue .log-severity-icon { 
+    background: #dbeafe; 
+    color: #2563eb; 
+}
+
+.log-severity-green { 
+    background: #f0fdf4; 
+    border-color: #bbf7d0; 
+    color: #166534; 
+    margin-right: 15px; 
+}
+
+.log-severity-green .log-severity-icon { 
+    background: #dcfce7; 
+    color: #16a34a; 
+}
+
+.log-severity-yellow { 
+    background: #fefce8; 
+    border-color: #fef08a; 
+    color: #854d0e; 
+    margin-right: 15px; 
+}
+
+.log-severity-yellow .log-severity-icon { 
+    background: #fef3c7; 
+    color: #f59e0b; 
+}
+
+.log-severity-red { 
+    background: #fef2f2; 
+    border-color: #fecaca; 
+    color: #991b1b; 
+    margin-right: 15px; 
+}
+
+.log-severity-red .log-severity-icon { 
+    background: #fee2e2; 
+    color: #dc2626; 
+}
+
+/* ===== BODY & SCROLLBAR ===== */
+.modal-body { 
+    padding: 28px 32px; 
+    overflow-y: auto; 
+    flex: 1; 
+}
+
+.modal-body::-webkit-scrollbar { 
+    width: 8px; 
+}
+
+.modal-body::-webkit-scrollbar-track { 
+    background: #f8fafc; 
+}
+
+.modal-body::-webkit-scrollbar-thumb { 
+    background: #cbd5e1; 
+    border-radius: 10px; 
+}
+
+/* ===== CARD STYLES ===== */
+.log-card { 
+    background: white; 
+    border: 2px solid #e2e8f0; 
+    border-radius: 16px; 
+    padding: 28px; 
+    margin-bottom: 15px; 
+    transition: all 0.2s ease; 
+}
+
+.log-card:hover { 
+    border-color: #cbd5e1; 
+}
+
+.log-card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 24px; 
+}
+
+.log-card-title { 
+    font-size: 12px; 
+    font-weight: 800; 
+    color: #64748b; 
+    margin: 0; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+}
+
+/* INFO GRID */
+.log-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+    gap: 20px; 
+}
+
+.log-info-item { 
+    display: flex; 
+    gap: 14px; 
+    align-items: flex-start; 
+}
+
+.log-info-icon {
+    width: 44px; 
+    height: 44px; 
+    background: linear-gradient(135deg, #e0f2fe, #bfdbfe); 
+    color: #3b82f6; 
+    border-radius: 12px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    flex-shrink: 0; 
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.log-info-content { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+}
+
+.log-info-label { 
+    font-size: 11px; 
+    color: #64748b; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+}
+
+.log-info-value { 
+    font-size: 15px; 
+    font-weight: 700; 
+    color: #0f172a; 
+    word-break: break-word; 
+}
+
+/* MESSAGE BOX (Used for descriptions and raw data) */
+.log-message-box {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    padding: 20px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.7;
+    border: 2px solid #e2e8f0;
+}
+
+/* ===== FOOTER ===== */
+.modal-footer {
+    padding: 24px 32px;
+    border-top: 2px solid #e2e8f0;
+    background: linear-gradient(to top, #fafbfc, #ffffff);
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+    border-radius: 0 0 20px 20px;
+}
+
+/* BUTTONS */
+.log-btn {
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 10px; 
+    padding: 12px 24px; 
+    border-radius: 10px;
+    font-size: 14px; 
+    font-weight: 700; 
+    cursor: pointer; 
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+    border: none;
+    white-space: nowrap; 
+    position: relative; 
+    overflow: hidden;
+}
+
+.log-btn:disabled { 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+}
+
+.log-btn-ghost { 
+    background: transparent; 
+    color: #64748b; 
+}
+
+.log-btn-ghost:hover:not(:disabled) { 
+    background: #f1f5f9; 
+    color: #0f172a; 
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .modal-content { 
+        max-height: 95vh; 
+        border-radius: 16px; 
+    }
+    
+    .modal-header, .modal-body, .modal-footer { 
+        padding: 20px; 
+    }
+    
+    .modal-header h2 { 
+        font-size: 18px; 
+    }
+    
+    .modal-header .log-header-content { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 14px; 
+    }
+    
+    .log-severity-badge { 
+        min-width: auto; 
+        width: 100%; 
+    }
+    
+    .log-grid { 
+        grid-template-columns: 1fr; 
+    }
+    
+    .modal-footer { 
+        flex-direction: column; 
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-body { 
+        padding: 16px; 
+    }
+    
+    .log-card { 
+        padding: 20px; 
+    }
+    
+    .log-btn { 
+        font-size: 13px; 
+        padding: 10px 16px; 
+    }
+}

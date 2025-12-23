@@ -664,6 +664,8 @@ const CenomarRequest = () => {
         <InquiryModal 
           inquiry={selectedInquiry}
           documents={documents}
+          // [CRITICAL] Passing the list of services to the modal so it can find the price
+          cenomarDocs={cenomarDocs}
           onClose={handleCloseInquiryModal}
           onUpdateStatus={handleUpdateInquiryStatus}
           onRequestPayment={handleRequestPayment}

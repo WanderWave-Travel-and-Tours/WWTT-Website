@@ -8,7 +8,7 @@ const addImage = async (req, res) => {
             return res.status(400).json({ message: 'Please upload an image.' });
         }
 
-        const imageUrl = `https://wanderwaveph-backend.onrender.com/uploads/${req.file.filename}`;
+        const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
         const imageName = req.body.title || req.file.originalname;
 
         const newImage = new Image({

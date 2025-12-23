@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { X, ChevronLeft, CheckCircle, ClipboardList, FileText, User, DollarSign, Briefcase, Building2, GraduationCap, Users, Calendar, Globe } from "lucide-react";
+import { X, ChevronLeft, CheckCircle, ClipboardList, FileText, User, DollarSign, Briefcase, Building2, GraduationCap, Users, Calendar, Globe, UserCircle, Baby, ChevronRight } from "lucide-react";
 import "./VisaApplicationModal.css";
 
 const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) => {
   const [step, setStep] = useState(1); // 1: Type Selection, 2: Form, 3: Confirmation
-  const [applicantType, setApplicantType] = useState("Adult");
+  const [applicantType, setApplicantType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -24,6 +24,10 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
 
   const handleNextStep = () => setStep(step + 1);
   const handlePrevStep = () => setStep(step - 1);
+
+  const handleApplicantTypeSelect = (type) => {
+    setApplicantType(type);
+  };
 
   // --- Retained Input Change Handler with Validations ---
   const handleInputChange = (e) => {
@@ -261,7 +265,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
         });
 
         // 3. Send Request
-        const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries/upload-application', data, {
+        const response = await axios.post('http://localhost:5000/api/inquiries/upload-application', data, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
 
@@ -280,7 +284,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
 
   const resetAndClose = () => {
     setStep(1);
-    setApplicantType("Adult");
+    setApplicantType("");
     setFormData({
         travelDate: "",
         lengthOfStay: "",
@@ -296,38 +300,70 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
   };
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && onClose()}>
-      <div className={`modal-content ${step === 2 ? "modal-content-xl" : "modal-content-md"}`}>
-        
-        {/* --- STEP 1: SELECT APPLICANT TYPE --- */}
-        {step === 1 && (
-          <>
-            <div className="modal-header">
-              <div>
-                <h3>Select Applicant Type</h3>
-                <p className="modal-header-subtitle">Choose whether you're applying as an adult or child</p>
-              </div>
-              <button className="modal-close-btn" onClick={onClose}><X size={24} /></button>
+    <>
+      {/* --- STEP 1: NEW SELECT APPLICANT TYPE DESIGN --- */}
+      {step === 1 && (
+        <div className="select-applicant-overlay" onClick={(e) => e.target.className === "select-applicant-overlay" && onClose()}>
+          <div className="select-applicant-modal">
+            <div className="select-applicant-header">
+              <div className="select-header-content">
+                </div>
+                <h2>Select Applicant Type</h2>
+                <p>Choose the appropriate category for your visa application</p>
+              <button className="select-close-btn" onClick={onClose}>
+                <X size={24} />
+              </button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Applicant Type <span className="req">*</span></label>
-                <select value={applicantType} onChange={(e) => setApplicantType(e.target.value)} className="app-select">
-                  <option value="Adult">Adult</option>
-                  <option value="Child">Child</option>
-                </select>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={onClose}>Cancel</button>
-              <button className="modal-save-btn" onClick={handleNextStep}>Continue</button>
-            </div>
-          </>
-        )}
 
-        {/* --- STEP 2: APPLICATION FORM --- */}
-        {step === 2 && (
-          <>
+            <div className="select-applicant-body">
+              <div className="applicant-type-cards">
+                <div 
+                  className={`applicant-type-card ${applicantType === "Adult" ? "selected" : ""}`}
+                  onClick={() => handleApplicantTypeSelect("Adult")}
+                >
+                  <div className="card-icon-wrapper">
+                    <UserCircle size={40} />
+                  </div>
+                  <h3 className="card-type-label">Adult</h3>
+                  <p className="card-type-desc">For applicants 18 years old and above</p>
+                  <span className="selection-indicator">Selected</span>
+                </div>
+
+                <div 
+                  className={`applicant-type-card ${applicantType === "Child" ? "selected" : ""}`}
+                  onClick={() => handleApplicantTypeSelect("Child")}
+                >
+                  <div className="card-icon-wrapper">
+                    <Baby size={40} />
+                  </div>
+                  <h3 className="card-type-label">Child</h3>
+                  <p className="card-type-desc">For applicants below 18 years old</p>
+                  <span className="selection-indicator">Selected</span>
+                </div>
+              </div>
+
+              <div className="select-applicant-footer">
+                <button className="select-cancel-btn" onClick={onClose}>
+                  Cancel
+                </button>
+                <button 
+                  className="select-continue-btn" 
+                  onClick={handleNextStep}
+                  disabled={!applicantType}
+                >
+                  <span>Continue</span>
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- STEP 2: APPLICATION FORM --- */}
+      {step === 2 && (
+        <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && onClose()}>
+          <div className="modal-content modal-content-xl">
             <div className="modal-header">
               <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
                 <button className="back-icon-btn" onClick={handlePrevStep}><ChevronLeft size={20}/></button>
@@ -548,12 +584,14 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 {isLoading ? "Saving..." : "Add Applicant"}
               </button>
             </div>
-          </>
-        )}
+          </div>
+        </div>
+      )}
 
-        {/* --- STEP 3: CONFIRMATION --- */}
-        {step === 3 && (
-            <>
+      {/* --- STEP 3: CONFIRMATION --- */}
+      {step === 3 && (
+        <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && resetAndClose()}>
+          <div className="modal-content modal-content-md">
             <div className="modal-header">
               <div>
                 <h3>Applicant Added</h3>
@@ -570,10 +608,10 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                     <button className="submit-inquiry-btn" onClick={resetAndClose}>Close</button>
                 </div>
             </div>
-            </>
-        )}
-      </div>
-    </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

@@ -7,6 +7,9 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Dedicated state para sa presyo para sure na nahahawakan natin
+  const [selectedPrice, setSelectedPrice] = useState(0);
+
   const [formData, setFormData] = useState({
     givenName: "",
     lastName: "",
@@ -21,6 +24,13 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Auto-update price kapag namili ng CENOMAR type
+    if (name === 'cenomarType') {
+        const selectedDoc = cenomarDocs.find(p => p.documentType === value);
+        setSelectedPrice(selectedDoc ? selectedDoc.price : 0);
+    }
+
     setFormData({ ...formData, [name]: value });
   };
 
@@ -44,7 +54,6 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
     try {
       const data = new FormData();
       
-      // Mapped to Inquiry Model requirements
       data.append('serviceName', formData.cenomarType);
       data.append('inquiryType', 'CENOMAR'); 
       data.append('fullName', `${formData.givenName} ${formData.lastName}`);
@@ -52,17 +61,13 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
       data.append('contactNumber', formData.contactNumber);
       data.append('message', formData.message);
       
-      // Get price from the selected CENOMAR configuration
-      const selectedDoc = cenomarDocs.find(p => p.documentType === formData.cenomarType);
-      data.append('estimatedPrice', selectedDoc ? selectedDoc.price : 0);
+      // CRITICAL: Ipasa ang nakuha nating price mula sa state
+      data.append('estimatedPrice', selectedPrice);
       data.append('cenomarDocument', formData.cenomarType);
 
-      // IMPORTANT: Mark this as a client requirement document
-      // This ensures it appears in "Submitted Documents (Requirements)"
       data.append('documentCategory', 'REQUIREMENT');
-      data.append('uploader', 'USER');
+      data.append('uploader', 'ADMIN_WALKIN');
 
-      // Append Walk-in attachments
       Object.keys(formData.files).forEach(key => {
         data.append(key, formData.files[key]);
       });
@@ -86,6 +91,7 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
   const resetAndClose = () => {
     setStep(1);
     setFormData({ givenName: "", lastName: "", email: "", contactNumber: "", cenomarType: "", message: "Walk-in Application", files: {} });
+    setSelectedPrice(0);
     onClose();
   };
 
@@ -139,6 +145,12 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
                     ))}
                   </select>
                 </div>
+                {/* DISPLAY CONFIRMATION OF PRICE */}
+                {selectedPrice > 0 && (
+                     <div style={{marginTop: '10px', padding: '10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#166534', fontSize: '14px', fontWeight: '600'}}>
+                        Current Price: ₱{selectedPrice}
+                     </div>
+                )}
               </div>
 
               <div className="cnm-form-section" style={{marginTop: '25px'}}>
@@ -157,7 +169,7 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
             </div>
 
             <div className="cnm-footer">
-              <button className="cnm-btn cnm-btn-ghost" onClick={onClose}>Cancel</button>
+              <button className="cnm-btn cnm-btn-ghost" onClick={resetAndClose}>Cancel</button>
               <button className="cnm-btn cnm-btn-primary" onClick={submitApplication} disabled={isLoading}>
                 {isLoading ? "Saving..." : "Create Request"}
               </button>

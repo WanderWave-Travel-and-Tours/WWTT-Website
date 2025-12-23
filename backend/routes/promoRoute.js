@@ -1,28 +1,33 @@
 const mongoose = require('mongoose');
 const router = require('express').Router();
+const multer = require('multer');
+const path = require('path');
+const Promo = require('../models/promo'); // Siguraduhin tama ang path sa model mo
 
-// SCHEMA DEFINITION
-const PromoSchema = new mongoose.Schema({
-    code: { type: String, required: true, unique: true, uppercase: true, trim: true },
-    description: { type: String, required: true },
-    category: { type: String, required: true },
-    discountType: { type: String, required: true },
-    discountValue: { type: Number, required: true },
-    startDate: { type: Date, required: true },
-    durationType: { type: String, enum: ['Weekly', 'Monthly', 'Yearly'], required: true }, // Ensure this matches frontend
-    validUntil: { type: Date, required: true },
-    isActive: { type: Boolean, default: true },
-    isArchive: { type: String, enum: ['No', 'Yes'], default: 'No' }
-}, { timestamps: true });
+// MULTER CONFIGURATION (Image Upload)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // Siguraduhin may 'uploads' folder ka sa root ng backend
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
+    }
+});
 
-const Promo = mongoose.models.Promo || mongoose.model('Promo', PromoSchema);
+const upload = multer({ storage: storage });
 
 // ROUTES
 
-// 1. CREATE
-router.post('/add', async (req, res) => {
+// 1. CREATE (With Image Upload)
+router.post('/add', upload.single('image'), async (req, res) => {
     try {
-        const newPromo = new Promo({ ...req.body, isArchive: "No" });
+        const promoData = {
+            ...req.body,
+            isArchive: "No",
+            image: req.file ? req.file.filename : "" // Save filename kung may inupload
+        };
+
+        const newPromo = new Promo(promoData);
         const savedPromo = await newPromo.save();
         res.status(200).json({ status: "ok", data: savedPromo });
     } catch (err) {
@@ -30,7 +35,7 @@ router.post('/add', async (req, res) => {
     }
 });
 
-// 2. READ: Get Specific Promo by ID (CRITICAL FOR EDIT PAGE)
+// 2. READ: Get Specific Promo by ID
 router.get('/:id', async (req, res) => {
     try {
         const promo = await Promo.findById(req.params.id);
@@ -41,7 +46,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// 3. READ: View Active Promos
+// 3. READ: View Active Promos (Not Archived)
 router.get('/', async (req, res) => {
     try {
         const promos = await Promo.find({ isArchive: "No" }).sort({ createdAt: -1 });
@@ -61,16 +66,22 @@ router.get('/all', async (req, res) => {
     }
 });
 
-// 5. UPDATE: General Update (Fixes editing issue)
-// UPDATE ARCHIVE STATUS (Ito ang fix sa 404)
-// URL: PUT https://wanderwaveph-backend.onrender.com/api/promos/:id
-router.put('/:id', async (req, res) => {
+// 5. UPDATE: Edit Promo (With Image Upload)
+router.put('/:id', upload.single('image'), async (req, res) => {
     try {
+        let updateData = { ...req.body };
+
+        // Kung may bagong image na inupload, i-update ang image field
+        if (req.file) {
+            updateData.image = req.file.filename;
+        }
+
         const updatedPromo = await Promo.findByIdAndUpdate(
             req.params.id,
-            { $set: req.body }, 
+            { $set: updateData }, 
             { new: true }
         );
+
         if (!updatedPromo) return res.status(404).json({ message: "Promo not found" });
         res.status(200).json({ status: "ok", data: updatedPromo });
     } catch (err) {

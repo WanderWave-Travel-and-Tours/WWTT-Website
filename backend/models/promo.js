@@ -25,8 +25,11 @@ const PromoSchema = new mongoose.Schema({
         type: Date, 
         required: true 
     },
+    image: {
+        type: String, // Dito masasave ang filename ng image
+        default: ''
+    },
     isActive: { type: Boolean, default: true },
-    // Dinagdag ang isArchive property dito
     isArchive: { 
         type: String, 
         enum: ['No', 'Yes'], 

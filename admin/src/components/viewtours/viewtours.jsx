@@ -7,7 +7,7 @@ import TourFilters from './TourFilters';
 import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/tours';
+const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 const ViewTours = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -110,7 +110,7 @@ const ViewTours = () => {
                                             <td>
                                                 <div className="vt-customer-cell">
                                                     <div className="vt-image-preview">
-                                                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} alt="" />
+                                                        <img src={`http://localhost:5000/uploads/${tour.image}`} alt="" />
                                                     </div>
                                                     <span className="vt-customer-name">{tour.title.toUpperCase()}</span>
                                                 </div>

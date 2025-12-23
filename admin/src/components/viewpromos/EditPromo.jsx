@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Tag, Calendar, Percent, DollarSign, FileText } from 'lucide-react';
+import { Save, ArrowLeft, Percent, DollarSign, Upload, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditPromo.css'; 
 
@@ -19,14 +19,19 @@ const EditPromo = () => {
         discountValue: '',
         startDate: '',
         validUntil: '',
-        description: ''
+        description: '',
+        durationType: 'Weekly' // Default
     });
+
+    // Image Handling
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [currentImage, setCurrentImage] = useState(null);
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Helper to format date for input type="date" (YYYY-MM-DD)
     const formatDateForInput = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -49,8 +54,13 @@ const EditPromo = () => {
                     discountValue: data.discountValue || '',
                     startDate: formatDateForInput(data.startDate),
                     validUntil: formatDateForInput(data.validUntil),
-                    description: data.description || ''
+                    description: data.description || '',
+                    durationType: data.durationType || 'Weekly'
                 });
+
+                if (data.image) {
+                    setCurrentImage(data.image);
+                }
             } catch (err) {
                 console.error(err);
                 alert('Could not load promo details. Please check connection.');
@@ -72,17 +82,42 @@ const EditPromo = () => {
         }));
     };
 
+    // Image Handlers
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeNewImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
 
         try {
+            const data = new FormData();
+            data.append('code', formData.code);
+            data.append('category', formData.category);
+            data.append('discountType', formData.discountType);
+            data.append('discountValue', formData.discountValue);
+            data.append('startDate', formData.startDate);
+            data.append('validUntil', formData.validUntil);
+            data.append('description', formData.description);
+            data.append('durationType', formData.durationType);
+
+            if (imageFile) {
+                data.append('image', imageFile);
+            }
+
             const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
+                body: data, // No Content-Type header
             });
 
             if (!response.ok) {
@@ -115,15 +150,11 @@ const EditPromo = () => {
 
     return (
         <div className="epr-page">
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
             <main className={`epr-main ${isSidebarCollapsed ? "epr-main--collapsed" : ""}`}>
                 <div className="epr-container">
                     
-                    {/* Header - Matches EditTour UI */}
                     <header className="epr-header">
                         <div className="epr-header-content">
                             <button className="epr-back-btn" onClick={() => navigate('/view-promos')}>
@@ -135,10 +166,63 @@ const EditPromo = () => {
                         </div>
                     </header>
 
-                    {/* Form */}
                     <form onSubmit={handleSubmit} className="epr-form">
                         
-                        {/* Section 1: Basic Information */}
+                        {/* Image Section */}
+                        <div className="epr-section">
+                            <h2 className="epr-section-title">Promo Image</h2>
+                            <div className="epr-form-group">
+                                <label className="epr-label">Upload New Image (Replaces current)</label>
+                                <div style={{ border: '2px dashed #e2e8f0', borderRadius: '10px', padding: '20px', textAlign: 'center', background: '#f8fafc' }}>
+                                    {imagePreview ? (
+                                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                                            <p style={{fontSize: '12px', color:'#64748b', marginBottom: '8px'}}>New Image Selected:</p>
+                                            <img src={imagePreview} alt="New Preview" style={{ maxWidth: '100%', maxHeight: '250px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
+                                            <button 
+                                                type="button"
+                                                onClick={removeNewImage}
+                                                style={{
+                                                    position: 'absolute', top: '20px', right: '-10px',
+                                                    background: 'red', color: 'white', border: 'none',
+                                                    borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                }}
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px'}}>
+                                            {currentImage && (
+                                                <div style={{marginBottom: '10px'}}>
+                                                     <p style={{fontSize: '12px', color:'#64748b', marginBottom: '8px'}}>Current Image:</p>
+                                                    <img 
+                                                        src={`http://localhost:5000/uploads/${currentImage}`} 
+                                                        alt="Current" 
+                                                        style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid #e2e8f0' }} 
+                                                        onError={(e) => e.target.style.display = 'none'}
+                                                    />
+                                                </div>
+                                            )}
+                                            
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                onChange={handleImageChange}
+                                                id="edit-promo-image"
+                                                style={{ display: 'none' }}
+                                            />
+                                            <label htmlFor="edit-promo-image" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: '#475569' }}>
+                                                <Upload size={18} />
+                                                {currentImage ? 'Change Image' : 'Upload Image'}
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Basic Info */}
                         <div className="epr-section">
                             <h2 className="epr-section-title">Voucher Identity</h2>
                             <div className="epr-form-grid">
@@ -151,30 +235,39 @@ const EditPromo = () => {
                                         onChange={handleChange}
                                         required
                                         className="epr-input"
-                                        placeholder="e.g. SUMMER2024"
+                                        style={{ textTransform: 'uppercase' }}
                                     />
                                 </div>
 
                                 <div className="epr-form-group">
                                     <label className="epr-label">Category *</label>
-                                    <select 
-                                        name="category" 
-                                        value={formData.category} 
+                                    <input 
+                                        type="text"
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleChange}
+                                        required
+                                        className="epr-input"
+                                    />
+                                </div>
+
+                                <div className="epr-form-group">
+                                    <label className="epr-label">Duration Type</label>
+                                    <select
+                                        name="durationType"
+                                        value={formData.durationType}
                                         onChange={handleChange}
                                         className="epr-select"
-                                        required
                                     >
-                                        <option value="">Select Category</option>
-                                        <option value="Flight">Flight</option>
-                                        <option value="Hotel">Hotel</option>
-                                        <option value="Tour">Tour</option>
-                                        <option value="General">General</option>
+                                        <option value="Weekly">Weekly</option>
+                                        <option value="Monthly">Monthly</option>
+                                        <option value="Yearly">Yearly</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Section 2: Discount Configuration */}
+                        {/* Value & Discount */}
                         <div className="epr-section">
                             <h2 className="epr-section-title">Value & Discount</h2>
                             <div className="epr-form-grid">
@@ -191,12 +284,12 @@ const EditPromo = () => {
                                             />
                                             <Percent size={16} /> Percentage (%)
                                         </label>
-                                        <label className={`epr-radio-label ${formData.discountType === 'Fixed Amount' ? 'active' : ''}`}>
+                                        <label className={`epr-radio-label ${formData.discountType === 'Fixed Amount (Peso)' || formData.discountType === 'Fixed Amount' ? 'active' : ''}`}>
                                             <input 
                                                 type="radio" 
                                                 name="discountType" 
-                                                value="Fixed Amount"
-                                                checked={formData.discountType === 'Fixed Amount'}
+                                                value="Fixed Amount (Peso)"
+                                                checked={formData.discountType === 'Fixed Amount (Peso)' || formData.discountType === 'Fixed Amount'}
                                                 onChange={handleChange}
                                             />
                                             <DollarSign size={16} /> Fixed Amount (₱)
@@ -214,13 +307,12 @@ const EditPromo = () => {
                                         required
                                         min="0"
                                         className="epr-input"
-                                        placeholder="0"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Section 3: Validity & Description */}
+                        {/* Validity & Terms */}
                         <div className="epr-section">
                             <h2 className="epr-section-title">Validity & Terms</h2>
                             <div className="epr-form-grid">
@@ -255,13 +347,11 @@ const EditPromo = () => {
                                         onChange={handleChange}
                                         className="epr-textarea"
                                         rows="4"
-                                        placeholder="Enter terms and conditions or internal notes..."
                                     ></textarea>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Footer Actions */}
                         <div className="epr-form-actions">
                             <button 
                                 type="button" 
@@ -276,13 +366,7 @@ const EditPromo = () => {
                                 className="epr-btn epr-btn--submit" 
                                 disabled={submitting}
                             >
-                                {submitting ? (
-                                    'Saving...' 
-                                ) : (
-                                    <>
-                                        <Save size={18} /> Update Promo
-                                    </>
-                                )}
+                                {submitting ? 'Saving...' : <><Save size={18} /> Update Promo</>}
                             </button>
                         </div>
                     </form>

@@ -9,7 +9,7 @@ import HotelPreview from './HotelPreview';
 import { useToast } from '../toast/ToastManager'; // 👈 ADD THIS LINE
 import './addhotel.css';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+const API_BASE_URL = 'http://localhost:5000';
 
 const AddHotel = () => {
   const navigate = useNavigate();

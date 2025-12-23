@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Ticket, Copy, Check, Tag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Ticket, Copy, Check } from 'lucide-react';
 import './promoSection.css';
 
 function PromoSection({ onBookNow }) {
@@ -8,31 +8,24 @@ function PromoSection({ onBookNow }) {
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(null);
 
-  const getPromoDesign = (type) => {
+  // Fallback images if no image uploaded
+  const getPromoFallbackImage = (type) => {
     switch(type) {
       case 'Weekly':
-        return {
-          image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=80"
-        };
+        return "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=80";
       case 'Monthly':
-        return {
-          image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80"
-        };
+        return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80";
       case 'Yearly':
-        return {
-          image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80"
-        };
+        return "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80";
       default:
-        return {
-          image: "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=1200&q=80"
-        };
+        return "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=1200&q=80";
     }
   };
 
   useEffect(() => {
     const fetchPromos = async () => {
       try {
-        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
+        const response = await fetch('http://localhost:5000/api/promos');
         const data = await response.json();
 
         if (Array.isArray(data)) {
@@ -43,7 +36,11 @@ function PromoSection({ onBookNow }) {
           });
 
           const formattedPromos = activePromos.map(p => {
-            const design = getPromoDesign(p.durationType);
+            // Check if backend provided an image, otherwise use fallback
+            const imageUrl = p.image 
+                ? `http://localhost:5000/uploads/${p.image}` 
+                : getPromoFallbackImage(p.durationType);
+
             return {
               id: p._id,
               type: p.durationType,
@@ -54,7 +51,7 @@ function PromoSection({ onBookNow }) {
               discountType: p.discountType,
               description: p.description,
               validUntil: new Date(p.validUntil),
-              ...design
+              image: imageUrl
             };
           });
 

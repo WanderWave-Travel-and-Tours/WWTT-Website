@@ -94,7 +94,7 @@ const BookingRightForm = ({ pkg }) => {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -434,7 +434,7 @@ const BookingRightForm = ({ pkg }) => {
       // ===========================================
       // API CALL 1: SAVE BOOKING DATA
       // ===========================================
-      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
+      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -448,7 +448,7 @@ const BookingRightForm = ({ pkg }) => {
         // API CALL 2: CREATE PAYMENT LINK (Final Redirect)
         // ===========================================
         // The /create-intent route expects { bookingId: '...' } in the body
-        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
+        const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
             bookingId: bookingId
         });
         
