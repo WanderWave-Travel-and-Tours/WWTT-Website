@@ -1,6 +1,9 @@
 const Document = require('../models/document');
 const { cloudinary } = require('../config/cloudinary');
 
+// ❌ REMOVE YUNG MULTER CONFIG AT UPLOAD EXPORT DITO
+// Lahat ng upload config nasa cloudinary.js na
+
 const uploadDocuments = async (req, res) => {
   try {
     console.log('📥 Upload request received');
@@ -41,10 +44,10 @@ const uploadDocuments = async (req, res) => {
       const document = await Document.create({
         inquiryId,
         userId,
-        fileName: file.filename,
+        fileName: file.filename, // Cloudinary public_id
         originalName: file.originalname,
         fileUrl: file.path, // Cloudinary URL
-        filePublicId: file.filename,
+        filePublicId: file.filename, // For deletion
         fileSize: file.size,
         fileType: file.mimetype,
         section: section,
@@ -108,13 +111,17 @@ const deleteDocument = async (req, res) => {
     // Delete from Cloudinary
     if (document.filePublicId) {
       try {
-        await cloudinary.uploader.destroy(document.filePublicId, { resource_type: 'auto' });
+        await cloudinary.uploader.destroy(document.filePublicId, { 
+          resource_type: 'auto' // Important for PDFs and documents
+        });
+        console.log('✅ File deleted from Cloudinary:', document.filePublicId);
       } catch (err) {
-        console.error('Failed to delete file from Cloudinary:', err);
+        console.error('❌ Failed to delete file from Cloudinary:', err);
       }
     }
 
     await Document.findByIdAndDelete(docId);
+    console.log('✅ Document deleted from database');
 
     res.json({ success: true, message: 'Document deleted successfully' });
 
@@ -185,14 +192,4 @@ const getAllDocuments = async (req, res) => {
     console.error('Get all documents error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
-};
-
-module.exports = {
-  uploadDocuments,
-  getDocumentsByInquiry,
-  getUserDocuments,
-  getDocumentsByUser,
-  deleteDocument,
-  updateDocumentStatus,
-  getAllDocuments
 };
