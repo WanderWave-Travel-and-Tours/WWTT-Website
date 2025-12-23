@@ -1,9 +1,7 @@
 const Document = require('../models/document');
 const { cloudinary } = require('../config/cloudinary');
 
-// ❌ REMOVE YUNG MULTER CONFIG AT UPLOAD EXPORT DITO
-// Lahat ng upload config nasa cloudinary.js na
-
+// ✅ UPLOAD DOCUMENTS FUNCTION
 const uploadDocuments = async (req, res) => {
   try {
     console.log('📥 Upload request received');
@@ -44,10 +42,10 @@ const uploadDocuments = async (req, res) => {
       const document = await Document.create({
         inquiryId,
         userId,
-        fileName: file.filename, // Cloudinary public_id
+        fileName: file.filename,
         originalName: file.originalname,
-        fileUrl: file.path, // Cloudinary URL
-        filePublicId: file.filename, // For deletion
+        fileUrl: file.path,
+        filePublicId: file.filename,
         fileSize: file.size,
         fileType: file.mimetype,
         section: section,
@@ -112,7 +110,7 @@ const deleteDocument = async (req, res) => {
     if (document.filePublicId) {
       try {
         await cloudinary.uploader.destroy(document.filePublicId, { 
-          resource_type: 'auto' // Important for PDFs and documents
+          resource_type: 'auto'
         });
         console.log('✅ File deleted from Cloudinary:', document.filePublicId);
       } catch (err) {
@@ -192,4 +190,15 @@ const getAllDocuments = async (req, res) => {
     console.error('Get all documents error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
+};
+
+// ✅ CRITICAL - SIGURADUHING NASA MODULE.EXPORTS LAHAT NG FUNCTIONS
+module.exports = {
+  uploadDocuments,
+  getDocumentsByInquiry,
+  getUserDocuments,
+  getDocumentsByUser,
+  deleteDocument,
+  updateDocumentStatus,
+  getAllDocuments
 };
