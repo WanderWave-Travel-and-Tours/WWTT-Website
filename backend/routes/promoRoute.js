@@ -62,6 +62,8 @@ router.get('/all', async (req, res) => {
 });
 
 // 5. UPDATE: General Update (Fixes editing issue)
+// UPDATE ARCHIVE STATUS (Ito ang fix sa 404)
+// URL: PUT https://wanderwaveph-backend.onrender.com/api/promos/:id
 router.put('/:id', async (req, res) => {
     try {
         const updatedPromo = await Promo.findByIdAndUpdate(

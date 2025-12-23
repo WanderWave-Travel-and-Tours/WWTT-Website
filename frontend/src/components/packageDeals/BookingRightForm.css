@@ -1,6 +1,22 @@
 /* BookingRightForm.css */
 
 /* --- Calendar Section --- */
+
+.brf-disabled-date {
+  color: #e5e7eb !important;      /* Sobrang light na gray para sa text */
+  background-color: transparent !important; /* Walang background */
+  cursor: default !important;     /* Default cursor lang, hindi 'pointer' */
+  pointer-events: none !important; /* ETO ANG KEY: Bawal i-hover o i-click */
+  border: none !important;        /* Tanggalin ang border kung meron */
+  text-decoration: none;          /* Optional: Kung ayaw mo ng strikethrough */
+}
+
+/* Dagdag safety para siguradong walang hover effect */
+.brf-disabled-date:hover {
+  background-color: transparent !important;
+  color: #e5e7eb !important;
+}
+
 .brf-calendar-wrapper {
   border: 1px solid #e5e7eb;
   border-radius: 12px;

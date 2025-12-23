@@ -3,52 +3,74 @@ const User = require('../models/user');
 
 // --- POST: Add New User ---
 router.post('/add', async (req, res) => {
-    try {
-        const newUser = new User({
-            fullName: req.body.fullName,
-            email: req.body.email,
-            username: req.body.username,
-            password: req.body.password, 
-            role: req.body.role || 'user',
-            isActive: true
-        });
+    try {
+        const newUser = new User({
+            fullName: req.body.fullName,
+            email: req.body.email,
+            username: req.body.username,
+            password: req.body.password, 
+            role: req.body.role || 'user',
+            isActive: true,
+            isArchive: "No" // Sinisiguro nating "No" ang default sa bawat bagong user
+        });
 
-        const savedUser = await newUser.save();
-        
-        const { password, ...other } = savedUser._doc;
-        
-        res.status(201).json({ status: "ok", message: "User created successfully!", data: other });
-    } catch (err) {
-        if (err.code === 11000) {
-            return res.status(400).json({ status: "error", message: "Email already exists." });
-        }
-        res.status(500).json({ status: "error", message: err.message });
-    }
+        const savedUser = await newUser.save();
+        
+        const { password, ...other } = savedUser._doc;
+        
+        res.status(201).json({ status: "ok", message: "User created successfully!", data: other });
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(400).json({ status: "error", message: "Email already exists." });
+        }
+        res.status(500).json({ status: "error", message: err.message });
+    }
 });
 
-// --- GET: Fetch All Users ---
+// --- GET: Fetch All Active Users (Not Archived) ---
 router.get('/', async (req, res) => {
-    try {
-        const users = await User.find().select('-password').sort({ createdAt: -1 });
-        res.status(200).json(users);
-    } catch (err) {
-        res.status(500).json(err);
-    }
+    try {
+        // Binago: Gagamit ng $ne (not equal) para lumabas ang "No" at pati yung mga walang isArchive field
+        const users = await User.find({ isArchive: { $ne: "Yes" } }).select('-password').sort({ createdAt: -1 });
+        res.status(200).json(users);
+    } catch (err) {
+        res.status(500).json(err);
+    }
 });
 
-// --- DELETE: Delete User by ID ---
+// --- PUT: Archive User (Replacement for DELETE) ---
+router.put('/archive/:id', async (req, res) => {
+    try {
+        // Imbes na findByIdAndDelete, gagamit tayo ng findByIdAndUpdate
+        const archivedUser = await User.findByIdAndUpdate(
+            req.params.id, 
+            { isArchive: "Yes" }, 
+            { new: true }
+        );
+        
+        if (!archivedUser) {
+            return res.status(404).json({ status: "error", message: "User not found." });
+        }
+        
+        res.status(200).json({ status: "ok", message: "User archived successfully." });
+    } catch (err) {
+        res.status(500).json({ status: "error", message: err.message });
+    }
+});
+
+// --- DELETE: Mananatili itong route kung sakaling gusto mo talagang mag-delete permanently ---
 router.delete('/:id', async (req, res) => {
-    try {
-        const deletedUser = await User.findByIdAndDelete(req.params.id);
-        
-        if (!deletedUser) {
-            return res.status(404).json({ status: "error", message: "User not found." });
-        }
-        
-        res.status(200).json({ status: "ok", message: "User deleted successfully." });
-    } catch (err) {
-        res.status(500).json(err);
-    }
+    try {
+        const deletedUser = await User.findByIdAndDelete(req.params.id);
+        
+        if (!deletedUser) {
+            return res.status(404).json({ status: "error", message: "User not found." });
+        }
+        
+        res.status(200).json({ status: "ok", message: "User deleted successfully." });
+    } catch (err) {
+        res.status(500).json(err);
+    }
 });
 
 // --- PUT: Update Personal Information ---
@@ -60,11 +82,11 @@ router.put('/update-profile/:id', async (req, res) => {
             return res.status(400).json({ status: "error", message: "Invalid User ID provided." });
         }
 
-        const { fullName, email, username } = req.body;
+        const { fullName, email, username, isArchive } = req.body;
         
         const updatedUser = await User.findByIdAndUpdate(
             userId,
-            { fullName, email, username },
+            { fullName, email, username, isArchive }, 
             { new: true, runValidators: true }
         ).select('-password');
 
@@ -99,7 +121,28 @@ router.put('/update-password/:id', async (req, res) => {
     }
 });
 
-// --- GET: Check if email exists (NEW ENDPOINT) ---
+
+// GET: Fetch ONLY Archived Users
+router.get('/archived', async (req, res) => {
+    try {
+        const archivedUsers = await User.find({ isArchive: "Yes" }).select('-password').sort({ createdAt: -1 });
+        res.status(200).json(archivedUsers);
+    } catch (err) {
+        res.status(500).json({ status: "error", message: err.message });
+    }
+});
+
+// GET: Fetch All (para sa helper sa service kung gusto mo)
+router.get('/all-with-archived', async (req, res) => {
+    try {
+        const users = await User.find({}).select('-password');
+        res.status(200).json(users);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// --- GET: Check if email exists ---
 router.get('/check-email', async (req, res) => {
     try {
         const email = req.query.email;
@@ -115,7 +158,6 @@ router.get('/check-email', async (req, res) => {
             return res.status(200).json({ status: "ok", exists: false, message: "Email not found." });
         }
     } catch (err) {
-        // Log the error for server-side debugging
         console.error("Error checking email:", err);
         res.status(500).json({ status: "error", message: err.message });
     }

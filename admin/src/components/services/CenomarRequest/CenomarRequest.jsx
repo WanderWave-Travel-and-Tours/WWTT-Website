@@ -279,7 +279,7 @@ const CenomarRequest = () => {
 
   const fetchCENOMARDocs = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/cenomar");
+      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/cenomar");
       if (Array.isArray(res.data)) {
         const mapped = res.data.map(d => ({ ...d, id: d._id, desc: d.description }));
         setCenomarDocs(mapped);
@@ -293,10 +293,11 @@ const CenomarRequest = () => {
 
   const fetchInquiries = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/inquiries');
+      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries');
       if (response.data.success) {
+        // FILTER: inquiryType ay CENOMAR at isArchive ay No
         const cenomarRequests = response.data.data.filter(inq => 
-          inq.cenomarDocument || (inq.serviceName && inq.serviceName.toUpperCase().includes('CENOMAR'))
+          inq.inquiryType === 'CENOMAR' && inq.isArchive === 'No'
         );
         // Sort by newest first
         cenomarRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -307,6 +308,22 @@ const CenomarRequest = () => {
     }
   };
 
+  // --- ARCHIVE FUNCTION ---
+  const handleArchiveInquiry = async (id) => {
+    if (!window.confirm("Sigurado ka bang gusto mong i-archive ang request na ito?")) return;
+    try {
+      const res = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, { isArchive: "Yes" });
+      if (res.data.success) {
+        alert("Inquiry archived successfully!");
+        fetchInquiries(); // Refresh listahan
+      }
+    } catch (error) {
+      console.error("Archive error:", error);
+      alert("Failed to archive inquiry.");
+    }
+  };
+
+  // --- FILTERING LOGIC ---
   const filteredInquiries = useMemo(() => {
     let list = inquiries;
     const lowerSearchTerm = searchTerm.toLowerCase();
@@ -320,7 +337,7 @@ const CenomarRequest = () => {
         inq.fullName.toLowerCase().includes(lowerSearchTerm) ||
         (inq.cenomarDocument || inq.serviceName || '').toLowerCase().includes(lowerSearchTerm) ||
         (inq.message || '').toLowerCase().includes(lowerSearchTerm) ||
-        (inq._id || '').slice(-6).toLowerCase().includes(lowerSearchTerm)
+        (inq._id || '').slice(-6).toLowerCase().includes(lowerSearchTerm) 
       );
     }
     
@@ -362,6 +379,20 @@ const CenomarRequest = () => {
 
   const getFilterClassName = (status) => {
     return status === filterStatus ? 'cenomar-active-navy' : '';
+    switch(status) {
+      case 'PENDING':
+      case 'PAYMENT_PENDING':
+      case 'CONTACTED':
+        return 'pending-active';
+      case 'PAID':
+      case 'CONFIRMED':
+      case 'COMPLETED':
+        return 'confirmed-active';
+      case 'CANCELLED':
+        return 'cancelled-active';
+      default:
+        return 'active'; 
+    }
   }
 
   const statusOptions = useMemo(() => {
@@ -382,7 +413,7 @@ const CenomarRequest = () => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) setDocuments(response.data.documents || []);
     } catch (error) { 
         console.error('Error fetching documents:', error); 
@@ -426,7 +457,7 @@ const CenomarRequest = () => {
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     if (!window.confirm(`Set status to ${newStatus}?`)) return;
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, { status: newStatus });
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/status`, { status: newStatus });
       if (response.data.success) {
         alert('Status updated successfully!'); 
         fetchInquiries();
@@ -441,7 +472,7 @@ const CenomarRequest = () => {
   const handleRequestPayment = async () => {
     if (!window.confirm("Request payment from user?")) return;
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, { status: 'PAYMENT_PENDING' });
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`, { status: 'PAYMENT_PENDING' });
       if (response.data.success) {
         alert('Payment requested!'); 
         fetchInquiries();
@@ -460,7 +491,7 @@ const CenomarRequest = () => {
       formData.append('status', 'CONTACTED');
       formData.append('remarks', contactRemarks);
       if (contactEvidence) formData.append('evidence', contactEvidence);
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (response.data.success) {
         alert('Status updated to CONTACTED!'); 
         fetchInquiries();
@@ -478,7 +509,7 @@ const CenomarRequest = () => {
   const handleConfirmPayment = async () => {
     if (!window.confirm("Confirm payment received?")) return;
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: 'Admin' });
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: 'Admin' });
       if (response.data.success) {
         alert('Payment confirmed!'); 
         fetchInquiries();
@@ -493,15 +524,13 @@ const CenomarRequest = () => {
   const handleDeliverDocuments = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (deliveryFiles.length === 0) return alert('Select files first');
-
     const formData = new FormData();
     deliveryFiles.forEach(file => formData.append('documents', file));
 
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
         headers: { 'Content-Type': 'multipart/form-data' } 
       });
-
       if (response.data.success) {
         alert('Documents sent successfully!');
         fetchInquiries(); 
@@ -510,12 +539,10 @@ const CenomarRequest = () => {
         setDeliveryFiles([]);
         setShowDeliverDocs(true); 
       }
-    } catch (error) { 
-      console.error(error); 
-      alert('Failed to send documents'); 
-    }
+    } catch (error) { console.error(error); alert('Failed to send documents'); }
   };
 
+  // --- CMS HANDLERS ---
   const handleManageService = () => setIsCENOMARFormsOpen(true);
 
   const handleAddNewCENOMAR = () => {
@@ -543,13 +570,8 @@ const CenomarRequest = () => {
 
   const handleDeleteCENOMAR = async (id) => {
     if (!window.confirm("Delete this service?")) return;
-    try { 
-        await axios.delete(`http://localhost:5000/api/cenomar/${id}`); 
-        fetchCENOMARDocs(); 
-    } catch(err) { 
-        console.error(err); 
-        alert("Failed to delete"); 
-    }
+    try { await axios.delete(`https://wanderwaveph-backend.onrender.com/api/cenomar/${id}`); fetchCENOMARDocs(); } 
+    catch(err) { console.error(err); alert("Failed to delete"); }
   };
 
   const handleSaveChanges = async () => {
@@ -562,19 +584,10 @@ const CenomarRequest = () => {
       processSteps: stepsProcess
     };
     try {
-      if (isEditorOpen && selectedCENOMAR) {
-        await axios.put(`http://localhost:5000/api/cenomar/${selectedCENOMAR._id}`, payload);
-      } else {
-        await axios.post(`http://localhost:5000/api/cenomar`, payload);
-      }
-      alert("Service saved!"); 
-      setIsAddFormOpen(false); 
-      setIsCENOMARFormsOpen(true); 
-      fetchCENOMARDocs();
-    } catch (err) { 
-        console.error(err); 
-        alert("Failed to save"); 
-    }
+      if (isEditorOpen && selectedCENOMAR) await axios.put(`https://wanderwaveph-backend.onrender.com/api/cenomar/${selectedCENOMAR._id}`, payload);
+      else await axios.post(`https://wanderwaveph-backend.onrender.com/api/cenomar`, payload);
+      alert("Service saved!"); setIsAddFormOpen(false); setIsCENOMARFormsOpen(true); fetchCENOMARDocs();
+    } catch (err) { console.error(err); alert("Failed to save"); }
   };
 
   const toggleAccordion = (section) => setAccordionState((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -594,7 +607,7 @@ const CenomarRequest = () => {
     const formData = new FormData(); 
     formData.append('file', file);
     try {
-      const res = await axios.post('http://localhost:5000/api/upload', formData);
+      const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/upload', formData);
       if (res.data.success) setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
     } catch(err) { 
         console.error(err); 
@@ -614,18 +627,19 @@ const CenomarRequest = () => {
           <div className="cenomar-header">
             <div className="cenomar-title">
                 <h1>CENOMAR Request</h1>
-                <p>Certificate of No Marriage Applications</p>
+                <p>Active Certificate of No Marriage Applications</p>
             </div>
-            <div className="cenomar-header-actions">
+            <div style={{ display: 'flex', gap: '12px' }}>
                 <button 
-                    className="cenomar-btn-add cenomar-btn-dark"
-                    onClick={() => setIsApplicationModalOpen(true)}
+                  className="cenomar-btn-add" 
+                  style={{ background: '#0f172a' }} 
+                  onClick={() => setIsApplicationModalOpen(true)}
                 >
-                    <UserPlus size={18} /> Add Applicant
+                  <UserPlus size={18} /> Add Applicant
                 </button>
                 
                 <button className="cenomar-btn-add" onClick={handleManageService}>
-                    <FolderOpen size={18} /> Manage Service
+                  <FolderOpen size={18} /> Manage Service
                 </button>
             </div>
           </div>
@@ -641,28 +655,69 @@ const CenomarRequest = () => {
             getFilterClassName={getFilterClassName}
           />
           
+          <div className="search-filter-card">
+              <div className="search-filter-wrapper">
+                  <div className="search-box">
+                      <Search size={20} className="search-icon" />
+                      <input
+                          type="text"
+                          className="search-input"
+                          placeholder="Search by Requester, Ref No..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                  </div>
+                  <div className="filter-buttons">
+                      {statusOptions.map(status => (
+                          <button
+                              key={status}
+                              className={`filter-btn ${filterStatus === status ? getFilterClassName(status) : ''}`}
+                              onClick={() => setFilterStatus(status)}
+                          >
+                              {status === 'ALL' ? 'All Active' : status.replace('_', ' ')}
+                          </button>
+                      ))}
+                  </div>
+              </div>
+          </div>
+
           <div className="cenomar-table-container">
             <table className="cenomar-table">
               <thead>
                 <tr>
-                    <th style={{ width: '50px' }}>No.</th>
-                    <th>Ref No.</th>
-                    <th>Requester</th>
-                    <th>Document</th>
-                    <th>Purpose</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: "right" }}>Actions</th>
+                  <th>Ref No.</th>
+                  <th>Requester</th>
+                  <th>Document</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
-              
-              <CenomarTable
-                loading={isLoading}
-                filteredInquiriesCount={filteredInquiries.length}
-                currentInquiries={currentInquiries}
-                handleViewInquiry={handleViewInquiry}
-                handleArchiveInquiry={handleArchiveInquiry}
-                startIndex={startIndex}
-              />
+              <tbody>
+                {currentInquiries.length === 0 ? (
+                  <tr><td colSpan="5" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>{isLoading ? 'Loading...' : 'No active CENOMAR requests found'}</td></tr>
+                ) : (
+                  currentInquiries.map((row) => (
+                    <tr key={row._id}>
+                      <td style={{ fontWeight: "700" }}>{row._id.slice(-6).toUpperCase()}</td>
+                      <td>{row.fullName}</td>
+                      <td><span className="doc-badge">CNM</span>{row.cenomarDocument || row.serviceName}</td>
+                      <td><span className={`cenomar-badge badge-${(row.status || 'PENDING').toLowerCase()}`}>{row.status || 'PENDING'}</span></td>
+                      <td style={{ textAlign: "right" }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button className="cenomar-action-btn cenomar-view-btn" onClick={() => handleViewInquiry(row)}>View</button>
+                            <button 
+                                className="cenomar-action-btn" 
+                                style={{ backgroundColor: '#ef4444', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                onClick={() => handleArchiveInquiry(row._id)}
+                            >
+                                <Archive size={14} /> Archive
+                            </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
             </table>
           </div>
 

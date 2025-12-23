@@ -76,6 +76,7 @@ const inquiryRoutes = require('./routes/inquiryRoute');
 const uploadRoutes = require('./routes/uploadRoute');
 const hotelRoutes = require('./routes/hotelRoute');
 const imagesRoutes = require('./routes/imagesRoute'); // ✅ ADD THIS LINE
+const sellerRateRoutes = require('./routes/sellerRoute');
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -233,6 +234,7 @@ app.use('/api/documents', require('./routes/documentRoute'));
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/images', imagesRoutes); // ✅ ADD THIS LINE
+app.use('/api/seller-rates', sellerRateRoutes);
 
 
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {

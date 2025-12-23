@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Eye, Calendar, User, FolderOpen, FileText } from 'lucide-react';
+// MODIFIED: Pinalitan ang Trash2 ng Archive icon mula sa lucide-react
+import { Archive, Eye, Calendar, User, FolderOpen, FileText } from 'lucide-react'; 
 import Sidebar from '../sidebar/sidebar';
 import BlogDetailModal from './BlogDetailModal';
 import BlogPagination from './BlogPagination';
@@ -21,9 +22,8 @@ const ViewBlog = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedBlog, setSelectedBlog] = useState(null);
     
-    const API_BASE_URL = 'http://localhost:5000';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
-    // Get unique categories from blogs
     const getCategories = () => {
         const categories = ['ALL'];
         const uniqueCategories = [...new Set(blogs.map(blog => blog.category))];
@@ -57,28 +57,29 @@ const ViewBlog = () => {
         fetchBlogs();
     }, []);
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this blog post?')) {
+    // MODIFIED: Pinalitan ang confirmation message at logic name patungong Archive
+    const handleArchive = async (id) => {
+        if (window.confirm('Are you sure you want to archive this blog post?')) {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/blogs/${id}`, {
-                    method: 'DELETE',
+                    method: 'DELETE', // Ginagamit pa rin ang endpoint pero archive na ang effect
                 });
 
                 if (response.ok) {
                     const updatedBlogs = blogs.filter(blog => blog._id !== id);
                     setBlogs(updatedBlogs);
-                    alert('Blog deleted successfully');
+                    alert('Blog archived successfully');
                     
                     const maxPage = Math.ceil(updatedBlogs.length / itemsPerPage);
                     if (currentPage > maxPage && maxPage > 0) {
                         setCurrentPage(maxPage);
                     }
                 } else {
-                    alert('Failed to delete blog');
+                    alert('Failed to archive blog');
                 }
             } catch (error) {
-                console.error('Error deleting blog:', error);
-                alert('An error occurred while deleting.');
+                console.error('Error archiving blog:', error);
+                alert('An error occurred while archiving.');
             }
         }
     };
@@ -105,7 +106,6 @@ const ViewBlog = () => {
         });
     };
 
-    // Filter and search logic
     const filteredBlogs = blogs.filter(blog => {
         const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             blog.category.toLowerCase().includes(searchTerm.toLowerCase());
@@ -133,7 +133,7 @@ const ViewBlog = () => {
                         <div className="vb-header-content">
                             <h1 className="vb-title">BLOG LIST</h1>
                             <p className="vb-subtitle">
-                                Managing {blogs.length} articles • {publishedBlogs} published
+                                Managing {blogs.length} active articles • {publishedBlogs} published
                             </p>
                         </div>
                         <button className="vb-btn vb-btn--add" onClick={() => window.location.href='/add-blog'}>
@@ -141,7 +141,6 @@ const ViewBlog = () => {
                         </button>
                     </header>
 
-                    {/* BLOG FILTERS */}
                     <BlogFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -236,13 +235,14 @@ const ViewBlog = () => {
                                                         <Eye size={16} />
                                                         <span>View</span>
                                                     </button>
+                                                    {/* MODIFIED: Pinalitan ang Delete Button patungong Archive Button */}
                                                     <button 
                                                         className="vb-action-btn vb-action-btn--delete"
-                                                        onClick={() => handleDelete(blog._id)}
-                                                        title="Delete Blog"
+                                                        onClick={() => handleArchive(blog._id)}
+                                                        title="Archive Blog"
                                                     >
-                                                        <Trash2 size={16} />
-                                                        <span>Delete</span>
+                                                        <Archive size={16} />
+                                                        <span>Archive</span>
                                                     </button>
                                                 </div>
                                             </td>
@@ -267,7 +267,7 @@ const ViewBlog = () => {
                     showModal={showDetailModal}
                     selectedBlog={selectedBlog}
                     setShowModal={setShowDetailModal}
-                    handleDelete={handleDelete}
+                    handleDelete={handleArchive} // I-pass ang archive function dito
                     getImageUrl={getImageUrl}
                 />
             )}

@@ -7,9 +7,8 @@ import {
 } from 'lucide-react';
 import './BookingLeftColumn.css';
 
-const BookingLeftColumn = ({ pkg }) => {
-  const navigate = useNavigate();
-  
+const BookingLeftColumn = ({ pkg, currency = 'PHP', exchangeRate = 58 }) => {
+  const navigate = useNavigate(); 
   const [isItineraryExpanded, setIsItineraryExpanded] = useState(false);
   const [expandedDayIndices, setExpandedDayIndices] = useState({});
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
@@ -27,6 +26,13 @@ const BookingLeftColumn = ({ pkg }) => {
       [index]: !prev[index]
     }));
   };
+
+  const currencySymbol = currency === 'PHP' ? '₱' : '$';
+  const convertPrice = (phpPrice) => {
+    if (currency === 'PHP') return phpPrice;
+    return (phpPrice / exchangeRate) * 1.30;
+  };
+  const displayPrice = convertPrice(pkg.price || 0);
 
   return (
     <div className="blc-container">
@@ -52,9 +58,11 @@ const BookingLeftColumn = ({ pkg }) => {
         
         <div className="blc-price-row">
           <span className="blc-price">
-            ₱{pkg.price ? pkg.price.toLocaleString() : '0'}
+            {currencySymbol}{displayPrice.toLocaleString(undefined, { 
+              minimumFractionDigits: currency === 'USD' ? 2 : 0,
+              maximumFractionDigits: currency === 'USD' ? 2 : 0 
+            })}
           </span>
-          <span className="blc-pax">/ pax</span>
         </div>
         
         <div className="blc-meta-row">

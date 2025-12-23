@@ -4,7 +4,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import './login.css';
 
 const Login = () => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');  // ✅ Changed from username to email
     const [password, setPassword] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -12,6 +12,7 @@ const Login = () => {
     const [recaptchaToken, setRecaptchaToken] = useState(null);
     const navigate = useNavigate();
     const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+    
     const destinations = [
         { 
             image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69114eb2c3a1eaa1cc1c2ab8.jpg', 
@@ -73,10 +74,11 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/admin/login', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, recaptchaToken }),
+                // ✅ Changed: Now sending email instead of username
+                body: JSON.stringify({ email, password, recaptchaToken }),
             });
 
             const data = await response.json();
@@ -147,17 +149,18 @@ const Login = () => {
                         </div>
 
                         <form onSubmit={handleLogin} className="login-form">
+                            {/* ✅ Changed: Email field instead of Username */}
                             <div className="input-group">
-                                <label htmlFor="username" className="input-label">Username</label>
+                                <label htmlFor="email" className="input-label">Email Address</label>
                                 <input
-                                    id="username"
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="Enter your username"
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email"
                                     className="input-field"
                                     required
-                                    autoComplete="username"
+                                    autoComplete="email"
                                 />
                             </div>
 

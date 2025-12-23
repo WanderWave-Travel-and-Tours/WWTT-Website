@@ -65,7 +65,7 @@ import TravelInsurance from './components/services/TravelInsurance/TravelInsuran
 import BillsPayment from './components/services/BillsPayment/BillsPayment.jsx';
 import MarriageCertificate from './components/services/MarriageCertificate/MarriageCertificate.jsx';
 import Users from './components/users/users.jsx';
-
+import SellerRate from './components/SellerRate/SellerRate.jsx'
 function App() {
   return (
     <BrowserRouter basename="/">
@@ -135,6 +135,7 @@ function App() {
         <Route path="/services/travelinsurance" element={<TravelInsurance />} />
         <Route path="/services/billspayment" element={<BillsPayment />} />
 
+        <Route path="/seller-rate" element={<SellerRate />} />
       </Routes>
       </ToastProvider>
     </BrowserRouter>

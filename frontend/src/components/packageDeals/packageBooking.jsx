@@ -3,22 +3,26 @@ import BookingLeftColumn from './bookingLeftColumn';
 import BookingRightForm from './bookingRightForm';
 import './packageBooking.css';
 
-function PackageBooking({ pkg }) {
+function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
   if (!pkg) return null;
 
   return (
     <div className="pb-page">
-      {/* Main Booking Container */}
       <div className="pb-container">
         <div className="pb-unified-card">
-          {/* Left Panel - Package Details & Itinerary */}
           <div className="pb-left-panel">
-            <BookingLeftColumn pkg={pkg} />
+            <BookingLeftColumn 
+              pkg={pkg} 
+              currency={currency}      
+              exchangeRate={58} />
           </div>
 
-          {/* Right Panel - Calendar & Booking Form */}
           <div className="pb-right-panel">
-            <BookingRightForm pkg={pkg} />
+            <BookingRightForm 
+              pkg={pkg} 
+              currency={currency}      
+              exchangeRate={58}        
+            />
           </div>
         </div>
       </div>

@@ -36,17 +36,24 @@ const AirlineBooking = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const fetchBookings = async () => {
-        setIsLoading(true);
-        try {
-            const response = await axios.get('http://localhost:5000/api/inquiries');
-            if (response.data.success) {
-                const flights = response.data.data.filter(inq => inq.inquiryType === 'FLIGHT_BOOKING');
-                setBookings(flights.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-            }
-        } catch (error) { console.error("Error fetching", error); } 
-        finally { setIsLoading(false); }
-    };
+    // Fetch flight booking inquiries from database
+const fetchFlightBookings = async () => {
+    setIsLoading(true);
+    try {
+        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries?isArchive=No');
+        if (response.data.success) {
+            // Filter: Flight Booking lang at hindi naka-archive
+            const filtered = response.data.data.filter(inq => 
+                inq.inquiryType === 'FLIGHT_BOOKING' && inq.isArchive === 'No'
+            );
+            setBookings(filtered);
+        }
+    } catch (error) {
+        console.error('Error fetching:', error);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     useEffect(() => { fetchBookings(); }, []);
 
@@ -93,11 +100,17 @@ const AirlineBooking = () => {
         const action = status === 'ARCHIVED' ? 'Archive this request' : `Update status to ${status}`;
         if(!window.confirm(`Are you sure you want to ${action}?`)) return;
         try {
-            await axios.put(`http://localhost:5000/api/inquiries/${id}/status`, { status });
-            fetchBookings(); // Refresh to remove archived item from list
-            
-            if(selectedBooking && selectedBooking._id === id) {
-                setSelectedBooking({ ...selectedBooking, status });
+            const response = await axios.put(
+                `https://wanderwaveph-backend.onrender.com/api/inquiries/${bookingId}/status`,
+                { status: newStatus }
+            );
+
+            if (response.data.success) {
+                alert('Status updated successfully!');
+                fetchFlightBookings();
+                if (selectedBooking && selectedBooking._id === bookingId) {
+                    setSelectedBooking({ ...selectedBooking, status: newStatus });
+                }
             }
         } catch(e) { alert("Error updating status"); }
     };
@@ -107,6 +120,25 @@ const AirlineBooking = () => {
         handleUpdateStatus(selectedBooking._id, 'PAYMENT_PENDING');
     };
 
+const handleArchiveBooking = async (id) => {
+    if (window.confirm('Are you sure you want to archive this inquiry?')) {
+        try {
+            const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
+                isArchive: 'Yes'
+            });
+
+            if (response.data.success) {
+                alert('Inquiry archived successfully!');
+                fetchFlightBookings(); // I-refresh ang listahan
+            }
+        } catch (error) {
+            console.error('Error archiving:', error);
+            alert('Failed to archive inquiry.');
+        }
+    }
+};
+
+    // Submit contact with remarks
     const submitContactWithRemarks = async () => {
         if (!selectedBooking || !contactRemarks.trim()) return alert('Please enter remarks');
         try {
@@ -115,9 +147,13 @@ const AirlineBooking = () => {
             formData.append('remarks', contactRemarks);
             if (contactEvidence) formData.append('evidence', contactEvidence);
 
-            const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedBooking._id}/status`, formData, { 
-                headers: { 'Content-Type': 'multipart/form-data' } 
-            });
+            const response = await axios.put(
+                `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/status`,
+                formData,
+                {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                }
+            );
 
             if (response.data.success) {
                 alert('Issue reported successfully!'); 
@@ -134,6 +170,26 @@ const AirlineBooking = () => {
             setSelectedBooking(null);
             setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
         }, 200);
+    // Handle request payment
+    const handleRequestPayment = async () => {
+        if (!selectedBooking) return;
+        
+        if (window.confirm('Send payment request to client?')) {
+            try {
+                const response = await axios.post(
+                    `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/request-payment`
+                );
+                
+                if (response.data.success) {
+                    alert('Payment request sent successfully!');
+                    fetchFlightBookings();
+                    setSelectedBooking({ ...selectedBooking, status: 'PAYMENT_PENDING' });
+                }
+            } catch (error) {
+                console.error('Error requesting payment:', error);
+                alert('Failed to send payment request');
+            }
+        }
     };
 
     const stats = [
@@ -259,6 +315,93 @@ const AirlineBooking = () => {
                                             </td>
                                         </tr>
                                     ))
+
+<button 
+    className="airline-action-btn" 
+    style={{ color: '#ef4444', borderColor: '#ef4444' }}
+    onClick={() => handleArchiveBooking(booking._id)}
+>
+    <Archive size={14}/> Archive
+</button>
+
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                <Pagination totalPages={totalPages} currentPage={currentPage} paginate={paginate} />
+                            </>
+                        )}
+                    </div>
+                </div>
+            </main>
+
+            <AirlineApplicationModal 
+                        isOpen={isApplicationModalOpen}
+                        onClose={() => setIsApplicationModalOpen(false)}
+                        refreshData={fetchFlightBookings}
+                    />
+
+            {/* View Booking Details Modal */}
+            {isModalOpen && selectedBooking && (
+                <div className="airline-modal-overlay" onClick={handleCloseModal}>
+                    <div className="airline-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="airline-modal-header">
+                            <h2>Flight Booking Details</h2>
+                            <button className="airline-modal-close" onClick={handleCloseModal}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="airline-modal-body">
+                            <div className="airline-detail-grid">
+                                <div className="airline-detail-item">
+                                    <label>Reference ID</label>
+                                    <p>{selectedBooking._id.slice(-8).toUpperCase()}</p>
+                                </div>
+                                <div className="airline-detail-item">
+                                    <label>Status</label>
+                                    <span className={`status-pill ${getStatusClass(selectedBooking.status)}`}>
+                                        {selectedBooking.status || 'PENDING'}
+                                    </span>
+                                </div>
+                                <div className="airline-detail-item">
+                                    <label>Full Name</label>
+                                    <p>{selectedBooking.fullName || 'N/A'}</p>
+                                </div>
+                                <div className="airline-detail-item">
+                                    <label>Email Address</label>
+                                    <p>{selectedBooking.email || 'N/A'}</p>
+                                </div>
+                                <div className="airline-detail-item full-width">
+                                    <label>Message</label>
+                                    <p style={{whiteSpace: 'pre-wrap'}}>{selectedBooking.message || 'No message provided'}</p>
+                                </div>
+                                <div className="airline-detail-item">
+                                    <label>Date Submitted</label>
+                                    <p>{formatDate(selectedBooking.createdAt)}</p>
+                                </div>
+                                <div className="airline-detail-item">
+                                    <label>Last Updated</label>
+                                    <p>{formatDate(selectedBooking.updatedAt)}</p>
+                                </div>
+                                {selectedBooking.remarks && (
+                                    <div className="airline-detail-item full-width">
+                                        <label>Remarks</label>
+                                        <p style={{whiteSpace: 'pre-wrap'}}>{selectedBooking.remarks}</p>
+                                    </div>
+                                )}
+                                {selectedBooking.evidenceUrl && (
+                                    <div className="airline-detail-item full-width">
+                                        <label>Evidence/Attachment</label>
+                                        <a 
+                                            href={`https://wanderwaveph-backend.onrender.com${selectedBooking.evidenceUrl}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="airline-evidence-link"
+                                        >
+                                            View Attachment
+                                        </a>
+                                    </div>
                                 )}
                             </tbody>
                         </table>

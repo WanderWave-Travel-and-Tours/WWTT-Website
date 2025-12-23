@@ -2,37 +2,51 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import Sidebar from "../../sidebar/sidebar";
 import {
-  FileText,
-  AlertTriangle,
-  CreditCard,
-  CheckCircle,
-  FolderOpen,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  UserPlus,
-  Eye,
-  Mail,
-  Globe,
-  Zap,
-  Archive,
-} from "lucide-react";
-import {
-  AppointmentViewModal,
-  PassportServiceListModal,
-  PassportServiceEditorModal,
-  PassportContactRemarksModal,
-} from "./PassportModals";
-import "./PassportAppt.css";
-import { PassportApplicationModal } from "./PassportApplicationModal";
+    BookOpen, Calendar, CheckCircle, RotateCcw,
+    FileText, Settings, RefreshCw, X, CreditCard, User,
+    ChevronDown, Trash2, PlusCircle, Save, ClipboardList, ListPlus, Download,
+    ChevronLeft, ChevronRight, Search, UserPlus, Archive
+} from 'lucide-react';
+import './PassportAppt.css';
+import PassportApplicationModal from './PassportApplicationModal';
 
-// Destination Images for Stats Cards
-const PASSPORT_STAT_IMAGES = {
-  TOTAL_REQUESTS: "https://picsum.photos/seed/passport-total/800/600",
-  PENDING: "https://picsum.photos/seed/passport-pending/800/600",
-  PAYMENT_PENDING: "https://picsum.photos/seed/passport-payment/800/600",
-  PAID: "https://picsum.photos/seed/passport-paid/800/600",
-};
+const PassportAppt = () => {
+    const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [activeTab, setActiveTab] = useState('appointments');
+
+    const [showContactRemarks, setShowContactRemarks] = useState(false);
+    const [contactRemarks, setContactRemarks] = useState("");
+    const [contactEvidence, setContactEvidence] = useState(null);
+
+    const [appointments, setAppointments] = useState([]);
+    const [passportData, setPassportData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const [selectedAppointment, setSelectedAppointment] = useState(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [documents, setDocuments] = useState([]);
+
+    const [isEditorOpen, setIsEditorOpen] = useState(false);
+    const [editorData, setEditorData] = useState({
+        requirements: [],
+        additionalDocuments: [],
+        stepsProcess: []
+    });
+    const [accordionState, setAccordionState] = useState({
+        requirements: false,
+        additionalDocs: false,
+        stepsProcess: false
+    });
+
+    const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false); 
+    // --- SEARCH AND FILTER STATE ---
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('ALL'); // Default to 'ALL'
+    // --- END SEARCH AND FILTER STATE ---
+
+    // --- FILTERING LOGIC (Use useMemo for efficient filtering) ---
+    const filteredAppointments = useMemo(() => {
+        let filtered = appointments;
 
 // Pagination Component
 const PassportPagination = ({

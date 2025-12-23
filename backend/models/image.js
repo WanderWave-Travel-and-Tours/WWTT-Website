@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const imageSchema = new mongoose.Schema({
-    imageName: {  // ✅ CORRECT
+    imageName: {  
         type: String,
         required: false,
         default: 'Untitled Image'
@@ -9,6 +9,12 @@ const imageSchema = new mongoose.Schema({
     imageUrl: {
         type: String,
         required: true
+    },
+    // Idinagdag ang isArchive field dito
+    isArchive: {
+        type: String,
+        enum: ['Yes', 'No'],
+        default: 'No'
     }
 }, {
     timestamps: true

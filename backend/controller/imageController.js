@@ -8,12 +8,13 @@ const addImage = async (req, res) => {
             return res.status(400).json({ message: 'Please upload an image.' });
         }
 
-        const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
-        const imageName = req.body.title || req.file.originalname;  // ← FIXED
+        const imageUrl = `https://wanderwaveph-backend.onrender.com/uploads/${req.file.filename}`;
+        const imageName = req.body.title || req.file.originalname;
 
         const newImage = new Image({
-            imageName,  // ← FIXED: changed from title to imageName
-            imageUrl
+            imageName,
+            imageUrl,
+            isArchive: 'No' // Default value kapag nag-add
         });
 
         await newImage.save();
@@ -37,27 +38,39 @@ const getAllImages = async (req, res) => {
     }
 };
 
-const deleteImage = async (req, res) => {
+/**
+ * MODIFIED FUNCTION: archiveImage
+ * Ginawa nating dynamic ang isArchive value.
+ * Kapag req.body.isArchive = "No", ito ay gagana bilang RESTORE.
+ * Kapag walang body (default), ito ay gagana bilang ARCHIVE ("Yes").
+ */
+const archiveImage = async (req, res) => {
     try {
-        const image = await Image.findById(req.params.id);
-        if (!image) {
+        const { id } = req.params;
+        
+        // Kinukuha ang value mula sa body, kung wala, default ay 'Yes'
+        const newStatus = req.body.isArchive || 'Yes';
+        
+        const updatedImage = await Image.findByIdAndUpdate(
+            id, 
+            { isArchive: newStatus }, 
+            { new: true }
+        );
+
+        if (!updatedImage) {
             return res.status(404).json({ message: 'Image not found' });
         }
 
-        if (image.imageUrl) {
-            const filename = image.imageUrl.split('/').pop();
-            const filePath = path.join(__dirname, '../uploads', filename);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-                console.log('🗑️ File deleted:', filename);
-            }
-        }
+        // Log para malaman kung Archive o Restore ang nangyari
+        const actionMessage = newStatus === 'Yes' ? 'archived' : 'restored';
+        console.log(`📦 Image ${actionMessage}:`, updatedImage._id);
 
-        await Image.findByIdAndDelete(req.params.id);
-        console.log('✅ Image deleted from database');
-        res.status(200).json({ message: 'Image deleted successfully' });
+        res.status(200).json({ 
+            message: `Image ${actionMessage} successfully`, 
+            image: updatedImage 
+        });
     } catch (error) {
-        console.error('❌ Error deleting image:', error);
+        console.error('❌ Error updating image archive status:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
@@ -65,5 +78,5 @@ const deleteImage = async (req, res) => {
 module.exports = {
     addImage,
     getAllImages,
-    deleteImage
+    archiveImage // Naka-export para magamit sa imagesRoute.js
 };
