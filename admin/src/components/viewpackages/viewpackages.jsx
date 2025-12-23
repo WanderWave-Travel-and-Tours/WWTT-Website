@@ -19,7 +19,7 @@ const ViewPackages = () => {
     const [selectedPackage, setSelectedPackage] = useState(null);
     const navigate = useNavigate();
     
-    const API_BASE_URL = 'http://localhost:5000/api/packages';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -82,7 +82,7 @@ const ViewPackages = () => {
                 <div className="vt-container">
                     <header className="vt-header">
                         <div className="vt-header-content">
-                            <h1 className="vt-title">TOUR PACKAGES</h1>
+                            <h1 className="vt-title">PACKAGE LIST</h1>
                             <p className="vt-subtitle">
                                 Managing {packages.length} packages • {filteredPackages.length} active
                             </p>
@@ -103,7 +103,7 @@ const ViewPackages = () => {
                     {loading ? (
                         <div className="vt-loading">
                             <div className="vt-spinner"></div>
-                            <p>Loading tour packages...</p>
+                            <p>Loading packages...</p>
                         </div>
                     ) : filteredPackages.length === 0 ? (
                         <div className="vt-empty">
@@ -130,7 +130,7 @@ const ViewPackages = () => {
                                             <td>
                                                 <div className="vt-customer-cell">
                                                     <div className="vt-image-preview">
-                                                        <img src={`http://localhost:5000/uploads/${pkg.image}`} alt={pkg.title} />
+                                                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`} alt={pkg.title} />
                                                     </div>
                                                     <span className="vt-customer-name">{pkg.title}</span>
                                                 </div>

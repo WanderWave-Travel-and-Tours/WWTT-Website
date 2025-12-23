@@ -6,7 +6,7 @@ import HotelPagination from './HotelPagination';
 import HotelFilters from './HotelFilters';
 import './viewhotel.css';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
 const ViewHotels = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -103,20 +103,38 @@ const ViewHotels = () => {
     setShowDetailModal(true);
   };
 
+  // 👇 UPDATED: Smart Image URL Logic (Matches Modal Logic)
   const getImageUrl = (hotel) => {
+    let imagePath = null;
+
+    // 1. Priority: Main Image
     if (hotel.mainImage) {
-      if (hotel.mainImage.startsWith('data:image') || 
-          hotel.mainImage.startsWith('blob:') || 
-          hotel.mainImage.startsWith('http')) {
-        return hotel.mainImage;
-      }
+      imagePath = hotel.mainImage;
+    } 
+    // 2. Fallback: First Gallery Image
+    else if (hotel.images && hotel.images.length > 0) {
+      // Handle if images[0] is object or string
+      imagePath = typeof hotel.images[0] === 'string' ? hotel.images[0] : hotel.images[0].url;
+    }
+
+    if (!imagePath) return null;
+
+    // 3. If it's already a full URL or Base64, return immediately
+    if (imagePath.startsWith('data:') || imagePath.startsWith('blob:') || imagePath.startsWith('http')) {
+      return imagePath;
+    }
+
+    // 4. Fix formatting (Windows backslashes to forward slashes)
+    let cleanPath = imagePath.replace(/\\/g, '/');
+    if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+
+    // 5. Build Full URL
+    // Prevent double 'uploads/' if the path already has it
+    if (cleanPath.startsWith('uploads/')) {
+        return `${API_BASE_URL}/${cleanPath}`;
     }
     
-    if (hotel.images && hotel.images.length > 0 && hotel.images[0].url) {
-      return hotel.images[0].url;
-    }
-    
-    return null;
+    return `${API_BASE_URL}/uploads/${cleanPath}`;
   };
 
   const formatPrice = (price) => {
@@ -224,6 +242,7 @@ const ViewHotels = () => {
                       ? Object.values(hotel.amenities).filter(Boolean).length 
                       : 0;
                     
+                    // Use the fixed getImageUrl function here
                     const imageUrl = getImageUrl(hotel);
                     
                     return (
@@ -234,7 +253,10 @@ const ViewHotels = () => {
                               <img 
                                 src={imageUrl} 
                                 alt={hotel.name}
-                                onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250'; }}
+                                onError={(e) => { 
+                                    e.target.onerror = null; // Prevent infinite loop
+                                    e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; 
+                                }}
                               />
                             ) : (
                               <div style={{

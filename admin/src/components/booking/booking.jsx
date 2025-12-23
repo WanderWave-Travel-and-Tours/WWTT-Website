@@ -3,7 +3,7 @@ import {
   Calendar, Users, Search, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
   ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw
 } from 'lucide-react';
-import './Booking.css';
+import './booking.css';
 import Sidebar from '../sidebar/sidebar';
 import BookingStats from './BookingStats';
 import BookingFilters from './BookingFilters';
@@ -42,10 +42,10 @@ const Booking = () => {
     try {
       setLoading(true);
       // Prioritize /active, fallback to / if 404 (temporary fix)
-      let res = await fetch('http://localhost:5000/api/bookings/active');
+      let res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings/active');
       if (!res.ok) {
         console.warn('Active endpoint failed, falling back to all bookings');
-        res = await fetch('http://localhost:5000/api/bookings');
+        res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings');
       }
 
       if (!res.ok) throw new Error('Failed to fetch bookings');
@@ -115,7 +115,7 @@ const Booking = () => {
     if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/confirm`, {
+      const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/confirm`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -133,7 +133,7 @@ const Booking = () => {
     if (!window.confirm(`Cancel booking ${booking.id}? This cannot be undone.`)) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/cancel`, {
+      const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/cancel`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -158,7 +158,7 @@ const Booking = () => {
 
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/archive`, {
+      const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/archive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

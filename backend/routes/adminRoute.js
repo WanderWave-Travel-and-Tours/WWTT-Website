@@ -16,19 +16,43 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// ✅ FIXED: Login with EMAIL
 router.post('/login', async (req, res) => {
-    const username = sanitize(req.body.username); 
-    const password = sanitize(req.body.password);
-    const recaptchaToken = req.body;
+    console.log('📥 Login request body:', req.body); // Debug log
+    
+    // ✅ FIX: Check if values exist BEFORE sanitizing
+    const emailRaw = req.body.email;
+    const passwordRaw = req.body.password;
+    const recaptchaToken = req.body.recaptchaToken;
+
+    // Validate that email and password exist
+    if (!emailRaw || !passwordRaw) {
+        console.log('❌ Missing email or password');
+        return res.status(400).json({ 
+            status: "error", 
+            message: "Email and password are required." 
+        });
+    }
 
     if (!recaptchaToken) {
+        console.log('❌ Missing reCAPTCHA token');
         return res.status(400).json({ 
             status: "error", 
             message: "reCAPTCHA verification is required." 
         });
     }
 
-    if (typeof username !== 'string' || typeof password !== 'string') {
+    // ✅ Sanitize AFTER validation
+    const email = sanitize(emailRaw.toString().toLowerCase());
+    const password = sanitize(passwordRaw.toString());
+
+    console.log('🔍 Sanitized email:', email);
+    console.log('🔍 Email type:', typeof email);
+    console.log('🔍 Password type:', typeof password);
+
+    // Extra type check (should pass now)
+    if (typeof email !== 'string' || typeof password !== 'string') {
+        console.log('❌ Type check failed after sanitization');
         return res.status(400).json({ 
             status: "error", 
             message: "Invalid input types. Credentials must be strings." 
@@ -36,21 +60,31 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        const admin = await AdminModel.findOne({ username });
+        console.log(`🔍 Searching for admin with email: ${email}`);
+        
+        // Find admin by EMAIL
+        const admin = await AdminModel.findOne({ email: email });
 
         if (!admin) {
-            return res.status(401).json({ status: "error", message: "Invalid credentials" });
+            console.log(`❌ No admin found with email: ${email}`);
+            return res.status(401).json({ 
+                status: "error", 
+                message: "Invalid email or password" 
+            });
         }
+
+        console.log(`✅ Admin found: ${admin.email}`);
 
         const isMatch = await admin.comparePassword(password); 
 
         if (isMatch) {
-
             const token = jwt.sign(
-                { id: admin._id, username: admin.username, role: 'admin' }, 
+                { id: admin._id, email: admin.email, role: 'admin' },
                 'wanderwaveph_admin25', 
                 { expiresIn: '1h' }
             );
+
+            console.log(`✅ Login successful for: ${admin.email}`);
 
             res.json({ 
                 status: "ok", 
@@ -58,17 +92,25 @@ router.post('/login', async (req, res) => {
                 token: token, 
                 data: {
                     username: admin.username,
+                    email: admin.email,
                     businessName: admin.businessName,
                     businessAddress: admin.businessAddress,
                     businessLogo: admin.businessLogo
                 }
             });
         } else {
-            res.status(401).json({ status: "error", message: "Invalid credentials" });
+            console.log(`❌ Password mismatch for: ${email}`);
+            res.status(401).json({ 
+                status: "error", 
+                message: "Invalid email or password" 
+            });
         }
     } catch (err) {
-        console.error("Login Error:", err);
-        res.status(500).json({ status: "error", message: "Server error during login." });
+        console.error("❌ Login Error:", err);
+        res.status(500).json({ 
+            status: "error", 
+            message: "Server error during login." 
+        });
     }
 });
 
@@ -84,6 +126,7 @@ router.get('/settings', async (req, res) => {
             status: "ok",
             data: {
                 username: admin.username,
+                email: admin.email,
                 businessName: admin.businessName,
                 businessAddress: admin.businessAddress,
                 businessLogo: admin.businessLogo
@@ -119,7 +162,8 @@ router.put('/update-settings', upload.single('businessLogo'), async (req, res) =
             data: {
                 businessName: admin.businessName,
                 businessAddress: admin.businessAddress,
-                businessLogo: admin.businessLogo
+                businessLogo: admin.businessLogo,
+                email: admin.email
             }
         });
 

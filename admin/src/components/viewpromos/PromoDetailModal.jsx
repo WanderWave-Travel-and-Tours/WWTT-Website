@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { X, Calendar, Tag, Percent, DollarSign, FileText, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './PromoDetailModal.css';
 
 const formatDate = (dateString) => {
@@ -15,6 +16,8 @@ const PromoDetailModal = ({
     setShowModal,
     handleArchive
 }) => {
+    const navigate = useNavigate();
+
     if (!showModal || !selectedPromo) return null;
 
     const closeModal = () => setShowModal(false);
@@ -27,7 +30,7 @@ const PromoDetailModal = ({
 
     const getStatusConfig = (status) => {
         const configs = {
-            ACTIVE: { color: "active", label: "ACTIVE", description: "Currently available for use" },
+            ACTIVE: { color: "active", label: "ACTIVE", description: "Currently available" },
             EXPIRED: { color: "inactive", label: "EXPIRED", description: "No longer valid" },
         };
         return configs[status.toUpperCase()] || configs.EXPIRED;
@@ -39,6 +42,11 @@ const PromoDetailModal = ({
     const handleArchiveClick = () => {
         handleArchive(selectedPromo._id, selectedPromo.code);
         closeModal();
+    };
+
+    // Redirect to Edit Page
+    const handleEditClick = () => {
+        navigate(`/edit-promo/${selectedPromo._id}`);
     };
 
     return (
@@ -142,10 +150,15 @@ const PromoDetailModal = ({
 
                 {/* FOOTER ACTIONS */}
                 <div className="prdm-footer">
-                    <button className="prdm-btn-close" onClick={closeModal}>Close</button>
+                    
+                    <button className="prdm-btn-edit" onClick={handleEditClick}>
+                        <Edit size={16} />
+                        Edit
+                    </button>
+
                     <button className="prdm-btn-danger" onClick={handleArchiveClick}>
                         <Trash2 size={16} />
-                        Archive Promo
+                        Archive
                     </button>
                 </div>
             </div>

@@ -1,83 +1,235 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from 'axios';
 import Sidebar from "../../sidebar/sidebar"; 
-import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen, ChevronLeft, ChevronRight, Search, UserPlus, Archive } from "lucide-react"; 
+import { FileText, AlertTriangle, CreditCard, CheckCircle, FolderOpen, ChevronLeft, ChevronRight, Search, UserPlus, Eye, Mail, Archive } from "lucide-react"; 
 import { InquiryModal, ServiceListModal, ServiceEditorModal, ContactRemarksModal } from "./CenomarModals"; 
 import "./CenomarRequest.css";
 import { CenomarApplicationModal } from "./CenomarApplicationModal";
 
-const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
+// Destination Images for Stats Cards
+const CENOMAR_STAT_IMAGES = {
+    TOTAL_REQUESTS: 'https://picsum.photos/seed/cenomar-total/800/600',
+    PENDING: 'https://picsum.photos/seed/cenomar-pending/800/600',
+    PAYMENT_PENDING: 'https://picsum.photos/seed/cenomar-payment/800/600',
+    PAID: 'https://picsum.photos/seed/cenomar-paid/800/600'
+};
+
+// Pagination Component
+const CenomarPagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
+  const [jumpPageInput, setJumpPageInput] = useState('');
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   if (totalPages <= 1) return null;
 
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
-    } else {
-      pageNumbers.push(1);
-      
-      let start = Math.max(2, currentPage - 1);
-      let end = Math.min(totalPages - 1, currentPage + 1);
-
-      if (start > 2) pageNumbers.push('...');
-      
-      for (let i = start; i <= end; i++) {
-        pageNumbers.push(i);
+  const handleJump = (e) => {
+      e.preventDefault();
+      const page = parseInt(jumpPageInput, 10);
+      if (page >= 1 && page <= totalPages) {
+          onPageChange(page);
+          setJumpPageInput('');
+      } else {
+          alert(`Please enter a page number between 1 and ${totalPages}.`);
       }
-
-      if (end < totalPages - 1) pageNumbers.push('...');
-
-      if (!pageNumbers.includes(totalPages)) {
-        pageNumbers.push(totalPages);
-      }
-    }
-    return pageNumbers.filter((value, index, self) => 
-      self.indexOf(value) === index || value === currentPage
-    ).filter((value, index, self) => 
-      !(value === '...' && self[index - 1] === '...')
-    );
   };
 
-  const pageNumbers = getPageNumbers();
-
   return (
-    <nav className="pagination-nav">
-      <ul className="pagination-list">
-        <li>
-          <button
-            className="pagination-btn"
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          ><ChevronLeft size={16} /></button>
-        </li>
-        {pageNumbers.map((number, index) => (
-          <li key={index}>
-            {number === '...' ? (
-              <span className="pagination-btn" style={{ cursor: 'default', opacity: 1, backgroundColor: 'white' }}>...</span>
-            ) : (
-              <button
-                onClick={() => onPageChange(number)}
-                className={`pagination-btn ${number === currentPage ? 'active' : ''}`}
-              >
-                {number}
-              </button>
-            )}
-          </li>
-        ))}
-        <li>
-          <button
-            className="pagination-btn"
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          ><ChevronRight size={16} /></button>
-        </li>
-      </ul>
+    <nav className="cenomar-pagination-nav">
+      <div className="cenomar-pagination-info">
+        <span className="cenomar-pagination-showing">
+          Showing <strong>{totalItems === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1}</strong> to{' '}
+          <strong>{Math.min(currentPage * itemsPerPage, totalItems)}</strong> of{' '}
+          <strong>{totalItems}</strong> items
+        </span>
+      </div>
+
+      <div className="cenomar-pagination-jump">
+        <button
+          type="button"
+          className="cenomar-jump-arrow"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft size={18} />
+        </button>
+        
+        <form onSubmit={handleJump} className="cenomar-pagination-jump-form">
+          <span className="cenomar-pagination-jump-label">Page</span>
+          <input 
+            type="number" 
+            value={jumpPageInput}
+            onChange={(e) => setJumpPageInput(e.target.value)}
+            placeholder={currentPage.toString()}
+            min="1" 
+            max={totalPages}
+            className="cenomar-jump-input"
+          />
+          <span className="cenomar-pagination-jump-label">of {totalPages}</span>
+        </form>
+        
+        <button
+          type="button"
+          className="cenomar-jump-arrow"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
     </nav>
   );
 };
 
+// Stats Component
+const CenomarStats = ({ stats }) => {
+    const getStatClass = (label) => {
+        return label.toLowerCase().replace(/ /g, '-');
+    }
+    
+    return (
+        <div className="cenomar-stats-grid">
+            {stats.map((s, i) => (
+                <div 
+                    className={`cenomar-stat-card cenomar-stat-card-${getStatClass(s.label)}`} 
+                    key={i}
+                    style={{backgroundImage: `url(${s.image})`}}
+                >
+                    <div className="cenomar-stat-card-content">
+                        <h2>{s.value}</h2>
+                        <span>{s.label}</span>
+                    </div>
+                    <div className="cenomar-stat-card-icon">{s.icon}</div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// Filters Component
+const CenomarFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus, statusOptions, getFilterClassName }) => {
+  return (
+    <div className="cenomar-filter-card">
+      <div className="cenomar-filter-wrapper">
+        <div className="cenomar-brand-label">
+            CENOMAR <span>FILTERS</span>
+        </div>
+        
+        <div className="cenomar-filter-buttons">
+          {statusOptions.map(status => (
+            <button
+              key={status}
+              className={`cenomar-filter-btn ${getFilterClassName(status)}`} 
+              onClick={() => setFilterStatus(status)}
+            >
+              {status === 'ALL' ? 'All Requests' : status.replace('_', ' ')}
+            </button>
+          ))}
+        </div>
+        
+        <div className="cenomar-search-box">
+          <Search size={18} className="cenomar-search-icon" /> 
+          <input
+            type="text"
+            className="cenomar-search-input"
+            placeholder="Search by Requester, Document, Ref No..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Table Component
+const CenomarTable = ({ loading, filteredInquiriesCount, currentInquiries, handleViewInquiry, handleArchiveInquiry, startIndex }) => {
+    const getStatusBadgeClass = (status) => {
+        const normalizedStatus = (status || 'PENDING').toLowerCase();
+        switch (normalizedStatus) {
+            case 'pending': return 'cenomar-badge-pending';
+            case 'contacted': return 'cenomar-badge-contacted';
+            case 'payment_pending': return 'cenomar-badge-payment_pending';
+            case 'paid': return 'cenomar-badge-paid';
+            case 'confirmed': return 'cenomar-badge-confirmed';
+            case 'completed': return 'cenomar-badge-completed';
+            case 'cancelled': return 'cenomar-badge-cancelled';
+            default: return 'cenomar-badge-pending';
+        }
+    };
+
+    if (loading) {
+        return (
+            <tbody>
+                <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                        Loading CENOMAR requests...
+                    </td>
+                </tr>
+            </tbody>
+        );
+    }
+
+    if (filteredInquiriesCount === 0) {
+        return (
+            <tbody>
+                <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                        No CENOMAR requests found
+                    </td>
+                </tr>
+            </tbody>
+        );
+    }
+
+    return (
+        <tbody>
+            {currentInquiries.map((row, index) => (
+                <tr key={row._id}>
+                    <td style={{ fontWeight: "700", color: '#0f172a', textAlign: 'center', width: '60px' }}>
+                        {startIndex + index + 1}
+                    </td>
+                    <td className="cenomar-ref-cell">{row._id.slice(-6).toUpperCase()}</td>
+                    <td>
+                        <div className="cenomar-requester-name">{row.fullName}</div>
+                        <div className="cenomar-requester-email">
+                            <Mail size={13} />
+                            <span>{row.email}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span className="cenomar-doc-badge">CNM</span>
+                        {row.cenomarDocument || row.serviceName}
+                    </td>
+                    <td>
+                        <span className={`cenomar-table-badge ${getStatusBadgeClass(row.status)}`}>
+                            {row.status || 'PENDING'}
+                        </span>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                        <div className="cenomar-action-group">
+                            <button 
+                                className="cenomar-action-btn cenomar-view-btn" 
+                                onClick={() => handleViewInquiry(row)}
+                                title="View Details"
+                            >
+                                <Eye size={16} /> View
+                            </button>
+                            <button 
+                                className="cenomar-action-btn cenomar-archive-btn" 
+                                style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                                onClick={() => handleArchiveInquiry(row._id)}
+                                title="Archive Request"
+                            >
+                                <Archive size={16} /> Archive
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            ))}
+        </tbody>
+    );
+};
+
+// Main Component
 const CenomarRequest = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [cenomarDocs, setCenomarDocs] = useState([]);
@@ -87,11 +239,9 @@ const CenomarRequest = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL"); 
   
-  // --- PAGINATION STATES ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
-  // --- MODAL STATES ---
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
@@ -102,24 +252,26 @@ const CenomarRequest = () => {
   const [deliveryFiles, setDeliveryFiles] = useState([]);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
 
-  // --- CMS STATES ---
   const [isCENOMARFormsOpen, setIsCENOMARFormsOpen] = useState(false);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedCENOMAR, setSelectedCENOMAR] = useState(null);
   
-  // Editor Form State
   const [newCENOMARForm, setNewCENOMARForm] = useState({ documentType: "", desc: "", price: "" });
   const [requirements, setRequirements] = useState([]);
   const [downloadForms, setDownloadForms] = useState([]);
   const [stepsProcess, setStepsProcess] = useState([]);
   const [accordionState, setAccordionState] = useState({ requirements: true, downloadForms: false, stepsProcess: false });
 
-  // --- INITIAL DATA FETCHING ---
   useEffect(() => {
     fetchCENOMARDocs();
     fetchInquiries();
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
 
   const fetchCENOMARDocs = async () => {
     try {
@@ -128,11 +280,15 @@ const CenomarRequest = () => {
         const mapped = res.data.map(d => ({ ...d, id: d._id, desc: d.description }));
         setCenomarDocs(mapped);
       }
-    } catch (error) { console.error("Error fetching CENOMAR docs:", error); } 
-    finally { setIsLoading(false); }
+    } catch (error) { 
+        console.error("Error fetching CENOMAR docs:", error); 
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   const fetchInquiries = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get('http://localhost:5000/api/inquiries');
       if (response.data.success) {
@@ -140,23 +296,14 @@ const CenomarRequest = () => {
         const cenomarRequests = response.data.data.filter(inq => 
           inq.inquiryType === 'CENOMAR' && inq.isArchive === 'No'
         );
+        // Sort by newest first
+        cenomarRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setInquiries(cenomarRequests);
       }
-    } catch (error) { console.error('Error fetching inquiries:', error); }
-  };
-
-  // --- ARCHIVE FUNCTION ---
-  const handleArchiveInquiry = async (id) => {
-    if (!window.confirm("Sigurado ka bang gusto mong i-archive ang request na ito?")) return;
-    try {
-      const res = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, { isArchive: "Yes" });
-      if (res.data.success) {
-        alert("Inquiry archived successfully!");
-        fetchInquiries(); // Refresh listahan
-      }
-    } catch (error) {
-      console.error("Archive error:", error);
-      alert("Failed to archive inquiry.");
+    } catch (error) { 
+        console.error('Error fetching inquiries:', error); 
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -165,12 +312,10 @@ const CenomarRequest = () => {
     let list = inquiries;
     const lowerSearchTerm = searchTerm.toLowerCase();
 
-    // 1. Filter by Status
     if (filterStatus !== "ALL") {
       list = list.filter(inq => (inq.status || 'PENDING') === filterStatus);
     }
 
-    // 2. Filter by Search Term
     if (lowerSearchTerm) {
       list = list.filter(inq =>
         inq.fullName.toLowerCase().includes(lowerSearchTerm) ||
@@ -180,69 +325,63 @@ const CenomarRequest = () => {
       );
     }
     
-    if (currentPage > Math.ceil(list.length / itemsPerPage) && list.length > 0) {
-      setCurrentPage(1);
-    } else if (list.length === 0 && currentPage !== 1) {
-      setCurrentPage(1);
-    }
-
     return list;
-  }, [inquiries, searchTerm, filterStatus, itemsPerPage, currentPage]);
+  }, [inquiries, searchTerm, filterStatus]);
 
-  const stats = [
-    { label: "Total Requests", value: inquiries.length, icon: <FileText size={24} /> },
-    { label: "To Process", value: inquiries.filter(i => (i.status || 'PENDING') === 'PENDING').length, icon: <AlertTriangle size={24} /> },
-    { label: "Pending Payment", value: inquiries.filter(i => i.status === 'PAYMENT_PENDING').length, icon: <CreditCard size={24} /> },
-    { label: "Paid/Confirming", value: inquiries.filter(i => i.status === 'PAID').length, icon: <CheckCircle size={24} /> },
-  ];
+  const stats = useMemo(() => [
+    { 
+        label: "Total Requests", 
+        value: inquiries.length, 
+        icon: <FileText size={24} />, 
+        image: CENOMAR_STAT_IMAGES.TOTAL_REQUESTS 
+    },
+    { 
+        label: "To Process", 
+        value: inquiries.filter(i => (i.status || 'PENDING') === 'PENDING').length, 
+        icon: <AlertTriangle size={24} />, 
+        image: CENOMAR_STAT_IMAGES.PENDING 
+    },
+    { 
+        label: "Pending Payment", 
+        value: inquiries.filter(i => i.status === 'PAYMENT_PENDING').length, 
+        icon: <CreditCard size={24} />, 
+        image: CENOMAR_STAT_IMAGES.PAYMENT_PENDING 
+    },
+    { 
+        label: "Paid/Confirming", 
+        value: inquiries.filter(i => i.status === 'PAID').length, 
+        icon: <CheckCircle size={24} />, 
+        image: CENOMAR_STAT_IMAGES.PAID 
+    },
+  ], [inquiries]);
 
   const getFilterClassName = (status) => {
-    switch(status) {
-      case 'PENDING':
-      case 'PAYMENT_PENDING':
-      case 'CONTACTED':
-        return 'pending-active';
-      case 'PAID':
-      case 'CONFIRMED':
-      case 'COMPLETED':
-        return 'confirmed-active';
-      case 'CANCELLED':
-        return 'cancelled-active';
-      default:
-        return 'active'; 
-    }
+    return status === filterStatus ? 'cenomar-active-navy' : '';
   }
 
   const statusOptions = useMemo(() => {
     const statuses = new Set(inquiries.map(i => i.status || 'PENDING')); 
     const allPossibleStatuses = [
-      'PENDING', 
-      'CONTACTED', 
-      'PAYMENT_PENDING', 
-      'PAID', 
-      'CONFIRMED', 
-      'COMPLETED',
-      'CANCELLED'
+      'PENDING', 'CONTACTED', 'PAYMENT_PENDING', 'PAID', 'CONFIRMED', 'COMPLETED', 'CANCELLED'
     ];
     const sortedStatuses = allPossibleStatuses.filter(status => statuses.has(status));
     return ['ALL', ...sortedStatuses];
   }, [inquiries]);
 
-
-  // --- PAGINATION LOGIC ---
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentInquiries = filteredInquiries.slice(indexOfFirstItem, indexOfLastItem);
   const totalItems = filteredInquiries.length;
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  const startIndex = (currentPage - 1) * itemsPerPage;
 
-
-  // --- INQUIRY HANDLERS ---
   const fetchDocuments = async (inquiryId) => {
     try {
       const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) setDocuments(response.data.documents || []);
-    } catch (error) { console.error('Error fetching documents:', error); setDocuments([]); }
+    } catch (error) { 
+        console.error('Error fetching documents:', error); 
+        setDocuments([]); 
+    }
   };
 
   const handleViewInquiry = (inquiry) => {
@@ -251,11 +390,31 @@ const CenomarRequest = () => {
     fetchDocuments(inquiry._id);
   };
 
+  const handleArchiveInquiry = async (id) => {
+    if (!window.confirm("Are you sure you want to archive this request?")) return;
+    try {
+      const res = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, { isArchive: "Yes" });
+      if (res.data.success) {
+        alert("Inquiry archived successfully!");
+        fetchInquiries(); // Refresh list
+        if (isInquiryModalOpen) handleCloseInquiryModal();
+      }
+    } catch (error) {
+      console.error("Archive error:", error);
+      alert("Failed to archive inquiry.");
+    }
+  };
+
   const handleCloseInquiryModal = () => {
     setIsInquiryModalOpen(false);
     setTimeout(() => {
-      setSelectedInquiry(null); setDocuments([]); setShowDeliverDocs(false);
-      setDeliveryFiles([]); setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
+      setSelectedInquiry(null); 
+      setDocuments([]); 
+      setShowDeliverDocs(false);
+      setDeliveryFiles([]); 
+      setShowContactRemarks(false); 
+      setContactRemarks(""); 
+      setContactEvidence(null);
     }, 200);
   };
 
@@ -264,10 +423,14 @@ const CenomarRequest = () => {
     try {
       const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, { status: newStatus });
       if (response.data.success) {
-        alert('Status updated successfully!'); fetchInquiries();
+        alert('Status updated successfully!'); 
+        fetchInquiries();
         if (selectedInquiry && selectedInquiry._id === inquiryId) setSelectedInquiry({ ...selectedInquiry, status: newStatus });
       }
-    } catch (error) { console.error(error); alert('Failed to update status'); }
+    } catch (error) { 
+        console.error(error); 
+        alert('Failed to update status'); 
+    }
   };
 
   const handleRequestPayment = async () => {
@@ -275,10 +438,14 @@ const CenomarRequest = () => {
     try {
       const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, { status: 'PAYMENT_PENDING' });
       if (response.data.success) {
-        alert('Payment requested!'); fetchInquiries();
+        alert('Payment requested!'); 
+        fetchInquiries();
         setSelectedInquiry({ ...selectedInquiry, status: 'PAYMENT_PENDING' });
       }
-    } catch (error) { console.error(error); alert('Failed to request payment'); }
+    } catch (error) { 
+        console.error(error); 
+        alert('Failed to request payment'); 
+    }
   };
 
   const submitContactWithRemarks = async () => {
@@ -290,11 +457,17 @@ const CenomarRequest = () => {
       if (contactEvidence) formData.append('evidence', contactEvidence);
       const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (response.data.success) {
-        alert('Status updated to CONTACTED!'); fetchInquiries();
+        alert('Status updated to CONTACTED!'); 
+        fetchInquiries();
         setSelectedInquiry({ ...selectedInquiry, status: 'CONTACTED' });
-        setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
+        setShowContactRemarks(false); 
+        setContactRemarks(""); 
+        setContactEvidence(null);
       }
-    } catch (error) { console.error(error); alert('Failed to update status'); }
+    } catch (error) { 
+        console.error(error); 
+        alert('Failed to update status'); 
+    }
   };
 
   const handleConfirmPayment = async () => {
@@ -302,10 +475,14 @@ const CenomarRequest = () => {
     try {
       const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: 'Admin' });
       if (response.data.success) {
-        alert('Payment confirmed!'); fetchInquiries();
+        alert('Payment confirmed!'); 
+        fetchInquiries();
         setSelectedInquiry({ ...selectedInquiry, status: 'CONFIRMED' });
       }
-    } catch (error) { console.error(error); alert('Failed to confirm payment'); }
+    } catch (error) { 
+        console.error(error); 
+        alert('Failed to confirm payment'); 
+    }
   };
 
   const handleDeliverDocuments = async (e) => {
@@ -313,6 +490,7 @@ const CenomarRequest = () => {
     if (deliveryFiles.length === 0) return alert('Select files first');
     const formData = new FormData();
     deliveryFiles.forEach(file => formData.append('documents', file));
+
     try {
       const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
         headers: { 'Content-Type': 'multipart/form-data' } 
@@ -332,16 +510,26 @@ const CenomarRequest = () => {
   const handleManageService = () => setIsCENOMARFormsOpen(true);
 
   const handleAddNewCENOMAR = () => {
-    setIsCENOMARFormsOpen(false); setIsAddFormOpen(true); setIsEditorOpen(false); setSelectedCENOMAR(null);
+    setIsCENOMARFormsOpen(false); 
+    setIsAddFormOpen(true); 
+    setIsEditorOpen(false); 
+    setSelectedCENOMAR(null);
     setNewCENOMARForm({ documentType: "", desc: "", price: "" });
-    setRequirements([]); setDownloadForms([]); setStepsProcess([]);
+    setRequirements([]); 
+    setDownloadForms([]); 
+    setStepsProcess([]);
     setAccordionState({ requirements: true, downloadForms: false, stepsProcess: false });
   };
 
   const handleEditCENOMAR = (cenomar) => {
-    setIsCENOMARFormsOpen(false); setIsAddFormOpen(true); setIsEditorOpen(true); setSelectedCENOMAR(cenomar);
+    setIsCENOMARFormsOpen(false); 
+    setIsAddFormOpen(true); 
+    setIsEditorOpen(true); 
+    setSelectedCENOMAR(cenomar);
     setNewCENOMARForm({ documentType: cenomar.documentType, desc: cenomar.description || cenomar.desc, price: cenomar.price });
-    setRequirements(cenomar.requirements || []); setDownloadForms(cenomar.downloadableForms || []); setStepsProcess(cenomar.processSteps || []);
+    setRequirements(cenomar.requirements || []); 
+    setDownloadForms(cenomar.downloadableForms || []); 
+    setStepsProcess(cenomar.processSteps || []);
   };
 
   const handleDeleteCENOMAR = async (id) => {
@@ -352,8 +540,12 @@ const CenomarRequest = () => {
 
   const handleSaveChanges = async () => {
     const payload = {
-      documentType: newCENOMARForm.documentType, description: newCENOMARForm.desc, price: parseFloat(newCENOMARForm.price),
-      requirements, downloadableForms: downloadForms, processSteps: stepsProcess
+      documentType: newCENOMARForm.documentType, 
+      description: newCENOMARForm.desc, 
+      price: parseFloat(newCENOMARForm.price),
+      requirements, 
+      downloadableForms: downloadForms, 
+      processSteps: stepsProcess
     };
     try {
       if (isEditorOpen && selectedCENOMAR) await axios.put(`http://localhost:5000/api/cenomar/${selectedCENOMAR._id}`, payload);
@@ -362,7 +554,6 @@ const CenomarRequest = () => {
     } catch (err) { console.error(err); alert("Failed to save"); }
   };
 
-  // --- CMS HELPERS ---
   const toggleAccordion = (section) => setAccordionState((prev) => ({ ...prev, [section]: !prev[section] }));
   const addCategory = () => setRequirements([...requirements, { id: Date.now(), title: "", items: [] }]);
   const removeCategory = (id) => setRequirements(requirements.filter(c => c.id !== id));
@@ -375,13 +566,19 @@ const CenomarRequest = () => {
   const handleStepChange = (id, v) => setStepsProcess(stepsProcess.map(s => s.id === id ? { ...s, label: v } : s));
 
   const handleDirectFileUpload = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const formData = new FormData(); formData.append('file', file);
+    const file = e.target.files[0]; 
+    if (!file) return;
+    const formData = new FormData(); 
+    formData.append('file', file);
     try {
       const res = await axios.post('http://localhost:5000/api/upload', formData);
       if (res.data.success) setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
-    } catch(err) { console.error(err); alert("Upload failed"); }
+    } catch(err) { 
+        console.error(err); 
+        alert("Upload failed"); 
+    }
   };
+  
   const removeDownloadForm = (id) => setDownloadForms(downloadForms.filter(f => f.id !== id));
 
   return (
@@ -411,45 +608,22 @@ const CenomarRequest = () => {
             </div>
           </div>
 
-          <div className="cenomar-stats-grid">
-            {stats.map((s, i) => (
-              <div className="cenomar-card" key={i}>
-                <div><h2>{s.value}</h2><span>{s.label}</span></div>
-                <div className="cenomar-card-icon">{s.icon}</div>
-              </div>
-            ))}
-          </div>
+          <CenomarStats stats={stats} />
           
-          <div className="search-filter-card">
-              <div className="search-filter-wrapper">
-                  <div className="search-box">
-                      <Search size={20} className="search-icon" />
-                      <input
-                          type="text"
-                          className="search-input"
-                          placeholder="Search by Requester, Ref No..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                  </div>
-                  <div className="filter-buttons">
-                      {statusOptions.map(status => (
-                          <button
-                              key={status}
-                              className={`filter-btn ${filterStatus === status ? getFilterClassName(status) : ''}`}
-                              onClick={() => setFilterStatus(status)}
-                          >
-                              {status === 'ALL' ? 'All Active' : status.replace('_', ' ')}
-                          </button>
-                      ))}
-                  </div>
-              </div>
-          </div>
+          <CenomarFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            statusOptions={statusOptions}
+            getFilterClassName={getFilterClassName}
+          />
 
           <div className="cenomar-table-container">
             <table className="cenomar-table">
               <thead>
                 <tr>
+                  <th style={{ textAlign: 'center', width: '60px' }}>#</th>
                   <th>Ref No.</th>
                   <th>Requester</th>
                   <th>Document</th>
@@ -457,52 +631,35 @@ const CenomarRequest = () => {
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {currentInquiries.length === 0 ? (
-                  <tr><td colSpan="5" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>{isLoading ? 'Loading...' : 'No active CENOMAR requests found'}</td></tr>
-                ) : (
-                  currentInquiries.map((row) => (
-                    <tr key={row._id}>
-                      <td style={{ fontWeight: "700" }}>{row._id.slice(-6).toUpperCase()}</td>
-                      <td>{row.fullName}</td>
-                      <td><span className="doc-badge">CNM</span>{row.cenomarDocument || row.serviceName}</td>
-                      <td><span className={`cenomar-badge badge-${(row.status || 'PENDING').toLowerCase()}`}>{row.status || 'PENDING'}</span></td>
-                      <td style={{ textAlign: "right" }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                            <button className="cenomar-action-btn cenomar-view-btn" onClick={() => handleViewInquiry(row)}>View</button>
-                            <button 
-                                className="cenomar-action-btn" 
-                                style={{ backgroundColor: '#ef4444', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                onClick={() => handleArchiveInquiry(row._id)}
-                            >
-                                <Archive size={14} /> Archive
-                            </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
+              <CenomarTable 
+                loading={isLoading}
+                filteredInquiriesCount={filteredInquiries.length}
+                currentInquiries={currentInquiries}
+                handleViewInquiry={handleViewInquiry}
+                handleArchiveInquiry={handleArchiveInquiry}
+                startIndex={startIndex}
+              />
             </table>
+          </div>
 
-            <Pagination
+          {filteredInquiries.length > 0 && Math.ceil(filteredInquiries.length / itemsPerPage) > 1 && (
+            <CenomarPagination
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
               currentPage={currentPage}
-              onPageChange={handlePageChange}
+              onPageChange={(page) => setCurrentPage(page)}
             />
-          </div>
+          )}
         </div>
       </main>
 
       <CenomarApplicationModal 
-            isOpen={isApplicationModalOpen}
-            onClose={() => setIsApplicationModalOpen(false)}
-            refreshData={fetchInquiries}
-            cenomarDocs={cenomarDocs}
+        isOpen={isApplicationModalOpen}
+        onClose={() => setIsApplicationModalOpen(false)}
+        refreshData={fetchInquiries}
+        cenomarDocs={cenomarDocs}
       />
 
-      {/* MODALS */}
       {isInquiryModalOpen && selectedInquiry && (
         <InquiryModal 
           inquiry={selectedInquiry}
@@ -526,7 +683,11 @@ const CenomarRequest = () => {
           setRemarks={setContactRemarks}
           setEvidence={setContactEvidence}
           onSubmit={submitContactWithRemarks}
-          onClose={() => { setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null); }}
+          onClose={() => { 
+              setShowContactRemarks(false); 
+              setContactRemarks(""); 
+              setContactEvidence(null); 
+          }}
         />
       )}
 
@@ -543,18 +704,29 @@ const CenomarRequest = () => {
       {isAddFormOpen && (
         <ServiceEditorModal 
           isEditorOpen={isEditorOpen}
-          form={newCENOMARForm} setForm={setNewCENOMARForm}
+          form={newCENOMARForm} 
+          setForm={setNewCENOMARForm}
           requirements={requirements}
           steps={stepsProcess}
           downloads={downloadForms}
           accordionState={accordionState}
           toggleAccordion={toggleAccordion}
-          addCategory={addCategory} removeCategory={removeCategory} handleCategoryTitleChange={handleCategoryTitleChange}
-          addRequirement={addRequirement} removeRequirement={removeRequirement} handleLabelChange={handleLabelChange}
-          addStep={addStep} removeStep={removeStep} handleStepChange={handleStepChange}
-          handleDirectFileUpload={handleDirectFileUpload} removeDownloadForm={removeDownloadForm}
+          addCategory={addCategory} 
+          removeCategory={removeCategory} 
+          handleCategoryTitleChange={handleCategoryTitleChange}
+          addRequirement={addRequirement} 
+          removeRequirement={removeRequirement} 
+          handleLabelChange={handleLabelChange}
+          addStep={addStep} 
+          removeStep={removeStep} 
+          handleStepChange={handleStepChange}
+          handleDirectFileUpload={handleDirectFileUpload} 
+          removeDownloadForm={removeDownloadForm}
           onSave={handleSaveChanges}
-          onClose={() => { setIsAddFormOpen(false); setIsCENOMARFormsOpen(true); }}
+          onClose={() => { 
+              setIsAddFormOpen(false); 
+              setIsCENOMARFormsOpen(true); 
+          }}
         />
       )}
     </div>

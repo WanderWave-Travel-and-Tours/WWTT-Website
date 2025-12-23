@@ -54,7 +54,7 @@ const RequirementEditor = ({ selectedVisa, onBack, onSave }) => {
         const formData = new FormData();
         formData.append('file', file);
         try {
-            const res = await axios.post('http://localhost:5000/api/visas/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
+            const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/visas/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
             if (res.data.success) {
                 const { fileName, fileUrl } = res.data.data;
                 setDownloadForms(prev => [...prev, { id: `form-${Date.now()}`, label: fileName, fileUrl, fileName }]);
@@ -191,7 +191,7 @@ const VisaSettingsModal = ({ isOpen, onClose, visaForms, isLoading, countryCodes
 
     const handleSaveRequirements = async (updatedData) => {
         try {
-            await axios.put(`http://localhost:5000/api/visas/${selectedVisa.id}`, updatedData);
+            await axios.put(`https://wanderwaveph-backend.onrender.com/api/visas/${selectedVisa.id}`, updatedData);
             refreshData();
             setViewMode("LIST");
         } catch (error) {
@@ -202,7 +202,7 @@ const VisaSettingsModal = ({ isOpen, onClose, visaForms, isLoading, countryCodes
     const handleDeleteVisa = async (id) => {
         if (!window.confirm("Delete this visa?")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/visas/${id}`);
+            await axios.delete(`https://wanderwaveph-backend.onrender.com/api/visas/${id}`);
             refreshData();
         } catch (error) { alert("Delete failed"); }
     };
@@ -212,7 +212,7 @@ const VisaSettingsModal = ({ isOpen, onClose, visaForms, isLoading, countryCodes
             alert("Fill all fields"); return;
         }
         try {
-            await axios.post("http://localhost:5000/api/visas/add", {
+            await axios.post("https://wanderwaveph-backend.onrender.com/api/visas/add", {
                 country: newVisa.country.toUpperCase(),
                 flagCode: newVisa.flagCode.toUpperCase(),
                 description: newVisa.desc.toUpperCase(),

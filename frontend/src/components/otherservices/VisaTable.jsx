@@ -12,7 +12,7 @@ const VisaTable = ({ onSelectVisa }) => {
   useEffect(() => {
     const fetchVisas = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/visas');
+        const res = await axios.get('https://wanderwaveph-backend.onrender.com/api/visas');
         
         if (Array.isArray(res.data)) {
           setVisas(res.data);
@@ -205,7 +205,7 @@ const VisaTable = ({ onSelectVisa }) => {
                                     <span className="download-icon">📄</span>
                                     {formUrl ? (
                                       <a 
-                                        href={`http://localhost:5000${formUrl}`}
+                                        href={`https://wanderwaveph-backend.onrender.com${formUrl}`}
                                         download={formLabel}
                                         target="_blank"
                                         rel="noopener noreferrer"

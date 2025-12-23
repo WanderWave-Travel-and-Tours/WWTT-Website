@@ -21,10 +21,10 @@ const TourDetailModal = ({ tour, close, onArchive, navigate }) => {
                 </div>
                 <div className="tdm-body">
                     <div className="tdm-section-card dashed-border">
-                        <img src={`http://localhost:5000/uploads/${tour.image}`} className="tdm-customer-image" alt="" />
+                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} className="tdm-customer-image" alt="" />
                     </div>
                     <div className="tdm-section-card">
-                        <h3 className="tdm-section-title">PACKAGE INFORMATION</h3>
+                        <h3 className="tdm-section-title">TOUR INFORMATION</h3>
                         <div className="tdm-info-grid">
                             <div className="tdm-info-box">
                                 <div className="tdm-box-icon blue"><MapPin size={18}/></div>
@@ -46,9 +46,8 @@ const TourDetailModal = ({ tour, close, onArchive, navigate }) => {
                     </div>
                 </div>
                 <div className="tdm-footer">
-                    <button className="tdm-btn-close" onClick={close}>Close</button>
                     <button className="tdm-btn-edit" onClick={() => navigate(`/edit-tour/${tour._id}`)}>
-                        <Edit size={16}/> Edit Tour
+                        <Edit size={16}/> Edit
                     </button>
                     <button className="tdm-btn-danger" onClick={() => {onArchive(tour._id); close();}}>
                         <Trash2 size={16}/> Archive

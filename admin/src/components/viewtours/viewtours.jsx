@@ -7,7 +7,7 @@ import TourFilters from './TourFilters';
 import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'http://localhost:5000/api/tours';
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/tours';
 
 const ViewTours = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -110,7 +110,7 @@ const ViewTours = () => {
                                             <td>
                                                 <div className="vt-customer-cell">
                                                     <div className="vt-image-preview">
-                                                        <img src={`http://localhost:5000/uploads/${tour.image}`} alt="" />
+                                                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} alt="" />
                                                     </div>
                                                     <span className="vt-customer-name">{tour.title.toUpperCase()}</span>
                                                 </div>
@@ -125,11 +125,12 @@ const ViewTours = () => {
                                             <td><span className="vt-rating">₱{tour.price?.toLocaleString()}</span></td>
                                             <td>
                                                 <div className="vt-actions">
+                                                    {/* UPDATED: Added span for responsive hiding */}
                                                     <button className="vt-action-btn vt-action-btn--view" onClick={() => {setSelectedTour(tour); setShowDetailModal(true)}}>
-                                                        <Eye size={16}/> View
+                                                        <Eye size={16}/> <span>View</span>
                                                     </button>
                                                     <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(tour._id)}>
-                                                        <Trash2 size={16}/> Archive
+                                                        <Trash2 size={16}/> <span>Archive</span>
                                                     </button>
                                                 </div>
                                             </td>

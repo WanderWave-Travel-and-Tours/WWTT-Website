@@ -52,6 +52,52 @@ const getActivePosters = async (req, res) => {
     }
 };
 
+// --- NEW FUNCTION: Get Single Poster by ID (For Edit Page) ---
+const getPosterById = async (req, res) => {
+    try {
+        const poster = await Poster.findById(req.params.id);
+        if (!poster) return res.status(404).json({ message: 'Poster not found' });
+        res.status(200).json(poster);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// --- NEW FUNCTION: Update Poster Details ---
+const updatePoster = async (req, res) => {
+    try {
+        const { title, description, startDate, endDate, status } = req.body;
+        
+        const updateData = {
+            title,
+            description,
+            startDate,
+            endDate,
+            status
+        };
+
+        // Kung may bagong image na inupload, palitan ang imageUrl
+        if (req.file) {
+            updateData.imageUrl = `uploads/${req.file.filename}`;
+            
+            // Optional: Pwede mong i-delete ang old image dito kung gusto mo mag-clean up
+        }
+
+        const updatedPoster = await Poster.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        );
+
+        if (!updatedPoster) return res.status(404).json({ message: 'Poster not found' });
+        
+        res.status(200).json({ status: "ok", data: updatedPoster });
+    } catch (error) {
+        console.error('Error updating poster:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 // Burahin ang poster (Permanent)
 const deletePoster = async (req, res) => {
     try {
@@ -98,6 +144,8 @@ module.exports = {
     addPoster,
     getAllPosters,
     getActivePosters,
+    getPosterById,      // EXPORTED
+    updatePoster,       // EXPORTED
     deletePoster,
     updatePosterStatus
 };

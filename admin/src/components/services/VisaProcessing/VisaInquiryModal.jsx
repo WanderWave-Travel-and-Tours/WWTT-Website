@@ -27,7 +27,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) {
         setDocuments(response.data.documents || []);
       }
@@ -40,7 +40,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
   const handleUpdateStatus = async (status) => {
     try {
         const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${inquiry._id}/status`,
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/status`,
             { status }
         );
         if (response.data.success) {
@@ -61,7 +61,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
         if (contactEvidence) formData.append('evidence', contactEvidence);
 
         const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${inquiry._id}/status`,
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/status`,
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
@@ -88,7 +88,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
   const handleConfirmPayment = async () => {
     if (!window.confirm("Confirm that payment has been received?")) return;
     try {
-        const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiry._id}/confirm-payment`, {
+        const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/confirm-payment`, {
             adminName: 'Admin' 
         });
         if (response.data.success) {
@@ -113,7 +113,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
         deliveryFiles.forEach(file => formData.append('documents', file));
 
         const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${inquiry._id}/deliver-documents`,
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/deliver-documents`,
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
@@ -265,7 +265,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                              Sent • {formatDate(doc.uploadedAt)}
                           </span>
                         </div>
-                        <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" 
+                        <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" 
                            className="vim-btn vim-btn-ghost vim-btn-sm" style={{color:'#16a34a'}}>
                           <TrendingUp size={14} /> View
                         </a>
@@ -406,10 +406,10 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                         <span className="vim-doc-name">{doc.originalName}</span>
                         <span className="vim-doc-meta">{formatFileSize(doc.fileSize)} • {formatDate(doc.uploadedAt)}</span>
                       </div>
-                      <a href={`http://localhost:5000${doc.fileUrl}`} download={doc.originalName} className="vim-btn vim-btn-ghost vim-btn-sm">
+                      <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} download={doc.originalName} className="vim-btn vim-btn-ghost vim-btn-sm">
                         <Upload size={14} style={{transform: 'rotate(180deg)'}} /> Download
                       </a>
-                      <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="vim-btn vim-btn-ghost vim-btn-sm">
+                      <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="vim-btn vim-btn-ghost vim-btn-sm">
                         <TrendingUp size={14} /> View
                       </a>
                     </div>

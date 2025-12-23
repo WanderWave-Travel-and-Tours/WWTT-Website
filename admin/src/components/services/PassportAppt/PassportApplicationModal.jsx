@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { X, CheckCircle, User, Mail, FileText, Upload, Globe, Zap } from "lucide-react";
+import { X, CheckCircle, User, Mail, FileText, Upload, DollarSign } from "lucide-react";
+import "./PassportModals.css"; // Reuse your existing modal styles
 
-const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }) => {
+// FIX: Tinanggal ko ang "export" dito
+const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportServices = [] }) => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -11,9 +13,10 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }
     lastName: "",
     email: "", 
     contactNumber: "",
-    applicationType: "NEW", // NEW, RENEWAL, etc.
-    processingType: "REGULAR", // REGULAR, EXPEDITE
-    message: "Walk-in Passport Appointment",
+    applicationType: "NEW", // NEW, RENEWAL
+    processingType: "", 
+    serviceId: "", 
+    message: "Walk-in Application",
     files: {} 
   });
 
@@ -23,6 +26,17 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
+  const handleServiceChange = (e) => {
+      const selectedId = e.target.value;
+      const selectedService = passportServices.find(s => s._id === selectedId);
+      
+      setFormData(prev => ({
+          ...prev,
+          serviceId: selectedId,
+          processingType: selectedService ? selectedService.documentType : prev.processingType
+      }));
+  }
 
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
@@ -35,8 +49,8 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }
   };
 
   const submitApplication = async () => {
-    if (!formData.email || !formData.givenName || !formData.lastName) {
-      alert("Please fill in the required client information.");
+    if (!formData.email || !formData.givenName || !formData.lastName || !formData.serviceId) {
+      alert("Please fill in Name, Email, and select a Service.");
       return;
     }
 
@@ -44,21 +58,27 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }
     try {
       const data = new FormData();
       
-      // Mapped to Inquiry Model
-      data.append('serviceName', 'Passport Appointment');
+      const selectedService = passportServices.find(s => s._id === formData.serviceId);
+      
+      // Mapped to Inquiry Model requirements
+      data.append('serviceName', selectedService ? selectedService.documentType : 'Passport Appointment');
       data.append('inquiryType', 'PASSPORT'); 
       data.append('fullName', `${formData.givenName} ${formData.lastName}`);
       data.append('email', formData.email); 
       data.append('contactNumber', formData.contactNumber);
+      data.append('message', `${formData.message} | Type: ${formData.applicationType}`);
       
-      // Determine Price based on Processing Type
-      const selectedType = passportData?.processingTypes?.find(t => t.type === formData.processingType);
-      data.append('estimatedPrice', selectedType ? selectedType.price : 1500);
+      // Get price from the selected Service
+      data.append('estimatedPrice', selectedService ? selectedService.price : 0);
+      
+      // Passport Specific Details structure
+      const passportDetails = {
+          applicationType: formData.applicationType,
+          dfaLocation: 'Walk-in/TBD' 
+      };
+      data.append('passportDetails', JSON.stringify(passportDetails));
 
-      const detailedMessage = `${formData.message} | Type: ${formData.applicationType} | Processing: ${formData.processingType}`;
-      data.append('message', detailedMessage);
-
-      // Append Files
+      // Append Walk-in attachments
       Object.keys(formData.files).forEach(key => {
         data.append(key, formData.files[key]);
       });
@@ -73,7 +93,7 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }
       }
     } catch (error) {
       console.error("Error:", error);
-      alert(error.response?.data?.message || "Failed to add walk-in record");
+      alert(error.response?.data?.message || "Failed to add walk-in applicant");
     } finally {
       setIsLoading(false);
     }
@@ -81,75 +101,94 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }
 
   const resetAndClose = () => {
     setStep(1);
-    setFormData({ givenName: "", lastName: "", email: "", contactNumber: "", applicationType: "NEW", processingType: "REGULAR", message: "Walk-in Passport Appointment", files: {} });
+    setFormData({ 
+        givenName: "", lastName: "", email: "", contactNumber: "", 
+        applicationType: "NEW", processingType: "", serviceId: "", 
+        message: "Walk-in Application", files: {} 
+    });
     onClose();
   };
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && onClose()}>
-      <div className={`modal-content ${step === 1 ? "modal-content-large" : ""}`} style={{maxWidth: step === 1 ? '800px' : '450px'}}>
+    <div className="ppt-overlay" onClick={(e) => e.target.className === "ppt-overlay" && onClose()}>
+      <div className={`ppt-modal ${step === 1 ? "ppt-modal-lg" : "ppt-modal-sm"}`}>
         
         {step === 1 && (
           <>
-            <div className="modal-header">
-              <div>
-                <h3 style={{margin:0, color:'#0f172a'}}>Add Walk-in Appointment</h3>
-                <p style={{margin:0, fontSize:'13px', color:'#64748b'}}>Register a new manual passport applicant</p>
+            <div className="ppt-header">
+              <div className="ppt-title-group">
+                <h2 className="ppt-title">Add Walk-in Applicant</h2>
+                <span className="ppt-subtitle">Register a new Passport appointment manually</span>
               </div>
-              <button className="modal-close-btn" onClick={onClose}><X size={20} /></button>
+              <button className="ppt-close-btn" onClick={onClose}><X size={20} /></button>
             </div>
             
-            <div className="modal-body" style={{padding:'24px'}}>
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px', marginBottom:'20px'}}>
-                <div className="form-group">
-                  <label style={{fontSize:'13px', fontWeight:'700', color:'#334155'}}>Given Name *</label>
-                  <input type="text" name="givenName" className="visa-input" value={formData.givenName} onChange={handleInputChange} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1'}} />
+            <div className="ppt-body">
+              <div className="ppt-form-section">
+                <h3 className="ppt-section-title">Client Information</h3>
+                <div className="ppt-form-row" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+                  <div className="ppt-form-group">
+                    <label className="ppt-form-label">Given Name <span className="ppt-label-req">*</span></label>
+                    <input type="text" name="givenName" className="ppt-input" value={formData.givenName} onChange={handleInputChange} />
+                  </div>
+                  <div className="ppt-form-group">
+                    <label className="ppt-form-label">Last Name <span className="ppt-label-req">*</span></label>
+                    <input type="text" name="lastName" className="ppt-input" value={formData.lastName} onChange={handleInputChange} />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label style={{fontSize:'13px', fontWeight:'700', color:'#334155'}}>Last Name *</label>
-                  <input type="text" name="lastName" className="visa-input" value={formData.lastName} onChange={handleInputChange} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1'}} />
-                </div>
-              </div>
-
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px', marginBottom:'20px'}}>
-                <div className="form-group">
-                  <label style={{fontSize:'13px', fontWeight:'700', color:'#334155'}}>Email Address *</label>
-                  <input type="email" name="email" className="visa-input" value={formData.email} onChange={handleInputChange} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1'}} />
-                </div>
-                <div className="form-group">
-                  <label style={{fontSize:'13px', fontWeight:'700', color:'#334155'}}>Contact Number</label>
-                  <input type="text" name="contactNumber" className="visa-input" value={formData.contactNumber} onChange={handleInputChange} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1'}} />
-                </div>
-              </div>
-
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px', marginBottom:'20px'}}>
-                <div className="form-group">
-                  <label style={{fontSize:'13px', fontWeight:'700', color:'#334155'}}><Globe size={14}/> Application Type</label>
-                  <select name="applicationType" className="visa-input" value={formData.applicationType} onChange={handleInputChange} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1'}}>
-                    <option value="NEW">New Application</option>
-                    <option value="RENEWAL">Renewal</option>
-                    <option value="LOST">Lost Passport</option>
-                    <option value="DAMAGED">Damaged Passport</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label style={{fontSize:'13px', fontWeight:'700', color:'#334155'}}><Zap size={14}/> Processing Type</label>
-                  <select name="processingType" className="visa-input" value={formData.processingType} onChange={handleInputChange} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1'}}>
-                    <option value="REGULAR">Regular (₱1,500)</option>
-                    <option value="EXPEDITE">Expedite (₱2,500)</option>
-                  </select>
+                <div className="ppt-form-row" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px'}}>
+                  <div className="ppt-form-group">
+                    <label className="ppt-form-label">Email <span className="ppt-label-req">*</span></label>
+                    <input type="email" name="email" className="ppt-input" value={formData.email} onChange={handleInputChange} />
+                  </div>
+                  <div className="ppt-form-group">
+                    <label className="ppt-form-label">Contact No.</label>
+                    <input type="text" name="contactNumber" className="ppt-input" value={formData.contactNumber} onChange={handleInputChange} />
+                  </div>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label style={{fontSize:'13px', fontWeight:'700', color:'#334155'}}><Upload size={14}/> Attachment (PSA Birth / ID)</label>
-                <input type="file" onChange={(e) => handleFileChange(e, 'walkInDoc')} style={{display:'block', marginTop:'5px'}} />
+              <div className="ppt-form-section" style={{marginTop: '25px'}}>
+                <h3 className="ppt-section-title">Service Details</h3>
+                <div className="ppt-form-row" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+                    <div className="ppt-form-group">
+                        <label className="ppt-form-label">Application Type</label>
+                        <select name="applicationType" className="ppt-input" value={formData.applicationType} onChange={handleInputChange}>
+                            <option value="NEW">New Application</option>
+                            <option value="RENEWAL">Renewal</option>
+                            <option value="LOST">Lost Passport</option>
+                        </select>
+                    </div>
+                    <div className="ppt-form-group">
+                        <label className="ppt-form-label">Service / Processing <span className="ppt-label-req">*</span></label>
+                        <select name="serviceId" className="ppt-input" value={formData.serviceId} onChange={handleServiceChange}>
+                            <option value="">Select Service (Price)...</option>
+                            {passportServices.map((doc) => (
+                            <option key={doc._id} value={doc._id}>{doc.documentType} - ₱{doc.price}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+              </div>
+
+              <div className="ppt-form-section" style={{marginTop: '25px'}}>
+                <h3 className="ppt-section-title">Attachments</h3>
+                <div className="ppt-form-group">
+                  <label className="ppt-form-label">Requirement Document (PSA/ID)</label>
+                  <div className="ppt-file-wrapper">
+                    <input type="file" className="ppt-hidden-input" id="walkin-file" onChange={(e) => handleFileChange(e, 'walkInDoc')} />
+                    <label htmlFor="walkin-file" className="ppt-file-btn"><Upload size={18}/><span>{formData.files.walkInDoc ? formData.files.walkInDoc.name : "Choose file"}</span></label>
+                  </div>
+                  <span className="ppt-hint" style={{marginTop: '8px', display: 'block', fontSize: '12px', color: '#64748b'}}>
+                    This will appear in "Submitted Documents (Requirements)" section
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="modal-footer" style={{padding:'16px 24px', borderTop:'1px solid #e2e8f0', display:'flex', justifyContent:'flex-end', gap:'12px'}}>
-              <button className="modal-cancel-btn" onClick={onClose}>Cancel</button>
-              <button className="modal-save-btn" onClick={submitApplication} disabled={isLoading} style={{backgroundColor:'#0f172a', color:'white', border:'none', padding:'10px 20px', borderRadius:'8px', fontWeight:'600'}}>
+            <div className="ppt-footer">
+              <button className="ppt-btn ppt-btn-ghost" onClick={onClose}>Cancel</button>
+              <button className="ppt-btn ppt-btn-primary" onClick={submitApplication} disabled={isLoading}>
                 {isLoading ? "Saving..." : "Create Appointment"}
               </button>
             </div>
@@ -157,11 +196,11 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }
         )}
 
         {step === 2 && (
-          <div className="modal-body" style={{textAlign: 'center', padding: '40px'}}>
+          <div className="ppt-body" style={{textAlign: 'center', padding: '40px'}}>
              <CheckCircle size={60} color="#16a34a" style={{margin: '0 auto 20px'}} />
-             <h3 style={{color:'#0f172a'}}>Appointment Created!</h3>
-             <p style={{color:'#64748b'}}>Manual record for {formData.givenName} is now in the system.</p>
-             <button className="modal-save-btn" style={{marginTop: '20px', width:'100%'}} onClick={resetAndClose}>Close</button>
+             <h2 className="ppt-title">Success!</h2>
+             <p className="ppt-subtitle">Passport appointment for {formData.givenName} has been recorded.</p>
+             <button className="ppt-btn ppt-btn-primary ppt-btn-block" style={{marginTop: '20px'}} onClick={resetAndClose}>Close</button>
           </div>
         )}
       </div>
@@ -169,4 +208,5 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportData }
   );
 };
 
+// FIX: Nagdagdag ako ng default export sa dulo
 export default PassportApplicationModal;

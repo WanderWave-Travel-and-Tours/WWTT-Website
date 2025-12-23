@@ -27,15 +27,21 @@ const BasicInfo = ({ title, setTitle, destination, setDestination, duration, set
           />
         </div>
         <div className="apkg-field">
-          <label>Duration</label>
-          <input
-            type="text"
-            placeholder="e.g. 3D2N"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            required
-          />
-        </div>
+                <label className="apkg-label">Duration *</label>
+                <select
+                    className="apkg-input apkg-select"
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    required
+                >
+                    <option value="">Select Duration</option>
+                    <option value="2D1N">2D1N</option>
+                    <option value="3D2N">3D2N</option>
+                    <option value="4D3N">4D3N</option>
+                    <option value="5D4N">5D4N</option>
+                </select>
+            </div>
+
         <div className="apkg-field">
           <label>Tour Type</label>
           <select

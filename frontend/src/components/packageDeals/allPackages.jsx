@@ -23,13 +23,16 @@ function AllPackages({
   selectedDestinations,
   setSelectedDestinations,
   allLocations,
-  isLoggedIn, // NEW PROP added
-  onLoginRequired // NEW PROP added
+  isLoggedIn, 
+  onLoginRequired,
+  currency = 'PHP',
+  exchangeRate = 58,
+  setCurrency     
 }) {
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [currency, setCurrency] = useState('PHP');
-  const EXCHANGE_RATE = 58;
+  //const [currency, setCurrency] = useState('PHP');
+  //const EXCHANGE_RATE = 58;
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -155,13 +158,11 @@ function AllPackages({
 
   return (
     <section className="all-packages-section" ref={packagesRef}>
-
-      {/* --- Pass Currency Props to Modal --- */}
       <CurrencyModal
         isOpen={showCurrencyModal}
         onClose={() => setShowCurrencyModal(false)}
         currency={currency}
-        setCurrency={setCurrency}
+        setCurrency={setCurrency} 
       />
 
       <div className="section-title-wrapper">
@@ -174,7 +175,7 @@ function AllPackages({
           <Info className="info-icon" size={20} />
           <div className="info-text">
             <strong>International Booking Notice:</strong> Prices may vary due to currency exchange rates and bank transaction fees.
-            Displayed USD prices are estimates based on the current exchange rate (₱{EXCHANGE_RATE} = $1).
+            Displayed USD prices are estimates based on the current exchange rate (₱{exchangeRate} = $1).
           </div>
         </div>
 
@@ -361,9 +362,9 @@ function AllPackages({
                   onToggleFavorite={onToggleFavorite}
                   onBookNow={onBookNow}
                   currency={currency}
-                  exchangeRate={EXCHANGE_RATE}
-                  isLoggedIn={isLoggedIn} // Passed new prop
-                  onLoginRequired={onLoginRequired} // Passed new prop
+                  exchangeRate={exchangeRate}
+                  isLoggedIn={isLoggedIn}
+                  onLoginRequired={onLoginRequired}
                 />
               ))
             ) : (

@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Eye, EyeOff, Calendar, Image as ImageIcon, FileText, Archive, CheckCircle, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // ADDED THIS
+import { X, Eye, EyeOff, Calendar, Image as ImageIcon, FileText, Archive, CheckCircle, ExternalLink, Edit } from 'lucide-react'; // ADDED Edit icon
 import './PosterDetailModal.css';
 
 const formatDate = (dateString) => {
@@ -16,6 +17,8 @@ const PosterDetailModal = ({
     toggleStatus,
     handleArchive
 }) => {
+    const navigate = useNavigate(); // ADDED THIS
+
     if (!showModal || !selectedPoster) return null;
 
     const closeModal = () => setShowModal(false);
@@ -39,6 +42,11 @@ const PosterDetailModal = ({
     const handleArchiveClick = () => {
         handleArchive(selectedPoster._id, selectedPoster.title);
         closeModal();
+    };
+
+    // New Edit Function
+    const handleEditClick = () => {
+        navigate(`/edit-poster/${selectedPoster._id}`);
     };
 
     return (
@@ -77,7 +85,7 @@ const PosterDetailModal = ({
                         
                         <div className="pdm-image-box">
                             <img 
-                                src={`http://localhost:5000/${selectedPoster.imageUrl}`} 
+                                src={`https://wanderwaveph-backend.onrender.com/${selectedPoster.imageUrl}`} 
                                 alt={selectedPoster.title}
                                 className="pdm-poster-image"
                                 onError={(e) => { e.target.src = 'https://via.placeholder.com/800x400'; }}
@@ -87,15 +95,10 @@ const PosterDetailModal = ({
                                     <ImageIcon size={14} className="pdm-icon-green" />
                                     <span>{selectedPoster.imageUrl?.split('/').pop() || 'poster_image.jpg'}</span>
                                 </div>
-                                <button className="pdm-view-link" onClick={() => window.open(`http://localhost:5000/${selectedPoster.imageUrl}`, '_blank')}>
+                                <button className="pdm-view-link" onClick={() => window.open(`https://wanderwaveph-backend.onrender.com/${selectedPoster.imageUrl}`, '_blank')}>
                                     View Full Image
                                 </button>
                             </div>
-                        </div>
-
-                        <div className="pdm-url-pill">
-                            <ExternalLink size={14} />
-                            <span>{selectedPoster.imageUrl}</span>
                         </div>
                     </div>
 
@@ -147,7 +150,13 @@ const PosterDetailModal = ({
 
                 {/* FOOTER SECTION */}
                 <div className="pdm-footer">
-                    <button className="pdm-btn-close" onClick={closeModal}>Close</button>
+                    
+                    {/* EDIT BUTTON ADDED */}
+                    <button className="pdm-btn-edit" onClick={handleEditClick}>
+                        <Edit size={16} />
+                        Edit
+                    </button>
+
                     <button 
                         className={`pdm-btn-action ${status === 'ACTIVE' ? 'deactivate' : 'activate'}`}
                         onClick={handleToggleStatus}

@@ -57,6 +57,11 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
       data.append('estimatedPrice', selectedDoc ? selectedDoc.price : 0);
       data.append('cenomarDocument', formData.cenomarType);
 
+      // IMPORTANT: Mark this as a client requirement document
+      // This ensures it appears in "Submitted Documents (Requirements)"
+      data.append('documentCategory', 'REQUIREMENT');
+      data.append('uploader', 'USER');
+
       // Append Walk-in attachments
       Object.keys(formData.files).forEach(key => {
         data.append(key, formData.files[key]);
@@ -144,6 +149,9 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
                     <input type="file" className="cnm-hidden-input" id="walkin-file" onChange={(e) => handleFileChange(e, 'walkInDoc')} />
                     <label htmlFor="walkin-file" className="cnm-file-btn"><Upload size={18}/><span>{formData.files.walkInDoc ? formData.files.walkInDoc.name : "Choose file"}</span></label>
                   </div>
+                  <span className="cnm-hint" style={{marginTop: '8px', display: 'block', fontSize: '12px', color: '#64748b'}}>
+                    This will appear in "Submitted Documents (Requirements)" section
+                  </span>
                 </div>
               </div>
             </div>
