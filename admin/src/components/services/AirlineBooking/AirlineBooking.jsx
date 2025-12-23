@@ -36,32 +36,52 @@ const AirlineBooking = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Fetch flight booking inquiries from database
-const fetchFlightBookings = async () => {
-    setIsLoading(true);
-    try {
-        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries?isArchive=No');
-        if (response.data.success) {
-            // Filter: Flight Booking lang at hindi naka-archive
-            const filtered = response.data.data.filter(inq => 
-                inq.inquiryType === 'FLIGHT_BOOKING' && inq.isArchive === 'No'
-            );
-            setBookings(filtered);
-        }
-    } catch (error) {
-        console.error('Error fetching:', error);
-    } finally {
-        setIsLoading(false);
-    }
-};
+    // Helper: Format Date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric'
+        });
+    };
 
-    useEffect(() => { fetchBookings(); }, []);
+    // Helper: Badge Colors
+    const getStatusBadgeClass = (status) => {
+        const map = {
+            'PENDING': 'badge-slate', 'CONTACTED': 'badge-amber',
+            'PAYMENT_PENDING': 'badge-amber', 'PAID': 'badge-blue',
+            'CONFIRMED': 'badge-blue', 'COMPLETED': 'badge-success', 
+            'CANCELLED': 'badge-red'
+        };
+        return map[status] || 'badge-slate';
+    };
+
+    // Fetch flight booking inquiries from database
+    const fetchFlightBookings = async () => {
+        setIsLoading(true);
+        try {
+            const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
+            if (response.data.success) {
+                // Filter: Flight Booking lang at hindi naka-archive
+                const filtered = response.data.data.filter(inq => 
+                    inq.inquiryType === 'FLIGHT_BOOKING' && inq.isArchive === 'No'
+                );
+                setBookings(filtered);
+            }
+        } catch (error) {
+            console.error('Error fetching:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Initial Fetch
+    useEffect(() => { fetchFlightBookings(); }, []);
 
     // Filter Logic
     const filteredData = useMemo(() => {
         let data = bookings;
         
-        // AUTOMATICALLY HIDE ARCHIVED ITEMS (Since they go to another page)
+        // AUTOMATICALLY HIDE ARCHIVED ITEMS
         data = data.filter(b => b.status !== 'ARCHIVED');
 
         if(statusFilter !== 'ALL') data = data.filter(b => b.status === statusFilter);
@@ -85,99 +105,37 @@ const fetchFlightBookings = async () => {
     const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
-    const getStatusBadgeClass = (status) => {
-        const map = {
-            'PENDING': 'badge-slate', 'CONTACTED': 'badge-amber',
-            'PAYMENT_PENDING': 'badge-amber', 'PAID': 'badge-blue',
-            'CONFIRMED': 'badge-blue', 'COMPLETED': 'badge-success', 
-            'CANCELLED': 'badge-red'
-        };
-        return map[status] || 'badge-slate';
-    };
-
-    // Handler for Archive and Status Updates
-    const handleUpdateStatus = async (id, status) => {
-        const action = status === 'ARCHIVED' ? 'Archive this request' : `Update status to ${status}`;
+    // Handler for Status Updates
+    const handleUpdateStatus = async (id, newStatus) => {
+        const action = `Update status to ${newStatus}`;
         if(!window.confirm(`Are you sure you want to ${action}?`)) return;
         try {
             const response = await axios.put(
-                `https://wanderwaveph-backend.onrender.com/api/inquiries/${bookingId}/status`,
+                `http://localhost:5000/api/inquiries/${id}/status`,
                 { status: newStatus }
             );
 
             if (response.data.success) {
                 alert('Status updated successfully!');
                 fetchFlightBookings();
-                if (selectedBooking && selectedBooking._id === bookingId) {
+                if (selectedBooking && selectedBooking._id === id) {
                     setSelectedBooking({ ...selectedBooking, status: newStatus });
                 }
             }
-        } catch(e) { alert("Error updating status"); }
-    };
-
-    const handleRequestPayment = async () => {
-        if(!selectedBooking) return;
-        handleUpdateStatus(selectedBooking._id, 'PAYMENT_PENDING');
-    };
-
-const handleArchiveBooking = async (id) => {
-    if (window.confirm('Are you sure you want to archive this inquiry?')) {
-        try {
-            const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
-                isArchive: 'Yes'
-            });
-
-            if (response.data.success) {
-                alert('Inquiry archived successfully!');
-                fetchFlightBookings(); // I-refresh ang listahan
-            }
-        } catch (error) {
-            console.error('Error archiving:', error);
-            alert('Failed to archive inquiry.');
+        } catch(e) { 
+            console.error(e);
+            alert("Error updating status"); 
         }
-    }
-};
-
-    // Submit contact with remarks
-    const submitContactWithRemarks = async () => {
-        if (!selectedBooking || !contactRemarks.trim()) return alert('Please enter remarks');
-        try {
-            const formData = new FormData();
-            formData.append('status', 'CONTACTED');
-            formData.append('remarks', contactRemarks);
-            if (contactEvidence) formData.append('evidence', contactEvidence);
-
-            const response = await axios.put(
-                `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/status`,
-                formData,
-                {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }
-            );
-
-            if (response.data.success) {
-                alert('Issue reported successfully!'); 
-                fetchBookings();
-                setSelectedBooking({ ...selectedBooking, status: 'CONTACTED' });
-                setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
-            }
-        } catch (error) { console.error(error); alert('Failed to report issue'); }
     };
 
-    const handleCloseViewModal = () => {
-        setIsViewModalOpen(false);
-        setTimeout(() => {
-            setSelectedBooking(null);
-            setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
-        }, 200);
-    // Handle request payment
+    // Handler for Payment Request
     const handleRequestPayment = async () => {
         if (!selectedBooking) return;
         
         if (window.confirm('Send payment request to client?')) {
             try {
                 const response = await axios.post(
-                    `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/request-payment`
+                    `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`
                 );
                 
                 if (response.data.success) {
@@ -190,6 +148,60 @@ const handleArchiveBooking = async (id) => {
                 alert('Failed to send payment request');
             }
         }
+    };
+
+    // Handler for Archiving
+    const handleArchiveBooking = async (id) => {
+        if (window.confirm('Are you sure you want to archive this inquiry?')) {
+            try {
+                const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+                    isArchive: 'Yes'
+                });
+
+                if (response.data.success) {
+                    alert('Inquiry archived successfully!');
+                    fetchFlightBookings(); // I-refresh ang listahan
+                    setIsViewModalOpen(false); // Close modal if open
+                }
+            } catch (error) {
+                console.error('Error archiving:', error);
+                alert('Failed to archive inquiry.');
+            }
+        }
+    };
+
+    // Submit contact with remarks
+    const submitContactWithRemarks = async () => {
+        if (!selectedBooking || !contactRemarks.trim()) return alert('Please enter remarks');
+        try {
+            const formData = new FormData();
+            formData.append('status', 'CONTACTED');
+            formData.append('remarks', contactRemarks);
+            if (contactEvidence) formData.append('evidence', contactEvidence);
+
+            const response = await axios.put(
+                `http://localhost:5000/api/inquiries/${selectedBooking._id}/status`,
+                formData,
+                {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                }
+            );
+
+            if (response.data.success) {
+                alert('Issue reported successfully!'); 
+                fetchFlightBookings();
+                setSelectedBooking({ ...selectedBooking, status: 'CONTACTED' });
+                setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
+            }
+        } catch (error) { console.error(error); alert('Failed to report issue'); }
+    };
+
+    const handleCloseViewModal = () => {
+        setIsViewModalOpen(false);
+        setTimeout(() => {
+            setSelectedBooking(null);
+            setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
+        }, 200);
     };
 
     const stats = [
@@ -230,7 +242,7 @@ const handleArchiveBooking = async (id) => {
                         ))}
                     </div>
                     
-                    {/* FILTER CARD (UPDATED DROPDOWN) */}
+                    {/* FILTER CARD */}
                     <div className="airline-filter-card">
                         <div className="airline-filter-wrapper">
                             
@@ -240,7 +252,7 @@ const handleArchiveBooking = async (id) => {
                                 AIRLINE <span>FILTERS</span>
                             </div>
 
-                            {/* Dropdown Group - NO ALL CAPS, NO ARCHIVED */}
+                            {/* Dropdown Group */}
                             <div className="airline-filter-group">
                                 <span className="airline-filter-label">Status Type:</span>
                                 <div className="airline-dropdown-container">
@@ -307,101 +319,17 @@ const handleArchiveBooking = async (id) => {
                                                     <button className="airline-action-btn airline-view-btn" onClick={() => { setSelectedBooking(b); setIsViewModalOpen(true); }}>
                                                         <Eye size={14}/> View
                                                     </button>
-                                                    {/* ARCHIVE BUTTON - Remains here to send items to the "other page" */}
-                                                    <button className="airline-action-btn airline-archive-btn" onClick={() => handleUpdateStatus(b._id, 'ARCHIVED')}>
+                                                    <button 
+                                                        className="airline-action-btn" 
+                                                        style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                                                        onClick={() => handleArchiveBooking(b._id)}
+                                                    >
                                                         <Archive size={14}/> Archive
                                                     </button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))
-
-<button 
-    className="airline-action-btn" 
-    style={{ color: '#ef4444', borderColor: '#ef4444' }}
-    onClick={() => handleArchiveBooking(booking._id)}
->
-    <Archive size={14}/> Archive
-</button>
-
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <Pagination totalPages={totalPages} currentPage={currentPage} paginate={paginate} />
-                            </>
-                        )}
-                    </div>
-                </div>
-            </main>
-
-            <AirlineApplicationModal 
-                        isOpen={isApplicationModalOpen}
-                        onClose={() => setIsApplicationModalOpen(false)}
-                        refreshData={fetchFlightBookings}
-                    />
-
-            {/* View Booking Details Modal */}
-            {isModalOpen && selectedBooking && (
-                <div className="airline-modal-overlay" onClick={handleCloseModal}>
-                    <div className="airline-modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="airline-modal-header">
-                            <h2>Flight Booking Details</h2>
-                            <button className="airline-modal-close" onClick={handleCloseModal}>
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <div className="airline-modal-body">
-                            <div className="airline-detail-grid">
-                                <div className="airline-detail-item">
-                                    <label>Reference ID</label>
-                                    <p>{selectedBooking._id.slice(-8).toUpperCase()}</p>
-                                </div>
-                                <div className="airline-detail-item">
-                                    <label>Status</label>
-                                    <span className={`status-pill ${getStatusClass(selectedBooking.status)}`}>
-                                        {selectedBooking.status || 'PENDING'}
-                                    </span>
-                                </div>
-                                <div className="airline-detail-item">
-                                    <label>Full Name</label>
-                                    <p>{selectedBooking.fullName || 'N/A'}</p>
-                                </div>
-                                <div className="airline-detail-item">
-                                    <label>Email Address</label>
-                                    <p>{selectedBooking.email || 'N/A'}</p>
-                                </div>
-                                <div className="airline-detail-item full-width">
-                                    <label>Message</label>
-                                    <p style={{whiteSpace: 'pre-wrap'}}>{selectedBooking.message || 'No message provided'}</p>
-                                </div>
-                                <div className="airline-detail-item">
-                                    <label>Date Submitted</label>
-                                    <p>{formatDate(selectedBooking.createdAt)}</p>
-                                </div>
-                                <div className="airline-detail-item">
-                                    <label>Last Updated</label>
-                                    <p>{formatDate(selectedBooking.updatedAt)}</p>
-                                </div>
-                                {selectedBooking.remarks && (
-                                    <div className="airline-detail-item full-width">
-                                        <label>Remarks</label>
-                                        <p style={{whiteSpace: 'pre-wrap'}}>{selectedBooking.remarks}</p>
-                                    </div>
-                                )}
-                                {selectedBooking.evidenceUrl && (
-                                    <div className="airline-detail-item full-width">
-                                        <label>Evidence/Attachment</label>
-                                        <a 
-                                            href={`https://wanderwaveph-backend.onrender.com${selectedBooking.evidenceUrl}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="airline-evidence-link"
-                                        >
-                                            View Attachment
-                                        </a>
-                                    </div>
                                 )}
                             </tbody>
                         </table>
@@ -427,6 +355,7 @@ const handleArchiveBooking = async (id) => {
                     onClose={handleCloseViewModal}
                     onUpdateStatus={handleUpdateStatus}
                     onRequestPayment={handleRequestPayment}
+                    onArchive={() => handleArchiveBooking(selectedBooking._id)}
                     setShowContactRemarks={setShowContactRemarks}
                 />
             )}
@@ -448,7 +377,7 @@ const handleArchiveBooking = async (id) => {
             <AirlineApplicationModal 
                 isOpen={isAddModalOpen} 
                 onClose={() => setIsAddModalOpen(false)} 
-                refreshData={fetchBookings} 
+                refreshData={fetchFlightBookings} 
             />
         </div>
     );
