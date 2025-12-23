@@ -16,43 +16,21 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// ✅ FIXED: Login with EMAIL
+// ✅ UPDATED: Login with EMAIL instead of USERNAME
 router.post('/login', async (req, res) => {
-    console.log('📥 Login request body:', req.body); // Debug log
-    
-    // ✅ FIX: Check if values exist BEFORE sanitizing
-    const emailRaw = req.body.email;
-    const passwordRaw = req.body.password;
-    const recaptchaToken = req.body.recaptchaToken;
-
-    // Validate that email and password exist
-    if (!emailRaw || !passwordRaw) {
-        console.log('❌ Missing email or password');
-        return res.status(400).json({ 
-            status: "error", 
-            message: "Email and password are required." 
-        });
-    }
+    const email = sanitize(req.body.email);  // ✅ Changed from username to email
+    const password = sanitize(req.body.password);
+    const recaptchaToken = req.body.recaptchaToken;  // ✅ Fixed: was req.body only
 
     if (!recaptchaToken) {
-        console.log('❌ Missing reCAPTCHA token');
         return res.status(400).json({ 
             status: "error", 
             message: "reCAPTCHA verification is required." 
         });
     }
 
-    // ✅ Sanitize AFTER validation
-    const email = sanitize(emailRaw.toString().toLowerCase());
-    const password = sanitize(passwordRaw.toString());
-
-    console.log('🔍 Sanitized email:', email);
-    console.log('🔍 Email type:', typeof email);
-    console.log('🔍 Password type:', typeof password);
-
-    // Extra type check (should pass now)
+    // ✅ Validate email and password
     if (typeof email !== 'string' || typeof password !== 'string') {
-        console.log('❌ Type check failed after sanitization');
         return res.status(400).json({ 
             status: "error", 
             message: "Invalid input types. Credentials must be strings." 
@@ -60,10 +38,8 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        console.log(`🔍 Searching for admin with email: ${email}`);
-        
-        // Find admin by EMAIL
-        const admin = await AdminModel.findOne({ email: email });
+        // ✅ Find admin by EMAIL instead of username
+        const admin = await AdminModel.findOne({ email: email.toLowerCase() });
 
         if (!admin) {
             console.log(`❌ No admin found with email: ${email}`);
@@ -73,33 +49,31 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        console.log(`✅ Admin found: ${admin.email}`);
-
         const isMatch = await admin.comparePassword(password); 
 
         if (isMatch) {
             const token = jwt.sign(
-                { id: admin._id, email: admin.email, role: 'admin' },
+                { id: admin._id, email: admin.email, role: 'admin' },  // ✅ Include email in token
                 'wanderwaveph_admin25', 
                 { expiresIn: '1h' }
             );
 
-            console.log(`✅ Login successful for: ${admin.email}`);
+            console.log(`✅ Admin login successful: ${admin.email}`);
 
             res.json({ 
                 status: "ok", 
                 message: "Login Success!",
                 token: token, 
                 data: {
-                    username: admin.username,
-                    email: admin.email,
+                    username: admin.username,  // Keep username for display
+                    email: admin.email,        // ✅ Include email in response
                     businessName: admin.businessName,
                     businessAddress: admin.businessAddress,
                     businessLogo: admin.businessLogo
                 }
             });
         } else {
-            console.log(`❌ Password mismatch for: ${email}`);
+            console.log(`❌ Password mismatch for email: ${email}`);
             res.status(401).json({ 
                 status: "error", 
                 message: "Invalid email or password" 
@@ -114,6 +88,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// ✅ UPDATED: Include email in settings response
 router.get('/settings', async (req, res) => {
     try {
         const admin = await AdminModel.findOne(); 
@@ -126,7 +101,7 @@ router.get('/settings', async (req, res) => {
             status: "ok",
             data: {
                 username: admin.username,
-                email: admin.email,
+                email: admin.email,  // ✅ Include email
                 businessName: admin.businessName,
                 businessAddress: admin.businessAddress,
                 businessLogo: admin.businessLogo
@@ -163,7 +138,7 @@ router.put('/update-settings', upload.single('businessLogo'), async (req, res) =
                 businessName: admin.businessName,
                 businessAddress: admin.businessAddress,
                 businessLogo: admin.businessLogo,
-                email: admin.email
+                email: admin.email  // ✅ Include email
             }
         });
 
