@@ -5,6 +5,8 @@ const {
     addPoster, 
     getAllPosters, 
     getActivePosters, 
+    getPosterById,       // IMPORTED
+    updatePoster,        // IMPORTED
     deletePoster, 
     updatePosterStatus 
 } = require('../controller/posterController');
@@ -24,22 +26,26 @@ const upload = multer({ storage: storage });
  * ROUTES
  */
 
-// Magdagdag ng bagong poster (Default isArchive: "No")
+// Magdagdag ng bagong poster
 router.post('/add', upload.single('image'), addPoster);
 
-// Kunin ang lahat ng posters (Kahit archived o hindi)
-// Dito kinukuha ng Archive page ang data
+// Update Poster (Full Edit with Image) - NEW ROUTE
+router.put('/update/:id', upload.single('image'), updatePoster);
+
+// Kunin ang lahat ng posters
 router.get('/', getAllPosters);
 
-// Kunin ang mga posters na 'Active' ang status AT isArchive: 'No'
-// Dito kinukuha ng Homepage o UI ang ipapakitang banners
+// Kunin ang mga active posters
 router.get('/active', getActivePosters);
 
-// Burahin ang poster at ang file nito sa server permanently
-router.delete('/:id', deletePoster);
+// Get Single Poster by ID (For Edit Page) - NEW ROUTE
+// NOTE: Dapat ito nasa ilalim ng /active para hindi ma-catch ng :id ang salitang "active"
+router.get('/:id', getPosterById);
 
-// I-update ang status (Active/Inactive/Scheduled) O ang isArchive (Yes/No)
-// Ginagamit ito ng Restore button sa frontend: papasahan ng { isArchive: "No" }
+// Update Status only
 router.put('/:id/status', updatePosterStatus);
+
+// Delete Poster
+router.delete('/:id', deletePoster);
 
 module.exports = router;

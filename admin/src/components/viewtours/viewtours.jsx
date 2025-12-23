@@ -125,11 +125,12 @@ const ViewTours = () => {
                                             <td><span className="vt-rating">₱{tour.price?.toLocaleString()}</span></td>
                                             <td>
                                                 <div className="vt-actions">
+                                                    {/* UPDATED: Added span for responsive hiding */}
                                                     <button className="vt-action-btn vt-action-btn--view" onClick={() => {setSelectedTour(tour); setShowDetailModal(true)}}>
-                                                        <Eye size={16}/> View
+                                                        <Eye size={16}/> <span>View</span>
                                                     </button>
                                                     <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(tour._id)}>
-                                                        <Trash2 size={16}/> Archive
+                                                        <Trash2 size={16}/> <span>Archive</span>
                                                     </button>
                                                 </div>
                                             </td>

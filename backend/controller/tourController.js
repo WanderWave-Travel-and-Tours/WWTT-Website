@@ -16,7 +16,8 @@ exports.createTour = async (req, res) => {
       sellerPrice, 
       markup, 
       inclusions,
-      isArchive // Idinagdag dito
+      itinerary, // ADDED: itinerary support
+      isArchive
     } = req.body;
 
     // Validate required fields
@@ -55,6 +56,19 @@ exports.createTour = async (req, res) => {
       }
     }
 
+    // ADDED: Parse itinerary if it's a string
+    let parsedItinerary = [];
+    if (itinerary) {
+      try {
+        parsedItinerary = typeof itinerary === 'string' 
+          ? JSON.parse(itinerary) 
+          : itinerary;
+      } catch (e) {
+        console.error('Error parsing itinerary:', e);
+        parsedItinerary = [];
+      }
+    }
+
     // Parse and validate numbers
     const sPrice = parseFloat(sellerPrice);
     const mkup = parseFloat(markup);
@@ -79,8 +93,9 @@ exports.createTour = async (req, res) => {
       markup: mkup,
       price: totalPrice,
       inclusions: parsedInclusions,
+      itinerary: parsedItinerary, // ADDED: itinerary field
       image: req.file.filename,
-      isArchive: isArchive || 'No' // Default sa 'No' kung walang pinasa
+      isArchive: isArchive || 'No'
     });
 
     // Save to database
@@ -164,7 +179,7 @@ exports.getTourById = async (req, res) => {
   }
 };
 
-// Update tour
+// Update tour - IMPROVED VERSION
 exports.updateTour = async (req, res) => {
   try {
     const { id } = req.params;
@@ -176,8 +191,12 @@ exports.updateTour = async (req, res) => {
       sellerPrice, 
       markup, 
       inclusions,
-      isArchive // Idinagdag dito
+      itinerary, // ADDED: itinerary support
+      existingImage, // ADDED: for handling existing image
+      isArchive
     } = req.body;
+
+    console.log('Update tour request:', { id, body: req.body, file: req.file });
 
     const existingTour = await Tour.findById(id);
     if (!existingTour) {
@@ -187,6 +206,7 @@ exports.updateTour = async (req, res) => {
       });
     }
 
+    // Parse inclusions
     let parsedInclusions = existingTour.inclusions;
     if (inclusions) {
       try {
@@ -195,6 +215,19 @@ exports.updateTour = async (req, res) => {
           : inclusions;
       } catch (e) {
         parsedInclusions = [inclusions];
+      }
+    }
+
+    // ADDED: Parse itinerary
+    let parsedItinerary = existingTour.itinerary || [];
+    if (itinerary) {
+      try {
+        parsedItinerary = typeof itinerary === 'string' 
+          ? JSON.parse(itinerary) 
+          : itinerary;
+      } catch (e) {
+        console.error('Error parsing itinerary:', e);
+        parsedItinerary = existingTour.itinerary || [];
       }
     }
 
@@ -211,15 +244,26 @@ exports.updateTour = async (req, res) => {
       markup: mkup,
       price: totalPrice,
       inclusions: parsedInclusions,
-      isArchive: isArchive || existingTour.isArchive // I-update o panatilihin ang dati
+      itinerary: parsedItinerary, // ADDED: itinerary field
+      isArchive: isArchive || existingTour.isArchive
     };
 
+    // Handle image update
     if (req.file) {
+      // Delete old image if it exists
       const oldImagePath = path.join(__dirname, '..', 'uploads', existingTour.image);
       if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
+        try {
+          fs.unlinkSync(oldImagePath);
+          console.log('Old image deleted:', existingTour.image);
+        } catch (err) {
+          console.error('Error deleting old image:', err);
+        }
       }
       updateData.image = req.file.filename;
+    } else {
+      // Keep existing image
+      updateData.image = existingImage || existingTour.image;
     }
 
     const updatedTour = await Tour.findByIdAndUpdate(
@@ -227,6 +271,8 @@ exports.updateTour = async (req, res) => {
       updateData, 
       { new: true, runValidators: true }
     );
+
+    console.log('Tour updated successfully:', updatedTour);
 
     res.status(200).json({ 
       status: 'ok', 
@@ -236,6 +282,19 @@ exports.updateTour = async (req, res) => {
 
   } catch (error) {
     console.error('Error updating tour:', error);
+    
+    // Clean up uploaded file if update fails
+    if (req.file) {
+      const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (err) {
+          console.error('Error cleaning up file:', err);
+        }
+      }
+    }
+    
     res.status(500).json({ 
       status: 'error',
       error: error.message || 'Error updating tour' 
@@ -243,24 +302,33 @@ exports.updateTour = async (req, res) => {
   }
 };
 
-// Delete tour
-// Idagdag ito sa iyong tourController.js
+// Archive tour
 exports.archiveTour = async (req, res) => {
-    try {
-        const { id } = req.params;
-        // Ina-update ang isArchive field base sa iyong Tour Schema
-        const updatedTour = await Tour.findByIdAndUpdate(
-            id, 
-            { isArchive: 'Yes' }, 
-            { new: true }
-        );
+  try {
+    const { id } = req.params;
+    const updatedTour = await Tour.findByIdAndUpdate(
+      id, 
+      { isArchive: 'Yes' }, 
+      { new: true }
+    );
 
-        if (!updatedTour) {
-            return res.status(404).json({ status: 'error', error: 'Tour not found' });
-        }
-
-        res.json({ status: 'ok', data: updatedTour });
-    } catch (err) {
-        res.status(500).json({ status: 'error', error: err.message });
+    if (!updatedTour) {
+      return res.status(404).json({ 
+        status: 'error', 
+        error: 'Tour not found' 
+      });
     }
-};   
+
+    res.json({ 
+      status: 'ok', 
+      message: 'Tour archived successfully',
+      data: updatedTour 
+    });
+  } catch (err) {
+    console.error('Error archiving tour:', err);
+    res.status(500).json({ 
+      status: 'error', 
+      error: err.message 
+    });
+  }
+};

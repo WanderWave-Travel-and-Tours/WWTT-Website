@@ -82,7 +82,7 @@ const ViewPackages = () => {
                 <div className="vt-container">
                     <header className="vt-header">
                         <div className="vt-header-content">
-                            <h1 className="vt-title">TOUR PACKAGES</h1>
+                            <h1 className="vt-title">PACKAGE LIST</h1>
                             <p className="vt-subtitle">
                                 Managing {packages.length} packages • {filteredPackages.length} active
                             </p>
@@ -103,7 +103,7 @@ const ViewPackages = () => {
                     {loading ? (
                         <div className="vt-loading">
                             <div className="vt-spinner"></div>
-                            <p>Loading tour packages...</p>
+                            <p>Loading packages...</p>
                         </div>
                     ) : filteredPackages.length === 0 ? (
                         <div className="vt-empty">

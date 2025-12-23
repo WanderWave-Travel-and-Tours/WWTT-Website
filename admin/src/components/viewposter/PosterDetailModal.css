@@ -11,13 +11,14 @@
     align-items: center;
     padding: 20px;
     font-family: 'Inter', sans-serif;
+    box-sizing: border-box;
 }
 
 .pdm-content {
     background: #ffffff;
     width: 100%;
-    max-width: 780px;
-    max-height: 92vh;
+    max-width: 780px; /* Max width for desktop */
+    max-height: 92vh; /* Never exceeds viewport height */
     border-radius: 24px;
     display: flex;
     flex-direction: column;
@@ -31,6 +32,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0; /* Prevents header from shrinking */
+}
+
+.pdm-header-left {
+    min-width: 0; /* Allows text truncation if needed */
 }
 
 .pdm-main-title {
@@ -45,6 +51,7 @@
     color: #94a3b8;
     font-weight: 600;
     margin-top: 4px;
+    white-space: nowrap;
 }
 
 .pdm-dot { margin: 0 8px; color: #e2e8f0; }
@@ -53,6 +60,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    flex-shrink: 0;
 }
 
 .pdm-status-pill {
@@ -78,7 +86,9 @@
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: #64748b;
+    transition: 0.2s;
 }
+.pdm-close-x:hover { background: #e2e8f0; }
 
 /* Body */
 .pdm-body {
@@ -140,26 +150,16 @@
     font-size: 13px;
     font-weight: 700;
     color: #15803d;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 60%;
 }
 
 .pdm-view-link {
     background: none; border: none;
     color: #15803d; font-size: 13px; font-weight: 800;
     text-decoration: underline; cursor: pointer;
-}
-
-.pdm-url-pill {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 16px;
-    padding: 10px 14px;
-    background: #f1f5f9;
-    border-radius: 10px;
-    font-size: 12px;
-    color: #64748b;
-    font-weight: 600;
-    word-break: break-all;
 }
 
 /* Grid */
@@ -181,12 +181,16 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    background: #fcfcfc;
+    padding: 10px;
+    border-radius: 12px;
 }
 
 .pdm-box-icon {
     width: 44px; height: 44px;
     border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
 }
 
 .pdm-box-icon.yellow { background: #fef9c3; color: #ca8a04; }
@@ -194,6 +198,7 @@
 .pdm-box-icon.green { background: #dcfce7; color: #16a34a; }
 .pdm-box-icon.orange { background: #ffedd5; color: #ea580c; }
 
+.pdm-box-content { min-width: 0; }
 .pdm-box-content label {
     display: block;
     font-size: 11px;
@@ -206,6 +211,9 @@
     font-size: 15px;
     font-weight: 700;
     color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Message Area */
@@ -231,6 +239,8 @@
     justify-content: flex-end;
     gap: 12px;
     background: white;
+    border-top: 1px solid #f1f5f9;
+    flex-wrap: wrap; /* Allows wrapping on small screens */
 }
 
 .pdm-btn-close {
@@ -243,7 +253,7 @@
     cursor: pointer;
 }
 
-.pdm-btn-action {
+.pdm-btn-action, .pdm-btn-edit {
     border: none;
     padding: 12px 24px;
     border-radius: 12px;
@@ -251,12 +261,24 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     transition: 0.2s;
+    font-size: 14px;
 }
 
 .pdm-btn-action.activate { background: #0f172a; color: white; }
 .pdm-btn-action.deactivate { background: #f59e0b; color: white; }
+
+.pdm-btn-edit {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+.pdm-btn-edit:hover {
+    background: #dbeafe;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
 
 .pdm-btn-danger {
     background: #fee2e2;
@@ -268,5 +290,58 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
+}
+
+/* ================================================= */
+/* MODAL RESPONSIVENESS                              */
+/* ================================================= */
+
+@media (max-width: 640px) {
+    .pdm-content {
+        max-height: 98vh;
+        width: 100%;
+    }
+
+    /* Header Stack */
+    .pdm-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px 24px;
+    }
+
+    .pdm-header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Smaller Body Padding */
+    .pdm-body {
+        padding: 0 20px 20px 20px;
+        gap: 16px;
+    }
+
+    /* One column grid for details */
+    .pdm-info-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Smaller Image */
+    .pdm-poster-image {
+        height: 180px;
+    }
+
+    /* Footer buttons stack */
+    .pdm-footer {
+        padding: 16px 20px;
+        flex-direction: column-reverse;
+    }
+
+    .pdm-btn-action, .pdm-btn-danger, .pdm-btn-edit {
+        width: 100%;
+        padding: 14px;
+    }
 }

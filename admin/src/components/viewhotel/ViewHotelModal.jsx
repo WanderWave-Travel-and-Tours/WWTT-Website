@@ -1,10 +1,31 @@
 import React, { useState, useEffect } from "react";
 import {
-  X, MapPin, Star, Wifi, Car, Waves, Dumbbell, UtensilsCrossed,
-  Wind, BellRing, Shirt, Wine, CheckCircle, AlertCircle, Edit,
-  Calendar, Users, DollarSign, Image as ImageIcon, Briefcase, Mail
+  X, MapPin, Wifi, Car, Waves, Dumbbell, UtensilsCrossed,
+  Wind, BellRing, Shirt, Wine, CheckCircle, Edit,
+  Calendar, Users, DollarSign, Image as ImageIcon, Archive
 } from "lucide-react";
 import "./ViewHotelModal.css";
+
+const API_BASE_URL = 'http://localhost:5000';
+
+// Helper: Fix Image URL
+const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    
+    const pathStr = typeof imagePath === 'object' ? imagePath.url : imagePath;
+    
+    if (!pathStr) return null;
+    if (pathStr.startsWith('http') || pathStr.startsWith('data:')) return pathStr;
+    
+    let cleanPath = pathStr.replace(/\\/g, '/');
+    if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+    
+    if (cleanPath.startsWith('uploads/')) {
+         return `${API_BASE_URL}/${cleanPath}`;
+    }
+    
+    return `${API_BASE_URL}/uploads/${cleanPath}`;
+};
 
 const getAmenityConfig = (key) => {
   const config = {
@@ -22,12 +43,17 @@ const getAmenityConfig = (key) => {
   return config[key] || { label: key, icon: <CheckCircle size={14} /> };
 };
 
-const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
+const ViewHotelModal = ({ hotel, onClose, onEdit, onArchive }) => {
   const [activeHeroImage, setActiveHeroImage] = useState(null);
 
   useEffect(() => {
     if (hotel) {
-      const main = hotel.mainImage || (hotel.images && hotel.images.length > 0 ? hotel.images[0].url : null);
+      let main = null;
+      if (hotel.mainImage) {
+          main = getImageUrl(hotel.mainImage);
+      } else if (hotel.images && hotel.images.length > 0) {
+          main = getImageUrl(hotel.images[0]);
+      }
       setActiveHeroImage(main);
     }
   }, [hotel]);
@@ -45,13 +71,15 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
     .filter(([_, isActive]) => isActive)
     .map(([key]) => key);
 
-  const galleryImages = Array.isArray(hotel.images) ? hotel.images : [];
+  const galleryImages = Array.isArray(hotel.images) 
+    ? hotel.images.map(img => getImageUrl(img))
+    : [];
 
   return (
     <div className="vhm-overlay" onClick={onClose}>
       <div className="vhm-modal" onClick={(e) => e.stopPropagation()}>
         
-        {/* === HEADER (Inspired by Image Header) === */}
+        {/* === HEADER === */}
         <div className="vhm-header">
           <div className="vhm-header-left">
             <h2 className="vhm-main-title">Hotel Details</h2>
@@ -65,7 +93,7 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
               <CheckCircle size={16} />
               <div className="vhm-status-text">
                 <span className="vhm-status-label">{hotel.isActive ? 'ACTIVE' : 'INACTIVE'}</span>
-                <span className="vhm-status-subtext">{hotel.isActive ? 'Listing is live' : 'Hidden from users'}</span>
+                <span className="vhm-status-subtext">{hotel.isActive ? 'Listing is live' : 'Hidden'}</span>
               </div>
             </div>
             <button className="vhm-close-x" onClick={onClose}><X size={18} /></button>
@@ -74,7 +102,7 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
 
         <div className="vhm-body">
           
-          {/* 1. MEDIA SECTION (Centered Image Card style) */}
+          {/* 1. MEDIA SECTION */}
           <div className="vhm-media-container">
             <div className="vhm-media-card">
                <div className="vhm-processing-bar">
@@ -82,36 +110,58 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
                  <span>Property Media & Assets</span>
                </div>
                
+               {/* MAIN HERO IMAGE */}
                <div className="vhm-image-box">
                  {activeHeroImage ? (
-                    <img src={activeHeroImage} alt={hotel.name} className="vhm-hero-img" />
+                    <img 
+                        src={activeHeroImage} 
+                        alt={hotel.name} 
+                        className="vhm-hero-img" 
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://via.placeholder.com/800x400?text=Image+Load+Error";
+                        }}
+                    />
                  ) : (
                     <div className="vhm-no-image"><ImageIcon size={40} /><span>No image provided</span></div>
                  )}
                  <div className="vhm-image-info">
                    <div className="vhm-file-pill">
                      <ImageIcon size={14} className="vhm-icon-green" />
-                     <span>{hotel.name}_Primary_View.jpg</span>
+                     <span>{hotel.name}_Primary.jpg</span>
                    </div>
-                   <button className="vhm-view-link">View Gallery</button>
                  </div>
                </div>
 
+               {/* THUMBNAILS */}
                <div className="vhm-gallery-strip">
-                  {galleryImages.map((img, idx) => (
+                  {hotel.mainImage && (
+                      <div 
+                        className={`vhm-thumb ${activeHeroImage === getImageUrl(hotel.mainImage) ? 'active' : ''}`}
+                        onClick={() => setActiveHeroImage(getImageUrl(hotel.mainImage))}
+                      >
+                        <img src={getImageUrl(hotel.mainImage)} alt="Main" onError={(e) => e.target.style.display = 'none'} />
+                      </div>
+                  )}
+
+                  {galleryImages.map((imgUrl, idx) => (
                     <div 
                       key={idx} 
-                      className={`vhm-thumb ${activeHeroImage === (img.url || img) ? 'active' : ''}`}
-                      onClick={() => setActiveHeroImage(img.url || img)}
+                      className={`vhm-thumb ${activeHeroImage === imgUrl ? 'active' : ''}`}
+                      onClick={() => setActiveHeroImage(imgUrl)}
                     >
-                      <img src={img.url || img} alt="Gallery" onError={(e) => e.target.style.display = 'none'} />
+                      <img 
+                        src={imgUrl} 
+                        alt="Gallery" 
+                        onError={(e) => e.target.style.display = 'none'} 
+                      />
                     </div>
                   ))}
                </div>
             </div>
           </div>
 
-          {/* 2. HOTEL INFORMATION (Grid like Client Information) */}
+          {/* 2. HOTEL INFORMATION */}
           <div className="vhm-section-card">
             <h3 className="vhm-section-title">HOTEL INFORMATION</h3>
             <div className="vhm-info-grid">
@@ -146,18 +196,18 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
             </div>
           </div>
 
-          {/* 3. DESCRIPTION (Message style) */}
+          {/* 3. DESCRIPTION */}
           <div className="vhm-section-card">
             <h3 className="vhm-section-title">HOTEL DESCRIPTION</h3>
             <div className="vhm-message-area">
-              <p>{hotel.description || "I would like to inquiry about Cenomar. Processing time: 5-7 business days."}</p>
+              <p>{hotel.description || "No description provided."}</p>
             </div>
           </div>
 
-          {/* 4. AMENITIES & ROOMS */}
+          {/* 4. AMENITIES */}
           <div className="vhm-section-card">
              <div className="vhm-title-flex">
-               <h3 className="vhm-section-title">AMENITIES & REQUIREMENTS</h3>
+               <h3 className="vhm-section-title">AMENITIES</h3>
                <span className="vhm-count-pill">{activeAmenities.length} ITEMS</span>
              </div>
              {activeAmenities.length > 0 ? (
@@ -173,8 +223,7 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
                 </div>
              ) : (
                 <div className="vhm-empty-state">
-                   <div className="vhm-empty-icon">📂</div>
-                   <p>No Requirements Yet</p>
+                   <p>No Amenities Listed</p>
                 </div>
              )}
           </div>
@@ -183,10 +232,20 @@ const ViewHotelModal = ({ hotel, onClose, onEdit }) => {
 
         {/* === FOOTER === */}
         <div className="vhm-footer">
-          <button className="vhm-btn-close" onClick={onClose}>Close</button>
           <button className="vhm-btn-edit" onClick={() => onEdit && onEdit(hotel._id)}>
             <Edit size={16} />
-            Edit Hotel Details
+            Edit
+          </button>
+          <button 
+            className="vhm-btn-archive" 
+            onClick={() => {
+              if (window.confirm('Are you sure you want to archive this hotel?')) {
+                onArchive && onArchive(hotel._id);
+              }
+            }}
+          >
+            <Archive size={16} />
+            Archive
           </button>
         </div>
 

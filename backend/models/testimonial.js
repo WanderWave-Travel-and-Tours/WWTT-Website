@@ -17,7 +17,7 @@ const TestimonialSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // Binago sa "No" ang default value
+    // Default is "No" (Active)
     isArchive: {
         type: String,
         default: "No"

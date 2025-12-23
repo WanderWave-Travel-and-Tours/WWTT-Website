@@ -1,8 +1,9 @@
 const router = require('express').Router();
-const Testimonial = require('../models/testimonial'); //
-const multer = require('multer'); //
-const path = require('path'); //
+const Testimonial = require('../models/testimonial'); // Siguraduhing tama ang path sa model mo
+const multer = require('multer');
+const path = require('path');
 
+// --- MULTER CONFIG (Image Upload) ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/'); 
@@ -10,11 +11,14 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => {
         cb(null, Date.now() + path.extname(file.originalname));
     }
-}); //
+});
 
-const upload = multer({ storage: storage }); //
+const upload = multer({ storage: storage });
 
-// POST - Create Testimonial
+
+// --- ROUTES ---
+
+// 1. POST - Create Testimonial
 router.post("/", upload.single('customerImage'), async (req, res) => {
     try {
         const newTestimonial = new Testimonial({
@@ -30,9 +34,9 @@ router.post("/", upload.single('customerImage'), async (req, res) => {
     } catch (err) {
         res.status(500).json(err);
     }
-}); //
+});
 
-// GET - Get all Testimonials
+// 2. GET - Get ALL Testimonials
 router.get("/", async (req, res) => {
     try {
         const testimonials = await Testimonial.find();
@@ -40,10 +44,59 @@ router.get("/", async (req, res) => {
     } catch (err) {
         res.status(500).json(err);
     }
-}); //
+});
 
-// MODIFIED/ADDED: PATCH - Update isArchive status
-// Ito ang reresolba sa 404 error mo kanina
+// 3. GET - Get SINGLE Testimonial by ID (IMPORTANT FIX FOR EDIT PAGE)
+// Ito ang tinatawag ng frontend mo pag nagbubukas ng Edit Page via ID
+router.get("/:id", async (req, res) => {
+    try {
+        const testimonial = await Testimonial.findById(req.params.id);
+        
+        if (!testimonial) {
+            return res.status(404).json("Testimonial not found");
+        }
+
+        res.status(200).json(testimonial);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// 4. PUT - Update Testimonial Details (IMPORTANT FIX FOR SAVING)
+// Ito ang tinatawag kapag pinindot ang "Update Testimonial" button
+router.put("/update/:id", upload.single('customerImage'), async (req, res) => {
+    try {
+        const { customerName, source, feedback } = req.body;
+        
+        // Prepare object to update
+        let updateData = {
+            customerName,
+            source,
+            feedback
+        };
+
+        // Kung may inupload na bagong picture, i-update din ang image field
+        if (req.file) {
+            updateData.customerImage = req.file.filename;
+        }
+
+        const updatedTestimonial = await Testimonial.findByIdAndUpdate(
+            req.params.id,
+            { $set: updateData },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedTestimonial) {
+            return res.status(404).json("Testimonial not found");
+        }
+
+        res.status(200).json(updatedTestimonial);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// 5. PATCH - Archive/Unarchive Status
 router.patch("/:id", async (req, res) => {
     try {
         const updatedTestimonial = await Testimonial.findByIdAndUpdate(
@@ -62,4 +115,4 @@ router.patch("/:id", async (req, res) => {
     }
 });
 
-module.exports = router; //
+module.exports = router;
