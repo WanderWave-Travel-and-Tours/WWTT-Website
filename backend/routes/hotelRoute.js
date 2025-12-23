@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const Hotel = require('../models/hotel'); // Siguraduhin tama ang path sa Model
+const Hotel = require('../models/hotel');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -20,12 +20,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Setup for handling multiple fields: 'mainImage' (single) and 'galleryImages' (multiple)
 const uploadFields = upload.fields([
     { name: 'mainImage', maxCount: 1 },
-    { name: 'galleryImages', maxCount: 10 } // Allow up to 10 gallery images at once
+    { name: 'galleryImages', maxCount: 10 }
 ]);
-
 
 // --- ROUTES ---
 
@@ -39,7 +37,49 @@ router.get("/", async (req, res) => {
     }
 });
 
-// 2. GET SINGLE HOTEL
+// 2. GET HOTELS BY LOCATION WITH ROOM TYPES (NEW ROUTE)
+router.get("/location/:location/rooms", async (req, res) => {
+    try {
+        const { location } = req.params;
+        
+        // Search hotels by location (case-insensitive)
+        const hotels = await Hotel.find({ 
+            isActive: true,
+            $or: [
+                { location: new RegExp(location, 'i') },
+                { city: new RegExp(location, 'i') }
+            ]
+        }).sort({ rating: -1 });
+
+        if (!hotels || hotels.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: `No hotels found in ${location}` 
+            });
+        }
+
+        // Extract all room types from all hotels
+        const roomsData = hotels.map(hotel => ({
+            hotelId: hotel._id,
+            hotelName: hotel.name,
+            hotelLocation: hotel.location,
+            hotelRating: hotel.rating,
+            hotelImage: hotel.mainImage,
+            roomTypes: hotel.roomTypes || []
+        }));
+
+        res.status(200).json({ 
+            success: true, 
+            data: roomsData,
+            count: hotels.length
+        });
+    } catch (err) {
+        console.error('Error fetching rooms by location:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// 3. GET SINGLE HOTEL
 router.get("/:id", async (req, res) => {
     try {
         const hotel = await Hotel.findById(req.params.id);
@@ -52,7 +92,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// 3. CREATE HOTEL
+// 4. CREATE HOTEL
 router.post("/", upload.single('mainImage'), async (req, res) => {
     try {
         const newHotel = new Hotel({
@@ -60,7 +100,6 @@ router.post("/", upload.single('mainImage'), async (req, res) => {
             mainImage: req.file ? req.file.filename : "", 
             isActive: true
         });
-        // Parse amenities if sent as stringified JSON
         if (typeof req.body.amenities === 'string') {
              try { newHotel.amenities = JSON.parse(req.body.amenities); } catch (e) {}
         }
@@ -71,31 +110,26 @@ router.post("/", upload.single('mainImage'), async (req, res) => {
     }
 });
 
-// 4. UPDATE HOTEL (UPDATED for Multiple Images)
+// 5. UPDATE HOTEL
 router.put("/update/:id", uploadFields, async (req, res) => {
     try {
         let updateData = { ...req.body };
 
-        // --- Handle Main Image ---
         if (req.files && req.files['mainImage']) {
             updateData.mainImage = req.files['mainImage'][0].filename;
         }
 
-        // --- Handle Gallery Images ---
-        // 1. Kunin ang mga existing images na gustong i-retain ng user
         let finalImagesArray = [];
         if (updateData.existingImages) {
              try {
                 const existingUrls = JSON.parse(updateData.existingImages);
-                // Convert back to object structure needed by schema
                 finalImagesArray = existingUrls.map(url => ({ url: url }));
              } catch (e) {
                  console.error("Error parsing existingImages:", e);
              }
-            delete updateData.existingImages; // Clean up req body
+            delete updateData.existingImages;
         }
 
-        // 2. Idagdag ang mga bagong upload na gallery images
         if (req.files && req.files['galleryImages']) {
             const newImageObjects = req.files['galleryImages'].map(file => ({
                 url: file.filename
@@ -103,12 +137,10 @@ router.put("/update/:id", uploadFields, async (req, res) => {
             finalImagesArray = [...finalImagesArray, ...newImageObjects];
         }
 
-        // Only update the images field if there are changes
         if (finalImagesArray.length > 0 || (req.files && req.files['galleryImages'])) {
              updateData.images = finalImagesArray;
         }
 
-        // --- Handle Amenities Parsing ---
         if (typeof updateData.amenities === 'string') {
              try {
                  updateData.amenities = JSON.parse(updateData.amenities);
@@ -132,7 +164,7 @@ router.put("/update/:id", uploadFields, async (req, res) => {
     }
 });
 
-// 5. ARCHIVE / SOFT DELETE (Used by Modal)
+// 6. ARCHIVE / SOFT DELETE
 router.delete("/:id", async (req, res) => {
     try {
         const hotel = await Hotel.findByIdAndUpdate(
