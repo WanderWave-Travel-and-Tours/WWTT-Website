@@ -251,7 +251,7 @@ const AddPackage = () => {
         }
 
         try {
-            const response = await fetch("http://localhost:5000/api/packages/add", {
+            const response = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/add", {
                 method: "POST",
                 body: formData,
             });
