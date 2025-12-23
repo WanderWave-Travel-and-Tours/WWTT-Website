@@ -25,6 +25,10 @@ const PromoSchema = new mongoose.Schema({
         type: Date, 
         required: true 
     },
+    imagePublicId: {
+        type: String,
+        default: ''
+    },
     isActive: { type: Boolean, default: true },
     // Dinagdag ang isArchive property dito
     isArchive: { 

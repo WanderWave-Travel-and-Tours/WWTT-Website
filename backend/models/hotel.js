@@ -61,6 +61,10 @@ const hotelSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'Total reviews cannot be negative']
   },
+  imagePublicId: {
+      type: String,
+      default: ''
+  },
   images: [{
     url: {
       type: String,

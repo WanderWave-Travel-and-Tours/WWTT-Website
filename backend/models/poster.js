@@ -26,6 +26,10 @@ const posterSchema = new mongoose.Schema({
         enum: ['Active', 'Inactive', 'Scheduled'],
         default: 'Active'
     },
+    imagePublicId: {
+        type: String,
+        default: ''
+    },
     // New field added here
     isArchive: {
         type: String,
