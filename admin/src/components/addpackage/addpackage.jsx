@@ -205,13 +205,18 @@ const AddPackage = () => {
         const processedInclusions = inclusions.filter(
             (item) => item.trim().length > 0
         );
-        const cleanedItinerary = itinerary
-            .filter((day) => day.activities.some((act) => act.trim() !== ""))
-            .map((day) => ({
-                day: day.day,
-                title: day.title.replace(/^Day \d+:? /, "") || day.title.trim(),
-                activities: day.activities.filter((act) => act.trim() !== ""),
-            }));
+        
+        // ✅ FIX: Allow days even without activities, just clean the title properly
+        const cleanedItinerary = itinerary.map((day, index) => {
+            // Extract the title without the "Day N: " prefix
+            const titleWithoutPrefix = day.title.replace(/^Day \d+:\s*/, "").trim();
+            
+            return {
+                day: index + 1, // Ensure sequential day numbers
+                title: titleWithoutPrefix || `Day ${index + 1}`, // Fallback to "Day N" if empty
+                activities: day.activities.filter((act) => act.trim() !== "")
+            };
+        });
 
         const supplierRateNum = parseFloat(supplierRate) || 0;
         const markupValueNum = parseFloat(markupValue) || 0;
@@ -246,7 +251,7 @@ const AddPackage = () => {
         }
 
         try {
-            const response = await fetch("https://wanderwaveph-backend.onrender.com0/api/packages/add", {
+            const response = await fetch("http://localhost:5000/api/packages/add", {
                 method: "POST",
                 body: formData,
             });
