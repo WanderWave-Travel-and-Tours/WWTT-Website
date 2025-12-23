@@ -59,7 +59,7 @@ const AirlineBooking = () => {
     const fetchFlightBookings = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
+            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries?isArchive=No');
             if (response.data.success) {
                 // Filter: Flight Booking lang at hindi naka-archive
                 const filtered = response.data.data.filter(inq => 
@@ -111,7 +111,7 @@ const AirlineBooking = () => {
         if(!window.confirm(`Are you sure you want to ${action}?`)) return;
         try {
             const response = await axios.put(
-                `http://localhost:5000/api/inquiries/${id}/status`,
+                `https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/status`,
                 { status: newStatus }
             );
 
@@ -135,7 +135,7 @@ const AirlineBooking = () => {
         if (window.confirm('Send payment request to client?')) {
             try {
                 const response = await axios.post(
-                    `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`
+                    `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/request-payment`
                 );
                 
                 if (response.data.success) {
@@ -154,7 +154,7 @@ const AirlineBooking = () => {
     const handleArchiveBooking = async (id) => {
         if (window.confirm('Are you sure you want to archive this inquiry?')) {
             try {
-                const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+                const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
                     isArchive: 'Yes'
                 });
 
@@ -180,7 +180,7 @@ const AirlineBooking = () => {
             if (contactEvidence) formData.append('evidence', contactEvidence);
 
             const response = await axios.put(
-                `http://localhost:5000/api/inquiries/${selectedBooking._id}/status`,
+                `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/status`,
                 formData,
                 {
                     headers: { 'Content-Type': 'multipart/form-data' }

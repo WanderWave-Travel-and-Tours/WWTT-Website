@@ -15,7 +15,7 @@ const EditHotel = () => {
     // 👇 ADDED: State for Destinations list
     const [destinations, setDestinations] = useState([]);
 
-    const API_BASE_URL = 'http://localhost:5000';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
     // --- HELPER: Image URL Builder ---
     const getImageUrl = (imagePath) => {

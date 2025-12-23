@@ -275,7 +275,7 @@ const CenomarRequest = () => {
 
   const fetchCENOMARDocs = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/cenomar");
+      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/cenomar");
       if (Array.isArray(res.data)) {
         const mapped = res.data.map(d => ({ ...d, id: d._id, desc: d.description }));
         setCenomarDocs(mapped);
@@ -290,7 +290,7 @@ const CenomarRequest = () => {
   const fetchInquiries = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/inquiries');
+      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries');
       if (response.data.success) {
         // FILTER: inquiryType ay CENOMAR at isArchive ay No
         const cenomarRequests = response.data.data.filter(inq => 
@@ -376,7 +376,7 @@ const CenomarRequest = () => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) setDocuments(response.data.documents || []);
     } catch (error) { 
         console.error('Error fetching documents:', error); 
@@ -393,7 +393,7 @@ const CenomarRequest = () => {
   const handleArchiveInquiry = async (id) => {
     if (!window.confirm("Are you sure you want to archive this request?")) return;
     try {
-      const res = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, { isArchive: "Yes" });
+      const res = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, { isArchive: "Yes" });
       if (res.data.success) {
         alert("Inquiry archived successfully!");
         fetchInquiries(); // Refresh list
@@ -421,7 +421,7 @@ const CenomarRequest = () => {
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     if (!window.confirm(`Set status to ${newStatus}?`)) return;
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, { status: newStatus });
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/status`, { status: newStatus });
       if (response.data.success) {
         alert('Status updated successfully!'); 
         fetchInquiries();
@@ -436,7 +436,7 @@ const CenomarRequest = () => {
   const handleRequestPayment = async () => {
     if (!window.confirm("Request payment from user?")) return;
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, { status: 'PAYMENT_PENDING' });
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`, { status: 'PAYMENT_PENDING' });
       if (response.data.success) {
         alert('Payment requested!'); 
         fetchInquiries();
@@ -455,7 +455,7 @@ const CenomarRequest = () => {
       formData.append('status', 'CONTACTED');
       formData.append('remarks', contactRemarks);
       if (contactEvidence) formData.append('evidence', contactEvidence);
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (response.data.success) {
         alert('Status updated to CONTACTED!'); 
         fetchInquiries();
@@ -473,7 +473,7 @@ const CenomarRequest = () => {
   const handleConfirmPayment = async () => {
     if (!window.confirm("Confirm payment received?")) return;
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: 'Admin' });
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: 'Admin' });
       if (response.data.success) {
         alert('Payment confirmed!'); 
         fetchInquiries();
@@ -492,7 +492,7 @@ const CenomarRequest = () => {
     deliveryFiles.forEach(file => formData.append('documents', file));
 
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
         headers: { 'Content-Type': 'multipart/form-data' } 
       });
       if (response.data.success) {
@@ -534,7 +534,7 @@ const CenomarRequest = () => {
 
   const handleDeleteCENOMAR = async (id) => {
     if (!window.confirm("Delete this service?")) return;
-    try { await axios.delete(`http://localhost:5000/api/cenomar/${id}`); fetchCENOMARDocs(); } 
+    try { await axios.delete(`https://wanderwaveph-backend.onrender.com/api/cenomar/${id}`); fetchCENOMARDocs(); } 
     catch(err) { console.error(err); alert("Failed to delete"); }
   };
 
@@ -548,8 +548,8 @@ const CenomarRequest = () => {
       processSteps: stepsProcess
     };
     try {
-      if (isEditorOpen && selectedCENOMAR) await axios.put(`http://localhost:5000/api/cenomar/${selectedCENOMAR._id}`, payload);
-      else await axios.post(`http://localhost:5000/api/cenomar`, payload);
+      if (isEditorOpen && selectedCENOMAR) await axios.put(`https://wanderwaveph-backend.onrender.com/api/cenomar/${selectedCENOMAR._id}`, payload);
+      else await axios.post(`https://wanderwaveph-backend.onrender.com/api/cenomar`, payload);
       alert("Service saved!"); setIsAddFormOpen(false); setIsCENOMARFormsOpen(true); fetchCENOMARDocs();
     } catch (err) { console.error(err); alert("Failed to save"); }
   };
@@ -571,7 +571,7 @@ const CenomarRequest = () => {
     const formData = new FormData(); 
     formData.append('file', file);
     try {
-      const res = await axios.post('http://localhost:5000/api/upload', formData);
+      const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/upload', formData);
       if (res.data.success) setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
     } catch(err) { 
         console.error(err); 

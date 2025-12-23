@@ -30,7 +30,7 @@ const EditTour = () => {
     { day: 1, title: "", activities: [""] },
   ]);
 
-  const API_BASE_URL = "http://localhost:5000/api/tours";
+  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/tours";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -87,7 +87,7 @@ const EditTour = () => {
           );
 
           if (tour.image) {
-            setImagePreview(`http://localhost:5000/uploads/${tour.image}`);
+            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`);
           }
         }
       } catch (err) {
