@@ -23,6 +23,10 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
+// ============================================
+// SPECIFIC ROUTES FIRST
+// ============================================
+
 // INITIALIZE ARCHIVE STATUS
 router.get('/init-archive', async (req, res) => {
     try {
@@ -59,18 +63,81 @@ router.get('/archived-list', async (req, res) => {
     }
 });
 
-// FETCH SINGLE
-router.get('/:id', async (req, res) => {
+// ============================================
+// CREATE NEW PACKAGE (CLOUDINARY)
+// ============================================
+router.post('/add', upload.single('image'), async (req, res) => {
     try {
-        const pkg = await Package.findById(req.params.id);
-        if (!pkg) return res.status(404).json({ status: 'error', error: 'Package not found.' });
-        return res.status(200).json({ status: 'ok', data: pkg });
-    } catch (error) {
-        return res.status(500).json({ status: 'error', error: 'Failed to retrieve package data.' });
+        console.log('📥 POST /add - Creating new package...');
+
+        const { 
+            title, destination, sellerPrice, markup, 
+            duration, category, inclusions, itinerary 
+        } = req.body;
+
+        if (!title || !destination || !sellerPrice || !duration || !category) {
+            return res.status(400).json({ 
+                status: 'error', 
+                error: 'Missing required fields' 
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ 
+                status: 'error', 
+                error: 'Image is required' 
+            });
+        }
+
+        const sellerPriceNum = Number(sellerPrice) || 0;
+        const markupNum = Number(markup) || 0;
+
+        const newPackage = new Package({
+            title,
+            destination,
+            sellerPrice: sellerPriceNum,
+            markup: markupNum,
+            price: sellerPriceNum + markupNum,
+            duration,
+            category,
+            image: req.file.path, // Cloudinary URL
+            imagePublicId: req.file.filename, // Cloudinary public_id
+            inclusions: inclusions ? JSON.parse(inclusions) : [],
+            itinerary: itinerary ? JSON.parse(itinerary) : [],
+            isArchive: 'No'
+        });
+
+        await newPackage.save();
+
+        console.log('✅ Package created:', newPackage._id);
+        console.log('📸 Image URL:', req.file.path);
+
+        res.status(201).json({
+            status: 'ok',
+            message: 'Package created successfully!',
+            data: newPackage
+        });
+
+    } catch (err) {
+        console.error('❌ Error:', err);
+        
+        // Cleanup uploaded image on error
+        if (req.file?.filename) {
+            try {
+                await cloudinary.uploader.destroy(req.file.filename);
+            } catch (e) {}
+        }
+        
+        res.status(500).json({ 
+            status: 'error', 
+            error: err.message 
+        });
     }
 });
 
-// EDIT PACKAGE (UPDATED FOR CLOUDINARY)
+// ============================================
+// EDIT PACKAGE (CLOUDINARY)
+// ============================================
 router.put('/edit/:id', upload.single('image'), async (req, res) => {
     try {
         const { 
@@ -115,7 +182,9 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
     }
 });
 
+// ============================================
 // ARCHIVE TOGGLE
+// ============================================
 router.post('/:id/archive', async (req, res) => {
     try {
         const pkg = await Package.findById(req.params.id);
@@ -128,6 +197,21 @@ router.post('/:id/archive', async (req, res) => {
         res.json({ status: "ok", message: `Package status updated to ${newStatus}`, isArchive: newStatus });
     } catch (err) {
         res.status(500).json({ status: "error", error: err.message });
+    }
+});
+
+// ============================================
+// GENERIC ROUTES LAST
+// ============================================
+
+// FETCH SINGLE PACKAGE
+router.get('/:id', async (req, res) => {
+    try {
+        const pkg = await Package.findById(req.params.id);
+        if (!pkg) return res.status(404).json({ status: 'error', error: 'Package not found.' });
+        return res.status(200).json({ status: 'ok', data: pkg });
+    } catch (error) {
+        return res.status(500).json({ status: 'error', error: 'Failed to retrieve package data.' });
     }
 });
 
