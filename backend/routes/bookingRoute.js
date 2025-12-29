@@ -36,7 +36,6 @@ const fileFilter = (req, file, cb) => {
   if (allowedMimeTypes.includes(file.mimetype) || isImage) {
     cb(null, true);
   } else {
-    // This returns the error to the client, preventing the 500 crash later
     cb(new Error('Invalid file type. Only JPG, PNG, GIF, WEBP, and PDF are allowed.'), false);
   }
 };
@@ -56,7 +55,6 @@ const generateTempPassword = () => {
   return `Wander_${numbers}${randomSpecialChar}`;
 };
 
-// --- NEW ROUTE: GET BOOKINGS BY USER EMAIL ---
 router.get('/user/:email', async (req, res) => {
   try {
     const { email } = req.params;
@@ -76,13 +74,137 @@ router.get('/user/:email', async (req, res) => {
   }
 });
 
+
+router.get('/stats/summary', async (req, res) => {
+  try {
+    const bookings = await Booking.find();
+
+    const stats = {
+      total: bookings.length,
+      confirmed: bookings.filter(b => b.status === 'confirmed').length,
+      pending: bookings.filter(b => b.status === 'pending').length,
+      cancelled: bookings.filter(b => b.status === 'cancelled').length,
+      withAirfare: bookings.filter(b => b.includesAirfare).length,
+      revenue: bookings
+        .filter(b => b.status === 'confirmed')
+        .reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+    };
+
+    res.json({
+      success: true,
+      stats: stats
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch statistics'
+    });
+  }
+});
+
+router.get('/init-archive', async (req, res) => {
+    try {
+        const result = await Booking.updateMany(
+            { isArchive: { $exists: false } },
+            { $set: { isArchive: 'No' } }
+        );
+        res.status(200).json({ 
+            status: 'ok', 
+            message: `Success! ${result.modifiedCount} booking documents updated to isArchive: 'No'.` 
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+
+
+router.get('/active', async (req, res) => {
+    try {
+        const bookings = await Booking.find({ isArchive: 'No' }).sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            count: bookings.length,
+            bookings: bookings
+        });
+    } catch (error) {
+        console.error('Error fetching active bookings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch active bookings'
+        });
+    }
+});
+
+router.get('/archived', async (req, res) => {
+    try {
+        const archived = await Booking.find({ isArchive: 'Yes' }).sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            count: archived.length,
+            bookings: archived
+        });
+    } catch (error) {
+        console.error('Error fetching archived bookings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch archived bookings'
+        });
+    }
+});
+
+router.post('/:id/archive', async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ status: "error", message: "Booking not found" });
+
+        const newStatus = booking.isArchive === 'Yes' ? 'No' : 'Yes';
+        booking.isArchive = newStatus;
+        await booking.save();
+
+        res.json({ 
+            status: "ok", 
+            message: `Booking archive status updated to ${newStatus}`, 
+            isArchive: newStatus 
+        });
+    } catch (err) {
+        res.status(500).json({ status: "error", error: err.message });
+    }
+});
+
+
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching booking:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch booking'
+    });
+  }
+});
+
 router.post('/', upload.any(), async (req, res) => {
   try {
     let bookingData;
     
-    // ===========================================
-    // 1. Parse Booking Data (Includes all text data now, including passengers)
-    // ===========================================
     if (!req.body.bookingData) {
       console.error('❌ No bookingData field found in request!');
       return res.status(400).json({
@@ -103,27 +225,21 @@ router.post('/', upload.any(), async (req, res) => {
         });
     }
 
-    // ===========================================
-    // 2. Process Passengers (Get array from bookingData) and Files
-    // ===========================================
-    const rawPassengers = bookingData.passengers || []; // Get the embedded array
+    const rawPassengers = bookingData.passengers || []; 
     const totalExpectedPassengers = bookingData.pax?.adult || 1;
-    const passengers = []; // Final array with file paths
+    const passengers = []; 
 
     if (rawPassengers.length === 0) {
         console.error(`❌ Embedded passenger array is empty.`);
     }
 
-    // Process the embedded passenger array
     rawPassengers.forEach((passengerData, index) => {
-        // Mongoose requires these fields to be true, so we check here
         if (!passengerData.firstName || !passengerData.lastName || !passengerData.email || !passengerData.phone || !passengerData.dateOfBirth) {
             console.warn(`⚠️ Warning: Skipping passenger ${index + 1} due to missing required fields in embedded data.`);
-            return; // Skip this passenger if validation fails
+            return;
         }
 
         const passenger = {
-            // Map fields from the embedded array
             passengerNumber: passengerData.passengerNumber || index + 1,
             firstName: passengerData.firstName,
             lastName: passengerData.lastName,
@@ -136,7 +252,6 @@ router.post('/', upload.any(), async (req, res) => {
             nationality: passengerData.nationality || 'Filipino'
         };
 
-        // Find files using the exact fieldname: idFile_X and passportFile_X
         const idFile = req.files ? req.files.find(f => f.fieldname === `idFile_${index}`) : null;
         const passportFile = req.files ? req.files.find(f => f.fieldname === `passportFile_${index}`) : null;
 
@@ -163,9 +278,7 @@ router.post('/', upload.any(), async (req, res) => {
         passengers.push(passenger);
     });
 
-    // Final check for minimum passengers required
     if (passengers.length !== totalExpectedPassengers) {
-        // Clean up uploaded files if available
         req.files?.forEach(file => {
           try {
             fs.unlinkSync(file.path);
@@ -178,9 +291,6 @@ router.post('/', upload.any(), async (req, res) => {
         });
     }
 
-    // ===========================================
-    // 3. User Handling and GHL Communication
-    // ===========================================
     const primaryEmail = bookingData.primaryContact?.email || passengers[0]?.email;
     const primaryName = bookingData.primaryContact?.fullName || `${passengers[0]?.firstName} ${passengers[0]?.lastName}`;
     
@@ -223,10 +333,6 @@ router.post('/', upload.any(), async (req, res) => {
       }
     }
 
-    // ===========================================
-    // 4. Create and Save Booking
-    // ===========================================
-    
     let flightDetailsObject = bookingData.flightDetails;
     if (flightDetailsObject && typeof flightDetailsObject === 'string') {
         try {
@@ -247,18 +353,12 @@ router.post('/', upload.any(), async (req, res) => {
       endDate: bookingData.endDate,
       duration: bookingData.duration,
       pax: bookingData.pax,
-      
-      // Included fields for Mongoose
       selectedRoomType: bookingData.selectedRoomType,
       hotelName: bookingData.hotelName,
       numberOfRooms: bookingData.numberOfRooms,
-      
       packageTotal: bookingData.packageTotal || bookingData.totalAmount,
       includesAirfare: bookingData.includesAirfare || false,
-      
-      // Use the final processed object (which can now handle the nested price object)
       flightDetails: flightDetailsObject, 
-      
       airfareTotal: bookingData.airfareTotal || 0,
       totalAmount: bookingData.totalAmount,
       fullName: primaryName,
@@ -272,7 +372,6 @@ router.post('/', upload.any(), async (req, res) => {
     console.log('💾 Saving booking to database...');
     await newBooking.save();
 
-    // 5. SUCCESS RESPONSE: Return the booking ID for payment initiation
     console.log(`💰 Booking saved. Returning ID for payment link creation: ${newBooking._id}`);
 
     res.json({
@@ -281,7 +380,6 @@ router.post('/', upload.any(), async (req, res) => {
       isNewUser: isNewUser,
       bookingId: newBooking._id,
       data: newBooking,
-      // No paymentRedirectUrl is returned here. Frontend calls the payment API.
     });
 
   } catch (error) {
@@ -291,13 +389,11 @@ router.post('/', upload.any(), async (req, res) => {
     console.error('Error:', error);
     console.error('Stack:', error.stack);
     
-    // Clean up uploaded files on failure
     req.files?.forEach(file => {
       try {
         fs.unlinkSync(file.path);
         console.log(`🧹 Deleted file: ${file.path}`);
       } catch (e) {
-        // Ignore file delete errors
       }
     });
 
@@ -305,32 +401,6 @@ router.post('/', upload.any(), async (req, res) => {
       success: false,
       message: 'Failed to create booking',
       error: error.message
-    });
-  }
-});
-
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const booking = await Booking.findById(id);
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      booking: booking
-    });
-
-  } catch (error) {
-    console.error('❌ Error fetching booking:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch booking'
     });
   }
 });
@@ -446,105 +516,5 @@ router.put('/:id/cancel', async (req, res) => {
   }
 });
 
-router.get('/stats/summary', async (req, res) => {
-  try {
-    const bookings = await Booking.find();
-
-    const stats = {
-      total: bookings.length,
-      confirmed: bookings.filter(b => b.status === 'confirmed').length,
-      pending: bookings.filter(b => b.status === 'pending').length,
-      cancelled: bookings.filter(b => b.status === 'cancelled').length,
-      withAirfare: bookings.filter(b => b.includesAirfare).length,
-      revenue: bookings
-        .filter(b => b.status === 'confirmed')
-        .reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-    };
-
-    res.json({
-      success: true,
-      stats: stats
-    });
-
-  } catch (error) {
-    console.error('❌ Error fetching stats:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch statistics'
-    });
-  }
-});
-
-// INITIALIZE ARCHIVE STATUS (para sa mga existing bookings na walang isArchive field pa)
-router.get('/init-archive', async (req, res) => {
-    try {
-        const result = await Booking.updateMany(
-            { isArchive: { $exists: false } },
-            { $set: { isArchive: 'No' } }
-        );
-        res.status(200).json({ 
-            status: 'ok', 
-            message: `Success! ${result.modifiedCount} booking documents updated to isArchive: 'No'.` 
-        });
-    } catch (error) {
-        res.status(500).json({ status: 'error', error: error.message });
-    }
-});
-
-// FETCH ALL ACTIVE BOOKINGS (default view sa admin)
-router.get('/active', async (req, res) => {
-    try {
-        const bookings = await Booking.find({ isArchive: 'No' }).sort({ createdAt: -1 });
-        res.json({
-            success: true,
-            count: bookings.length,
-            bookings: bookings
-        });
-    } catch (error) {
-        console.error('Error fetching active bookings:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch active bookings'
-        });
-    }
-});
-
-// FETCH ARCHIVED BOOKINGS
-router.get('/archived', async (req, res) => {
-    try {
-        const archived = await Booking.find({ isArchive: 'Yes' }).sort({ createdAt: -1 });
-        res.json({
-            success: true,
-            count: archived.length,
-            bookings: archived
-        });
-    } catch (error) {
-        console.error('Error fetching archived bookings:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch archived bookings'
-        });
-    }
-});
-
-// TOGGLE ARCHIVE STATUS
-router.post('/:id/archive', async (req, res) => {
-    try {
-        const booking = await Booking.findById(req.params.id);
-        if (!booking) return res.status(404).json({ status: "error", message: "Booking not found" });
-
-        const newStatus = booking.isArchive === 'Yes' ? 'No' : 'Yes';
-        booking.isArchive = newStatus;
-        await booking.save();
-
-        res.json({ 
-            status: "ok", 
-            message: `Booking archive status updated to ${newStatus}`, 
-            isArchive: newStatus 
-        });
-    } catch (err) {
-        res.status(500).json({ status: "error", error: err.message });
-    }
-});
 
 module.exports = router;

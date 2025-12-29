@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
+import { getImageUrl } from '../../utils/imageHelper'; // ✅ TAMA - 2x ../ to go up to src/\
 import './packageCard.css';
 
 function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, currency = 'PHP', exchangeRate = 58, isLoggedIn, onLoginRequired }) { 
@@ -44,8 +45,16 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
       </button>
 
       <div className="card-image">
-        <img src={pkg.image} alt={pkg.name} className="image-content" />
+        <img 
+          src={getImageUrl(pkg.image)} 
+          alt={pkg.name} 
+          className="image-content"
+          onError={(e) => {
+            e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available';
+          }}
+        />
       </div>
+      
       <div className="card-body">
         <div>
           <div className="card-header">
