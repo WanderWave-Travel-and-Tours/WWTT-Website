@@ -1,30 +1,19 @@
 const router = require('express').Router();
 const Package = require('../models/package');
-const ActivityLog = require('../models/ActivityLog'); // Import Activity Log Model
-const fs = require('fs');
-const multer = require('multer'); 
+const ActivityLog = require('../models/ActivityLog');
+const multer = require('multer');
 const path = require('path');
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = 'uploads/';
-        if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath); // Safety check
-        cb(null, uploadPath); 
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-const multer = require('multer'); 
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// CLOUDINARY CONFIG
+// 1. CLOUDINARY CONFIG
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// CLOUDINARY STORAGE
+// 2. CLOUDINARY STORAGE CONFIG
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
@@ -36,139 +25,39 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
-// ============================================================
-// 1. ADD PACKAGE (WITH PRICE FIX & LOGGING & NULL ID FIX)
-// ============================================================
+// HELPER: Sanitize Admin ID to avoid CastError
+const getValidAdminId = (id) => {
+    if (id && id !== 'null' && id !== 'undefined' && id !== '') {
+        return id;
+    }
+    return null;
+};
+
+// ============================================
+// ROUTES
+// ============================================
+
+// 1. ADD PACKAGE (WITH CLOUDINARY & LOGGING)
 router.post('/add', upload.single('image'), async (req, res) => {
     try {
         const { 
             title, destination, sellerPrice, markup, 
             duration, category, inclusions, itinerary,
-            // Admin Info from Frontend
             userEmail, adminId 
         } = req.body;
 
-        // FIX: Manual calc to avoid "Path price is required" error
-        const calculatedPrice = Number(sellerPrice) + Number(markup);
-
-        // FIX: Handle "null" string from FormData to avoid ObjectId CastError
-        // Kung ang adminId ay string na "null", empty, o "undefined", gawin itong null value.
-        let logUserId = null;
-        if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
-            logUserId = adminId;
-        }
-
-        const newPackage = new Package({
-            title,
-            destination,
-            sellerPrice: Number(sellerPrice),
-            markup: Number(markup),
-            price: calculatedPrice, // Set explicitly
-            duration,
-            category,
-            image: req.file ? req.file.filename : '',
-            inclusions: inclusions ? JSON.parse(inclusions) : [],
-            itinerary: itinerary ? JSON.parse(itinerary) : []
-        });
-
-        const savedPackage = await newPackage.save();
-
-        // --- INSERT ACTIVITY LOG HERE ---
-        await ActivityLog.create({
-            action: 'CREATE',
-            module: 'Packages',
-            user: userEmail || 'System Admin', 
-            userId: logUserId, // Gamitin ang sanitized ID
-            severity: 'SUCCESS',
-            description: `Created a new tour package: ${title}`,
-            details: {
-                recordTitle: title,
-                recordId: savedPackage._id,
-                method: 'POST',
-                endpoint: '/api/packages/add'
-            }
-        });
-        // --------------------------------
-
-        res.status(200).json({ status: 'ok', message: 'Package added successfully!' });
-    } catch (err) {
-        console.error("Error adding package:", err); // Log error para madali makita
-        res.status(500).json({ status: 'error', error: err.message });
-    }
-});
-
-// INITIALIZE ARCHIVE STATUS (Original Code)
-// ============================================
-// SPECIFIC ROUTES FIRST
-// ============================================
-
-// INITIALIZE ARCHIVE STATUS
-router.get('/init-archive', async (req, res) => {
-    try {
-        const result = await Package.updateMany(
-            { isArchive: { $exists: false } },
-            { $set: { isArchive: 'No' } }
-        );
-        res.status(200).json({ 
-            status: 'ok', 
-            message: `Success! ${result.modifiedCount} documents updated.` 
-        });
-    } catch (error) {
-        res.status(500).json({ status: 'error', error: error.message });
-    }
-});
-
-// FETCH ALL ACTIVE (Original Code)
-// FETCH ALL ACTIVE
-router.get('/all', async (req, res) => {
-    try {
-        const packages = await Package.find({ isArchive: 'No' }).sort({ _id: -1 });
-        return res.status(200).json({ status: 'ok', data: packages });
-    } catch (error) {
-        return res.status(500).json({ status: 'error', error: 'Failed to retrieve packages.' });
-    }
-});
-
-// FETCH ARCHIVED (Original Code)
-router.get('/archived-list', async (req, res) => {
-    try {
-        const archived = await Package.find({ isArchive: 'Yes' }).sort({ _id: -1 });
-        return res.status(200).json({ status: 'ok', data: archived });
-    } catch (error) {
-        return res.status(500).json({ status: 'error', error: error.message });
-    }
-});
-
-// FETCH SINGLE (Original Code)
-router.get('/:id', async (req, res) => {
-// ============================================
-// CREATE NEW PACKAGE (CLOUDINARY)
-// ============================================
-router.post('/add', upload.single('image'), async (req, res) => {
-    try {
-        console.log('📥 POST /add - Creating new package...');
-
-        const { 
-            title, destination, sellerPrice, markup, 
-            duration, category, inclusions, itinerary 
-        } = req.body;
-
+        // Validation
         if (!title || !destination || !sellerPrice || !duration || !category) {
-            return res.status(400).json({ 
-                status: 'error', 
-                error: 'Missing required fields' 
-            });
+            return res.status(400).json({ status: 'error', error: 'Missing required fields' });
         }
 
         if (!req.file) {
-            return res.status(400).json({ 
-                status: 'error', 
-                error: 'Image is required' 
-            });
+            return res.status(400).json({ status: 'error', error: 'Image is required' });
         }
 
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
+        const logUserId = getValidAdminId(adminId);
 
         const newPackage = new Package({
             title,
@@ -178,81 +67,76 @@ router.post('/add', upload.single('image'), async (req, res) => {
             price: sellerPriceNum + markupNum,
             duration,
             category,
-            image: req.file.path, // Cloudinary URL
-            imagePublicId: req.file.filename, // Cloudinary public_id
+            image: req.file.path, // Cloudinary Secure URL
+            imagePublicId: req.file.filename, // Cloudinary ID for deletion later
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
             isArchive: 'No'
         });
 
-        await newPackage.save();
+        const savedPackage = await newPackage.save();
 
-        console.log('✅ Package created:', newPackage._id);
-        console.log('📸 Image URL:', req.file.path);
-
-        res.status(201).json({
-            status: 'ok',
-            message: 'Package created successfully!',
-            data: newPackage
+        // Activity Logging
+        await ActivityLog.create({
+            action: 'CREATE',
+            module: 'Packages',
+            user: userEmail || 'System Admin',
+            userId: logUserId,
+            severity: 'SUCCESS',
+            description: `Created a new tour package: ${title}`,
+            details: {
+                recordTitle: title,
+                recordId: savedPackage._id,
+                method: 'POST',
+                endpoint: '/api/packages/add'
+            }
         });
+
+        res.status(201).json({ status: 'ok', message: 'Package created successfully!', data: savedPackage });
 
     } catch (err) {
-        console.error('❌ Error:', err);
-        
-        // Cleanup uploaded image on error
+        console.error('❌ Error adding package:', err);
+        // Cleanup image in Cloudinary if DB save fails
         if (req.file?.filename) {
-            try {
-                await cloudinary.uploader.destroy(req.file.filename);
-            } catch (e) {}
+            await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
         }
-        
-        res.status(500).json({ 
-            status: 'error', 
-            error: err.message 
-        });
+        res.status(500).json({ status: 'error', error: err.message });
     }
 });
 
-// ============================================================
-// 2. EDIT PACKAGE (WITH LOGGING INSERTED & ID FIX)
-// ============================================================
-// ============================================
-// EDIT PACKAGE (CLOUDINARY)
-// ============================================
+// 2. EDIT PACKAGE (WITH CLOUDINARY & LOGGING)
 router.put('/edit/:id', upload.single('image'), async (req, res) => {
     try {
         const { 
             title, destination, sellerPrice, markup, duration, 
-            category, existingImage, inclusions, itinerary,
-            // Admin Info
+            category, existingImage, existingImagePublicId, inclusions, itinerary,
             userEmail, adminId
-            category, existingImage, existingImagePublicId, inclusions, itinerary 
         } = req.body;
         
+        const logUserId = getValidAdminId(adminId);
+        const sellerPriceNum = Number(sellerPrice) || 0;
+        const markupNum = Number(markup) || 0;
+
         const updateData = {
             title,
             destination,
-            sellerPrice: Number(sellerPrice),
-            markup: Number(markup),
-            price: Number(sellerPrice) + Number(markup),
+            sellerPrice: sellerPriceNum,
+            markup: markupNum,
+            price: sellerPriceNum + markupNum,
             duration,
             category,
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
 
-        // If new image uploaded
+        // If a new image is uploaded
         if (req.file) {
-            updateData.image = req.file.path; // Cloudinary URL
-            updateData.imagePublicId = req.file.filename; // Cloudinary public_id
+            updateData.image = req.file.path;
+            updateData.imagePublicId = req.file.filename;
             
-            // Delete old image from Cloudinary
+            // Delete the old image from Cloudinary
             if (existingImagePublicId) {
-                try {
-                    await cloudinary.uploader.destroy(existingImagePublicId);
-                } catch (err) {
-                    console.error('Failed to delete old image:', err);
-                }
+                await cloudinary.uploader.destroy(existingImagePublicId).catch(e => console.error('Old image delete failed:', e));
             }
         } else {
             updateData.image = existingImage;
@@ -261,13 +145,9 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
 
         const updatedPkg = await Package.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
-        // Sanitize ID
-        let logUserId = null;
-        if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
-            logUserId = adminId;
-        }
+        if (!updatedPkg) return res.status(404).json({ status: 'error', error: 'Package not found' });
 
-        // --- INSERT ACTIVITY LOG HERE ---
+        // Activity Logging
         await ActivityLog.create({
             action: 'UPDATE',
             module: 'Packages',
@@ -282,23 +162,18 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
                 endpoint: `/api/packages/edit/${req.params.id}`
             }
         });
-        // --------------------------------
 
-        res.json({ status: 'ok', message: 'Package updated successfully!' });
+        res.json({ status: 'ok', message: 'Package updated successfully!', data: updatedPkg });
     } catch (err) {
         res.status(500).json({ status: 'error', error: err.message });
     }
 });
 
-// ============================================================
-// 3. ARCHIVE TOGGLE (WITH LOGGING INSERTED & ID FIX)
-// ============================================================
-// ============================================
-// ARCHIVE TOGGLE
-// ============================================
+// 3. ARCHIVE TOGGLE
 router.post('/:id/archive', async (req, res) => {
     try {
         const { userEmail, adminId } = req.body; 
+        const logUserId = getValidAdminId(adminId);
 
         const pkg = await Package.findById(req.params.id);
         if (!pkg) return res.status(404).json({ status: "error", message: "Not found" });
@@ -309,20 +184,13 @@ router.post('/:id/archive', async (req, res) => {
 
         const actionType = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE';
 
-        // Sanitize ID
-        let logUserId = null;
-        if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
-            logUserId = adminId;
-        }
-
-        // --- INSERT ACTIVITY LOG HERE ---
         await ActivityLog.create({
             action: actionType, 
             module: 'Packages',
             user: userEmail || 'System Admin',
             userId: logUserId,
             severity: 'SUCCESS',
-            description: `${actionType === 'ARCHIVE' ? 'Archived' : 'Restored'} package: ${pkg.title}`,
+            description: `${newStatus === 'Yes' ? 'Archived' : 'Restored'} package: ${pkg.title}`,
             details: {
                 recordTitle: pkg.title,
                 recordId: pkg._id,
@@ -330,7 +198,6 @@ router.post('/:id/archive', async (req, res) => {
                 endpoint: `/api/packages/${req.params.id}/archive`
             }
         });
-        // --------------------------------
 
         res.json({ status: "ok", message: `Package status updated to ${newStatus}`, isArchive: newStatus });
     } catch (err) {
@@ -338,18 +205,47 @@ router.post('/:id/archive', async (req, res) => {
     }
 });
 
-// ============================================
-// GENERIC ROUTES LAST
-// ============================================
+// 4. FETCH ALL ACTIVE
+router.get('/all', async (req, res) => {
+    try {
+        const packages = await Package.find({ isArchive: 'No' }).sort({ _id: -1 });
+        res.status(200).json({ status: 'ok', data: packages });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: 'Failed to retrieve packages.' });
+    }
+});
 
-// FETCH SINGLE PACKAGE
+// 5. FETCH ARCHIVED
+router.get('/archived-list', async (req, res) => {
+    try {
+        const archived = await Package.find({ isArchive: 'Yes' }).sort({ _id: -1 });
+        res.status(200).json({ status: 'ok', data: archived });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+// 6. INITIALIZE ARCHIVE STATUS
+router.get('/init-archive', async (req, res) => {
+    try {
+        const result = await Package.updateMany(
+            { isArchive: { $exists: false } },
+            { $set: { isArchive: 'No' } }
+        );
+        res.status(200).json({ status: 'ok', message: `Success! ${result.modifiedCount} documents updated.` });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+// 7. FETCH SINGLE PACKAGE (Generic ID routes should be last)
 router.get('/:id', async (req, res) => {
     try {
         const pkg = await Package.findById(req.params.id);
         if (!pkg) return res.status(404).json({ status: 'error', error: 'Package not found.' });
-        return res.status(200).json({ status: 'ok', data: pkg });
+        res.status(200).json({ status: 'ok', data: pkg });
     } catch (error) {
-        return res.status(500).json({ status: 'error', error: 'Failed to retrieve package data.' });
+        res.status(500).json({ status: 'error', error: 'Failed to retrieve package data.' });
     }
 });
 
