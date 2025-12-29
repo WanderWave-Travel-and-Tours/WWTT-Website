@@ -136,6 +136,19 @@ const AddTour = () => {
     formData.append("inclusions", JSON.stringify(finalIncs));
     formData.append("image", tourFile);
 
+    // =========================================================
+    // 1. KUNIN ANG USER DATA PARA SA ACTIVITY LOGS
+    // =========================================================
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+    
+    // I-handle ang ID para hindi maging string na "null"
+    const activeId = adminData.id || adminData._id || "";
+
+    formData.append("userEmail", activeUser);
+    formData.append("adminId", activeId);
+    // =========================================================
+
     // Show loading toast
     toast.info("Uploading tour package...", "Please Wait", 2000);
 
@@ -283,4 +296,4 @@ const AddTour = () => {
   );
 };
 
-export default AddTour; 
+export default AddTour;

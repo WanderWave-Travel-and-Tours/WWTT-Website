@@ -1,24 +1,51 @@
 const Image = require('../models/image');
+const ActivityLog = require('../models/ActivityLog'); // ✅ IMPORT ADDED
 const fs = require('fs');
 const path = require('path');
 
+// 1. ADD IMAGE (UPLOAD)
 const addImage = async (req, res) => {
     try {
+        // Kunin ang user data mula sa request body
+        const { title, userEmail, adminId } = req.body; 
+
         if (!req.file) {
             return res.status(400).json({ message: 'Please upload an image.' });
         }
 
         const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
-        const imageName = req.body.title || req.file.originalname;
+        const imageName = title || req.file.originalname;
 
         const newImage = new Image({
             imageName,
             imageUrl,
-            isArchive: 'No' // Default value kapag nag-add
+            isArchive: 'No' // Default value
         });
 
         await newImage.save();
-        console.log('✅ Image saved to database:', newImage);
+        console.log('✅ Image saved to database:', newImage._id);
+
+        // 👇👇👇 ACTIVITY LOG START (UPLOAD) 👇👇👇
+        try {
+            await ActivityLog.create({
+                action: 'CREATE', // Pwede ring 'UPLOAD' kung nasa enum mo na
+                module: 'Gallery', // ⚠️ Siguraduhing nasa ActivityLog Model enum ang 'Gallery'
+                user: userEmail || 'Unknown User',
+                userId: adminId || null,
+                description: `Uploaded new image to gallery: ${imageName}`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: imageName,
+                    recordId: newImage._id.toString(),
+                    method: 'POST'
+                }
+            });
+            console.log('✅ Activity Log saved for Image Upload');
+        } catch (logError) {
+            console.error('⚠️ Failed to save activity log:', logError.message);
+        }
+        // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
         res.status(201).json({ message: 'Image uploaded successfully!', image: newImage });
 
     } catch (error) {
@@ -27,6 +54,7 @@ const addImage = async (req, res) => {
     }
 };
 
+// 2. GET ALL IMAGES
 const getAllImages = async (req, res) => {
     try {
         const images = await Image.find().sort({ createdAt: -1 });
@@ -38,18 +66,15 @@ const getAllImages = async (req, res) => {
     }
 };
 
-/**
- * MODIFIED FUNCTION: archiveImage
- * Ginawa nating dynamic ang isArchive value.
- * Kapag req.body.isArchive = "No", ito ay gagana bilang RESTORE.
- * Kapag walang body (default), ito ay gagana bilang ARCHIVE ("Yes").
- */
+// 3. ARCHIVE / RESTORE IMAGE
 const archiveImage = async (req, res) => {
     try {
         const { id } = req.params;
+        // Kunin ang user data para sa logs (kailangan ipasa ng frontend)
+        const { isArchive, userEmail, adminId } = req.body; 
         
-        // Kinukuha ang value mula sa body, kung wala, default ay 'Yes'
-        const newStatus = req.body.isArchive || 'Yes';
+        // Default to 'Yes' (Archive) if not specified
+        const newStatus = isArchive || 'Yes';
         
         const updatedImage = await Image.findByIdAndUpdate(
             id, 
@@ -61,9 +86,32 @@ const archiveImage = async (req, res) => {
             return res.status(404).json({ message: 'Image not found' });
         }
 
-        // Log para malaman kung Archive o Restore ang nangyari
         const actionMessage = newStatus === 'Yes' ? 'archived' : 'restored';
+        const logAction = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE'; // Siguraduhing nasa enum ang 'RESTORE'
         console.log(`📦 Image ${actionMessage}:`, updatedImage._id);
+
+        // 👇👇👇 ACTIVITY LOG START (ARCHIVE/RESTORE) 👇👇👇
+        try {
+            if (userEmail) {
+                await ActivityLog.create({
+                    action: logAction, 
+                    module: 'Gallery',
+                    user: userEmail,
+                    userId: adminId || null,
+                    description: `${actionMessage.charAt(0).toUpperCase() + actionMessage.slice(1)} gallery image: ${updatedImage.imageName}`,
+                    severity: newStatus === 'Yes' ? 'WARNING' : 'SUCCESS',
+                    details: {
+                        recordTitle: updatedImage.imageName,
+                        recordId: updatedImage._id.toString(),
+                        method: 'PATCH'
+                    }
+                });
+                console.log(`✅ Activity Log saved for Image ${logAction}`);
+            }
+        } catch (logError) {
+            console.error('⚠️ Failed to save activity log:', logError.message);
+        }
+        // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
         res.status(200).json({ 
             message: `Image ${actionMessage} successfully`, 
@@ -75,8 +123,9 @@ const archiveImage = async (req, res) => {
     }
 };
 
+// Export functions only (HINDI router)
 module.exports = {
     addImage,
     getAllImages,
-    archiveImage // Naka-export para magamit sa imagesRoute.js
+    archiveImage
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './addpromo.css';
 import Sidebar from '../sidebar/sidebar';
-import { Upload, X } from 'lucide-react'; // Make sure lucide-react is installed
+import { Upload, X } from 'lucide-react'; // Ensure lucide-react is installed
 
 const AddPromo = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -100,7 +100,6 @@ const AddPromo = () => {
         setIsSubmitting(true);
 
         try {
-            // Gumamit ng FormData para sa file upload
             const formData = new FormData();
             formData.append('code', promoDetails.code);
             formData.append('description', promoDetails.description);
@@ -115,9 +114,16 @@ const AddPromo = () => {
                 formData.append('image', imageFile);
             }
 
+            // User Data for Logs
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+            const activeId = adminData.id || adminData._id || "";
+
+            formData.append("userEmail", activeUser);
+            formData.append("adminId", activeId);
+
             const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
-                // Do NOT set Content-Type header manually when using FormData
                 body: formData,
             });
 
@@ -200,10 +206,12 @@ const AddPromo = () => {
                                                     <img src={imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
                                                     <button 
                                                         onClick={removeImage}
+                                                        type="button"
                                                         style={{
                                                             position: 'absolute', top: '-10px', right: '-10px',
                                                             background: 'red', color: 'white', border: 'none',
-                                                            borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer'
+                                                            borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer',
+                                                            zIndex: 10
                                                         }}
                                                     >
                                                         <X size={14} />
@@ -218,7 +226,7 @@ const AddPromo = () => {
                                                         id="promo-image-upload"
                                                         style={{ display: 'none' }}
                                                     />
-                                                    <label htmlFor="promo-image-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+                                                    <label htmlFor="promo-image-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#64748b', pointerEvents: 'auto' }}>
                                                         <Upload size={24} />
                                                         <span>Click to Upload Image</span>
                                                     </label>
@@ -387,6 +395,7 @@ const AddPromo = () => {
                                     </div>
                                 </div>
 
+                                {/* BUTTONS ACTION */}
                                 <div className="promo-actions">
                                     <button 
                                         type="button" 

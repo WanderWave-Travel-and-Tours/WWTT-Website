@@ -1,11 +1,12 @@
 const Poster = require('../models/poster');
+const ActivityLog = require('../models/ActivityLog'); // IMPORT ACTIVITY LOG MODEL
 const fs = require('fs');
 const path = require('path');
 
 // Magdagdag ng bagong poster
 const addPoster = async (req, res) => {
     try {
-        const { title, description, startDate, endDate, status, isArchive } = req.body;
+        const { title, description, startDate, endDate, status, isArchive, userEmail, adminId } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'Please upload an image.' });
@@ -24,6 +25,30 @@ const addPoster = async (req, res) => {
         });
 
         await newPoster.save();
+
+        // =========================================================
+        // ADDED: CREATE ACTIVITY LOG
+        // =========================================================
+        try {
+            await ActivityLog.create({
+                action: 'CREATE',
+                module: 'Posters',
+                entity: 'Poster',
+                entityId: newPoster._id,
+                user: userEmail || 'Unknown User',
+                description: `Created new poster: ${title}`,
+                
+                // --- IDAGDAG MO ITO PARA MAGING GREEN (SUCCESS) ---
+                severity: 'SUCCESS', 
+                // -------------------------------------------------
+
+                adminId: adminId || null
+            });
+            console.log('Activity Log saved for Add Poster');
+        } catch (logError) {
+            console.error('Failed to save activity log:', logError);
+        }
+
         res.status(201).json({ message: 'Poster added successfully!', poster: newPoster });
 
     } catch (error) {
@@ -79,7 +104,6 @@ const updatePoster = async (req, res) => {
         // Kung may bagong image na inupload, palitan ang imageUrl
         if (req.file) {
             updateData.imageUrl = `uploads/${req.file.filename}`;
-            
             // Optional: Pwede mong i-delete ang old image dito kung gusto mo mag-clean up
         }
 
@@ -144,8 +168,8 @@ module.exports = {
     addPoster,
     getAllPosters,
     getActivePosters,
-    getPosterById,      // EXPORTED
-    updatePoster,       // EXPORTED
+    getPosterById,
+    updatePoster,
     deletePoster,
     updatePosterStatus
 };

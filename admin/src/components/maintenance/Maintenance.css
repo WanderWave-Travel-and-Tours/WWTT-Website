@@ -1,0 +1,135 @@
+/* Container para sa gitna */
+.maintenance-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f8fafc;
+    padding: 20px;
+}
+
+/* Card na mukhang Boarding Pass */
+.maintenance-card {
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.1);
+    width: 100%;
+    max-width: 650px;
+    display: flex;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+/* Left Side (Navy Blue) */
+.maintenance-visual {
+    background: #0f172a;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    min-width: 240px;
+    text-align: center;
+    position: relative;
+}
+
+.maintenance-bg-icon {
+    margin-bottom: 20px;
+    opacity: 0.2;
+    transform: scale(3);
+    position: absolute;
+    pointer-events: none;
+}
+
+.maintenance-visual-content {
+    position: relative;
+    z-index: 10;
+}
+
+.maintenance-visual-title {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.maintenance-visual-sub {
+    opacity: 0.7;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+/* Right Side (Content) */
+.maintenance-content {
+    padding: 40px;
+    flex: 1;
+}
+
+.maintenance-status-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    border-bottom: 2px dashed #e2e8f0;
+    padding-bottom: 20px;
+}
+
+.maintenance-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: block;
+}
+
+.maintenance-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.maintenance-value.highlight {
+    color: #f59e0b; /* Orange */
+}
+
+.maintenance-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #0f172a;
+}
+
+.maintenance-desc {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.maintenance-btn {
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: not-allowed;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    .maintenance-card {
+        flex-direction: column;
+    }
+    .maintenance-visual {
+        padding: 30px;
+        min-width: auto;
+    }
+}

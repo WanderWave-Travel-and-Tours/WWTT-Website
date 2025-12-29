@@ -140,3 +140,34 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
         justify-content: center; 
     }
 }
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error message styling */
+.act-error-message {
+    padding: 12px 20px;
+    background-color: #fee;
+    border: 1px solid #fcc;
+    border-radius: 8px;
+    color: #c33;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.act-error-message svg {
+    margin-right: 8px;
+    flex-shrink: 0;
+}

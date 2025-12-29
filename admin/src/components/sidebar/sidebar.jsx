@@ -51,6 +51,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     services: false
   });
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   useEffect(() => {
     if (isCollapsed) {
       setOpenMenus({
@@ -76,10 +78,64 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     }));
   };
 
-  const handleLogout = () => {
-    console.log('Logging out user...');
-    localStorage.removeItem('adminToken');
-    navigate('/admin');
+  // ==========================================
+  // UPDATED LOGOUT WITH ACTIVITY LOGGING
+  // ==========================================
+  const handleLogout = async () => {
+    // Ask for confirmation
+    const confirmed = window.confirm('Are you sure you want to logout?');
+    if (!confirmed) return;
+
+    setIsLoggingOut(true);
+    console.log('🚪 Starting admin logout process...');
+
+    try {
+      // Get admin data from localStorage
+      const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+      const adminToken = localStorage.getItem('adminToken');
+
+      console.log('👤 Admin data:', {
+        email: adminData.email,
+        username: adminData.username
+      });
+
+      // Call logout API to log the activity
+      const response = await fetch('http://localhost:5000/api/admin/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminToken && { 'Authorization': `Bearer ${adminToken}` })
+        },
+        body: JSON.stringify({
+          email: adminData.email || 'admin@wanderwave.com',
+          adminId: adminData.id || null
+        })
+      });
+
+      const data = await response.json();
+      console.log('📡 Logout API response:', data);
+
+      if (data.status === 'ok' || response.ok) {
+        console.log('✅ Logout logged successfully');
+      } else {
+        console.warn('⚠️ Logout API returned error, but continuing logout');
+      }
+
+    } catch (error) {
+      console.error('❌ Logout API error:', error);
+      console.log('⚠️ Continuing with local logout despite API error');
+    } finally {
+      // Always clear localStorage and redirect (even if API fails)
+      console.log('🧹 Clearing admin session data...');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminData');
+      
+      console.log('✅ Session cleared, redirecting to login...');
+      setIsLoggingOut(false);
+      
+      // Navigate to admin login page
+      navigate('/admin');
+    }
   };
 
   const isActive = (path) => location.pathname === path;
@@ -255,8 +311,20 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             </div>
           </div>
           {!isCollapsed && (
-            <button onClick={handleLogout} className="logout-btn" title="Logout">
-              <LogOut size={18} />
+            <button 
+              onClick={handleLogout} 
+              className="logout-btn" 
+              title="Logout"
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? (
+                <>
+                  <div className="logout-spinner"></div>
+                  <span className="logout-text">Logging out...</span>
+                </>
+              ) : (
+                <LogOut size={18} />
+              )}
             </button>
           )}
         </div>

@@ -8,6 +8,14 @@ const AdminSchema = new mongoose.Schema({
         required: true, 
         unique: true 
     },
+    // ✅ ADD EMAIL FIELD FOR LOGIN
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        lowercase: true,
+        trim: true
+    },
     password: { 
         type: String, 
         required: true 
@@ -23,9 +31,21 @@ const AdminSchema = new mongoose.Schema({
     businessLogo: {
         type: String,
         default: ""
+    },
+    // ✅ ADD TIMESTAMPS
+    lastLogin: {
+        type: Date,
+        default: null
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     }
+}, {
+    timestamps: true // Automatically adds createdAt and updatedAt
 });
 
+// Hash password before saving
 AdminSchema.pre('save', async function (next) {
     const admin = this;
 
@@ -42,6 +62,7 @@ AdminSchema.pre('save', async function (next) {
     }
 });
 
+// Compare password method
 AdminSchema.methods.comparePassword = function (candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
 };

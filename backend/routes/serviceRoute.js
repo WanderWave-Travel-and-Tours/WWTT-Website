@@ -1,4 +1,8 @@
 const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+
 const {
   getAllServices,
   getServicesByCategory,
@@ -9,16 +13,33 @@ const {
   getAllServicesForAdmin
 } = require('../controller/serviceController');
 
-const router = express.Router();
+// --- MULTER CONFIGURATION ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
 
+const upload = multer({ storage: storage });
+
+// --- ROUTES ---
+
+// Public Routes
 router.get('/', getAllServices);
 router.get('/category/:category', getServicesByCategory);
 router.get('/:id', getService);
 
+// Admin Routes
 router.get('/admin/all', getAllServicesForAdmin);
 
-router.post('/', createService);
-router.put('/:id', updateService);
+// Create & Update (Need upload middleware for image)
+router.post('/', upload.single('image'), createService);
+router.put('/:id', upload.single('image'), updateService);
+
+// Delete
 router.delete('/:id', deleteService);
 
 module.exports = router;

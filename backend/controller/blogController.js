@@ -1,11 +1,12 @@
 const Blog = require('../models/blog');
+const ActivityLog = require('../models/ActivityLog'); // ✅ IMPORT ADDED
 const fs = require('fs');
 const path = require('path');
 
 // 1. ADD BLOG
 const addBlog = async (req, res) => {
     try {
-        const { title, author, category, content, status, isArchive } = req.body;
+        const { title, author, category, content, status, isArchive, userEmail, adminId } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'Please upload a cover image.' });
@@ -24,6 +25,28 @@ const addBlog = async (req, res) => {
         });
 
         await newBlog.save();
+
+        // 👇👇👇 ACTIVITY LOG START (ADD) 👇👇👇
+        try {
+            await ActivityLog.create({
+                action: 'CREATE',
+                module: 'Blogs',
+                user: userEmail || 'Unknown User',
+                userId: adminId || null,
+                description: `Created new blog post: ${title}`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: title,
+                    recordId: newBlog._id.toString(),
+                    method: 'POST'
+                }
+            });
+            console.log('✅ Activity Log saved for Add Blog');
+        } catch (logError) {
+            console.error('⚠️ Failed to save activity log:', logError.message);
+        }
+        // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
         res.status(201).json({ message: 'Blog post created successfully!', blog: newBlog });
 
     } catch (error) {
@@ -63,6 +86,30 @@ const deleteBlog = async (req, res) => {
         blog.isArchive = 'Yes';
         await blog.save();
 
+        // 👇👇👇 ACTIVITY LOG START (ARCHIVE) 👇👇👇
+        try {
+            const { userEmail, adminId } = req.body; // Frontend needs to send this!
+            if (userEmail) {
+                await ActivityLog.create({
+                    action: 'ARCHIVE',
+                    module: 'Blogs',
+                    user: userEmail,
+                    userId: adminId || null,
+                    description: `Archived blog post: ${blog.title}`,
+                    severity: 'WARNING',
+                    details: {
+                        recordTitle: blog.title,
+                        recordId: blog._id.toString(),
+                        method: 'DELETE' // or PUT depending on implementation
+                    }
+                });
+                console.log('✅ Activity Log saved for Archive Blog');
+            }
+        } catch (logError) {
+            console.error('⚠️ Failed to save activity log:', logError.message);
+        }
+        // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
         res.status(200).json({ message: 'Blog post archived successfully' });
     } catch (error) {
         console.error('Error archiving blog:', error);
@@ -83,7 +130,7 @@ const getArchivedBlogs = async (req, res) => {
 // 6. UPDATE BLOG
 const updateBlog = async (req, res) => {
     try {
-        const { title, author, category, content, status, isArchive } = req.body;
+        const { title, author, category, content, status, isArchive, userEmail, adminId } = req.body;
         let updateData = { title, author, category, content, status, isArchive };
 
         if (req.file) {
@@ -101,6 +148,29 @@ const updateBlog = async (req, res) => {
             updateData, 
             { new: true }
         );
+
+        // 👇👇👇 ACTIVITY LOG START (UPDATE) 👇👇👇
+        try {
+            if (userEmail) {
+                await ActivityLog.create({
+                    action: 'UPDATE',
+                    module: 'Blogs',
+                    user: userEmail,
+                    userId: adminId || null,
+                    description: `Updated blog post: ${updatedBlog.title}`,
+                    severity: 'INFO',
+                    details: {
+                        recordTitle: updatedBlog.title,
+                        recordId: updatedBlog._id.toString(),
+                        method: 'PUT'
+                    }
+                });
+                console.log('✅ Activity Log saved for Update Blog');
+            }
+        } catch (logError) {
+            console.error('⚠️ Failed to save activity log:', logError.message);
+        }
+        // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
         res.status(200).json({ message: 'Blog updated!', blog: updatedBlog });
     } catch (error) {

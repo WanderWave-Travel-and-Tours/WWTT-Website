@@ -55,6 +55,9 @@ app.get('/', (req, res) => {
   res.send('WanderWave API is running!');
 });
 
+// ===================================================================
+// IMPORT ALL ROUTES
+// ===================================================================
 const flightRoutes = require('./routes/flightRoute');
 const packageRoutes = require('./routes/packageRoute');
 const testimonialRoutes = require('./routes/testimonialRoute');
@@ -75,14 +78,21 @@ const passportRoutes = require('./routes/passportRoute');
 const inquiryRoutes = require('./routes/inquiryRoute');
 const uploadRoutes = require('./routes/uploadRoute');
 const hotelRoutes = require('./routes/hotelRoute');
-const imagesRoutes = require('./routes/imagesRoute'); // ✅ ADD THIS LINE
+const imagesRoutes = require('./routes/imagesRoute');
 const sellerRateRoutes = require('./routes/sellerRoute');
+const activityLogRoute = require('./routes/activityLogRoute'); // ✅ SINGLE IMPORT
 
+// ===================================================================
+// ENSURE UPLOAD DIRECTORY EXISTS
+// ===================================================================
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
+// ===================================================================
+// MULTER CONFIGURATION
+// ===================================================================
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
@@ -93,11 +103,17 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// ===================================================================
+// IMPORT MODELS
+// ===================================================================
 const PackageModel = require('./models/package');
 const Booking = require('./models/booking');
 const Blog = require('./models/blog');
 const ServiceModel = require('./models/service');
 
+// ===================================================================
+// VISA FILE UPLOAD ENDPOINT
+// ===================================================================
 app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
@@ -130,6 +146,9 @@ app.post('/api/visas/upload', upload.single('file'), async (req, res) => {
     }
 });
 
+// ===================================================================
+// CENOMAR FILE UPLOAD ENDPOINT
+// ===================================================================
 app.post('/api/cenomar/upload', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
@@ -162,6 +181,9 @@ app.post('/api/cenomar/upload', upload.single('file'), async (req, res) => {
     }
 });
 
+// ===================================================================
+// SERVICE CREATE ENDPOINT
+// ===================================================================
 app.post('/api/services', upload.single('image'), async (req, res) => {
     try {
         const imageFilename = req.file ? req.file.filename : null;
@@ -212,6 +234,9 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
     }
 });
 
+// ===================================================================
+// REGISTER ALL ROUTES
+// ===================================================================
 app.use('/api/packages', packageRoutes);
 app.use('/api/flights', flightRoutes);
 app.use('/api/testimonials', testimonialRoutes);
@@ -233,10 +258,13 @@ app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/documents', require('./routes/documentRoute'));
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/hotels', hotelRoutes);
-app.use('/api/images', imagesRoutes); // ✅ ADD THIS LINE
+app.use('/api/images', imagesRoutes);
 app.use('/api/seller-rates', sellerRateRoutes);
+app.use('/api/activity-logs', activityLogRoute); // ✅ SINGLE REGISTRATION
 
-
+// ===================================================================
+// PACKAGE ADD ENDPOINT
+// ===================================================================
 app.post('/api/packages/add', upload.single('image'), async (req, res) => {
     try {
         const { 
@@ -287,6 +315,9 @@ app.post('/api/packages/add', upload.single('image'), async (req, res) => {
     }
 });
 
+// ===================================================================
+// BOOKING ENDPOINTS
+// ===================================================================
 app.post('/api/bookings', async (req, res) => {
   try {
     const bookingData = req.body;
@@ -455,11 +486,17 @@ app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
   }
 });
 
+// ===================================================================
+// BLOG ENDPOINTS
+// ===================================================================
 app.get('/api/blogs', async (req, res) => {
   const blogs = await Blog.find();
   res.json(blogs);
 });
 
+// ===================================================================
+// STATISTICS ENDPOINT
+// ===================================================================
 app.get('/api/admin/statistics', async (req, res) => {
   try {
     const confirmedBookings = await Booking.find({ status: 'confirmed' });
@@ -505,6 +542,9 @@ app.get('/api/admin/statistics', async (req, res) => {
   }
 });
 
+// ===================================================================
+// START SERVER
+// ===================================================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
