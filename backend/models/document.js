@@ -48,6 +48,10 @@ const documentSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
+  imagePublicId: {
+      type: String,
+      default: ''
+  },
   notes: {
     type: String,
     default: ''

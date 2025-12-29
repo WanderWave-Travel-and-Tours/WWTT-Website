@@ -2,6 +2,7 @@ const Image = require('../models/image');
 const ActivityLog = require('../models/ActivityLog'); // ✅ IMPORT ADDED
 const fs = require('fs');
 const path = require('path');
+const { cloudinary } = require('../config/cloudinary');
 
 // 1. ADD IMAGE (UPLOAD)
 const addImage = async (req, res) => {
@@ -13,13 +14,13 @@ const addImage = async (req, res) => {
             return res.status(400).json({ message: 'Please upload an image.' });
         }
 
-        const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
-        const imageName = title || req.file.originalname;
+        const imageName = req.body.title || req.file.originalname;
 
         const newImage = new Image({
             imageName,
-            imageUrl,
-            isArchive: 'No' // Default value
+            imageUrl: req.file.path, // Cloudinary URL
+            imagePublicId: req.file.filename,
+            isArchive: 'No'
         });
 
         await newImage.save();
@@ -66,15 +67,10 @@ const getAllImages = async (req, res) => {
     }
 };
 
-// 3. ARCHIVE / RESTORE IMAGE
 const archiveImage = async (req, res) => {
     try {
         const { id } = req.params;
-        // Kunin ang user data para sa logs (kailangan ipasa ng frontend)
-        const { isArchive, userEmail, adminId } = req.body; 
-        
-        // Default to 'Yes' (Archive) if not specified
-        const newStatus = isArchive || 'Yes';
+        const newStatus = req.body.isArchive || 'Yes';
         
         const updatedImage = await Image.findByIdAndUpdate(
             id, 

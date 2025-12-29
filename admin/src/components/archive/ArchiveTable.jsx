@@ -40,23 +40,38 @@ const ArchiveTable = ({
         }
     };
 
+    // Pinagsama ang table header para sa loading at empty states para hindi paulit-ulit
+    const TableHeader = () => (
+        <thead>
+            <tr>
+                {/* SORTABLE NO. COLUMN - Pinakaluma (1) hanggang Pinakabago */}
+                <th 
+                    style={{ width: '80px', cursor: 'pointer' }} 
+                    className="sortable-header"
+                    onClick={handleSort}
+                >
+                    <div className="sort-click-area" style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center' }}>
+                        NO.
+                        {renderSortIcon()}
+                    </div>
+                </th>
+                <th>Archive ID</th>
+                <th>Item Name</th>
+                <th>Type</th>
+                <th>Reference</th>
+                <th>Date Archived</th>
+                <th style={{ width: '120px' }}>Expires In</th>
+                <th>Status</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
+            </tr>
+        </thead>
+    );
+
     if (loading) {
         return (
             <div className="arc-table-wrapper">
                 <table className="arc-table">
-                    <thead>
-                        <tr>
-                            <th style={{ width: '80px' }}>NO.</th>
-                            <th>Archive ID</th>
-                            <th>Item Name</th>
-                            <th>Type</th>
-                            <th>Reference</th>
-                            <th>Date Archived</th>
-                            <th style={{ width: '120px' }}>Expires In</th>
-                            <th>Status</th>
-                            <th style={{ textAlign: "right" }}>Actions</th>
-                        </tr>
-                    </thead>
+                    <TableHeader />
                     <tbody>
                         <tr><td colSpan="9" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>Loading archived items...</td></tr>
                     </tbody>
@@ -69,19 +84,7 @@ const ArchiveTable = ({
         return (
             <div className="arc-table-wrapper">
                 <table className="arc-table">
-                    <thead>
-                        <tr>
-                            <th style={{ width: '80px' }}>NO.</th>
-                            <th>Archive ID</th>
-                            <th>Item Name</th>
-                            <th>Type</th>
-                            <th>Reference</th>
-                            <th>Date Archived</th>
-                            <th style={{ width: '120px' }}>Expires In</th>
-                            <th>Status</th>
-                            <th style={{ textAlign: "right" }}>Actions</th>
-                        </tr>
-                    </thead>
+                    <TableHeader />
                     <tbody>
                         <tr><td colSpan="9" style={{textAlign:'center', padding:'40px', color:'#64748b'}}>No archived items found matching filters.</td></tr>
                     </tbody>
@@ -93,33 +96,12 @@ const ArchiveTable = ({
     return (
         <div className="arc-table-wrapper">
             <table className="arc-table">
-                <thead>
-                    <tr>
-                        {/* SORTABLE NO. COLUMN */}
-                        <th 
-                            style={{ width: '80px' }} 
-                            className="sortable-header"
-                        >
-                            <div className="sort-click-area" onClick={handleSort}>
-                                NO.
-                                {renderSortIcon()}
-                            </div>
-                        </th>
-                        
-                        <th>Archive ID</th>
-                        <th>Item Name</th>
-                        <th>Type</th>
-                        <th>Reference</th>
-                        <th>Date Archived</th>
-                        <th style={{ width: '120px' }}>Expires In</th>
-                        <th>Status</th>
-                        <th style={{ textAlign: "right" }}>Actions</th>
-                    </tr>
-                </thead>
+                <TableHeader />
                 <tbody>
                     {currentArchiveItems.map((item) => (
-                        <tr key={item.id}>
-                            <td style={{ fontWeight: "700", color: '#0f172a' }}>
+                        <tr key={item.mongoId || item.id}>
+                            {/* Displaying the computed archiveNumber (Oldest = 1) */}
+                            <td style={{ fontWeight: "700", color: '#0f172a', textAlign: 'center' }}>
                                 {item.archiveNumber}
                             </td>
 
@@ -158,7 +140,6 @@ const ArchiveTable = ({
 
                             <td style={{ textAlign: "right" }}>
                                 <div className="arc-action-group">
-                                    
                                     <button 
                                         className="arc-action-btn arc-view-btn" 
                                         onClick={() => handleViewDetails(item)}
@@ -167,7 +148,6 @@ const ArchiveTable = ({
                                         View
                                     </button>
                                     
-                                    {/* ALL ITEMS CAN BE RESTORED - NO MORE STATUS CHECK */}
                                     <button 
                                         className="arc-action-btn arc-restore-text-btn"
                                         onClick={() => handleRestore(item)}

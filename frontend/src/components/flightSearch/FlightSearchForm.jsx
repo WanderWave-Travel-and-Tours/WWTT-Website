@@ -48,7 +48,8 @@ const FlightSearchForm = ({
   handleMultiCityChange,
   removeMultiCityLeg,
   addMultiCityLeg,
-  multiCityContainerRef
+  multiCityContainerRef,
+  minDate
 }) => {
   const [activeDropdown, setActiveDropdown] = useState(null); 
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -183,6 +184,8 @@ const FlightSearchForm = ({
 
     handleSearch(e);
   };
+
+  const effectiveMinDate = minDate ? parseDate(minDate) : new Date();
 
   return (
     <div className="hero-section">
@@ -379,7 +382,7 @@ const FlightSearchForm = ({
                       <DatePicker
                         selected={parseDate(oneWayData.departureDate)}
                         onChange={(date) => setOneWayData({ ...oneWayData, departureDate: formatDate(date) })}
-                        minDate={new Date()}
+                        minDate={effectiveMinDate} 
                         monthsShown={2}
                         dateFormat="EEE, MMM d"
                         placeholderText="Select Date"
@@ -401,7 +404,7 @@ const FlightSearchForm = ({
                                 startDate={parseDate(roundTripData.departureDate)}
                                 endDate={parseDate(roundTripData.returnDate)}
                                 selectsRange
-                                minDate={new Date()}
+                                minDate={effectiveMinDate}
                                 monthsShown={2}
                                 dateFormat="EEE, MMM d"
                                 placeholderText="Select Date"
@@ -551,7 +554,7 @@ const FlightSearchForm = ({
                                 <DatePicker 
                                     selected={parseDate(leg.departureDate)} 
                                     onChange={(date) => handleMultiCityChange(index, "departureDate", formatDate(date))} 
-                                    minDate={new Date()} 
+                                    minDate={effectiveMinDate}
                                     placeholderText="Select Date" 
                                     className="mc-date-input" 
                                 />

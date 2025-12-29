@@ -10,6 +10,7 @@ const {
     deletePoster, 
     updatePosterStatus 
 } = require('../controller/posterController');
+const { uploadPoster } = require('../config/cloudinary');
 
 // Configuration para sa Multer (File Uploads)
 const storage = multer.diskStorage({
@@ -48,4 +49,6 @@ router.put('/:id/status', updatePosterStatus);
 // Delete Poster
 router.delete('/:id', deletePoster);
 
+router.post('/add', uploadPoster.single('image'), addPoster);
+router.put('/update/:id', uploadPoster.single('image'), updatePoster);
 module.exports = router;

@@ -25,8 +25,8 @@ const PromoSchema = new mongoose.Schema({
         type: Date, 
         required: true 
     },
-    image: {
-        type: String, // Dito masasave ang filename ng image
+    imagePublicId: {
+        type: String,
         default: ''
     },
     isActive: { type: Boolean, default: true },

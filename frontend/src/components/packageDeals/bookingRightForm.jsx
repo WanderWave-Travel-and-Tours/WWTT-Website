@@ -5,12 +5,8 @@ import {
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
-
-// Imported Sub-Components
 import HotelRoomSelector from './hotelRoomSelector';
 import BookingFormModal from './BookingFormModal';
-
-// Imported Styles
 import './BookingRightForm.css';
 
 const BookingRightForm = ({ pkg }) => {
@@ -20,23 +16,15 @@ const BookingRightForm = ({ pkg }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); 
-  
-  // Modal States
   const [showModal, setShowModal] = useState(false);
-  
-  // Data States
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [bookingWithAirfare, setBookingWithAirfare] = useState(false);
-  
   const [selectedRoomType, setSelectedRoomType] = useState(null);
   const [hotelData, setHotelData] = useState(null);
   const [loadingHotelData, setLoadingHotelData] = useState(false);
-  
   const [passengerStep, setPassengerStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  
   const totalPassengers = quantities.adult || 1;
-  
   const isInternationalFlight = selectedFlight && 
     selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
   const requiresPassport = isInternationalFlight;
@@ -49,7 +37,6 @@ const BookingRightForm = ({ pkg }) => {
 
   const numberOfRooms = calculateRoomsNeeded();
 
-  // Check if returning from flight search with selected flight
   useEffect(() => {
     const bookingData = sessionStorage.getItem('pendingBookingData');
     console.log('Checking for pending booking data:', bookingData);
@@ -66,13 +53,10 @@ const BookingRightForm = ({ pkg }) => {
         setSelectedDate(data.selectedDate);
         setQuantities(data.quantities);
         setCurrentMonth(new Date(data.currentMonth));
-        
-        // Clear session storage
         sessionStorage.removeItem('pendingBookingData');
         
         toast.success(`✈️ Flight Added! ${data.selectedFlight.airline.name}`, { duration: 3000 });
         
-        // Open booking form modal after a short delay
         setTimeout(() => {
           setPassengerStep(1);
           setShowModal(true);
@@ -81,7 +65,6 @@ const BookingRightForm = ({ pkg }) => {
     }
   }, [pkg._id]);
 
-  // Fetch Hotel Data
   useEffect(() => {
     const fetchHotelData = async () => {
       const destination = pkg.destination || pkg.location;
@@ -174,20 +157,53 @@ const BookingRightForm = ({ pkg }) => {
 
   const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
   const totalAmount = packageTotal + airfareTotal;
-
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   const isInSelectedRange = (day) => {
     if (!selectedDate) return false;
-    const endDate = selectedDate + durationDays - 1;
-    return day >= selectedDate && day <= endDate;
+    
+    const { start, end } = getCalculatedDates();
+    const currentCheckDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    
+    currentCheckDate.setHours(0,0,0,0);
+    if(start) start.setHours(0,0,0,0);
+    if(end) end.setHours(0,0,0,0);
+
+    return currentCheckDate >= start && currentCheckDate <= end;
   };
 
-  const getEndDate = () => {
-    if (!selectedDate) return null;
-    return selectedDate + durationDays - 1;
+  const getCalculatedDates  = () => {
+    if (!selectedDate) return { start: null, end: null };
+    const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDate);
+    
+    const end = new Date(start);
+    end.setDate(start.getDate() + durationDays - 1);
+
+    return { start, end };
+  };
+
+  const formatDateRangeDisplay = () => {
+    const { start, end } = getCalculatedDates();
+    if (!start || !end) return '';
+
+    const startMonth = monthNames[start.getMonth()];
+    const endMonth = monthNames[end.getMonth()];
+    const startYear = start.getFullYear();
+    const endYear = end.getFullYear();
+    const startDay = start.getDate();
+    const endDay = end.getDate();
+
+    if (startMonth === endMonth && startYear === endYear) {
+      return `${startMonth} ${startDay} - ${endDay}, ${startYear}`;
+    }
+
+    if (startMonth !== endMonth && startYear === endYear) {
+      return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${startYear}`;
+    }
+
+    return `${startMonth} ${startDay}, ${startYear} - ${endMonth} ${endDay}, ${endYear}`;
   };
 
   const handleQuantity = (type, delta) => {
@@ -229,20 +245,25 @@ const BookingRightForm = ({ pkg }) => {
       return;
     }
 
-    // Store booking data in sessionStorage to pass to flight search
-    const departureDate = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
-    
+    const { start, end } = getCalculatedDates();
+
+    const formatDate = (date) => {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const departureDateStr = formatDate(start);
+    const returnDateStr = formatDate(end);    
+
     const bookingData = {
       packageId: pkg._id || pkg.id,
       packageName: pkg.name,
-      packageData: pkg, // Store entire package data
+      packageData: pkg, 
       selectedDate: selectedDate,
       quantities: quantities,
       currentMonth: currentMonth.toISOString(),
       destination: pkg.location || pkg.destination,
-      departureDate: departureDate,
+      departureDate: departureDateStr, 
       returnToBooking: true,
-      // Generic return path without any identifiers
       returnPath: `/packages/book`
     };
 
@@ -250,14 +271,14 @@ const BookingRightForm = ({ pkg }) => {
     
     console.log('Saving booking data with returnPath:', bookingData.returnPath);
 
-    // Navigate to flight search page
     navigate('/flights', {
       state: {
         fromBooking: true,
         packageData: {
           packageId: pkg._id || pkg.id,
           packageName: pkg.name,
-          departureDate: departureDate,
+          departureDate: departureDateStr, 
+          returnDate: returnDateStr,
           destination: pkg.location || pkg.destination,
           passengers: {
             adults: quantities.adult || 1,
@@ -291,10 +312,8 @@ const BookingRightForm = ({ pkg }) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // CRITICAL FIX: Check file size on frontend (5MB limit) and show toast
     if (file.size > 5 * 1024 * 1024) {
       toast.error('File size must be less than 5MB');
-      // Clear the file input in the UI
       event.target.value = null;
       return;
     }
@@ -331,7 +350,6 @@ const BookingRightForm = ({ pkg }) => {
     
     const currentPassengerData = passengers[passengerStep - 1];
     
-    // 1. Validate required uploads
     if (bookingWithAirfare && requiresID && !currentPassengerData.idFile) {
       toast.error('Please upload a valid ID for this passenger');
       return;
@@ -347,16 +365,19 @@ const BookingRightForm = ({ pkg }) => {
       return;
     }
 
-    // --- FINAL SUBMISSION LOGIC ---
     setLoading(true);
     
     try {
       const formData = new FormData();
-      
-      const startDateFormatted = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
-      const endDateFormatted = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(getEndDate()).padStart(2, '0')}`;
+      const { start, end } = getCalculatedDates(); 
 
-      // 2. Prepare Base Booking Data object - Embed all non-file data
+      const formatDate = (date) => {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      };
+
+      const startDateFormatted = formatDate(start);
+      const endDateFormatted = formatDate(end);
+
       const baseBookingData = {
         packageId: pkg._id,
         packageName: pkg.name,
@@ -371,8 +392,6 @@ const BookingRightForm = ({ pkg }) => {
         },
         packageTotal: packageTotal,
         includesAirfare: !!selectedFlight,
-        
-        // Flight Details Object (passes the nested price object)
         flightDetails: selectedFlight ? ({
           airline: selectedFlight.airline.name,
           flightNumber: selectedFlight.airline.flightNumber || 'N/A',
@@ -386,22 +405,17 @@ const BookingRightForm = ({ pkg }) => {
         
         airfareTotal: airfareTotal,
         totalAmount: totalAmount,
-        
-        // Primary contact info is taken from the first passenger
         primaryContact: {
           fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
           email: passengers[0].email,
         },
         
-        // Hotel/Room Details
         selectedRoomType: selectedRoomType ? selectedRoomType.type : null,
         hotelName: selectedRoomType ? selectedRoomType.hotelName : null,
         numberOfRooms: numberOfRooms,
         sellerPrice: pkg.price || 0, 
         markup: 0, 
         price: pkg.price || 0,
-        
-        // Embed the ENTIRE passengers array (for Mongoose validation)
         passengers: passengers.map(p => ({
             passengerNumber: p.passengerNumber || 1,
             firstName: p.firstName || '',
@@ -416,10 +430,8 @@ const BookingRightForm = ({ pkg }) => {
         }))
       };
       
-      // Append the entire booking data object as a JSON string
       formData.append('bookingData', JSON.stringify(baseBookingData));
 
-      // 3. Prepare ONLY the File Data
       passengers.forEach((passenger, idx) => {
         if (passenger.idFile) {
           formData.append(`idFile_${idx}`, passenger.idFile);
@@ -431,10 +443,7 @@ const BookingRightForm = ({ pkg }) => {
 
       console.log('Submitting Booking Data to backend...');
       
-      // ===========================================
-      // API CALL 1: SAVE BOOKING DATA
-      // ===========================================
-      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', formData, {
+      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -444,11 +453,7 @@ const BookingRightForm = ({ pkg }) => {
         console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
-        // ===========================================
-        // API CALL 2: CREATE PAYMENT LINK (Final Redirect)
-        // ===========================================
-        // The /create-intent route expects { bookingId: '...' } in the body
-        const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
+        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
             bookingId: bookingId
         });
         
@@ -457,12 +462,10 @@ const BookingRightForm = ({ pkg }) => {
             toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
             setShowModal(false);
             
-            // CRITICAL FIX: REDIRECT TO PAYMONGO URL
             window.location.href = checkoutUrl; 
             return;
             
         } else {
-             // If payment link creation fails, redirect to dashboard/pending page
              const redirectId = bookingResponse.data.bookingId || bookingResponse.data.data._id; 
              toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
              setTimeout(() => {
@@ -496,13 +499,11 @@ const BookingRightForm = ({ pkg }) => {
     <div className="brf-container">
       <Toaster position="top-center" />
       
-      {/* Header Section */}
       <div className="brf-header">
         <h2>Book Your Journey</h2>
         <p className="brf-subtitle">Select your preferred dates and customize your trip</p>
       </div>
 
-      {/* Calendar Section */}
       <div className="brf-calendar-wrapper">
         <div className="brf-calendar-box">
           <div className="brf-calendar-header">
@@ -522,7 +523,7 @@ const BookingRightForm = ({ pkg }) => {
               <div className="brf-date-icon">📅</div>
               <div>
                 <div style={{fontWeight:'600', color:'#1f2937'}}>
-                  {monthNames[currentMonth.getMonth()]} {selectedDate} - {getEndDate()}, {currentMonth.getFullYear()}
+                  {formatDateRangeDisplay()}
                 </div>
                 <div style={{fontSize:'0.85rem', color:'#6b7280', marginTop:'4px'}}>
                   {durationDays} days • {durationNights} {durationNights === 1 ? 'night' : 'nights'}
@@ -547,7 +548,7 @@ const BookingRightForm = ({ pkg }) => {
 
               const isStartDate = selectedDate === day;
               const isInRange = isInSelectedRange(day);
-              const isEndDate = selectedDate && day === getEndDate();
+              const isEndDate = selectedDate && day === getCalculatedDates ();
               
               return (
                 <button
@@ -569,7 +570,6 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
-      {/* Quantity Section */}
       <div className="brf-quantity-section">
         <div className="brf-quantity-item">
           <div>
@@ -609,7 +609,6 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       </div>
 
-      {/* Hotel Section */}
       {loadingHotelData && (
         <div style={{padding:'1rem', background:'#fef3c7', borderRadius:'8px', marginBottom:'1rem'}}>
           Loading hotel data...
@@ -634,7 +633,6 @@ const BookingRightForm = ({ pkg }) => {
         />
       )}
 
-      {/* Flight Summary Card */}
       {selectedFlight && (
         <div style={{
           background: '#fff7ed', border: '2px solid #fc9c1b', borderRadius: '12px',
@@ -666,7 +664,6 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       )}
 
-      {/* Footer / Buttons */}
       <div className="brf-booking-footer">
         <div className="brf-total-row">
           <span className="brf-total-label">{selectedFlight ? 'Package Total' : 'Total Amount'}</span>
@@ -712,15 +709,13 @@ const BookingRightForm = ({ pkg }) => {
         </p>
       </div>
 
-      {/* --- BOOKING FORM MODAL --- */}
-      
       <BookingFormModal 
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         pkg={pkg}
         currentMonth={currentMonth}
         selectedDate={selectedDate}
-        getEndDate={getEndDate}
+        getCalculatedDates ={getCalculatedDates }
         monthNames={monthNames}
         packageTotal={packageTotal}
         selectedFlight={selectedFlight}

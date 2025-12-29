@@ -9,12 +9,11 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Check if coming from booking page
   const isFromBooking = location.state?.fromBooking || false;
   const packageData = location.state?.packageData || null;
 
   const [searchParams, setSearchParams] = useState({
-    journeyType: "one-way",
+    journeyType: "round-trip",
     adults: prefilledPassengers?.adults?.toString() || packageData?.passengers?.adults?.toString() || "1",
     children: prefilledPassengers?.children?.toString() || packageData?.passengers?.children?.toString() || "0",
     infants: prefilledPassengers?.infants?.toString() || packageData?.passengers?.infants?.toString() || "0",
@@ -32,7 +31,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     origin: "",
     destination: "",
     departureDate: prefilledDepartureDate || packageData?.departureDate || getTomorrowDate(),
-    returnDate: getNextWeekDate(),
+    returnDate: packageData?.returnDate || getNextWeekDate(),
   });
 
   const [multiCityLegs, setMultiCityLegs] = useState([
@@ -44,13 +43,9 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchInfo, setSearchInfo] = useState(null);
-  
-  // Suggestions State
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
   const [multiCitySuggestions, setMultiCitySuggestions] = useState([]);
-  
-  // Search Terms (Visual Input)
   const [originSearchTerm, setOriginSearchTerm] = useState("");
   const [destinationSearchTerm, setDestinationSearchTerm] = useState("");
   const [multiCitySearchTerms, setMultiCitySearchTerms] = useState([
@@ -59,18 +54,14 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   ]);
   
   const [airportSearchLoading, setAirportSearchLoading] = useState(false);
-  
-  // Track which multi-city field is active { legIndex, field: 'origin'|'destination' }
   const [activeMultiCityField, setActiveMultiCityField] = useState(null);
   
-  // REFS
   const originRef = useRef(null);
   const destinationRef = useRef(null);
   const suggestionsRef = useRef(null);
   const searchTimerRef = useRef(null);
   const multiCityContainerRef = useRef(null); 
 
-  // --- HELPERS ---
   function getTomorrowDate() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -83,25 +74,29 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     return nextWeek.toISOString().split("T")[0];
   }
 
-  // Update departure dates when prefilledDepartureDate changes
   useEffect(() => {
     const depDate = prefilledDepartureDate || packageData?.departureDate;
+    const retDate = packageData?.returnDate; 
+
     if (depDate) {
       setOneWayData(prev => ({ ...prev, departureDate: depDate }));
-      setRoundTripData(prev => ({ ...prev, departureDate: depDate }));
+      setRoundTripData(prev => ({ 
+        ...prev, 
+        departureDate: depDate,
+        returnDate: retDate || prev.returnDate 
+      }));
+        
       setMultiCityLegs(prev => {
         const updated = [...prev];
         updated[0] = { ...updated[0], departureDate: depDate };
         return updated;
       });
     }
-  }, [prefilledDepartureDate, packageData?.departureDate]);
+  }, [prefilledDepartureDate, packageData?.departureDate, packageData?.returnDate]);
 
-  // Search and set destination when prefilledDestination is provided
   useEffect(() => {
     const destination = prefilledDestination || packageData?.destination;
     if (destination) {
-      // Auto-search for destination airport
       const searchDestination = async () => {
         try {
           const response = await axios.get(
@@ -114,7 +109,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
             const iataCode = airport.iata_code;
             const displayName = `${airport.city_name} (${iataCode})`;
 
-            // Set destination for all journey types
             setOneWayData(prev => ({ ...prev, destination: iataCode }));
             setRoundTripData(prev => ({ ...prev, destination: iataCode }));
             setMultiCityLegs(prev => {
@@ -123,7 +117,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
               return updated;
             });
 
-            // Set display text
             setDestinationSearchTerm(displayName);
           }
         } catch (error) {
@@ -135,7 +128,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     }
   }, [prefilledDestination, packageData?.destination]);
 
-  // --- API SEARCH ---
   const searchAirportsFromAPI = async (searchTerm, field) => {
     if (!searchTerm || searchTerm.trim().length < 2) {
       if (field === "origin") setOriginSuggestions([]);
@@ -192,7 +184,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     }
   };
 
-  // --- ONE WAY / ROUND TRIP HANDLERS ---
   const handleAirportInputChange = (field, value) => {
     if (field === "origin") {
       setOriginSearchTerm(value);
@@ -222,7 +213,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     }
   };
 
-  // --- MULTI-CITY HANDLERS ---
   const handleMultiCityAirportInputChange = (legIndex, field, value) => {
     setMultiCitySearchTerms(prev => {
       const updated = [...prev];
@@ -278,7 +268,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
       }
   };
 
-  // --- GENERAL HANDLERS ---
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (multiCityContainerRef.current && !multiCityContainerRef.current.contains(event.target)) {
@@ -307,34 +296,26 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
 
   const getTotalPassengers = () => parseInt(searchParams.adults) + parseInt(searchParams.children) + parseInt(searchParams.infants);
 
-  // --- HANDLE FLIGHT SELECTION FROM BOOKING ---
   const handleFlightSelectFromBooking = (flight) => {
-    // Get the stored booking data
     const bookingData = JSON.parse(sessionStorage.getItem('pendingBookingData') || '{}');
     
     console.log('Flight selected, booking data:', bookingData);
-    
-    // Add the selected flight to the booking data
     bookingData.selectedFlight = flight;
     sessionStorage.setItem('pendingBookingData', JSON.stringify(bookingData));
-
-    // Get the return path (where the user came from)
     const returnPath = bookingData.returnPath;
     
     console.log('Navigating back to:', returnPath);
 
-    // Navigate back to the booking page with the selected flight and package data
     navigate(returnPath, {
       state: { 
         selectedFlight: flight,
-        packageData: bookingData.packageData, // Pass the package data back
+        packageData: bookingData.packageData, 
         fromFlightSearch: true 
       },
       replace: false
     });
   };
 
-  // --- SUBMIT SEARCH ---
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -373,7 +354,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
           returnDate: roundTripData.returnDate 
         };
     } else if (searchParams.journeyType === "multi-city") {
-        // Validate Multi-City
         for (let i = 0; i < multiCityLegs.length; i++) {
             if (!multiCityLegs[i].origin || !multiCityLegs[i].destination) {
                 setError(`Please fill in origin and destination for flight ${i + 1}`); 
@@ -382,8 +362,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
             }
         }
         
-        // Multi-city will search each leg as one-way
-        // For now, we'll just search the first leg (you can enhance this later)
         searchData = {
           origin: multiCityLegs[0].origin,
           destination: multiCityLegs[0].destination,
@@ -409,8 +387,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
           departure: { ...flight.departure, displayTime: flight.departure.time },
           arrival: { ...flight.arrival, displayTime: flight.arrival.time },
           airline: { ...flight.airline, logo: flight.airline.logo || "https://images.kiwi.com/airlines/64/5J.png" },
-          
-          // Ensure Price Object is well-formed
           price: {
              ...flight.price,
              amount: parseFloat(flight.price.amount) || 0,
@@ -445,10 +421,13 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     }
   };
 
+  const today = new Date().toISOString().split("T")[0]; 
+
   return (
     <div className="flight-search-container">
       <FlightSearchForm
         searchParams={searchParams}
+        minDate={today}
         setSearchParams={setSearchParams}
         oneWayData={oneWayData}
         setOneWayData={setOneWayData}
@@ -471,8 +450,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
         disableDateEdit={!!prefilledDepartureDate || !!packageData?.departureDate}
         disableDestinationEdit={!!prefilledDestination || !!packageData?.destination}
         disablePassengerEdit={!!prefilledPassengers || !!packageData?.passengers}
-        
-        // Multi City Props
         multiCitySearchTerms={multiCitySearchTerms}
         handleMultiCityAirportInputChange={handleMultiCityAirportInputChange}
         handleMultiCityAirportFocus={handleMultiCityAirportFocus}

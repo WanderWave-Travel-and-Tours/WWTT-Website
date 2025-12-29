@@ -15,6 +15,10 @@ const imageSchema = new mongoose.Schema({
         type: String,
         enum: ['Yes', 'No'],
         default: 'No'
+    },
+    imagePublicId: {
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true

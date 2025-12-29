@@ -6,6 +6,7 @@ import './packageDeals.css';
 import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
 import toast, { Toaster } from 'react-hot-toast';
+//import { getImageUrl } from './utils/imageHelper';
 
 const LoginNoticeModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -240,7 +241,7 @@ function PackageDeals() {
             discount: 30,
             rating: 4.5,
             reviews: 100, 
-            image: pkg.image ? `http://localhost:5000/uploads/${pkg.image}` : 'https://default-image-url.jpg', 
+            image: pkg.image, 
             inclusions: pkg.inclusions || [], 
             itinerary: pkg.itinerary || [], 
             excludes: [], 
