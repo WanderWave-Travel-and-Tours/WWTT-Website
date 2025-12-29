@@ -245,8 +245,17 @@ const BookingRightForm = ({ pkg }) => {
       return;
     }
 
-    const departureDate = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
+    const { start, end } = getCalculatedDates();
+
+    const formatDate = (date) => {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    //const departureDate = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
     
+    const departureDateStr = formatDate(start); // Ito ang flight papunta (Dec 30)
+    const returnDateStr = formatDate(end);     // Ito ang flight pabalik (Jan 1)
+
     const bookingData = {
       packageId: pkg._id || pkg.id,
       packageName: pkg.name,
@@ -270,7 +279,8 @@ const BookingRightForm = ({ pkg }) => {
         packageData: {
           packageId: pkg._id || pkg.id,
           packageName: pkg.name,
-          departureDate: departureDate,
+          departureDate: departureDateStr, // Start Date
+          returnDate: returnDateStr,
           destination: pkg.location || pkg.destination,
           passengers: {
             adults: quantities.adult || 1,

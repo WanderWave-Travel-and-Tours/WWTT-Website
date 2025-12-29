@@ -154,7 +154,6 @@
   position: relative;
 }
 
-/* Orange accent bar on top */
 .search-bar-wrapper::before {
   content: '';
   position: absolute;
@@ -904,7 +903,6 @@
   position: relative;
 }
 
-/* Orange accent bar */
 .multi-city-container::before {
   content: '';
   position: absolute;
@@ -1151,6 +1149,19 @@
   background: linear-gradient(135deg, var(--navy-light), var(--navy-blue));
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(10, 32, 59, 0.4);
+}
+
+.react-datepicker__day--disabled {
+  color: #cbd5e1 !important; 
+  background-color: #f8fafc !important; 
+  cursor: not-allowed !important;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.react-datepicker__day--disabled:hover {
+  background-color: #f8fafc !important;
+  color: #cbd5e1 !important;
 }
 
 
