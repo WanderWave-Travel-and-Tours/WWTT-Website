@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './addpromo.css';
 import Sidebar from '../sidebar/sidebar';
+import { Upload, X } from 'lucide-react'; // Ensure lucide-react is installed
 
 const AddPromo = () => {
-    // --- SIDEBAR LOGIC START ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    // --- SIDEBAR LOGIC END ---
 
     const [promoDetails, setPromoDetails] = useState({
         code: '',
@@ -21,6 +20,10 @@ const AddPromo = () => {
         durationType: 'Weekly',
         startDate: ''
     });
+
+    // Image State
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOtherCategory, setIsOtherCategory] = useState(false);
@@ -64,7 +67,6 @@ const AddPromo = () => {
 
     const handleCategorySelect = (e) => {
         const value = e.target.value;
-        
         if (value === 'Other') {
             setIsOtherCategory(true);
             setPromoDetails(prev => ({ ...prev, category: '' }));
@@ -72,6 +74,20 @@ const AddPromo = () => {
             setIsOtherCategory(false);
             setPromoDetails(prev => ({ ...prev, category: value }));
         }
+    };
+
+    // Handle Image Selection
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
     };
 
     const handleSubmit = async () => {
@@ -84,12 +100,31 @@ const AddPromo = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
+            const formData = new FormData();
+            formData.append('code', promoDetails.code);
+            formData.append('description', promoDetails.description);
+            formData.append('category', promoDetails.category);
+            formData.append('discountType', promoDetails.discountType);
+            formData.append('discountValue', promoDetails.discountValue);
+            formData.append('durationType', promoDetails.durationType);
+            formData.append('startDate', promoDetails.startDate);
+            formData.append('validUntil', promoDetails.validUntil);
+            
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            // User Data for Logs
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+            const activeId = adminData.id || adminData._id || "";
+
+            formData.append("userEmail", activeUser);
+            formData.append("adminId", activeId);
+
+            const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(promoDetails),
+                body: formData,
             });
 
             const data = await response.json();
@@ -98,6 +133,7 @@ const AddPromo = () => {
                 alert(`Promo Code ${promoDetails.code} added successfully!`);
                 console.log('Saved Promo:', data);
 
+                // Reset Form
                 setPromoDetails({
                     code: '',
                     discount: '',
@@ -109,13 +145,15 @@ const AddPromo = () => {
                     durationType: 'Weekly',
                     startDate: ''
                 });
+                setImageFile(null);
+                setImagePreview(null);
                 setIsOtherCategory(false);
             } else {
                 alert(`Error adding promo: ${data.message || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Network Error:', error);
-            alert('Failed to connect to the server. Please check if your backend is running.');
+            alert('Failed to connect to the server.');
         } finally {
             setIsSubmitting(false);
         }
@@ -133,6 +171,8 @@ const AddPromo = () => {
             durationType: 'Weekly',
             startDate: ''
         });
+        setImageFile(null);
+        setImagePreview(null);
         setIsOtherCategory(false);
     };
 
@@ -156,6 +196,45 @@ const AddPromo = () => {
                             <section className="promo-section">
                                 <h2 className="promo-section-title">PROMO DETAILS</h2>
                                 <div className="promo-fields">
+                                    
+                                    {/* IMAGE UPLOAD FIELD */}
+                                    <div className="promo-field promo-field--full">
+                                        <label>Promo Image (Optional)</label>
+                                        <div style={{ border: '2px dashed #e2e8f0', borderRadius: '8px', padding: '20px', textAlign: 'center', background: '#f8fafc' }}>
+                                            {imagePreview ? (
+                                                <div style={{ position: 'relative', display: 'inline-block' }}>
+                                                    <img src={imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                                                    <button 
+                                                        onClick={removeImage}
+                                                        type="button"
+                                                        style={{
+                                                            position: 'absolute', top: '-10px', right: '-10px',
+                                                            background: 'red', color: 'white', border: 'none',
+                                                            borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer',
+                                                            zIndex: 10
+                                                        }}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        onChange={handleImageChange}
+                                                        id="promo-image-upload"
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    <label htmlFor="promo-image-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#64748b', pointerEvents: 'auto' }}>
+                                                        <Upload size={24} />
+                                                        <span>Click to Upload Image</span>
+                                                    </label>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     <div className="promo-field promo-field--full">
                                         <label>Promo Code Name</label>
                                         <input
@@ -264,9 +343,6 @@ const AddPromo = () => {
                                             readOnly
                                             style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                                         />
-                                        <small style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                                            Automatically calculated based on Duration Type and Start Date
-                                        </small>
                                     </div>
                                 </div>
                             </section>
@@ -275,8 +351,16 @@ const AddPromo = () => {
                         <aside className="promo-right">
                             <div className="promo-preview">
                                 <span className="promo-preview-label">PREVIEW</span>
+                                {/* Preview Card */}
                                 <div className="promo-card">
-                                    <div className="promo-card-header">
+                                    {/* Image Preview inside card if available */}
+                                    {imagePreview && (
+                                        <div style={{ height: '140px', overflow: 'hidden' }}>
+                                            <img src={imagePreview} alt="Promo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </div>
+                                    )}
+                                    
+                                    <div className="promo-card-header" style={imagePreview ? { paddingTop: '10px', paddingBottom: '10px' } : {}}>
                                         <div className="promo-card-icon">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" strokeLinecap="round" strokeLinejoin="round"/>
@@ -304,12 +388,6 @@ const AddPromo = () => {
                                             {promoDetails.description || 'Promo description will appear here'}
                                         </p>
                                         <div className="promo-card-validity">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                                <line x1="16" y1="2" x2="16" y2="6"/>
-                                                <line x1="8" y1="2" x2="8" y2="6"/>
-                                                <line x1="3" y1="10" x2="21" y2="10"/>
-                                            </svg>
                                             <span>
                                                 Valid: {promoDetails.startDate || '--'} to {promoDetails.validUntil || '--'}
                                             </span>
@@ -317,42 +395,25 @@ const AddPromo = () => {
                                     </div>
                                 </div>
 
-                                <div className="promo-stats">
-                                    <div className="promo-stat">
-                                        <strong>{promoDetails.code ? '1' : '0'}</strong>
-                                        <span>Code</span>
-                                    </div>
-                                    <div className="promo-stat">
-                                        <strong>
-                                            {promoDetails.discountValue || '0'}
-                                            {promoDetails.discountType === 'Percentage' ? '%' : '₱'}
-                                        </strong>
-                                        <span>Discount</span>
-                                    </div>
-                                    <div className="promo-stat">
-                                        <strong>{promoDetails.durationType || 'Weekly'}</strong>
-                                        <span>Duration</span>
-                                    </div>
+                                {/* BUTTONS ACTION */}
+                                <div className="promo-actions">
+                                    <button 
+                                        type="button" 
+                                        className="promo-btn promo-btn--cancel" 
+                                        onClick={handleCancel}
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className="promo-btn promo-btn--submit"
+                                        onClick={handleSubmit}
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Creating...' : 'Create'}
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div className="promo-actions">
-                                <button 
-                                    type="button" 
-                                    className="promo-btn promo-btn--cancel" 
-                                    onClick={handleCancel}
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    type="button" 
-                                    className="promo-btn promo-btn--submit"
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Creating...' : 'Create'}
-                                </button>
                             </div>
                         </aside>
                     </div>

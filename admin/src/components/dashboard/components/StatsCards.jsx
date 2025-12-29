@@ -1,8 +1,9 @@
 import React from "react";
 import { 
-  Plane, FileText, DollarSign, Package, 
+  Plane, FileText, Package, 
   Map, Tag, MessageSquare, Users, 
-  ArrowUp, AlertCircle, Briefcase, CheckCircle
+  ArrowUp, AlertCircle, Briefcase, CheckCircle,
+  PhilippinePeso 
 } from "lucide-react";
 import "./StatsCards.css";
 
@@ -11,7 +12,7 @@ const StatsCards = ({ stats }) => {
 
   const statsData = [
     {
-      icon: DollarSign,
+      icon: PhilippinePeso,
       color: "green",
       label: "Combined Revenue",
       value: `₱${(safeStats.combinedTotalRevenue / 1000000).toFixed(2)}M`,

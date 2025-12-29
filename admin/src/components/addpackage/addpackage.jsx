@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../sidebar/sidebar"; // Ensure this path is correct
+import Sidebar from "../sidebar/sidebar"; 
 import "./addpackage.css";
 
-// Import the sub-components
+// Import sub-components
 import BasicInfo from "./BasicInfo";
 import ImageUpload from "./ImageUpload";
 import PricingCalculator from "./PricingCalculator";
@@ -12,19 +12,19 @@ import ItineraryBuilder from "./ItineraryBuilder";
 import PackagePreview from "./PackagePreview";
 
 const AddPackage = () => {
-    // --- SIDEBAR TOGGLE LOGIC ---
+    // --- SIDEBAR TOGGLE ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // --- STATE MANAGEMENT ---
+    // --- STATE ---
     const [title, setTitle] = useState("");
     const [destination, setDestination] = useState("");
     const [supplierRate, setSupplierRate] = useState("");
     const [markupValue, setMarkupValue] = useState("");
     const [markupType, setMarkupType] = useState("peso");
-    const [price, setPrice] = useState(""); // Calculated total price
+    const [price, setPrice] = useState("");
     const [duration, setDuration] = useState("");
     const [category, setCategory] = useState("Local Tour");
     const [file, setFile] = useState(null);
@@ -72,15 +72,11 @@ const AddPackage = () => {
         const newType = markupType === "percentage" ? "peso" : "percentage";
         setMarkupType(newType);
         setMarkupValue("");
-        
-        if (supplierRate) {
-            setPrice(parseFloat(supplierRate).toFixed(2));
-        } else {
-            setPrice("");
-        }
+        if (supplierRate) setPrice(parseFloat(supplierRate).toFixed(2));
+        else setPrice("");
     };
 
-    // --- IMAGE HANDLERS ---
+    // --- IMAGE & PASTE HANDLERS ---
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
         if (selected) {
@@ -99,7 +95,6 @@ const AddPackage = () => {
     const handlePaste = (e) => {
         e.preventDefault();
         const items = e.clipboardData?.items;
-
         if (items) {
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf("image") !== -1) {
@@ -117,117 +112,56 @@ const AddPackage = () => {
 
     useEffect(() => {
         const handleGlobalPaste = (e) => {
-            if (isPasteActive) {
-                handlePaste(e);
-            }
+            if (isPasteActive) handlePaste(e);
         };
-
         document.addEventListener("paste", handleGlobalPaste);
-
-        return () => {
-            document.removeEventListener("paste", handleGlobalPaste);
-        };
+        return () => document.removeEventListener("paste", handleGlobalPaste);
     }, [isPasteActive]);
 
-    const activatePasteArea = () => {
-        setIsPasteActive(true);
-    };
+    const activatePasteArea = () => setIsPasteActive(true);
 
-    // --- INCLUSIONS HANDLERS ---
+    // --- LIST HANDLERS ---
     const addInclusion = () => setInclusions([...inclusions, ""]);
-    const removeInclusion = (i) =>
-        setInclusions(inclusions.filter((_, idx) => idx !== i));
-    const handleIncChange = (i, val) =>
-        setInclusions(inclusions.map((item, idx) => (idx === i ? val : item)));
+    const removeInclusion = (i) => setInclusions(inclusions.filter((_, idx) => idx !== i));
+    const handleIncChange = (i, val) => setInclusions(inclusions.map((item, idx) => (idx === i ? val : item)));
 
-    // --- ITINERARY HANDLERS ---
-    const addDay = () =>
-        setItinerary([
-            ...itinerary,
-            { day: itinerary.length + 1, title: "", activities: [""] },
-        ]);
-
+    const addDay = () => setItinerary([...itinerary, { day: itinerary.length + 1, title: "", activities: [""] }]);
+    
     const removeDay = (dayIndex) => {
-        setItinerary(
-            itinerary
-                .filter((_, index) => index !== dayIndex)
-                .map((day, index) => {
-                    const baseTitle = day.title.split(": ").slice(1).join(": ") || "";
-                    return {
-                        ...day,
-                        day: index + 1,
-                        title: baseTitle ? `Day ${index + 1}: ${baseTitle}` : "",
-                    };
-                })
-        );
+        setItinerary(itinerary.filter((_, index) => index !== dayIndex).map((day, index) => {
+            const baseTitle = day.title.split(": ").slice(1).join(": ") || "";
+            return { ...day, day: index + 1, title: baseTitle ? `Day ${index + 1}: ${baseTitle}` : "" };
+        }));
     };
     
     const handleDayTitle = (dayIndex, value) => {
         const trimmedValue = value.trim();
         const newTitle = trimmedValue ? `Day ${dayIndex + 1}: ${trimmedValue}` : "";
-        setItinerary(
-            itinerary.map((day, index) =>
-                index === dayIndex ? { ...day, title: newTitle } : day
-            )
-        );
+        setItinerary(itinerary.map((day, index) => index === dayIndex ? { ...day, title: newTitle } : day));
     };
 
-    const addAct = (i) =>
-        setItinerary(
-            itinerary.map((d, idx) =>
-                idx === i ? { ...d, activities: [...d.activities, ""] } : d
-            )
-        );
-    const removeAct = (di, ai) =>
-        setItinerary(
-            itinerary.map((d, idx) =>
-                idx === di
-                    ? { ...d, activities: d.activities.filter((_, x) => x !== ai) }
-                    : d
-            )
-        );
-    const handleAct = (di, ai, val) =>
-        setItinerary(
-            itinerary.map((d, idx) =>
-                idx === di
-                    ? {
-                          ...d,
-                          activities: d.activities.map((a, x) => (x === ai ? val : a)),
-                      }
-                    : d
-            )
-        );
+    const addAct = (i) => setItinerary(itinerary.map((d, idx) => idx === i ? { ...d, activities: [...d.activities, ""] } : d));
+    const removeAct = (di, ai) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.filter((_, x) => x !== ai) } : d));
+    const handleAct = (di, ai, val) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.map((a, x) => (x === ai ? val : a)) } : d));
 
     // --- SUBMIT HANDLER ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        const processedInclusions = inclusions.filter(
-            (item) => item.trim().length > 0
-        );
+        const processedInclusions = inclusions.filter(item => item.trim().length > 0);
         
-        // ✅ FIX: Allow days even without activities, just clean the title properly
         const cleanedItinerary = itinerary.map((day, index) => {
-            // Extract the title without the "Day N: " prefix
             const titleWithoutPrefix = day.title.replace(/^Day \d+:\s*/, "").trim();
-            
             return {
-                day: index + 1, // Ensure sequential day numbers
-                title: titleWithoutPrefix || `Day ${index + 1}`, // Fallback to "Day N" if empty
+                day: index + 1, 
+                title: titleWithoutPrefix || `Day ${index + 1}`,
                 activities: day.activities.filter((act) => act.trim() !== "")
             };
         });
 
         const supplierRateNum = parseFloat(supplierRate) || 0;
         const markupValueNum = parseFloat(markupValue) || 0;
-        
-        let markupInPeso = 0;
-        if (markupType === "percentage") {
-            markupInPeso = (supplierRateNum * markupValueNum) / 100;
-        } else {
-            markupInPeso = markupValueNum;
-        }
-        
+        let markupInPeso = markupType === "percentage" ? (supplierRateNum * markupValueNum) / 100 : markupValueNum;
         markupInPeso = Math.round(markupInPeso * 100) / 100;
 
         const formData = new FormData();
@@ -236,12 +170,26 @@ const AddPackage = () => {
         formData.append("sellerPrice", supplierRateNum.toString());
         formData.append("markup", markupInPeso.toString());
         formData.append("duration", duration);
-        
-        const categoryValue = category === "Local Tour" ? "Local" : "International";
-        formData.append("category", categoryValue);
-        
+        formData.append("category", category === "Local Tour" ? "Local" : "International");
         formData.append("inclusions", JSON.stringify(processedInclusions));
         formData.append("itinerary", JSON.stringify(cleanedItinerary));
+
+        // =========================================================
+        // USER DATA HANDLING (GET USER INFO PARA SA LOGS)
+        // =========================================================
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log("👤 Admin Data Found:", adminData); 
+
+        // Check kung email, username, or user ang key
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        
+        // IMPORTANT: Kapag null, wag na nating ipilit i-append na null value para di maging string na "null"
+        // Pero dahil string based ang FormData, haandle natin to sa backend
+        const activeId = adminData.id || adminData._id || "";
+
+        formData.append("userEmail", activeUser);
+        formData.append("adminId", activeId); 
+        // =========================================================
 
         if (file) {
             formData.append("image", file);
@@ -251,22 +199,23 @@ const AddPackage = () => {
         }
 
         try {
-            const response = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/add", {
+            const response = await fetch("http://localhost:5000/api/packages/add", {
                 method: "POST",
                 body: formData,
+                headers: {
+                    ...(localStorage.getItem('adminToken') && { 
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}` 
+                    })
+                }
             });
             const data = await response.json();
+            
             if (response.ok) {
                 alert("✅ Package Added Successfully!");
-                setTitle("");
-                setDestination("");
-                setSupplierRate("");
-                setMarkupValue("");
-                setPrice("");
-                setDuration("");
-                setCategory("Local Tour");
-                setFile(null);
-                setPreviewUrl(null);
+                // Reset Form
+                setTitle(""); setDestination(""); setSupplierRate("");
+                setMarkupValue(""); setPrice(""); setDuration("");
+                setCategory("Local Tour"); setFile(null); setPreviewUrl(null);
                 setInclusions([""]);
                 setItinerary([{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
                 setMarkupType("peso");
@@ -282,21 +231,15 @@ const AddPackage = () => {
 
     return (
         <div className="apkg-page">
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             <main className={`apkg-main ${isSidebarCollapsed ? 'collapsed-main' : ''}`}>
                 <div className="apkg-container">
                     <header className="apkg-header">
                         <div className="apkg-header-content">
                             <h1 className="apkg-title">NEW PACKAGE</h1>
-                            <p className="apkg-subtitle">
-                                Fill in the details below to create a new tour package
-                            </p>
+                            <p className="apkg-subtitle">Fill in the details below to create a new tour package</p>
                         </div>
                     </header>
-
                     <form onSubmit={handleSubmit} className="apkg-form">
                         <div className="apkg-grid">
                             <div className="apkg-left">

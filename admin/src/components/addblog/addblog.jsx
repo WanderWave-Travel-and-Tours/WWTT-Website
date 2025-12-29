@@ -13,7 +13,7 @@ const AddBlog = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
     
-    // --- STATE MANAGEMENT (Original Variables Preserved) ---
+    // --- STATE MANAGEMENT ---
     const [blogDetails, setBlogDetails] = useState({
         title: '',
         author: '',
@@ -26,7 +26,7 @@ const AddBlog = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com'; 
+    const API_BASE_URL = 'http://localhost:5000'; 
 
     useEffect(() => {
         return () => {
@@ -79,6 +79,23 @@ const AddBlog = () => {
             formData.append('content', blogDetails.content);
             formData.append('status', blogDetails.status);
             formData.append('image', imageFile); 
+
+            // =========================================================
+            // 👇 ADDED: KUNIN ANG USER DATA PARA SA ACTIVITY LOGS 👇
+            // =========================================================
+            try {
+                const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+                const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+                const activeId = adminData.id || adminData._id || "";
+
+                formData.append("userEmail", activeUser);
+                formData.append("adminId", activeId);
+                
+                console.log("Submitting Blog by:", activeUser); // Debug log
+            } catch (err) {
+                console.error("Error parsing admin data:", err);
+            }
+            // =========================================================
 
             const response = await fetch(`${API_BASE_URL}/api/blogs/add`, {
                 method: 'POST',

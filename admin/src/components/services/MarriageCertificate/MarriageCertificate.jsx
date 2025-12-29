@@ -1,12 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import Sidebar from '../../sidebar/sidebar';
-import { Plus, Heart, Clock, Truck, AlertOctagon, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import Maintenance from '../../maintenance/Maintenance'; // Import Maintenance Component
+import { Plus, Heart, Clock, Truck, AlertOctagon, ChevronLeft, ChevronRight, Search, Eye, Archive } from 'lucide-react';
+import { MarriageModal } from './MarriageModals';
+import { MarriageApplicationModal } from './MarriageApplicationModal';
 import './MarriageCertificate.css';
+
+// Generic Images for Stats
+const MC_STAT_IMAGES = {
+    REQUESTS: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&q=80&w=1000',
+    PROCESSING: 'https://images.unsplash.com/photo-1629230538186-04285df64947?auto=format&fit=crop&q=80&w=1000',
+    DELIVERED: 'https://images.unsplash.com/photo-1621623543949-00f70a531d05?auto=format&fit=crop&q=80&w=1000',
+    UNCLAIMED: 'https://images.unsplash.com/photo-1518135714426-c18f5d db6f4d?auto=format&fit=crop&q=80&w=1000'
+};
 
 const ITEMS_PER_PAGE = 10;
 
-// Expanded mock data for demonstration purposes
-const allRequests = [
+// Mock Data
+const initialRequests = [
     { id: 'MC-101', husband: 'Dingdong Dantes', wife: 'Marian Rivera', dateMarried: 'Dec 30, 2014', copies: 2, status: 'Completed' },
     { id: 'MC-102', husband: 'Richard Gutierrez', wife: 'Sarah Lahbati', dateMarried: 'Mar 14, 2020', copies: 1, status: 'Pending' },
     { id: 'MC-103', husband: 'Drew Arellano', wife: 'Iya Villania', dateMarried: 'Jan 31, 2014', copies: 3, status: 'Completed' },
@@ -16,228 +27,246 @@ const allRequests = [
     { id: 'MC-107', husband: 'Ogie Alcasid', wife: 'Regine Velasquez', dateMarried: 'Dec 22, 2010', copies: 2, status: 'Completed' },
     { id: 'MC-108', husband: 'Vhong Navarro', wife: 'Tanya Bautista', dateMarried: 'Nov 28, 2019', copies: 1, status: 'Completed' },
     { id: 'MC-109', husband: 'Robin Padilla', wife: 'Mariel Rodriguez', dateMarried: 'Aug 19, 2010', copies: 3, status: 'Pending' },
-    { id: 'MC-110', husband: 'Piolo Pascual', wife: 'Shaina Magdayao', dateMarried: 'Feb 14, 2022', copies: 1, status: 'Processing' }, // End of Page 1 (10 items)
-
+    { id: 'MC-110', husband: 'Piolo Pascual', wife: 'Shaina Magdayao', dateMarried: 'Feb 14, 2022', copies: 1, status: 'Processing' },
     { id: 'MC-111', husband: 'John Lloyd Cruz', wife: 'Ellen Adarna', dateMarried: 'Apr 04, 2018', copies: 2, status: 'Completed' },
-    { id: 'MC-112', husband: 'Coco Martin', wife: 'Julia Montes', dateMarried: 'May 05, 2021', copies: 1, status: 'Pending' },
-    { id: 'MC-113', husband: 'Alden Richards', wife: 'Maine Mendoza', dateMarried: 'Dec 12, 2020', copies: 1, status: 'Completed' },
-    { id: 'MC-114', husband: 'Daniel Padilla', wife: 'Kathryn Bernardo', dateMarried: 'Jun 11, 2023', copies: 2, status: 'Completed' },
-    { id: 'MC-115', husband: 'Jericho Rosales', wife: 'Kim Jones', dateMarried: 'May 01, 2014', copies: 1, status: 'Unclaimed' },
-    { id: 'MC-116', husband: 'Sam Milby', wife: 'Catriona Gray', dateMarried: 'Jan 28, 2024', copies: 3, status: 'Processing' },
-    { id: 'MC-117', husband: 'Gerald Anderson', wife: 'Julia Barretto', dateMarried: 'Aug 20, 2022', copies: 1, status: 'Completed' },
-    { id: 'MC-118', husband: 'Rayver Cruz', wife: 'Julie Anne San Jose', dateMarried: 'Oct 10, 2023', copies: 2, status: 'Pending' },
-    { id: 'MC-119', husband: 'Matteo Guidicelli', wife: 'Sarah Geronimo', dateMarried: 'Feb 20, 2020', copies: 1, status: 'Completed' },
-    { id: 'MC-120', husband: 'Billy Crawford', wife: 'Coleen Garcia', dateMarried: 'Apr 20, 2018', copies: 2, status: 'Processing' }, // End of Page 2 (20 items)
-    
-    { id: 'MC-121', husband: 'Vico Sotto', wife: 'Robi Domingo', dateMarried: 'Dec 25, 2024', copies: 1, status: 'Pending' },
-    { id: 'MC-122', husband: 'Bamboo Mañalac', wife: 'Lea Salonga', dateMarried: 'Feb 02, 2025', copies: 2, status: 'Unclaimed' },
-    { id: 'MC-123', husband: 'Apl.de.ap', wife: 'Nicole Scherzinger', dateMarried: 'Mar 03, 2025', copies: 1, status: 'Completed' },
-    { id: 'MC-124', husband: 'Ben&Ben', wife: 'Moira Dela Torre', dateMarried: 'Apr 04, 2025', copies: 3, status: 'Processing' },
-    { id: 'MC-125', husband: 'Silent Sanctuary', wife: 'Callalily', dateMarried: 'May 05, 2025', copies: 2, status: 'Completed' }, // End of all items (25 items)
 ];
 
-
 const MarriageCertificate = () => {
+    // --- MAINTENANCE MODE TOGGLE ---
+    // Change this to 'false' to show the actual system
+    const MAINTENANCE_MODE = true; 
+
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [requests, setRequests] = useState(initialRequests);
     const [currentPage, setCurrentPage] = useState(1);
-    // New state for Search and Filter
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeFilter, setActiveFilter] = useState('All'); // 'All', 'Completed', 'Pending', etc.
+    const [filterStatus, setFilterStatus] = useState('All');
 
-    // 1. Filtering and Searching Logic
+    // Modals
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [isAppModalOpen, setIsAppModalOpen] = useState(false);
+
+    // Filter Logic
     const filteredRequests = useMemo(() => {
-        let results = allRequests;
-        const lowerSearchTerm = searchTerm.toLowerCase();
-
-        // Filter by Status
-        if (activeFilter !== 'All') {
-            results = results.filter(req => req.status === activeFilter);
+        let list = requests;
+        if (filterStatus !== 'All') {
+            list = list.filter(r => r.status === filterStatus);
         }
-
-        // Search by Name or ID
-        if (lowerSearchTerm) {
-            results = results.filter(req => 
-                req.id.toLowerCase().includes(lowerSearchTerm) ||
-                req.husband.toLowerCase().includes(lowerSearchTerm) ||
-                req.wife.toLowerCase().includes(lowerSearchTerm)
+        if (searchTerm.trim()) {
+            const search = searchTerm.toLowerCase();
+            list = list.filter(r => 
+                r.husband.toLowerCase().includes(search) ||
+                r.wife.toLowerCase().includes(search) ||
+                r.id.toLowerCase().includes(search)
             );
         }
+        return list;
+    }, [requests, filterStatus, searchTerm]);
 
-        // Reset page to 1 after filtering/searching
-        if (currentPage !== 1 && results.length <= (currentPage - 1) * ITEMS_PER_PAGE) {
-            setCurrentPage(1);
-        }
-
-        return results;
-    }, [searchTerm, activeFilter, currentPage]);
-    
-    // Extract unique statuses for the filter buttons (including 'All')
-    const uniqueStatuses = ['All', ...new Set(allRequests.map(req => req.status))];
-
-    // 2. Pagination Logic
-    const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    const currentRequests = filteredRequests.slice(startIndex, endIndex);
-
-    const changePage = (pageNumber) => {
-        if (pageNumber > 0 && pageNumber <= totalPages) {
-            setCurrentPage(pageNumber);
-        }
-    };
-    
-    // Helper function to generate page numbers
-    const getPageNumbers = () => {
-        const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
-            pages.push(i);
-        }
-        return pages;
-    };
-
+    // Stats Logic
     const stats = [
-        { label: 'Requests', value: '150', icon: <Heart size={24}/> }, // Assuming 150 total requests
-        { label: 'Processing', value: '12', icon: <Clock size={24}/> },
-        { label: 'Delivered', value: '135', icon: <Truck size={24}/> },
-        { label: 'Unclaimed', value: '3', icon: <AlertOctagon size={24}/> },
+        { label: 'Total Requests', value: requests.length, icon: <Heart size={24}/>, image: MC_STAT_IMAGES.REQUESTS },
+        { label: 'Processing', value: requests.filter(r => r.status === 'Processing').length, icon: <Clock size={24}/>, image: MC_STAT_IMAGES.PROCESSING },
+        { label: 'Completed', value: requests.filter(r => r.status === 'Completed').length, icon: <Truck size={24}/>, image: MC_STAT_IMAGES.DELIVERED },
+        { label: 'Unclaimed', value: requests.filter(r => r.status === 'Unclaimed').length, icon: <AlertOctagon size={24}/>, image: MC_STAT_IMAGES.UNCLAIMED },
     ];
 
-    // Helper to get status for dynamic class
-    const getStatusClass = (status) => status.toLowerCase().replace(' ', '-');
+    // Pagination
+    const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const currentRequests = filteredRequests.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
+    const handleViewRequest = (req) => {
+        setSelectedRequest(req);
+        setIsDetailsModalOpen(true);
+    };
+
+    const handleArchiveRequest = (id) => {
+        if(window.confirm("Are you sure you want to archive this request?")) {
+            setRequests(requests.filter(r => r.id !== id));
+        }
+    };
+
+    const handleStatusUpdate = (id, newStatus) => {
+        setRequests(requests.map(r => r.id === id ? {...r, status: newStatus} : r));
+        if (selectedRequest && selectedRequest.id === id) {
+            setSelectedRequest({...selectedRequest, status: newStatus});
+        }
+        alert(`Status updated to ${newStatus}`);
+    };
+
+    const handleAddRequest = (newReq) => {
+        setRequests([newReq, ...requests]);
+    };
+
+    const getStatusBadgeClass = (status) => {
+        switch(status.toLowerCase()) {
+            case 'completed': return 'mc-badge-completed';
+            case 'pending': return 'mc-badge-pending';
+            case 'processing': return 'mc-badge-processing';
+            case 'unclaimed': return 'mc-badge-unclaimed';
+            default: return 'mc-badge-pending';
+        }
+    };
+
+    const uniqueStatuses = ['All', ...new Set(requests.map(r => r.status))];
+
+    // --- RENDER LOGIC ---
+
+    // 1. KUNG NAKA MAINTENANCE MODE
+    if (MAINTENANCE_MODE) {
+        return (
+            <div className="mc-page">
+                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
+                <main className={`mc-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
+                    <Maintenance />
+                </main>
+            </div>
+        );
+    }
+
+    // 2. KUNG LIVE NA ANG SYSTEM (Normal View)
     return (
-        <div className="marriage-page">
+        <div className="mc-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
-            <main className={`marriage-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
-                <div className="marriage-container">
-                    <div className="marriage-header">
-                        <div className="marriage-title">
+            
+            <main className={`mc-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
+                <div className="mc-container">
+                    <div className="mc-header">
+                        <div className="mc-title">
                             <h1>Marriage Certificate</h1>
                             <p>PSA Authenticated Marriage Certificate Requests</p>
                         </div>
-                        <button className="marriage-btn-add"><Plus size={18} style={{marginRight:'8px'}}/> New Request</button>
+                        <div style={{display:'flex', gap:'12px'}}>
+                            <button className="mc-btn-add mc-btn-dark" onClick={() => setIsAppModalOpen(true)}>
+                                <Plus size={18}/> New Request
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="marriage-stats-grid">
+                    <div className="mc-stats-grid">
                         {stats.map((s, i) => (
-                            <div className="marriage-card" key={i}>
-                                <div><h2>{s.value}</h2><span>{s.label}</span></div>
-                                <div className="marriage-card-icon">{s.icon}</div>
+                            <div className="mc-stat-card" key={i} style={{backgroundImage: `url(${s.image})`}}>
+                                <div className="mc-stat-card-content">
+                                    <h2>{s.value}</h2>
+                                    <span>{s.label}</span>
+                                </div>
+                                <div className="mc-stat-card-icon">{s.icon}</div>
                             </div>
                         ))}
                     </div>
-                    
-                    {/* --- NEW SEARCH AND FILTER CARD --- */}
-                    <div className="search-filter-card">
-                        <div className="search-filter-wrapper">
-                            {/* Search Box */}
-                            <div className="search-box">
-                                <Search size={20} className="search-icon" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search by ID, Husband or Wife Name..." 
-                                    className="search-input" 
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
 
-                            {/* Filter Buttons */}
-                            <div className="filter-buttons">
+                    <div className="mc-filter-card">
+                        <div className="mc-filter-wrapper">
+                            <div className="mc-brand-label">MARRIAGE <span>FILTERS</span></div>
+                            <div className="mc-filter-buttons">
                                 {uniqueStatuses.map(status => (
-                                    <button
-                                        key={status}
-                                        className={`filter-btn ${activeFilter === status ? 'active' : ''} filter-${getStatusClass(status)}-active`}
-                                        onClick={() => setActiveFilter(status)}
+                                    <button 
+                                        key={status} 
+                                        className={`mc-filter-btn ${filterStatus === status ? 'mc-active-navy' : ''}`}
+                                        onClick={() => setFilterStatus(status)}
                                     >
                                         {status}
                                     </button>
                                 ))}
                             </div>
+                            <div className="mc-search-box">
+                                <Search size={18} className="mc-search-icon" />
+                                <input 
+                                    type="text" 
+                                    className="mc-search-input" 
+                                    placeholder="Search Husband, Wife, or Ref No..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
-                    {/* --- END NEW SEARCH AND FILTER CARD --- */}
 
-                    <div className="marriage-table-container">
-                        <table className="marriage-table">
+                    <div className="mc-table-container">
+                        <table className="mc-table">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>Ref #</th>
-                                    <th>Husband Name</th>
-                                    <th>Wife Name</th>
-                                    <th>Date of Marriage</th>
+                                    <th style={{textAlign:'center', width:'60px'}}>#</th>
+                                    <th>Ref No.</th>
+                                    <th>Husband</th>
+                                    <th>Wife</th>
+                                    <th>Date Married</th>
                                     <th>Copies</th>
                                     <th>Status</th>
                                     <th style={{textAlign:'right'}}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {currentRequests.map((req, i) => (
-                                    <tr key={req.id}>
-                                        <td style={{fontWeight:'700', color:'#475569'}}>{startIndex + i + 1}</td>
-                                        <td style={{fontWeight:'700', color:'#0f172a'}}>{req.id}</td>
-                                        <td>{req.husband}</td>
-                                        <td>{req.wife}</td>
-                                        <td>{req.dateMarried}</td>
-                                        <td style={{textAlign:'center'}}>{req.copies}</td>
-                                        <td><span className={`status-pill status-${getStatusClass(req.status)}`}>{req.status}</span></td>
-                                        <td style={{textAlign:'right'}}>
-                                            <button className="marriage-action-btn">Details</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {/* Display message if no results are found */}
-                                {currentRequests.length === 0 && (
+                                {currentRequests.length > 0 ? (
+                                    currentRequests.map((row, index) => (
+                                        <tr key={row.id}>
+                                            <td style={{fontWeight:'700', textAlign:'center'}}>{startIndex + index + 1}</td>
+                                            <td className="mc-ref-cell">{row.id}</td>
+                                            <td><div className="mc-couple-name">{row.husband}</div></td>
+                                            <td><div className="mc-couple-name">{row.wife}</div></td>
+                                            <td>{row.dateMarried}</td>
+                                            <td style={{textAlign: 'center'}}>{row.copies}</td>
+                                            <td><span className={`mc-table-badge ${getStatusBadgeClass(row.status)}`}>{row.status}</span></td>
+                                            <td style={{textAlign:'right'}}>
+                                                <div className="mc-action-group">
+                                                    <button className="mc-action-btn mc-view-btn" onClick={() => handleViewRequest(row)}>
+                                                        <Eye size={16}/> View
+                                                    </button>
+                                                    <button className="mc-action-btn mc-archive-btn" onClick={() => handleArchiveRequest(row.id)}>
+                                                        <Archive size={16}/> Archive
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
                                     <tr>
-                                        <td colSpan="8" style={{textAlign: 'center', padding: '40px'}}>
-                                            No requests found matching your search and filter criteria.
-                                        </td>
+                                        <td colSpan="8" style={{textAlign:'center', padding:'60px', color:'#64748b'}}>No requests found.</td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
-                        
-                        {/* --- PAGINATION NAVIGATION --- */}
-                        {filteredRequests.length > ITEMS_PER_PAGE && (
-                            <div className="pagination-nav">
-                                <ul className="pagination-list">
-                                    <li>
-                                        <button 
-                                            className="pagination-btn"
-                                            onClick={() => changePage(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                        >
-                                            <ChevronLeft size={16} /> Previous
-                                        </button>
-                                    </li>
-                                    {getPageNumbers().map(number => (
-                                        <li key={number}>
-                                            <button
-                                                className={`pagination-btn ${currentPage === number ? 'active' : ''}`}
-                                                onClick={() => changePage(number)}
-                                            >
-                                                {number}
-                                            </button>
-                                        </li>
-                                    ))}
-                                    <li>
-                                        <button 
-                                            className="pagination-btn"
-                                            onClick={() => changePage(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
-                                        >
-                                            Next <ChevronRight size={16} />
-                                        </button>
-                                    </li>
-                                </ul>
-                            </div>
-                        )}
-                        {/* --- END PAGINATION NAVIGATION --- */}
                     </div>
+
+                    {totalPages > 1 && (
+                        <div className="mc-pagination-nav">
+                             <div className="mc-pagination-info">
+                                <span className="mc-pagination-showing">
+                                    Showing <strong>{startIndex + 1}</strong> to <strong>{Math.min(startIndex + ITEMS_PER_PAGE, filteredRequests.length)}</strong> of <strong>{filteredRequests.length}</strong> items
+                                </span>
+                             </div>
+                             <div className="mc-pagination-jump">
+                                <button className="mc-jump-arrow" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                                    <ChevronLeft size={18}/>
+                                </button>
+                                <span className="mc-pagination-jump-label">Page {currentPage} of {totalPages}</span>
+                                <button className="mc-jump-arrow" disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
+                                    <ChevronRight size={18}/>
+                                </button>
+                             </div>
+                        </div>
+                    )}
                 </div>
             </main>
+
+            {/* MODALS - Hidden during maintenance */}
+            <MarriageApplicationModal 
+                isOpen={isAppModalOpen} 
+                onClose={() => setIsAppModalOpen(false)}
+                onAddRequest={handleAddRequest}
+            />
+
+            {isDetailsModalOpen && selectedRequest && (
+                <MarriageModal 
+                    request={selectedRequest}
+                    onClose={() => setIsDetailsModalOpen(false)}
+                    onUpdateStatus={handleStatusUpdate}
+                />
+            )}
         </div>
     );
 };
+
 export default MarriageCertificate;

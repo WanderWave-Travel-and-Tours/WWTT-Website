@@ -1,0 +1,221 @@
+/* --- SEARCH AND FILTER CARD (act-) --- */
+.act-filter-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 20px; 
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); 
+    position: relative;
+    overflow: hidden;
+}
+
+/* Flex wrapper for the entire filter area (Single Line Desktop) */
+.act-filter-wrapper {
+    display: flex;
+    gap: 16px; 
+    align-items: center;
+    flex-wrap: wrap; 
+    padding-top: 0;
+    justify-content: flex-start;
+}
+
+/* Branding Label (ACTIVITY FILTERS) */
+.act-brand-label {
+    /* Order 1 */
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #0f172a; 
+    flex-shrink: 0; /* Prevents shrinking */
+    white-space: nowrap;
+    line-height: 1; 
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.act-brand-label span {
+    color: #3b82f6; 
+    font-weight: 800;
+}
+
+/* Dropdown Grouping (Action, Module, Severity) */
+.act-select-group {
+    /* order 2, 3, 4 implicit */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0; 
+    height: 44px;
+}
+
+.act-select-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+}
+
+/* Dropdown/Select element styling */
+.act-filter-select {
+    padding: 10px 14px; 
+    border-radius: 10px; 
+    font-size: 14px; 
+    font-weight: 500;
+    cursor: pointer;
+    background: #f8fafc; 
+    border: 1px solid #e2e8f0; 
+    color: #0f172a; 
+    transition: all 0.2s;
+    height: 44px; 
+    appearance: none; 
+    /* Custom arrow styling */
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%20viewBox%3D%220%200%20292.4%20292.4%22%3E%3Cpath%20fill%3D%22%230f172a%22%20d%3D%22M287%2C197.8L158.4%2C69.2c-5.7-5.7-14.8-5.7-20.5%2C0L5.4%2C197.8c-7.2%2C7.2-2.5%2C20.5%2C7.9%2C20.5h278.3C289.5%2C218.3%2C294.2%2C205%2C287%2C197.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center; 
+    background-size: 10px; 
+    padding-right: 30px; 
+    min-width: 140px; /* Ensures dropdowns don't shrink too much on desktop */
+}
+
+.act-filter-select:focus {
+    outline: none;
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 1px #3b82f6; 
+}
+
+/* Search Box - Pushed to the right and takes remaining space */
+.search-box {
+    background: white; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 12px; 
+    
+    flex: 1 1 250px; /* Allows it to grow and shrink */
+    max-width: 400px;
+    height: 44px; 
+    padding: 0;
+    margin-left: auto; /* PUSH TO RIGHT CORNER */
+    transition: all 0.2s ease;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.search-input {
+    width: 100%;
+    height: 100%;
+    background: #f8fafc; 
+    border: none; 
+    border-radius: 11px;
+    font-size: 14px;
+    color: #0f172a;
+    padding: 0 12px 0 40px; 
+}
+
+.search-box:focus-within {
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 1px #3b82f6; 
+}
+
+/* ================================================
+   RESPONSIVENESS (FULLY ADJUSTED)
+   ================================================ */
+
+/* Tablet/Mid-Screen (Below 960px) */
+@media (max-width: 960px) {
+    .act-filter-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .act-brand-label {
+        order: 1; 
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e2e8f0;
+        justify-content: flex-start;
+        min-width: 100%;
+    }
+    
+    /* Grouping all dropdowns into a single flex row (order 2) */
+    .act-select-group {
+        order: 2; 
+        height: auto;
+        justify-content: flex-start;
+        flex-wrap: wrap; 
+        width: 100%; /* Takes full container width */
+        margin-right: 0;
+    }
+    
+    /* Individual Select Group Widths for Tablet (3 columns max) */
+    .act-select-group.action-filter,
+    .act-select-group.module-filter,
+    .act-select-group.severity-filter {
+        /* Distribute evenly in the row, 33.33% minus gap */
+        width: calc(33.33% - 10.66px); 
+        margin-left: 0; /* Reset margins */
+    }
+    
+    .act-select-group.module-filter,
+    .act-select-group.severity-filter {
+        /* Add spacing between elements */
+        margin-left: 8px; 
+    }
+    
+    /* Ensure select input fills its container and labels don't push it out */
+    .act-select-group .act-filter-select {
+        flex: 1;
+        min-width: auto;
+    }
+    
+    .search-box {
+        order: 3; 
+        min-width: 100%;
+        max-width: 100%;
+        height: 48px; 
+        margin-left: 0; 
+    }
+}
+
+/* Mobile/Small Screens (Below 600px) */
+@media (max-width: 600px) {
+    /* Stack everything vertically on very small phones (1 column) */
+    .act-filter-wrapper {
+        gap: 8px;
+    }
+
+    .act-select-group {
+        flex-direction: column; /* Stack label and select input */
+        align-items: flex-start;
+        padding-bottom: 5px;
+        width: 100%;
+    }
+    
+    /* All groups take full width and clear horizontal margins */
+    .act-select-group.action-filter,
+    .act-select-group.module-filter,
+    .act-select-group.severity-filter {
+        width: 100%;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Select input must fill its container */
+    .act-filter-select {
+        width: 100%;
+    }
+    
+    .act-select-label {
+        width: 100%;
+        margin-bottom: 4px;
+    }
+}

@@ -7,7 +7,8 @@ import Login from './components/login/login.jsx';
 import Dashboard from './components/dashboard/dashboard.jsx'; 
 import Booking from './components/booking/booking.jsx';
 import Settings from './components/settings/settings.jsx'; 
-import Archive from './components/archive/Archive.jsx'; 
+import Archive from './components/archive/Archive.jsx';
+import ActivityLogs from './components/activitylogs/ActivityLogs.jsx';
 
 // Packages
 import AddPackage from './components/addpackage/addpackage.jsx';
@@ -46,7 +47,7 @@ import ViewDeal from './components/viewdeals/viewdeals.jsx';
 // Hotels (General Management)
 import AddHotel from './components/addhotel/addhotel.jsx';
 import ViewHotels from './components/viewhotel/viewhotel.jsx';
-import EditHotel from './components/viewhotel/EditHotel.jsx'; // ADDED THIS IMPORT
+import EditHotel from './components/viewhotel/EditHotel.jsx';
 
 // --- SERVICE MANAGEMENT IMPORTS ---
 import AddService from './components/addservice/addservice.jsx';
@@ -66,6 +67,7 @@ import BillsPayment from './components/services/BillsPayment/BillsPayment.jsx';
 import MarriageCertificate from './components/services/MarriageCertificate/MarriageCertificate.jsx';
 import Users from './components/users/users.jsx';
 import SellerRate from './components/SellerRate/SellerRate.jsx'
+
 function App() {
   return (
     <BrowserRouter basename="/">
@@ -75,6 +77,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/archive" element={<Archive />} />
+        <Route path="/activity-logs" element={<ActivityLogs />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/users" element={<Users />} />
 
@@ -118,7 +121,7 @@ function App() {
         {/* Hotel Inventory Management */}
         <Route path="/add-hotel" element={<AddHotel />} />
         <Route path="/view-hotels" element={<ViewHotels />} />
-        <Route path="/edit-hotel/:id" element={<EditHotel />} /> {/* ADDED THIS ROUTE */}
+        <Route path="/edit-hotel/:id" element={<EditHotel />} />
 
         {/* --- SERVICE MANAGEMENT ROUTES --- */}
         <Route path="/add-service" element={<AddService />} />

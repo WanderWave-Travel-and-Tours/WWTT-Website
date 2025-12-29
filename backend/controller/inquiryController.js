@@ -2,6 +2,7 @@ const Inquiry = require('../models/inquiry');
 const Service = require('../models/service');
 const User = require('../models/user');
 const Payment = require('../models/payment');
+const CENOMAR = require('../models/cenomar'); // ADDED THIS: Required para makuha ang price
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
 const mongoose = require('mongoose');
 
@@ -11,7 +12,32 @@ const generateTempPassword = () => {
   const randomSpecialChar = specialChars.charAt(Math.floor(Math.random() * specialChars.length));
   return `Wander_${numbers}${randomSpecialChar}`;
 };
- 
+
+// --- HELPER PARA SA PRICE MATCHING ---
+const findCorrectPrice = async (serviceName, cenomarDocument) => {
+    try {
+        const services = await CENOMAR.find();
+        const searchName = (serviceName || cenomarDocument || "").toLowerCase().trim();
+
+        const matchedService = services.find(s => {
+            const docType = (s.documentType || "").toLowerCase().trim();
+            // Check matching: "CENOMAR Assistance" matches "CENOMAR"
+            return (
+                docType === searchName || 
+                searchName.includes(docType) || 
+                docType.includes(searchName)
+            );
+        });
+
+        if (matchedService) {
+            return Number(matchedService.price);
+        }
+    } catch (error) {
+        console.error("Error finding price:", error);
+    }
+    return 0; // Default if not found
+};
+
 const createInquiry = async (req, res) => {
   try {
     console.log('🔥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
@@ -36,6 +62,16 @@ const createInquiry = async (req, res) => {
       cenomarDocument,
       passportDetails
     } = req.body;
+
+    // --- [START] SMART PRICE FIX FOR FRONTEND SUBMISSIONS ---
+    let finalPrice = parseFloat(estimatedPrice) || 0;
+    
+    if (finalPrice === 0) {
+        console.log("⚠️ Price is 0. Attempting to auto-fix based on Service Name...");
+        finalPrice = await findCorrectPrice(serviceName, cenomarDocument);
+        console.log(`✅ Price Auto-Fixed to: ${finalPrice}`);
+    }
+    // --- [END] SMART PRICE FIX ---
 
     console.log('🔍 PASSENGERS TYPE:', typeof passengers);
     console.log('🔍 PASSENGERS IS ARRAY?:', Array.isArray(passengers));
@@ -114,11 +150,11 @@ const createInquiry = async (req, res) => {
       psaDocument: psaDocument || null,
       psaId: psaId || null,
       inquiryType: inquiryType || 'GENERAL',
-      estimatedPrice: parseFloat(estimatedPrice) || 0,
+      estimatedPrice: finalPrice, // ✅ USED THE FIXED PRICE HERE
       cenomarDocument: cenomarDocument || null,
       cenomarId: cenomarId || null,
       status: 'PENDING',
-      isArchive: "No", // ✅ DEFAULT ADDED HERE
+      isArchive: "No", 
       remarks: '',
       evidenceUrl: '',
       evidenceName: '',
@@ -231,8 +267,19 @@ const createInquiryWithUploads = async (req, res) => {
             contactNumber,
             message,
             visaCountry,
-            estimatedPrice
+            estimatedPrice, // This might be coming in as string "0" or "100"
+            cenomarDocument
         } = req.body;
+
+        // --- [START] SMART PRICE FIX FOR ADMIN WALK-IN / UPLOADS ---
+        let finalPrice = parseFloat(estimatedPrice) || 0;
+    
+        if (finalPrice === 0) {
+            console.log("⚠️ Uploads Price is 0. Attempting to auto-fix...");
+            finalPrice = await findCorrectPrice(serviceName, cenomarDocument);
+            console.log(`✅ Uploads Price Auto-Fixed to: ${finalPrice}`);
+        }
+        // --- [END] SMART PRICE FIX ---
 
         if (!email || !fullName) {
             return res.status(400).json({ success: false, message: 'Email and Name are required' });
@@ -264,10 +311,13 @@ const createInquiryWithUploads = async (req, res) => {
             contactNumber,
             message: message,
             visaCountry: visaCountry || 'Japan',
-            estimatedPrice: estimatedPrice || 0,
+            estimatedPrice: finalPrice, // ✅ SAVES THE CORRECT PRICE
+            cenomarDocument: cenomarDocument || serviceName,
             status: 'PENDING',
-            isArchive: "No", // ✅ DEFAULT ADDED HERE
-            deliveredDocuments: uploadedDocs 
+            isArchive: "No", 
+            deliveredDocuments: uploadedDocs,
+            uploader: req.body.uploader || 'USER', // Capture uploader source
+            documentCategory: req.body.documentCategory || 'REQUIREMENT'
         });
 
         res.status(201).json({

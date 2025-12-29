@@ -1,4 +1,5 @@
 const Tour = require('../models/tour');
+const ActivityLog = require('../models/ActivityLog'); // IMPORT ACTIVITY LOG MODEL
 const fs = require('fs');
 const path = require('path');
 
@@ -16,8 +17,11 @@ exports.createTour = async (req, res) => {
       sellerPrice, 
       markup, 
       inclusions,
-      itinerary, // ADDED: itinerary support
-      isArchive
+      itinerary,
+      isArchive,
+      // Admin Info galing sa Frontend
+      userEmail,
+      adminId
     } = req.body;
 
     // Validate required fields
@@ -56,7 +60,7 @@ exports.createTour = async (req, res) => {
       }
     }
 
-    // ADDED: Parse itinerary if it's a string
+    // Parse itinerary if it's a string
     let parsedItinerary = [];
     if (itinerary) {
       try {
@@ -93,7 +97,7 @@ exports.createTour = async (req, res) => {
       markup: mkup,
       price: totalPrice,
       inclusions: parsedInclusions,
-      itinerary: parsedItinerary, // ADDED: itinerary field
+      itinerary: parsedItinerary,
       image: req.file.filename,
       isArchive: isArchive || 'No'
     });
@@ -101,6 +105,37 @@ exports.createTour = async (req, res) => {
     // Save to database
     await newTour.save();
     
+    // =========================================================
+    // 2. INSERT ACTIVITY LOG HERE (AFTER SAVING)
+    // =========================================================
+    try {
+      // Sanitize ID para iwas CastError (kung sakaling "null" string ang pumasok)
+      let logUserId = null;
+      if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
+          logUserId = adminId;
+      }
+
+      await ActivityLog.create({
+          action: 'CREATE',
+          module: 'Tours', // Pinalitan ko ng 'Tours' para specific, o pwede ring 'Packages' kung yun ang gusto mo
+          user: userEmail || 'System Admin',
+          userId: logUserId,
+          severity: 'SUCCESS',
+          description: `Created a new tour: ${title}`,
+          details: {
+              recordTitle: title,
+              recordId: newTour._id,
+              method: 'POST',
+              endpoint: '/api/tours/add'
+          }
+      });
+      console.log('✅ Activity Log recorded for New Tour');
+    } catch (logError) {
+      console.error('❌ Error logging activity:', logError);
+      // Hindi natin haharangin ang success response kahit mag-fail ang log
+    }
+    // =========================================================
+
     console.log('Tour saved successfully:', newTour);
 
     res.status(201).json({ 
@@ -179,7 +214,7 @@ exports.getTourById = async (req, res) => {
   }
 };
 
-// Update tour - IMPROVED VERSION
+// Update tour
 exports.updateTour = async (req, res) => {
   try {
     const { id } = req.params;
@@ -191,8 +226,8 @@ exports.updateTour = async (req, res) => {
       sellerPrice, 
       markup, 
       inclusions,
-      itinerary, // ADDED: itinerary support
-      existingImage, // ADDED: for handling existing image
+      itinerary,
+      existingImage,
       isArchive
     } = req.body;
 
@@ -218,7 +253,7 @@ exports.updateTour = async (req, res) => {
       }
     }
 
-    // ADDED: Parse itinerary
+    // Parse itinerary
     let parsedItinerary = existingTour.itinerary || [];
     if (itinerary) {
       try {
@@ -244,7 +279,7 @@ exports.updateTour = async (req, res) => {
       markup: mkup,
       price: totalPrice,
       inclusions: parsedInclusions,
-      itinerary: parsedItinerary, // ADDED: itinerary field
+      itinerary: parsedItinerary,
       isArchive: isArchive || existingTour.isArchive
     };
 

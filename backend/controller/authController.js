@@ -6,6 +6,16 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto'); 
 const path = require('path');
 
+// 🎯 IMPORT ACTIVITY LOGGER
+const { 
+    logLogin, 
+    logLogout, 
+    logCreate,
+    logActivity,
+    getIpAddress, 
+    getUserAgent 
+} = require('../utils/activityLogger');
+
 // ====================================================================
 // TEMPORARY STORAGE FOR UNVERIFIED USERS AND OTP
 const unverifiedUsers = new Map();
@@ -100,15 +110,6 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
     <meta name="color-scheme" content="light">
     <meta name="supported-color-schemes" content="light">
     <title>WanderWave OTP Verification</title>
-    <!--[if mso]>
-    <noscript>
-        <xml>
-            <o:OfficeDocumentSettings>
-                <o:PixelsPerInch>96</o:PixelsPerInch>
-            </o:OfficeDocumentSettings>
-        </xml>
-    </noscript>
-    <![endif]-->
     <style>
         * {
             margin: 0;
@@ -141,7 +142,6 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
             text-decoration: none;
         }
         
-        /* Force white background in dark mode */
         @media (prefers-color-scheme: dark) {
             body {
                 background-color: #ffffff !important;
@@ -157,7 +157,6 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
             }
         }
         
-        /* Mobile responsive styles */
         @media screen and (max-width: 600px) {
             .email-container {
                 width: 100% !important;
@@ -199,33 +198,27 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
                     <td align="center" style="padding:0;">
                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);overflow:hidden;">
                             
-                            <!-- HEADER SECTION - Navy Blue with Orange Border -->
                             <tr>
                                 <td style="background-color:#001b3e !important;border-bottom:4px solid #FF8C00;padding:25px 30px 20px;text-align:right;" class="mobile-padding-sm">
                                     <span class="header-label" style="display:inline-block;background-color:#FFF3E0 !important;color:#001b3e !important;padding:8px 24px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:1.5px;font-family:Arial,sans-serif;">OTP VERIFICATION</span>
                                 </td>
                             </tr>
                             
-                            <!-- LOGO SECTION - White BG with Navy Border -->
                             <tr>
                                 <td class="white-bg mobile-padding-sm" style="background-color:#ffffff !important;padding:25px 30px;border-bottom:1px dashed #001b3e;">
                                     <img src="cid:logo@wanderwave.com" alt="WanderWave Logo" class="logo-img" style="max-width:130px;height:auto;display:block;border:0;" width="130" />
                                 </td>
                             </tr>
                             
-                            <!-- MAIN CONTENT - White Background -->
                             <tr>
                                 <td class="white-bg mobile-padding" style="background-color:#ffffff !important;padding:35px 40px;">
                                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                         <tr>
                                             <td style="padding:0;">
-                                                <!-- Greeting - Navy Blue Text -->
                                                 <p style="font-size:16px;color:#001b3e !important;margin:0 0 8px 0;font-weight:600;font-family:Arial,sans-serif;">Hi ${fullName || 'New User'},</p>
                                                 
-                                                <!-- Message - Secondary Text with Orange Brand -->
                                                 <p style="font-size:14px;color:#64748b !important;line-height:1.7;margin:0 0 30px 0;font-family:Arial,sans-serif;">Thank you for signing up with <span style="color:#FF8C00 !important;font-weight:600;">WanderWave</span>! To complete your registration, please use the verification code below:</p>
                                                 
-                                                <!-- OTP BOX - Navy Blue Background -->
                                                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0;">
                                                     <tr>
                                                         <td style="background-color:#001b3e !important;border-radius:10px;padding:35px 20px;text-align:center;">
@@ -235,11 +228,19 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
                                                     </tr>
                                                 </table>
                                                 
-                                                <!-- WARNING BOX - Light Orange BG with Orange Border -->
                                                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0;">
                                                     <tr>
                                                         <td style="background-color:#FFF7ED !important;border-left:4px solid #FF8C00;padding:15px 20px;border-radius:4px;">
-                                                            <p style="font-size:13px;color...(truncated 1167 characters)...nt-weight:700;margin:0;font-family:Arial,sans-serif;">WanderWave Team</p>
+                                                            <p style="font-size:13px;color:#92400e !important;margin:0;line-height:1.6;font-family:Arial,sans-serif;"><strong>⏱ Valid for ${otpDurationMinutes} minutes</strong> • This code will expire shortly. Please complete verification soon.</p>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:30px 0 0 0;">
+                                                    <tr>
+                                                        <td>
+                                                            <p style="font-size:14px;color:#001b3e !important;margin:0 0 6px 0;font-weight:700;font-family:Arial,sans-serif;">Best regards,</p>
+                                                            <p style="font-size:14px;color:#FF8C00 !important;font-weight:700;margin:0;font-family:Arial,sans-serif;">WanderWave Team</p>
                                                         </td>
                                                     </tr>
                                                 </table>
@@ -249,7 +250,6 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
                                 </td>
                             </tr>
                             
-                            <!-- FOOTER - Navy Blue Background -->
                             <tr>
                                 <td class="mobile-padding" style="background-color:#001b3e !important;padding:25px 40px;text-align:center;">
                                     <p style="font-size:12px;color:#ffffff !important;margin:0 0 8px 0;line-height:1.6;font-family:Arial,sans-serif;">If you did not request this verification code, please ignore this email.</p>
@@ -289,10 +289,11 @@ const generateAndSendOtp = async (email) => {
 };
 
 // --------------------------------------------------------------------
-// SIGNUP CONTROLLER - Clear messages for frontend
+// SIGNUP CONTROLLER - WITH ACTIVITY LOGGING
 // --------------------------------------------------------------------
 const signup = async (req, res) => {
     console.log('\n--- SIGNUP Controller Hit ---');
+    const startTime = Date.now();
     const { fullName, email: emailInput, username: usernameInput, password, confirmPassword, recaptchaToken } = req.body;
 
     const email = emailInput.toLowerCase();
@@ -301,12 +302,47 @@ const signup = async (req, res) => {
     try {
         // Validation
         if (!fullName || !email || !username || !password || !confirmPassword) {
+            // 🎯 LOG FAILED SIGNUP ATTEMPT
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email || 'Unknown',
+                severity: 'ERROR',
+                description: `Failed signup attempt: Missing required fields`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(400).json({ 
                 success: false, 
                 message: 'All fields are required.' 
             });
         }
+
         if (password !== confirmPassword) {
+            // 🎯 LOG PASSWORD MISMATCH
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email,
+                severity: 'WARNING',
+                description: `Failed signup attempt: Password mismatch for ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(400).json({ 
                 success: false, 
                 message: 'Passwords do not match.' 
@@ -316,6 +352,23 @@ const signup = async (req, res) => {
         // Check existing user
         const existingUser = await User.findOne({ email });
         if (existingUser) {
+            // 🎯 LOG DUPLICATE EMAIL ATTEMPT
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email,
+                severity: 'WARNING',
+                description: `Failed signup attempt: Email already registered - ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(400).json({ 
                 success: false, 
                 message: 'This email is already registered. Please log in.' 
@@ -324,6 +377,23 @@ const signup = async (req, res) => {
 
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
+            // 🎯 LOG DUPLICATE USERNAME ATTEMPT
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email,
+                severity: 'WARNING',
+                description: `Failed signup attempt: Username already taken - ${username}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(400).json({ 
                 success: false, 
                 message: 'This username is already taken.' 
@@ -337,8 +407,26 @@ const signup = async (req, res) => {
                 message: 'Please complete the reCAPTCHA.' 
             });
         }
+
         const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
         if (!isValidRecaptcha) {
+            // 🎯 LOG RECAPTCHA FAILURE
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email,
+                severity: 'WARNING',
+                description: `Failed signup attempt: reCAPTCHA verification failed for ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(400).json({ 
                 success: false, 
                 message: 'reCAPTCHA failed. Please try again.' 
@@ -361,6 +449,24 @@ const signup = async (req, res) => {
             });
         }
 
+        // 🎯 LOG SUCCESSFUL OTP SENT
+        await logActivity({
+            action: 'CREATE',
+            module: 'Auth',
+            user: email,
+            severity: 'INFO',
+            description: `OTP verification code sent to ${email} (User: ${fullName})`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 200,
+                duration: `${Date.now() - startTime}ms`,
+                recordTitle: `Signup initiated - ${email}`
+            }
+        });
+
         return res.status(200).json({
             success: true,
             message: result.emailSent 
@@ -372,6 +478,24 @@ const signup = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Signup error:', error);
+
+        // 🎯 LOG SYSTEM ERROR
+        await logActivity({
+            action: 'CREATE',
+            module: 'Auth',
+            user: email || 'System',
+            severity: 'ERROR',
+            description: `Signup system error: ${error.message}`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 500,
+                duration: `${Date.now() - startTime}ms`
+            }
+        });
+
         return res.status(500).json({ 
             success: false, 
             message: 'Server error. Please try again later.' 
@@ -380,10 +504,11 @@ const signup = async (req, res) => {
 };
 
 // --------------------------------------------------------------------
-// RESEND OTP - Clear, frontend-friendly messages
+// RESEND OTP - WITH ACTIVITY LOGGING
 // --------------------------------------------------------------------
 const resendOtp = async (req, res) => {
     console.log('\n--- RESEND OTP Controller Hit ---');
+    const startTime = Date.now();
     const { email: emailInput } = req.body;
     const email = emailInput.toLowerCase();
 
@@ -413,6 +538,24 @@ const resendOtp = async (req, res) => {
 
         const result = await generateAndSendOtp(email);
 
+        // 🎯 LOG OTP RESEND
+        await logActivity({
+            action: 'CREATE',
+            module: 'Auth',
+            user: email,
+            severity: 'INFO',
+            description: `OTP verification code resent to ${email}`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 200,
+                duration: `${Date.now() - startTime}ms`,
+                recordTitle: `OTP Resent - ${email}`
+            }
+        });
+
         if (result.emailSent) {
             return res.status(200).json({
                 success: true,
@@ -428,6 +571,24 @@ const resendOtp = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Resend OTP error:', error);
+
+        // 🎯 LOG RESEND ERROR
+        await logActivity({
+            action: 'CREATE',
+            module: 'Auth',
+            user: email || 'System',
+            severity: 'ERROR',
+            description: `Resend OTP error: ${error.message}`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 500,
+                duration: `${Date.now() - startTime}ms`
+            }
+        });
+
         return res.status(500).json({ 
             success: false, 
             message: 'Server error. Please try again.' 
@@ -436,10 +597,11 @@ const resendOtp = async (req, res) => {
 };
 
 // --------------------------------------------------------------------
-// VERIFY OTP - Clear error messages (no reload needed)
+// VERIFY OTP - WITH ACTIVITY LOGGING
 // --------------------------------------------------------------------
 const verifyOtp = async (req, res) => {
     console.log('\n--- VERIFY OTP Controller Hit ---');
+    const startTime = Date.now();
     const { email: emailInput, otp } = req.body;
     const email = emailInput.toLowerCase();
 
@@ -447,6 +609,23 @@ const verifyOtp = async (req, res) => {
         const userData = unverifiedUsers.get(email);
 
         if (!userData) {
+            // 🎯 LOG EXPIRED SESSION
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email,
+                severity: 'WARNING',
+                description: `Failed OTP verification: Session expired for ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(400).json({ 
                 success: false, 
                 message: 'Session expired. Please sign up again.' 
@@ -454,6 +633,23 @@ const verifyOtp = async (req, res) => {
         }
 
         if (userData.otp !== otp) {
+            // 🎯 LOG INVALID OTP
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email,
+                severity: 'WARNING',
+                description: `Failed OTP verification: Invalid code entered for ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(400).json({ 
                 success: false, 
                 message: 'Invalid code. Please check and try again.' 
@@ -462,6 +658,24 @@ const verifyOtp = async (req, res) => {
 
         if (Date.now() > userData.otpExpires) { 
             unverifiedUsers.delete(email);
+
+            // 🎯 LOG EXPIRED OTP
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email,
+                severity: 'WARNING',
+                description: `Failed OTP verification: Code expired for ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(400).json({ 
                 success: false, 
                 message: 'Code has expired. Please request a new one.' 
@@ -478,6 +692,11 @@ const verifyOtp = async (req, res) => {
         const savedUser = await newUser.save();
         unverifiedUsers.delete(email);
 
+        // 🎯 LOG SUCCESSFUL USER REGISTRATION
+        await logCreate(req, 'Users', `${savedUser.fullName} (${savedUser.email})`);
+
+        console.log('✅ User registered and verified successfully:', email);
+
         return res.status(201).json({
             success: true,
             message: 'Account verified successfully!',
@@ -491,13 +710,50 @@ const verifyOtp = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Verify OTP error:', error);
+
         if (error.code === 11000) {
             unverifiedUsers.delete(email);
+
+            // 🎯 LOG DUPLICATE ERROR
+            await logActivity({
+                action: 'CREATE',
+                module: 'Auth',
+                user: email,
+                severity: 'ERROR',
+                description: `Failed OTP verification: Duplicate user error for ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 409,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
             return res.status(409).json({ 
                 success: false, 
                 message: 'Email or username already in use.' 
             });
         }
+
+        // 🎯 LOG SYSTEM ERROR
+        await logActivity({
+            action: 'CREATE',
+            module: 'Auth',
+            user: email || 'System',
+            severity: 'ERROR',
+            description: `OTP verification system error: ${error.message}`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 500,
+                duration: `${Date.now() - startTime}ms`
+            }
+        });
+
         return res.status(500).json({ 
             success: false, 
             message: 'Server error. Please try again.' 
@@ -506,37 +762,112 @@ const verifyOtp = async (req, res) => {
 };
 
 // --------------------------------------------------------------------
-// LOGIN CONTROLLER
+// LOGIN CONTROLLER - WITH ACTIVITY LOGGING
 // --------------------------------------------------------------------
 const login = async (req, res) => {
     console.log('\n--- LOGIN Controller Hit ---');
+    const startTime = Date.now();
     const { email: emailInput, password, recaptchaToken } = req.body;
-    const email = emailInput.toLowerCase();
+    const email = emailInput ? emailInput.toLowerCase() : '';
   
     try {
         if (!recaptchaToken) {
-            return res.status(400).json({ success: false, message: 'Please complete reCAPTCHA.' });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please complete reCAPTCHA.' 
+            });
         }
 
         const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
         if (!isValidRecaptcha) {
-            return res.status(400).json({ success: false, message: 'reCAPTCHA failed.' });
+            // 🎯 LOG RECAPTCHA FAILURE
+            await logActivity({
+                action: 'LOGIN',
+                module: 'Auth',
+                user: email || 'Unknown',
+                severity: 'WARNING',
+                description: `Failed login attempt: reCAPTCHA verification failed`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 400,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
+            return res.status(400).json({ 
+                success: false, 
+                message: 'reCAPTCHA failed.' 
+            });
         }
          
         if (!email || !password) {
-            return res.status(400).json({ success: false, message: 'Email and password required.' });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Email and password required.' 
+            });
         }
 
         const user = await User.findOne({ email }).select('+password');
         if (!user) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+            // 🎯 LOG FAILED LOGIN - USER NOT FOUND
+            await logActivity({
+                action: 'LOGIN',
+                module: 'Auth',
+                user: email,
+                severity: 'WARNING',
+                description: `Failed login attempt: User not found - ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 401,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            });
+
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid email or password.' 
+            });
         }
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             console.log('Password mismatch for user:', email);
-            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+
+            // 🎯 LOG FAILED LOGIN - WRONG PASSWORD
+            await logActivity({
+                action: 'LOGIN',
+                module: 'Auth',
+                user: email,
+                userId: user._id,
+                severity: 'WARNING',
+                description: `Failed login attempt: Invalid password for ${email}`,
+                ipAddress: getIpAddress(req),
+                userAgent: getUserAgent(req),
+                details: {
+                    method: req.method,
+                    endpoint: req.originalUrl,
+                    statusCode: 401,
+                    duration: `${Date.now() - startTime}ms`,
+                    recordId: user._id.toString()
+                }
+            });
+
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid email or password.' 
+            });
         }
+
+        // 🎯 LOG SUCCESSFUL LOGIN
+        await logLogin(req, user);
+
+        console.log('✅ User logged in successfully:', email);
 
         return res.json({
             success: true,
@@ -552,29 +883,114 @@ const login = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Login error:', error);
-        return res.status(500).json({ success: false, message: 'Server error.' });
+
+        // 🎯 LOG SYSTEM ERROR
+        await logActivity({
+            action: 'LOGIN',
+            module: 'Auth',
+            user: email || 'System',
+            severity: 'ERROR',
+            description: `Login system error: ${error.message}`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 500,
+                duration: `${Date.now() - startTime}ms`
+            }
+        });
+
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Server error.' 
+        });
     }
 };
 
-exports.getMe = (req, res) => {
-    // Ang req.user ay na-set na ng 'protect' middleware
-    // Ang 'protect' middleware ay kukuha ng user data galing sa database
-    // at ise-save ito sa req.user
+// --------------------------------------------------------------------
+// LOGOUT CONTROLLER - WITH ACTIVITY LOGGING
+// --------------------------------------------------------------------
+const logout = async (req, res) => {
+    console.log('\n--- LOGOUT Controller Hit ---');
+    const startTime = Date.now();
+    
+    try {
+        // Get user info from request (if available from middleware)
+        const userEmail = req.body.email || req.user?.email || 'Unknown';
+        const userId = req.body.userId || req.user?._id || null;
+
+        // 🎯 LOG LOGOUT
+        await logActivity({
+            action: 'LOGOUT',
+            module: 'Auth',
+            user: userEmail,
+            userId: userId,
+            severity: 'INFO',
+            description: `User logged out: ${userEmail}`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 200,
+                duration: `${Date.now() - startTime}ms`
+            }
+        });
+
+        console.log('✅ User logged out:', userEmail);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Logout successful'
+        });
+
+    } catch (error) {
+        console.error('❌ Logout error:', error);
+
+        // 🎯 LOG LOGOUT ERROR
+        await logActivity({
+            action: 'LOGOUT',
+            module: 'Auth',
+            user: 'System',
+            severity: 'ERROR',
+            description: `Logout error: ${error.message}`,
+            ipAddress: getIpAddress(req),
+            userAgent: getUserAgent(req),
+            details: {
+                method: req.method,
+                endpoint: req.originalUrl,
+                statusCode: 500,
+                duration: `${Date.now() - startTime}ms`
+            }
+        });
+
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Logout failed.' 
+        });
+    }
+};
+
+// --------------------------------------------------------------------
+// GET ME CONTROLLER
+// --------------------------------------------------------------------
+const getMe = (req, res) => {
     res.status(200).json({
-        // Ibalik ang user data (walang password)
         _id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        // (Iba pang user data na gusto mong i-return)
     });
 };
 
-//  --------------------------------------------------------------------
+// --------------------------------------------------------------------
 // EXPORTS
 // --------------------------------------------------------------------
 module.exports = {
     signup,
     login,
+    logout,
     verifyOtp,
-    resendOtp
+    resendOtp,
+    getMe
 };

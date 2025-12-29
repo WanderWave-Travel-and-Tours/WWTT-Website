@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   X, CreditCard, CheckCircle, Upload, Send, FileText, Edit, Trash2,
   Plus, Save, ListPlus, ChevronDown, PlusCircle, Download, AlertCircle,
@@ -27,7 +27,7 @@ const formatFileSize = (bytes) => {
 export const InquiryModal = ({
   inquiry, documents = [], onClose, onUpdateStatus, onRequestPayment,
   onConfirmPayment, showDeliverDocs, setShowDeliverDocs, deliveryFiles = [],
-  setDeliveryFiles, handleDeliverDocuments, setShowContactRemarks,
+  setDeliveryFiles, handleDeliverDocuments, setShowContactRemarks, cenomarDocs = []
 }) => {
   if (!inquiry) return null;
 
@@ -52,17 +52,11 @@ export const InquiryModal = ({
   const statusConfig = getStatusConfig(inquiry.status);
   const StatusIcon = statusConfig.icon;
 
-  // --- [FIXED] FILTERING LOGIC ---
-  // 1. Check muna kung nasa 'deliveredDocuments' field ng inquiry (Style ng User Side)
-  // 2. Kung wala, fallback sa pag-filter ng documents list (Backup)
-  
+  // --- FILTERING LOGIC ---
   let finalSentDocs = [];
-
   if (inquiry.deliveredDocuments && inquiry.deliveredDocuments.length > 0) {
-    // Priority: Gamitin ang data na nasa inquiry object mismo (gaya ng User Side)
     finalSentDocs = inquiry.deliveredDocuments;
   } else {
-    // Fallback: Filter mula sa general documents list
     finalSentDocs = documents.filter(doc => 
       doc.uploader === 'ADMIN' || 
       doc.category === 'DELIVERABLE' || 
@@ -70,12 +64,47 @@ export const InquiryModal = ({
     );
   }
 
-  // Filter Client Documents (Exclude anything that looks like an Admin Doc)
-  // Note: Since we are prioritizing deliveredDocuments for admin view, 
-  // we strictly filter documents prop for client uploads.
   const clientDocs = documents.filter(doc => 
     !doc.uploader || doc.uploader === 'USER' || doc.category === 'REQUIREMENT'
   );
+
+  // --- [UPDATED] SMART PRICE RECOVERY LOGIC ---
+  // Fixes the issue where price is 0 because "CENOMAR Assistance" != "CENOMAR"
+  const displayPrice = useMemo(() => {
+    const dbPrice = Number(inquiry.estimatedPrice || 0);
+    
+    // 1. If Database has a valid price, use it.
+    if (dbPrice > 0) return dbPrice;
+
+    // 2. If Database is 0, find the price from the Service List (cenomarDocs)
+    if (cenomarDocs && cenomarDocs.length > 0) {
+      // Clean strings for comparison (remove spaces, lowercase)
+      const cleanService = (inquiry.serviceName || "").toLowerCase().trim();
+      const cleanDocument = (inquiry.cenomarDocument || "").toLowerCase().trim();
+
+      // Find matching service
+      const matchedService = cenomarDocs.find(s => {
+        const docType = (s.documentType || "").toLowerCase().trim();
+        // Check for Exact Match OR Partial Match (e.g. "CENOMAR" is inside "CENOMAR Assistance")
+        return (
+          docType === cleanService || 
+          docType === cleanDocument ||
+          (cleanService.includes(docType) && docType.length > 3) || // Partial match
+          (cleanDocument.includes(docType) && docType.length > 3)
+        );
+      });
+
+      if (matchedService) {
+        return Number(matchedService.price);
+      }
+      
+      // Fallback: If there is only 1 service in the system, default to it
+      if (cenomarDocs.length === 1) {
+        return Number(cenomarDocs[0].price);
+      }
+    }
+    return 0;
+  }, [inquiry, cenomarDocs]);
 
   return (
     <div className="cnm-overlay" onClick={onClose}>
@@ -135,7 +164,7 @@ export const InquiryModal = ({
             </div>
           )}
 
-          {/* === [UPDATED] DELIVERY / ADMIN UPLOAD ZONE === */}
+          {/* UPLOAD ZONE */}
           {(showDeliverDocs || inquiry.status === 'COMPLETED' || finalSentDocs.length > 0) && (
             <div className="cnm-upload-zone" style={{ 
               borderColor: inquiry.status === 'COMPLETED' ? '#22c55e' : '#cbd5e1',
@@ -155,7 +184,6 @@ export const InquiryModal = ({
                 </div>
               </div>
 
-              {/* === [FIXED LIST] DISPLAY SENT FILES === */}
               {finalSentDocs.length > 0 && (
                 <div className="cnm-file-list" style={{ marginBottom: '20px' }}>
                   <div className="cnm-file-header" style={{ color: '#16a34a' }}><span>Sent to User (Stored)</span></div>
@@ -169,7 +197,6 @@ export const InquiryModal = ({
                         <FileText size={18} />
                       </div>
                       <div className="cnm-file-info">
-                        {/* Support both fileName (from inquiry array) and originalName (from docs array) */}
                         <span className="cnm-file-name" style={{fontWeight:'700', color: '#15803d'}}>
                           {doc.fileName || doc.originalName}
                         </span>
@@ -178,7 +205,7 @@ export const InquiryModal = ({
                         </span>
                       </div>
                       <a 
-                        href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} 
+                        href={`http://localhost:5000${doc.fileUrl}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="cnm-btn cnm-btn-ghost cnm-btn-sm" 
@@ -191,7 +218,6 @@ export const InquiryModal = ({
                 </div>
               )}
 
-              {/* UPLOAD INPUT BOX */}
               <div className="cnm-upload-wrapper">
                 <input
                   type="file" multiple accept=".pdf,.jpg,.png,.jpeg"
@@ -208,7 +234,6 @@ export const InquiryModal = ({
                 </label>
               </div>
 
-              {/* PENDING UPLOADS (Ready to Send) */}
               {deliveryFiles.length > 0 && (
                 <div className="cnm-file-list">
                   <div className="cnm-file-header"><span>Ready to Send ({deliveryFiles.length})</span></div>
@@ -227,7 +252,6 @@ export const InquiryModal = ({
                 </div>
               )}
 
-              {/* BUTTONS */}
               {deliveryFiles.length > 0 && (
                 <div className="cnm-upload-actions">
                   <button className="cnm-btn cnm-btn-ghost" onClick={() => { setDeliveryFiles([]); if(inquiry.status !== 'COMPLETED') setShowDeliverDocs(false); }}>
@@ -265,7 +289,8 @@ export const InquiryModal = ({
                 <div className="cnm-info-icon"><DollarSign size={18} /></div>
                 <div className="cnm-info-content">
                   <label className="cnm-info-label">Amount</label>
-                  <span className="cnm-info-value cnm-val-amount">₱{(inquiry.estimatedPrice || 0).toLocaleString()}</span>
+                  {/* --- DISPLAY PRICE FROM CALCULATION --- */}
+                  <span className="cnm-info-value cnm-val-amount">₱{displayPrice.toLocaleString()}</span>
                 </div>
               </div>
               <div className="cnm-info-item">
@@ -288,7 +313,7 @@ export const InquiryModal = ({
             </div>
           </div>
 
-          {/* SUBMITTED DOCUMENTS (CLIENT) */}
+          {/* SUBMITTED DOCUMENTS */}
           <div className="cnm-card">
             <div className="cnm-card-header">
               <h3 className="cnm-card-title">Submitted Documents (Requirements)</h3>
@@ -309,7 +334,7 @@ export const InquiryModal = ({
                       <span className="cnm-doc-name">{doc.originalName}</span>
                       <span className="cnm-doc-meta">{formatFileSize(doc.fileSize)} • Uploaded {formatDate(doc.uploadedAt)}</span>
                     </div>
-                    <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="cnm-btn cnm-btn-ghost cnm-btn-sm">
+                    <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="cnm-btn cnm-btn-ghost cnm-btn-sm">
                       <TrendingUp size={14} /> View
                     </a>
                   </div>
@@ -372,7 +397,6 @@ export const InquiryModal = ({
   );
 };
 
-// ... (Other components like ContactRemarksModal, etc. stay the same as before) ...
 export const ContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit, onClose }) => (
   <div className="cnm-overlay">
     <div className="cnm-modal cnm-modal-sm">

@@ -368,3 +368,52 @@
         padding: 14px;
     }
 }
+
+/* ... (EXISTING STYLES) ... */
+
+/* --- NEW IMAGE SECTION STYLES --- */
+.prdm-image-section {
+    margin-bottom: 0px; /* Spacing below image */
+}
+
+.prdm-image-container {
+    width: 100%;
+    height: 200px; /* Fixed height for consistency */
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+}
+
+.prdm-promo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures image fills box nicely */
+    display: block;
+}
+
+.prdm-image-badge {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive tweak for image */
+@media (max-width: 640px) {
+    .prdm-image-container {
+        height: 160px;
+    }
+}

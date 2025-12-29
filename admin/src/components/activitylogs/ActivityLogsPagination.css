@@ -1,0 +1,208 @@
+/* ================================================
+   ACTIVITY LOGS PAGINATION CONTROLS - CLEAN & MINIMAL (act-)
+   ================================================ */
+
+.act-pagination-nav {
+    margin-top: 20px;
+    padding: 16px 24px;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Info section */
+.act-pagination-info {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.act-pagination-showing {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.act-pagination-showing strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Center area - kept for spacing on large screens */
+.act-pagination-controls {
+    flex: 1; /* Takes available space in the middle */
+}
+
+.act-large-only {
+    display: block; /* Visible but empty on large screens */
+}
+
+/* Jump to page section */
+.act-pagination-jump {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.act-pagination-jump-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.act-jump-arrow {
+    min-width: 36px;
+    height: 36px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.act-jump-arrow:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.act-jump-arrow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.act-hide-on-large {
+    display: flex;
+}
+
+.act-pagination-jump-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.act-jump-input {
+    width: 50px;
+    height: 36px;
+    padding: 6px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    transition: all 0.2s ease;
+    -moz-appearance: textfield;
+}
+
+.act-jump-input::-webkit-outer-spin-button,
+.act-jump-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.act-jump-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.act-jump-input:hover {
+    border-color: #cbd5e1;
+}
+
+/* ================================================
+   RESPONSIVE
+   ================================================ */
+
+@media (max-width: 900px) {
+    .act-pagination-nav {
+        padding: 14px 20px;
+        gap: 12px;
+    }
+
+    /* Hide empty center on smaller screens (not needed) */
+    .act-large-only {
+        display: none;
+    }
+
+    /* Show arrows on mid screens */
+    .act-hide-on-large {
+        display: flex;
+    }
+}
+
+@media (max-width: 600px) {
+    .act-pagination-nav {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+    
+    .act-pagination-info {
+        width: 100%;
+        justify-content: center;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .act-pagination-showing {
+        font-size: 12px;
+    }
+    
+    .act-pagination-jump {
+        width: 100%;
+        justify-content: center;
+        padding-top: 8px;
+        border-top: 1px solid #f1f5f9;
+        gap: 12px;
+    }
+    
+    .act-pagination-jump-form {
+        gap: 6px;
+    }
+    
+    .act-jump-arrow {
+        min-width: 44px;
+        height: 44px;
+    }
+    
+    .act-pagination-jump-label {
+        font-size: 13px;
+    }
+    
+    .act-jump-input {
+        width: 60px;
+        height: 44px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 400px) {
+    .act-pagination-nav {
+        padding: 10px 12px;
+    }
+    
+    .act-jump-arrow {
+        min-width: 40px;
+        height: 40px;
+    }
+    
+    .act-jump-input {
+        width: 55px;
+        height: 40px;
+    }
+}

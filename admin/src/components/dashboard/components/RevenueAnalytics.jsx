@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -11,7 +9,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { DollarSign, TrendingUp, Calendar, Activity } from "lucide-react";
+import { 
+  TrendingUp, 
+  Calendar, 
+  Activity, 
+  PhilippinePeso // Updated import
+} from "lucide-react";
 import "./RevenueAnalytics.css";
 
 const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
@@ -76,7 +79,7 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
       <div className="rev-summary-grid">
         <div className="rev-summary-card card-blue">
           <div className="rev-card-icon">
-            <DollarSign size={24} />
+            <PhilippinePeso size={24} /> 
           </div>
           <div className="rev-card-content">
             <span className="rev-card-label">Today's Revenue</span>
@@ -102,7 +105,7 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
 
         <div className="rev-summary-card card-purple">
           <div className="rev-card-icon">
-            <DollarSign size={24} />
+            <PhilippinePeso size={24} />
           </div>
           <div className="rev-card-content">
             <span className="rev-card-label">Total Revenue</span>

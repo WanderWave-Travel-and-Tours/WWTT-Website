@@ -6,14 +6,14 @@ import HotelDetails from './HotelDetails';
 import HotelAmenities from './HotelAmenities';
 import HotelGallery from './HotelGallery';
 import HotelPreview from './HotelPreview';
-import { useToast } from '../toast/ToastManager'; // 👈 ADD THIS LINE
+import { useToast } from '../toast/ToastManager'; 
 import './addhotel.css';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+const API_BASE_URL = 'http://localhost:5000';
 
 const AddHotel = () => {
   const navigate = useNavigate();
-  const toast = useToast(); // 👈 ADD THIS LINE
+  const toast = useToast(); 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -62,7 +62,7 @@ const AddHotel = () => {
       }
     } catch (error) {
       console.error('Error fetching destinations:', error);
-      toast.error('Failed to load destinations', 'Connection Error'); // 👈 ADD THIS LINE
+      toast.error('Failed to load destinations', 'Connection Error'); 
     } finally {
       setLoading(false);
     }
@@ -96,13 +96,13 @@ const AddHotel = () => {
     
     // Validation
     if (!hotelDetails.name || !hotelDetails.destination || !hotelDetails.price) {
-      toast.error('Please fill in all required fields', 'Validation Error'); // 👈 ADD THIS LINE
+      toast.error('Please fill in all required fields', 'Validation Error'); 
       window.scrollTo(0, 0);
       return;
     }
 
     if (isNaN(hotelDetails.price) || Number(hotelDetails.price) <= 0) {
-      toast.error('Please enter a valid price', 'Validation Error'); // 👈 ADD THIS LINE
+      toast.error('Please enter a valid price', 'Validation Error'); 
       window.scrollTo(0, 0);
       return;
     }
@@ -134,6 +134,14 @@ const AddHotel = () => {
       // Extract city from destination
       const cityName = hotelDetails.destination.split(',')[0].trim();
 
+      // =========================================================
+      // 1. KUNIN ANG USER DATA PARA SA ACTIVITY LOGS
+      // =========================================================
+      const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+      const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+      const activeId = adminData.id || adminData._id || "";
+      // =========================================================
+
       const hotelPayload = {
         name: hotelDetails.name,
         location: hotelDetails.destination,
@@ -152,7 +160,10 @@ const AddHotel = () => {
           price: Number(hotelDetails.price),
           available: 5,
           description: `Standard ${type} room`
-        }]
+        }],
+        // Isama ang user data sa payload
+        userEmail: activeUser,
+        adminId: activeId
       };
 
       console.log('Sending hotel payload:', {
@@ -173,7 +184,7 @@ const AddHotel = () => {
       console.log('Server response:', data);
 
       if (data.success) {
-        toast.success(`${hotelDetails.name} has been added successfully!`, 'Hotel Added'); // 👈 ADD THIS LINE
+        toast.success(`${hotelDetails.name} has been added successfully!`, 'Hotel Added'); 
         window.scrollTo(0, 0);
         
         // Reset form
@@ -199,18 +210,13 @@ const AddHotel = () => {
         setPreviewUrl(null);
         setGalleryFiles([]);
         setType("Budget");
-
-        // 👇 COMMENT OUT OR REMOVE THESE 3 LINES TO STOP REDIRECT
-        // setTimeout(() => {
-        //   navigate('/view-hotels');
-        // }, 1500);
       } else {
-        toast.error(data.message || 'Failed to save hotel', 'Save Failed'); // 👈 ADD THIS LINE
+        toast.error(data.message || 'Failed to save hotel', 'Save Failed'); 
         window.scrollTo(0, 0);
       }
     } catch (err) {
       console.error('Error saving hotel:', err);
-      toast.error('Please check if your backend is running', 'Connection Error'); // 👈 ADD THIS LINE
+      toast.error('Please check if your backend is running', 'Connection Error'); 
       window.scrollTo(0, 0);
     } finally {
       setIsSubmitting(false);

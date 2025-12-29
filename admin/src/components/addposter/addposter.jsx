@@ -78,8 +78,23 @@ const AddPoster = () => {
         formData.append('endDate', posterDetails.endDate);
         formData.append('status', posterDetails.status);
 
+        // =========================================================
+        // ADDED: KUNIN ANG USER DATA PARA SA ACTIVITY LOGS
+        // =========================================================
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters/add', {
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+            const activeId = adminData.id || adminData._id || "";
+
+            formData.append("userEmail", activeUser);
+            formData.append("adminId", activeId);
+        } catch (err) {
+            console.error("Error parsing admin data:", err);
+        }
+        // =========================================================
+
+        try {
+            const response = await fetch('http://localhost:5000/api/posters/add', {
                 method: 'POST',
                 body: formData,
             });

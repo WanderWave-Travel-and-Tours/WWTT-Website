@@ -51,8 +51,25 @@ const AddImage = () => {
         formData.append('image', imageFile);
         formData.append('title', imageFile.name);
 
+        // =========================================================
+        // 👇 ADDED: KUNIN ANG USER DATA PARA SA ACTIVITY LOGS 👇
+        // =========================================================
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/images/add', {
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+            const activeId = adminData.id || adminData._id || "";
+
+            formData.append("userEmail", activeUser);
+            formData.append("adminId", activeId);
+            
+            console.log("Uploading Image as:", activeUser); // Debug log
+        } catch (err) {
+            console.error("Error parsing admin data:", err);
+        }
+        // =========================================================
+
+        try {
+            const response = await fetch('http://localhost:5000/api/images/add', {
                 method: 'POST',
                 body: formData,
             });

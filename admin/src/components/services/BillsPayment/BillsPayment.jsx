@@ -1,175 +1,137 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import Sidebar from '../../sidebar/sidebar';
-import { Plus, Receipt, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import Maintenance from '../../maintenance/Maintenance'; // Import Maintenance Component
+import { Plus, Receipt, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Search, Eye, Archive } from 'lucide-react';
+import { BillsModal } from './BillsModals';
+import { BillsApplicationModal } from './BillsApplicationModal';
 import './BillsPayment.css';
 
-// Dummy data generator for testing pagination
-const generateDummyData = (count) => {
-    const billers = ['Meralco', 'PLDT', 'Globe', 'Maynilad', 'BIR', 'SSS'];
-    const statuses = ['Paid', 'Unpaid', 'Pending'];
-    const data = [];
-    for (let i = 1; i <= count; i++) {
-        const status = statuses[i % 3];
-        const amount = (Math.random() * 5000 + 500).toFixed(2);
-        const dueDate = `Dec ${String(i).padStart(2, '0')}, 2025`;
-
-        data.push({
-            id: `BP-${String(1000 + i).padStart(4, '0')}`,
-            client: `Client: User ${i}`,
-            biller: billers[i % billers.length],
-            acctNo: String(Math.floor(Math.random() * 9000000000) + 1000000000),
-            amount: `₱${amount}`,
-            dueDate: dueDate,
-            status: status,
-        });
-    }
-    return data;
+// Generic Images for Stats
+const BP_STAT_IMAGES = {
+    TOTAL: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=1000',
+    PENDING: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?auto=format&fit=crop&q=80&w=1000',
+    PAID: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&q=80&w=1000',
+    FAILED: 'https://images.unsplash.com/photo-1594322436404-5a0526db4d13?auto=format&fit=crop&q=80&w=1000'
 };
 
-// Main data: initial two items + 8 dummy items to reach 11 total
-const initialData = [
-    { id: 'BP-1001', client: 'Wanderwave Office', biller: 'Meralco', acctNo: '1234567890', amount: '₱15,000.00', dueDate: 'Nov 30, 2025', status: 'Paid' },
-    { id: 'BP-1002', client: 'Client: Juan', biller: 'PLDT', acctNo: '0288881234', amount: '₱1,699.00', dueDate: 'Dec 05, 2025', status: 'Unpaid' },
-    { id: 'BP-1003', client: 'Client: Maria', biller: 'Globe', acctNo: '09175551234', amount: '₱2,100.00', dueDate: 'Dec 15, 2025', status: 'Pending' },
+const ITEMS_PER_PAGE = 10;
+
+// Mock Data
+const initialBills = [
+    { id: 'BP-1001', client: 'Wanderwave Office', biller: 'Meralco', acctNo: '1234567890', amount: 15000, dueDate: 'Nov 30, 2025', status: 'Paid' },
+    { id: 'BP-1002', client: 'Client: Juan', biller: 'PLDT', acctNo: '0288881234', amount: 1699, dueDate: 'Dec 05, 2025', status: 'Unpaid' },
+    { id: 'BP-1003', client: 'Client: Maria', biller: 'Globe', acctNo: '09175551234', amount: 2100, dueDate: 'Dec 15, 2025', status: 'Pending' },
+    { id: 'BP-1004', client: 'Client: Pedro', biller: 'Maynilad', acctNo: '00112233', amount: 450, dueDate: 'Dec 18, 2025', status: 'Paid' },
+    { id: 'BP-1005', client: 'Client: Ana', biller: 'Converge', acctNo: '11223344', amount: 1500, dueDate: 'Dec 20, 2025', status: 'Failed' },
+    { id: 'BP-1006', client: 'Client: Jose', biller: 'Meralco', acctNo: '55667788', amount: 3200, dueDate: 'Dec 25, 2025', status: 'Pending' },
+    { id: 'BP-1007', client: 'Client: Clara', biller: 'SkyCable', acctNo: '99887766', amount: 999, dueDate: 'Dec 28, 2025', status: 'Paid' },
+    { id: 'BP-1008', client: 'Client: Mario', biller: 'SSS', acctNo: '33445566', amount: 2400, dueDate: 'Dec 30, 2025', status: 'Pending' },
+    { id: 'BP-1009', client: 'Client: Luigi', biller: 'PhilHealth', acctNo: '77889900', amount: 500, dueDate: 'Jan 05, 2026', status: 'Paid' },
+    { id: 'BP-1010', client: 'Client: Peach', biller: 'Pag-IBIG', acctNo: '11221122', amount: 200, dueDate: 'Jan 10, 2026', status: 'Unpaid' },
+    { id: 'BP-1011', client: 'Client: Bowser', biller: 'Meralco', acctNo: '66666666', amount: 12000, dueDate: 'Jan 15, 2026', status: 'Pending' },
 ];
 
-const allData = [...initialData, ...generateDummyData(8)]; // 11 items total
-
-// --- Pagination Component ---
-const Pagination = ({ totalPages, currentPage, onPageChange }) => {
-    const pageNumbers = useMemo(() => {
-        const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
-            pages.push(i);
-        }
-        return pages;
-    }, [totalPages]);
-
-    return (
-        <nav className="pagination-nav">
-            <ul className="pagination-list">
-                <li>
-                    <button
-                        className="pagination-btn"
-                        onClick={() => onPageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                    >
-                        <ChevronLeft size={16} /> Prev
-                    </button>
-                </li>
-                {pageNumbers.map(number => (
-                    <li key={number}>
-                        <button
-                            onClick={() => onPageChange(number)}
-                            className={`pagination-btn ${number === currentPage ? 'active' : ''}`}
-                        >
-                            {number}
-                        </button>
-                    </li>
-                ))}
-                <li>
-                    <button
-                        className="pagination-btn"
-                        onClick={() => onPageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next <ChevronRight size={16} />
-                    </button>
-                </li>
-            </ul>
-        </nav>
-    );
-};
-// --- End Pagination Component ---
-
-
 const BillsPayment = () => {
-    const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [searchTerm, setSearchTerm] = useState(''); 
-    const [activeStatusFilter, setActiveStatusFilter] = useState('All'); 
-    const itemsPerPage = 10; 
+    // --- MAINTENANCE MODE TOGGLE ---
+    // Change this to 'false' to show the actual system
+    const MAINTENANCE_MODE = true; 
 
+    const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [bills, setBills] = useState(initialBills);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('All');
+
+    // Modals
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedBill, setSelectedBill] = useState(null);
+    const [isAppModalOpen, setIsAppModalOpen] = useState(false);
+
+    // Filter Logic
+    const filteredBills = useMemo(() => {
+        let list = bills;
+        if (filterStatus !== 'All') {
+            list = list.filter(b => b.status === filterStatus);
+        }
+        if (searchTerm.trim()) {
+            const search = searchTerm.toLowerCase();
+            list = list.filter(b => 
+                b.client.toLowerCase().includes(search) ||
+                b.biller.toLowerCase().includes(search) ||
+                b.id.toLowerCase().includes(search) ||
+                b.acctNo.includes(search)
+            );
+        }
+        return list;
+    }, [bills, filterStatus, searchTerm]);
+
+    // Stats Logic
     const stats = [
-        { label: 'Total Transactions', value: allData.length.toLocaleString(), icon: <Receipt size={24}/> },
-        { label: 'Pending Process', value: allData.filter(d => d.status === 'Pending').length, icon: <Clock size={24}/> },
-        { label: 'Successful', value: allData.filter(d => d.status === 'Paid').length, icon: <CheckCircle size={24}/> },
-        { label: 'Failed', value: allData.filter(d => d.status === 'Failed' || d.status === 'Unpaid').length, icon: <AlertTriangle size={24}/> },
+        { label: 'Total Transactions', value: bills.length, icon: <Receipt size={24}/>, image: BP_STAT_IMAGES.TOTAL },
+        { label: 'Pending Process', value: bills.filter(b => b.status === 'Pending').length, icon: <Clock size={24}/>, image: BP_STAT_IMAGES.PENDING },
+        { label: 'Successful', value: bills.filter(b => b.status === 'Paid').length, icon: <CheckCircle size={24}/>, image: BP_STAT_IMAGES.PAID },
+        { label: 'Failed/Unpaid', value: bills.filter(b => b.status === 'Failed' || b.status === 'Unpaid').length, icon: <AlertTriangle size={24}/>, image: BP_STAT_IMAGES.FAILED },
     ];
 
-    // Determine all unique statuses for filter buttons
-    const allStatuses = useMemo(() => {
-        const statuses = new Set(allData.map(d => d.status));
-        return ['All', ...Array.from(statuses)];
-    }, []);
+    // Pagination
+    const totalPages = Math.ceil(filteredBills.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const currentBills = filteredBills.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-    // Filtering and Searching Logic
-    const filteredData = useMemo(() => {
-        return allData.filter(item => {
-            // 1. Status Filter
-            const statusMatch = activeStatusFilter === 'All' || item.status === activeStatusFilter;
-
-            // 2. Search Term Filter (Case-insensitive match on ID, Client, Biller, Account No.)
-            const lowerCaseSearchTerm = searchTerm.toLowerCase();
-            const searchMatch = item.id.toLowerCase().includes(lowerCaseSearchTerm) ||
-                                item.client.toLowerCase().includes(lowerCaseSearchTerm) ||
-                                item.biller.toLowerCase().includes(lowerCaseSearchTerm) ||
-                                item.acctNo.includes(lowerCaseSearchTerm);
-
-            return statusMatch && searchMatch;
-        });
-    }, [activeStatusFilter, searchTerm]);
-
-    // Pagination logic uses filteredData
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-
-    const handlePageChange = (pageNumber) => {
-        if (pageNumber < 1 || pageNumber > totalPages) return;
-        setCurrentPage(pageNumber);
+    const handleViewBill = (bill) => {
+        setSelectedBill(bill);
+        setIsDetailsModalOpen(true);
     };
 
-    const handleFilterChange = (status) => {
-        setActiveStatusFilter(status);
-        setCurrentPage(1); // Reset to first page on filter change
-    };
-    
-    // Reset page to 1 when search term changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm]);
-
-    // Helper to map data status to CSS status class and apply size style
-    const getFilterButtonProps = (status) => {
-        let statusClass = '';
-        if (status === 'All') {
-            statusClass = activeStatusFilter === 'All' ? 'active' : '';
-        } else {
-            // Mapping data status ('Paid', 'Unpaid', 'Pending') to provided CSS class names
-            if (status === 'Paid') {
-                statusClass = activeStatusFilter === status ? 'confirmed-active' : '';
-            } else if (status === 'Pending') {
-                statusClass = activeStatusFilter === status ? 'pending-active' : '';
-            } else if (status === 'Unpaid' || status === 'Failed') {
-                statusClass = activeStatusFilter === status ? 'cancelled-active' : '';
-            }
+    const handleArchiveBill = (id) => {
+        if(window.confirm("Are you sure you want to archive this transaction?")) {
+            setBills(bills.filter(b => b.id !== id));
         }
-        
-        // Custom style to make filter buttons smaller, as requested
-        const smallerStyle = { padding: '0.6rem 1.1rem', fontSize: '0.85rem', borderRadius: '8px' };
-
-        return { 
-            className: `filter-btn ${statusClass}`,
-            style: smallerStyle
-        };
     };
 
+    const handleStatusUpdate = (id, newStatus) => {
+        setBills(bills.map(b => b.id === id ? {...b, status: newStatus} : b));
+        if (selectedBill && selectedBill.id === id) {
+            setSelectedBill({...selectedBill, status: newStatus});
+        }
+        alert(`Transaction updated to ${newStatus}`);
+    };
 
+    const handleAddBill = (newBill) => {
+        setBills([newBill, ...bills]);
+    };
+
+    const getStatusBadgeClass = (status) => {
+        switch(status.toLowerCase()) {
+            case 'paid': return 'bills-badge-paid';
+            case 'pending': return 'bills-badge-pending';
+            case 'failed': return 'bills-badge-failed';
+            case 'unpaid': return 'bills-badge-unpaid';
+            default: return 'bills-badge-pending';
+        }
+    };
+
+    const uniqueStatuses = ['All', 'Paid', 'Pending', 'Unpaid', 'Failed'];
+
+    // --- RENDER LOGIC ---
+
+    // 1. KUNG NAKA MAINTENANCE MODE
+    if (MAINTENANCE_MODE) {
+        return (
+            <div className="bills-page">
+                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
+                <main className={`bills-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
+                    <Maintenance />
+                </main>
+            </div>
+        );
+    }
+
+    // 2. KUNG LIVE NA ANG SYSTEM (Normal View)
     return (
         <div className="bills-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed(!isSidebarCollapsed)} />
+            
             <main className={`bills-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
                 <div className="bills-container">
                     <div className="bills-header">
@@ -177,62 +139,60 @@ const BillsPayment = () => {
                             <h1>Bills Payment</h1>
                             <p>Utilities, Telecom, and Government Fees</p>
                         </div>
-                        <button className="bills-btn-add"><Plus size={18} style={{marginRight:'8px'}}/> Pay Bill</button>
+                        <div style={{display:'flex', gap:'12px'}}>
+                            <button className="bills-btn-add bills-btn-dark" onClick={() => setIsAppModalOpen(true)}>
+                                <Plus size={18}/> Pay Bill
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bills-stats-grid">
                         {stats.map((s, i) => (
-                            <div className="bills-card" key={i}>
-                                <div><h2>{s.value}</h2><span>{s.label}</span></div>
-                                <div className="bills-card-icon">{s.icon}</div>
+                            <div className="bills-stat-card" key={i} style={{backgroundImage: `url(${s.image})`}}>
+                                <div className="bills-stat-card-content">
+                                    <h2>{s.value}</h2>
+                                    <span>{s.label}</span>
+                                </div>
+                                <div className="bills-stat-card-icon">{s.icon}</div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Search and Filter Card */}
-                    <div className="search-filter-card">
-                        <div className="search-filter-wrapper">
-                            {/* Search Box */}
-                            <div className="search-box">
-                                <Search size={20} className="search-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="Search by ID, Client, or Account No..."
-                                    className="search-input"
+                    <div className="bills-filter-card">
+                        <div className="bills-filter-wrapper">
+                            <div className="bills-brand-label">BILLS <span>FILTERS</span></div>
+                            <div className="bills-filter-buttons">
+                                {uniqueStatuses.map(status => (
+                                    <button 
+                                        key={status} 
+                                        className={`bills-filter-btn ${filterStatus === status ? 'bills-active-navy' : ''}`}
+                                        onClick={() => setFilterStatus(status)}
+                                    >
+                                        {status}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="bills-search-box">
+                                <Search size={18} className="bills-search-icon" />
+                                <input 
+                                    type="text" 
+                                    className="bills-search-input" 
+                                    placeholder="Search Biller, Client, or Ref No..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-
-                            {/* Filter Buttons */}
-                            <div className="filter-buttons">
-                                {allStatuses.map(status => {
-                                    const props = getFilterButtonProps(status);
-                                    return (
-                                        <button
-                                            key={status}
-                                            {...props}
-                                            onClick={() => handleFilterChange(status)}
-                                        >
-                                            {/* Display 'Unpaid/Failed' for the Unpaid status button if needed */}
-                                            {status === 'Unpaid' ? 'Unpaid/Failed' : status}
-                                        </button>
-                                    );
-                                })}
-                            </div>
                         </div>
                     </div>
-                    {/* END Search and Filter Card */}
 
                     <div className="bills-table-container">
                         <table className="bills-table">
                             <thead>
                                 <tr>
-                                    <th>No.</th> {/* Added for numbering */}
+                                    <th style={{textAlign:'center', width:'60px'}}>#</th>
                                     <th>Trans ID</th>
                                     <th>Client/Ref</th>
-                                    <th>Biller</th>
-                                    <th>Account No.</th>
+                                    <th>Biller / Account</th>
                                     <th>Amount</th>
                                     <th>Due Date</th>
                                     <th>Status</th>
@@ -240,52 +200,77 @@ const BillsPayment = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* Loop over currentItems which are filtered and paginated */}
-                                {currentItems.map((item, index) => (
-                                    <tr key={item.id + index}>
-                                        {/* Serial number calculation */}
-                                        <td style={{fontWeight:'400', color:'#6b7280'}}>{indexOfFirstItem + index + 1}</td> 
-                                        <td style={{fontWeight:'700', color:'#0f172a'}}>{item.id}</td>
-                                        <td>{item.client}</td>
-                                        <td style={{fontWeight:'700'}}>{item.biller}</td>
-                                        <td style={{fontFamily:'monospace'}}>{item.acctNo}</td>
-                                        <td style={{fontWeight:'700', color:'#10b981'}}>{item.amount}</td>
-                                        <td>{item.dueDate}</td>
-                                        <td><span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span></td>
-                                        <td style={{textAlign:'right'}}>
-                                            <button className="bills-action-btn">Receipt</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {/* Display a row if no data is present */}
-                                {currentItems.length === 0 && (
+                                {currentBills.length > 0 ? (
+                                    currentBills.map((row, index) => (
+                                        <tr key={row.id}>
+                                            <td style={{fontWeight:'700', textAlign:'center'}}>{startIndex + index + 1}</td>
+                                            <td className="bills-ref-cell">{row.id}</td>
+                                            <td><div className="bills-client-name">{row.client}</div></td>
+                                            <td>
+                                                <div className="bills-client-name">{row.biller}</div>
+                                                <div className="bills-biller-info">{row.acctNo}</div>
+                                            </td>
+                                            <td style={{fontWeight:'700', color: '#10b981'}}>₱{row.amount.toLocaleString()}</td>
+                                            <td>{row.dueDate}</td>
+                                            <td><span className={`bills-table-badge ${getStatusBadgeClass(row.status)}`}>{row.status}</span></td>
+                                            <td style={{textAlign:'right'}}>
+                                                <div className="bills-action-group">
+                                                    <button className="bills-action-btn bills-view-btn" onClick={() => handleViewBill(row)}>
+                                                        <Eye size={16}/> View
+                                                    </button>
+                                                    <button className="bills-action-btn bills-archive-btn" onClick={() => handleArchiveBill(row.id)}>
+                                                        <Archive size={16}/> Archive
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
                                     <tr>
-                                        <td colSpan="9" style={{ textAlign: 'center', padding: '30px' }}> {/* colSpan increased to 9 */}
-                                            No bills transactions found matching your criteria.
-                                        </td>
+                                        <td colSpan="8" style={{textAlign:'center', padding:'60px', color:'#64748b'}}>No transactions found.</td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
-                        
-                        {/* Pagination Navigation */}
-                        {totalPages > 1 && (
-                            <Pagination 
-                                totalPages={totalPages} 
-                                currentPage={currentPage} 
-                                onPageChange={handlePageChange} 
-                            />
-                        )}
-                        {/* Optional message for filtered results when not using pagination */}
-                        {totalPages <= 1 && filteredData.length > 0 && filteredData.length < allData.length && (
-                            <div style={{textAlign: 'center', marginTop: '1rem', color: '#667eea', fontWeight: '500'}}>
-                                Displaying {filteredData.length} results.
-                            </div>
-                        )}
                     </div>
+
+                    {totalPages > 1 && (
+                        <div className="bills-pagination-nav">
+                             <div className="bills-pagination-info">
+                                <span className="bills-pagination-showing">
+                                    Showing <strong>{startIndex + 1}</strong> to <strong>{Math.min(startIndex + ITEMS_PER_PAGE, filteredBills.length)}</strong> of <strong>{filteredBills.length}</strong> items
+                                </span>
+                             </div>
+                             <div className="bills-pagination-jump">
+                                <button className="bills-jump-arrow" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                                    <ChevronLeft size={18}/>
+                                </button>
+                                <span className="bills-pagination-jump-label">Page {currentPage} of {totalPages}</span>
+                                <button className="bills-jump-arrow" disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
+                                    <ChevronRight size={18}/>
+                                </button>
+                             </div>
+                        </div>
+                    )}
                 </div>
             </main>
+
+            {/* MODALS - Hidden during maintenance */}
+            <BillsApplicationModal 
+                isOpen={isAppModalOpen} 
+                onClose={() => setIsAppModalOpen(false)}
+                onAddBill={handleAddBill}
+            />
+
+            {isDetailsModalOpen && selectedBill && (
+                <BillsModal 
+                    bill={selectedBill}
+                    onClose={() => setIsDetailsModalOpen(false)}
+                    onUpdateStatus={handleStatusUpdate}
+                />
+            )}
         </div>
     );
 };
+
 export default BillsPayment;
