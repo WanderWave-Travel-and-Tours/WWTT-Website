@@ -343,6 +343,14 @@ router.post('/', upload.any(), async (req, res) => {
         }
     }
 
+    // ✅ DEBUG: Log promo data
+    console.log('📊 Promo Data:', {
+      promoCode: bookingData.promoCode,
+      promoId: bookingData.promoId,
+      discountAmount: bookingData.discountAmount,
+      finalPackageTotal: bookingData.finalPackageTotal
+    });
+
     const newBooking = new Booking({
       packageName: bookingData.packageName,
       packageId: bookingData.packageId || null,
@@ -366,7 +374,13 @@ router.post('/', upload.any(), async (req, res) => {
       message: bookingData.message || '',
       passengers: passengers, 
       status: 'pending',
-      createdAt: new Date()
+      createdAt: new Date(),
+      
+      // ✅ ADD PROMO FIELDS - Required for validation
+      promoCode: bookingData.promoCode || null,
+      promoId: bookingData.promoId || null,
+      discountAmount: bookingData.discountAmount || 0,
+      finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount
     });
 
     console.log('💾 Saving booking to database...');

@@ -520,7 +520,7 @@ const BookingRightForm = ({ pkg }) => {
 
       console.log('Submitting Booking Data to backend...');
       
-      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
+      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -530,7 +530,7 @@ const BookingRightForm = ({ pkg }) => {
         console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
-        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
+        const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
             bookingId: bookingId
         });
         
