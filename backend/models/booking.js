@@ -100,7 +100,12 @@ const bookingSchema = new mongoose.Schema({
   cancelledAt: { type: Date },
 
   // NEW: Exactly like sa package.js
-  isArchive: { type: String, default: 'No' }
+  isArchive: { type: String, default: 'No' },
+
+  promoCode: { type: String, default: null },
+  promoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Promo', default: null },
+  discountAmount: { type: Number, default: 0 },
+  finalPackageTotal: { type: Number, required: true }
 });
 
 bookingSchema.pre('save', function(next) {

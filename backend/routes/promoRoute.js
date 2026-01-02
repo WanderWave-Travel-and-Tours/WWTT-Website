@@ -171,4 +171,67 @@ router.post('/claim/:id', async (req, res) => {
     }
 });
 
+router.get('/validate/:code', async (req, res) => {
+    try {
+        const { code } = req.params;
+        
+        const promo = await Promo.findOne({ 
+            code: code.toUpperCase(),
+            isArchive: 'No'
+        });
+
+        if (!promo) {
+            return res.status(404).json({ 
+                valid: false, 
+                message: 'Promo code not found' 
+            });
+        }
+
+        // Check if active
+        if (!promo.isActive) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'This promo code is no longer active' 
+            });
+        }
+
+        // Check if expired
+        const today = new Date();
+        const validUntil = new Date(promo.validUntil);
+        if (today > validUntil) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'This promo code has expired' 
+            });
+        }
+
+        // Check usage limit
+        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'This promo code has reached its usage limit' 
+            });
+        }
+
+        res.status(200).json({ 
+            valid: true, 
+            promo: {
+                _id: promo._id,
+                code: promo.code,
+                description: promo.description,
+                discountType: promo.discountType,
+                discountValue: promo.discountValue,
+                usageLimit: promo.usageLimit,
+                usedCount: promo.usedCount
+            }
+        });
+
+    } catch (err) {
+        res.status(500).json({ 
+            valid: false, 
+            message: err.message 
+        });
+    }
+});
+
 module.exports = router;

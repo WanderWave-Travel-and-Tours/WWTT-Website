@@ -9,9 +9,12 @@ const BookingFormModal = ({
   pkg, 
   currentMonth, 
   selectedDate, 
-  getEndDate, 
+  getCalculatedDates, 
   monthNames, 
-  packageTotal, 
+  packageTotal,
+  appliedPromo,
+  discountAmount,
+  finalPackageTotal,
   selectedFlight, 
   airfareTotal, 
   totalAmount, 
@@ -64,7 +67,7 @@ const BookingFormModal = ({
             <div className="bfm-summary-item">
               <span className="bfm-summary-label">Travel Dates</span>
               <strong className="bfm-summary-value">
-                {monthNames[currentMonth.getMonth()]} {selectedDate} - {getEndDate()}, {currentMonth.getFullYear()}
+                {monthNames[currentMonth.getMonth()]} {selectedDate} - {getCalculatedDates().end.getDate()}, {currentMonth.getFullYear()}
               </strong>
               <span className="bfm-summary-subtext">
                 ({parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1)} days trip)
@@ -73,7 +76,23 @@ const BookingFormModal = ({
             
             <div className="bfm-summary-item">
               <span className="bfm-summary-label">Package Price</span>
-              <strong className="bfm-summary-value bfm-price">₱{packageTotal.toLocaleString()}</strong>
+              <strong className="bfm-summary-value bfm-price">
+                {appliedPromo ? (
+                  <>
+                    <span style={{textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem', marginRight: '8px'}}>
+                      ₱{packageTotal.toLocaleString()}
+                    </span>
+                    ₱{finalPackageTotal.toLocaleString()}
+                  </>
+                ) : (
+                  `₱${packageTotal.toLocaleString()}`
+                )}
+              </strong>
+              {appliedPromo && (
+                <span className="bfm-summary-subtext" style={{color: '#10b981', fontWeight: '600'}}>
+                  🎉 {appliedPromo.code} applied (-₱{discountAmount.toLocaleString()})
+                </span>
+              )}
             </div>
             
             {selectedFlight && (
