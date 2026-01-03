@@ -93,7 +93,7 @@ const AddService = () => {
     // =========================================================
 
     try {
-      const response = await fetch("http://localhost:5000/api/services", {
+      const response = await fetch("https://wanderwaveph-backend.onrender.com/api/services", {
         method: "POST",
         body: formData,
       });

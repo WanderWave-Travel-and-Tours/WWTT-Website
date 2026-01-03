@@ -45,7 +45,7 @@ const BookingRightForm = ({ pkg }) => {
     setPromoError('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/promos/validate/${promoCode.toUpperCase()}`);
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}`);
       const data = await response.json();
 
       if (response.ok && data.valid) {
@@ -144,7 +144,7 @@ const BookingRightForm = ({ pkg }) => {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -531,7 +531,7 @@ const BookingRightForm = ({ pkg }) => {
 
       console.log('Submitting Booking Data to backend...');
       
-      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', formData, {
+      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

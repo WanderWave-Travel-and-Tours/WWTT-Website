@@ -42,7 +42,7 @@ const Toast = ({ message, type = 'success', onClose, duration = 5000, title }) =
         return 'Notification';
     }
   };
-
+ 
   return (
     <div className={`toast toast--${type}`}>
       <div className="toast__icon">

@@ -218,7 +218,7 @@ function PackageDeals() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/packages/all'); 
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/packages/all'); 
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -341,7 +341,7 @@ function PackageDeals() {
       const userId = user._id;
       const isCurrentlyFavorite = favorites.includes(packageId);
       const method = 'POST'; 
-      const url = `http://localhost:5000/api/favorites`;
+      const url = `https://wanderwaveph-backend.onrender.com/api/favorites`;
 
       const previousState = favorites;
       setFavorites(prev => 
