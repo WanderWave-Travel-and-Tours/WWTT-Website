@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const Booking = require('../models/booking');
 const User = require('../models/user');
+const Promo = require('../models/promo'); 
 const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
 
 const storage = multer.diskStorage({
@@ -225,6 +226,66 @@ router.post('/', upload.any(), async (req, res) => {
         });
     }
 
+    if (bookingData.promoId) {
+      console.log('🎟️ Validating promo code...');
+      try {
+        const promo = await Promo.findById(bookingData.promoId);
+        
+        if (!promo) {
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'Promo code not found'
+          });
+        }
+
+        if (!promo.isActive || promo.isArchive === 'Yes') {
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'This promo code is no longer active'
+          });
+        }
+
+        const today = new Date();
+        if (today > new Date(promo.validUntil)) {
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'This promo code has expired'
+          });
+        }
+
+        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'This promo code has reached its usage limit and is no longer available'
+          });
+        }
+
+        console.log(`✅ Promo code validated: ${promo.code} (${promo.usedCount}/${promo.usageLimit || '∞'} used)`);
+      } catch (promoError) {
+        console.error('❌ Promo validation error:', promoError);
+        req.files?.forEach(file => {
+          try { fs.unlinkSync(file.path); } catch (e) {}
+        });
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to validate promo code',
+          error: promoError.message
+        });
+      }
+    }
+
     const rawPassengers = bookingData.passengers || []; 
     const totalExpectedPassengers = bookingData.pax?.adult || 1;
     const passengers = []; 
@@ -343,7 +404,6 @@ router.post('/', upload.any(), async (req, res) => {
         }
     }
 
-    // ✅ DEBUG: Log promo data
     console.log('📊 Promo Data:', {
       promoCode: bookingData.promoCode,
       promoId: bookingData.promoId,
@@ -375,8 +435,6 @@ router.post('/', upload.any(), async (req, res) => {
       passengers: passengers, 
       status: 'pending',
       createdAt: new Date(),
-      
-      // ✅ ADD PROMO FIELDS - Required for validation
       promoCode: bookingData.promoCode || null,
       promoId: bookingData.promoId || null,
       discountAmount: bookingData.discountAmount || 0,
@@ -462,6 +520,32 @@ router.put('/:id/confirm', async (req, res) => {
       });
     }
 
+    if (booking.promoId) {
+      try {
+        console.log(`🎟️ Incrementing promo usage count for booking ${id}...`);
+        
+        const promo = await Promo.findById(booking.promoId);
+        
+        if (promo) {
+          if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+            return res.status(400).json({
+              success: false,
+              message: 'Promo code usage limit has been reached. Cannot confirm booking.'
+            });
+          }
+
+          promo.usedCount += 1;
+          await promo.save();
+          
+          console.log(`✅ Promo usage incremented: ${promo.code} (${promo.usedCount}/${promo.usageLimit || '∞'})`);
+        } else {
+          console.warn(`⚠️ Warning: Promo ID ${booking.promoId} not found, but continuing with booking confirmation`);
+        }
+      } catch (promoError) {
+        console.error('❌ Error incrementing promo usage:', promoError);
+      }
+    }
+
     booking.status = 'confirmed';
     booking.updatedAt = new Date();
     
@@ -507,6 +591,23 @@ router.put('/:id/cancel', async (req, res) => {
         message: 'Booking is already cancelled'
       });
     }
+
+    // ✅ OPTIONAL: DECREMENT PROMO USAGE IF BOOKING WAS CONFIRMED
+    // Uncomment this if you want to release promo slots when confirmed bookings are cancelled
+    /*
+    if (booking.status === 'confirmed' && booking.promoId) {
+      try {
+        const promo = await Promo.findById(booking.promoId);
+        if (promo && promo.usedCount > 0) {
+          promo.usedCount -= 1;
+          await promo.save();
+          console.log(`🎟️ Promo usage decremented: ${promo.code} (${promo.usedCount}/${promo.usageLimit || '∞'})`);
+        }
+      } catch (promoError) {
+        console.error('❌ Error decrementing promo usage:', promoError);
+      }
+    }
+    */
 
     booking.status = 'cancelled';
     booking.updatedAt = new Date();
