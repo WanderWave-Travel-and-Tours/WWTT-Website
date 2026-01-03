@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, Users, Search, Eye, CheckCircle, XCircle, AlertCircle, Mail, Check, X,
-  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw
+  ChevronLeft, ChevronRight, FileText, CreditCard, FolderOpen, Archive, RotateCcw, Wallet
 } from 'lucide-react';
 import './booking.css';
 import Sidebar from '../sidebar/sidebar';
@@ -15,7 +15,8 @@ const DESTINATION_IMAGES = {
     TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600',
     PENDING: 'https://picsum.photos/seed/mountain/800/600',
     CONFIRMED: 'https://picsum.photos/seed/city/800/600',
-    TOTAL_REVENUE: 'https://picsum.photos/seed/forest/800/600'
+    TOTAL_REVENUE: 'https://picsum.photos/seed/forest/800/600',
+    PENDING_BALANCE: 'https://picsum.photos/seed/sunset/800/600' // NEW
 };
 
 const Booking = () => {
@@ -24,6 +25,7 @@ const Booking = () => {
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [paymentFilter, setPaymentFilter] = useState('ALL'); // NEW: Payment filter
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -41,7 +43,6 @@ const Booking = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      // Prioritize /active, fallback to / if 404 (temporary fix)
       let res = await fetch('http://localhost:5000/api/bookings/active');
       if (!res.ok) {
         console.warn('Active endpoint failed, falling back to all bookings');
@@ -52,12 +53,11 @@ const Booking = () => {
 
       const data = await res.json();
 
-      // Normalize data structure
-      const bookingsArray = data.bookings || data; // /active returns {bookings, count}, / returns array
+      const bookingsArray = data.bookings || data;
       const count = data.count || bookingsArray.length;
 
       const formatted = bookingsArray
-        .filter(b => (b.isArchive || 'No') === 'No') // Client-side filter if backend fallback
+        .filter(b => (b.isArchive || 'No') === 'No')
         .map((b, index) => ({
           id: `BK${String(count - index).padStart(4, '0')}`,
           mongoId: b._id,
@@ -75,6 +75,14 @@ const Booking = () => {
           message: b.message || '',
           referenceNumber: b.referenceNumber || 'N/A',
           paymentLinkId: b.paymentLinkId,
+          
+          // ✅ NEW: Payment-related fields - CORRECTED
+          paymentType: b.paymentType || 'full',
+          initialPaymentAmount: b.initialPaymentAmount || 0,
+          remainingBalance: b.remainingBalance || 0,
+          balancePaidAmount: b.balancePaidAmount || 0,
+          balancePaidAt: b.balancePaidAt,
+          
           rawData: b,
           isArchive: b.isArchive || 'No'
         }));
@@ -88,14 +96,36 @@ const Booking = () => {
     }
   };
 
-  // Filtering
+  // ✅ Enhanced filtering with payment status
   useEffect(() => {
     let filtered = bookings;
 
+    // Status filter
     if (filterStatus !== 'ALL') {
       filtered = filtered.filter(b => b.status.toLowerCase() === filterStatus.toLowerCase());
     }
 
+    // ✅ NEW: Payment filter
+    if (paymentFilter !== 'ALL') {
+      if (paymentFilter === 'PENDING_BALANCE') {
+        filtered = filtered.filter(b => {
+          return b.paymentType === 'partial' && 
+                 b.remainingBalance > 0 && 
+                 b.balancePaidAmount === 0;
+        });
+      } else if (paymentFilter === 'FULLY_PAID') {
+        filtered = filtered.filter(b => {
+          if (b.paymentType === 'full') {
+            return b.status === 'confirmed' || b.status === 'fully_paid';
+          }
+          return b.balancePaidAmount > 0 && (b.totalAmount - b.initialPaymentAmount - b.balancePaidAmount) <= 0;
+        });
+      } else if (paymentFilter === 'PARTIAL_ONLY') {
+        filtered = filtered.filter(b => b.paymentType === 'partial');
+      }
+    }
+
+    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(b =>
@@ -109,7 +139,7 @@ const Booking = () => {
 
     setFilteredBookings(filtered);
     setCurrentPage(1);
-  }, [searchTerm, filterStatus, bookings]);
+  }, [searchTerm, filterStatus, paymentFilter, bookings]);
 
   const handleConfirm = async (booking) => {
     if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) return;
@@ -167,7 +197,7 @@ const Booking = () => {
 
       if (result.status === 'ok') {
         alert(`Booking ${action}d successfully!`);
-        await fetchBookings(); // Always refresh — simpler and consistent
+        await fetchBookings();
       } else {
         alert('Failed to update archive status.');
       }
@@ -184,21 +214,56 @@ const Booking = () => {
     setShowModal(true);
   };
 
+  // ✅ Enhanced stats with pending balance
   const stats = useMemo(() => {
     const confirmedRevenue = bookings
       .filter(b => b.status === 'confirmed')
       .reduce((sum, b) => sum + b.totalAmount, 0);
 
+    const pendingBalanceCount = bookings.filter(b => 
+      b.paymentType === 'partial' && 
+      b.remainingBalance > 0 && 
+      b.balancePaidAmount === 0
+    ).length;
+
+    const totalPendingBalance = bookings
+      .filter(b => b.paymentType === 'partial' && b.remainingBalance > 0)
+      .reduce((sum, b) => sum + b.remainingBalance, 0);
+
     return [
-      { label: "Total Active Bookings", value: bookings.length, icon: <FileText size={24} />, image: DESTINATION_IMAGES.TOTAL_BOOKINGS },
-      { label: "Pending", value: bookings.filter(b => b.status === 'pending').length, icon: <AlertCircle size={24} />, image: DESTINATION_IMAGES.PENDING },
-      { label: "Confirmed", value: bookings.filter(b => b.status === 'confirmed').length, icon: <CheckCircle size={24} />, image: DESTINATION_IMAGES.CONFIRMED },
-      { label: "Revenue (Confirmed)", value: `₱${confirmedRevenue.toLocaleString()}`, icon: <CreditCard size={24} />, image: DESTINATION_IMAGES.TOTAL_REVENUE },
+      { 
+        label: "Total Active Bookings", 
+        value: bookings.length, 
+        icon: <FileText size={24} />, 
+        image: DESTINATION_IMAGES.TOTAL_BOOKINGS 
+      },
+      { 
+        label: "Pending Balance Payments", 
+        value: pendingBalanceCount, 
+        icon: <Wallet size={24} />, 
+        image: DESTINATION_IMAGES.PENDING_BALANCE,
+        subtext: `₱${totalPendingBalance.toLocaleString()} total` 
+      },
+      { 
+        label: "Confirmed", 
+        value: bookings.filter(b => b.status === 'confirmed').length, 
+        icon: <CheckCircle size={24} />, 
+        image: DESTINATION_IMAGES.CONFIRMED 
+      },
+      { 
+        label: "Revenue (Confirmed)", 
+        value: `₱${confirmedRevenue.toLocaleString()}`, 
+        icon: <CreditCard size={24} />, 
+        image: DESTINATION_IMAGES.TOTAL_REVENUE 
+      },
     ];
   }, [bookings]);
 
   const getFilterClassName = (status) => 
     status.toLowerCase() === filterStatus.toLowerCase() ? 'active-navy' : '';
+
+  const getPaymentFilterClassName = (filter) => 
+    filter === paymentFilter ? 'active-navy' : '';
 
   const statusOptions = useMemo(() => {
     const opts = ['ALL'];
@@ -206,6 +271,14 @@ const Booking = () => {
     ['pending', 'confirmed', 'cancelled'].forEach(s => unique.has(s) && opts.push(s));
     return opts;
   }, [bookings]);
+
+  // ✅ NEW: Payment filter options
+  const paymentOptions = [
+    { value: 'ALL', label: 'All Payments' },
+    { value: 'PENDING_BALANCE', label: 'Pending Balance' },
+    { value: 'FULLY_PAID', label: 'Fully Paid' },
+    { value: 'PARTIAL_ONLY', label: 'Partial Payment' }
+  ];
 
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   const currentBookings = useMemo(() => {
@@ -241,6 +314,10 @@ const Booking = () => {
             setFilterStatus={setFilterStatus}
             statusOptions={statusOptions}
             getFilterClassName={getFilterClassName}
+            paymentFilter={paymentFilter}
+            setPaymentFilter={setPaymentFilter}
+            paymentOptions={paymentOptions}
+            getPaymentFilterClassName={getPaymentFilterClassName}
           />
           
           <div className="bkm-table-container">
@@ -254,6 +331,7 @@ const Booking = () => {
                   <th>Travel Date</th>
                   <th>Guests</th>
                   <th>Amount</th>
+                  <th>Payment Status</th>
                   <th>Status</th>
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
@@ -279,6 +357,7 @@ const Booking = () => {
                 UsersIcon={Users}
                 ArchiveIcon={Archive}
                 RotateCcwIcon={RotateCcw}
+                WalletIcon={Wallet}
                 startIndex={startIndex}
               />
             </table>
