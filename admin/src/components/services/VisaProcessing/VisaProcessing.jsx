@@ -273,7 +273,7 @@ const VisaProcessing = () => {
 
   const fetchVisas = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/visas");
+      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/visas");
       if (Array.isArray(res.data)) {
         setVisaForms(res.data.map((v) => ({ ...v, id: v._id, desc: v.description })));
       }
@@ -286,7 +286,7 @@ const VisaProcessing = () => {
 
   const fetchInquiries = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
+      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries?isArchive=No');
       if (response.data.success) {
         const visaRequests = response.data.data.filter(inq => 
             (inq.inquiryType === 'VISA') && inq.isArchive === 'No'
@@ -301,7 +301,7 @@ const VisaProcessing = () => {
   const handleArchive = async (id) => {
     if (window.confirm("Are you sure you want to archive this inquiry?")) {
       try {
-        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+        const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
           isArchive: "Yes"
         });
         if (response.data.success) {

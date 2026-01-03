@@ -13,7 +13,8 @@ const {
   deliverDocuments,
   getInquiryAnalytics,
   getInquiriesByDateRange,
-  toggleArchive // Imported new function
+  toggleArchive,
+  updateInquiry // <--- DINAGDAG NA IMPORT
 } = require('../controller/inquiryController');
 const multer = require('multer');
 const path = require('path');
@@ -63,7 +64,11 @@ router.get('/', getAllInquiries);
 router.get('/:id', getInquiry);
 router.delete('/:id', deleteInquiry);
 
-// ✅ ARCHIVE ROUTE ADDED
+// ✅ UPDATE ROUTE (Para sa EditAirline.jsx)
+// Gagamit ng uploadEvidence dahil 'evidence' ang field name sa frontend
+router.put('/update/:id', uploadEvidence.single('evidence'), updateInquiry); 
+
+// ✅ ARCHIVE ROUTE
 router.put('/:id/archive', toggleArchive); 
 
 router.put('/:id/status', uploadEvidence.single('evidence'), updateInquiryStatus);

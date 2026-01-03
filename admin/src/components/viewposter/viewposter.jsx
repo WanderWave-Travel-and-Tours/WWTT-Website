@@ -35,7 +35,7 @@ const ViewPoster = () => {
         setLoading(true);
         try {
             // Kinukuha ang lahat ng posters mula sa backend
-            const response = await fetch('http://localhost:5000/api/posters');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters');
             if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
             
@@ -56,7 +56,7 @@ const ViewPoster = () => {
             try {
                 // UPDATE: Binago ang endpoint patungong /status at method patungong PUT
                 // Pinapasa natin ang { isArchive: 'Yes' } para i-update ang field sa database
-                const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, { 
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ isArchive: 'Yes' }) 
@@ -89,7 +89,7 @@ const ViewPoster = () => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         
         try {
-            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -203,7 +203,7 @@ const ViewPoster = () => {
                                             <td>
                                                 <div className="vp-image-preview">
                                                     <img 
-                                                        src={`http://localhost:5000/${poster.imageUrl}`} 
+                                                        src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
                                                         alt={poster.title}
                                                     />
                                                 </div>

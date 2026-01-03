@@ -3,11 +3,13 @@ import axios from "axios";
 import { 
   X, CreditCard, CheckCircle, Upload, Send, FileText, 
   AlertCircle, Clock, User, Mail, DollarSign, Calendar, 
-  Package, TrendingUp, Globe, Flag
+  Package, TrendingUp, Globe, Flag, Edit 
 } from "lucide-react";
-import "./VisaInquiryModal.css"; // Sariling CSS ng Visa
+import { useNavigate } from "react-router-dom"; 
+import "./VisaInquiryModal.css"; 
 
 const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
+  const navigate = useNavigate(); 
   const [documents, setDocuments] = useState([]);
   const [showContactRemarks, setShowContactRemarks] = useState(false);
   const [contactRemarks, setContactRemarks] = useState("");
@@ -27,7 +29,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) {
         setDocuments(response.data.documents || []);
       }
@@ -37,10 +39,15 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
     }
   };
 
+  // --- EDIT FUNCTION HANDLER ---
+ const handleEditClick = () => {
+  navigate(`/EditVisa/${inquiry._id}`);
+};
+
   const handleUpdateStatus = async (status) => {
     try {
         const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${inquiry._id}/status`,
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/status`,
             { status }
         );
         if (response.data.success) {
@@ -61,7 +68,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
         if (contactEvidence) formData.append('evidence', contactEvidence);
 
         const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${inquiry._id}/status`,
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/status`,
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
@@ -88,7 +95,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
   const handleConfirmPayment = async () => {
     if (!window.confirm("Confirm that payment has been received?")) return;
     try {
-        const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiry._id}/confirm-payment`, {
+        const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/confirm-payment`, {
             adminName: 'Admin' 
         });
         if (response.data.success) {
@@ -101,7 +108,6 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
     }
   };
 
-  // Deliver Documents Function
   const handleDeliverDocuments = async () => {
     if (deliveryFiles.length === 0) {
         alert("Please select files to upload.");
@@ -113,7 +119,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
         deliveryFiles.forEach(file => formData.append('documents', file));
 
         const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${inquiry._id}/deliver-documents`,
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/deliver-documents`,
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
@@ -131,7 +137,6 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
     }
   };
 
-  // Helpers
   const formatDate = (d) => d ? new Date(d).toLocaleDateString() : 'N/A';
   const formatFileSize = (bytes) => {
     if (!bytes) return "0 B";
@@ -158,13 +163,11 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
   const statusConfig = getStatusConfig(localInquiryStatus);
   const StatusIcon = statusConfig.icon;
 
-  // Filter Logic
   let finalSentDocs = [];
   if (inquiry.deliveredDocuments && inquiry.deliveredDocuments.length > 0) {
     finalSentDocs = inquiry.deliveredDocuments;
   }
 
-  // Group client docs by section if available, otherwise flat list
   const clientDocs = documents.filter(doc => !doc.isAdminUpload);
 
   return (
@@ -176,18 +179,23 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
           <div className="vim-header">
             <div className="vim-header-content">
               <div className="vim-title-group">
-                <h2 className="vim-title">Visa Request Details</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <h2 className="vim-title">Visa Request Details</h2>
+  </div>
                 <div className="vim-meta">
                   <span className="vim-ref">REF: #{inquiry._id.slice(-8).toUpperCase()}</span>
                   <span className="vim-divider">•</span>
                   <span className="vim-date">{formatDate(inquiry.createdAt)}</span>
                 </div>
               </div>
-              <div className={`vim-status-badge vim-status-${statusConfig.color}`}>
-                <div className="vim-status-icon"><StatusIcon size={16} /></div>
-                <div className="vim-status-content">
-                  <span className="vim-status-label">{statusConfig.label}</span>
-                  <span className="vim-status-desc">{statusConfig.description}</span>
+
+              {/* STATUS BADGE */}
+              <div className="vim-header-actions">
+                <div className={`vim-status-badge vim-status-${statusConfig.color}`}>
+                  <div className="vim-status-icon"><StatusIcon size={16} /></div>
+                  <div className="vim-status-content">
+                    <span className="vim-status-label">{statusConfig.label}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -262,10 +270,10 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                             {doc.fileName || doc.originalName}
                           </span>
                           <span className="vim-file-size" style={{color:'#16a34a'}}>
-                             Sent • {formatDate(doc.uploadedAt)}
+                               Sent • {formatDate(doc.uploadedAt)}
                           </span>
                         </div>
-                        <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" 
+                        <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" 
                            className="vim-btn vim-btn-ghost vim-btn-sm" style={{color:'#16a34a'}}>
                           <TrendingUp size={14} /> View
                         </a>
@@ -321,6 +329,8 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                     </button>
                   </div>
                 )}
+
+                
               </div>
             )}
 
@@ -406,12 +416,14 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                         <span className="vim-doc-name">{doc.originalName}</span>
                         <span className="vim-doc-meta">{formatFileSize(doc.fileSize)} • {formatDate(doc.uploadedAt)}</span>
                       </div>
-                      <a href={`http://localhost:5000${doc.fileUrl}`} download={doc.originalName} className="vim-btn vim-btn-ghost vim-btn-sm">
-                        <Upload size={14} style={{transform: 'rotate(180deg)'}} /> Download
-                      </a>
-                      <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="vim-btn vim-btn-ghost vim-btn-sm">
-                        <TrendingUp size={14} /> View
-                      </a>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} download={doc.originalName} className="vim-btn vim-btn-ghost vim-btn-sm">
+                          <Upload size={14} style={{transform: 'rotate(180deg)'}} /> Download
+                        </a>
+                        <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="vim-btn vim-btn-ghost vim-btn-sm">
+                          <TrendingUp size={14} /> View
+                        </a>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -467,10 +479,50 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
             </div>
 
           </div>
+                  {/* FOOTER BUTTONS - UPDATED WITH EDIT BOOKING BUTTON */}
+                  <div className="cnm-footer" style={{ 
+                    justifyContent: 'flex-end', 
+                    gap: '12px',
+                    padding: '20px 24px',
+                    borderTop: '1px solid #f1f5f9'
+                  }}>
+                    <button 
+                       className="cnm-btn" 
+                       style={{ 
+                         backgroundColor: '#eff6ff', 
+                         color: '#2563eb', 
+                         border: '1px solid #dbeafe',
+                         display: 'flex',
+                         alignItems: 'center',
+                         gap: '8px',
+                         padding: '10px 20px',
+                         borderRadius: '8px',
+                         fontWeight: '600'
+                       }}
+                       onClick={() => navigate(`/EditVisa/${inquiry._id}`)}
+                    >
+                      <Edit size={18} /> <span>Edit Visa</span>
+                    </button>
+                    
+                    <button 
+                      className="cnm-btn cnm-btn-ghost" 
+                      onClick={onClose} 
+                      style={{ 
+                        border: '1px solid #e2e8f0',
+                        padding: '10px 24px',
+                        borderRadius: '8px'
+                      }}
+                    >
+                      Close
+                    </button>
+                  </div>
         </div>
+        
       </div>
 
-      {/* SUB-MODAL: Contact Remarks (Same structure) */}
+
+
+      {/* SUB-MODAL: Contact Remarks */}
       {showContactRemarks && (
         <div className="vim-overlay" style={{ zIndex: 10000 }}>
             <div className="vim-modal vim-modal-sm">

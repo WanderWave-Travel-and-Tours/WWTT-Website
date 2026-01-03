@@ -1,8 +1,10 @@
 import React from "react";
 import { 
   X, CreditCard, CheckCircle, Clock, User, Mail, DollarSign, 
-  Calendar, AlertCircle, Upload, FileText, TrendingUp, Package, Send 
+  Calendar, AlertCircle, Upload, FileText, TrendingUp, Package, Send,
+  Edit // Idinagdag ang Edit icon
 } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // Idinagdag para sa navigation
 import "./AirlineModals.css"; 
 
 const formatDate = (dateString) => {
@@ -12,6 +14,8 @@ const formatDate = (dateString) => {
 
 // --- MAIN INQUIRY MODAL ---
 export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onRequestPayment, setShowContactRemarks }) => {
+  const navigate = useNavigate(); // Hook para sa paglipat ng page
+
   if (!inquiry) return null;
 
   // Status Configuration
@@ -51,7 +55,7 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
                  borderColor: statusConfig.border,
                  color: statusConfig.color
              }}>
-                <Clock size={20} /> {/* Increased Icon Size */}
+                <Clock size={20} />
                 <div className="air-pill-text">
                     <span className="air-pill-label">{statusConfig.label}</span>
                     <span className="air-pill-sub">{statusConfig.sub}</span>
@@ -108,7 +112,7 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
             </div>
           )}
 
-          {/* ZONE 2: Client Information (2 Columns) */}
+          {/* ZONE 2: Client Information */}
           <div className="air-section-card">
             <h3 className="air-section-label">CLIENT INFORMATION</h3>
             <div className="air-client-list">
@@ -143,7 +147,7 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
             </div>
           </div>
 
-          {/* ZONE 3: Flight Details (1 Column) */}
+          {/* ZONE 3: Flight Details */}
           <div className="air-section-card">
             <h3 className="air-section-label">FLIGHT DETAILS</h3>
             <div className="air-flight-details">
@@ -213,14 +217,41 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
                 </button>
              </div>
           </div>
-
         </div>
+
+        {/* FOOTER - Idinagdag ang Edit Button dito para kapareho ng TourDetailModal flow */}
+        <div className="air-modal-footer" style={{ 
+            padding: '20px 32px', 
+            borderTop: '1px solid #e2e8f0', 
+            display: 'flex', 
+            justifyContent: 'flex-end',
+            gap: '12px',
+            backgroundColor: '#f8fafc',
+            borderBottomLeftRadius: '16px',
+            borderBottomRightRadius: '16px'
+        }}>
+          <button className="tdm-btn-edit" onClick={() => navigate(`/EditAirline/${inquiry._id}`)}>
+             <Edit size={16}/> Edit Booking
+          </button>
+          <button className="air-close-btn-secondary" onClick={onClose} style={{
+              padding: '10px 20px',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              backgroundColor: 'white',
+              cursor: 'pointer',
+              fontWeight: '600',
+              color: '#64748b'
+          }}>
+            Close
+          </button>
+        </div>
+
       </div>
     </div>
   );
 };
 
-// ... (Report Issue Modal)
+// --- REPORT ISSUE MODAL ---
 export const AirlineContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit, onClose }) => (
     <div className="air-overlay">
       <div className="air-modal air-modal-sm">
