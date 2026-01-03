@@ -34,7 +34,7 @@ const BookingRightForm = ({ pkg }) => {
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
   const [isCheckingPromo, setIsCheckingPromo] = useState(false);
-
+  const [paymentType, setPaymentType] = useState('full');
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
       setPromoError('Please enter a promo code');
@@ -233,6 +233,14 @@ const BookingRightForm = ({ pkg }) => {
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const calculatePartialAmount = () => {
+    const finalAmount = selectedFlight ? finalTotalAmount : finalPackageTotal;
+    const percentage = selectedFlight ? 0.85 : 0.50;
+    return Math.round(finalAmount * percentage);
+  };
+
+  const partialAmount = calculatePartialAmount();
 
   const isInSelectedRange = (day) => {
     if (!selectedDate) return false;
@@ -482,6 +490,9 @@ const BookingRightForm = ({ pkg }) => {
         
         airfareTotal: airfareTotal,
         totalAmount: finalTotalAmount,
+        paymentType: paymentType || 'full',
+        initialPaymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount,
+        remainingBalance: paymentType === 'partial' ? (finalTotalAmount - partialAmount) : 0,
         primaryContact: {
           fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
           email: passengers[0].email,
@@ -531,7 +542,9 @@ const BookingRightForm = ({ pkg }) => {
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
         const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
-            bookingId: bookingId
+            bookingId: bookingId,
+            paymentType: paymentType || 'full',
+            paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
         });
         
         if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
@@ -956,6 +969,9 @@ const BookingRightForm = ({ pkg }) => {
         requiresPassport={requiresPassport}
         passengerStep={passengerStep}
         totalPassengers={totalPassengers}
+        paymentType={paymentType}
+        setPaymentType={setPaymentType}
+        partialAmount={partialAmount}
         progressPercent={Math.round((passengerStep / totalPassengers) * 100)}
         currentPassenger={passengers[passengerStep - 1]}
         passengers={passengers}

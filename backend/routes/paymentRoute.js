@@ -7,21 +7,10 @@ const paymentController = require('../controller/paymentController');
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
 
-// ==========================================
-// ROUTES FOR PAYMENT GENERATION
-// ==========================================
-
-// Route for Inquiry Payments (Visa, Cenomar, PSA, etc.) - Uses Checkout Session
 router.post('/create-inquiry-checkout', paymentController.createInquiryCheckoutSession);
-
-// Route for Package Bookings - Uses Payment Links
 router.post('/create-intent', paymentController.createBookingPaymentLink);
+router.post('/create-balance-intent', paymentController.createBalancePaymentLink);
 
-// ==========================================
-// WEBHOOKS & VERIFICATION
-// ==========================================
-
-// Webhook for PayMongo (Mainly handles 'Link' payments for Bookings)
 router.post('/webhook', async (req, res) => {
   try {
     const event = req.body.data;
@@ -54,7 +43,6 @@ router.post('/webhook', async (req, res) => {
       return res.json({ received: true, bookingConfirmed: true });
     }
 
-    // Return 200 OK for other events to acknowledge receipt
     res.json({ received: true });
 
   } catch (error) {
@@ -63,7 +51,6 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
-// Verification Route (Utility to check link status manually)
 router.get('/verify/:linkId', async (req, res) => {
   try {
     const { linkId } = req.params;

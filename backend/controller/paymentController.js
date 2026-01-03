@@ -8,9 +8,6 @@ const PAYMONGO_API = 'https://api.paymongo.com/v1';
 
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
 
-// ==========================================
-// FUNCTION 1: FOR INQUIRIES (Visa, Cenomar, PSA)
-// ==========================================
 const createInquiryCheckoutSession = async (req, res) => {
   try {
     const { inquiryId } = req.body;
@@ -51,8 +48,8 @@ const createInquiryCheckoutSession = async (req, res) => {
             send_email_receipt: true,
             show_description: true,
             description: `Inquiry Ref: ${inquiry._id}`,
-            success_url: `http://localhost:5173/dashboard?success=true&inquiryId=${inquiry._id}`,
-            cancel_url: `http://localhost:5173/dashboard`
+            success_url: `http://localhost:3001/dashboard?success=true&inquiryId=${inquiry._id}`,
+            cancel_url: `http://localhost:3001/dashboard`
           }
         }
       }
@@ -86,46 +83,32 @@ const createInquiryCheckoutSession = async (req, res) => {
   }
 };
 
-// ==========================================
-// FUNCTION 2: FOR BOOKINGS (Travel Packages)
-// 🔥 FIXED VERSION - Expects bookingId to already exist
-// ==========================================
 const createBookingPaymentLink = async (req, res) => {
   try {
     console.log('═══════════════════════════════════════');
-    console.log('📥 PAYMENT CONTROLLER RECEIVED REQUEST');
+    console.log('🔥 PAYMENT CONTROLLER RECEIVED REQUEST');
     console.log('═══════════════════════════════════════');
     console.log('Request Body:', req.body);
-    console.log('Request Headers:', req.headers);
-    console.log('Body Keys:', Object.keys(req.body));
-    console.log('BookingId Value:', req.body.bookingId);
-    console.log('BookingId Type:', typeof req.body.bookingId);
 
-    const { bookingId } = req.body;
+    const { bookingId, paymentType, paymentAmount } = req.body;
 
     if (!bookingId) {
       console.error('❌ Missing bookingId in request body');
-      console.error('Received body:', JSON.stringify(req.body, null, 2));
       return res.status(400).json({
         success: false,
-        message: 'Missing required field: bookingId',
-        receivedBody: req.body,
-        debug: {
-          bodyKeys: Object.keys(req.body),
-          bodyValues: Object.values(req.body)
-        }
+        message: 'Missing required field: bookingId'
       });
     }
 
     console.log('✅ BookingId received:', bookingId);
+    console.log('💳 Payment Type:', paymentType || 'full');
+    console.log('💰 Payment Amount:', paymentAmount);
 
-    // Find the existing booking
     console.log('🔍 Searching for booking in database...');
     const booking = await Booking.findById(bookingId);
     
     if (!booking) {
       console.error('❌ Booking not found in database');
-      console.error('Searched for ID:', bookingId);
       return res.status(404).json({
         success: false,
         message: 'Booking not found',
@@ -140,7 +123,6 @@ const createBookingPaymentLink = async (req, res) => {
       status: booking.status
     });
 
-    // Check for duplicate payment link
     if (booking.paymentLinkId) {
       console.warn('⚠️ Payment link already exists');
       return res.status(400).json({
@@ -150,32 +132,41 @@ const createBookingPaymentLink = async (req, res) => {
       });
     }
 
-    // Convert to centavos
-    const amountInCentavos = Math.round(booking.totalAmount * 100);
+    const amountToPay = paymentAmount || booking.totalAmount;
+    const amountInCentavos = Math.round(amountToPay * 100);
+    
+    const isPartial = paymentType === 'partial';
+    const paymentDescription = isPartial 
+      ? `Initial Payment (${paymentType === 'partial' && booking.includesAirfare ? '85%' : '50%'})`
+      : 'Full Payment';
 
     console.log('💰 Payment Details:', {
-      totalAmount: booking.totalAmount,
+      paymentType: paymentType || 'full',
+      amountToPay: amountToPay,
       amountInCentavos: amountInCentavos,
-      currency: 'PHP'
+      totalAmount: booking.totalAmount,
+      description: paymentDescription
     });
 
     console.log('📡 Calling PayMongo API...');
 
-    // Create PayMongo Payment Link
     const paymentLinkResponse = await axios.post(
       `${PAYMONGO_API}/links`,
       {
         data: {
           attributes: {
             amount: amountInCentavos,
-            description: `${booking.packageName} - ${booking.fullName}`,
-            remarks: `Booking for ${booking.fullName}`,
+            description: `${booking.packageName} - ${paymentDescription} - ${booking.fullName}`,
+            remarks: `${paymentDescription} for ${booking.fullName}`,
             metadata: {
               booking_id: bookingId,
               customer_name: booking.fullName,
               customer_email: booking.email,
               package: booking.packageName,
               total_amount: booking.totalAmount,
+              payment_amount: amountToPay,
+              payment_type: paymentType || 'full',
+              is_initial_payment: true,
               includes_airfare: booking.includesAirfare || false
             }
           }
@@ -197,8 +188,8 @@ const createBookingPaymentLink = async (req, res) => {
       referenceNumber: paymentLink.attributes.reference_number
     });
 
-    // Update booking with payment details
     booking.paymentLinkId = paymentLink.id;
+    booking.initialPaymentLinkId = paymentLink.id; 
     booking.referenceNumber = paymentLink.attributes.reference_number;
     await booking.save();
 
@@ -213,6 +204,8 @@ const createBookingPaymentLink = async (req, res) => {
       paymentLinkId: paymentLink.id,
       referenceNumber: paymentLink.attributes.reference_number,
       bookingId: bookingId,
+      paymentType: paymentType || 'full',
+      paymentAmount: amountToPay,
       message: 'Payment link created successfully'
     });
 
@@ -222,7 +215,6 @@ const createBookingPaymentLink = async (req, res) => {
     console.error('═══════════════════════════════════════');
     console.error('Error Type:', error.name);
     console.error('Error Message:', error.message);
-    console.error('Error Stack:', error.stack);
     
     if (error.response) {
       console.error('PayMongo API Error:');
@@ -233,17 +225,134 @@ const createBookingPaymentLink = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to create payment link',
-      error: error.response?.data?.errors || error.message,
-      details: error.response?.data,
-      debug: {
-        errorType: error.name,
-        errorMessage: error.message
+      error: error.response?.data?.errors || error.message
+    });
+  }
+};
+
+const createBalancePaymentLink = async (req, res) => {
+  try {
+    console.log('═══════════════════════════════════════');
+    console.log('💰 BALANCE PAYMENT LINK REQUEST');
+    console.log('═══════════════════════════════════════');
+
+    const { bookingId, amount } = req.body;
+
+    if (!bookingId || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: bookingId and amount'
+      });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.paymentType !== 'partial') {
+      return res.status(400).json({
+        success: false,
+        message: 'This booking was paid in full'
+      });
+    }
+
+    if (booking.isFullyPaid()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already fully paid'
+      });
+    }
+
+    if (booking.balancePaymentLinkId) {
+      console.warn('⚠️ Balance payment link already exists');
+      return res.status(400).json({
+        success: false,
+        message: 'Balance payment link already exists',
+        existingLinkId: booking.balancePaymentLinkId
+      });
+    }
+
+    const amountInCentavos = Math.round(amount * 100);
+
+    console.log('💰 Balance Payment Details:', {
+      bookingId: bookingId,
+      balanceAmount: amount,
+      amountInCentavos: amountInCentavos
+    });
+
+    const paymentLinkResponse = await axios.post(
+      `${PAYMONGO_API}/links`,
+      {
+        data: {
+          attributes: {
+            amount: amountInCentavos,
+            description: `${booking.packageName} - Remaining Balance - ${booking.fullName}`,
+            remarks: `Balance Payment for ${booking.fullName}`,
+            metadata: {
+              booking_id: bookingId,
+              customer_name: booking.fullName,
+              customer_email: booking.email,
+              package: booking.packageName,
+              payment_amount: amount,
+              payment_type: 'balance',
+              is_balance_payment: true,
+              total_amount: booking.totalAmount,
+              initial_payment: booking.initialPaymentAmount
+            }
+          }
+        }
+      },
+      {
+        headers: {
+          'Authorization': `Basic ${authHeader}`,
+          'Content-Type': 'application/json'
+        }
       }
+    );
+
+    const paymentLink = paymentLinkResponse.data.data;
+    
+    console.log('✅ Balance Payment Link Created:', {
+      linkId: paymentLink.id,
+      checkoutUrl: paymentLink.attributes.checkout_url
+    });
+
+    booking.balancePaymentLinkId = paymentLink.id;
+    await booking.save();
+
+    console.log('✅ Booking updated with balance payment link');
+    console.log('═══════════════════════════════════════');
+
+    return res.json({
+      success: true,
+      checkoutUrl: paymentLink.attributes.checkout_url,
+      paymentLinkId: paymentLink.id,
+      amount: amount,
+      message: 'Balance payment link created successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Balance Payment Link Error:', error.message);
+    
+    if (error.response) {
+      console.error('PayMongo API Error:', error.response.data);
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create balance payment link',
+      error: error.response?.data?.errors || error.message
     });
   }
 };
 
 module.exports = { 
     createInquiryCheckoutSession, 
-    createBookingPaymentLink 
+    createBookingPaymentLink,
+    createBalancePaymentLink 
 };

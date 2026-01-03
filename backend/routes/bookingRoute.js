@@ -429,6 +429,12 @@ router.post('/', upload.any(), async (req, res) => {
       flightDetails: flightDetailsObject, 
       airfareTotal: bookingData.airfareTotal || 0,
       totalAmount: bookingData.totalAmount,
+
+      paymentType: bookingData.paymentType || 'full',
+      initialPaymentAmount: bookingData.paymentAmount || bookingData.totalAmount,
+      remainingBalance: bookingData.remainingBalance || 0,
+      balancePaidAmount: 0,
+
       fullName: primaryName,
       email: primaryEmail,
       message: bookingData.message || '',
@@ -631,5 +637,196 @@ router.put('/:id/cancel', async (req, res) => {
   }
 });
 
+router.get('/:id/balance', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    const balanceInfo = {
+      bookingId: booking._id,
+      totalAmount: booking.totalAmount,
+      paymentType: booking.paymentType,
+      initialPaymentAmount: booking.initialPaymentAmount,
+      remainingBalance: booking.remainingBalance,
+      balancePaidAmount: booking.balancePaidAmount,
+      isFullyPaid: booking.isFullyPaid(),
+      paymentStatus: booking.getPaymentStatusDescription(),
+      initialPaymentDate: booking.paidAt,
+      balancePaymentDate: booking.balancePaidAt
+    };
+
+    res.json({
+      success: true,
+      balanceInfo: balanceInfo
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching balance info:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch balance information',
+      error: error.message
+    });
+  }
+});
+
+router.post('/:id/create-balance-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.paymentType !== 'partial') {
+      return res.status(400).json({
+        success: false,
+        message: 'This booking was paid in full'
+      });
+    }
+
+    if (booking.remainingBalance <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No remaining balance to pay'
+      });
+    }
+
+    if (booking.isFullyPaid()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already fully paid'
+      });
+    }
+
+    const axios = require('axios');
+    
+    const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-balance-intent', {
+      bookingId: booking._id,
+      amount: booking.remainingBalance
+    });
+
+    if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
+      booking.balancePaymentLinkId = paymentResponse.data.paymentLinkId;
+      await booking.save();
+
+      res.json({
+        success: true,
+        checkoutUrl: paymentResponse.data.checkoutUrl,
+        paymentLinkId: paymentResponse.data.paymentLinkId,
+        amount: booking.remainingBalance
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create payment link'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error creating balance payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create balance payment link',
+      error: error.message
+    });
+  }
+});
+
+router.put('/:id/confirm-balance-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentId } = req.body;
+    
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.isFullyPaid()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already fully paid'
+      });
+    }
+
+    booking.balancePaidAmount = booking.remainingBalance;
+    booking.remainingBalance = 0;
+    booking.balancePaymentId = paymentId;
+    booking.balancePaidAt = new Date();
+    booking.status = 'fully_paid';
+    booking.updatedAt = new Date();
+
+    await booking.save();
+
+    console.log(`✅ Balance payment confirmed for booking ${id}`);
+
+    res.json({
+      success: true,
+      message: 'Balance payment confirmed successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Error confirming balance payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to confirm balance payment',
+      error: error.message
+    });
+  }
+});
+
+router.get('/pending-balance/all', async (req, res) => {
+  try {
+    const bookings = await Booking.find({
+      paymentType: 'partial',
+      remainingBalance: { $gt: 0 },
+      status: 'partial_paid',
+      isArchive: 'No'
+    }).sort({ createdAt: -1 });
+
+    const bookingsWithBalance = bookings.map(booking => ({
+      _id: booking._id,
+      packageName: booking.packageName,
+      fullName: booking.fullName,
+      email: booking.email,
+      totalAmount: booking.totalAmount,
+      initialPaymentAmount: booking.initialPaymentAmount,
+      remainingBalance: booking.remainingBalance,
+      startDate: booking.startDate,
+      createdAt: booking.createdAt,
+      paidAt: booking.paidAt
+    }));
+
+    res.json({
+      success: true,
+      count: bookingsWithBalance.length,
+      bookings: bookingsWithBalance
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching pending balance bookings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch bookings with pending balance'
+    });
+  }
+});
 
 module.exports = router;

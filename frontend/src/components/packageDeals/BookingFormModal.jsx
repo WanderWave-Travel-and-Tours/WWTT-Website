@@ -1,8 +1,8 @@
 import React from 'react';
-import { X, Plane, CheckCircle, Upload } from 'lucide-react';
+import { X, Plane, CheckCircle, Upload, Wallet, CreditCard } from 'lucide-react';
 // Import the new CSS file
 import './BookingFormModal.css';
-
+import './PaymentOption.css'
 const BookingFormModal = ({ 
   isOpen, 
   onClose, 
@@ -31,10 +31,22 @@ const BookingFormModal = ({
   handleFileUpload, 
   removeFile, 
   handleNextPassenger, 
-  handleBackPassenger, 
+  handleBackPassenger,
+  // NEW: Payment option props
+  paymentType,
+  setPaymentType,
+  partialAmount,
   loading 
 }) => {
   if (!isOpen) return null;
+
+  // Check if this is the last passenger (payment options should show)
+  const isLastPassenger = passengerStep === totalPassengers;
+  const finalAmount = selectedFlight ? totalAmount : finalPackageTotal;
+  
+  // Dynamic percentage based on airfare
+  const partialPercentage = selectedFlight ? 85 : 50;
+  const partialPercentageText = selectedFlight ? '85%' : '50%';
 
   return (
     <div className="bfm-overlay">
@@ -346,6 +358,100 @@ const BookingFormModal = ({
               )}
 
             </div>
+
+            {/* ✅ PAYMENT OPTIONS - Show only on last passenger */}
+            {isLastPassenger && (
+              <div className="bfm-payment-section">
+                <div className="bfm-payment-header">
+                  <Wallet size={20} />
+                  <h3>Select Payment Option</h3>
+                </div>
+                
+                <div className="bfm-payment-options">
+                  {/* PAY IN FULL */}
+                  <div 
+                    className={`bfm-payment-card ${paymentType === 'full' ? 'active' : ''}`}
+                    onClick={() => setPaymentType('full')}
+                  >
+                    <div className="bfm-payment-card-header">
+                      <div className="bfm-payment-radio">
+                        <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
+                      </div>
+                      <div className="bfm-payment-card-title">
+                        <CreditCard size={18} />
+                        <span>Pay in Full</span>
+                        <span className="bfm-recommended-badge">Most Popular</span>
+                      </div>
+                    </div>
+                    <div className="bfm-payment-card-body">
+                      <div className="bfm-payment-amount">
+                        ₱{finalAmount.toLocaleString()}
+                      </div>
+                      <div className="bfm-payment-description">
+                        Complete payment now and secure your booking
+                      </div>
+                      <ul className="bfm-payment-benefits">
+                        <li>✓ Instant confirmation</li>
+                        <li>✓ No further payments needed</li>
+                        <li>✓ Priority processing</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* PARTIAL PAYMENT */}
+                  <div 
+                    className={`bfm-payment-card ${paymentType === 'partial' ? 'active' : ''}`}
+                    onClick={() => setPaymentType('partial')}
+                  >
+                    <div className="bfm-payment-card-header">
+                      <div className="bfm-payment-radio">
+                        <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
+                      </div>
+                      <div className="bfm-payment-card-title">
+                        <Wallet size={18} />
+                        <span>Partial Payment</span>
+                        <span className="bfm-flexible-badge">Flexible</span>
+                      </div>
+                    </div>
+                    <div className="bfm-payment-card-body">
+                      <div className="bfm-payment-amount">
+                        ₱{partialAmount.toLocaleString()}
+                        <span className="bfm-payment-percentage">{partialPercentageText} Down Payment</span>
+                      </div>
+                      <div className="bfm-payment-description">
+                        Pay {partialPercentageText} now, remaining balance before departure
+                      </div>
+                      <div className="bfm-payment-breakdown">
+                        <div className="bfm-breakdown-row">
+                          <span>Now ({partialPercentageText}):</span>
+                          <strong>₱{partialAmount.toLocaleString()}</strong>
+                        </div>
+                        <div className="bfm-breakdown-row">
+                          <span>Later ({100 - partialPercentage}%):</span>
+                          <strong>₱{(finalAmount - partialAmount).toLocaleString()}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Summary */}
+                <div className="bfm-payment-summary">
+                  <div className="bfm-summary-row">
+                    <span>Amount to pay now:</span>
+                    <strong className="bfm-amount-highlight">
+                      ₱{(paymentType === 'full' ? finalAmount : partialAmount).toLocaleString()}
+                    </strong>
+                  </div>
+                  {paymentType === 'partial' && (
+                    <div className="bfm-summary-row bfm-remaining">
+                      <span>Remaining balance:</span>
+                      <span>₱{(finalAmount - partialAmount).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* ACTION BUTTONS */}
             <div className="bfm-actions">

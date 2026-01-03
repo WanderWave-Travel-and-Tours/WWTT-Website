@@ -75,6 +75,21 @@ const bookingSchema = new mongoose.Schema({
 
   totalAmount: { type: Number, required: true },
 
+  paymentType: { 
+    type: String, 
+    enum: ['full', 'partial'], 
+    default: 'full' 
+  },
+  initialPaymentAmount: { type: Number, required: true },  // Amount paid initially (50% or 85% or 100%)
+  remainingBalance: { type: Number, default: 0 },           // Balance to be paid later
+  balancePaidAmount: { type: Number, default: 0 },          // Amount paid for remaining balance
+  balancePaidAt: { type: Date },                            // When remaining balance was paid
+  
+  initialPaymentId: { type: String },                       // First payment transaction ID
+  balancePaymentId: { type: String },                       // Second payment transaction ID
+  initialPaymentLinkId: { type: String },                   // First payment link ID
+  balancePaymentLinkId: { type: String },                   // Second payment link ID (for remaining balance)
+
   fullName: { type: String, required: true },
   email:    { type: String, required: true },
   message:  { type: String },
@@ -86,12 +101,12 @@ const bookingSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'failed', 'cancelled'],
+    enum: ['pending', 'confirmed', 'failed', 'cancelled', 'partial_paid', 'fully_paid'],
     default: 'pending'
   },
 
-  paymentId:        { type: String },
-  paymentLinkId:    { type: String },
+  paymentId:        { type: String },   // Legacy - kept for backwards compatibility
+  paymentLinkId:    { type: String },   // Legacy - kept for backwards compatibility
   referenceNumber:  { type: String },
 
   createdAt: { type: Date, default: Date.now },
@@ -99,7 +114,6 @@ const bookingSchema = new mongoose.Schema({
   paidAt: { type: Date },
   cancelledAt: { type: Date },
 
-  // NEW: Exactly like sa package.js
   isArchive: { type: String, default: 'No' },
 
   promoCode: { type: String, default: null },
@@ -112,6 +126,41 @@ bookingSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
+
+bookingSchema.virtual('computedRemainingBalance').get(function() {
+  if (this.paymentType === 'partial') {
+    return this.totalAmount - this.initialPaymentAmount - this.balancePaidAmount;
+  }
+  return 0;
+});
+
+bookingSchema.methods.isFullyPaid = function() {
+  if (this.paymentType === 'full') {
+    return this.status === 'confirmed' || this.status === 'fully_paid';
+  }
+  
+  const totalPaid = this.initialPaymentAmount + this.balancePaidAmount;
+  return totalPaid >= this.totalAmount;
+};
+
+bookingSchema.methods.getPaymentStatusDescription = function() {
+  if (this.paymentType === 'full') {
+    if (this.status === 'confirmed' || this.status === 'fully_paid') {
+      return 'Paid in Full';
+    }
+    return 'Pending Payment';
+  }
+  
+  if (this.isFullyPaid()) {
+    return 'Fully Paid';
+  }
+  
+  if (this.initialPaymentAmount > 0 && this.balancePaidAmount === 0) {
+    return `Partial Paid (₱${this.remainingBalance.toLocaleString()} remaining)`;
+  }
+  
+  return 'Pending Payment';
+};
 
 const Booking = mongoose.model('Booking', bookingSchema, 'bookings');
 

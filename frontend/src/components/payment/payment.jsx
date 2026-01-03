@@ -21,7 +21,10 @@ const Payment = () => {
 
   if (!bookingData) return null;
 
-  // 🔥 FIXED: Send only bookingId, not the entire object
+  // ✅ Use the correct payment amount
+  const paymentAmount = bookingData.initialPaymentAmount || bookingData.totalAmount;
+  const isPartialPayment = bookingData.paymentType === 'partial';
+
   const handlePayment = async () => {
     setIsProcessing(true);
 
@@ -32,17 +35,18 @@ const Payment = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bookingId: bookingData._id  // ✅ FIXED: Send just the ID
+          bookingId: bookingData._id, 
+          paymentType: bookingData.paymentType || 'full',              
+          paymentAmount: paymentAmount  // ✅ Use the calculated amount
         })
       });
 
       const data = await response.json();
 
-      console.log('📥 Payment response:', data);
+      console.log('🔥 Payment response:', data);
 
       if (data.success) {
         console.log('✅ Redirecting to:', data.checkoutUrl);
-        // Redirect to PayMongo Checkout URL
         window.location.href = data.checkoutUrl;
       } else {
         throw new Error(data.message || 'Payment creation failed');
@@ -66,7 +70,6 @@ const Payment = () => {
       
       <div className="payment-card-container">
         
-        {/* LEFT COLUMN - Summary */}
         <div className="payment-summary-section">
           <button className="back-link-modern" onClick={() => navigate(-1)} disabled={isProcessing}>
             <ArrowLeft size={18} />
@@ -84,7 +87,7 @@ const Payment = () => {
                 <div className="summary-icon"><Calendar size={18} /></div>
                 <div className="summary-text">
                   <span className="s-label">Travel Dates</span>
-                  <span className="s-value">{bookingData.startDate} — {bookingData.endDate}</span>
+                  <span className="s-value">{bookingData.startDate} – {bookingData.endDate}</span>
                 </div>
               </div>
 
@@ -114,15 +117,32 @@ const Payment = () => {
             </div>
 
             <div className="summary-footer">
-               <div className="total-row">
-                  <span className="total-label-lg">Total Amount</span>
-                  <span className="total-amount-lg">₱{bookingData.totalAmount.toLocaleString()}</span>
-               </div>
+               {/* ✅ Show payment breakdown for partial payments */}
+               {isPartialPayment ? (
+                 <>
+                   <div className="total-row" style={{fontSize: '0.9rem', color: '#6b7280', marginBottom: '8px'}}>
+                     <span>Total Package Price:</span>
+                     <span>₱{bookingData.totalAmount.toLocaleString()}</span>
+                   </div>
+                   <div className="total-row">
+                     <span className="total-label-lg">Amount Due Now ({bookingData.paymentType === 'partial' && bookingData.includesAirfare ? '85%' : '50%'})</span>
+                     <span className="total-amount-lg">₱{paymentAmount.toLocaleString()}</span>
+                   </div>
+                   <div className="total-row" style={{fontSize: '0.85rem', color: '#9ca3af', marginTop: '4px'}}>
+                     <span>Remaining Balance:</span>
+                     <span>₱{bookingData.remainingBalance.toLocaleString()}</span>
+                   </div>
+                 </>
+               ) : (
+                 <div className="total-row">
+                   <span className="total-label-lg">Total Amount</span>
+                   <span className="total-amount-lg">₱{paymentAmount.toLocaleString()}</span>
+                 </div>
+               )}
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN - Payment Form */}
         <div className="payment-form-section">
           <div className="form-header-modern">
             <h1 className="form-title-modern">Payment Details</h1>
@@ -131,7 +151,6 @@ const Payment = () => {
 
           <div className="payment-methods-modern">
             
-            {/* Credit Card */}
             <div 
               className={`method-card ${paymentMethod === 'card' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('card')}
@@ -150,7 +169,6 @@ const Payment = () => {
               </div>
             </div>
 
-            {/* GCash - Blue Badge Style */}
             <div 
               className={`method-card ${paymentMethod === 'gcash' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('gcash')}
@@ -169,7 +187,6 @@ const Payment = () => {
               </div>
             </div>
 
-            {/* PayMaya - White/Green Badge Style */}
             <div 
               className={`method-card ${paymentMethod === 'paymaya' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('paymaya')}
@@ -205,17 +222,22 @@ const Payment = () => {
             ) : (
               <>
                 <Lock size={18} /> 
-                CONFIRM ₱{bookingData.totalAmount.toLocaleString()}
+                CONFIRM ₱{paymentAmount.toLocaleString()}
               </>
             )}
           </button>
+          
+          {/* ✅ Show payment info */}
+          {isPartialPayment && (
+            <p style={{textAlign: 'center', fontSize: '0.85rem', color: '#6b7280', marginTop: '12px'}}>
+              Remaining balance of ₱{bookingData.remainingBalance.toLocaleString()} due before departure
+            </p>
+          )}
         </div>
       </div>
     </div>
   );
 };
-
-// --- BADGE COMPONENTS (Embedded for easier copy-paste) ---
 
 const CardIconsBadge = () => (
   <svg width="36" height="24" viewBox="0 0 36 24" fill="none" xmlns="http://www.w3.org/2000/svg">
