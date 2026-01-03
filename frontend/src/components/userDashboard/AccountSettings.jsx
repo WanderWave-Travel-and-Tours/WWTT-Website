@@ -35,7 +35,7 @@ const AccountSettings = ({ user }) => {
             return;
         }
         try {
-            const response = await fetch(`http://localhost:5000/api/users/update-profile/${user.id}`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/update-profile/${user.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -72,7 +72,7 @@ const AccountSettings = ({ user }) => {
         }
 
         try {
-            const response = await fetch(`http://localhost:5000/api/users/update-password/${user.id}`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/update-password/${user.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

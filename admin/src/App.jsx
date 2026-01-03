@@ -59,6 +59,11 @@ import PSASerbilis from './components/services/PSASerbilis/PSASerbilis.jsx';
 import CenomarRequest from './components/services/CenomarRequest/CenomarRequest.jsx';
 import PassportAppt from './components/services/PassportAppt/PassportAppt.jsx';
 import AirlineBooking from './components/services/AirlineBooking/AirlineBooking.jsx';
+import EditAirline from './components/services/AirlineBooking/EditAirline.jsx';
+import EditCenomar from './components/services/CenomarRequest/EditCenomar.jsx'; // INIDAGDAG NA IMPORT
+import EditVisa from './components/services/VisaProcessing/EditVisa.jsx';
+import EditPassport from './components/services/PassportAppt/EditPassport.jsx';
+import EditPSA from './components/services/PSASerbilis/EditPSA.jsx';
 import HotelBooking from './components/services/HotelBooking/HotelBooking.jsx';
 import TourArrangements from './components/services/TourArrangements/TourArrangements.jsx';
 import FerryBooking from './components/services/FerryBooking/FerryBooking.jsx';
@@ -130,7 +135,14 @@ function App() {
         <Route path="/services/psa" element={<PSASerbilis />} />
         <Route path="/services/cenomar" element={<CenomarRequest />} />
         <Route path="/services/passport" element={<PassportAppt />} />
+        
+        {/* Airline Booking Routes */}
         <Route path="/services/airlinebooking" element={<AirlineBooking />} />
+        <Route path="/EditAirline/:id" element={<EditAirline />} /> {/* INIDAGDAG NA ROUTE */}
+        <Route path="/EditCenomar/:id" element={<EditCenomar />} />
+        <Route path="/EditVisa/:id" element={<EditVisa />} />
+        <Route path="/EditPassport/:id" element={<EditPassport />} />
+        <Route path="/EditPSA/:id" element={<EditPSA />} />
         <Route path="/services/hotelbooking" element={<HotelBooking />} />
         <Route path="/services/tourarrangements" element={<TourArrangements />} />
         <Route path="/services/ferrybooking" element={<FerryBooking />} />

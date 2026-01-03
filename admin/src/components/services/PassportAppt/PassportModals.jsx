@@ -4,6 +4,7 @@ import {
   Plus, Save, ListPlus, ChevronDown, PlusCircle, Download, AlertCircle,
   Clock, User, Mail, DollarSign, Calendar, Package, TrendingUp,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // Idinagdag para sa navigation
 import "./PassportModals.css";
 
 // --- HELPER FUNCTIONS ---
@@ -29,6 +30,8 @@ export const AppointmentViewModal = ({
   onConfirmPayment, showDeliverDocs, setShowDeliverDocs, deliveryFiles = [],
   setDeliveryFiles, handleDeliverDocuments, setShowContactRemarks,
 }) => {
+  const navigate = useNavigate(); // Hook para sa navigation
+
   if (!appointment) return null;
 
   const handleDeliverDocsSubmit = (e) => {
@@ -356,13 +359,55 @@ export const AppointmentViewModal = ({
             </div>
           </div>
 
+
+
         </div>
+
+        {/* FOOTER BUTTONS - UPDATED WITH EDIT BOOKING BUTTON */}
+          <div className="ppt-footer-actions" style={{ 
+            display: 'flex',
+            justifyContent: 'flex-end', 
+            gap: '12px',
+            padding: '20px 24px',
+            borderTop: '1px solid #f1f5f9'
+          }}>
+            <button 
+                className="ppt-btn" 
+                style={{ 
+                  backgroundColor: '#eff6ff', 
+                  color: '#2563eb', 
+                  border: '1px solid #dbeafe',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+                onClick={() => navigate(`/EditPassport/${appointment._id}`)}
+            >
+              <Edit size={18} /> <span>Edit Passport</span>
+            </button>
+            
+            <button 
+              className="ppt-btn ppt-btn-ghost" 
+              onClick={onClose} 
+              style={{ 
+                border: '1px solid #e2e8f0',
+                padding: '10px 24px',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              Close
+            </button>
+          </div>
       </div>
+      
     </div>
   );
 };
-
-// ... (Rest of the modals remain the same structure but with ppt- prefixes) ...
 
 export const PassportContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit, onClose }) => (
   <div className="ppt-overlay">
