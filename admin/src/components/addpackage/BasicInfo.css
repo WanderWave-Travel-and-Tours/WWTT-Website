@@ -119,8 +119,72 @@
     border-color: #1e40af;
     box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
+
+.apkg-tour-type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Toggle Button Base */
+.apkg-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.apkg-toggle-btn:hover {
+  border-color: #fc9c1b;
+  background: #fff7ed;
+  color: #fc9c1b;
+  transform: translateY(-2px);
+}
+
+/* Active State */
+.apkg-toggle-btn.active {
+  border-color: #fc9c1b;
+  background: linear-gradient(135deg, #fc9c1b 0%, #ffa940 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
+}
+
+.apkg-toggle-btn.active .toggle-icon {
+  transform: scale(1.2);
+}
+
+/* Toggle Icon */
+.toggle-icon {
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+/* Field Hint Text */
+.apkg-field-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-style: italic;
+}
+
 /* Tablet */
 @media (max-width: 768px) {
+    .apkg-tour-type-toggle {
+        grid-template-columns: 1fr;
+    }
+    
     .apkg-fields {
         gap: 16px;
     }

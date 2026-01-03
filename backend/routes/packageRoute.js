@@ -43,6 +43,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, 
             duration, category, inclusions, itinerary,
+            tourType, minPax,  // ✅ ADDED
             userEmail, adminId 
         } = req.body;
 
@@ -55,11 +56,17 @@ router.post('/add', upload.single('image'), async (req, res) => {
             return res.status(400).json({ status: 'error', error: 'Image is required' });
         }
 
+        // ✅ Validate tourType and minPax
+        if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+            return res.status(400).json({ status: 'error', error: 'Minimum pax is required for joiner tours' });
+        }
+
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
         const logUserId = getValidAdminId(adminId);
 
-        const newPackage = new Package({
+        // ✅ Prepare package data with tourType and minPax
+        const packageData = {
             title,
             destination,
             sellerPrice: sellerPriceNum,
@@ -67,13 +74,20 @@ router.post('/add', upload.single('image'), async (req, res) => {
             price: sellerPriceNum + markupNum,
             duration,
             category,
+            tourType: tourType || 'private', // ✅ ADDED
             image: req.file.path, // Cloudinary Secure URL
             imagePublicId: req.file.filename, // Cloudinary ID for deletion later
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
             isArchive: 'No'
-        });
+        };
 
+        // ✅ Only add minPax if tourType is joiners
+        if (tourType === 'joiners' && minPax) {
+            packageData.minPax = parseInt(minPax);
+        }
+
+        const newPackage = new Package(packageData);
         const savedPackage = await newPackage.save();
 
         // Activity Logging
@@ -110,12 +124,18 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
+            tourType, minPax,  // ✅ ADDED
             userEmail, adminId
         } = req.body;
         
         const logUserId = getValidAdminId(adminId);
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
+
+        // ✅ Validate tourType and minPax
+        if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+            return res.status(400).json({ status: 'error', error: 'Minimum pax is required for joiner tours' });
+        }
 
         const updateData = {
             title,
@@ -125,9 +145,17 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             price: sellerPriceNum + markupNum,
             duration,
             category,
+            tourType: tourType || 'private',  // ✅ ADDED
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
+
+        // ✅ Handle minPax based on tourType
+        if (tourType === 'joiners' && minPax) {
+            updateData.minPax = parseInt(minPax);
+        } else if (tourType === 'private') {
+            updateData.minPax = null; // Clear minPax for private tours
+        }
 
         // If a new image is uploaded
         if (req.file) {

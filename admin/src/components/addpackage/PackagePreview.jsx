@@ -8,7 +8,10 @@ const IconLocation = () => (
     </svg>
 );
 
-const PackagePreview = ({ previewUrl, category, title, destination, price, duration, inclusions, itinerary }) => {
+const PackagePreview = ({ 
+    previewUrl, category, title, destination, price, duration, 
+    inclusions, itinerary, tourType, minPax 
+}) => {
     
     const activeInclusionsCount = inclusions.filter((i) => i.trim()).length;
     const totalActivities = itinerary.reduce(
@@ -32,7 +35,18 @@ const PackagePreview = ({ previewUrl, category, title, destination, price, durat
                     )}
                 </div>
                 <div className="apkg-card-body">
-                    <span className="apkg-card-badge">{category}</span>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <span className="apkg-card-badge">{category}</span>
+                        {/* ✅ NEW: Tour Type Badge */}
+                        {tourType && (
+                            <span className="apkg-card-badge" style={{ 
+                                backgroundColor: tourType === 'joiners' ? '#10b981' : '#3b82f6',
+                                fontSize: '11px'
+                            }}>
+                                {tourType === 'joiners' ? `👥 Joiners` : `👤 Private`}
+                            </span>
+                        )}
+                    </div>
                     <h3 className="apkg-card-title">
                         {title || "Package Name"}
                     </h3>
@@ -40,6 +54,19 @@ const PackagePreview = ({ previewUrl, category, title, destination, price, durat
                         <IconLocation />
                         {destination || "Destination"}
                     </p>
+                    
+                    {/* ✅ NEW: Show Min Pax for Joiners */}
+                    {tourType === 'joiners' && minPax && (
+                        <p style={{ 
+                            fontSize: '12px', 
+                            color: '#10b981', 
+                            marginTop: '4px',
+                            fontWeight: '500'
+                        }}>
+                            Minimum {minPax} pax required
+                        </p>
+                    )}
+                    
                     <div className="apkg-card-divider"></div>
                     <div className="apkg-card-meta">
                         <div>
