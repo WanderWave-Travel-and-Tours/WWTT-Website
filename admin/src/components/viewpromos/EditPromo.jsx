@@ -4,6 +4,10 @@ import { Save, ArrowLeft, Percent, DollarSign, Upload, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditPromo.css'; 
 
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
 const EditPromo = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -38,6 +42,155 @@ const EditPromo = () => {
         return date.toISOString().split('T')[0];
     };
 
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    // 1. Helper: File <-> Base64 Converters
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    // 2. Draft Payload State
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    // 3. Listen to state changes and update Draft Payload
+    useEffect(() => {
+        const updateDraft = async () => {
+            // 🛑 FIX: Don't save draft if data is still loading or form is empty
+            if (isLoading) {
+                setDraftPayload(null);
+                return;
+            }
+
+            // Check if form is effectively empty/default
+            const isFormEmpty = 
+                !formData.code && 
+                !formData.category && 
+                !formData.discountValue && 
+                !formData.startDate && 
+                !formData.validUntil && 
+                !formData.description && 
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null);
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            // Handle Image Conversion
+            if (imageFile) {
+                try {
+                    // Limit draft image size (~3MB limit safety)
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...formData,
+                image: imageBase64, // Saved as Base64 string
+                imageMeta: imageMeta,
+                originalId: id // Store ID to ensure we only restore draft for THIS promo
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500); // Debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [formData, imageFile, isLoading, id]);
+
+    // 4. Restore Function
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+        
+        // Safety check: Ensure the draft belongs to the promo we are currently editing
+        if (data.originalId && data.originalId !== id) {
+            console.warn("Draft found but belongs to a different promo ID. Ignoring.");
+            return;
+        }
+
+        setFormData({
+            code: data.code || '',
+            category: data.category || '',
+            discountType: data.discountType || 'Percentage',
+            discountValue: data.discountValue || '',
+            startDate: data.startDate || '',
+            validUntil: data.validUntil || '',
+            description: data.description || '',
+            durationType: data.durationType || 'Weekly'
+        });
+
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    // 5. Initialize Hook
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: `edit-promo-${id}`, // Unique ID per promo to avoid conflicts
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false // Manual via modal
+    });
+
+    // 6. Modal State
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        // Only show modal if we have a draft AND we are done loading the original data
+        if (hasDraft && !isLoading) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft, isLoading]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft(); // Ensure storage is cleared
+        setShowRestoreModal(false);
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
+
     // Fetch Promo Data
     useEffect(() => {
         const fetchPromoDetails = async () => {
@@ -47,6 +200,7 @@ const EditPromo = () => {
                 
                 const data = await response.json();
                 
+                // Only update state if we haven't restored a draft yet
                 setFormData({
                     code: data.code || '',
                     category: data.category || '',
@@ -125,6 +279,10 @@ const EditPromo = () => {
             }
 
             alert('✅ Promo updated successfully!');
+            
+            // ✅ CLEAR DRAFT ON SUCCESS
+            await clearDraft();
+            
             navigate('/view-promos'); 
         } catch (err) {
             console.error(err);
@@ -150,6 +308,15 @@ const EditPromo = () => {
 
     return (
         <div className="epr-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
             <main className={`epr-main ${isSidebarCollapsed ? "epr-main--collapsed" : ""}`}>
@@ -242,7 +409,7 @@ const EditPromo = () => {
                                 <div className="epr-form-group">
                                     <label className="epr-label">Category *</label>
                                     <input 
-                                        type="text"
+                                        type="text" 
                                         name="category"
                                         value={formData.category}
                                         onChange={handleChange}
@@ -356,7 +523,10 @@ const EditPromo = () => {
                             <button 
                                 type="button" 
                                 className="epr-btn epr-btn--cancel" 
-                                onClick={() => navigate('/view-promos')}
+                                onClick={async () => {
+                                    await clearDraft(); // Clear draft on cancel
+                                    navigate('/view-promos');
+                                }}
                                 disabled={submitting}
                             >
                                 Cancel

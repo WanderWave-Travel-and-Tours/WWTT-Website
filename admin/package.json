@@ -19,6 +19,7 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.5.31",
+    "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.554.0",
     "mongo-sanitize": "^1.1.0",
     "mongoose": "^9.0.1",

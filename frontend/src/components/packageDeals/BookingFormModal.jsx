@@ -3,6 +3,7 @@ import { X, Plane, CheckCircle, Upload, Wallet, CreditCard } from 'lucide-react'
 // Import the new CSS file
 import './BookingFormModal.css';
 import './PaymentOption.css'
+
 const BookingFormModal = ({ 
   isOpen, 
   onClose, 
@@ -58,7 +59,7 @@ const BookingFormModal = ({
           onClick={onClose}
           aria-label="Close Modal"
         >
-          <X size={24} strokeWidth={2.5} />
+          <X size={20} strokeWidth={2.5} />
         </button>
         
         {/* PREMIUM HEADER SECTION */}
@@ -284,7 +285,7 @@ const BookingFormModal = ({
                   {currentPassenger.idFileName ? (
                     <div className="bfm-file-uploaded">
                       <div className="bfm-file-info">
-                        <CheckCircle size={20} color="#22c55e"/>
+                        <CheckCircle size={18} color="#22c55e"/>
                         <span className="bfm-file-name">{currentPassenger.idFileName}</span>
                       </div>
                       <button 
@@ -305,7 +306,7 @@ const BookingFormModal = ({
                         style={{display: 'none'}}
                       />
                       <label htmlFor={`id-upload-${passengerStep}`} className="bfm-file-upload-label">
-                        <Upload size={32} color="#94a3b8"/>
+                        <Upload size={28} color="#94a3b8"/>
                         <span className="bfm-upload-text">Click to upload ID</span>
                         <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
                       </label>
@@ -327,7 +328,7 @@ const BookingFormModal = ({
                   {currentPassenger.passportFileName ? (
                     <div className="bfm-file-uploaded">
                       <div className="bfm-file-info">
-                        <CheckCircle size={20} color="#22c55e"/>
+                        <CheckCircle size={18} color="#22c55e"/>
                         <span className="bfm-file-name">{currentPassenger.passportFileName}</span>
                       </div>
                       <button 
@@ -348,7 +349,7 @@ const BookingFormModal = ({
                         style={{display: 'none'}}
                       />
                       <label htmlFor={`passport-upload-${passengerStep}`} className="bfm-file-upload-label">
-                        <Upload size={32} color="#94a3b8"/>
+                        <Upload size={28} color="#94a3b8"/>
                         <span className="bfm-upload-text">Click to upload Passport</span>
                         <span className="bfm-upload-subtext">PNG, JPG or PDF (Max 5MB)</span>
                       </label>
@@ -363,7 +364,7 @@ const BookingFormModal = ({
             {isLastPassenger && (
               <div className="bfm-payment-section">
                 <div className="bfm-payment-header">
-                  <Wallet size={20} />
+                  <Wallet size={18} />
                   <h3>Select Payment Option</h3>
                 </div>
                 
@@ -378,7 +379,7 @@ const BookingFormModal = ({
                         <div className={`bfm-radio-dot ${paymentType === 'full' ? 'active' : ''}`} />
                       </div>
                       <div className="bfm-payment-card-title">
-                        <CreditCard size={18} />
+                        <CreditCard size={16} />
                         <span>Pay in Full</span>
                         <span className="bfm-recommended-badge">Most Popular</span>
                       </div>
@@ -408,7 +409,7 @@ const BookingFormModal = ({
                         <div className={`bfm-radio-dot ${paymentType === 'partial' ? 'active' : ''}`} />
                       </div>
                       <div className="bfm-payment-card-title">
-                        <Wallet size={18} />
+                        <Wallet size={16} />
                         <span>Partial Payment</span>
                         <span className="bfm-flexible-badge">Flexible</span>
                       </div>
