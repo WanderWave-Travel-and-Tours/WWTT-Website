@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -41,66 +41,180 @@ import {
 } from 'lucide-react';
 import './sidebar.css';
 
+// --- HELPER: PATH LISTS ---
+const MENU_PATHS = {
+    add: [
+        '/add-package', '/add-tour', '/add-promo', '/add-poster', 
+        '/add-hotel', '/add-blog', '/add-image', '/add-testimonial', '/add-service'
+    ],
+    list: [
+        '/view-packages', '/view-tours', '/view-promos', '/view-posters', 
+        '/view-blogs', '/view-hotels', '/view-images', '/view-testimonials'
+    ],
+    services: [
+        '/view-services', '/services/visa', '/services/psa', '/services/cenomar',
+        '/services/passport', '/services/airlinebooking', '/services/hotelbooking',
+        '/services/tourarrangements', '/services/ferrybooking', '/services/marriagecert',
+        '/services/travelinsurance', '/services/billspayment'
+    ]
+};
+
+// --- SUB-COMPONENTS ---
+
+const MenuItem = ({ path, icon: Icon, label, isCollapsed, isActive, onClick }) => {
+  return (
+    <li className="nav-item">
+      <button
+        onClick={onClick}
+        className={`menu-btn ${isActive ? 'active' : ''}`}
+        title={isCollapsed ? label : ''}
+      >
+        <div className="btn-content">
+          <Icon size={20} className="btn-icon" />
+          <span className={`btn-label ${isCollapsed ? 'hidden' : ''}`}>{label}</span>
+        </div>
+      </button>
+    </li>
+  );
+};
+
+const DropdownMenu = ({ title, icon: Icon, menuKey, childrenItems, isOpen, isCollapsed, toggleMenu, location, navigate }) => {
+  const isChildActive = childrenItems.some(item => item.path === location.pathname);
+
+  return (
+    <li className="nav-item">
+      <div className="submenu-container">
+        <button
+          onClick={() => toggleMenu(menuKey)}
+          className={`menu-btn ${isChildActive || (isOpen && !isCollapsed) ? 'active' : ''}`}
+          title={isCollapsed ? title : ''}
+        >
+          <div className="btn-content">
+            <Icon size={20} className="btn-icon" />
+            <span className={`btn-label ${isCollapsed ? 'hidden' : ''}`}>{title}</span>
+          </div>
+          {!isCollapsed && (
+            <span className="arrow-icon">
+                {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </span>
+          )}
+        </button>
+
+        <div className={`submenu-wrapper ${isOpen && !isCollapsed ? 'open' : 'closed'}`}>
+          <ul className="submenu-list">
+            {childrenItems.map((item) => (
+              <li key={item.path}>
+                <button
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    navigate(item.path); 
+                  }}
+                  className={`submenu-btn ${location.pathname === item.path ? 'active' : ''}`}
+                >
+                  <item.icon size={16} className="sub-icon" />
+                  <span className="sub-label">{item.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </li>
+  );
+};
+
+// --- MAIN COMPONENT ---
+
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [openMenus, setOpenMenus] = useState({
-    add: false,
-    list: false,
-    services: false
-  });
+  // Initialize state based on current URL to prevent flicker on load
+  const getInitialMenuState = useCallback(() => {
+    const path = location.pathname;
+    return {
+        add: MENU_PATHS.add.includes(path),
+        list: MENU_PATHS.list.includes(path),
+        services: MENU_PATHS.services.includes(path) || path.startsWith('/services/')
+    };
+  }, [location.pathname]);
 
+  const [openMenus, setOpenMenus] = useState(getInitialMenuState);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // ---------------------------------------------------------
+  // ✅ LOGIC 1: SYNC MENU WITH URL (Corrected Dependency)
+  // ---------------------------------------------------------
+  useEffect(() => {
+    if (isCollapsed) return;
+
+    const path = location.pathname;
+    let targetState = { add: false, list: false, services: false };
+
+    // Check URL to decide which menu SHOULD be open
+    if (MENU_PATHS.add.includes(path)) {
+        targetState = { add: true, list: false, services: false };
+    } else if (MENU_PATHS.list.includes(path)) {
+        targetState = { add: false, list: true, services: false };
+    } else if (MENU_PATHS.services.includes(path) || path.startsWith('/services/')) {
+        targetState = { add: false, list: false, services: true };
+    } else {
+        // If we are on a non-dropdown page (like Dashboard), we don't force-close everything immediately
+        // allowing the user to keep the menu open if they just clicked it.
+        return; 
+    }
+
+    setOpenMenus(targetState);
+
+    // 🛑 IMPORTANT: Removed 'openMenus' from dependency array!
+    // This ensures this effect ONLY runs when URL changes, not when user clicks a menu.
+  }, [location.pathname, isCollapsed]);
+
+
+  // ---------------------------------------------------------
+  // ✅ LOGIC 2: CLOSE MENUS WHEN SIDEBAR COLLAPSES
+  // ---------------------------------------------------------
   useEffect(() => {
     if (isCollapsed) {
-      setOpenMenus({
-        add: false,
-        list: false,
-        services: false
-      });
+      setOpenMenus({ add: false, list: false, services: false });
     }
   }, [isCollapsed]);
 
+  // ---------------------------------------------------------
+  // ✅ LOGIC 3: MANUAL TOGGLE
+  // ---------------------------------------------------------
   const toggleMenu = (menuKey) => {
     if (isCollapsed) {
       toggleSidebar();
       setTimeout(() => {
-        setOpenMenus(prev => ({ ...prev, [menuKey]: true }));
-      }, 300);
+        setOpenMenus({
+          add: false,
+          list: false,
+          services: false,
+          [menuKey]: true 
+        });
+      }, 100);
       return; 
     }
 
     setOpenMenus(prev => ({
-      ...prev,
-      [menuKey]: !prev[menuKey]
+      add: false,
+      list: false,
+      services: false,
+      [menuKey]: !prev[menuKey] // Toggle current, close others
     }));
   };
 
-  // ==========================================
-  // UPDATED LOGOUT WITH ACTIVITY LOGGING
-  // ==========================================
   const handleLogout = async () => {
-    // Ask for confirmation
     const confirmed = window.confirm('Are you sure you want to logout?');
     if (!confirmed) return;
 
     setIsLoggingOut(true);
-    console.log('🚪 Starting admin logout process...');
-
     try {
-      // Get admin data from localStorage
       const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
       const adminToken = localStorage.getItem('adminToken');
 
-      console.log('👤 Admin data:', {
-        email: adminData.email,
-        username: adminData.username
-      });
-
-      // Call logout API to log the activity
-      const response = await fetch('http://localhost:5000/api/admin/logout', {
+      await fetch('http://localhost:5000/api/admin/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,118 +225,38 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           adminId: adminData.id || null
         })
       });
-
-      const data = await response.json();
-      console.log('📡 Logout API response:', data);
-
-      if (data.status === 'ok' || response.ok) {
-        console.log('✅ Logout logged successfully');
-      } else {
-        console.warn('⚠️ Logout API returned error, but continuing logout');
-      }
-
     } catch (error) {
-      console.error('❌ Logout API error:', error);
-      console.log('⚠️ Continuing with local logout despite API error');
+      console.error('Logout error:', error);
     } finally {
-      // Always clear localStorage and redirect (even if API fails)
-      console.log('🧹 Clearing admin session data...');
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
-      
-      console.log('✅ Session cleared, redirecting to login...');
       setIsLoggingOut(false);
-      
-      // Navigate to admin login page
       navigate('/admin');
     }
-  };
-
-  const isActive = (path) => location.pathname === path;
-  
-  const MenuItem = ({ path, icon: Icon, label }) => {
-    const active = isActive(path);
-    return (
-      <li className="nav-item">
-        <button
-          onClick={() => navigate(path)}
-          className={`menu-btn ${active ? 'active' : ''}`}
-          title={isCollapsed ? label : ''}
-        >
-          <div className="btn-content">
-            <Icon size={20} className="btn-icon" />
-            <span className="btn-label">{label}</span>
-          </div>
-        </button>
-      </li>
-    );
-  };
-
-  const DropdownMenu = ({ title, icon: Icon, menuKey, childrenItems }) => {
-    const isOpen = openMenus[menuKey];
-    const isChildActive = childrenItems.some(item => item.path === location.pathname);
-
-    return (
-      <li className="nav-item">
-        <div className="submenu-container">
-          <button
-            onClick={() => toggleMenu(menuKey)}
-            className={`menu-btn ${isChildActive || (isOpen && !isCollapsed) ? 'active' : ''}`}
-            title={isCollapsed ? title : ''}
-          >
-            <div className="btn-content">
-              <Icon size={20} className="btn-icon" />
-              <span className="btn-label">{title}</span>
-            </div>
-            {!isCollapsed && (
-              isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />
-            )}
-          </button>
-
-          <div className={`submenu-wrapper ${isOpen && !isCollapsed ? 'open' : 'closed'}`}>
-            <ul className="submenu-list">
-              {childrenItems.map((item) => (
-                <li key={item.path}>
-                  <button
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      navigate(item.path); 
-                    }}
-                    className={`submenu-btn ${isActive(item.path) ? 'active' : ''}`}
-                  >
-                    <item.icon size={16} className="sub-icon" />
-                    <span className="sub-label">{item.name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </li>
-    );
   };
 
   return (
     <div className={`sidebar-container custom-scrollbar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <div className="logo-wrapper">
-          <div className="logo-box">
-            <img 
-              src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" 
-              alt="Wanderwave Logo" 
-              className="logo-img"
-            />
-          </div>
-          <div className="brand-info">
-            <h1>WANDERWAVE</h1>
-            <span>Admin Panel</span>
-          </div>
+        <div className="sidebar-brand-wrapper">
+            <div className="sidebar-logo-box">
+                <img 
+                src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" 
+                alt="Logo" 
+                className="sidebar-logo-img"
+                />
+            </div>
+            
+            <div className={`brand-info ${isCollapsed ? 'hidden' : ''}`}>
+                <h1>WANDERWAVE</h1>
+                <span>Admin Panel</span>
+            </div>
         </div>
+        
         <button 
             className="toggle-btn" 
             onClick={toggleSidebar}
             type="button"
-            style={{ zIndex: 1002 }}
         >
             {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
         </button>
@@ -230,82 +264,146 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
       <nav className="sidebar-nav custom-scrollbar">
         <div className="menu-group">
-          <h3 className="menu-title">Main Menu</h3>
+          <h3 className={`menu-title ${isCollapsed ? 'hidden' : ''}`}>Main Menu</h3>
           <ul className="nav-list">
-            <MenuItem path="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-            <MenuItem path="/booking" icon={Calendar} label="Booking" />
+            <MenuItem 
+                path="/dashboard" 
+                icon={LayoutDashboard} 
+                label="Dashboard" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/dashboard'}
+                onClick={() => navigate('/dashboard')}
+            />
+            <MenuItem 
+                path="/booking" 
+                icon={Calendar} 
+                label="Booking" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/booking'}
+                onClick={() => navigate('/booking')}
+            />
             
             <DropdownMenu 
-              title="Add" 
+              title="Add New" 
               icon={PlusCircle} 
               menuKey="add"
+              isOpen={openMenus.add}
+              isCollapsed={isCollapsed}
+              toggleMenu={toggleMenu}
+              location={location}
+              navigate={navigate}
               childrenItems={[
-                { name: 'Create Package', path: '/add-package', icon: FilePlus },
-                { name: 'Create Tour', path: '/add-tour', icon: MapPin },
-                { name: 'Add Promo', path: '/add-promo', icon: Tag },
-                { name: 'Add Poster', path: '/add-poster', icon: Image },
-                { name: 'Add Hotel', path: '/add-hotel', icon: Hotel },
-                { name: 'Create Blog', path: '/add-blog', icon: PenTool },
-                { name: 'Upload Image', path: '/add-image', icon: UploadCloud }, 
-                { name: 'Add Testimonial', path: '/add-testimonial', icon: Star },
-                { name: 'Add Service', path: '/add-service', icon: Briefcase },
+                { name: 'Package', path: '/add-package', icon: FilePlus },
+                { name: 'Tour', path: '/add-tour', icon: MapPin },
+                { name: 'Promo', path: '/add-promo', icon: Tag },
+                { name: 'Poster', path: '/add-poster', icon: Image },
+                { name: 'Hotel', path: '/add-hotel', icon: Hotel },
+                { name: 'Blog', path: '/add-blog', icon: PenTool },
+                { name: 'Image', path: '/add-image', icon: UploadCloud }, 
+                { name: 'Testimonial', path: '/add-testimonial', icon: Star },
+                { name: 'Service', path: '/add-service', icon: Briefcase },
               ]}
             />
 
             <DropdownMenu 
-              title="List" 
+              title="Lists" 
               icon={List} 
               menuKey="list"
+              isOpen={openMenus.list}
+              isCollapsed={isCollapsed}
+              toggleMenu={toggleMenu}
+              location={location}
+              navigate={navigate}
               childrenItems={[
-                { name: 'Manage Packages', path: '/view-packages', icon: Package },
-                { name: 'Manage Tours', path: '/view-tours', icon: MapPin },
-                { name: 'Promo List', path: '/view-promos', icon: ListOrdered },
-                { name: 'Poster List', path: '/view-posters', icon: Images },
-                { name: 'Blog List', path: '/view-blogs', icon: Newspaper },
+                { name: 'Packages', path: '/view-packages', icon: Package },
+                { name: 'Tours', path: '/view-tours', icon: MapPin },
+                { name: 'Promos', path: '/view-promos', icon: ListOrdered },
+                { name: 'Posters', path: '/view-posters', icon: Images },
+                { name: 'Blogs', path: '/view-blogs', icon: Newspaper },
                 { name: 'Hotels', path: '/view-hotels', icon: Hotel },
-                { name: 'Image Gallery', path: '/view-images', icon: Grid }, 
-                { name: 'Testimonials List', path: '/view-testimonials', icon: ClipboardList },
+                { name: 'Gallery', path: '/view-images', icon: Grid }, 
+                { name: 'Testimonials', path: '/view-testimonials', icon: ClipboardList },
               ]}
             />
           </ul>
         </div>
 
         <div className="menu-group">
-          <h3 className="menu-title">Management</h3>
+          <h3 className={`menu-title ${isCollapsed ? 'hidden' : ''}`}>Management</h3>
           <ul className="nav-list">
             <DropdownMenu 
-              title="Other Services" 
+              title="Services" 
               icon={Wrench} 
               menuKey="services"
+              isOpen={openMenus.services}
+              isCollapsed={isCollapsed}
+              toggleMenu={toggleMenu}
+              location={location}
+              navigate={navigate}
               childrenItems={[
-                { name: 'Manage Services', path: '/view-services', icon: Briefcase }, 
-                { name: 'VISA Processing', path: '/services/visa', icon: BookOpen },
-                { name: 'PSA Serbilis', path: '/services/psa', icon: FileText },
+                { name: 'Manage All', path: '/view-services', icon: Briefcase }, 
+                { name: 'VISA', path: '/services/visa', icon: BookOpen },
+                { name: 'PSA', path: '/services/psa', icon: FileText },
                 { name: 'CENOMAR', path: '/services/cenomar', icon: HeartHandshake },
-                { name: 'Passport Appt', path: '/services/passport', icon: BookOpen },
-                { name: 'Airline Booking', path: '/services/airlinebooking', icon: Plane },
-                { name: 'Hotel Booking', path: '/services/hotelbooking', icon: Hotel },
-                { name: 'Tour Arrangements', path: '/services/tourarrangements', icon: Calendar },
-                { name: 'Ferry Booking', path: '/services/ferrybooking', icon: Ship },
-                { name: 'Marriage Cert', path: '/services/marriagecert', icon: FileText },
-                { name: 'Travel Insurance', path: '/services/travelinsurance', icon: ShieldCheck },
-                { name: 'Bills Payment', path: '/services/billspayment', icon: FileText },
+                { name: 'Passport', path: '/services/passport', icon: BookOpen },
+                { name: 'Flights', path: '/services/airlinebooking', icon: Plane },
+                { name: 'Hotels', path: '/services/hotelbooking', icon: Hotel },
+                { name: 'Tours', path: '/services/tourarrangements', icon: Calendar },
+                { name: 'Ferry', path: '/services/ferrybooking', icon: Ship },
+                { name: 'Marriage', path: '/services/marriagecert', icon: FileText },
+                { name: 'Insurance', path: '/services/travelinsurance', icon: ShieldCheck },
+                { name: 'Bills', path: '/services/billspayment', icon: DollarSign },
               ]}
             />
-            <MenuItem path="/seller-rate" icon={TrendingUp} label="Supplier Rate" />
-            <MenuItem path="/users" icon={Users} label="Users" />
-            <MenuItem path="/archive" icon={ArchiveIcon} label="Archive" />
-            <MenuItem path="/activity-logs" icon={Activity} label="Activity Logs" />
-            <MenuItem path="/settings" icon={Settings} label="Settings" />
+            <MenuItem 
+                path="/seller-rate" 
+                icon={TrendingUp} 
+                label="Supplier Rate" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/seller-rate'}
+                onClick={() => navigate('/seller-rate')}
+            />
+            <MenuItem 
+                path="/users" 
+                icon={Users} 
+                label="Users" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/users'}
+                onClick={() => navigate('/users')}
+            />
+            <MenuItem 
+                path="/archive" 
+                icon={ArchiveIcon} 
+                label="Archive" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/archive'}
+                onClick={() => navigate('/archive')}
+            />
+            <MenuItem 
+                path="/activity-logs" 
+                icon={Activity} 
+                label="Activity Logs" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/activity-logs'}
+                onClick={() => navigate('/activity-logs')}
+            />
+            <MenuItem 
+                path="/settings" 
+                icon={Settings} 
+                label="Settings" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/settings'}
+                onClick={() => navigate('/settings')}
+            />
           </ul>
         </div>
       </nav>
 
       <div className="sidebar-footer">
-        <div className="user-profile-card">
+        <div className={`user-profile-card ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="user-info-group">
             <div className="user-avatar">A</div>
-            <div className="user-details">
+            <div className={`user-details ${isCollapsed ? 'hidden' : ''}`}>
               <span className="user-name">Admin</span>
               <span className="user-role">SysAdmin</span>
             </div>
@@ -318,10 +416,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               disabled={isLoggingOut}
             >
               {isLoggingOut ? (
-                <>
-                  <div className="logout-spinner"></div>
-                  <span className="logout-text">Logging out...</span>
-                </>
+                <div className="logout-spinner"></div>
               ) : (
                 <LogOut size={18} />
               )}

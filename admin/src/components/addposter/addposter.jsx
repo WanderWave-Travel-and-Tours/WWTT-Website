@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Image as ImageIcon } from 'lucide-react';
-import './addposter.css';
 import Sidebar from '../sidebar/sidebar';
+import './addposter.css';
+
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
 const AddPoster = () => {
     // --- SIDEBAR LOGIC ---
@@ -20,6 +24,166 @@ const AddPoster = () => {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    // 1. Helper: File <-> Base64 Converters
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    // 2. Draft Payload State
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    // 3. Listen to state changes and update Draft Payload
+    useEffect(() => {
+        const updateDraft = async () => {
+            // 🛑 FIX 1: Check if form is completely empty/default before saving
+            // This prevents overwriting a valid draft with an empty one, or saving an empty start state
+            const isFormEmpty = 
+                !posterDetails.title &&
+                !posterDetails.description &&
+                !posterDetails.startDate &&
+                !posterDetails.endDate &&
+                posterDetails.status === 'Active' && // Check default
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null); // Do not save anything
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            // Handle Image Conversion
+            if (imageFile) {
+                try {
+                    // Limit draft image size (~3MB limit safety)
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...posterDetails,
+                image: imageBase64, // Saved as Base64 string
+                imageMeta: imageMeta
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500); // Debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [posterDetails, imageFile]);
+
+    // 4. Restore Function
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+
+        // Restore Text Fields
+        setPosterDetails({
+            title: data.title || '',
+            description: data.description || '',
+            startDate: data.startDate || '',
+            endDate: data.endDate || '',
+            status: data.status || 'Active'
+        });
+
+        // Restore Image
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    // 5. Initialize Hook
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: 'add-poster', // Unique ID
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false // Manual via modal
+    });
+
+    // 6. Modal State with Smart Check
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft && draftInfo) {
+            // 🛑 FIX 2: Check if the *saved* draft is actually empty (contains only defaults)
+            // If it is empty, silently clear it and DO NOT show the modal
+            const isDraftEmpty = 
+                !draftInfo.title && 
+                !draftInfo.description && 
+                !draftInfo.startDate && 
+                !draftInfo.endDate && 
+                (draftInfo.status === 'Active' || !draftInfo.status) && 
+                !draftInfo.image;
+
+            if (isDraftEmpty) {
+                clearDraft(); // Auto-clear ghost drafts
+                setShowRestoreModal(false);
+            } else {
+                setShowRestoreModal(true);
+            }
+        }
+    }, [hasDraft, draftInfo, clearDraft]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft(); // Ensure storage is cleared
+        setShowRestoreModal(false);
+        
+        // Reset state to defaults to ensure isFormEmpty logic takes over
+        setPosterDetails({
+            title: '',
+            description: '',
+            startDate: '',
+            endDate: '',
+            status: 'Active'
+        });
+        setImageFile(null);
+        setImagePreview(null);
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
 
     useEffect(() => {
         return () => {
@@ -46,20 +210,25 @@ const AddPoster = () => {
     };
 
     const removeImage = () => {
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
         setImageFile(null);
         setImagePreview(null);
     };
 
-    const handleCancel = () => {
-        setPosterDetails({
-            title: '',
-            description: '',
-            startDate: '',
-            endDate: '',
-            status: 'Active'
-        });
-        setImageFile(null);
-        setImagePreview(null);
+    const handleCancel = async () => {
+        if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+            // ✅ CLEAR DRAFT ON CANCEL
+            await clearDraft();
+
+            setPosterDetails({
+                title: '',
+                description: '',
+                startDate: '',
+                endDate: '',
+                status: 'Active'
+            });
+            removeImage();
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -101,7 +270,20 @@ const AddPoster = () => {
 
             if (response.ok) {
                 alert('✅ Poster uploaded successfully!');
-                handleCancel();
+                
+                // ✅ CLEAR DRAFT ON SUCCESS
+                await clearDraft();
+                
+                // Reset Form manually
+                setPosterDetails({
+                    title: '',
+                    description: '',
+                    startDate: '',
+                    endDate: '',
+                    status: 'Active'
+                });
+                removeImage();
+
             } else {
                 const data = await response.json();
                 alert(`❌ Error: ${data.message || 'Failed to upload'}`);
@@ -115,11 +297,19 @@ const AddPoster = () => {
 
     return (
         <div className="apstr-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
             <main className={`apstr-main ${isSidebarCollapsed ? "apstr-main--collapsed" : ""}`}>
                 <div className="apstr-container">
-                    {/* HEADER MATCHED TO PROMO WITH DESTINATION FEEL */}
                     <header className="apstr-header">
                         <div className="apstr-header-content">
                             <h1 className="apstr-title">NEW POSTER</h1>

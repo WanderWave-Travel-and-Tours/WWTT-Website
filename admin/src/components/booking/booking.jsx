@@ -43,7 +43,7 @@ const Booking = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      let res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings/active');
+      let res = await fetch('http://localhost:5000/api/bookings/active');
       if (!res.ok) {
         console.warn('Active endpoint failed, falling back to all bookings');
         res = await fetch('http://localhost:5000/api/bookings');

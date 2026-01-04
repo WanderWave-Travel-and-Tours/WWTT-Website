@@ -4,6 +4,10 @@ import { Save, ArrowLeft, Upload, Image as ImageIcon, MapPin, DollarSign, Users,
 import Sidebar from '../sidebar/sidebar'; 
 import './EditHotel.css';
 
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
 const EditHotel = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -12,7 +16,7 @@ const EditHotel = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     
-    // 👇 ADDED: State for Destinations list
+    // State for Destinations list
     const [destinations, setDestinations] = useState([]);
 
     const API_BASE_URL = 'http://localhost:5000';
@@ -22,11 +26,9 @@ const EditHotel = () => {
         if (!imagePath) return null;
         if (imagePath.startsWith('http') || imagePath.startsWith('data:')) return imagePath;
         
-        // Fix backslashes for Windows paths
         let cleanPath = imagePath.replace(/\\/g, '/');
         if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
         
-        // Handle 'uploads' prefix logic
         if (cleanPath.startsWith('uploads/')) return `${API_BASE_URL}/${cleanPath}`;
         return `${API_BASE_URL}/uploads/${cleanPath}`;
     };
@@ -35,7 +37,7 @@ const EditHotel = () => {
     const [formData, setFormData] = useState({
         name: '',
         location: '',
-        city: '', // Controlled by dropdown
+        city: '', 
         country: 'Philippines',
         description: '',
         price: '',
@@ -59,6 +61,158 @@ const EditHotel = () => {
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    // 1. Helper: File <-> Base64 Converters
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    // 2. Draft Payload State
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    // 3. Listen to state changes and update Draft Payload
+    useEffect(() => {
+        const updateDraft = async () => {
+            // 🛑 FIX: Don't save draft if data is still loading or form is empty
+            if (isLoading) {
+                setDraftPayload(null);
+                return;
+            }
+
+            // Check if form is effectively empty/default
+            const isFormEmpty = 
+                !formData.name && 
+                !formData.location && 
+                !formData.city && 
+                !formData.price && 
+                !formData.maxCapacity && 
+                !mainImageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null);
+                return;
+            }
+
+            let mainImageBase64 = null;
+            let mainImageMeta = null;
+
+            // Handle Main Image Conversion
+            if (mainImageFile) {
+                try {
+                    // Limit draft image size (~3MB limit safety)
+                    if (mainImageFile.size < 3 * 1024 * 1024) { 
+                        mainImageBase64 = await fileToBase64(mainImageFile);
+                        mainImageMeta = { name: mainImageFile.name, type: mainImageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Main image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...formData,
+                amenities,
+                mainImage: mainImageBase64, // Saved as Base64 string
+                mainImageMeta: mainImageMeta,
+                originalId: id // Store ID to ensure we only restore draft for THIS hotel
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500); // Debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [formData, amenities, mainImageFile, isLoading, id]);
+
+    // 4. Restore Function
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+        
+        // Safety check: Ensure the draft belongs to the hotel we are currently editing
+        if (data.originalId && data.originalId !== id) {
+            console.warn("Draft found but belongs to a different hotel ID. Ignoring.");
+            return;
+        }
+
+        setFormData({
+            name: data.name || '',
+            location: data.location || '',
+            city: data.city || '',
+            country: data.country || 'Philippines',
+            description: data.description || '',
+            price: data.price || '',
+            priceUnit: data.priceUnit || 'per night',
+            maxCapacity: data.maxCapacity || '',
+            featured: data.featured || false
+        });
+
+        if (data.amenities) setAmenities(data.amenities);
+
+        if (data.mainImage && data.mainImageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.mainImage, data.mainImageMeta.name, data.mainImageMeta.type);
+                setMainImageFile(restoredFile);
+                setMainImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore main image:", err);
+            }
+        }
+    };
+
+    // 5. Initialize Hook
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: `edit-hotel-${id}`, // Unique ID per hotel to avoid conflicts
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: mainImagePreview, 
+        autoRestore: false // Manual via modal
+    });
+
+    // 6. Modal State
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        // Only show modal if we have a draft AND we are done loading the original data
+        if (hasDraft && !isLoading) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft, isLoading]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft(); // Ensure storage is cleared
+        setShowRestoreModal(false);
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
+
     // --- FETCH DATA ---
     useEffect(() => {
         const loadData = async () => {
@@ -81,11 +235,11 @@ const EditHotel = () => {
                 const result = await response.json();
                 const data = result.data || result;
                 
-                // Populate Fields
+                // Populate Fields (Only if not restoring draft later)
                 setFormData({
                     name: data.name || '',
                     location: data.location || '',
-                    city: data.city || '', // Will match with dropdown value
+                    city: data.city || '', 
                     country: data.country || 'Philippines',
                     description: data.description || '',
                     price: data.price || '',
@@ -183,6 +337,10 @@ const EditHotel = () => {
             }
 
             alert('✅ Hotel updated successfully!');
+            
+            // ✅ CLEAR DRAFT ON SUCCESS
+            await clearDraft();
+            
             navigate('/view-hotels'); 
         } catch (err) {
             console.error(err);
@@ -197,6 +355,15 @@ const EditHotel = () => {
 
     return (
         <div className="eho-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             <main className={`eho-main ${isSidebarCollapsed ? "eho-main--collapsed" : ""}`}>
                 <div className="eho-container">
@@ -262,7 +429,6 @@ const EditHotel = () => {
                                     <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="eho-input" />
                                 </div>
                                 
-                                {/* 👇 DESTINATION DROPDOWN (Matches AddHotel) */}
                                 <div className="eho-form-group">
                                     <label className="eho-label">Destination / City *</label>
                                     <select 
@@ -336,7 +502,17 @@ const EditHotel = () => {
 
                         {/* Actions */}
                         <div className="eho-form-actions">
-                            <button type="button" className="eho-btn eho-btn--cancel" onClick={() => navigate('/view-hotels')} disabled={submitting}>Cancel</button>
+                            <button 
+                                type="button" 
+                                className="eho-btn eho-btn--cancel" 
+                                onClick={async () => {
+                                    await clearDraft(); // Clear draft on cancel
+                                    navigate('/view-hotels');
+                                }} 
+                                disabled={submitting}
+                            >
+                                Cancel
+                            </button>
                             <button type="submit" className="eho-btn eho-btn--submit" disabled={submitting}>{submitting ? 'Updating...' : <><Save size={18} /> Save Changes</>}</button>
                         </div>
                     </form>

@@ -81,6 +81,7 @@ const hotelRoutes = require('./routes/hotelRoute');
 const imagesRoutes = require('./routes/imagesRoute');
 const sellerRateRoutes = require('./routes/sellerRoute');
 const activityLogRoute = require('./routes/activityLogRoute'); // ✅ SINGLE IMPORT
+const draftsRoutes = require('./routes/drafts');
 
 // ===================================================================
 // ENSURE UPLOAD DIRECTORY EXISTS
@@ -261,6 +262,8 @@ app.use('/api/hotels', hotelRoutes);
 app.use('/api/images', imagesRoutes);
 app.use('/api/seller-rates', sellerRateRoutes);
 app.use('/api/activity-logs', activityLogRoute); // ✅ SINGLE REGISTRATION
+app.use('/api/drafts', require('./routes/drafts'));
+
 
 // ===================================================================
 // PACKAGE ADD ENDPOINT
