@@ -25,12 +25,33 @@ const PackageDetailModal = ({
 
   const closeModal = () => setShowModal(false);
 
-  // Standardize Image URL
+  // Helper function: PRIORITY - Database first, then Cloudinary
   const getImageUrl = (image) => {
-    if (!image) return "https://via.placeholder.com/800x400";
-    return image.startsWith("http")
-      ? image
-      : `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
+    if (!image) return "https://via.placeholder.com/800x400?text=No+Image";
+    
+    // If already a full URL (Cloudinary), use it
+    if (image.startsWith("http")) {
+      return image;
+    }
+    
+    // DEFAULT: Try database/uploads folder first
+    return `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
+  };
+
+  // Smart error handler: If database fails, try Cloudinary
+  const handleImageError = (e) => {
+    e.target.onerror = null; // Prevent infinite loop
+    
+    // If imagePublicId exists, construct Cloudinary URL
+    if (selectedPackage.imagePublicId && selectedPackage.imagePublicId.trim() !== '') {
+      const cloudinaryUrl = `https://res.cloudinary.com/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'dg0cmujxy'}/image/upload/${selectedPackage.imagePublicId}`;
+      console.log(`📸 Fallback to Cloudinary: ${cloudinaryUrl}`);
+      e.target.src = cloudinaryUrl;
+    } else {
+      // No Cloudinary backup, show placeholder
+      console.log(`⚠️ No image found for: ${selectedPackage.title}`);
+      e.target.src = "https://via.placeholder.com/800x400?text=No+Image";
+    }
   };
 
   return (
@@ -72,6 +93,7 @@ const PackageDetailModal = ({
                 src={getImageUrl(selectedPackage.image)}
                 className="tdm-customer-image"
                 alt={selectedPackage.destination}
+                onError={handleImageError}
               />
               <div className="tdm-image-info">
                 <div className="tdm-file-pill">
