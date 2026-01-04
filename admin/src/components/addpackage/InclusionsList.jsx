@@ -13,7 +13,7 @@ const IconRemove = () => (
     </svg>
 );
 
-const InclusionsList = ({ inclusions, handleIncChange, addInclusion, removeInclusion }) => {
+const InclusionsList = ({ inclusions, handleIncChange, addInclusion, removeInclusion, handleInclusionPaste }) => {
     
     const activeInclusionsCount = inclusions.filter((i) => i.trim()).length;
 
@@ -34,6 +34,7 @@ const InclusionsList = ({ inclusions, handleIncChange, addInclusion, removeInclu
                             placeholder="What's included?"
                             value={inc}
                             onChange={(e) => handleIncChange(i, e.target.value)}
+                            onPaste={(e) => handleInclusionPaste(i, e)}
                         />
                         {inclusions.length > 1 && (
                             <button
