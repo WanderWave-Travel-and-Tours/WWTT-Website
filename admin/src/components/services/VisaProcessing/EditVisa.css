@@ -1,3 +1,6 @@
+/* EditVisa.css */
+
+/* ===== 1. CORE PAGE LAYOUT ===== */
 .et-page {
     display: flex;
     min-height: 100vh;
@@ -7,7 +10,7 @@
 
 .et-main {
     flex: 1;
-    margin-left: 300px;
+    margin-left: 300px; /* Space for Sidebar */
     padding: 40px 80px;
     transition: margin-left 0.3s ease;
 }
@@ -17,147 +20,437 @@
 }
 
 .et-container {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
-/* --- THE UPDATED HEADER DESIGN --- */
-.et-header-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 20px;
+/* ===== 2. HEADER DESIGN (Consistent with Modal Style) ===== */
+.et-header {
     margin-bottom: 35px;
 }
 
-.et-back-square-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    border: 1px solid #e2e8f0;
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #64748b;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-}
-
-.et-back-square-btn:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-    transform: translateY(-1px);
-}
-
-.et-header-text {
+.et-header-content {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 8px;
 }
 
-.et-back-link {
-    font-size: 13px;
+.et-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 8px;
     color: #64748b;
+    font-weight: 600;
     cursor: pointer;
-    font-weight: 500;
+    width: fit-content;
+    transition: all 0.2s ease;
 }
 
-.et-back-link:hover {
-    color: #f97316;
-}
-
-.et-header-title {
-    font-size: 26px;
+.et-back-btn:hover {
+    background: #f1f5f9;
     color: #0f172a;
-    margin: 0;
+}
+
+.et-title {
+    font-size: 28px;
+    color: #0f172a;
+    margin: 10px 0 0 0;
     font-weight: 800;
     letter-spacing: -0.5px;
 }
 
-/* --- FORM LAYOUT --- */
+.et-subtitle {
+    color: #64748b;
+    margin: 0;
+    font-size: 15px;
+}
+
+/* ===== 3. FORM GRID & SECTIONS (Modal Inspired) ===== */
 .et-grid-layout {
     display: grid;
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 2fr 1fr; /* focus sa forms sa kaliwa, actions sa kanan */
     gap: 30px;
 }
 
 .et-section {
     background: white;
-    padding: 24px;
+    padding: 28px 28px 28px 40px; /* ✅ Increased left padding to make room for indicator bar */
     border-radius: 16px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     margin-bottom: 24px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid #e2e8f0; 
+    overflow: hidden; /* Ensures the indicator bar stays within rounded corners */
 }
 
 .et-section-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    color: #f97316;
+    justify-content: flex-start; /* Ensure left alignment */
+    gap: 10px; /* ✅ Tight space between icon and title (magkadikit) */
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+    position: relative;
 }
 
-.et-section-header h3 { margin: 0; color: #1e293b; font-size: 16px; font-weight: 700; }
+/* ✅ Fixed the orange left bar indicator positioning */
+.et-section-header::before {
+    content: '';
+    position: absolute;
+    left: -40px; /* ✅ Adjusted to align exactly with the left border of the container */
+    top: 0;
+    bottom: 16px;
+    width: 4px;
+    background-color: #f97316; /* Orange bar */
+    border-radius: 0 4px 4px 0;
+}
 
+.et-section-icon {
+    color: #1e293b; /* Darker professional color from image */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.et-section-header h3 { 
+    margin: 0; 
+    color: #003366; /* Deep blue tone from image */
+    font-size: 16px; 
+    font-weight: 800; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===== 4. INPUTS & FIELD GRIDS ===== */
 .et-fields-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 20px;
 }
 
 .full-width { grid-column: span 2; }
 
 .et-input-group label {
     display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
     margin-bottom: 8px;
-    text-transform: uppercase;
 }
 
-.et-input {
+.et-input, .et-textarea, select.et-input {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
+    padding: 11px 14px;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     font-size: 14px;
+    color: #0f172a;
+    background-color: #fff;
+    transition: all 0.2s ease;
 }
 
-.et-image-upload-container {
-    margin-top: 15px;
-    border: 2px dashed #e2e8f0;
-    border-radius: 12px;
-    min-height: 200px;
+.et-input:focus, .et-textarea:focus {
+    outline: none;
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1); 
+}
+
+.et-textarea {
+    resize: vertical;
+}
+
+/* ===== 5. FILE ROW & ACTION BUTTONS (View Logic) ===== */
+.et-file-grid-internal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.et-file-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.2s ease;
 }
 
-.et-image-preview img {
-    width: 100%;
-    border-radius: 8px;
-    max-height: 300px;
-    object-fit: cover;
+.et-file-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.et-file-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.et-file-status {
+    font-size: 11px;
+    color: #64748b;
+    font-style: italic;
+}
+
+.et-file-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.et-view-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #f1f5f9;
+    color: #475569;
+    padding: 8px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.et-view-btn:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+
+.et-file-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #334155; 
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.2s;
+}
+
+.et-file-upload-btn:hover {
+    background-color: #475569;
+}
+
+/* ===== 6. STICKY SIDEBAR ACTIONS ===== */
+.et-sticky-sidebar {
+    position: sticky;
+    top: 40px;
+}
+
+.et-form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .et-btn {
-    padding: 12px 20px;
-    border-radius: 8px;
+    padding: 14px 20px;
+    border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
     border: none;
+    font-size: 14px;
+    transition: all 0.2s ease;
 }
 
-.et-btn--submit { background: #0f172a; color: white; width: 100%; }
-.et-btn--cancel { background: transparent; color: #64748b; width: 100%; }
+.et-btn--submit { 
+    background: #f97316; 
+    color: white; 
+    width: 100%; 
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
 
+.et-btn--submit:hover {
+    background: #ea580c;
+    transform: translateY(-1px);
+}
+
+.et-btn--cancel { 
+    background: white; 
+    color: #64748b; 
+    width: 100%; 
+    border: 1px solid #e2e8f0;
+}
+
+.et-btn--cancel:hover {
+    background: #f1f5f9;
+}
+
+/* ===== 7. MODAL PREVIEW (Overlay Styles) ===== */
+.et-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.et-modal-preview-wrapper {
+    background: white;
+    width: 95%; 
+    max-width: 1200px;
+    height: 90vh;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.et-modal-preview-header {
+    padding: 20px 32px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview-filename {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 16px;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+}
+
+.preview-close-btn {
+    background: #f1f5f9; border: none; border-radius: 50%; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b;
+}
+
+.preview-close-btn:hover { background: #ef4444; color: white; }
+
+.et-modal-preview-body {
+    flex: 1;
+    background: #f1f5f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0; 
+    overflow: hidden;
+}
+
+.preview-media-full {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; 
+    background: #f1f5f9;
+}
+
+.preview-iframe-full {
+    width: 100%;
+    height: 100%;
+    border: none; 
+}
+
+.et-modal-preview-footer {
+    padding: 16px 32px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end; 
+}
+
+.preview-delete-btn {
+    display: flex; align-items: center; gap: 8px; background: #fff; color: #ef4444;
+    border: 2px solid #fee2e2; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer;
+}
+
+.preview-delete-btn:hover { background: #ef4444; color: white; border-color: #ef4444; }
+
+/* ===== 8. LOADING STATE ===== */
 .et-loading {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    font-weight: 600;
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 18px;
+}
+
+/* ✅ SHOW MORE BUTTON STYLES */
+.et-show-more-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0; /* ✅ Balanced vertical spacing */
+    margin: 20px 0;
+    width: 100%;
+}
+
+.et-show-more-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    color: #475569;
+    border: 2px solid #e2e8f0;
+    padding: 12px 32px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.et-show-more-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* ✅ EXTRA REQUIREMENTS WRAPPER */
+.et-extra-requirements-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ✅ ANIMATION FOR SMOOTH APPEARANCE */
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive design adjustments */
+@media (max-width: 1024px) {
+    .et-grid-layout {
+        grid-template-columns: 1fr;
+    }
+    .et-main {
+        padding: 20px;
+    }
 }
