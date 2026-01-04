@@ -19,7 +19,7 @@ const ViewPackages = () => {
     const [selectedPackage, setSelectedPackage] = useState(null);
     const navigate = useNavigate();
     
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
+    const API_BASE_URL = 'http://localhost:5000/api/packages';
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 

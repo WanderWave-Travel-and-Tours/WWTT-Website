@@ -100,7 +100,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       });
 
       // Call logout API to log the activity
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/logout', {
+      const response = await fetch('http://localhost:5000/api/admin/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

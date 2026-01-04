@@ -38,7 +38,7 @@ const EditPoster = () => {
     useEffect(() => {
         const fetchPosterDetails = async () => {
             try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/${id}`);
+                const response = await fetch(`http://localhost:5000/api/posters/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch poster details');
                 
                 const data = await response.json();
@@ -52,7 +52,7 @@ const EditPoster = () => {
                 });
 
                 if (data.imageUrl) {
-                    setImagePreview(`https://wanderwaveph-backend.onrender.com/${data.imageUrl}`);
+                    setImagePreview(`http://localhost:5000/${data.imageUrl}`);
                 }
             } catch (err) {
                 console.error(err);
@@ -103,7 +103,7 @@ const EditPoster = () => {
                 formDataToSend.append("image", imageFile);
             }
 
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/update/${id}`, {
+            const response = await fetch(`http://localhost:5000/api/posters/update/${id}`, {
                 method: 'PUT',
                 body: formDataToSend,
             });

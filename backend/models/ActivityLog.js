@@ -4,7 +4,7 @@ const activityLogSchema = new mongoose.Schema({
     action: {
         type: String,
         required: true,
-        enum: ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'LOGIN', 'LOGOUT', 'RESTORE', 'VIEW', 'EXPORT', 'IMPORT', 'UPLOAD']
+        enum: ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'LOGIN', 'LOGOUT', 'RESTORE', 'VIEW', 'EXPORT', 'IMPORT', 'UPLOAD', 'FEATURE', 'UNFEATURE']
     },
 
     module: {
@@ -30,7 +30,6 @@ const activityLogSchema = new mongoose.Schema({
             'Posters', 
             'Gallery' ,   
             'System'
-            
         ]
     },
     entity: { 

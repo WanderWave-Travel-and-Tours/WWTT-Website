@@ -1,6 +1,6 @@
 import React from 'react';
-import { Search, Wallet } from 'lucide-react';
-import './BookingFilters.css'; 
+import { Search, Filter, ChevronDown } from 'lucide-react';
+import './BookingFilters.css';
 
 const BookingFilters = ({ 
   searchTerm, 
@@ -8,64 +8,79 @@ const BookingFilters = ({
   filterStatus, 
   setFilterStatus, 
   statusOptions, 
-  getFilterClassName,
   paymentFilter,
   setPaymentFilter,
-  paymentOptions,
-  getPaymentFilterClassName
+  paymentOptions
 }) => {
   return (
     <div className="bkm-filter-card">
       <div className="bkm-filter-wrapper">
         
-        {/* ORDER 1: Branding Label */}
-        <div className="bkm-brand-label">
-            BOOKING <span>FILTERS</span>
+        {/* LEFT: Branding */}
+        <div className="bkm-brand-section">
+            <div className="bkm-brand-icon">
+                <Filter size={18} strokeWidth={2.5} />
+            </div>
+            <div className="bkm-brand-label">
+                BOOKING <span>FILTERS</span>
+            </div>
         </div>
         
-        {/* ORDER 2: Status Filter Buttons */}
-        <div className="filter-buttons">
-          {statusOptions.map(status => (
-            <button
-              key={status}
-              className={`filter-btn ${getFilterClassName(status)}`} 
-              onClick={() => setFilterStatus(status)}
-            >
-              {status === 'ALL' ? 'All Bookings' : status.toLowerCase().replace('_', ' ')}
-            </button>
-          ))}
+        <div className="bkm-controls-group">
+            {/* MIDDLE: Filter Dropdowns */}
+            <div className="bkm-filters-row">
+                {/* Status Filter */}
+                <div className="bkm-filter-item">
+                    <label>Status:</label>
+                    <div className="bkm-select-wrapper">
+                        <select 
+                            value={filterStatus} 
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="bkm-select"
+                        >
+                            {statusOptions.map((status) => (
+                                <option key={status} value={status}>
+                                    {status === 'ALL' ? 'ALL BOOKINGS' : status.toUpperCase().replace('_', ' ')}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="bkm-select-icon" size={14} />
+                    </div>
+                </div>
+
+                {/* Payment Filter */}
+                <div className="bkm-filter-item">
+                    <label>Payment:</label>
+                    <div className="bkm-select-wrapper">
+                        <select 
+                            value={paymentFilter} 
+                            onChange={(e) => setPaymentFilter(e.target.value)}
+                            className="bkm-select"
+                        >
+                            {paymentOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label.toUpperCase()}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="bkm-select-icon" size={14} />
+                    </div>
+                </div>
+            </div>
+
+            {/* RIGHT: Search Box */}
+            <div className="search-box">
+                <Search size={16} className="search-icon" /> 
+                <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search by name, ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
         </div>
 
-        {/* ✅ NEW: Payment Filter Buttons */}
-        <div className="payment-filter-section">
-          <div className="payment-filter-label">
-            <Wallet size={16} />
-            <span>Payment Status:</span>
-          </div>
-          <div className="filter-buttons">
-            {paymentOptions.map(option => (
-              <button
-                key={option.value}
-                className={`filter-btn filter-btn-payment ${getPaymentFilterClassName(option.value)}`}
-                onClick={() => setPaymentFilter(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {/* ORDER 3: Search Box */}
-        <div className="search-box">
-          <Search size={18} className="search-icon" /> 
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search by name, ID, or package..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
       </div>
     </div>
   );
