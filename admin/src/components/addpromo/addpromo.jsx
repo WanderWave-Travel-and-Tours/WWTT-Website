@@ -18,7 +18,8 @@ const AddPromo = () => {
         discountType: 'Fixed Amount (Peso)',
         discountValue: '',
         durationType: 'Weekly',
-        startDate: ''
+        startDate: '',
+        usageLimit: ''
     });
 
     // Image State
@@ -92,7 +93,7 @@ const AddPromo = () => {
 
     const handleSubmit = async () => {
         if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
-            !promoDetails.discountValue || !promoDetails.startDate) {
+            !promoDetails.discountValue || !promoDetails.startDate || !promoDetails.usageLimit) {
             alert('Please fill in all required fields');
             return;
         }
@@ -109,6 +110,8 @@ const AddPromo = () => {
             formData.append('durationType', promoDetails.durationType);
             formData.append('startDate', promoDetails.startDate);
             formData.append('validUntil', promoDetails.validUntil);
+            formData.append('usageLimit', promoDetails.usageLimit);
+
             
             if (imageFile) {
                 formData.append('image', imageFile);
@@ -122,7 +125,7 @@ const AddPromo = () => {
             formData.append("userEmail", activeUser);
             formData.append("adminId", activeId);
 
-            const response = await fetch('http://localhost:5000/api/promos/add', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
                 method: 'POST',
                 body: formData,
             });
@@ -143,7 +146,8 @@ const AddPromo = () => {
                     discountType: 'Fixed Amount (Peso)',
                     discountValue: '',
                     durationType: 'Weekly',
-                    startDate: ''
+                    startDate: '',
+                    usageLimit: '' 
                 });
                 setImageFile(null);
                 setImagePreview(null);
@@ -169,7 +173,8 @@ const AddPromo = () => {
             discountType: 'Fixed Amount (Peso)',
             discountValue: '',
             durationType: 'Weekly',
-            startDate: ''
+            startDate: '',
+            usageLimit: ''
         });
         setImageFile(null);
         setImagePreview(null);
@@ -312,6 +317,21 @@ const AddPromo = () => {
                                     </div>
 
                                     <div className="promo-field">
+                                        <label>Usage Limit</label>
+                                        <input
+                                            type="number"
+                                            name="usageLimit"
+                                            value={promoDetails.usageLimit}
+                                            onChange={handleChange}
+                                            placeholder="Leave empty for unlimited"
+                                            min="1"
+                                        />
+                                        <small style={{fontSize: '11px', color: '#64748b', marginTop: '4px'}}>
+                                            Maximum number of users who can avail this promo
+                                        </small>
+                                    </div>
+
+                                    <div className="promo-field">
                                         <label>Duration Type</label>
                                         <select
                                             name="durationType"
@@ -334,7 +354,7 @@ const AddPromo = () => {
                                         />
                                     </div>
 
-                                    <div className="promo-field promo-field--full">
+                                    <div className="promo-field">
                                         <label>End Date (Auto-Calculated)</label>
                                         <input
                                             type="date"

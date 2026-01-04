@@ -128,6 +128,137 @@
     box-shadow: 0 0 0 1px #f59e0b; 
 }
 
+.payment-filter-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 12px;
+}
+
+.payment-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.filter-btn-payment {
+  font-size: 0.85rem;
+  padding: 6px 14px;
+}
+
+/* Add these styles to your BookingTable.css */
+
+.payment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.payment-badge-full {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.payment-badge-partial {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+.payment-badge-pending {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+/* Add these styles to your BookingDetailModal.css */
+
+.cnm-payment-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+}
+
+.payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.payment-label {
+  display: flex;
+  align-items: center;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.payment-row strong {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.payment-divider {
+  height: 1px;
+  background: #cbd5e1;
+  margin: 8px 0;
+}
+
+.cnm-badge-green {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.cnm-badge-amber {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+/* Update BookingStats.css for new stat card */
+.bkm-card-pending-balance-payments {
+  position: relative;
+  overflow: hidden;
+}
+
+.bkm-card-pending-balance-payments::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.9), rgba(249, 115, 22, 0.95));
+  z-index: 1;
+}
+
+.bkm-card-pending-balance-payments .bkm-card-content,
+.bkm-card-pending-balance-payments .bkm-card-icon {
+  position: relative;
+  z-index: 2;
+}
+
+/* Subtext styling for stats */
+.bkm-card-content span.stat-subtext {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+
 
 /* Responsive */
 @media (max-width: 960px) {

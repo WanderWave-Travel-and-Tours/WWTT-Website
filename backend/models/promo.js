@@ -29,6 +29,17 @@ const PromoSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    usageLimit: {
+        type: Number,
+        default: null, 
+        min: 0,
+        required: true
+    },
+    usedCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     isActive: { type: Boolean, default: true },
     isArchive: { 
         type: String, 

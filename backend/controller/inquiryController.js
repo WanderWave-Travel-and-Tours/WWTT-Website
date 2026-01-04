@@ -356,6 +356,50 @@ const getInquiry = async (req, res) => {
   }
 };
 
+// Idagdag ito sa inquiryController.js
+const updateInquiry = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // I-prepare ang data mula sa form
+    const updateData = {
+      fullName: req.body.fullName,
+      email: req.body.email,
+      estimatedPrice: req.body.estimatedPrice,
+      message: req.body.message,
+      // I-map pabalik sa flightDetails object
+      flightDetails: {
+        origin: req.body.origin,
+        destination: req.body.destination,
+        departureDate: req.body.departureDate,
+        airline: req.body.airline
+      },
+      updatedAt: Date.now()
+    };
+
+    // Kung may bagong file na ini-upload
+    if (req.file) {
+      updateData.evidenceName = req.file.filename;
+      updateData.evidenceUrl = `/uploads/${req.file.filename}`;
+    }
+
+    const updatedInquiry = await Inquiry.findByIdAndUpdate(
+      id, 
+      { $set: updateData }, 
+      { new: true }
+    );
+
+    if (!updatedInquiry) {
+      return res.status(404).json({ success: false, message: 'Inquiry not found' });
+    }
+
+    res.json({ success: true, data: updatedInquiry });
+  } catch (error) {
+    console.error('Update Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const updateInquiryStatus = async (req, res) => {
   try {
     const { status, adminNotes, contactedBy, remarks } = req.body;
@@ -668,6 +712,7 @@ module.exports = {
   getAllInquiries,
   getInquiry,
   updateInquiryStatus,
+  updateInquiry,  
   deleteInquiry,
   getInquiriesByEmail,
   getInquiryStats,

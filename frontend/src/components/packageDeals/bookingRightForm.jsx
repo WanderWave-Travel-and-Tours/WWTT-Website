@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Plane 
+  ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Plane, Ticket  
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
@@ -29,6 +29,73 @@ const BookingRightForm = ({ pkg }) => {
     selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
   const requiresPassport = isInternationalFlight;
   const requiresID = selectedFlight && !isInternationalFlight;
+
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState('');
+  const [isCheckingPromo, setIsCheckingPromo] = useState(false);
+  const [paymentType, setPaymentType] = useState('full');
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Please enter a promo code');
+      return;
+    }
+
+    setIsCheckingPromo(true);
+    setPromoError('');
+
+    try {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}`);
+      const data = await response.json();
+
+      if (response.ok && data.valid) {
+        const promo = data.promo;
+        
+        // Check if promo has reached usage limit
+        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+          setPromoError('This promo code has reached its usage limit');
+          setAppliedPromo(null);
+          return;
+        }
+
+        setAppliedPromo({
+          code: promo.code,
+          discountType: promo.discountType,
+          discountValue: promo.discountValue,
+          promoId: promo._id
+        });
+        
+        toast.success(`✅ Promo "${promo.code}" applied successfully!`, { duration: 3000 });
+      } else {
+        setPromoError(data.message || 'Invalid or expired promo code');
+        setAppliedPromo(null);
+      }
+    } catch (error) {
+      console.error('Error validating promo:', error);
+      setPromoError('Failed to validate promo code');
+      setAppliedPromo(null);
+    } finally {
+      setIsCheckingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode('');
+    setPromoError('');
+    toast.success('Promo code removed', { duration: 2000 });
+  };
+
+  const calculateDiscount = () => {
+    if (!appliedPromo) return 0;
+
+    if (appliedPromo.discountType === 'Percentage') {
+      return (packageTotal * appliedPromo.discountValue) / 100;
+    } else {
+      // Fixed Amount
+      return appliedPromo.discountValue;
+    }
+  };
 
   const calculateRoomsNeeded = () => {
     if (!selectedRoomType) return 1;
@@ -77,7 +144,7 @@ const BookingRightForm = ({ pkg }) => {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -155,11 +222,25 @@ const BookingRightForm = ({ pkg }) => {
     return basePackagePrice + totalUpgradeCost;
   })();
 
+  const discountAmount = calculateDiscount();
+  const finalPackageTotal = Math.max(0, packageTotal - discountAmount);
+
+
   const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
+  
+  const finalTotalAmount = finalPackageTotal + airfareTotal;
   const totalAmount = packageTotal + airfareTotal;
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const calculatePartialAmount = () => {
+    const finalAmount = selectedFlight ? finalTotalAmount : finalPackageTotal;
+    const percentage = selectedFlight ? 0.85 : 0.50;
+    return Math.round(finalAmount * percentage);
+  };
+
+  const partialAmount = calculatePartialAmount();
 
   const isInSelectedRange = (day) => {
     if (!selectedDate) return false;
@@ -391,6 +472,10 @@ const BookingRightForm = ({ pkg }) => {
           infants: quantities.infants || 0,
         },
         packageTotal: packageTotal,
+        promoCode: appliedPromo ? appliedPromo.code : null,
+        promoId: appliedPromo ? appliedPromo.promoId : null,
+        discountAmount: discountAmount,
+        finalPackageTotal: finalPackageTotal,
         includesAirfare: !!selectedFlight,
         flightDetails: selectedFlight ? ({
           airline: selectedFlight.airline.name,
@@ -404,7 +489,10 @@ const BookingRightForm = ({ pkg }) => {
         }) : null,
         
         airfareTotal: airfareTotal,
-        totalAmount: totalAmount,
+        totalAmount: finalTotalAmount,
+        paymentType: paymentType || 'full',
+        initialPaymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount,
+        remainingBalance: paymentType === 'partial' ? (finalTotalAmount - partialAmount) : 0,
         primaryContact: {
           fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
           email: passengers[0].email,
@@ -453,8 +541,10 @@ const BookingRightForm = ({ pkg }) => {
         console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
-        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
-            bookingId: bookingId
+        const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
+            bookingId: bookingId,
+            paymentType: paymentType || 'full',
+            paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
         });
         
         if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
@@ -664,26 +754,175 @@ const BookingRightForm = ({ pkg }) => {
         </div>
       )}
 
+      <div className="brf-promo-section" style={{
+        background: '#fff',
+        border: '2px solid #e2e8f0',
+        borderRadius: '12px',
+        padding: '16px',
+        marginBottom: '16px'
+      }}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
+          <Ticket size={20} color="#fc9c1b"/>
+          <strong style={{fontSize: '0.95rem', color: '#1f2937'}}>Have a Promo Code?</strong>
+        </div>
+
+        {!appliedPromo ? (
+          <>
+            <div style={{display: 'flex', gap: '8px'}}>
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="Enter promo code"
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  border: `2px solid ${promoError ? '#ef4444' : '#e2e8f0'}`,
+                  borderRadius: '8px',
+                  fontSize: '0.9rem',
+                  textTransform: 'uppercase',
+                  fontWeight: '600',
+                  letterSpacing: '1px'
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') handleApplyPromo();
+                }}
+              />
+              <button
+                onClick={handleApplyPromo}
+                disabled={isCheckingPromo}
+                style={{
+                  padding: '10px 20px',
+                  background: '#fc9c1b',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {isCheckingPromo ? 'Checking...' : 'Apply'}
+              </button>
+            </div>
+            
+            {promoError && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                background: '#fee2e2',
+                color: '#dc2626',
+                borderRadius: '6px',
+                fontSize: '0.85rem'
+              }}>
+                {promoError}
+              </div>
+            )}
+          </>
+        ) : (
+          <div style={{
+            background: '#d1fae5',
+            border: '2px solid #10b981',
+            borderRadius: '8px',
+            padding: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div>
+              <div style={{fontWeight: '700', color: '#047857', fontSize: '0.95rem'}}>
+                {appliedPromo.code}
+              </div>
+              <div style={{fontSize: '0.85rem', color: '#065f46', marginTop: '2px'}}>
+                {appliedPromo.discountType === 'Percentage' 
+                  ? `${appliedPromo.discountValue}% discount applied`
+                  : `₱${appliedPromo.discountValue.toLocaleString()} discount applied`
+                }
+              </div>
+            </div>
+            <button
+              onClick={handleRemovePromo}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#dc2626',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                textDecoration: 'underline',
+                fontWeight: '600'
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="brf-booking-footer">
         <div className="brf-total-row">
-          <span className="brf-total-label">{selectedFlight ? 'Package Total' : 'Total Amount'}</span>
-          <span className="brf-total-amount">{packageTotal === 0 ? 'Select Room Type' : `₱${packageTotal.toLocaleString()}`}</span>
+          <span className="brf-total-label">Package Total</span>
+          <span className="brf-total-amount">
+            ₱{packageTotal.toLocaleString()}
+          </span>
         </div>
+
+        {appliedPromo && (
+          <div className="brf-total-row" style={{color: '#10b981', fontSize: '0.9rem'}}>
+            <span>
+              - Promo Discount ({appliedPromo.code})
+            </span>
+            <span style={{fontWeight: '700'}}>
+              -₱{discountAmount.toLocaleString()}
+            </span>
+          </div>
+        )}
+
+        {appliedPromo && (
+          <div className="brf-total-row" style={{fontSize: '0.95rem', color: '#374151'}}>
+            <span>Discounted Package Total</span>
+            <span style={{fontWeight: '700', color: '#fc9c1b'}}>
+              ₱{finalPackageTotal.toLocaleString()}
+            </span>
+          </div>
+        )}
         
         {selectedFlight && (
           <>
-            <div className="brf-total-row" style={{fontSize:'0.9rem', color:'#6b7280'}}>
+            <div className="brf-total-row" style={{fontSize: '0.9rem', color: '#6b7280'}}>
               <span>+ Airfare</span>
               <span>₱{airfareTotal.toLocaleString()}</span>
             </div>
             <div className="brf-total-row" style={{
-              borderTop:'2px solid #fc9c1b', paddingTop:'12px', marginTop:'8px',
-              fontSize:'1.1rem', fontWeight:'800', color:'#1f2937'
+              borderTop: '2px solid #fc9c1b',
+              paddingTop: '12px',
+              marginTop: '8px',
+              fontSize: '1.1rem',
+              fontWeight: '800',
+              color: '#1f2937'
             }}>
               <span>GRAND TOTAL</span>
-              <span style={{color:'#fc9c1b'}}>₱{totalAmount.toLocaleString()}</span>
+              <span style={{color: '#fc9c1b'}}>
+                ₱{finalTotalAmount.toLocaleString()}
+              </span>
             </div>
           </>
+        )}
+        
+        {!selectedFlight && (
+          <div className="brf-total-row" style={{
+            borderTop: '2px solid #fc9c1b',
+            paddingTop: '12px',
+            marginTop: '8px',
+            fontSize: '1.1rem',
+            fontWeight: '800',
+            color: '#1f2937'
+          }}>
+            <span>TOTAL AMOUNT</span>
+            <span style={{color: '#fc9c1b'}}>
+              ₱{finalPackageTotal.toLocaleString()}
+            </span>
+          </div>
         )}
         
         <button 
@@ -715,18 +954,24 @@ const BookingRightForm = ({ pkg }) => {
         pkg={pkg}
         currentMonth={currentMonth}
         selectedDate={selectedDate}
-        getCalculatedDates ={getCalculatedDates }
+        getCalculatedDates={getCalculatedDates}
         monthNames={monthNames}
         packageTotal={packageTotal}
+        appliedPromo={appliedPromo}
+        discountAmount={discountAmount}
+        finalPackageTotal={finalPackageTotal}
         selectedFlight={selectedFlight}
         airfareTotal={airfareTotal}
-        totalAmount={totalAmount}
+        totalAmount={finalTotalAmount}
         bookingWithAirfare={bookingWithAirfare}
         isInternationalFlight={isInternationalFlight}
         requiresID={requiresID}
         requiresPassport={requiresPassport}
         passengerStep={passengerStep}
         totalPassengers={totalPassengers}
+        paymentType={paymentType}
+        setPaymentType={setPaymentType}
+        partialAmount={partialAmount}
         progressPercent={Math.round((passengerStep / totalPassengers) * 100)}
         currentPassenger={passengers[passengerStep - 1]}
         passengers={passengers}

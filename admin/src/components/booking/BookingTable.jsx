@@ -8,7 +8,7 @@ const BookingTable = ({
     handleViewDetails,
     handleConfirm,
     handleCancel,
-    handleArchive,        // NEW: Dedicated archive handler
+    handleArchive,
     actionLoading,
     MailIcon,
     CheckCircleIcon,
@@ -19,8 +19,9 @@ const BookingTable = ({
     XIcon,
     CalendarIcon,
     UsersIcon,
-    ArchiveIcon,          // NEW
-    RotateCcwIcon,        // NEW for unarchive
+    ArchiveIcon,
+    RotateCcwIcon,
+    WalletIcon,
     startIndex
 }) => {
 
@@ -33,12 +34,58 @@ const BookingTable = ({
         }
     };
 
-    // Loading state - full row
+    // ✅ FIXED: Get payment status badge - USE CORRECT CALCULATION
+    const getPaymentStatusBadge = (booking) => {
+        // Full payment type
+        if (booking.paymentType === 'full') {
+            if (booking.status === 'confirmed' || booking.status === 'fully_paid') {
+                return {
+                    text: 'Paid in Full',
+                    class: 'payment-badge-full'
+                };
+            }
+            return {
+                text: 'Pending Payment',
+                class: 'payment-badge-pending'
+            };
+        }
+
+        // Partial payment logic - CORRECTED
+        const totalAmount = booking.totalAmount || 0;
+        const remainingBalance = booking.remainingBalance || 0;
+        const balancePaid = booking.balancePaidAmount || 0;
+        
+        // Calculate actual paid amount
+        const initialPaid = totalAmount - remainingBalance;
+
+        // Check if fully paid (balance paid and no remaining)
+        if (balancePaid > 0 && remainingBalance <= 0) {
+            return {
+                text: 'Fully Paid',
+                class: 'payment-badge-full'
+            };
+        }
+
+        // Initial payment made, balance pending
+        if (initialPaid > 0 && balancePaid === 0 && remainingBalance > 0) {
+            return {
+                text: `Partial (₱${remainingBalance.toLocaleString()} due)`,
+                class: 'payment-badge-partial'
+            };
+        }
+
+        // No payment yet
+        return {
+            text: 'Pending Payment',
+            class: 'payment-badge-pending'
+        };
+    };
+
     if (loading) {
         return (
             <tbody>
                 <tr>
-                    <td colSpan="9" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="10" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                         Loading active bookings...
                     </td>
                 </tr>
@@ -46,12 +93,11 @@ const BookingTable = ({
         );
     }
 
-    // Empty state
     if (filteredBookingsCount === 0) {
         return (
             <tbody>
                 <tr>
-                    <td colSpan="9" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
+                    <td colSpan="10" style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '16px' }}>
                         No active bookings found
                     </td>
                 </tr>
@@ -63,6 +109,7 @@ const BookingTable = ({
         <tbody>
             {currentBookings.map((booking, index) => {
                 const isArchived = booking.isArchive === 'Yes';
+                const paymentStatus = getPaymentStatusBadge(booking);
 
                 return (
                     <tr key={booking.mongoId || booking.id}>
@@ -107,10 +154,33 @@ const BookingTable = ({
                             </div>
                         </td>
 
-                        {/* Amount */}
-                        <td>₱{booking.totalAmount.toLocaleString()}</td>
+                        {/* Amount - CORRECTED CALCULATION */}
+                        <td>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                                {booking.paymentType === 'partial' ? (
+                                    <>
+                                        <strong style={{color: '#059669'}}>
+                                            ₱{(booking.totalAmount - booking.remainingBalance).toLocaleString()}
+                                        </strong>
+                                        <span style={{fontSize: '0.75rem', color: '#64748b'}}>
+                                            of ₱{booking.totalAmount.toLocaleString()}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <strong>₱{booking.totalAmount.toLocaleString()}</strong>
+                                )}
+                            </div>
+                        </td>
 
-                        {/* Status Badge */}
+                        {/* ✅ NEW: Payment Status */}
+                        <td>
+                            <div className={`payment-status-badge ${paymentStatus.class}`}>
+                                <WalletIcon size={14} />
+                                <span>{paymentStatus.text}</span>
+                            </div>
+                        </td>
+
+                        {/* Booking Status Badge */}
                         <td>
                             <span className={`bkm-badge ${getStatusBadgeClass(booking.status)}`}>
                                 {booking.status || 'pending'}
@@ -150,12 +220,6 @@ const BookingTable = ({
                                         </>
                                     )}
                                 </button>
-
-                                {/* Optional: Confirm button only for pending */}
-                                {!isArchived && booking.status === 'pending' }
-
-                                {/* Optional: Cancel button only for non-cancelled */}
-                                {!isArchived && booking.status !== 'cancelled' && booking.status !== 'confirmed' }
                             </div>
                         </td>
                     </tr>
@@ -165,4 +229,4 @@ const BookingTable = ({
     );
 };
 
-export default BookingTable; 
+export default BookingTable;

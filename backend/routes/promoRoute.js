@@ -3,9 +3,9 @@ const router = require('express').Router();
 const multer = require('multer');
 const path = require('path');
 const Promo = require('../models/promo'); 
-const ActivityLog = require('../models/ActivityLog'); // IMPORT ACTIVITY LOG MODEL
+const ActivityLog = require('../models/ActivityLog');
 
-// MULTER CONFIGURATION (Image Upload)
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/'); 
@@ -17,9 +17,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// ROUTES
-
-// 1. CREATE (With Image Upload & Activity Log)
 router.post('/add', upload.single('image'), async (req, res) => {
     try {
         const promoData = {
@@ -31,13 +28,9 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const newPromo = new Promo(promoData);
         const savedPromo = await newPromo.save();
 
-        // ==========================================
-        // INSERT ACTIVITY LOG HERE
-        // ==========================================
         try {
             const { userEmail, adminId } = req.body;
             
-            // Sanitize ID
             let logUserId = null;
             if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
                 logUserId = adminId;
@@ -61,7 +54,6 @@ router.post('/add', upload.single('image'), async (req, res) => {
         } catch (logError) {
             console.error('❌ Error logging activity:', logError);
         }
-        // ==========================================
 
         res.status(200).json({ status: "ok", data: savedPromo });
     } catch (err) {
@@ -69,7 +61,6 @@ router.post('/add', upload.single('image'), async (req, res) => {
     }
 });
 
-// 2. READ: Get Specific Promo by ID
 router.get('/:id', async (req, res) => {
     try {
         const promo = await Promo.findById(req.params.id);
@@ -80,7 +71,6 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// 3. READ: View Active Promos (Not Archived)
 router.get('/', async (req, res) => {
     try {
         const promos = await Promo.find({ isArchive: "No" }).sort({ createdAt: -1 });
@@ -90,7 +80,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 4. READ: All Promos
 router.get('/all', async (req, res) => {
     try {
         const promos = await Promo.find().sort({ createdAt: -1 });
@@ -100,7 +89,6 @@ router.get('/all', async (req, res) => {
     }
 });
 
-// 5. UPDATE: Edit Promo (With Image Upload & Activity Log)
 router.put('/:id', upload.single('image'), async (req, res) => {
     try {
         let updateData = { ...req.body };
@@ -117,9 +105,6 @@ router.put('/:id', upload.single('image'), async (req, res) => {
 
         if (!updatedPromo) return res.status(404).json({ message: "Promo not found" });
 
-        // ==========================================
-        // INSERT ACTIVITY LOG HERE (UPDATE)
-        // ==========================================
         try {
             const { userEmail, adminId } = req.body;
             
@@ -146,11 +131,106 @@ router.put('/:id', upload.single('image'), async (req, res) => {
         } catch (logError) {
             console.error('❌ Error logging activity:', logError);
         }
-        // ==========================================
 
         res.status(200).json({ status: "ok", data: updatedPromo });
     } catch (err) {
         res.status(500).json({ status: "error", message: err.message });
+    }
+});
+
+router.post('/claim/:id', async (req, res) => {
+    try {
+        const promo = await Promo.findById(req.params.id);
+        
+        if (!promo) {
+            return res.status(404).json({ message: "Promo not found" });
+        }
+        
+        if (!promo.isActive || promo.isArchive === 'Yes') {
+            return res.status(400).json({ message: "Promo is no longer active" });
+        }
+        
+        if (new Date() > new Date(promo.validUntil)) {
+            return res.status(400).json({ message: "Promo has expired" });
+        }
+        
+        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+            return res.status(400).json({ message: "Promo limit reached" });
+        }
+        
+        promo.usedCount += 1;
+        await promo.save();
+        
+        res.status(200).json({ 
+            message: "Promo claimed successfully",
+            promo 
+        });
+        
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+router.get('/validate/:code', async (req, res) => {
+    try {
+        const { code } = req.params;
+        
+        const promo = await Promo.findOne({ 
+            code: code.toUpperCase(),
+            isArchive: 'No'
+        });
+
+        if (!promo) {
+            return res.status(404).json({ 
+                valid: false, 
+                message: 'Promo code not found' 
+            });
+        }
+
+        // Check if active
+        if (!promo.isActive) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'This promo code is no longer active' 
+            });
+        }
+
+        // Check if expired
+        const today = new Date();
+        const validUntil = new Date(promo.validUntil);
+        if (today > validUntil) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'This promo code has expired' 
+            });
+        }
+
+        // Check usage limit
+        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'This promo code has reached its usage limit' 
+            });
+        }
+
+        res.status(200).json({ 
+            valid: true, 
+            promo: {
+                _id: promo._id,
+                code: promo.code,
+                description: promo.description,
+                discountType: promo.discountType,
+                discountValue: promo.discountValue,
+                usageLimit: promo.usageLimit,
+                usedCount: promo.usedCount
+            }
+        });
+
+    } catch (err) {
+        res.status(500).json({ 
+            valid: false, 
+            message: err.message 
+        });
     }
 });
 

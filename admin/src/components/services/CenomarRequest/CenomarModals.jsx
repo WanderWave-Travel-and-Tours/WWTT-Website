@@ -4,6 +4,7 @@ import {
   Plus, Save, ListPlus, ChevronDown, PlusCircle, Download, AlertCircle,
   Clock, User, Mail, DollarSign, Calendar, Package, TrendingUp,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import "./CenomarModals.css";
 
 // --- HELPER FUNCTIONS ---
@@ -29,6 +30,8 @@ export const InquiryModal = ({
   onConfirmPayment, showDeliverDocs, setShowDeliverDocs, deliveryFiles = [],
   setDeliveryFiles, handleDeliverDocuments, setShowContactRemarks, cenomarDocs = []
 }) => {
+  const navigate = useNavigate();
+
   if (!inquiry) return null;
 
   const handleDeliverDocsSubmit = (e) => {
@@ -52,7 +55,6 @@ export const InquiryModal = ({
   const statusConfig = getStatusConfig(inquiry.status);
   const StatusIcon = statusConfig.icon;
 
-  // --- FILTERING LOGIC ---
   let finalSentDocs = [];
   if (inquiry.deliveredDocuments && inquiry.deliveredDocuments.length > 0) {
     finalSentDocs = inquiry.deliveredDocuments;
@@ -68,40 +70,23 @@ export const InquiryModal = ({
     !doc.uploader || doc.uploader === 'USER' || doc.category === 'REQUIREMENT'
   );
 
-  // --- [UPDATED] SMART PRICE RECOVERY LOGIC ---
-  // Fixes the issue where price is 0 because "CENOMAR Assistance" != "CENOMAR"
   const displayPrice = useMemo(() => {
     const dbPrice = Number(inquiry.estimatedPrice || 0);
-    
-    // 1. If Database has a valid price, use it.
     if (dbPrice > 0) return dbPrice;
-
-    // 2. If Database is 0, find the price from the Service List (cenomarDocs)
     if (cenomarDocs && cenomarDocs.length > 0) {
-      // Clean strings for comparison (remove spaces, lowercase)
       const cleanService = (inquiry.serviceName || "").toLowerCase().trim();
       const cleanDocument = (inquiry.cenomarDocument || "").toLowerCase().trim();
-
-      // Find matching service
       const matchedService = cenomarDocs.find(s => {
         const docType = (s.documentType || "").toLowerCase().trim();
-        // Check for Exact Match OR Partial Match (e.g. "CENOMAR" is inside "CENOMAR Assistance")
         return (
           docType === cleanService || 
           docType === cleanDocument ||
-          (cleanService.includes(docType) && docType.length > 3) || // Partial match
+          (cleanService.includes(docType) && docType.length > 3) || 
           (cleanDocument.includes(docType) && docType.length > 3)
         );
       });
-
-      if (matchedService) {
-        return Number(matchedService.price);
-      }
-      
-      // Fallback: If there is only 1 service in the system, default to it
-      if (cenomarDocs.length === 1) {
-        return Number(cenomarDocs[0].price);
-      }
+      if (matchedService) return Number(matchedService.price);
+      if (cenomarDocs.length === 1) return Number(cenomarDocs[0].price);
     }
     return 0;
   }, [inquiry, cenomarDocs]);
@@ -110,17 +95,44 @@ export const InquiryModal = ({
     <div className="cnm-overlay" onClick={onClose}>
       <div className="cnm-modal cnm-modal-lg" onClick={(e) => e.stopPropagation()}>
         
-        {/* HEADER */}
+        {/* HEADER - UPDATED UI WITH INLINE EDIT BUTTON */}
         <div className="cnm-header">
           <div className="cnm-header-content">
             <div className="cnm-title-group">
-              <h2 className="cnm-title">Request Details</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '4px' }}>
+                <h2 className="cnm-title" style={{ margin: 0 }}>Request Details</h2>
+                
+                {/* INLINE EDIT BUTTON - Katulad ng nasa 2nd image */}
+                <button 
+                  className="cnm-edit-btn-pill"
+                  onClick={() => navigate(`/EditCenomar/${inquiry._id}`)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#f8fafc',
+                    color: '#64748b',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Edit size={14} />
+                  <span>Edit Details</span>
+                </button>
+              </div>
+
               <div className="cnm-meta">
                 <span className="cnm-ref">REF: #{inquiry._id.slice(-8).toUpperCase()}</span>
                 <span className="cnm-divider">•</span>
                 <span className="cnm-date">{formatDate(inquiry.createdAt)}</span>
               </div>
             </div>
+
             <div className={`cnm-status-badge cnm-status-${statusConfig.color}`}>
               <div className="cnm-status-icon"><StatusIcon size={16} /></div>
               <div className="cnm-status-content">
@@ -136,7 +148,6 @@ export const InquiryModal = ({
 
         {/* BODY */}
         <div className="cnm-body">
-          
           {/* ALERTS */}
           {inquiry.status === "PAID" && (
             <div className="cnm-alert cnm-alert-warning">
@@ -201,11 +212,11 @@ export const InquiryModal = ({
                           {doc.fileName || doc.originalName}
                         </span>
                         <span className="cnm-file-size" style={{color:'#16a34a'}}>
-                           Sent • {formatDate(doc.uploadedAt)}
+                            Sent • {formatDate(doc.uploadedAt)}
                         </span>
                       </div>
                       <a 
-                        href={`http://localhost:5000${doc.fileUrl}`} 
+                        href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="cnm-btn cnm-btn-ghost cnm-btn-sm" 
@@ -265,7 +276,7 @@ export const InquiryModal = ({
             </div>
           )}
 
-          {/* CLIENT INFORMATION */}
+          {/* INFO SECTIONS */}
           <div className="cnm-card">
             <div className="cnm-card-header">
               <h3 className="cnm-card-title">Client Information</h3>
@@ -289,7 +300,6 @@ export const InquiryModal = ({
                 <div className="cnm-info-icon"><DollarSign size={18} /></div>
                 <div className="cnm-info-content">
                   <label className="cnm-info-label">Amount</label>
-                  {/* --- DISPLAY PRICE FROM CALCULATION --- */}
                   <span className="cnm-info-value cnm-val-amount">₱{displayPrice.toLocaleString()}</span>
                 </div>
               </div>
@@ -303,7 +313,6 @@ export const InquiryModal = ({
             </div>
           </div>
 
-          {/* REQUEST MESSAGE */}
           <div className="cnm-card">
             <div className="cnm-card-header">
               <h3 className="cnm-card-title">Request Message</h3>
@@ -313,7 +322,6 @@ export const InquiryModal = ({
             </div>
           </div>
 
-          {/* SUBMITTED DOCUMENTS */}
           <div className="cnm-card">
             <div className="cnm-card-header">
               <h3 className="cnm-card-title">Submitted Documents (Requirements)</h3>
@@ -334,7 +342,7 @@ export const InquiryModal = ({
                       <span className="cnm-doc-name">{doc.originalName}</span>
                       <span className="cnm-doc-meta">{formatFileSize(doc.fileSize)} • Uploaded {formatDate(doc.uploadedAt)}</span>
                     </div>
-                    <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="cnm-btn cnm-btn-ghost cnm-btn-sm">
+                    <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="cnm-btn cnm-btn-ghost cnm-btn-sm">
                       <TrendingUp size={14} /> View
                     </a>
                   </div>
@@ -343,7 +351,6 @@ export const InquiryModal = ({
             )}
           </div>
 
-          {/* ACTIONS */}
           <div className="cnm-card">
             <div className="cnm-card-header">
               <h3 className="cnm-card-title">Quick Actions</h3>
@@ -390,13 +397,51 @@ export const InquiryModal = ({
               </button>
             </div>
           </div>
+        </div>
 
+        {/* FOOTER BUTTONS - UPDATED WITH EDIT BOOKING BUTTON */}
+        <div className="cnm-footer" style={{ 
+          justifyContent: 'flex-end', 
+          gap: '12px',
+          padding: '20px 24px',
+          borderTop: '1px solid #f1f5f9'
+        }}>
+          <button 
+             className="cnm-btn" 
+             style={{ 
+               backgroundColor: '#eff6ff', 
+               color: '#2563eb', 
+               border: '1px solid #dbeafe',
+               display: 'flex',
+               alignItems: 'center',
+               gap: '8px',
+               padding: '10px 20px',
+               borderRadius: '8px',
+               fontWeight: '600'
+             }}
+             onClick={() => navigate(`/EditCenomar/${inquiry._id}`)}
+          >
+            <Edit size={18} /> <span>Edit Booking</span>
+          </button>
+          
+          <button 
+            className="cnm-btn cnm-btn-ghost" 
+            onClick={onClose} 
+            style={{ 
+              border: '1px solid #e2e8f0',
+              padding: '10px 24px',
+              borderRadius: '8px'
+            }}
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
+// --- OTHER MODALS ---
 export const ContactRemarksModal = ({ remarks, setRemarks, setEvidence, onSubmit, onClose }) => (
   <div className="cnm-overlay">
     <div className="cnm-modal cnm-modal-sm">
@@ -518,7 +563,6 @@ export const ServiceEditorModal = ({
         </button>
       </div>
       <div className="cnm-body">
-        {/* BASIC INFO */}
         <div className="cnm-form-section">
           <h3 className="cnm-section-title"><span className="cnm-section-icon">📋</span> Basic Information</h3>
           <div className="cnm-form-row">
@@ -548,7 +592,6 @@ export const ServiceEditorModal = ({
             />
           </div>
         </div>
-        {/* REQUIREMENTS */}
         <div className="cnm-accordion">
           <button className={`cnm-acc-header ${accordionState.requirements ? "active" : ""}`} onClick={() => toggleAccordion("requirements")}>
             <div className="cnm-acc-title">
@@ -594,7 +637,6 @@ export const ServiceEditorModal = ({
             </div>
           )}
         </div>
-        {/* STEPS */}
         <div className="cnm-accordion">
           <button className={`cnm-acc-header ${accordionState.stepsProcess ? "active" : ""}`} onClick={() => toggleAccordion("stepsProcess")}>
             <div className="cnm-acc-title">
@@ -622,7 +664,6 @@ export const ServiceEditorModal = ({
             </div>
           )}
         </div>
-        {/* DOWNLOADS */}
         <div className="cnm-accordion">
           <button className={`cnm-acc-header ${accordionState.downloadForms ? "active" : ""}`} onClick={() => toggleAccordion("downloadForms")}>
             <div className="cnm-acc-title">
