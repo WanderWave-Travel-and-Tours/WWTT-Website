@@ -14,7 +14,7 @@ const IconRemove = () => (
     </svg>
 );
 
-const TourInclusions = ({ incs, onChange, onAdd, onRem }) => {
+const TourInclusions = ({ incs, onChange, onAdd, onRem, onPaste }) => {
     
     // Binibilang ang valid items para sa count badge gaya ng sa package
     const activeInclusionsCount = incs.filter((i) => i.trim()).length;
@@ -36,6 +36,7 @@ const TourInclusions = ({ incs, onChange, onAdd, onRem }) => {
                             placeholder="What's included?"
                             value={inc}
                             onChange={(e) => onChange(i, e.target.value)}
+                            onPaste={(e) => onPaste(i, e)}
                         />
                         {incs.length > 1 && (
                             <button
