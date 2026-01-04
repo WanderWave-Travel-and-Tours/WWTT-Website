@@ -30,7 +30,7 @@ const PackageDetailModal = ({
     if (!image) return "https://via.placeholder.com/800x400";
     return image.startsWith("http")
       ? image
-      : `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
+      : `http://localhost:5000/uploads/${image}`;
   };
 
   return (

@@ -29,7 +29,7 @@ const EditPSA = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
+  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -56,7 +56,7 @@ const EditPSA = () => {
           });
 
           if (data.evidenceName) {
-            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${data.evidenceName}`);
+            setImagePreview(`http://localhost:5000/uploads/${data.evidenceName}`);
           }
         } else {
             toast.error("Hindi mahanap ang requested record.", "Data Error");

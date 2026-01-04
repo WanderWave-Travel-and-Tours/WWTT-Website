@@ -21,7 +21,7 @@ const TourDetailModal = ({ tour, close, onArchive, navigate }) => {
                 </div>
                 <div className="tdm-body">
                     <div className="tdm-section-card dashed-border">
-                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} className="tdm-customer-image" alt="" />
+                        <img src={`http://localhost:5000/uploads/${tour.image}`} className="tdm-customer-image" alt="" />
                     </div>
                     <div className="tdm-section-card">
                         <h3 className="tdm-section-title">TOUR INFORMATION</h3>
