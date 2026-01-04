@@ -60,7 +60,9 @@ const createInquiry = async (req, res) => {
       passengers,
       cenomarId,
       cenomarDocument,
-      passportDetails
+      passportDetails,
+      travelDate,      // <--- ADD THIS
+      lengthOfStay
     } = req.body;
 
     // --- [START] SMART PRICE FIX FOR FRONTEND SUBMISSIONS ---
@@ -166,7 +168,9 @@ const createInquiry = async (req, res) => {
       deliveredDocuments: [],
       documentsDeliveredAt: null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      travelDate: travelDate || flightDetails?.departureDate || null,
+      lengthOfStay: lengthOfStay || flightDetails?.duration || null
     };
 
     if (flightDetails) {
@@ -356,42 +360,72 @@ const getInquiry = async (req, res) => {
   }
 };
 
-// Idagdag ito sa inquiryController.js
+// Hanapin ang updateInquiry sa inquiryController.js at i-update ang logic:
 const updateInquiry = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // I-prepare ang data mula sa form
-    const updateData = {
+    const existingInquiry = await Inquiry.findById(id);
+    if (!existingInquiry) {
+      return res.status(404).json({ success: false, message: 'Inquiry not found' });
+    }
+
+    // Listahan para sa Delete File logic
+    let remainingFilesList = [];
+    if (req.body.existingFiles) {
+      try {
+        remainingFilesList = JSON.parse(req.body.existingFiles);
+      } catch (e) {
+        remainingFilesList = [];
+      }
+    }
+
+const updateData = {
       fullName: req.body.fullName,
       email: req.body.email,
-      estimatedPrice: req.body.estimatedPrice,
-      message: req.body.message,
-      // I-map pabalik sa flightDetails object
+      contactNumber: req.body.contactNumber,
+      // I-save sa root para sa fallback
+      travelDate: req.body.travelDate,
+      lengthOfStay: req.body.lengthOfStay,
+      // I-save din sa loob ng flightDetails para sa consistency ng schema mo
       flightDetails: {
-        origin: req.body.origin,
-        destination: req.body.destination,
-        departureDate: req.body.departureDate,
-        airline: req.body.airline
+        departureDate: req.body.travelDate,
+        duration: req.body.lengthOfStay
       },
+      serviceName: req.body.serviceName,
+      message: req.body.message, // Ito lang ang dapat mapunta sa Remarks
       updatedAt: Date.now()
     };
 
-    // Kung may bagong file na ini-upload
-    if (req.file) {
-      updateData.evidenceName = req.file.filename;
-      updateData.evidenceUrl = `/uploads/${req.file.filename}`;
+    // File Upload Management
+    const documentMap = new Map();
+    if (existingInquiry.deliveredDocuments) {
+      existingInquiry.deliveredDocuments.forEach(doc => {
+        const fieldKey = doc.fileName.split(' - ')[0].trim();
+        if (remainingFilesList.includes(fieldKey)) {
+          documentMap.set(fieldKey, doc);
+        }
+      });
     }
+
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        const fieldKey = file.fieldname;
+        documentMap.set(fieldKey, {
+          fileName: `${fieldKey} - ${file.originalname}`, 
+          fileUrl: `/uploads/documents/${file.filename}`,
+          uploadedAt: Date.now()
+        });
+      });
+    }
+
+    updateData.deliveredDocuments = Array.from(documentMap.values());
 
     const updatedInquiry = await Inquiry.findByIdAndUpdate(
       id, 
       { $set: updateData }, 
       { new: true }
     );
-
-    if (!updatedInquiry) {
-      return res.status(404).json({ success: false, message: 'Inquiry not found' });
-    }
 
     res.json({ success: true, data: updatedInquiry });
   } catch (error) {
@@ -705,7 +739,7 @@ const toggleArchive = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-
+ 
 module.exports = {
   createInquiry,
   createInquiryWithUploads, 

@@ -92,6 +92,40 @@ const AddTour = () => {
     return () => document.removeEventListener("paste", handleGlobalTourPaste);
   }, [isTourPasteActive]);
 
+  // PASTE HANDLER FOR MULTIPLE LINES IN INCLUSIONS
+  const handleTourInclusionPaste = (index, e) => {
+    const pastedText = e.clipboardData.getData('text');
+    
+    // Split by newlines and filter out empty lines
+    const lines = pastedText.split(/\r?\n/).filter(line => line.trim());
+    
+    // If may multiple lines, prevent default and handle manually
+    if (lines.length > 1) {
+      e.preventDefault();
+      
+      // Remove ONLY checkmarks and bullet points, preserve other emojis
+      const cleanedLines = lines.map(line => {
+        // Remove only leading checkmarks/bullets (✓, ✔️, ☑️, •) and extra spaces
+        return line.replace(/^[✓✔️☑️•\s]+/, '').trim();
+      });
+      
+      // Create new inclusions array
+      const newTourIncs = [...tourIncs];
+      
+      // Replace current item with first line
+      newTourIncs[index] = cleanedLines[0];
+      
+      // Add remaining lines after current index
+      cleanedLines.slice(1).forEach(line => {
+        newTourIncs.splice(index + 1, 0, line);
+        index++;
+      });
+      
+      setTourIncs(newTourIncs);
+    }
+    // If single line, let default paste behavior happen
+  };
+
   const handleSubmitTour = async (e) => {
     e.preventDefault();
     
@@ -263,6 +297,7 @@ const AddTour = () => {
                   onRem={(i) =>
                     setTourIncs(tourIncs.filter((_, idx) => idx !== i))
                   }
+                  onPaste={handleTourInclusionPaste}
                 />
               </div>
               <aside className="atour-right">

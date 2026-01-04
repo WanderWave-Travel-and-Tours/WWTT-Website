@@ -124,6 +124,40 @@ const AddPackage = () => {
     const addInclusion = () => setInclusions([...inclusions, ""]);
     const removeInclusion = (i) => setInclusions(inclusions.filter((_, idx) => idx !== i));
     const handleIncChange = (i, val) => setInclusions(inclusions.map((item, idx) => (idx === i ? val : item)));
+    
+    // PASTE HANDLER FOR MULTIPLE LINES
+    const handleInclusionPaste = (index, e) => {
+        const pastedText = e.clipboardData.getData('text');
+        
+        // Split by newlines and filter out empty lines
+        const lines = pastedText.split(/\r?\n/).filter(line => line.trim());
+        
+        // If may multiple lines, prevent default and handle manually
+        if (lines.length > 1) {
+            e.preventDefault();
+            
+            // Remove ONLY checkmarks and bullet points, preserve other emojis
+            const cleanedLines = lines.map(line => {
+                // Remove only leading checkmarks/bullets (✓, ✔️, ☑️, •) and extra spaces
+                return line.replace(/^[✓✔️☑️•\s]+/, '').trim();
+            });
+            
+            // Create new inclusions array
+            const newInclusions = [...inclusions];
+            
+            // Replace current item with first line
+            newInclusions[index] = cleanedLines[0];
+            
+            // Add remaining lines after current index
+            cleanedLines.slice(1).forEach(line => {
+                newInclusions.splice(index + 1, 0, line);
+                index++;
+            });
+            
+            setInclusions(newInclusions);
+        }
+        // If single line, let default paste behavior happen
+    };
 
     const addDay = () => setItinerary([...itinerary, { day: itinerary.length + 1, title: "", activities: [""] }]);
     
@@ -271,6 +305,7 @@ const AddPackage = () => {
                                     handleIncChange={handleIncChange}
                                     addInclusion={addInclusion}
                                     removeInclusion={removeInclusion}
+                                    handleInclusionPaste={handleInclusionPaste}
                                 />
                                 <ItineraryBuilder
                                     itinerary={itinerary}
