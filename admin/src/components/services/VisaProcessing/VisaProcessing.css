@@ -236,7 +236,7 @@ body { margin: 0; padding: 0; overflow-x: hidden; }
 .filter-btn.payment-pending-active {
     background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); /* Orange */
     color: white;
-}@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+}
 
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; overflow-x: hidden; }
