@@ -168,88 +168,90 @@ const ViewBlog = () => {
                             <p>Try adjusting your search or filter criteria</p>
                         </div>
                     ) : (
-                        <div className="vb-table-wrapper">
-                            <table className="vb-table">
-                                <thead>
-                                    <tr>
-                                        <th>PREVIEW</th>
-                                        <th>TITLE</th>
-                                        <th>EXCERPT</th>
-                                        <th>AUTHOR & DATE</th>
-                                        <th>CATEGORY</th>
-                                        <th>STATUS</th>
-                                        <th>ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentBlogs.map((blog) => (
-                                        <tr key={blog._id}>
-                                            <td>
-                                                <div className="vb-image-preview">
-                                                    <img 
-                                                        src={getImageUrl(blog.imageUrl)} 
-                                                        alt={blog.title}
-                                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250'; }}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="vb-blog-title">{blog.title}</span>
-                                            </td>
-                                            <td>
-                                                <span className="vb-excerpt">
-                                                    {blog.content.substring(0, 100)}...
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="vb-meta-cell">
-                                                    <div className="vb-author">
-                                                        <User size={14} />
-                                                        <span>{blog.author}</span>
-                                                    </div>
-                                                    <div className="vb-date">
-                                                        <Calendar size={14} />
-                                                        <span>{formatDate(blog.createdAt)}</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="vb-category">
-                                                    <FolderOpen size={12} />
-                                                    {blog.category}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className={`vb-status vb-status--${(blog.status || 'Published').toLowerCase()}`}>
-                                                    <FileText size={12} />
-                                                    {blog.status || 'Published'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="vb-actions">
-                                                    <button 
-                                                        className="vb-action-btn vb-action-btn--view"
-                                                        onClick={() => handleViewDetails(blog)}
-                                                        title="View Details"
-                                                    >
-                                                        <Eye size={16} />
-                                                        <span>View</span>
-                                                    </button>
-                                                    {/* MODIFIED: Pinalitan ang Delete Button patungong Archive Button */}
-                                                    <button 
-                                                        className="vb-action-btn vb-action-btn--delete"
-                                                        onClick={() => handleArchive(blog._id)}
-                                                        title="Archive Blog"
-                                                    >
-                                                        <Archive size={16} />
-                                                        <span>Archive</span>
-                                                    </button>
-                                                </div>
-                                            </td>
+                        <>
+                            <div className="vb-table-wrapper">
+                                <table className="vb-table">
+                                    <thead>
+                                        <tr>
+                                            <th>PREVIEW</th>
+                                            <th>TITLE</th>
+                                            <th>EXCERPT</th>
+                                            <th>AUTHOR & DATE</th>
+                                            <th>CATEGORY</th>
+                                            <th>STATUS</th>
+                                            <th>ACTIONS</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {currentBlogs.map((blog) => (
+                                            <tr key={blog._id}>
+                                                <td>
+                                                    <div className="vb-image-preview">
+                                                        <img 
+                                                            src={getImageUrl(blog.imageUrl)} 
+                                                            alt={blog.title}
+                                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250'; }}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="vb-blog-title">{blog.title}</span>
+                                                </td>
+                                                <td>
+                                                    <span className="vb-excerpt">
+                                                        {blog.content.substring(0, 100)}...
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="vb-meta-cell">
+                                                        <div className="vb-author">
+                                                            <User size={14} />
+                                                            <span>{blog.author}</span>
+                                                        </div>
+                                                        <div className="vb-date">
+                                                            <Calendar size={14} />
+                                                            <span>{formatDate(blog.createdAt)}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="vb-category">
+                                                        <FolderOpen size={12} />
+                                                        {blog.category}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className={`vb-status vb-status--${(blog.status || 'Published').toLowerCase()}`}>
+                                                        <FileText size={12} />
+                                                        {blog.status || 'Published'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="vb-actions">
+                                                        <button 
+                                                            className="vb-action-btn vb-action-btn--view"
+                                                            onClick={() => handleViewDetails(blog)}
+                                                            title="View Details"
+                                                        >
+                                                            <Eye size={16} />
+                                                            <span>View</span>
+                                                        </button>
+                                                        {/* MODIFIED: Pinalitan ang Delete Button patungong Archive Button */}
+                                                        <button 
+                                                            className="vb-action-btn vb-action-btn--delete"
+                                                            onClick={() => handleArchive(blog._id)}
+                                                            title="Archive Blog"
+                                                        >
+                                                            <Archive size={16} />
+                                                            <span>Archive</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                             
                             <BlogPagination
                                 totalItems={filteredBlogs.length}
@@ -257,7 +259,7 @@ const ViewBlog = () => {
                                 currentPage={currentPage}
                                 onPageChange={setCurrentPage}
                             />
-                        </div>
+                        </>
                     )}
                 </div>
             </main>

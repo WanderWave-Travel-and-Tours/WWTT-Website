@@ -156,84 +156,87 @@ const ViewTestimonials = () => {
                             <p>{testimonials.length === 0 ? 'Start by adding your first customer testimonial' : 'Try adjusting your search or filter criteria'}</p>
                         </div>
                     ) : (
-                        <div className="vt-table-wrapper">
-                            <table className="vt-table">
-                                <thead>
-                                    <tr>
-                                        <th>CUSTOMER</th>
-                                        <th>FEEDBACK</th>
-                                        <th>SOURCE & DATE</th>
-                                        <th>RATING</th>
-                                        <th>STATUS</th>
-                                        <th>ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentTestimonials.map((testimonial) => (
-                                        <tr key={testimonial._id}>
-                                            <td>
-                                                <div className="vt-customer-cell">
-                                                    <div className="vt-image-preview">
-                                                        <img 
-                                                            src={getImageUrl(testimonial.customerImage)} 
-                                                            alt=""
-                                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
-                                                        />
-                                                    </div>
-                                                    <span className="vt-customer-name">{testimonial.customerName}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="vt-excerpt">
-                                                    {testimonial.feedback?.substring(0, 80)}...
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="vt-meta-cell">
-                                                    <div className="vt-source">
-                                                        <MessageSquare size={14} />
-                                                        <span>{testimonial.source}</span>
-                                                    </div>
-                                                    <div className="vt-date">
-                                                        <Calendar size={14} />
-                                                        <span>{formatDate(testimonial.createdAt)}</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="vt-rating">
-                                                    <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                                                    5.0 Stars
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className="vt-status vt-status--active">
-                                                    <MessageSquare size={12} />
-                                                    Active
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="vt-actions">
-                                                    <button className="vt-action-btn vt-action-btn--view" onClick={() => handleViewDetails(testimonial)}>
-                                                        <Eye size={16} /> <span>View</span>
-                                                    </button>
-                                                    <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(testimonial._id, testimonial.customerName)}>
-                                                        <Trash2 size={16} /> <span>Archive</span>
-                                                    </button>
-                                                </div>
-                                            </td>
+                        <>
+                            <div className="vt-table-wrapper">
+                                <table className="vt-table">
+                                    <thead>
+                                        <tr>
+                                            <th>CUSTOMER</th>
+                                            <th>FEEDBACK</th>
+                                            <th>SOURCE & DATE</th>
+                                            <th>RATING</th>
+                                            <th>STATUS</th>
+                                            <th>ACTIONS</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {currentTestimonials.map((testimonial) => (
+                                            <tr key={testimonial._id}>
+                                                <td>
+                                                    <div className="vt-customer-cell">
+                                                        <div className="vt-image-preview">
+                                                            <img 
+                                                                src={getImageUrl(testimonial.customerImage)} 
+                                                                alt=""
+                                                                onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
+                                                            />
+                                                        </div>
+                                                        <span className="vt-customer-name">{testimonial.customerName}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="vt-excerpt">
+                                                        {testimonial.feedback?.substring(0, 80)}...
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="vt-meta-cell">
+                                                        <div className="vt-source">
+                                                            <MessageSquare size={14} />
+                                                            <span>{testimonial.source}</span>
+                                                        </div>
+                                                        <div className="vt-date">
+                                                            <Calendar size={14} />
+                                                            <span>{formatDate(testimonial.createdAt)}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="vt-rating">
+                                                        <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                                                        5.0 Stars
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className="vt-status vt-status--active">
+                                                        <MessageSquare size={12} />
+                                                        Active
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="vt-actions">
+                                                        <button className="vt-action-btn vt-action-btn--view" onClick={() => handleViewDetails(testimonial)}>
+                                                            <Eye size={16} /> <span>View</span>
+                                                        </button>
+                                                        <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(testimonial._id, testimonial.customerName)}>
+                                                            <Trash2 size={16} /> <span>Archive</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                             
+                            {/* 🔥 PAGINATION IS NOW OUTSIDE THE TABLE WRAPPER! */}
                             <TestimonialPagination
                                 totalItems={filteredTestimonials.length}
                                 itemsPerPage={itemsPerPage}
                                 currentPage={currentPage}
                                 onPageChange={setCurrentPage}
                             />
-                        </div>
+                        </>
                     )}
                 </div>
             </main>

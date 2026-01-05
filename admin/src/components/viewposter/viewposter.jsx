@@ -184,84 +184,86 @@ const ViewPoster = () => {
                             <p>Try adjusting your search or filter criteria</p>
                         </div>
                     ) : (
-                        <div className="vp-table-wrapper">
-                            <table className="vp-table">
-                                <thead>
-                                    <tr>
-                                        <th>PREVIEW</th>
-                                        <th>TITLE</th>
-                                        <th>DESCRIPTION</th>
-                                        <th>START DATE</th>
-                                        <th>END DATE</th>
-                                        <th>STATUS</th>
-                                        <th>ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentPosters.map((poster) => (
-                                        <tr key={poster._id}>
-                                            <td>
-                                                <div className="vp-image-preview">
-                                                    <img 
-                                                        src={`http://localhost:5000/${poster.imageUrl}`} 
-                                                        alt={poster.title}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="vp-poster-title">{poster.title}</span>
-                                            </td>
-                                            <td>
-                                                <span className="vp-desc">
-                                                    {poster.description || 'No description provided'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="vp-date">
-                                                    <Calendar size={14} />
-                                                    <span>
-                                                        {poster.startDate ? formatDate(poster.startDate) : '--'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="vp-date">
-                                                    <Calendar size={14} />
-                                                    <span>
-                                                        {poster.endDate ? formatDate(poster.endDate) : '--'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className={`vp-status vp-status--${poster.status.toLowerCase()}`}>
-                                                    {poster.status === 'Active' ? <Eye size={12} /> : <EyeOff size={12} />}
-                                                    {poster.status}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="vp-actions">
-                                                    <button 
-                                                        className="vp-action-btn vp-action-btn--view"
-                                                        onClick={() => handleViewDetails(poster)}
-                                                        title="View Details"
-                                                    >
-                                                        <Eye size={16} />
-                                                        <span>View</span>
-                                                    </button>
-                                                    <button 
-                                                        className="vp-action-btn vp-action-btn--archive"
-                                                        onClick={() => handleArchive(poster._id, poster.title)}
-                                                        title="Archive Poster"
-                                                    >
-                                                        <Archive size={16} />
-                                                        <span>Archive</span>
-                                                    </button>
-                                                </div>
-                                            </td>
+                        <>
+                            <div className="vp-table-wrapper">
+                                <table className="vp-table">
+                                    <thead>
+                                        <tr>
+                                            <th>PREVIEW</th>
+                                            <th>TITLE</th>
+                                            <th>DESCRIPTION</th>
+                                            <th>START DATE</th>
+                                            <th>END DATE</th>
+                                            <th>STATUS</th>
+                                            <th>ACTIONS</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {currentPosters.map((poster) => (
+                                            <tr key={poster._id}>
+                                                <td>
+                                                    <div className="vp-image-preview">
+                                                        <img 
+                                                            src={`http://localhost:5000/${poster.imageUrl}`} 
+                                                            alt={poster.title}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="vp-poster-title">{poster.title}</span>
+                                                </td>
+                                                <td>
+                                                    <span className="vp-desc">
+                                                        {poster.description || 'No description provided'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="vp-date">
+                                                        <Calendar size={14} />
+                                                        <span>
+                                                            {poster.startDate ? formatDate(poster.startDate) : '--'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="vp-date">
+                                                        <Calendar size={14} />
+                                                        <span>
+                                                            {poster.endDate ? formatDate(poster.endDate) : '--'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className={`vp-status vp-status--${poster.status.toLowerCase()}`}>
+                                                        {poster.status === 'Active' ? <Eye size={12} /> : <EyeOff size={12} />}
+                                                        {poster.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="vp-actions">
+                                                        <button 
+                                                            className="vp-action-btn vp-action-btn--view"
+                                                            onClick={() => handleViewDetails(poster)}
+                                                            title="View Details"
+                                                        >
+                                                            <Eye size={16} />
+                                                            <span>View</span>
+                                                        </button>
+                                                        <button 
+                                                            className="vp-action-btn vp-action-btn--archive"
+                                                            onClick={() => handleArchive(poster._id, poster.title)}
+                                                            title="Archive Poster"
+                                                        >
+                                                            <Archive size={16} />
+                                                            <span>Archive</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                             
                             <PosterPagination
                                 totalItems={filteredPosters.length}
@@ -269,7 +271,7 @@ const ViewPoster = () => {
                                 currentPage={currentPage}
                                 onPageChange={setCurrentPage}
                             />
-                        </div>
+                        </>
                     )}
                 </div>
             </main>
