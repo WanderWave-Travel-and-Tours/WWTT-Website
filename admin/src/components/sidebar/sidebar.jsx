@@ -37,6 +37,7 @@ import {
   TrendingUp,
   Archive as ArchiveIcon,
   Activity,
+  DollarSign,
   UserCog
 } from 'lucide-react';
 import './sidebar.css';
@@ -141,6 +142,18 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   const [openMenus, setOpenMenus] = useState(getInitialMenuState);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
+
+  useEffect(() => {
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const mainAdmin = adminData.isMainAdmin === true;
+    setIsMainAdmin(mainAdmin);
+    
+    console.log('🔐 Sidebar Admin Check:', {
+      email: adminData.email,
+      isMainAdmin: mainAdmin
+    });
+  }, []);
 
   // ---------------------------------------------------------
   // ✅ LOGIC 1: SYNC MENU WITH URL (Corrected Dependency)
@@ -371,6 +384,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 isActive={location.pathname === '/users'}
                 onClick={() => navigate('/users')}
             />
+            {isMainAdmin && (
+              <MenuItem path="/admins" icon={UserCog} label="Admins" />
+            )}
             <MenuItem 
                 path="/archive" 
                 icon={ArchiveIcon} 
