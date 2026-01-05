@@ -1,41 +1,59 @@
-const mongoose = require('mongoose');
 const router = require('express').Router();
-const multer = require('multer');
-const path = require('path');
 const Promo = require('../models/promo'); 
 const ActivityLog = require('../models/ActivityLog');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
+// ✅ 1. CLOUDINARY CONFIG
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/'); 
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname)); 
+// ✅ 2. CLOUDINARY STORAGE CONFIG - PROMO FOLDER
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'wanderwave/promos', // 🎯 YOUR PROMO FOLDER
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, height: 1200, crop: 'limit' }] // Square for promo images
     }
 });
 
 const upload = multer({ storage: storage });
 
+// HELPER: Sanitize Admin ID
+const getValidAdminId = (id) => {
+    if (id && id !== 'null' && id !== 'undefined' && id !== '') {
+        return id;
+    }
+    return null;
+};
+
+// ============================================
+// ROUTES
+// ============================================
+
+// 1. ADD PROMO (WITH CLOUDINARY & LOGGING)
 router.post('/add', upload.single('image'), async (req, res) => {
     try {
+        const { userEmail, adminId } = req.body;
+        const logUserId = getValidAdminId(adminId);
+
         const promoData = {
             ...req.body,
             isArchive: "No",
-            image: req.file ? req.file.filename : "" 
+            image: req.file ? req.file.path : "", // ✅ Cloudinary URL
+            imagePublicId: req.file ? req.file.filename : "" // ✅ Cloudinary public_id
         };
 
         const newPromo = new Promo(promoData);
         const savedPromo = await newPromo.save();
 
+        // Activity Logging
         try {
-            const { userEmail, adminId } = req.body;
-            
-            let logUserId = null;
-            if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
-                logUserId = adminId;
-            }
-
             await ActivityLog.create({
                 action: 'CREATE',
                 module: 'Promos',
@@ -57,10 +75,18 @@ router.post('/add', upload.single('image'), async (req, res) => {
 
         res.status(200).json({ status: "ok", data: savedPromo });
     } catch (err) {
+        console.error('❌ Error adding promo:', err);
+        
+        // ✅ Cleanup Cloudinary if DB save fails
+        if (req.file?.filename) {
+            await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
+        }
+        
         res.status(500).json({ status: "error", message: err.message });
     }
 });
 
+// 2. GET SINGLE PROMO
 router.get('/:id', async (req, res) => {
     try {
         const promo = await Promo.findById(req.params.id);
@@ -71,6 +97,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// 3. GET ALL ACTIVE PROMOS
 router.get('/', async (req, res) => {
     try {
         const promos = await Promo.find({ isArchive: "No" }).sort({ createdAt: -1 });
@@ -80,6 +107,7 @@ router.get('/', async (req, res) => {
     }
 });
 
+// 4. GET ALL PROMOS (INCLUDING ARCHIVED)
 router.get('/all', async (req, res) => {
     try {
         const promos = await Promo.find().sort({ createdAt: -1 });
@@ -89,12 +117,24 @@ router.get('/all', async (req, res) => {
     }
 });
 
+// 5. UPDATE PROMO (WITH CLOUDINARY & LOGGING)
 router.put('/:id', upload.single('image'), async (req, res) => {
     try {
+        const { userEmail, adminId, existingImagePublicId } = req.body;
+        const logUserId = getValidAdminId(adminId);
+
         let updateData = { ...req.body };
 
+        // If new image is uploaded
         if (req.file) {
-            updateData.image = req.file.filename;
+            updateData.image = req.file.path; // ✅ Cloudinary URL
+            updateData.imagePublicId = req.file.filename; // ✅ Cloudinary public_id
+            
+            // ✅ Delete old image from Cloudinary
+            if (existingImagePublicId) {
+                await cloudinary.uploader.destroy(existingImagePublicId)
+                    .catch(e => console.error('❌ Old image delete failed:', e));
+            }
         }
 
         const updatedPromo = await Promo.findByIdAndUpdate(
@@ -103,16 +143,16 @@ router.put('/:id', upload.single('image'), async (req, res) => {
             { new: true }
         );
 
-        if (!updatedPromo) return res.status(404).json({ message: "Promo not found" });
-
-        try {
-            const { userEmail, adminId } = req.body;
-            
-            let logUserId = null;
-            if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
-                logUserId = adminId;
+        if (!updatedPromo) {
+            // ✅ If update fails, delete newly uploaded image
+            if (req.file?.filename) {
+                await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
             }
+            return res.status(404).json({ message: "Promo not found" });
+        }
 
+        // Activity Logging
+        try {
             await ActivityLog.create({
                 action: 'UPDATE',
                 module: 'Promos',
@@ -134,10 +174,59 @@ router.put('/:id', upload.single('image'), async (req, res) => {
 
         res.status(200).json({ status: "ok", data: updatedPromo });
     } catch (err) {
+        console.error('❌ Error updating promo:', err);
         res.status(500).json({ status: "error", message: err.message });
     }
 });
 
+// 6. ARCHIVE/RESTORE PROMO
+router.post('/:id/archive', async (req, res) => {
+    try {
+        const { userEmail, adminId } = req.body;
+        const logUserId = getValidAdminId(adminId);
+
+        const promo = await Promo.findById(req.params.id);
+        if (!promo) return res.status(404).json({ status: "error", message: "Promo not found" });
+
+        const newStatus = promo.isArchive === 'Yes' ? 'No' : 'Yes';
+        promo.isArchive = newStatus;
+        await promo.save();
+
+        const actionType = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE';
+        const actionMessage = newStatus === 'Yes' ? 'Archived' : 'Restored';
+
+        // Activity Logging
+        try {
+            await ActivityLog.create({
+                action: actionType,
+                module: 'Promos',
+                user: userEmail || 'System Admin',
+                userId: logUserId,
+                severity: newStatus === 'Yes' ? 'WARNING' : 'SUCCESS',
+                description: `${actionMessage} promo code: ${promo.code}`,
+                details: {
+                    recordTitle: promo.code,
+                    recordId: promo._id,
+                    method: 'POST',
+                    endpoint: `/api/promos/${req.params.id}/archive`
+                }
+            });
+            console.log(`✅ Activity Log recorded for ${actionType} Promo`);
+        } catch (logError) {
+            console.error('❌ Error logging activity:', logError);
+        }
+
+        res.json({ 
+            status: "ok", 
+            message: `Promo ${actionMessage.toLowerCase()} successfully`, 
+            isArchive: newStatus 
+        });
+    } catch (err) {
+        res.status(500).json({ status: "error", error: err.message });
+    }
+});
+
+// 7. CLAIM PROMO
 router.post('/claim/:id', async (req, res) => {
     try {
         const promo = await Promo.findById(req.params.id);
@@ -171,6 +260,7 @@ router.post('/claim/:id', async (req, res) => {
     }
 });
 
+// 8. VALIDATE PROMO CODE
 router.get('/validate/:code', async (req, res) => {
     try {
         const { code } = req.params;
