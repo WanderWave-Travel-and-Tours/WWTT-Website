@@ -155,6 +155,17 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     });
   }, []);
 
+  useEffect(() => {
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const mainAdmin = adminData.email?.toLowerCase() === 'info@wanderwavetravelandtours.com';
+    setIsMainAdmin(mainAdmin);
+    
+    console.log('🔐 Sidebar Admin Check:', {
+      email: adminData.email,
+      isMainAdmin: mainAdmin
+    });
+  }, []);
+
   // ---------------------------------------------------------
   // ✅ LOGIC 1: SYNC MENU WITH URL (Corrected Dependency)
   // ---------------------------------------------------------
@@ -385,7 +396,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 onClick={() => navigate('/users')}
             />
             {isMainAdmin && (
-              <MenuItem path="/admins" icon={UserCog} label="Admins" />
+              <MenuItem 
+                path="/admins" 
+                icon={UserCog} 
+                label="Admins"
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/admins'}
+                onClick={() => navigate('/admins')}
+              />
             )}
             <MenuItem 
                 path="/archive" 
