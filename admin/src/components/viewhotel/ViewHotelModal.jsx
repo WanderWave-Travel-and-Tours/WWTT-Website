@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import "./ViewHotelModal.css";
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+const API_BASE_URL = 'http://localhost:5000';
 
 // Helper: Fix Image URL
 const getImageUrl = (imagePath) => {

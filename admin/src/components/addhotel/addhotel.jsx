@@ -9,7 +9,11 @@ import HotelPreview from './HotelPreview';
 import { useToast } from '../toast/ToastManager'; 
 import './addhotel.css';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+// ✅ Imports needed for Draft functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+const API_BASE_URL = 'http://localhost:5000';
 
 const AddHotel = () => {
   const navigate = useNavigate();
@@ -17,6 +21,7 @@ const AddHotel = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
+  // --- STATE MANAGEMENT ---
   const [hotelDetails, setHotelDetails] = useState({
     name: '',
     destination: '',
@@ -43,6 +48,144 @@ const AddHotel = () => {
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [type, setType] = useState("Budget");
   const [loading, setLoading] = useState(true);
+
+  // =========================================================
+  // ✅ AUTO-DRAFT LOGIC START
+  // =========================================================
+
+  // 1. Helper: File <-> Base64 Converters
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const base64ToFile = async (base64String, fileName, mimeType) => {
+    const res = await fetch(base64String);
+    const blob = await res.blob();
+    return new File([blob], fileName, { type: mimeType });
+  };
+
+  // 2. Draft Payload State
+  const [draftPayload, setDraftPayload] = useState(null);
+
+  // 3. Listen to state changes and update Draft Payload
+  useEffect(() => {
+    const updateDraft = async () => {
+      // 🛑 FIX: Check if form is completely empty/default before saving
+      // This prevents the modal from appearing if the user cleared the form or just visited
+      const isFormEmpty = 
+        !hotelDetails.name && 
+        !hotelDetails.destination && 
+        !hotelDetails.price && 
+        hotelDetails.maxCapacity === 4 && // Check against default
+        type === "Budget" && // Check against default
+        !file && 
+        galleryFiles.length === 0;
+
+      if (isFormEmpty) {
+        setDraftPayload(null); // Do not save anything
+        return;
+      }
+
+      let mainImageBase64 = null;
+      let mainImageMeta = null;
+
+      // Handle Main Image Conversion
+      if (file) {
+        try {
+          if (file.size < 3 * 1024 * 1024) { 
+            mainImageBase64 = await fileToBase64(file);
+            mainImageMeta = { name: file.name, type: file.type };
+          }
+        } catch (err) {
+          console.warn("Main image too large for draft, saving text only.");
+        }
+      }
+
+      // We are not saving gallery images to draft to avoid LocalStorage overflow, 
+      // but we save the count so we know they existed (optional)
+
+      setDraftPayload({
+        ...hotelDetails,
+        selectedRoomType: type,
+        mainImage: mainImageBase64,
+        mainImageMeta: mainImageMeta
+      });
+    };
+
+    const timeoutId = setTimeout(() => {
+      updateDraft();
+    }, 500); // Debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [hotelDetails, type, file, galleryFiles]);
+
+  // 4. Restore Function
+  const restoreDraftData = async (data) => {
+    if (!data) return;
+
+    const { selectedRoomType, mainImage, mainImageMeta, ...rest } = data;
+    
+    // Restore Room Type
+    if (selectedRoomType) setType(selectedRoomType);
+    
+    // Restore Hotel Details
+    setHotelDetails(rest);
+
+    // Restore Main Image
+    if (mainImage && mainImageMeta) {
+      try {
+        const restoredFile = await base64ToFile(mainImage, mainImageMeta.name, mainImageMeta.type);
+        setFile(restoredFile);
+        setPreviewUrl(URL.createObjectURL(restoredFile));
+      } catch (err) {
+        console.error("Failed to restore main image:", err);
+      }
+    }
+  };
+
+  // 5. Initialize Hook
+  const { 
+    clearDraft, 
+    hasDraft, 
+    restoreDraft, 
+    discardDraft,
+    draftInfo 
+  } = useAutoDraft({
+    module: 'add-hotel', // Unique key for this module
+    formData: draftPayload,
+    setFormData: restoreDraftData,
+    imagePreview: previewUrl, 
+    autoRestore: false // Manual via modal
+  });
+
+  // 6. Modal State
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+  useEffect(() => {
+    if (hasDraft) {
+      setShowRestoreModal(true);
+    }
+  }, [hasDraft]);
+
+  const handleRestoreDraft = () => {
+    restoreDraft();
+    setShowRestoreModal(false);
+    toast.success('Draft restored successfully', 'Draft Recovered');
+  };
+
+  const handleDiscardDraft = async () => {
+    await discardDraft(); // Ensure storage is cleared
+    setShowRestoreModal(false);
+  };
+
+  // =========================================================
+  // ✅ AUTO-DRAFT LOGIC END
+  // =========================================================
 
   useEffect(() => {
     fetchDestinations();
@@ -187,6 +330,9 @@ const AddHotel = () => {
         toast.success(`${hotelDetails.name} has been added successfully!`, 'Hotel Added'); 
         window.scrollTo(0, 0);
         
+        // ✅ CLEAR DRAFT ON SUCCESS
+        await clearDraft();
+
         // Reset form
         setHotelDetails({
           name: '',
@@ -223,14 +369,25 @@ const AddHotel = () => {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+      // ✅ CLEAR DRAFT ON CANCEL
+      await clearDraft();
       navigate('/view-hotels');
     }
   };
 
   return (
     <div className="atour-page">
+      
+      {/* ✅ RESTORE DRAFT MODAL */}
+      <RestoreDraftModal
+        isOpen={showRestoreModal}
+        onRestore={handleRestoreDraft}
+        onDiscard={handleDiscardDraft}
+        draftInfo={draftInfo}
+      />
+
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <main className={`atour-main ${isSidebarCollapsed ? 'atour-collapsed' : ''}`}>
         <div className="atour-container">

@@ -55,7 +55,7 @@ const ActivityLogs = () => {
         
         try {
             // API endpoint
-            const apiUrl = 'https://wanderwaveph-backend.onrender.com/api/activity-logs';
+            const apiUrl = 'http://localhost:5000/api/activity-logs';
             console.log('📡 Fetching from:', apiUrl);
             
             const response = await fetch(apiUrl);

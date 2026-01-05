@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './addpromo.css';
 import Sidebar from '../sidebar/sidebar';
-import { Upload, X } from 'lucide-react'; // Ensure lucide-react is installed
+import { Upload, X } from 'lucide-react'; 
+
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
 const AddPromo = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -28,6 +32,149 @@ const AddPromo = () => {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOtherCategory, setIsOtherCategory] = useState(false);
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    // 1. Helper: File <-> Base64 Converters
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    // 2. Draft Payload State
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    // 3. Listen to state changes and update Draft Payload
+    useEffect(() => {
+        const updateDraft = async () => {
+            // 🛑 FIX: Check if form is completely empty/default before saving
+            const isFormEmpty = 
+                !promoDetails.code &&
+                !promoDetails.description &&
+                !promoDetails.category &&
+                !promoDetails.discountValue &&
+                !promoDetails.startDate &&
+                !promoDetails.usageLimit &&
+                promoDetails.durationType === 'Weekly' && // Default
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null); // Do not save anything
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            // Handle Image Conversion
+            if (imageFile) {
+                try {
+                    // Limit draft image size (~3MB limit safety)
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...promoDetails,
+                isOtherCategory, // Save this UI state too
+                image: imageBase64, // Saved as Base64 string
+                imageMeta: imageMeta
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500); // Debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [promoDetails, isOtherCategory, imageFile]);
+
+    // 4. Restore Function
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+
+        // Restore Promo Details
+        setPromoDetails({
+            code: data.code || '',
+            discount: data.discount || '',
+            validUntil: data.validUntil || '',
+            description: data.description || '',
+            category: data.category || '',
+            discountType: data.discountType || 'Fixed Amount (Peso)',
+            discountValue: data.discountValue || '',
+            durationType: data.durationType || 'Weekly',
+            startDate: data.startDate || '',
+            usageLimit: data.usageLimit || ''
+        });
+
+        setIsOtherCategory(!!data.isOtherCategory);
+
+        // Restore Image
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    // 5. Initialize Hook
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: 'add-promo', // Unique ID
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false // Manual via modal
+    });
+
+    // 6. Modal State
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft(); // Ensure storage is cleared
+        setShowRestoreModal(false);
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
 
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
@@ -125,7 +272,7 @@ const AddPromo = () => {
             formData.append("userEmail", activeUser);
             formData.append("adminId", activeId);
 
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
+            const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
                 body: formData,
             });
@@ -134,7 +281,9 @@ const AddPromo = () => {
 
             if (response.ok) {
                 alert(`Promo Code ${promoDetails.code} added successfully!`);
-                console.log('Saved Promo:', data);
+                
+                // ✅ CLEAR DRAFT ON SUCCESS
+                await clearDraft();
 
                 // Reset Form
                 setPromoDetails({
@@ -163,26 +312,40 @@ const AddPromo = () => {
         }
     };
 
-    const handleCancel = () => {
-        setPromoDetails({
-            code: '',
-            discount: '',
-            validUntil: '',
-            description: '',
-            category: '',
-            discountType: 'Fixed Amount (Peso)',
-            discountValue: '',
-            durationType: 'Weekly',
-            startDate: '',
-            usageLimit: ''
-        });
-        setImageFile(null);
-        setImagePreview(null);
-        setIsOtherCategory(false);
+    const handleCancel = async () => {
+        if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+            // ✅ CLEAR DRAFT ON CANCEL
+            await clearDraft();
+
+            setPromoDetails({
+                code: '',
+                discount: '',
+                validUntil: '',
+                description: '',
+                category: '',
+                discountType: 'Fixed Amount (Peso)',
+                discountValue: '',
+                durationType: 'Weekly',
+                startDate: '',
+                usageLimit: ''
+            });
+            setImageFile(null);
+            setImagePreview(null);
+            setIsOtherCategory(false);
+        }
     };
 
     return (
         <div className="promo-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 

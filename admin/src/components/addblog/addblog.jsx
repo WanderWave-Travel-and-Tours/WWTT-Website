@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, FileText, User, Loader2 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import { useNavigate } from 'react-router-dom'; 
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 import './addblog.css';
 
 const AddBlog = () => {
@@ -26,8 +28,144 @@ const AddBlog = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com'; 
+    const API_BASE_URL = 'http://localhost:5000'; 
 
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    // 1. Helper: File <-> Base64 Converters
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    // 2. Draft Payload State
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    // 3. Listen to state changes and update Draft Payload
+    useEffect(() => {
+        const updateDraft = async () => {
+            // 🛑 FIX: Check if form is completely empty/default before saving
+            const isFormEmpty = 
+                !blogDetails.title &&
+                !blogDetails.author &&
+                !blogDetails.category &&
+                !blogDetails.content &&
+                blogDetails.status === 'Published' && // Check default
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null); // Do not save anything
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            // Handle Image Conversion
+            if (imageFile) {
+                try {
+                    // Limit draft image size (~3MB limit safety)
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...blogDetails,
+                image: imageBase64, // Saved as Base64 string
+                imageMeta: imageMeta
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500); // Debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [blogDetails, imageFile]);
+
+    // 4. Restore Function
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+
+        // Restore Blog Details
+        setBlogDetails({
+            title: data.title || '',
+            author: data.author || '',
+            category: data.category || '',
+            content: data.content || '',
+            status: data.status || 'Published'
+        });
+
+        // Restore Image
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    // 5. Initialize Hook
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: 'add-blog', // Unique ID
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false // Manual via modal
+    });
+
+    // 6. Modal State
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft(); // Ensure storage is cleared
+        setShowRestoreModal(false);
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
+
+    // =========================================================
+    // CLEANUP IMAGE PREVIEW
+    // =========================================================
     useEffect(() => {
         return () => {
             if (imagePreview) {
@@ -80,9 +218,6 @@ const AddBlog = () => {
             formData.append('status', blogDetails.status);
             formData.append('image', imageFile); 
 
-            // =========================================================
-            // 👇 ADDED: KUNIN ANG USER DATA PARA SA ACTIVITY LOGS 👇
-            // =========================================================
             try {
                 const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
                 const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
@@ -91,11 +226,10 @@ const AddBlog = () => {
                 formData.append("userEmail", activeUser);
                 formData.append("adminId", activeId);
                 
-                console.log("Submitting Blog by:", activeUser); // Debug log
+                console.log("Submitting Blog by:", activeUser);
             } catch (err) {
                 console.error("Error parsing admin data:", err);
             }
-            // =========================================================
 
             const response = await fetch(`${API_BASE_URL}/api/blogs/add`, {
                 method: 'POST',
@@ -106,7 +240,21 @@ const AddBlog = () => {
 
             if (response.ok) {
                 alert('✅ Blog post created successfully!');
-                handleCancel(); 
+                
+                // ✅ CLEAR DRAFT ON SUCCESS
+                await clearDraft();
+                
+                // Manually reset form since handleCancel has confirm logic
+                setBlogDetails({
+                    title: '',
+                    author: '',
+                    category: '',
+                    content: '',
+                    status: 'Published'
+                });
+                setImageFile(null);
+                setImagePreview(null);
+
             } else {
                 alert(`❌ Error: ${result.message || 'Failed to create blog'}`);
             }
@@ -119,16 +267,21 @@ const AddBlog = () => {
         }
     };
 
-    const handleCancel = () => {
-        setBlogDetails({
-            title: '',
-            author: '',
-            category: '',
-            content: '',
-            status: 'Published'
-        });
-        setImageFile(null);
-        setImagePreview(null);
+    const handleCancel = async () => {
+        if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+            // ✅ CLEAR DRAFT ON CANCEL
+            await clearDraft();
+
+            setBlogDetails({
+                title: '',
+                author: '',
+                category: '',
+                content: '',
+                status: 'Published'
+            });
+            setImageFile(null);
+            setImagePreview(null);
+        }
     };
 
     const currentDate = new Date().toLocaleDateString('en-US', {
@@ -137,6 +290,15 @@ const AddBlog = () => {
 
     return (
         <div className="blog-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
@@ -144,7 +306,6 @@ const AddBlog = () => {
             
             <main className={`blog-main ${isSidebarCollapsed ? "blog-main--collapsed" : ""}`}>
                 <div className="blog-container">
-                    {/* Header Matched to Promo/Poster Style */}
                     <header className="blog-header">
                         <div className="blog-header-content">
                             <h1 className="blog-title">NEW BLOG</h1>
@@ -155,7 +316,6 @@ const AddBlog = () => {
                     <form onSubmit={handleSubmit}>
                         <div className="blog-grid">
                             <div className="blog-left">
-                                {/* Section 1: Image Upload (Poster UI) */}
                                 <section className="blog-section">
                                     <h2 className="blog-section-title">BLOG COVER IMAGE</h2>
                                     {!imagePreview ? (
@@ -191,7 +351,6 @@ const AddBlog = () => {
                                     )}
                                 </section>
 
-                                {/* Section 2: Blog Details */}
                                 <section className="blog-section">
                                     <h2 className="blog-section-title">BLOG DETAILS</h2>
                                     <div className="blog-fields">
