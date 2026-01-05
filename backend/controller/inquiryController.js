@@ -65,6 +65,12 @@ const createInquiry = async (req, res) => {
       lengthOfStay
     } = req.body;
 
+updateData.passportDetails = {
+  ...existingInquiry.passportDetails,
+  applicationType: req.body.passportDocument, // Mula sa input ng Admin
+  processingType: req.body.serviceName      // Mula sa input ng Admin
+};
+
     // --- [START] SMART PRICE FIX FOR FRONTEND SUBMISSIONS ---
     let finalPrice = parseFloat(estimatedPrice) || 0;
     
@@ -88,11 +94,16 @@ const createInquiry = async (req, res) => {
     }
 
     // Auto-generate message for PASSPORT
-    if (!message && inquiryType === 'PASSPORT') {
-      const appType = passportDetails?.applicationType || 'NEW';
-      const procType = passportDetails?.processingType || 'REGULAR';
-      message = `Passport Appointment Request: ${appType} Application (${procType} Processing)`;
-    }
+if (!message && inquiryType === 'PASSPORT' && passportDetails) {
+  const appType = passportDetails.applicationType || '';
+  const procType = passportDetails.processingType || '';
+  
+  if (appType || procType) {
+    message = `Passport Appointment Request${appType ? ': ' + appType : ''}${procType ? ' (' + procType + ')' : ''}`;
+  } else {
+    message = `Passport Appointment Request`;
+  }
+}
 
     if (!serviceName || !fullName || !email || !message) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
@@ -365,12 +376,13 @@ const updateInquiry = async (req, res) => {
   try {
     const { id } = req.params;
     
+    // 1. Hanapin ang existing record
     const existingInquiry = await Inquiry.findById(id);
     if (!existingInquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
 
-    // Listahan para sa Delete File logic
+    // 2. I-parse ang listahan ng mga files na ititira
     let remainingFilesList = [];
     if (req.body.existingFiles) {
       try {
@@ -380,25 +392,30 @@ const updateInquiry = async (req, res) => {
       }
     }
 
-const updateData = {
+    // 3. I-map ang updateData base sa structure ng PassportApplicationModal
+    const updateData = {
       fullName: req.body.fullName,
       email: req.body.email,
       contactNumber: req.body.contactNumber,
-      // I-save sa root para sa fallback
-      travelDate: req.body.travelDate,
-      lengthOfStay: req.body.lengthOfStay,
-      // I-save din sa loob ng flightDetails para sa consistency ng schema mo
-      flightDetails: {
-        departureDate: req.body.travelDate,
-        duration: req.body.lengthOfStay
-      },
-      serviceName: req.body.serviceName,
-      message: req.body.message, // Ito lang ang dapat mapunta sa Remarks
+      serviceName: req.body.serviceName, // Ito ang Service / Processing
+      message: req.body.message, 
+      adminRemarks: req.body.message,
+      estimatedPrice: parseFloat(req.body.estimatedPrice) || 0,
       updatedAt: Date.now()
     };
 
-    // File Upload Management
+    // 4. SYNC PASSPORT DETAILS: Inalis ang hardcoded 'NEW' o 'REGULAR'
+    // Kinukuha ang data mula sa passportDocument (Application Type) field ng form
+    updateData.passportDetails = {
+      ...existingInquiry.passportDetails?.toObject(),
+      applicationType: req.body.passportDocument || existingInquiry.passportDetails?.applicationType,
+      processingType: req.body.serviceName || existingInquiry.passportDetails?.processingType
+    };
+
+    // 5. IMPROVED FILE MANAGEMENT
     const documentMap = new Map();
+    
+    // I-retain ang existing files na hindi dinelete
     if (existingInquiry.deliveredDocuments) {
       existingInquiry.deliveredDocuments.forEach(doc => {
         const fieldKey = doc.fileName.split(' - ')[0].trim();
@@ -408,12 +425,30 @@ const updateData = {
       });
     }
 
+    // Paghawak sa root evidence status
+    if (req.body.hasExistingEvidence === 'false') {
+        updateData.evidenceUrl = '';
+        updateData.evidenceName = '';
+    } else {
+        updateData.evidenceUrl = existingInquiry.evidenceUrl;
+        updateData.evidenceName = existingInquiry.evidenceName;
+    }
+
+    // 6. I-process ang mga BAGONG upload (Suporta para sa walkInDoc at requirement)
     if (req.files && req.files.length > 0) {
       req.files.forEach(file => {
         const fieldKey = file.fieldname;
+        const fileUrl = `/uploads/documents/${file.filename}`;
+
+        // I-sync sa root evidence kung ang field ay requirement o walkInDoc
+        if (fieldKey === 'evidence' || fieldKey === 'requirement' || fieldKey === 'walkInDoc') {
+            updateData.evidenceUrl = fileUrl;
+            updateData.evidenceName = file.originalname;
+        } 
+        
         documentMap.set(fieldKey, {
           fileName: `${fieldKey} - ${file.originalname}`, 
-          fileUrl: `/uploads/documents/${file.filename}`,
+          fileUrl: fileUrl,
           uploadedAt: Date.now()
         });
       });
@@ -421,6 +456,7 @@ const updateData = {
 
     updateData.deliveredDocuments = Array.from(documentMap.values());
 
+    // 7. Isagawa ang update
     const updatedInquiry = await Inquiry.findByIdAndUpdate(
       id, 
       { $set: updateData }, 

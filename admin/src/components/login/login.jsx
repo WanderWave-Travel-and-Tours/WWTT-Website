@@ -4,7 +4,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import './login.css';
 
 const Login = () => {
-    const [email, setEmail] = useState('');  // ✅ Changed from username to email
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -77,15 +77,20 @@ const Login = () => {
             const response = await fetch('http://localhost:5000/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // ✅ Changed: Now sending email instead of username
                 body: JSON.stringify({ email, password, recaptchaToken }),
             });
 
             const data = await response.json();
 
             if (data.status === 'ok') {
+                // ✅ Store admin data (isMainAdmin comes from backend)
                 localStorage.setItem('adminToken', data.token); 
                 localStorage.setItem('adminData', JSON.stringify(data.data)); 
+                
+                console.log('🔐 Admin logged in:', {
+                    email: data.data.email,
+                    isMainAdmin: data.data.isMainAdmin
+                });
                 
                 alert('✅ Access Granted!');
                 navigate('/dashboard');
@@ -149,7 +154,6 @@ const Login = () => {
                         </div>
 
                         <form onSubmit={handleLogin} className="login-form">
-                            {/* ✅ Changed: Email field instead of Username */}
                             <div className="input-group">
                                 <label htmlFor="email" className="input-label">Email Address</label>
                                 <input

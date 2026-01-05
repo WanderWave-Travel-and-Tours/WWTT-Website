@@ -34,10 +34,11 @@ import {
   Ship,       
   ShieldCheck,
   Briefcase,
-  TrendingUp, 
-  DollarSign,
+  TrendingUp,
   Archive as ArchiveIcon,
-  Activity
+  Activity,
+  DollarSign,
+  UserCog
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -141,6 +142,29 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   const [openMenus, setOpenMenus] = useState(getInitialMenuState);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
+
+  useEffect(() => {
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const mainAdmin = adminData.isMainAdmin === true;
+    setIsMainAdmin(mainAdmin);
+    
+    console.log('🔐 Sidebar Admin Check:', {
+      email: adminData.email,
+      isMainAdmin: mainAdmin
+    });
+  }, []);
+
+  useEffect(() => {
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const mainAdmin = adminData.email?.toLowerCase() === 'info@wanderwavetravelandtours.com';
+    setIsMainAdmin(mainAdmin);
+    
+    console.log('🔐 Sidebar Admin Check:', {
+      email: adminData.email,
+      isMainAdmin: mainAdmin
+    });
+  }, []);
 
   // ---------------------------------------------------------
   // ✅ LOGIC 1: SYNC MENU WITH URL (Corrected Dependency)
@@ -371,6 +395,16 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 isActive={location.pathname === '/users'}
                 onClick={() => navigate('/users')}
             />
+            {isMainAdmin && (
+              <MenuItem 
+                path="/admins" 
+                icon={UserCog} 
+                label="Admins"
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/admins'}
+                onClick={() => navigate('/admins')}
+              />
+            )}
             <MenuItem 
                 path="/archive" 
                 icon={ArchiveIcon} 
@@ -405,7 +439,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <div className="user-avatar">A</div>
             <div className={`user-details ${isCollapsed ? 'hidden' : ''}`}>
               <span className="user-name">Admin</span>
-              <span className="user-role">SysAdmin</span>
+              <span className="user-role">{isMainAdmin ? 'Main Admin' : 'SysAdmin'}</span>
             </div>
           </div>
           {!isCollapsed && (
