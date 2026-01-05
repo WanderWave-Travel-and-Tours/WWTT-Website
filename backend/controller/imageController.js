@@ -70,11 +70,11 @@ const getAllImages = async (req, res) => {
 const archiveImage = async (req, res) => {
     try {
         const { id } = req.params;
-        const newStatus = req.body.isArchive || 'Yes';
+        const { isArchive: newStatus, userEmail, adminId } = req.body; // ✅ FIXED: Added userEmail and adminId
         
         const updatedImage = await Image.findByIdAndUpdate(
             id, 
-            { isArchive: newStatus }, 
+            { isArchive: newStatus || 'Yes' }, 
             { new: true }
         );
 
@@ -83,12 +83,12 @@ const archiveImage = async (req, res) => {
         }
 
         const actionMessage = newStatus === 'Yes' ? 'archived' : 'restored';
-        const logAction = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE'; // Siguraduhing nasa enum ang 'RESTORE'
+        const logAction = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE';
         console.log(`📦 Image ${actionMessage}:`, updatedImage._id);
 
         // 👇👇👇 ACTIVITY LOG START (ARCHIVE/RESTORE) 👇👇👇
         try {
-            if (userEmail) {
+            if (userEmail) { // ✅ NOW THIS WILL WORK
                 await ActivityLog.create({
                     action: logAction, 
                     module: 'Gallery',

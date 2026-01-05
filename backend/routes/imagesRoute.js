@@ -1,44 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { addImage, getAllImages, archiveImage } = require('../controller/imageController');
-const { uploadGallery } = require('../config/cloudinary');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
+// ✅ 1. CLOUDINARY CONFIG (same as package route)
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const fileFilter = (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-        return cb(null, true);
-    } else {
-        cb(new Error('Only image files are allowed!'));
+// ✅ 2. CLOUDINARY STORAGE CONFIGURATION
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'wanderwave/gallery', // Separate folder for gallery images
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        transformation: [{ width: 1920, height: 1080, crop: 'limit' }] // HD quality
     }
-};
+});
 
 const upload = multer({ 
     storage: storage,
-    fileFilter: fileFilter,
-    limits: { fileSize: 10 * 1024 * 1024 }
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+// ✅ 3. ROUTES (CLEAN - NO DUPLICATES)
 router.post('/add', upload.single('image'), addImage);
 router.get('/', getAllImages);
-
-// Gagamit ng PATCH dahil update operation ito
 router.patch('/:id', archiveImage); 
-
-router.post('/add', uploadGallery.single('image'), addImage);
-router.put('/update/:id', uploadGallery.single('image'), addImage);
 
 module.exports = router;
