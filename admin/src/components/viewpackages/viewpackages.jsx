@@ -54,7 +54,7 @@ const ViewPackages = () => {
         }
         
         // DEFAULT: Try database/uploads folder first
-        return `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
+        return `http://localhost:5000/uploads/${image}`;
     };
 
     // Smart error handler: If database fails, try Cloudinary

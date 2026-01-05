@@ -62,6 +62,7 @@ const EditVisa = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
+  const [showMore, setShowMore] = useState(false);
 
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -70,8 +71,6 @@ const EditVisa = () => {
     onConfirm: () => {},
     type: "primary"
   });
-
-  const [showMore, setShowMore] = useState(false); // ✅ Show More State
 
   const [formData, setFormData] = useState({
     givenName: "",
@@ -89,8 +88,8 @@ const EditVisa = () => {
   const [files, setFiles] = useState({});
   const [existingFiles, setExistingFiles] = useState({});
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
-  const FILE_BASE_URL = "https://wanderwaveph-backend.onrender.com";
+  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
+  const FILE_BASE_URL = "http://localhost:5000";
 
   const todayObj = new Date();
   const tomorrowObj = new Date(todayObj);
@@ -160,18 +159,37 @@ const EditVisa = () => {
       }
     };
     if (visaId) fetchVisaDetails();
-  }, [visaId, API_BASE_URL, toast]);
+  }, [visaId, API_BASE_URL]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "lengthOfStay") {
+    if (["givenName", "lastName", "otherNames"].includes(name)) {
+      const alphaValue = value.replace(/[0-9]/g, ""); 
+      setFormData(prev => ({ ...prev, [name]: alphaValue }));
+    } 
+    else if (name === "lengthOfStay") {
       const numericValue = value.replace(/\D/g, ""); 
       if (numericValue !== "" && (parseInt(numericValue) < 1 || parseInt(numericValue) > 30)) {
         return; 
       }
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
-    } else {
+    } 
+    else if (name === "contactNumber") {
+      let val = value.replace(/[^0-9+]/g, "");
+      if (val.includes("+")) {
+        if (val.indexOf("+") !== 0) {
+          val = val.replace(/\+/g, "");
+        } else {
+          const rest = val.substring(1).replace(/\+/g, "");
+          val = "+" + rest;
+        }
+      }
+      if (val.length <= 20) {
+        setFormData((prev) => ({ ...prev, [name]: val }));
+      }
+    } 
+    else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -192,7 +210,7 @@ const EditVisa = () => {
         "Upload Confirmation",
         `Are you sure you want to upload "${file.name}" for ${fieldName}?`,
         () => {
-          setFiles((prev) => ({ ...prev, [fieldName]: file }));
+          setFiles(prevFiles => ({ ...prevFiles, [fieldName]: file }));
           toast.info(`Successfully prepared: ${file.name}`, "Document Selected");
         }
       );
@@ -218,15 +236,16 @@ const EditVisa = () => {
       "Remove File",
       "Are you sure you want to remove this file? This will be finalized once you save changes.",
       () => {
-        if (files[fieldKey]) {
-          const newFiles = { ...files };
+        setFiles(prevFiles => {
+          const newFiles = { ...prevFiles };
           delete newFiles[fieldKey];
-          setFiles(newFiles);
-        } else {
-          const newExisting = { ...existingFiles };
+          return newFiles;
+        });
+        setExistingFiles(prevExisting => {
+          const newExisting = { ...prevExisting };
           delete newExisting[fieldKey];
-          setExistingFiles(newExisting);
-        }
+          return newExisting;
+        });
         setPreviewFile(null);
         toast.success("Document removed from the selection. Changes will apply after saving.", "File Removed");
       },
@@ -247,10 +266,24 @@ const EditVisa = () => {
 
   const handleSaveConfirmation = (e) => {
     e.preventDefault();
+
+    // ✅ Strict Email Format Validation (Must end in exactly .com)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.com$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.warning("Please enter a valid email address ending with .com");
+      return;
+    }
+
+    if (formData.contactNumber.replace(/[^0-9]/g, "").length < 8) {
+      toast.warning("Contact number must have at least 8 digits.");
+      return;
+    }
+
     if (!formData.travelDate || !formData.lengthOfStay) {
       toast.warning("Travel Date and Length of Stay are required.");
       return;
     }
+
     askConfirmation(
       "Save Changes",
       "Are you sure you want to save all updates to this visa application?",
@@ -273,8 +306,7 @@ const EditVisa = () => {
     data.append('message', formData.message); 
     data.append('estimatedPrice', formData.estimatedPrice);
 
-    const remainingKeys = Object.keys(existingFiles);
-    data.append('existingFiles', JSON.stringify(remainingKeys));
+    data.append('existingFiles', JSON.stringify(Object.keys(existingFiles)));
 
     Object.keys(files).forEach(key => {
       data.append(key, files[key]);
@@ -336,7 +368,7 @@ const EditVisa = () => {
         <div className="et-container">
           <header className="et-header">
             <div className="et-header-content">
-              <button className="et-back-btn" onClick={handleDiscard}>
+              <button className="et-back-btn" type="button" onClick={handleDiscard}>
                 <ArrowLeft size={20} /> Back
               </button>
               <h1 className="et-title">Edit Visa Application</h1>
@@ -400,19 +432,27 @@ const EditVisa = () => {
                   <div className="et-fields-grid">
                     <div className="et-input-group">
                       <label>Given Name</label>
-                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" />
+                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" required />
                     </div>
                     <div className="et-input-group">
                       <label>Last Name</label>
-                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" />
+                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" required />
                     </div>
                     <div className="et-input-group">
                       <label>Email Address</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" required />
                     </div>
                     <div className="et-input-group">
-                      <label>Contact Number</label>
-                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" />
+                      <label>Contact Number (Min 8 Digits)</label>
+                      <input 
+                        type="text" 
+                        name="contactNumber" 
+                        value={formData.contactNumber} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="+63..."
+                        required
+                      />
                     </div>
                     <div className="et-input-group full-width">
                       <label>Other Names (Optional)</label>
@@ -450,7 +490,6 @@ const EditVisa = () => {
                   </div>
                 </section>
 
-                {/* ✅ Show More Trigger - Adjusted position outside sections */}
                 <div className="et-show-more-container">
                     <button type="button" className="et-show-more-btn" onClick={() => setShowMore(!showMore)}>
                       {showMore ? (

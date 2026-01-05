@@ -4,6 +4,10 @@ import { Save, ArrowLeft, Upload } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; // Ensure correct path
 import './EditBlog.css';
 
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
 const EditBlog = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -15,7 +19,7 @@ const EditBlog = () => {
     const [formData, setFormData] = useState({
         title: '',
         author: '',
-        category: '', // This will now be controlled by the dropdown
+        category: '',
         status: 'Published',
         content: ''
     });
@@ -34,6 +38,150 @@ const EditBlog = () => {
         return `http://localhost:5000/${imagePath.replace(/\\/g, '/')}`;
     };
 
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    // 1. Helper: File <-> Base64 Converters
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    // 2. Draft Payload State
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    // 3. Listen to state changes and update Draft Payload
+    useEffect(() => {
+        const updateDraft = async () => {
+            // 🛑 FIX: Don't save draft if data is still loading or form is empty
+            if (isLoading) {
+                setDraftPayload(null);
+                return;
+            }
+
+            // Check if form is effectively empty/default (to prevent saving empty state on load)
+            const isFormEmpty = 
+                !formData.title && 
+                !formData.author && 
+                !formData.category && 
+                !formData.content && 
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null);
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            // Handle Image Conversion
+            if (imageFile) {
+                try {
+                    // Limit draft image size (~3MB limit safety)
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...formData,
+                image: imageBase64, // Saved as Base64 string
+                imageMeta: imageMeta,
+                originalId: id // Store ID to ensure we only restore draft for THIS blog
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500); // Debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [formData, imageFile, isLoading, id]);
+
+    // 4. Restore Function
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+        
+        // Safety check: Ensure the draft belongs to the blog we are currently editing
+        if (data.originalId && data.originalId !== id) {
+            console.warn("Draft found but belongs to a different blog ID. Ignoring.");
+            return;
+        }
+
+        setFormData({
+            title: data.title || '',
+            author: data.author || '',
+            category: data.category || '',
+            status: data.status || 'Published',
+            content: data.content || ''
+        });
+
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    // 5. Initialize Hook
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: `edit-blog-${id}`, // Unique ID per blog post to avoid conflicts
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false // Manual via modal
+    });
+
+    // 6. Modal State
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        // Only show modal if we have a draft AND we are done loading the original data
+        if (hasDraft && !isLoading) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft, isLoading]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft(); // Ensure storage is cleared
+        setShowRestoreModal(false);
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
+
     // Fetch Blog Data
     useEffect(() => {
         const fetchBlogDetails = async () => {
@@ -43,6 +191,8 @@ const EditBlog = () => {
                 
                 const data = await response.json();
                 
+                // Only update state if we haven't restored a draft yet
+                // (Or you can choose to overwrite state and let the draft modal override it later)
                 setFormData({
                     title: data.title || '',
                     author: data.author || '',
@@ -113,6 +263,10 @@ const EditBlog = () => {
             }
 
             alert('✅ Blog post updated successfully!');
+            
+            // ✅ CLEAR DRAFT ON SUCCESS
+            await clearDraft();
+            
             navigate('/view-blogs'); 
         } catch (err) {
             console.error(err);
@@ -138,6 +292,15 @@ const EditBlog = () => {
 
     return (
         <div className="ebl-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
@@ -275,7 +438,10 @@ const EditBlog = () => {
                             <button 
                                 type="button" 
                                 className="ebl-btn ebl-btn--cancel" 
-                                onClick={() => navigate('/view-blogs')}
+                                onClick={async () => {
+                                    await clearDraft(); // Clear draft on cancel
+                                    navigate('/view-blogs');
+                                }}
                                 disabled={submitting}
                             >
                                 Cancel

@@ -11,12 +11,18 @@ import InclusionsList from "./InclusionsList";
 import ItineraryBuilder from "./ItineraryBuilder";
 import PackagePreview from "./PackagePreview";
 
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
 const AddPackage = () => {
     // --- SIDEBAR TOGGLE ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
+
+    const navigate = useNavigate();
 
     // --- STATE ---
     const [title, setTitle] = useState("");
@@ -36,7 +42,155 @@ const AddPackage = () => {
     const [isPasteActive, setIsPasteActive] = useState(false);
 
     const pasteAreaRef = useRef(null);
-    const navigate = useNavigate();
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    // 1. Helper: File <-> Base64 Converters
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    // 2. Draft Payload State (Consolidates all state into one object)
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    // 3. Listen to state changes and update Draft Payload
+    useEffect(() => {
+        const updateDraft = async () => {
+            // 🛑 FIX: Check if form is completely empty/default before saving
+            // This prevents saving a draft if the user just visited the page or cleared it
+            const isFormEmpty = 
+                !title && 
+                !destination && 
+                !supplierRate && 
+                !markupValue && 
+                !price && 
+                !duration && 
+                category === "Local Tour" && // Default
+                (inclusions.length === 1 && inclusions[0] === "") && // Empty inclusions
+                (itinerary.length === 1 && itinerary[0].title === "Day 1: Arrival" && itinerary[0].activities.length === 1 && itinerary[0].activities[0] === "") && // Default itinerary
+                !file;
+
+            if (isFormEmpty) {
+                setDraftPayload(null); // Do not save anything
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            // Handle Image Conversion
+            if (file) {
+                try {
+                    // Limit draft image size to avoid LocalStorage crash (~3MB limit safety)
+                    if (file.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(file);
+                        imageMeta = { name: file.name, type: file.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                title,
+                destination,
+                supplierRate,
+                markupValue,
+                markupType,
+                price,
+                duration,
+                category,
+                inclusions,
+                itinerary,
+                image: imageBase64, // Saved as Base64 string
+                imageMeta: imageMeta
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500); // Debounce slightly to prevent lag
+
+        return () => clearTimeout(timeoutId);
+    }, [title, destination, supplierRate, markupValue, markupType, price, duration, category, inclusions, itinerary, file]);
+
+    // 4. Restore Function (How to put data back into state)
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+
+        setTitle(data.title || "");
+        setDestination(data.destination || "");
+        setSupplierRate(data.supplierRate || "");
+        setMarkupValue(data.markupValue || "");
+        setMarkupType(data.markupType || "peso");
+        setPrice(data.price || "");
+        setDuration(data.duration || "");
+        setCategory(data.category || "Local Tour");
+        setInclusions(data.inclusions || [""]);
+        setItinerary(data.itinerary || [{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
+
+        // Restore Image
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setFile(restoredFile);
+                setPreviewUrl(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    // 5. Initialize Hook
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: 'add-package', // Unique ID for this form
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: previewUrl, 
+        autoRestore: false // Manual via modal
+    });
+
+    // 6. Modal State
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft(); // Ensure storage is cleared
+        setShowRestoreModal(false);
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
 
     // --- CALCULATIONS ---
     const calculateTotalPrice = useCallback((supplier, markup, type) => {
@@ -246,6 +400,10 @@ const AddPackage = () => {
             
             if (response.ok) {
                 alert("✅ Package Added Successfully!");
+                
+                // ✅ CLEAR DRAFT ON SUCCESS
+                await clearDraft();
+
                 // Reset Form
                 setTitle(""); setDestination(""); setSupplierRate("");
                 setMarkupValue(""); setPrice(""); setDuration("");
@@ -263,8 +421,25 @@ const AddPackage = () => {
         }
     };
 
+    const handleCancel = async () => {
+        if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+            // ✅ CLEAR DRAFT ON CANCEL
+            await clearDraft();
+            navigate(-1);
+        }
+    };
+
     return (
         <div className="apkg-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             <main className={`apkg-main ${isSidebarCollapsed ? 'collapsed-main' : ''}`}>
                 <div className="apkg-container">
@@ -325,7 +500,7 @@ const AddPackage = () => {
                                     inclusions={inclusions} itinerary={itinerary}
                                 />
                                 <div className="apkg-actions">
-                                    <button type="button" className="apkg-btn apkg-btn--cancel" onClick={() => navigate(-1)}>Cancel</button>
+                                    <button type="button" className="apkg-btn apkg-btn--cancel" onClick={handleCancel}>Cancel</button>
                                     <button type="submit" className="apkg-btn apkg-btn--submit">Publish</button>
                                 </div>
                             </aside>
