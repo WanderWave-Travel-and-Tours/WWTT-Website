@@ -24,6 +24,18 @@ const PosterPagination = ({
         }
     };
 
+    const handlePrevious = () => {
+        if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
+        }
+    };
+
     return (
         <nav className="pp-pagination-nav">
             <div className="pp-pagination-info">
@@ -42,9 +54,10 @@ const PosterPagination = ({
                 <button
                     type="button"
                     className="pp-pagination-btn pp-jump-arrow pp-hide-on-large"
-                    onClick={() => onPageChange(currentPage - 1)}
+                    onClick={handlePrevious}
                     disabled={currentPage === 1}
                     title="Previous page"
+                    aria-label="Previous page"
                 >
                     <ChevronLeft size={18} />
                 </button>
@@ -66,9 +79,10 @@ const PosterPagination = ({
                 <button
                     type="button"
                     className="pp-pagination-btn pp-jump-arrow pp-hide-on-large"
-                    onClick={() => onPageChange(currentPage + 1)}
+                    onClick={handleNext}
                     disabled={currentPage === totalPages}
                     title="Next page"
+                    aria-label="Next page"
                 >
                     <ChevronRight size={18} />
                 </button>

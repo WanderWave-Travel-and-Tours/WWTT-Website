@@ -92,7 +92,34 @@
     display: inline-block;
 }
 
-/* --- STATS SECTION (REMOVED BUT KEEPING STYLES) --- */
+.vp-btn {
+    position: relative;
+    z-index: 2;
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.vp-btn--add {
+    color: #fff;
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
+}
+
+.vp-btn--add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
+}
+
+/* --- STATS SECTION --- */
 .vp-stats {
     display: flex;
     gap: 16px;
@@ -197,12 +224,12 @@
     font-size: 15px;
 }
 
-/* --- TABLE WRAPPER & TABLE --- */
+/* --- TABLE WRAPPER & TABLE - UPDATED: Removed overflow:hidden, added rounded top only --- */
 .vp-table-wrapper {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    overflow: visible;
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
 }
 
@@ -323,7 +350,7 @@
     height: 12px;
 }
 
-/* --- ACTION BUTTONS (UPDATED) --- */
+/* --- ACTION BUTTONS --- */
 .vp-actions {
     display: flex;
     gap: 8px;
@@ -381,6 +408,11 @@
         align-items: flex-start;
         gap: 16px;
         padding: 40px;
+    }
+
+    .vp-btn--add {
+        width: 100%;
+        text-align: center;
     }
 
     .vp-table-wrapper {
@@ -445,153 +477,6 @@
 
     .vp-stat strong {
         font-size: 28px;
-    }
-
-    .vp-empty {
-        padding: 40px 24px;
-    }
-
-    .vp-image-preview {
-        width: 60px;
-        height: 40px;
-    }
-
-    .vp-actions {
-        gap: 6px;
-    }
-
-    .vp-action-btn {
-        padding: 6px 10px;
-        font-size: 11px;
-    }
-}
-
-@media (max-width: 480px) {
-    .vp-title {
-        font-size: 1.4rem;
-    }
-
-    .vp-header {
-        padding: 28px 20px;
-    }
-
-    .vp-actions {
-        gap: 4px;
-    }
-
-    .vp-action-btn span {
-        display: none;
-    }
-
-    .vp-action-btn {
-        padding: 8px;
-        min-width: 36px;
-        justify-content: center;
-    }
-
-    .vp-action-btn svg {
-        width: 16px;
-        height: 16px;
-    }
-}
-
-/* Add after .vp-subtitle styles */
-
-.vp-btn {
-    position: relative;
-    z-index: 2;
-    padding: 14px 28px;
-    font-size: 14px;
-    font-weight: 700;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    white-space: nowrap;
-}
-
-.vp-btn--add {
-    color: #fff;
-    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
-    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
-}
-
-.vp-btn--add:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
-}
-
-/* Update the responsive section */
-
-@media (max-width: 1100px) {
-    .vp-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-        padding: 40px;
-    }
-
-    .vp-btn--add {
-        width: 100%;
-        text-align: center;
-    }
-
-    .vp-table-wrapper {
-        overflow-x: auto;
-    }
-
-    .vp-table {
-        min-width: 1000px;
-    }
-}
-
-@media (max-width: 768px) {
-    .vp-main, .vp-main--collapsed {
-        margin-left: 90px !important;
-        padding: 24px 16px !important;
-        width: calc(100% - 90px) !important;
-    }
-
-    .vp-header {
-        padding: 35px 30px;
-        margin-bottom: 28px;
-    }
-
-    .vp-title {
-        font-size: 2rem;
-    }
-
-    .vp-actions {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .vp-action-btn {
-        padding: 7px 12px;
-        font-size: 12px;
-    }
-
-    .vp-action-btn svg {
-        width: 14px;
-        height: 14px;
-    }
-}
-
-@media (max-width: 640px) {
-    .vp-title {
-        font-size: 1.6rem;
-        letter-spacing: 2px;
-    }
-
-    .vp-subtitle {
-        font-size: 13px;
-    }
-
-    .vp-header {
-        padding: 30px 24px;
     }
 
     .vp-empty {

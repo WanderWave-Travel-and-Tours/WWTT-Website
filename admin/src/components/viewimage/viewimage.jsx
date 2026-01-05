@@ -41,7 +41,7 @@ const ViewImage = () => {
             }
             
             const data = await response.json();
-            console.log('📸 Fetched images:', data);
+            console.log('🖼️ Fetched images:', data);
             
             // FILTER: I-set lamang sa state ang mga images na "No" ang isArchive status
             const activeImages = data.filter(img => img.isArchive === "No");
@@ -166,81 +166,84 @@ const ViewImage = () => {
                             <p>Try adjusting your search criteria</p>
                         </div>
                     ) : (
-                        <div className="vi-table-wrapper">
-                            <table className="vi-table">
-                                <thead>
-                                    <tr>
-                                        <th>PREVIEW</th>
-                                        <th>FILE NAME</th>
-                                        <th>FILE TYPE</th>
-                                        <th>UPLOAD DATE</th>
-                                        <th>ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentImages.map((image) => (
-                                        <tr key={image._id}>
-                                            <td>
-                                                <div className="vi-image-preview">
-                                                    <img 
-                                                        src={image.imageUrl} 
-                                                        alt={image.imageName || 'Gallery image'}
-                                                        onError={(e) => {
-                                                            console.error('Image load error:', image.imageUrl);
-                                                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage not found%3C/text%3E%3C/svg%3E';
-                                                        }}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="vi-image-name">{image.imageName || 'Untitled'}</span>
-                                            </td>
-                                            <td>
-                                                <span className="vi-file-type">
-                                                    <ImageIcon size={12} />
-                                                    {image.imageName?.split('.').pop()?.toUpperCase() || 'IMAGE'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="vi-date">
-                                                    <Calendar size={14} />
-                                                    <span>
-                                                        {image.createdAt ? formatDate(image.createdAt) : '--'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="vi-actions">
-                                                    <button 
-                                                        className="vi-action-btn vi-action-btn--view"
-                                                        onClick={() => handleViewDetails(image)}
-                                                        title="View Details"
-                                                    >
-                                                        <Eye size={16} />
-                                                        <span>View</span>
-                                                    </button>
-                                                    <button 
-                                                        className="vi-action-btn vi-action-btn--archive"
-                                                        onClick={() => handleArchive(image._id, image.imageName)}
-                                                        title="Archive Image"
-                                                    >
-                                                        <Archive size={16} />
-                                                        <span>Archive</span>
-                                                    </button>
-                                                </div>
-                                            </td>
+                        <>
+                            <div className="vi-table-wrapper">
+                                <table className="vi-table">
+                                    <thead>
+                                        <tr>
+                                            <th>PREVIEW</th>
+                                            <th>FILE NAME</th>
+                                            <th>FILE TYPE</th>
+                                            <th>UPLOAD DATE</th>
+                                            <th>ACTIONS</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {currentImages.map((image) => (
+                                            <tr key={image._id}>
+                                                <td>
+                                                    <div className="vi-image-preview">
+                                                        <img 
+                                                            src={image.imageUrl} 
+                                                            alt={image.imageName || 'Gallery image'}
+                                                            onError={(e) => {
+                                                                console.error('Image load error:', image.imageUrl);
+                                                                e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage not found%3C/text%3E%3C/svg%3E';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="vi-image-name">{image.imageName || 'Untitled'}</span>
+                                                </td>
+                                                <td>
+                                                    <span className="vi-file-type">
+                                                        <ImageIcon size={12} />
+                                                        {image.imageName?.split('.').pop()?.toUpperCase() || 'IMAGE'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="vi-date">
+                                                        <Calendar size={14} />
+                                                        <span>
+                                                            {image.createdAt ? formatDate(image.createdAt) : '--'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="vi-actions">
+                                                        <button 
+                                                            className="vi-action-btn vi-action-btn--view"
+                                                            onClick={() => handleViewDetails(image)}
+                                                            title="View Details"
+                                                        >
+                                                            <Eye size={16} />
+                                                            <span>View</span>
+                                                        </button>
+                                                        <button 
+                                                            className="vi-action-btn vi-action-btn--archive"
+                                                            onClick={() => handleArchive(image._id, image.imageName)}
+                                                            title="Archive Image"
+                                                        >
+                                                            <Archive size={16} />
+                                                            <span>Archive</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                             
+                            {/* 🔥 PAGINATION IS NOW OUTSIDE THE TABLE WRAPPER! */}
                             <ImagePagination
                                 totalItems={filteredImages.length}
                                 itemsPerPage={itemsPerPage}
                                 currentPage={currentPage}
                                 onPageChange={setCurrentPage}
                             />
-                        </div>
+                        </>
                     )}
                 </div>
             </main>

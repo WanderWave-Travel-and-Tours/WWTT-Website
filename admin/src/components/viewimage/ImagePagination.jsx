@@ -24,6 +24,18 @@ const ImagePagination = ({
         }
     };
 
+    const handlePrevious = () => {
+        if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
+        }
+    };
+
     return (
         <nav className="ip-pagination-nav">
             <div className="ip-pagination-info">
@@ -42,9 +54,10 @@ const ImagePagination = ({
                 <button
                     type="button"
                     className="ip-pagination-btn ip-jump-arrow ip-hide-on-large"
-                    onClick={() => onPageChange(currentPage - 1)}
+                    onClick={handlePrevious}
                     disabled={currentPage === 1}
                     title="Previous page"
+                    aria-label="Previous page"
                 >
                     <ChevronLeft size={18} />
                 </button>
@@ -66,9 +79,10 @@ const ImagePagination = ({
                 <button
                     type="button"
                     className="ip-pagination-btn ip-jump-arrow ip-hide-on-large"
-                    onClick={() => onPageChange(currentPage + 1)}
+                    onClick={handleNext}
                     disabled={currentPage === totalPages}
                     title="Next page"
+                    aria-label="Next page"
                 >
                     <ChevronRight size={18} />
                 </button>

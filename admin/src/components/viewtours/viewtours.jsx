@@ -93,63 +93,69 @@ const ViewTours = () => {
                     ) : filteredTours.length === 0 ? (
                         <div className="vt-empty"><h3>No tours found</h3></div>
                     ) : (
-                        <div className="vt-table-wrapper">
-                            <table className="vt-table">
-                                <thead>
-                                    <tr>
-                                        <th>TOUR PACKAGE</th>
-                                        <th>DESTINATION</th>
-                                        <th>DURATION/CAT</th>
-                                        <th>PRICE</th>
-                                        <th>ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentTours.map((tour) => (
-                                        <tr key={tour._id}>
-                                            <td>
-                                                <div className="vt-customer-cell">
-                                                    <div className="vt-image-preview">
-                                                        <img src={`http://localhost:5000/uploads/${tour.image}`} alt="" />
-                                                    </div>
-                                                    <span className="vt-customer-name">{tour.title.toUpperCase()}</span>
-                                                </div>
-                                            </td>
-                                            <td><div className="vt-source"><MapPin size={14}/> {tour.destination.toUpperCase()}</div></td>
-                                            <td>
-                                                <div className="vt-meta-cell">
-                                                    <div className="vt-source"><Clock size={14}/> {tour.duration}</div>
-                                                    <div className="vt-date"><Tag size={14}/> {tour.category}</div>
-                                                </div>
-                                            </td>
-                                            <td><span className="vt-rating">₱{tour.price?.toLocaleString()}</span></td>
-                                            <td>
-                                                <div className="vt-actions">
-                                                    {/* UPDATED: Added span for responsive hiding */}
-                                                    <button className="vt-action-btn vt-action-btn--view" onClick={() => {setSelectedTour(tour); setShowDetailModal(true)}}>
-                                                        <Eye size={16}/> <span>View</span>
-                                                    </button>
-                                                    <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(tour._id)}>
-                                                        <Trash2 size={16}/> <span>Archive</span>
-                                                    </button>
-                                                </div>
-                                            </td>
+                        <>
+                            <div className="vt-table-wrapper">
+                                <table className="vt-table">
+                                    <thead>
+                                        <tr>
+                                            <th>TOUR PACKAGE</th>
+                                            <th>DESTINATION</th>
+                                            <th>DURATION/CAT</th>
+                                            <th>PRICE</th>
+                                            <th>ACTIONS</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {currentTours.map((tour) => (
+                                            <tr key={tour._id}>
+                                                <td>
+                                                    <div className="vt-customer-cell">
+                                                        <div className="vt-image-preview">
+                                                            <img src={`http://localhost:5000/uploads/${tour.image}`} alt="" />
+                                                        </div>
+                                                        <span className="vt-customer-name">{tour.title.toUpperCase()}</span>
+                                                    </div>
+                                                </td>
+                                                <td><div className="vt-source"><MapPin size={14}/> {tour.destination.toUpperCase()}</div></td>
+                                                <td>
+                                                    <div className="vt-meta-cell">
+                                                        <div className="vt-source"><Clock size={14}/> {tour.duration}</div>
+                                                        <div className="vt-date"><Tag size={14}/> {tour.category}</div>
+                                                    </div>
+                                                </td>
+                                                <td><span className="vt-rating">₱{tour.price?.toLocaleString()}</span></td>
+                                                <td>
+                                                    <div className="vt-actions">
+                                                        <button className="vt-action-btn vt-action-btn--view" onClick={() => {setSelectedTour(tour); setShowDetailModal(true)}}>
+                                                            <Eye size={16}/> <span>View</span>
+                                                        </button>
+                                                        <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(tour._id)}>
+                                                            <Trash2 size={16}/> <span>Archive</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
                             <TourPagination 
-                                totalItems={filteredTours.length} itemsPerPage={itemsPerPage} 
-                                currentPage={currentPage} onPageChange={setCurrentPage} 
+                                totalItems={filteredTours.length} 
+                                itemsPerPage={itemsPerPage} 
+                                currentPage={currentPage} 
+                                onPageChange={setCurrentPage} 
                             />
-                        </div>
+                        </>
                     )}
                 </div>
             </main>
             {showDetailModal && (
                 <TourDetailModal 
-                    tour={selectedTour} close={() => setShowDetailModal(false)} 
-                    onArchive={handleArchive} navigate={navigate}
+                    tour={selectedTour} 
+                    close={() => setShowDetailModal(false)} 
+                    onArchive={handleArchive} 
+                    navigate={navigate}
                 />
             )}
         </div>

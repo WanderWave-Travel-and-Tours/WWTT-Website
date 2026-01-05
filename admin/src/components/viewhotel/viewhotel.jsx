@@ -103,7 +103,7 @@ const ViewHotels = () => {
     setShowDetailModal(true);
   };
 
-  // 👇 UPDATED: Smart Image URL Logic (Matches Modal Logic)
+  // Smart Image URL Logic (Matches Modal Logic)
   const getImageUrl = (hotel) => {
     let imagePath = null;
 
@@ -222,126 +222,128 @@ const ViewHotels = () => {
               <p>Try adjusting your search or filter criteria</p>
             </div>
           ) : (
-            <div className="vh-table-wrapper">
-              <table className="vh-table">
-                <thead>
-                  <tr>
-                    <th>PREVIEW</th>
-                    <th>HOTEL NAME</th>
-                    <th>LOCATION</th>
-                    <th>CAPACITY</th>
-                    <th>PRICE</th>
-                    <th>AMENITIES</th>
-                    <th>STATUS</th>
-                    <th>ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentHotels.map((hotel) => {
-                    const amenitiesCount = hotel.amenities 
-                      ? Object.values(hotel.amenities).filter(Boolean).length 
-                      : 0;
-                    
-                    // Use the fixed getImageUrl function here
-                    const imageUrl = getImageUrl(hotel);
-                    
-                    return (
-                      <tr key={hotel._id}>
-                        <td>
-                          <div className="vh-image-preview">
-                            {imageUrl ? (
-                              <img 
-                                src={imageUrl} 
-                                alt={hotel.name}
-                                onError={(e) => { 
-                                    e.target.onerror = null; // Prevent infinite loop
-                                    e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; 
-                                }}
-                              />
-                            ) : (
-                              <div style={{
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: '#f1f5f9',
-                                color: '#94a3b8'
+            <>
+              <div className="vh-table-wrapper">
+                <table className="vh-table">
+                  <thead>
+                    <tr>
+                      <th>PREVIEW</th>
+                      <th>HOTEL NAME</th>
+                      <th>LOCATION</th>
+                      <th>CAPACITY</th>
+                      <th>PRICE</th>
+                      <th>AMENITIES</th>
+                      <th>STATUS</th>
+                      <th>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentHotels.map((hotel) => {
+                      const amenitiesCount = hotel.amenities 
+                        ? Object.values(hotel.amenities).filter(Boolean).length 
+                        : 0;
+                      
+                      // Use the fixed getImageUrl function here
+                      const imageUrl = getImageUrl(hotel);
+                      
+                      return (
+                        <tr key={hotel._id}>
+                          <td>
+                            <div className="vh-image-preview">
+                              {imageUrl ? (
+                                <img 
+                                  src={imageUrl} 
+                                  alt={hotel.name}
+                                  onError={(e) => { 
+                                      e.target.onerror = null; // Prevent infinite loop
+                                      e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; 
+                                  }}
+                                />
+                              ) : (
+                                <div style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: '#f1f5f9',
+                                  color: '#94a3b8'
+                                }}>
+                                  <Home size={20} />
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <span className="vh-hotel-name">{hotel.name}</span>
+                            {hotel.featured && (
+                              <span style={{
+                                marginLeft: '8px',
+                                fontSize: '10px',
+                                padding: '2px 8px',
+                                background: '#fef3c7',
+                                color: '#d97706',
+                                borderRadius: '6px',
+                                fontWeight: '700',
+                                textTransform: 'uppercase'
                               }}>
-                                <Home size={20} />
-                              </div>
+                                ⭐ Featured
+                              </span>
                             )}
-                          </div>
-                        </td>
-                        <td>
-                          <span className="vh-hotel-name">{hotel.name}</span>
-                          {hotel.featured && (
-                            <span style={{
-                              marginLeft: '8px',
-                              fontSize: '10px',
-                              padding: '2px 8px',
-                              background: '#fef3c7',
-                              color: '#d97706',
-                              borderRadius: '6px',
-                              fontWeight: '700',
-                              textTransform: 'uppercase'
-                            }}>
-                              ⭐ Featured
+                          </td>
+                          <td>
+                            <div className="vh-location-cell">
+                              <MapPin size={14} />
+                              <span>{hotel.location || hotel.city || 'N/A'}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="vh-capacity-badge">
+                              <Users size={12} />
+                              {hotel.maxCapacity || 4} Pax
                             </span>
-                          )}
-                        </td>
-                        <td>
-                          <div className="vh-location-cell">
-                            <MapPin size={14} />
-                            <span>{hotel.location || hotel.city || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="vh-capacity-badge">
-                            <Users size={12} />
-                            {hotel.maxCapacity || 4} Pax
-                          </span>
-                        </td>
-                        <td>
-                          <span className="vh-price-value">{formatPrice(hotel.price || 0)}</span>
-                        </td>
-                        <td>
-                          <span className="vh-amenities-badge">
-                            <CheckCircle size={12} />
-                            {amenitiesCount} Amenities
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`vh-status vh-status--${hotel.isActive ? 'active' : 'inactive'}`}>
-                            <Home size={12} />
-                            {hotel.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="vh-actions">
-                            <button 
-                              className="vh-action-btn vh-action-btn--view"
-                              onClick={() => handleViewDetails(hotel)}
-                              title="View Details"
-                            >
-                              <Eye size={16} />
-                              <span>View</span>
-                            </button>
-                            <button 
-                              className="vh-action-btn vh-action-btn--delete"
-                              onClick={() => handleDelete(hotel._id, hotel.name)}
-                              title="Archive"
-                            >
-                              <Archive size={16} />
-                              <span>Archive</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td>
+                            <span className="vh-price-value">{formatPrice(hotel.price || 0)}</span>
+                          </td>
+                          <td>
+                            <span className="vh-amenities-badge">
+                              <CheckCircle size={12} />
+                              {amenitiesCount} Amenities
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`vh-status vh-status--${hotel.isActive ? 'active' : 'inactive'}`}>
+                              <Home size={12} />
+                              {hotel.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="vh-actions">
+                              <button 
+                                className="vh-action-btn vh-action-btn--view"
+                                onClick={() => handleViewDetails(hotel)}
+                                title="View Details"
+                              >
+                                <Eye size={16} />
+                                <span>View</span>
+                              </button>
+                              <button 
+                                className="vh-action-btn vh-action-btn--delete"
+                                onClick={() => handleDelete(hotel._id, hotel.name)}
+                                title="Archive"
+                              >
+                                <Archive size={16} />
+                                <span>Archive</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
               
               <HotelPagination
                 totalItems={filteredHotels.length}
@@ -349,7 +351,7 @@ const ViewHotels = () => {
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
               />
-            </div>
+            </>
           )}
         </div>
       </main>

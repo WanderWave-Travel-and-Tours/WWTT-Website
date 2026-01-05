@@ -92,6 +92,34 @@
     display: inline-block;
 }
 
+/* --- ADD BUTTON --- */
+.vb-btn {
+    position: relative;
+    z-index: 2;
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.vb-btn--add {
+    color: #fff;
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
+}
+
+.vb-btn--add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
+}
+
 /* --- LOADING STATE --- */
 .vb-loading {
     display: flex;
@@ -157,12 +185,12 @@
     font-size: 15px;
 }
 
-/* --- TABLE WRAPPER & TABLE --- */
+/* --- TABLE WRAPPER & TABLE - UPDATED: Removed overflow:hidden, added rounded top only --- */
 .vb-table-wrapper {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    overflow: visible;
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
 }
 
@@ -371,34 +399,6 @@
     background: white;
     border-color: #cbd5e1;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-/* --- ADD BUTTON --- */
-.vb-btn {
-    position: relative;
-    z-index: 2;
-    padding: 14px 28px;
-    font-size: 14px;
-    font-weight: 700;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    white-space: nowrap;
-}
-
-.vb-btn--add {
-    color: #fff;
-    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
-    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
-}
-
-.vb-btn--add:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
 }
 
 /* ================================================= */
