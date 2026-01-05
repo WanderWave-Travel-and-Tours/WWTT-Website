@@ -34,10 +34,10 @@ import {
   Ship,       
   ShieldCheck,
   Briefcase,
-  TrendingUp, 
-  DollarSign,
+  TrendingUp,
   Archive as ArchiveIcon,
-  Activity
+  Activity,
+  UserCog
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -52,6 +52,31 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   });
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
+
+  // ✅ Check if user is main admin
+  useEffect(() => {
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const mainAdmin = adminData.isMainAdmin === true;
+    setIsMainAdmin(mainAdmin);
+    
+    console.log('🔐 Sidebar Admin Check:', {
+      email: adminData.email,
+      isMainAdmin: mainAdmin
+    });
+  }, []);
+
+  // ✅ Check if user is main admin
+  useEffect(() => {
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const mainAdmin = adminData.email?.toLowerCase() === 'info@wanderwavetravelandtours.com';
+    setIsMainAdmin(mainAdmin);
+    
+    console.log('🔐 Sidebar Admin Check:', {
+      email: adminData.email,
+      isMainAdmin: mainAdmin
+    });
+  }, []);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -78,11 +103,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     }));
   };
 
-  // ==========================================
-  // UPDATED LOGOUT WITH ACTIVITY LOGGING
-  // ==========================================
   const handleLogout = async () => {
-    // Ask for confirmation
     const confirmed = window.confirm('Are you sure you want to logout?');
     if (!confirmed) return;
 
@@ -90,7 +111,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     console.log('🚪 Starting admin logout process...');
 
     try {
-      // Get admin data from localStorage
       const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
       const adminToken = localStorage.getItem('adminToken');
 
@@ -99,7 +119,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         username: adminData.username
       });
 
-      // Call logout API to log the activity
       const response = await fetch('http://localhost:5000/api/admin/logout', {
         method: 'POST',
         headers: {
@@ -125,15 +144,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       console.error('❌ Logout API error:', error);
       console.log('⚠️ Continuing with local logout despite API error');
     } finally {
-      // Always clear localStorage and redirect (even if API fails)
       console.log('🧹 Clearing admin session data...');
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
       
       console.log('✅ Session cleared, redirecting to login...');
       setIsLoggingOut(false);
-      
-      // Navigate to admin login page
       navigate('/admin');
     }
   };
@@ -294,6 +310,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             />
             <MenuItem path="/seller-rate" icon={TrendingUp} label="Supplier Rate" />
             <MenuItem path="/users" icon={Users} label="Users" />
+            
+            {/* ✅ MAIN ADMIN ONLY - Admin Management */}
+            {isMainAdmin && (
+              <MenuItem path="/admins" icon={UserCog} label="Admins" />
+            )}
+            
             <MenuItem path="/archive" icon={ArchiveIcon} label="Archive" />
             <MenuItem path="/activity-logs" icon={Activity} label="Activity Logs" />
             <MenuItem path="/settings" icon={Settings} label="Settings" />
@@ -307,7 +329,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <div className="user-avatar">A</div>
             <div className="user-details">
               <span className="user-name">Admin</span>
-              <span className="user-role">SysAdmin</span>
+              <span className="user-role">{isMainAdmin ? 'Main Admin' : 'SysAdmin'}</span>
             </div>
           </div>
           {!isCollapsed && (
