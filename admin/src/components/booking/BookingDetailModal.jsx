@@ -1,6 +1,7 @@
-import React from 'react';
-import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText } from 'lucide-react';
 import './BookingDetailModal.css'; 
+import VoucherPreviewModal from './VoucherPreviewModal';
 
 const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -22,12 +23,106 @@ export const BookingDetailModal = ({
     CheckIcon,
     XIcon
 }) => {
+    const [showVoucherPreview, setShowVoucherPreview] = useState(false);
+    const [voucherData, setVoucherData] = useState(null);
+
     if (!showModal || !selectedBooking) return null;
 
     const closeModal = () => setShowModal(false);
 
-    const handleConfirmAndClose = (booking) => handleConfirm(booking);
+    const handleConfirmAndClose = async (booking) => {
+        const confirmed = await handleConfirm(booking);
+        if (confirmed) {
+            // Generate voucher data after confirmation
+            generateVoucherData(booking);
+        }
+    };
+
     const handleCancelAndClose = (booking) => handleCancel(booking);
+
+    const generateVoucherData = (booking) => {
+        // Prepare voucher data from booking
+        const voucher = {
+            // Client Info
+            clientName: booking.customerName,
+            clientEmail: booking.email,
+            clientPhone: booking.phone || booking.contactNumber || "N/A",
+            
+            // Travel Details
+            travelDate: booking.travelDate,
+            voucherDate: formatDate(new Date()),
+            
+            // Package Info
+            packageName: booking.packageName,
+            packageRate: booking.totalAmount / (booking.guests || 1),
+            numberOfGuests: booking.guests || 1,
+            duration: booking.duration || "4D3N",
+            
+            // Guest Details (example - you may need to get this from booking.passengers or similar)
+            guestList: booking.passengers || [
+                {
+                    name: booking.customerName,
+                    age: 30,
+                    nationality: "FIL"
+                }
+            ],
+            
+            // Payment Info
+            totalAmount: booking.totalAmount,
+            downPayment: booking.totalAmount - (booking.remainingBalance || 0),
+            amountDue: booking.remainingBalance || 0,
+            paymentType: booking.paymentType,
+            balancePaid: booking.balancePaidAmount || 0,
+            
+            // Package Details
+            inclusions: [
+                "4D3N Accommodation (Las Residencias Bed and Breakfast)",
+                "Roundtrip Van Transfers",
+                "Daily Breakfast",
+                "Half-Day City Tour w/ Light Snacks",
+                "Underground River w/ Picnic Lunch",
+                "Honda Bay Island Hopping Tour with Picnic Lunch"
+            ],
+            exclusions: [
+                "Snorkeling Gears",
+                "Other Entrance that not included in Tour package",
+                "Travel Insurance"
+            ],
+            amenities: {
+                amenities: ["Free Wi-Fi", "Shared Room", "Shared Bathroom"],
+                facilities: ["Air conditioning room"]
+            },
+            
+            // Itinerary
+            itinerary: [
+                {
+                    day: 1,
+                    date: "December 11, 2025",
+                    activity: "Pickup from PPS Airport, Transfer to Hotel, Half Day City Tour with Light Snacks (1pm to 5pm)"
+                },
+                {
+                    day: 2,
+                    date: "December 12, 2025",
+                    activity: "Underground River Tour with Buffet Lunch (7am to 3pm)"
+                },
+                {
+                    day: 3,
+                    date: "December 13, 2025",
+                    activity: "Honda Bay Island Hopping Tour with Picnic Lunch (7am to 3pm)"
+                },
+                {
+                    day: 4,
+                    date: "December 14, 2025",
+                    activity: "Transfer to Airport - end of service"
+                }
+            ],
+            
+            referenceNumber: booking.referenceNumber || booking.id
+        };
+        
+        setVoucherData(voucher);
+        setShowVoucherPreview(true);
+    };
 
     const getStatusConfig = (status) => {
         const configs = {
@@ -42,217 +137,238 @@ export const BookingDetailModal = ({
     const statusConfig = getStatusConfig(status);
     const StatusIcon = statusConfig.icon;
 
-    // ✅ Payment calculations - CORRECTED
+    // Payment calculations
     const isPartialPayment = selectedBooking.paymentType === 'partial';
     const totalAmount = selectedBooking.totalAmount || 0;
     const remainingBalance = selectedBooking.remainingBalance || 0;
     const balancePaid = selectedBooking.balancePaidAmount || 0;
     
-    // Calculate actual amount paid (what they already paid)
     const initialPaid = totalAmount - remainingBalance;
     const totalPaid = initialPaid + balancePaid;
     
-    // Check if fully paid
     const isFullyPaid = balancePaid > 0 && remainingBalance <= 0;
 
     return (
-        <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <div className="cnm-header-content">
-                        <div className="cnm-title-group">
-                            <h2 className="cnm-title">Booking Details</h2>
-                            <div className="cnm-meta">
-                                <span className="cnm-ref">ID: #{selectedBooking.id}</span>
-                                <span className="cnm-divider">•</span>
-                                <span className="cnm-date">Booked: {formatDate(selectedBooking.bookingDate)}</span>
+        <>
+            <div className="modal-overlay" onClick={closeModal}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-header">
+                        <div className="cnm-header-content">
+                            <div className="cnm-title-group">
+                                <h2 className="cnm-title">Booking Details</h2>
+                                <div className="cnm-meta">
+                                    <span className="cnm-ref">ID: #{selectedBooking.id}</span>
+                                    <span className="cnm-divider">•</span>
+                                    <span className="cnm-date">Booked: {formatDate(selectedBooking.bookingDate)}</span>
+                                </div>
+                            </div>
+                            <div className={`cnm-status-badge cnm-status-${statusConfig.color}`}>
+                                <div className="cnm-status-icon"><StatusIcon size={16} /></div>
+                                <div className="cnm-status-content">
+                                    <span className="cnm-status-label">{statusConfig.label}</span>
+                                    <span className="cnm-status-desc">{statusConfig.description}</span>
+                                </div>
                             </div>
                         </div>
-                        <div className={`cnm-status-badge cnm-status-${statusConfig.color}`}>
-                            <div className="cnm-status-icon"><StatusIcon size={16} /></div>
-                            <div className="cnm-status-content">
-                                <span className="cnm-status-label">{statusConfig.label}</span>
-                                <span className="cnm-status-desc">{statusConfig.description}</span>
-                            </div>
-                        </div>
+                        <button className="modal-close" onClick={closeModal} aria-label="Close modal">
+                            <X size={20} />
+                        </button>
                     </div>
-                    <button className="modal-close" onClick={closeModal} aria-label="Close modal">
-                        <X size={20} />
-                    </button>
-                </div>
-                
-                <div className="modal-body">
-                    {/* CLIENT/BOOKING INFORMATION */}
-                    <div className="cnm-card">
-                        <div className="cnm-card-header">
-                            <h3 className="cnm-card-title">Booking Information</h3>
-                        </div>
-                        <div className="cnm-grid">
-                            <div className="cnm-info-item">
-                                <div className="cnm-info-icon"><User size={18} /></div>
-                                <div className="cnm-info-content">
-                                    <label className="cnm-info-label">Client Name</label>
-                                    <span className="cnm-info-value">{selectedBooking.customerName}</span>
-                                </div>
+                    
+                    <div className="modal-body">
+                        {/* CLIENT/BOOKING INFORMATION */}
+                        <div className="cnm-card">
+                            <div className="cnm-card-header">
+                                <h3 className="cnm-card-title">Booking Information</h3>
                             </div>
-                            <div className="cnm-info-item">
-                                <div className="cnm-info-icon"><Mail size={18} /></div>
-                                <div className="cnm-info-content">
-                                    <label className="cnm-info-label">Email Address</label>
-                                    <span className="cnm-info-value">{selectedBooking.email}</span>
-                                </div>
-                            </div>
-                            <div className="cnm-info-item">
-                                <div className="cnm-info-icon"><DollarSign size={18} /></div>
-                                <div className="cnm-info-content">
-                                    <label className="cnm-info-label">
-                                        {isPartialPayment ? 'Total Amount' : 'Total Amount'}
-                                    </label>
-                                    <span className="cnm-info-value cnm-val-amount">₱{selectedBooking.totalAmount.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <div className="cnm-info-item">
-                                <div className="cnm-info-icon"><Calendar size={18} /></div>
-                                <div className="cnm-info-content">
-                                    <label className="cnm-info-label">Travel Date</label>
-                                    <span className="cnm-info-value">{selectedBooking.travelDate}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ✅ NEW: PAYMENT DETAILS SECTION */}
-                    <div className="cnm-card" style={{background: isPartialPayment ? '#fef3c7' : '#f0fdf4'}}>
-                        <div className="cnm-card-header">
-                            <h3 className="cnm-card-title">
-                                <Wallet size={18} style={{marginRight: '8px', display: 'inline'}} />
-                                Payment Details
-                            </h3>
-                            <span className={`cnm-badge ${isPartialPayment ? 'cnm-badge-amber' : 'cnm-badge-green'}`}>
-                                {isPartialPayment ? 'PARTIAL PAYMENT' : 'FULL PAYMENT'}
-                            </span>
-                        </div>
-                        <div className="cnm-payment-breakdown">
-                            <div className="payment-row">
-                                <span className="payment-label">Payment Type:</span>
-                                <strong>{isPartialPayment ? 'Partial Payment' : 'Pay in Full'}</strong>
-                            </div>
-                            
-                            <div className="payment-row">
-                                <span className="payment-label">Total Booking Amount:</span>
-                                <strong>₱{selectedBooking.totalAmount.toLocaleString()}</strong>
-                            </div>
-
-                            {isPartialPayment && (
-                                <>
-                                    <div className="payment-divider"></div>
-                                    
-                                    <div className="payment-row" style={{color: '#059669'}}>
-                                        <span className="payment-label">
-                                            <CheckCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
-                                            Initial Payment:
-                                        </span>
-                                        <strong>₱{initialPaid.toLocaleString()}</strong>
+                            <div className="cnm-grid">
+                                <div className="cnm-info-item">
+                                    <div className="cnm-info-icon"><User size={18} /></div>
+                                    <div className="cnm-info-content">
+                                        <label className="cnm-info-label">Client Name</label>
+                                        <span className="cnm-info-value">{selectedBooking.customerName}</span>
                                     </div>
+                                </div>
+                                <div className="cnm-info-item">
+                                    <div className="cnm-info-icon"><Mail size={18} /></div>
+                                    <div className="cnm-info-content">
+                                        <label className="cnm-info-label">Email Address</label>
+                                        <span className="cnm-info-value">{selectedBooking.email}</span>
+                                    </div>
+                                </div>
+                                <div className="cnm-info-item">
+                                    <div className="cnm-info-icon"><DollarSign size={18} /></div>
+                                    <div className="cnm-info-content">
+                                        <label className="cnm-info-label">
+                                            {isPartialPayment ? 'Total Amount' : 'Total Amount'}
+                                        </label>
+                                        <span className="cnm-info-value cnm-val-amount">₱{selectedBooking.totalAmount.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                <div className="cnm-info-item">
+                                    <div className="cnm-info-icon"><Calendar size={18} /></div>
+                                    <div className="cnm-info-content">
+                                        <label className="cnm-info-label">Travel Date</label>
+                                        <span className="cnm-info-value">{selectedBooking.travelDate}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                    {balancePaid > 0 && (
+                        {/* PAYMENT DETAILS SECTION */}
+                        <div className="cnm-card" style={{background: isPartialPayment ? '#fef3c7' : '#f0fdf4'}}>
+                            <div className="cnm-card-header">
+                                <h3 className="cnm-card-title">
+                                    <Wallet size={18} style={{marginRight: '8px', display: 'inline'}} />
+                                    Payment Details
+                                </h3>
+                                <span className={`cnm-badge ${isPartialPayment ? 'cnm-badge-amber' : 'cnm-badge-green'}`}>
+                                    {isPartialPayment ? 'PARTIAL PAYMENT' : 'FULL PAYMENT'}
+                                </span>
+                            </div>
+                            <div className="cnm-payment-breakdown">
+                                <div className="payment-row">
+                                    <span className="payment-label">Payment Type:</span>
+                                    <strong>{isPartialPayment ? 'Partial Payment' : 'Pay in Full'}</strong>
+                                </div>
+                                
+                                <div className="payment-row">
+                                    <span className="payment-label">Total Booking Amount:</span>
+                                    <strong>₱{selectedBooking.totalAmount.toLocaleString()}</strong>
+                                </div>
+
+                                {isPartialPayment && (
+                                    <>
+                                        <div className="payment-divider"></div>
+                                        
                                         <div className="payment-row" style={{color: '#059669'}}>
                                             <span className="payment-label">
                                                 <CheckCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
-                                                Balance Paid:
+                                                Initial Payment:
                                             </span>
-                                            <strong>₱{balancePaid.toLocaleString()}</strong>
+                                            <strong>₱{initialPaid.toLocaleString()}</strong>
                                         </div>
-                                    )}
 
-                                    <div className="payment-row" style={{
-                                        color: remainingBalance > 0 ? '#dc2626' : '#059669',
-                                        fontSize: '1.05rem',
-                                        fontWeight: '700',
-                                        paddingTop: '8px',
-                                        borderTop: '2px solid #cbd5e1'
-                                    }}>
-                                        <span className="payment-label">
-                                            {remainingBalance > 0 ? (
-                                                <AlertCircle size={18} style={{marginRight: '4px', display: 'inline'}} />
-                                            ) : (
-                                                <CheckCircle size={18} style={{marginRight: '4px', display: 'inline'}} />
-                                            )}
-                                            Remaining Balance:
-                                        </span>
+                                        {balancePaid > 0 && (
+                                            <div className="payment-row" style={{color: '#059669'}}>
+                                                <span className="payment-label">
+                                                    <CheckCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
+                                                    Balance Paid:
+                                                </span>
+                                                <strong>₱{balancePaid.toLocaleString()}</strong>
+                                            </div>
+                                        )}
+
+                                        <div className="payment-row" style={{
+                                            color: remainingBalance > 0 ? '#dc2626' : '#059669',
+                                            fontSize: '1.05rem',
+                                            fontWeight: '700',
+                                            paddingTop: '8px',
+                                            borderTop: '2px solid #cbd5e1'
+                                        }}>
+                                            <span className="payment-label">
+                                                {remainingBalance > 0 ? (
+                                                    <AlertCircle size={18} style={{marginRight: '4px', display: 'inline'}} />
+                                                ) : (
+                                                    <CheckCircle size={18} style={{marginRight: '4px', display: 'inline'}} />
+                                                )}
+                                                Remaining Balance:
+                                            </span>
+                                            <strong>
+                                                {remainingBalance > 0 ? `₱${remainingBalance.toLocaleString()}` : 'FULLY PAID'}
+                                            </strong>
+                                        </div>
+
+                                        {selectedBooking.balancePaidAt && (
+                                            <div className="payment-row" style={{fontSize: '0.85rem', color: '#64748b'}}>
+                                                <span>Balance paid on:</span>
+                                                <span>{formatDate(selectedBooking.balancePaidAt)}</span>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {!isPartialPayment && (
+                                    <div className="payment-row" style={{color: isFullyPaid ? '#059669' : '#dc2626'}}>
+                                        <span className="payment-label">Payment Status:</span>
                                         <strong>
-                                            {remainingBalance > 0 ? `₱${remainingBalance.toLocaleString()}` : 'FULLY PAID'}
+                                            {isFullyPaid ? (
+                                                <>
+                                                    <CheckCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
+                                                    PAID IN FULL
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <AlertCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
+                                                    PENDING PAYMENT
+                                                </>
+                                            )}
                                         </strong>
                                     </div>
-
-                                    {selectedBooking.balancePaidAt && (
-                                        <div className="payment-row" style={{fontSize: '0.85rem', color: '#64748b'}}>
-                                            <span>Balance paid on:</span>
-                                            <span>{formatDate(selectedBooking.balancePaidAt)}</span>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {!isPartialPayment && (
-                                <div className="payment-row" style={{color: isFullyPaid ? '#059669' : '#dc2626'}}>
-                                    <span className="payment-label">Payment Status:</span>
-                                    <strong>
-                                        {isFullyPaid ? (
-                                            <>
-                                                <CheckCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
-                                                PAID IN FULL
-                                            </>
-                                        ) : (
-                                            <>
-                                                <AlertCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
-                                                PENDING PAYMENT
-                                            </>
-                                        )}
-                                    </strong>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* PACKAGE DETAILS */}
-                    <div className="cnm-card">
-                        <div className="cnm-card-header">
-                            <h3 className="cnm-card-title">Package Details</h3>
-                            <span className="cnm-badge cnm-badge-amber">{selectedBooking.guests} PAX</span>
-                        </div>
-                        <div className="cnm-message-box">
-                            <h4 style={{margin:'0 0 10px 0', fontSize:'16px'}}>{selectedBooking.packageName}</h4>
-                            <p style={{margin:0, color:'#475569'}}>Duration: {selectedBooking.duration}</p>
-                            <p style={{margin:0, color:'#475569'}}>Reference No: {selectedBooking.referenceNumber}</p>
-                        </div>
-                    </div>
-
-                    {/* SPECIAL REQUESTS */}
-                    {selectedBooking.message && (
+                        {/* PACKAGE DETAILS */}
                         <div className="cnm-card">
                             <div className="cnm-card-header">
-                                <h3 className="cnm-card-title">Special Requests / Notes</h3>
+                                <h3 className="cnm-card-title">Package Details</h3>
+                                <span className="cnm-badge cnm-badge-amber">{selectedBooking.guests} PAX</span>
                             </div>
                             <div className="cnm-message-box">
-                                {selectedBooking.message}
+                                <h4 style={{margin:'0 0 10px 0', fontSize:'16px'}}>{selectedBooking.packageName}</h4>
+                                <p style={{margin:0, color:'#475569'}}>Duration: {selectedBooking.duration}</p>
+                                <p style={{margin:0, color:'#475569'}}>Reference No: {selectedBooking.referenceNumber}</p>
                             </div>
                         </div>
-                    )}
-                </div>
 
-                {/* FOOTER ACTIONS */}
-                <div className="modal-footer">
-                    <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
-                    {status === 'PENDING' && (
-                        <>
+                        {/* SPECIAL REQUESTS */}
+                        {selectedBooking.message && (
+                            <div className="cnm-card">
+                                <div className="cnm-card-header">
+                                    <h3 className="cnm-card-title">Special Requests / Notes</h3>
+                                </div>
+                                <div className="cnm-message-box">
+                                    {selectedBooking.message}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* FOOTER ACTIONS */}
+                    <div className="modal-footer">
+                        <button className="cnm-btn cnm-btn-ghost" onClick={closeModal}>Close</button>
+                        
+                        {/* Show voucher button for confirmed bookings */}
+                        {status === 'CONFIRMED' && (
                             <button 
-                                className="cnm-btn cnm-btn-success"
-                                onClick={() => handleConfirmAndClose(selectedBooking)}
-                                disabled={actionLoading}
+                                className="cnm-btn cnm-btn-primary"
+                                onClick={() => generateVoucherData(selectedBooking)}
+                                style={{background: '#1e3a8a', marginRight: 'auto'}}
                             >
-                                <CheckIcon size={16} /> Confirm Booking
+                                <FileText size={16} /> View Voucher
                             </button>
+                        )}
+                        
+                        {status === 'PENDING' && (
+                            <>
+                                <button 
+                                    className="cnm-btn cnm-btn-success"
+                                    onClick={() => handleConfirmAndClose(selectedBooking)}
+                                    disabled={actionLoading}
+                                >
+                                    <CheckIcon size={16} /> Confirm Booking
+                                </button>
+                                <button 
+                                    className="cnm-btn cnm-btn-danger cnm-btn-outline"
+                                    onClick={() => handleCancelAndClose(selectedBooking)}
+                                    disabled={actionLoading}
+                                >
+                                    <XIcon size={16} /> Cancel Booking
+                                </button>
+                            </>
+                        )}
+                        {status === 'CONFIRMED' && (
                             <button 
                                 className="cnm-btn cnm-btn-danger cnm-btn-outline"
                                 onClick={() => handleCancelAndClose(selectedBooking)}
@@ -260,20 +376,20 @@ export const BookingDetailModal = ({
                             >
                                 <XIcon size={16} /> Cancel Booking
                             </button>
-                        </>
-                    )}
-                    {status === 'CONFIRMED' && (
-                        <button 
-                            className="cnm-btn cnm-btn-danger cnm-btn-outline"
-                            onClick={() => handleCancelAndClose(selectedBooking)}
-                            disabled={actionLoading}
-                        >
-                            <XIcon size={16} /> Cancel Booking
-                        </button>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+
+            {/* Voucher Preview Modal */}
+            {showVoucherPreview && voucherData && (
+                <VoucherPreviewModal
+                    voucherData={voucherData}
+                    onClose={() => setShowVoucherPreview(false)}
+                    onEdit={(updatedData) => setVoucherData(updatedData)}
+                />
+            )}
+        </>
     );
 };
 

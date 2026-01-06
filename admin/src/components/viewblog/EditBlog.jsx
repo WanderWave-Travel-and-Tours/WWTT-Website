@@ -35,7 +35,7 @@ const EditBlog = () => {
     const getImageUrl = (imagePath) => {
         if (!imagePath) return '';
         if (imagePath.startsWith('http')) return imagePath;
-        return `http://localhost:5000/${imagePath.replace(/\\/g, '/')}`;
+        return `https://wanderwaveph-backend.onrender.com/${imagePath.replace(/\\/g, '/')}`;
     };
 
     // =========================================================
@@ -186,7 +186,7 @@ const EditBlog = () => {
     useEffect(() => {
         const fetchBlogDetails = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/blogs/${id}`);
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch blog details');
                 
                 const data = await response.json();
@@ -253,7 +253,7 @@ const EditBlog = () => {
                 formDataToSend.append("image", imageFile);
             }
 
-            const response = await fetch(`http://localhost:5000/api/blogs/${id}`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/${id}`, {
                 method: 'PUT',
                 body: formDataToSend,
             });

@@ -25,7 +25,11 @@ const PromoSchema = new mongoose.Schema({
         type: Date, 
         required: true 
     },
-    imagePublicId: {
+    image: {  // ✅ ADDED
+        type: String,
+        default: ''
+    },
+    imagePublicId: {  // ✅ UPDATED - nandito na originally
         type: String,
         default: ''
     },
