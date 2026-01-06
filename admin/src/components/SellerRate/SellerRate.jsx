@@ -228,26 +228,9 @@ const SellerRate = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this rate?')) return;
-
-    try {
-      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/seller-rates/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        alert('Rate deleted!');
-        fetchRates();
-      } else {
-        alert('Failed to delete rate');
-      }
-    } catch (error) {
-      console.error('Error deleting rate:', error);
-      alert('Error deleting rate');
-    }
-  };
-
+  // ============================================
+  // TABLE ACTION HANDLERS
+  // ============================================
   const handleEdit = (rate) => {
     setEditingRate(rate);
     setFormData({
