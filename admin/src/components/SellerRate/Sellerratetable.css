@@ -1,0 +1,175 @@
+/* ========================================
+   SUPPLIER RATE TABLE - TABLE STYLES (sr-)
+   ======================================== */
+
+.sr-table-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.sr-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1200px;
+}
+
+.sr-table th {
+    background-color: #0f172a;
+    color: white;
+    padding: 16px 24px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.sr-table td {
+    padding: 18px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    vertical-align: middle;
+    color: #334155;
+    font-weight: 500;
+}
+
+/* Alternating Row Colors (Zebra Stripes) */
+.sr-table tbody tr:nth-child(odd) {
+    background-color: white;
+}
+
+.sr-table tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+.sr-table tbody tr:hover td {
+    background-color: #f1f5f9;
+}
+
+.sr-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* --- BADGES (sr-) --- */
+.sr-markup-badge {
+    background: #eff6ff;
+    color: #3b82f6;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.sr-status-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.sr-status-badge.active {
+    background-color: #d1fae5;
+    color: #10b981;
+}
+
+.sr-status-badge.inactive {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
+
+/* --- ACTION BUTTONS (sr-) --- */
+.sr-action-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.sr-action-btn {
+    height: 36px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    gap: 6px;
+}
+
+.sr-action-btn:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+/* Archive Button - Warning/Orange Style */
+.sr-action-btn.archive {
+    color: #ea580c;
+    border-color: #fed7aa;
+    background-color: #fff7ed;
+}
+
+.sr-action-btn.archive:hover {
+    color: white;
+    border-color: #ea580c;
+    background-color: #ea580c;
+    transform: translateY(-1px);
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    .sr-table-container {
+        overflow-x: auto;
+    }
+
+    .sr-table {
+        min-width: 1000px;
+    }
+
+    .sr-table th,
+    .sr-table td {
+        padding: 12px 16px;
+    }
+
+    .sr-action-group {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+    }
+
+    .sr-action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 640px) {
+    .sr-table th,
+    .sr-table td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .sr-action-btn {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+}
