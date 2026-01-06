@@ -12,7 +12,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
   useEffect(() => {
     const fetchCENOMARDocuments = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/cenomar');
+        const res = await axios.get('https://wanderwaveph-backend.onrender.com/api/cenomar');
         
         if (Array.isArray(res.data)) {
           setCenomarDocs(res.data);
@@ -201,7 +201,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
                               {cenomar.downloadForms.map((form, index) => {
                                 const formLabel = typeof form === 'string' ? form : (form.fileName || form.label || 'Download Form');
                                 const formUrl = typeof form === 'object' ? form.fileUrl : null;
-                                const finalUrl = formUrl && formUrl.startsWith('http') ? formUrl : `http://localhost:5000${formUrl}`;
+                                const finalUrl = formUrl && formUrl.startsWith('http') ? formUrl : `https://wanderwaveph-backend.onrender.com${formUrl}`;
 
                                 return (
                                   <li key={index} className="cenomar-download-item">

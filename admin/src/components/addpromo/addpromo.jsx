@@ -259,6 +259,7 @@ const AddPromo = () => {
             formData.append('validUntil', promoDetails.validUntil);
             formData.append('usageLimit', promoDetails.usageLimit);
 
+            // ✅ REMOVED: existingImagePublicId (not needed for ADD)
             
             if (imageFile) {
                 formData.append('image', imageFile);
@@ -272,6 +273,7 @@ const AddPromo = () => {
             formData.append("userEmail", activeUser);
             formData.append("adminId", activeId);
 
+            // ✅ FIXED: Changed to localhost
             const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
                 body: formData,
@@ -280,7 +282,7 @@ const AddPromo = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert(`Promo Code ${promoDetails.code} added successfully!`);
+                alert(`✅ Promo Code ${promoDetails.code} added successfully!`);
                 
                 // ✅ CLEAR DRAFT ON SUCCESS
                 await clearDraft();
@@ -302,10 +304,10 @@ const AddPromo = () => {
                 setImagePreview(null);
                 setIsOtherCategory(false);
             } else {
-                alert(`Error adding promo: ${data.message || 'Unknown error'}`);
+                alert(`❌ Error adding promo: ${data.message || 'Unknown error'}`);
             }
         } catch (error) {
-            console.error('Network Error:', error);
+            console.error('❌ Network Error:', error);
             alert('Failed to connect to the server.');
         } finally {
             setIsSubmitting(false);

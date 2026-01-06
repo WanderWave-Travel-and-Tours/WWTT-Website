@@ -88,8 +88,8 @@ const EditVisa = () => {
   const [files, setFiles] = useState({});
   const [existingFiles, setExistingFiles] = useState({});
 
-  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
-  const FILE_BASE_URL = "http://localhost:5000";
+  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
+  const FILE_BASE_URL = "https://wanderwaveph-backend.onrender.com";
 
   const todayObj = new Date();
   const tomorrowObj = new Date(todayObj);
