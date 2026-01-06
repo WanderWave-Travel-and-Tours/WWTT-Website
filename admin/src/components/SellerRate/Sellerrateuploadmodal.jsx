@@ -25,17 +25,55 @@ const SellerRateUploadModal = ({
         <div className="sr-upload-content">
           {/* Instructions */}
           <div className="sr-upload-instructions">
-            <h3>📊 Flexible Excel Import</h3>
-            <p>The system automatically detects column names:</p>
-            <ul>
-              <li><strong>Destination:</strong> destination, dest, location, place, city</li>
-              <li><strong>Activity:</strong> activity, tour, package, service</li>
-              <li><strong>Supplier:</strong> supplier, vendor, provider, hotel</li>
-              <li><strong>Rate:</strong> supplier rate, cost, net rate, base price</li>
-              <li><strong>Markup:</strong> markup, margin, commission, profit</li>
-            </ul>
-            <p style={{ color: '#10b981', fontWeight: '600', marginTop: '12px' }}>
-              ✨ Just upload - we'll detect your columns!
+            <h3>📊 Smart Excel Import - Auto-Detects Format!</h3>
+            <p>System automatically supports TWO formats:</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+              {/* Standard Format */}
+              <div style={{ 
+                padding: '12px', 
+                background: '#f8fafc', 
+                borderLeft: '3px solid #3b82f6', 
+                borderRadius: '6px' 
+              }}>
+                <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '8px' }}>
+                  ✅ Standard Table
+                </h4>
+                <ul style={{ fontSize: '12px', color: '#475569', margin: 0, paddingLeft: '18px' }}>
+                  <li>Headers in Row 1</li>
+                  <li>Auto-detects columns</li>
+                  <li>Single sheet</li>
+                </ul>
+              </div>
+
+              {/* WTT Format */}
+              <div style={{ 
+                padding: '12px', 
+                background: '#f8fafc', 
+                borderLeft: '3px solid #10b981', 
+                borderRadius: '6px' 
+              }}>
+                <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '8px' }}>
+                  ✅ WTT Contracted
+                </h4>
+                <ul style={{ fontSize: '12px', color: '#475569', margin: 0, paddingLeft: '18px' }}>
+                  <li>Sheet = Destination</li>
+                  <li>Multiple sheets</li>
+                  <li>Position-based</li>
+                </ul>
+              </div>
+            </div>
+
+            <p style={{ 
+              color: '#10b981', 
+              fontWeight: '600', 
+              marginTop: '16px',
+              padding: '10px 14px',
+              background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+              borderRadius: '6px',
+              border: '1px solid #6ee7b7'
+            }}>
+              ✨ Just upload - we'll auto-detect which format!
             </p>
           </div>
 

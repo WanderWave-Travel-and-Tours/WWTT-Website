@@ -1,6 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const SellerRate = require('../models/sellerRate'); // Adjust path as needed
+const SellerRate = require('../models/sellerRate');
+
+// ============================================
+// HELPER: Safe parseFloat (prevents NaN)
+// ============================================
+const safeParseFloat = (value, defaultValue = 0) => {
+  if (value === null || value === undefined || value === '' || value === 'NaN') {
+    return defaultValue;
+  }
+  const parsed = parseFloat(value);
+  return isNaN(parsed) || !isFinite(parsed) ? defaultValue : parsed;
+};
 
 // ============================================
 // GET ALL RATES
@@ -53,23 +64,6 @@ router.get('/:id', async (req, res) => {
 });
 
 // ============================================
-// GET RATES BY DESTINATION
-// ============================================
-router.get('/destination/:destination', async (req, res) => {
-  try {
-    const rates = await SellerRate.find({
-      destination: { $regex: req.params.destination, $options: 'i' },
-      status: 'active'
-    }).sort({ activity: 1 });
-
-    res.json(rates);
-  } catch (error) {
-    console.error('Error fetching rates by destination:', error);
-    res.status(500).json({ message: 'Error fetching rates', error: error.message });
-  }
-});
-
-// ============================================
 // CREATE NEW RATE
 // ============================================
 router.post('/', async (req, res) => {
@@ -87,20 +81,22 @@ router.post('/', async (req, res) => {
       status
     } = req.body;
 
-    // Calculate selling price
+    const safeSupplierRate = safeParseFloat(supplierRate, 0);
+    const safeMarkup = safeParseFloat(markup, 0);
+
     let sellingPrice;
     if (markupType === 'percentage') {
-      sellingPrice = supplierRate + (supplierRate * markup / 100);
+      sellingPrice = safeSupplierRate + (safeSupplierRate * safeMarkup / 100);
     } else {
-      sellingPrice = supplierRate + markup;
+      sellingPrice = safeSupplierRate + safeMarkup;
     }
 
     const newRate = new SellerRate({
       destination,
       activity,
       supplierName,
-      supplierRate,
-      markup,
+      supplierRate: safeSupplierRate,
+      markup: safeMarkup,
       markupType,
       sellingPrice,
       pax,
@@ -118,49 +114,80 @@ router.post('/', async (req, res) => {
 });
 
 // ============================================
-// BULK UPLOAD RATES (Excel Import)
+// BULK UPLOAD RATES - FIXED NaN HANDLING
 // ============================================
 router.post('/bulk', async (req, res) => {
   try {
-    const rates = req.body; // Array of rate objects
+    const rates = req.body;
 
     if (!Array.isArray(rates) || rates.length === 0) {
       return res.status(400).json({ message: 'Invalid data format. Expected array of rates.' });
     }
 
-    // Validate and prepare rates
-    const validRates = rates.map(rate => {
-      // Calculate selling price if not provided
-      let sellingPrice = rate.sellingPrice;
-      if (!sellingPrice) {
-        if (rate.markupType === 'percentage') {
-          sellingPrice = rate.supplierRate + (rate.supplierRate * rate.markup / 100);
-        } else {
-          sellingPrice = rate.supplierRate + rate.markup;
-        }
-      }
+    console.log(`📊 Receiving ${rates.length} rates for bulk upload`);
 
-      return {
-        destination: rate.destination,
-        activity: rate.activity,
-        supplierName: rate.supplierName,
-        supplierRate: parseFloat(rate.supplierRate),
-        markup: parseFloat(rate.markup),
-        markupType: rate.markupType || 'percentage',
-        sellingPrice,
-        pax: rate.pax || '',
-        inclusions: rate.inclusions || '',
-        notes: rate.notes || '',
-        status: rate.status || 'active',
-        dateAdded: new Date()
-      };
+    // Validate and prepare rates with STRICT NaN checks
+    const validRates = [];
+    const invalidRates = [];
+
+    rates.forEach((rate, index) => {
+      try {
+        // CRITICAL: Safe parsing with NaN protection
+        const supplierRate = safeParseFloat(rate.supplierRate, 0);
+        const markup = safeParseFloat(rate.markup, 0);
+        
+        // Validation: Must have valid rate > 0
+        if (supplierRate === 0) {
+          invalidRates.push({ index: index + 1, reason: 'Invalid supplier rate' });
+          return;
+        }
+
+        // Calculate selling price
+        let sellingPrice = safeParseFloat(rate.sellingPrice, 0);
+        if (sellingPrice === 0) {
+          if (rate.markupType === 'percentage') {
+            sellingPrice = supplierRate + (supplierRate * markup / 100);
+          } else {
+            sellingPrice = supplierRate + markup;
+          }
+        }
+
+        validRates.push({
+          destination: rate.destination || 'Unspecified',
+          activity: rate.activity || 'Unspecified',
+          supplierName: rate.supplierName || 'Unspecified',
+          supplierRate: supplierRate,
+          markup: markup,
+          markupType: rate.markupType || 'percentage',
+          sellingPrice: sellingPrice,
+          pax: rate.pax || '',
+          inclusions: rate.inclusions || '',
+          notes: rate.notes || '',
+          status: rate.status || 'active',
+          dateAdded: new Date()
+        });
+      } catch (error) {
+        console.error(`Error processing rate ${index + 1}:`, error);
+        invalidRates.push({ index: index + 1, reason: error.message });
+      }
     });
+
+    if (validRates.length === 0) {
+      return res.status(400).json({ 
+        message: 'No valid rates to upload', 
+        invalidCount: invalidRates.length,
+        invalidRates: invalidRates.slice(0, 10) // Show first 10 errors
+      });
+    }
+
+    console.log(`✅ Valid rates: ${validRates.length}, Invalid: ${invalidRates.length}`);
 
     const insertedRates = await SellerRate.insertMany(validRates);
     
     res.status(201).json({
       message: `Successfully uploaded ${insertedRates.length} rates`,
       count: insertedRates.length,
+      skipped: invalidRates.length,
       rates: insertedRates
     });
   } catch (error) {
@@ -187,12 +214,14 @@ router.put('/:id', async (req, res) => {
       status
     } = req.body;
 
-    // Calculate selling price
+    const safeSupplierRate = safeParseFloat(supplierRate, 0);
+    const safeMarkup = safeParseFloat(markup, 0);
+
     let sellingPrice;
     if (markupType === 'percentage') {
-      sellingPrice = supplierRate + (supplierRate * markup / 100);
+      sellingPrice = safeSupplierRate + (safeSupplierRate * safeMarkup / 100);
     } else {
-      sellingPrice = supplierRate + markup;
+      sellingPrice = safeSupplierRate + safeMarkup;
     }
 
     const updatedRate = await SellerRate.findByIdAndUpdate(
@@ -201,8 +230,8 @@ router.put('/:id', async (req, res) => {
         destination,
         activity,
         supplierName,
-        supplierRate,
-        markup,
+        supplierRate: safeSupplierRate,
+        markup: safeMarkup,
         markupType,
         sellingPrice,
         pax,
@@ -244,7 +273,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // ============================================
-// SOFT DELETE (Set to inactive)
+// ARCHIVE RATE (Soft Delete)
 // ============================================
 router.patch('/:id/archive', async (req, res) => {
   try {
