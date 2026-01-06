@@ -9,7 +9,7 @@ import {
   Eye, 
   EyeOff,
   ArrowLeft,
-  Check,
+  Save,
   X
 } from 'lucide-react';
 import './AddAdmin.css';
@@ -21,6 +21,7 @@ const AddAdmin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   const [formData, setFormData] = useState({
@@ -145,7 +146,7 @@ const AddAdmin = () => {
     if (Object.values(formData).some(value => value.trim() !== '')) {
       const confirm = window.confirm('Are you sure you want to cancel? All changes will be lost.');
       if (confirm) {
-        navigate('/admin/manage-admins');
+        navigate('/admins');
       }
     } else {
       navigate('/admins');
@@ -153,156 +154,161 @@ const AddAdmin = () => {
   };
 
   return (
-    <div className="add-admin-wrapper">
+    <div className="add-admin-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      <div className={`add-admin-content ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <main className={`add-admin-main ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="add-admin-container">
-          <div className="add-admin-header">
-            <button className="back-btn" onClick={() => navigate('/admin/manage-admins')}>
-              <ArrowLeft size={20} />
-              Back to Admin Management
-            </button>
-            
-            <div className="header-content">
-              <div className="header-icon">
-                <UserPlus size={24} />
-              </div>
-              <div>
-                <h1 className="page-title">Add New Admin</h1>
-                <p className="page-subtitle">Create a new administrator account</p>
-              </div>
+          
+          {/* Header */}
+          <header className="add-admin-header">
+            <div className="add-admin-header-content">
+              <button className="add-admin-back-btn" onClick={() => navigate('/admins')}>
+                <ArrowLeft size={18} />
+                Back to Admin Management
+              </button>
+              <h1 className="add-admin-title">ADD NEW ADMIN</h1>
+              <p className="add-admin-subtitle">Create a new administrator account</p>
             </div>
-          </div>
+          </header>
 
+          {/* Form */}
           <form className="add-admin-form" onSubmit={handleSubmit}>
-            <div className="form-section">
-              <h2 className="section-title">Personal Information</h2>
+            
+            {/* Section 1: Personal Information */}
+            <div className="add-admin-section">
+              <h2 className="add-admin-section-title">Personal Information</h2>
               
-              <div className="form-group">
-                <label className="form-label">
-                  <User size={18} />
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  className={`form-input ${errors.firstName ? 'error' : ''}`}
-                  placeholder="Enter first name"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-                {errors.firstName && (
-                  <span className="error-message">{errors.firstName}</span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  <User size={18} />
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  className={`form-input ${errors.lastName ? 'error' : ''}`}
-                  placeholder="Enter last name"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-                {errors.lastName && (
-                  <span className="error-message">{errors.lastName}</span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  <Mail size={18} />
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  className={`form-input ${errors.email ? 'error' : ''}`}
-                  placeholder="Enter email address"
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-                {errors.email && (
-                  <span className="error-message">{errors.email}</span>
-                )}
-              </div>
-            </div>
-
-            <div className="form-section">
-              <h2 className="section-title">Account Credentials</h2>
-              
-              <div className="form-group">
-                <label className="form-label">
-                  <Lock size={18} />
-                  Password
-                </label>
-                <div className="password-input-wrapper">
+              <div className="add-admin-form-grid">
+                {/* First Name */}
+                <div className="add-admin-form-group">
+                  <label className="add-admin-label">
+                    First Name *
+                  </label>
                   <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    className={`form-input ${errors.password ? 'error' : ''}`}
-                    placeholder="Enter password (min. 8 characters)"
-                    value={formData.password}
+                    type="text"
+                    name="firstName"
+                    className={`add-admin-input ${errors.firstName ? 'error' : ''}`}
+                    placeholder="e.g. John"
+                    value={formData.firstName}
                     onChange={handleChange}
                     disabled={loading}
                   />
-                  <button
-                    type="button"
-                    className="toggle-password-btn"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={loading}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                  {errors.firstName && (
+                    <span className="add-admin-error">{errors.firstName}</span>
+                  )}
                 </div>
-                {errors.password && (
-                  <span className="error-message">{errors.password}</span>
-                )}
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">
-                  <Lock size={18} />
-                  Confirm Password
-                </label>
-                <div className="password-input-wrapper">
+                {/* Last Name */}
+                <div className="add-admin-form-group">
+                  <label className="add-admin-label">
+                    Last Name *
+                  </label>
                   <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    name="confirmPassword"
-                    className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
-                    placeholder="Re-enter password"
-                    value={formData.confirmPassword}
+                    type="text"
+                    name="lastName"
+                    className={`add-admin-input ${errors.lastName ? 'error' : ''}`}
+                    placeholder="e.g. Doe"
+                    value={formData.lastName}
                     onChange={handleChange}
                     disabled={loading}
                   />
-                  <button
-                    type="button"
-                    className="toggle-password-btn"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={loading}
-                  >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                  {errors.lastName && (
+                    <span className="add-admin-error">{errors.lastName}</span>
+                  )}
                 </div>
-                {errors.confirmPassword && (
-                  <span className="error-message">{errors.confirmPassword}</span>
-                )}
+
+                {/* Email */}
+                <div className="add-admin-form-group full-width">
+                  <label className="add-admin-label">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    className={`add-admin-input ${errors.email ? 'error' : ''}`}
+                    placeholder="e.g. john.doe@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    disabled={loading}
+                  />
+                  {errors.email && (
+                    <span className="add-admin-error">{errors.email}</span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="form-actions">
+            {/* Section 2: Account Credentials */}
+            <div className="add-admin-section">
+              <h2 className="add-admin-section-title">Account Credentials</h2>
+              
+              <div className="add-admin-form-grid">
+                {/* Password */}
+                <div className="add-admin-form-group">
+                  <label className="add-admin-label">
+                    Password *
+                  </label>
+                  <div className="add-admin-password-wrapper">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      className={`add-admin-input ${errors.password ? 'error' : ''}`}
+                      placeholder="Min. 8 characters"
+                      value={formData.password}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      className="add-admin-toggle-password"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={loading}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <span className="add-admin-error">{errors.password}</span>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div className="add-admin-form-group">
+                  <label className="add-admin-label">
+                    Confirm Password *
+                  </label>
+                  <div className="add-admin-password-wrapper">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      className={`add-admin-input ${errors.confirmPassword ? 'error' : ''}`}
+                      placeholder="Re-enter password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      className="add-admin-toggle-password"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      disabled={loading}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <span className="add-admin-error">{errors.confirmPassword}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="add-admin-actions">
               <button
                 type="button"
-                className="cancel-btn"
+                className="add-admin-btn cancel"
                 onClick={handleCancel}
                 disabled={loading}
               >
@@ -311,17 +317,17 @@ const AddAdmin = () => {
               </button>
               <button
                 type="submit"
-                className="submit-btn"
+                className="add-admin-btn submit"
                 disabled={loading}
               >
                 {loading ? (
                   <>
-                    <div className="btn-spinner" />
+                    <div className="add-admin-spinner" />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <Check size={18} />
+                    <Save size={18} />
                     Create Admin Account
                   </>
                 )}
@@ -329,7 +335,7 @@ const AddAdmin = () => {
             </div>
           </form>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
