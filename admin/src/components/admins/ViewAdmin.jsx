@@ -63,7 +63,7 @@ const ViewAdmin = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/list', {
+      const response = await fetch('http://localhost:5000/api/admin/list', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -101,7 +101,7 @@ const ViewAdmin = () => {
 
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/admin/delete/${adminId}`, {
+      const response = await fetch(`http://localhost:5000/api/admin/delete/${adminId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -58,7 +58,7 @@ export const BookingDetailModal = ({
             numberOfGuests: booking.guests || 1,
             duration: booking.duration || "4D3N",
             
-            // Guest Details (example - you may need to get this from booking.passengers or similar)
+            // Guest Details
             guestList: booking.passengers || [
                 {
                     name: booking.customerName,
@@ -147,6 +147,7 @@ export const BookingDetailModal = ({
     const totalPaid = initialPaid + balancePaid;
     
     const isFullyPaid = balancePaid > 0 && remainingBalance <= 0;
+    const isPendingPayment = !isPartialPayment && status === 'PENDING';
 
     return (
         <>
@@ -215,96 +216,140 @@ export const BookingDetailModal = ({
                             </div>
                         </div>
 
-                        {/* PAYMENT DETAILS SECTION */}
-                        <div className="cnm-card" style={{background: isPartialPayment ? '#fef3c7' : '#f0fdf4'}}>
-                            <div className="cnm-card-header">
-                                <h3 className="cnm-card-title">
-                                    <Wallet size={18} style={{marginRight: '8px', display: 'inline'}} />
-                                    Payment Details
-                                </h3>
-                                <span className={`cnm-badge ${isPartialPayment ? 'cnm-badge-amber' : 'cnm-badge-green'}`}>
-                                    {isPartialPayment ? 'PARTIAL PAYMENT' : 'FULL PAYMENT'}
-                                </span>
-                            </div>
-                            <div className="cnm-payment-breakdown">
-                                <div className="payment-row">
-                                    <span className="payment-label">Payment Type:</span>
-                                    <strong>{isPartialPayment ? 'Partial Payment' : 'Pay in Full'}</strong>
+                        {/* ENHANCED PAYMENT DETAILS SECTION */}
+                        <div className="cnm-payment-card">
+                            <div className="cnm-payment-header">
+                                <div className="cnm-payment-title">
+                                    <CreditCard size={18} />
+                                    PAYMENT DETAILS
                                 </div>
-                                
-                                <div className="payment-row">
-                                    <span className="payment-label">Total Booking Amount:</span>
-                                    <strong>₱{selectedBooking.totalAmount.toLocaleString()}</strong>
+                                <div className={`cnm-payment-badge ${isPartialPayment ? 'partial' : 'full'}`}>
+                                    {isPartialPayment ? 'PARTIAL PAYMENT' : 'FULL PAYMENT'}
+                                </div>
+                            </div>
+                            
+                            <div className="cnm-payment-body">
+                                {/* Payment Type and Total */}
+                                <div className="cnm-payment-section">
+                                    <div className="cnm-payment-row">
+                                        <span className="cnm-payment-label">Payment Type:</span>
+                                        <span className="cnm-payment-value">
+                                            {isPartialPayment ? 'Pay in Partial' : 'Pay in Full'}
+                                        </span>
+                                    </div>
+                                    <div className="cnm-payment-row">
+                                        <span className="cnm-payment-label">Total Booking Amount:</span>
+                                        <span className="cnm-payment-value">₱{totalAmount.toLocaleString()}</span>
+                                    </div>
                                 </div>
 
+                                {/* Partial Payment Breakdown */}
                                 {isPartialPayment && (
                                     <>
-                                        <div className="payment-divider"></div>
+                                        <div className="cnm-payment-divider"></div>
                                         
-                                        <div className="payment-row" style={{color: '#059669'}}>
-                                            <span className="payment-label">
-                                                <CheckCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
-                                                Initial Payment:
-                                            </span>
-                                            <strong>₱{initialPaid.toLocaleString()}</strong>
+                                        <div className="cnm-payment-section">
+                                            <div className="cnm-payment-row">
+                                                <span className="cnm-payment-label">
+                                                    <CheckCircle size={16} style={{color: '#16a34a'}} />
+                                                    Initial Payment:
+                                                </span>
+                                                <span className="cnm-payment-value" style={{color: '#16a34a'}}>
+                                                    ₱{initialPaid.toLocaleString()}
+                                                </span>
+                                            </div>
+
+                                            {balancePaid > 0 && (
+                                                <div className="cnm-payment-row">
+                                                    <span className="cnm-payment-label">
+                                                        <CheckCircle size={16} style={{color: '#16a34a'}} />
+                                                        Balance Paid:
+                                                    </span>
+                                                    <span className="cnm-payment-value" style={{color: '#16a34a'}}>
+                                                        ₱{balancePaid.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {balancePaid > 0 && (
-                                            <div className="payment-row" style={{color: '#059669'}}>
-                                                <span className="payment-label">
-                                                    <CheckCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
-                                                    Balance Paid:
-                                                </span>
-                                                <strong>₱{balancePaid.toLocaleString()}</strong>
+                                        {/* Payment Status Box */}
+                                        {remainingBalance > 0 ? (
+                                            <div className="cnm-payment-status-box pending">
+                                                <div className="cnm-payment-status-left">
+                                                    <div className="cnm-payment-status-title">
+                                                        <AlertCircle size={14} style={{marginRight: '4px', display: 'inline'}} />
+                                                        PENDING PAYMENT
+                                                    </div>
+                                                    <div className="cnm-payment-status-amount">
+                                                        ₱{remainingBalance.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <div className="cnm-payment-status-icon">
+                                                    <AlertCircle size={24} />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="cnm-payment-status-box paid">
+                                                <div className="cnm-payment-status-left">
+                                                    <div className="cnm-payment-status-title">
+                                                        <CheckCircle size={14} style={{marginRight: '4px', display: 'inline'}} />
+                                                        FULLY PAID
+                                                    </div>
+                                                    <div className="cnm-payment-status-amount">
+                                                        ₱{totalAmount.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <div className="cnm-payment-status-icon">
+                                                    <CheckCircle size={24} />
+                                                </div>
                                             </div>
                                         )}
 
-                                        <div className="payment-row" style={{
-                                            color: remainingBalance > 0 ? '#dc2626' : '#059669',
-                                            fontSize: '1.05rem',
-                                            fontWeight: '700',
-                                            paddingTop: '8px',
-                                            borderTop: '2px solid #cbd5e1'
-                                        }}>
-                                            <span className="payment-label">
-                                                {remainingBalance > 0 ? (
-                                                    <AlertCircle size={18} style={{marginRight: '4px', display: 'inline'}} />
-                                                ) : (
-                                                    <CheckCircle size={18} style={{marginRight: '4px', display: 'inline'}} />
-                                                )}
-                                                Remaining Balance:
-                                            </span>
-                                            <strong>
-                                                {remainingBalance > 0 ? `₱${remainingBalance.toLocaleString()}` : 'FULLY PAID'}
-                                            </strong>
-                                        </div>
-
                                         {selectedBooking.balancePaidAt && (
-                                            <div className="payment-row" style={{fontSize: '0.85rem', color: '#64748b'}}>
-                                                <span>Balance paid on:</span>
-                                                <span>{formatDate(selectedBooking.balancePaidAt)}</span>
+                                            <div className="cnm-payment-date">
+                                                Balance paid on: {formatDate(selectedBooking.balancePaidAt)}
                                             </div>
                                         )}
                                     </>
                                 )}
 
+                                {/* Full Payment Status */}
                                 {!isPartialPayment && (
-                                    <div className="payment-row" style={{color: isFullyPaid ? '#059669' : '#dc2626'}}>
-                                        <span className="payment-label">Payment Status:</span>
-                                        <strong>
-                                            {isFullyPaid ? (
-                                                <>
-                                                    <CheckCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
-                                                    PAID IN FULL
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <AlertCircle size={16} style={{marginRight: '4px', display: 'inline'}} />
-                                                    PENDING PAYMENT
-                                                </>
-                                            )}
-                                        </strong>
-                                    </div>
+                                    <>
+                                        <div className="cnm-payment-divider"></div>
+                                        
+                                        {isPendingPayment ? (
+                                            <div className="cnm-payment-status-box pending">
+                                                <div className="cnm-payment-status-left">
+                                                    <div className="cnm-payment-status-title">
+                                                        <AlertCircle size={14} style={{marginRight: '4px', display: 'inline'}} />
+                                                        PENDING PAYMENT
+                                                    </div>
+                                                    <div className="cnm-payment-status-amount">
+                                                        ₱{totalAmount.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <div className="cnm-payment-status-icon">
+                                                    <AlertCircle size={24} />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="cnm-payment-status-box paid">
+                                                <div className="cnm-payment-status-left">
+                                                    <div className="cnm-payment-status-title">
+                                                        <CheckCircle size={14} style={{marginRight: '4px', display: 'inline'}} />
+                                                        FULLY PAID
+                                                    </div>
+                                                    <div className="cnm-payment-status-amount">
+                                                        ₱{totalAmount.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <div className="cnm-payment-status-icon">
+                                                    <CheckCircle size={24} />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -342,9 +387,8 @@ export const BookingDetailModal = ({
                         {/* Show voucher button for confirmed bookings */}
                         {status === 'CONFIRMED' && (
                             <button 
-                                className="cnm-btn cnm-btn-primary"
+                                className="cnm-btn cnm-btn-primary cnm-btn-left"
                                 onClick={() => generateVoucherData(selectedBooking)}
-                                style={{background: '#1e3a8a', marginRight: 'auto'}}
                             >
                                 <FileText size={16} /> View Voucher
                             </button>

@@ -51,7 +51,7 @@ const ApplicationDetails = ({
                         </div>
                         <p>{remarks}</p>
                         {evidenceUrl && (
-                            <a href={`https://wanderwaveph-backend.onrender.com${evidenceUrl}`} target="_blank" rel="noreferrer" className="ad-link-btn">
+                            <a href={`http://localhost:5000${evidenceUrl}`} target="_blank" rel="noreferrer" className="ad-link-btn">
                                 View Evidence ↗
                             </a>
                         )}
@@ -103,7 +103,7 @@ const ApplicationDetails = ({
                                     </div>
                                     {/* DOWNLOAD BUTTON */}
                                     <a 
-                                        href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} 
+                                        href={`http://localhost:5000${doc.fileUrl}`} 
                                         download={doc.fileName}
                                         className="ad-btn-download"
                                         onClick={() => onDownloadComplete(inquiry._id)} // <-- THIS MOVES IT TO HISTORY

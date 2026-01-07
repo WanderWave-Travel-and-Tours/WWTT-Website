@@ -61,7 +61,7 @@ const SellerRate = () => {
   const fetchRates = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/seller-rates');
+      const response = await fetch('http://localhost:5000/api/seller-rates');
       if (!response.ok) {
         console.error('Failed to fetch rates:', response.status);
         setRates([]);
@@ -109,8 +109,8 @@ const SellerRate = () => {
 
     try {
       const url = editingRate 
-        ? `https://wanderwaveph-backend.onrender.com/api/seller-rates/${editingRate._id}`
-        : 'https://wanderwaveph-backend.onrender.com/api/seller-rates';
+        ? `http://localhost:5000/api/seller-rates/${editingRate._id}`
+        : 'http://localhost:5000/api/seller-rates';
       
       const method = editingRate ? 'PUT' : 'POST';
 
@@ -194,7 +194,7 @@ const SellerRate = () => {
         return;
       }
 
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/seller-rates/bulk', {
+      const response = await fetch('http://localhost:5000/api/seller-rates/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedRates)

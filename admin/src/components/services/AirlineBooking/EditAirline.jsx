@@ -29,7 +29,7 @@ const EditAirline = () => {
   const [imagePreview, setImagePreview] = useState("");
 
   // Ginawa nating /api/inquiries dahil ito ang nasa inquiryRoute.js mo
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
+  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -61,7 +61,7 @@ const EditAirline = () => {
 
           // I-set ang preview kung may existing image (evidenceName)
           if (data.evidenceName) {
-            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${data.evidenceName}`);
+            setImagePreview(`http://localhost:5000/uploads/${data.evidenceName}`);
           }
         } else {
             console.error("Failed to fetch data:", result.message);

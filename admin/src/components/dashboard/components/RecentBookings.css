@@ -1,80 +1,57 @@
+/* ========================================
+   RECENT BOOKINGS TABLE (Archive Table Style)
+   ======================================== */
+
 .dash-link-btn {
-    background: none;
-    border: none;
-    color: #FF8C42;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
+    background: none; border: none; color: #FF8C42; 
+    font-size: 13px; font-weight: 600; cursor: pointer;
 }
 
-.dash-link-btn:hover {
-    color: #e57a35;
-}
-
+/* SCROLLABLE WRAPPER (Critical for Mobile) */
 .dash-table-wrapper {
+    width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .dash-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 700px; /* Forces scroll on mobile */
 }
 
 .dash-table th {
-    padding: 14px 20px;
+    padding: 16px;
     background: #001F3F;
-    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 10px;
-    font-weight: 900;
-    color: #fff;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
     text-align: left;
-    letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 .dash-table td {
-    padding: 14px 20px;
-    font-size: 13px;
-    color: #64748b;
+    padding: 16px;
     border-bottom: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 14px;
+    white-space: nowrap;
 }
 
-.dash-table tbody tr:last-child td {
-    border-bottom: none;
-}
+.dash-table tr:last-child td { border-bottom: none; }
+.dash-client { font-weight: 700; color: #1e293b; }
+.dash-amount { font-weight: 700; color: #FF8C42; }
 
-.dash-table tbody tr:hover {
-    background: #f8fafc;
-}
-
-.dash-client {
-    font-weight: 700;
-    color: #1e293b;
-}
-
-.dash-amount {
-    font-weight: 700;
-    color: #FF8C42;
-}
-
-.dash-status {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
+/* Status Badges */
+.dash-status { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .dash-status--confirmed { background: #ecfdf5; color: #059669; }
 .dash-status--pending { background: #fef3c7; color: #d97706; }
 .dash-status--cancelled { background: #fef2f2; color: #dc2626; }
 
-.dash-empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    color: #9ca3af;
-    gap: 12px;
+.dash-empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 640px) {
+    .dash-table th, .dash-table td { padding: 12px; }
 }

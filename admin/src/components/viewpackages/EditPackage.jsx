@@ -35,7 +35,7 @@ const EditPackage = () => {
     { day: 1, title: "", activities: [""] },
   ]);
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/packages";
+  const API_BASE_URL = "http://localhost:5000/api/packages";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -246,7 +246,7 @@ const EditPackage = () => {
           );
 
           if (pkg.image) {
-            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`);
+            setImagePreview(`http://localhost:5000/uploads/${pkg.image}`);
           }
         } else {
           console.error("Error in response:", result.error);

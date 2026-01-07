@@ -85,7 +85,7 @@ const PosterDetailModal = ({
                         
                         <div className="pdm-image-box">
                             <img 
-                                src={`https://wanderwaveph-backend.onrender.com/${selectedPoster.imageUrl}`} 
+                                src={`http://localhost:5000/${selectedPoster.imageUrl}`} 
                                 alt={selectedPoster.title}
                                 className="pdm-poster-image"
                                 onError={(e) => { e.target.src = 'https://via.placeholder.com/800x400'; }}
@@ -95,7 +95,7 @@ const PosterDetailModal = ({
                                     <ImageIcon size={14} className="pdm-icon-green" />
                                     <span>{selectedPoster.imageUrl?.split('/').pop() || 'poster_image.jpg'}</span>
                                 </div>
-                                <button className="pdm-view-link" onClick={() => window.open(`https://wanderwaveph-backend.onrender.com/${selectedPoster.imageUrl}`, '_blank')}>
+                                <button className="pdm-view-link" onClick={() => window.open(`http://localhost:5000/${selectedPoster.imageUrl}`, '_blank')}>
                                     View Full Image
                                 </button>
                             </div>

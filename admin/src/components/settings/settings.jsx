@@ -24,7 +24,7 @@ const Settings = () => {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/settings');
+                const response = await fetch('http://localhost:5000/api/admin/settings');
                 const result = await response.json();
                 if (result.status === 'ok') {
                     setSettings({
@@ -65,7 +65,7 @@ const Settings = () => {
         }
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/update-settings', {
+            const response = await fetch('http://localhost:5000/api/admin/update-settings', {
                 method: 'PUT',
                 body: formData
             });
@@ -85,21 +85,29 @@ const Settings = () => {
         }
     };
 
+    const mainClasses = `settings-main ${isSidebarCollapsed ? 'collapsed' : ''}`;
+
     return (
         <div className="settings-page">
-              <Sidebar 
+            <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
             
-            <main className={`settings-main ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+            <main className={mainClasses}>
                 <div className="settings-container">
+                    {/* HEADER - Matching Users Style */}
                     <header className="settings-header">
-                        <h1 className="settings-title">BUSINESS PROFILE</h1>
-                        <p className="settings-subtitle">Manage your agency's public information and branding</p>
+                        <div className="settings-header-content">
+                            <h1 className="settings-title">BUSINESS PROFILE</h1>
+                            <p className="settings-subtitle">
+                                Manage your agency's public information and branding
+                            </p>
+                        </div>
                     </header>
 
                     <form onSubmit={handleSubmit} className="settings-grid">
+                        {/* GENERAL INFORMATION SECTION */}
                         <section className="settings-section">
                             <div className="settings-section-header">
                                 <h2 className="settings-section-title">General Information</h2>
@@ -110,7 +118,7 @@ const Settings = () => {
                                     {previewUrl ? (
                                         <img src={previewUrl} alt="Preview" />
                                     ) : settings.businessLogo ? (
-                                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${settings.businessLogo}`} alt="Business Logo" />
+                                        <img src={`http://localhost:5000/uploads/${settings.businessLogo}`} alt="Business Logo" />
                                     ) : (
                                         <div className="logo-placeholder">✈️</div>
                                     )}
@@ -166,6 +174,7 @@ const Settings = () => {
                             </div>
                         </section>
 
+                        {/* LOCATION DETAILS SECTION */}
                         <section className="settings-section">
                             <div className="settings-section-header">
                                 <h2 className="settings-section-title">Location Details</h2>
