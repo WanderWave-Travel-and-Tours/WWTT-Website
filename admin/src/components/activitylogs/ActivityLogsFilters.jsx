@@ -78,11 +78,11 @@ const ActivityLogsFilters = ({
                 </div>
                 
                 {/* ORDER 5: SEARCH BOX - Pushed to the right */}
-                <div className="search-box">
-                    <Search size={18} className="search-icon" /> 
+                <div className="act-search-box">
+                    <Search size={18} className="act-search-icon" /> 
                     <input
                         type="text"
-                        className="search-input"
+                        className="act-search-input"
                         placeholder="Search by ID, action, module, user..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}

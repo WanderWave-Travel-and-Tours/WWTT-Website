@@ -35,11 +35,11 @@
     align-items: center;
     gap: 4px;
 }
+
 .arc-brand-label span {
     color: #ef4444; 
     font-weight: 800;
 }
-
 
 /* Dropdown Grouping (Status, Type, Subtype) */
 .arc-select-group {
@@ -78,6 +78,7 @@
     background-size: 10px; 
     padding-right: 30px; 
     min-width: 140px; /* Ensures dropdowns don't shrink too much on desktop */
+    box-sizing: border-box;
 }
 
 .arc-filter-select:focus {
@@ -86,22 +87,23 @@
     box-shadow: 0 0 0 1px #ef4444; 
 }
 
-
 /* Search Box - Pushed to the right and takes remaining space */
-.search-box {
+.arc-search-box {
     background: white; 
     border: 1px solid #cbd5e1; 
     border-radius: 12px; 
-    
+    position: relative;
     flex: 1 1 250px; /* Allows it to grow and shrink */
     max-width: 400px;
     height: 44px; 
     padding: 0;
     margin-left: auto; /* PUSH TO RIGHT CORNER */
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
 }
 
-.search-icon {
+.arc-search-icon {
     position: absolute;
     left: 14px;
     top: 50%;
@@ -111,7 +113,7 @@
     z-index: 10;
 }
 
-.search-input {
+.arc-search-input {
     width: 100%;
     height: 100%;
     background: #f8fafc; 
@@ -119,14 +121,18 @@
     border-radius: 11px;
     font-size: 14px;
     color: #0f172a;
-    padding: 0 12px 0 40px; 
+    padding: 0 12px 0 40px;
+    box-sizing: border-box;
 }
 
-.search-box:focus-within {
+.arc-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.arc-search-box:focus-within {
     border-color: #ef4444; 
     box-shadow: 0 0 0 1px #ef4444; 
 }
-
 
 /* ================================================
    RESPONSIVENESS (FULLY ADJUSTED)
@@ -139,6 +145,7 @@
         align-items: stretch;
         gap: 12px;
     }
+    
     .arc-brand-label {
         order: 1; 
         padding-bottom: 8px;
@@ -165,6 +172,7 @@
         width: calc(33.33% - 10.66px); 
         margin-left: 0; /* Reset margins */
     }
+    
     .arc-select-group.type-filter,
     .arc-select-group.subtype-filter {
         /* Add spacing between elements */
@@ -177,20 +185,28 @@
         min-width: auto;
     }
     
-    .search-box {
+    .arc-search-box {
         order: 3; 
         min-width: 100%;
         max-width: 100%;
-        height: 48px; 
+        height: 44px; 
         margin-left: 0; 
     }
 }
 
-/* Mobile/Small Screens (Below 600px) */
+/* Mobile/Small Screens (Below 600px) - FIXED HEIGHT */
 @media (max-width: 600px) {
     /* Stack everything vertically on very small phones (1 column) */
     .arc-filter-wrapper {
         gap: 8px;
+    }
+
+    .arc-filter-card {
+        padding: 16px;
+    }
+
+    .arc-brand-label {
+        font-size: 13px;
     }
 
     .arc-select-group {
@@ -198,6 +214,7 @@
         align-items: flex-start;
         padding-bottom: 5px;
         width: 100%;
+        height: auto !important;
     }
     
     /* All groups take full width and clear horizontal margins */
@@ -209,12 +226,81 @@
         margin-right: 0 !important;
     }
     
-    /* Select input must fill its container */
+    /* Select input must fill its container with reduced height */
     .arc-filter-select {
         width: 100%;
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        font-size: 13px;
+        padding: 8px 30px 8px 12px;
     }
+    
     .arc-select-label {
         width: 100%;
         margin-bottom: 4px;
+        font-size: 13px;
+    }
+
+    /* SEARCH BOX - FORCE MOBILE HEIGHT */
+    .arc-search-box {
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        border-radius: 10px;
+    }
+
+    .arc-search-input {
+        height: 38px !important;
+        font-size: 13px;
+        padding: 0 12px 0 38px;
+        border-radius: 10px;
+    }
+
+    .arc-search-icon {
+        left: 12px;
+    }
+}
+
+/* Extra Small Screens (Below 400px) */
+@media (max-width: 400px) {
+    .arc-filter-card {
+        padding: 14px;
+    }
+
+    .arc-filter-wrapper {
+        gap: 10px;
+    }
+
+    .arc-brand-label {
+        font-size: 12px;
+    }
+
+    .arc-select-label {
+        font-size: 12px;
+    }
+
+    .arc-filter-select {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        font-size: 12px;
+        padding: 6px 28px 6px 10px;
+    }
+
+    .arc-search-box {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+    }
+
+    .arc-search-input {
+        height: 36px !important;
+        font-size: 12px;
+        padding: 0 10px 0 36px;
+    }
+
+    .arc-search-icon {
+        left: 10px;
     }
 }
