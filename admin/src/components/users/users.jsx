@@ -25,7 +25,7 @@ const Users = () => {
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [currentPage, setCurrentPage] = useState(1);
 
-    const API_URL = 'https://wanderwaveph-backend.onrender.com/api/users';
+    const API_URL = 'http://localhost:5000/api/users';
 
     // Get dynamic status options
     const getStatusOptions = () => {

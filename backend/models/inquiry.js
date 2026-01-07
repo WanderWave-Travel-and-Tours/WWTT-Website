@@ -70,6 +70,15 @@ const inquirySchema = new mongoose.Schema({
     default: null
   },
 
+  travelDate: {
+    type: Date,
+    default: null
+  },
+  lengthOfStay: {
+    type: String,
+    default: ''
+  },
+
   // PSA FIELDS
   psaDocument: {
     type: String,

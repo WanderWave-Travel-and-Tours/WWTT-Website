@@ -63,7 +63,7 @@ const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) =
       </div>
       <div className="et-file-actions">
         {(hasExisting || currentFile) && (
-          <button type="button" className="et-view-btn" onClick={onView} title="View file">
+          <button type="button" className="et-view-btn" onClick={() => onView(field)} title="View file">
             <Eye size={14} /> View
           </button>
         )}
@@ -111,9 +111,11 @@ const EditCenomar = () => {
 
   const [files, setFiles] = useState({});
   const [existingFiles, setExistingFiles] = useState({});
+  const [originalData, setOriginalData] = useState(null); 
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
-  const FILE_BASE_URL = "https://wanderwaveph-backend.onrender.com";
+  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
+  const FILE_BASE_URL = "http://localhost:5000";
+  const LOGS_API_URL = "http://localhost:5000/api/activity-logs";
 
   const cenomarOptions = [
     { label: "CENOMAR - ₱150", value: "CENOMAR - ₱150", price: 150 },
@@ -143,6 +145,8 @@ const EditCenomar = () => {
         
         if (result.success && result.data) {
           const data = result.data;
+          setOriginalData(data); 
+
           const nameParts = data.fullName ? data.fullName.split(" ") : ["", ""];
           const lName = nameParts.length > 1 ? nameParts.pop() : "";
           const gName = nameParts.join(" ");
@@ -186,30 +190,22 @@ const EditCenomar = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    // Name Validation: Bawal digits
     if (name === "givenName" || name === "lastName") {
       const nameRegex = /^[a-zA-Z\sñÑ]*$/; 
       if (!nameRegex.test(value)) return;
     }
 
-    // Contact Number Typing Validation
     if (name === "contactNumber") {
-      let val = value.replace(/[^0-9+]/g, ""); // Allow only digits and +
-      
+      let val = value.replace(/[^0-9+]/g, ""); 
       if (val.includes("+")) {
-        // Strict: + sign allowed ONLY at the beginning (index 0)
         if (val.indexOf("+") !== 0) {
           val = val.replace(/\+/g, ""); 
         } else {
-          // Allow only ONE + sign
           const rest = val.substring(1).replace(/\+/g, "");
           val = "+" + rest;
         }
       }
-
-      // Max 20 digits validation
       if (val.length > 20) return; 
-
       setFormData((prev) => ({ ...prev, [name]: val }));
       return;
     }
@@ -242,9 +238,15 @@ const EditCenomar = () => {
 
       askConfirmation(
         "Upload Confirmation",
-        `Are you sure you want to upload "${file.name}" for ${fieldName}?`,
+        `Are you sure you want to upload "${file.name}"? This will replace any existing document.`,
         () => {
           setFiles((prev) => ({ ...prev, [fieldName]: file }));
+          // Clear existing file reference so the UI and Preview switch to the NEW file
+          setExistingFiles((prev) => {
+              const updated = { ...prev };
+              delete updated[fieldName];
+              return updated;
+          });
           toast.info(`Successfully prepared: ${file.name}`, "Document Selected");
         }
       );
@@ -254,13 +256,24 @@ const EditCenomar = () => {
   const handleViewFile = (fieldKey) => {
     if (files[fieldKey]) {
       const blobUrl = URL.createObjectURL(files[fieldKey]);
-      setPreviewFile({ url: blobUrl, name: files[fieldKey].name, fieldKey, isNew: true });
+      setPreviewFile({ 
+          url: blobUrl, 
+          name: files[fieldKey].name, 
+          fieldKey: fieldKey, 
+          isNew: true 
+      });
       return;
     }
+    
     const url = existingFiles[fieldKey];
     if (url) {
       const finalUrl = url.startsWith('http') ? url : `${FILE_BASE_URL}${url}`;
-      setPreviewFile({ url: finalUrl, name: url, fieldKey, isNew: false });
+      setPreviewFile({ 
+          url: finalUrl, 
+          name: url.split('/').pop(), 
+          fieldKey: fieldKey, 
+          isNew: false 
+      });
     } else {
       toast.warning("No document available for preview.", "Preview Unavailable");
     }
@@ -269,23 +282,22 @@ const EditCenomar = () => {
   const handleDeleteFile = (fieldKey) => {
     askConfirmation(
       "Remove File",
-      "Are you sure you want to remove this file?",
+      "Are you sure you want to remove this file? You need to save changes to make this permanent.",
       () => {
-        if (files[fieldKey]) {
-          setFiles((prev) => {
-            const newFiles = { ...prev };
-            delete newFiles[fieldKey];
-            return newFiles;
-          });
-        } else {
-          setExistingFiles((prev) => {
-            const newExisting = { ...prev };
-            delete newExisting[fieldKey];
-            return newExisting;
-          });
-        }
+        setFiles((prev) => {
+          const newFiles = { ...prev };
+          delete newFiles[fieldKey];
+          return newFiles;
+        });
+        
+        setExistingFiles((prev) => {
+          const newExisting = { ...prev };
+          delete newExisting[fieldKey];
+          return newExisting;
+        });
+        
         setPreviewFile(null);
-        toast.success("Document removed from selection.", "File Removed");
+        toast.success("Document removed from view.", "File Removed");
       },
       "danger"
     );
@@ -302,14 +314,12 @@ const EditCenomar = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Strict Email Validation
     const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/;
     if (!strictEmailRegex.test(formData.email)) {
       toast.error("Please enter a valid email format ending with .com", "Invalid Email");
       return;
     }
 
-    // Contact Number Length Validation
     const digitsOnly = formData.contactNumber.replace(/\+/g, "");
     if (digitsOnly.length < 8) {
       toast.error("Contact number must have at least 8 digits.", "Validation Error");
@@ -325,8 +335,12 @@ const EditCenomar = () => {
 
   const performSubmit = async () => {
     setSubmitting(true);
+
+    const adminData = JSON.parse(localStorage.getItem('adminUser')) || {};
+    const adminName = adminData.username || adminData.name || "Admin";
+    const adminEmail = adminData.email || "N/A";
+
     const data = new FormData();
-    
     const fullName = `${formData.givenName} ${formData.lastName}`.trim();
     
     Object.keys(formData).forEach(key => {
@@ -334,28 +348,77 @@ const EditCenomar = () => {
     });
     data.append("fullName", fullName);
 
+    // Backend usually expects 'evidence' for the requirement file
     if (files.requirement) {
       data.append("evidence", files.requirement); 
     }
     
-    const remainingKeys = Object.keys(existingFiles);
-    data.append("existingFiles", JSON.stringify(remainingKeys));
     data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
+
+    let changes = [];
+    const trackChange = (label, oldVal, newVal) => {
+      if (String(oldVal || "").trim() !== String(newVal || "").trim()) {
+        changes.push(`${label} changed from "${oldVal || 'None'}" to "${newVal}"`);
+      }
+    };
+
+    if (originalData) {
+      trackChange("First Name", originalData.givenName, formData.givenName);
+      trackChange("Last Name", originalData.lastName, formData.lastName);
+      trackChange("Email", originalData.email, formData.email);
+      trackChange("Contact Number", originalData.contactNumber, formData.contactNumber);
+      trackChange("Service Type", originalData.cenomarDocument, formData.cenomarDocument);
+      trackChange("Admin Remarks", originalData.adminRemarks || originalData.message, formData.message);
+      
+      if (files.requirement) {
+        changes.push(`Uploaded new attachment: ${files.requirement.name}`);
+      } else if (!existingFiles.requirement && (originalData.evidenceName || originalData.evidenceUrl)) {
+        changes.push(`Removed existing attachment.`);
+      }
+    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/update/${cenomarId}`, {
         method: "PUT",
-        body: data,
+        body: data, 
       });
+      
       const result = await res.json();
+
       if (result.success) {
-        toast.success("CENOMAR Request updated successfully!", "Success");
+        if (changes.length > 0) {
+          try {
+            await fetch(LOGS_API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'UPDATE',
+                module: 'CENOMAR',
+                entity: 'CENOMAR Request',
+                entityId: cenomarId,
+                user: adminName,
+                severity: 'SUCCESS',
+                description: `Admin updated CENOMAR request for ${fullName}.`,
+                details: {
+                  recordTitle: fullName,
+                  changes: changes,
+                  adminEmail: adminEmail
+                }
+              })
+            });
+          } catch (logErr) {
+            console.error("Failed to save activity log:", logErr);
+          }
+        }
+
+        toast.success("CENOMAR Request updated successfully!", "Update Success");
         navigate("/services/cenomar");
       } else {
-        toast.error(result.message || "Failed to update record.", "Error");
+        toast.error(result.message || "Failed to update record.", "Update Error");
       }
     } catch (err) {
-      toast.error("Server connection failed. Please try again.", "Connection Error");
+      console.error("Submission error:", err);
+      toast.error("Server connection failed. Please check your network.", "Connection Error");
     } finally {
       setSubmitting(false);
     }
@@ -368,15 +431,15 @@ const EditCenomar = () => {
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
     if (isImage && !isPdf) {
-      return <img src={url} alt="File Preview" className="preview-media-full" />;
+      return <img src={url} alt="File Preview" style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', display: 'block', margin: '0 auto' }} />;
     } else if (isPdf) {
-      return <iframe src={url} title="PDF Preview" className="preview-iframe-full" />;
+      return <iframe src={url} title="PDF Preview" style={{ width: '100%', height: '70vh', border: 'none' }} />;
     } else {
       return (
-        <div style={{textAlign: 'center', padding: '20px'}}>
-          <FileText size={48} style={{margin: '0 auto 10px'}} />
+        <div style={{textAlign: 'center', padding: '40px'}}>
+          <FileText size={64} style={{margin: '0 auto 20px', color: '#64748b'}} />
           <p>Preview not available for this format.</p>
-          <a href={url} download className="et-view-btn">Download to View</a>
+          <a href={url} download={name} className="et-view-btn" style={{marginTop: '15px', display: 'inline-block'}}>Download to View</a>
         </div>
       );
     }
@@ -457,7 +520,7 @@ const EditCenomar = () => {
                         label="Requirement Document (ID/Form)" 
                         field="requirement" 
                         onChange={handleFileChange} 
-                        onView={() => handleViewFile('requirement')} 
+                        onView={handleViewFile} 
                         hasExisting={!!existingFiles['requirement']} 
                         currentFile={files['requirement']} 
                     />
@@ -477,8 +540,8 @@ const EditCenomar = () => {
                         <input type="text" name="estimatedPrice" value={formData.estimatedPrice} readOnly className="et-input" style={{ background: '#f8fafc' }} />
                     </div>
                     <div className="et-input-group" style={{ marginTop: "15px" }}>
-                       <label>Admin Remarks</label>
-                       <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Internal notes..." />
+                        <label>Admin Remarks</label>
+                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Internal notes..." />
                     </div>
                   </section>
                   
@@ -499,7 +562,7 @@ const EditCenomar = () => {
         <div className="et-modal-overlay" onClick={() => setPreviewFile(null)}>
           <div className="et-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
             <div className="et-modal-preview-header">
-              <span className="preview-filename">{previewFile.name.split('/').pop()}</span>
+              <span className="preview-filename">{previewFile.name}</span>
               <button className="preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
             <div className="et-modal-preview-body">{renderPreviewContent()}</div>

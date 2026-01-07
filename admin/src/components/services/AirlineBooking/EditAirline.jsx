@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Upload, X, Plane, User, Mail, DollarSign, MessageSquare } from "lucide-react";
+import { ArrowLeft, Upload, X, Plane, User, Mail, DollarSign, MessageSquare, Users, Trash2 } from "lucide-react";
 import Sidebar from "../../sidebar/sidebar"; 
 import "./EditAirline.css";
 
@@ -12,62 +12,105 @@ const EditAirline = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // centralized state para sa auto-populate
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    contactNumber: "",
     estimatedPrice: "",
     message: "",
     origin: "",
     destination: "",
     departureDate: "",
     airline: "",
-    existingImage: "",
+    flightNumber: "",
+    passengers: [{ firstName: "", lastName: "", type: "Adult", age: "" }], 
+    existingFiles: [],
   });
 
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [newFiles, setNewFiles] = useState([]);
+  const [filePreviews, setFilePreviews] = useState([]);
 
-  // Ginawa nating /api/inquiries dahil ito ang nasa inquiryRoute.js mo
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
+  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
+  // ✅ ENHANCED PARSING: Handle deeply nested stringified passengers
+  const parsePassengers = (rawPassengers) => {
+    let result = [{ firstName: "", lastName: "", type: "Adult", age: "" }];
+    
+    if (!rawPassengers) return result;
+
+    try {
+      // If it's already an array
+      if (Array.isArray(rawPassengers)) {
+        return rawPassengers.length > 0 ? rawPassengers : result;
+      }
+
+      // If it's a string, try to parse it
+      if (typeof rawPassengers === 'string') {
+        // First parse attempt
+        let parsed = JSON.parse(rawPassengers);
+        
+        // Check if it's a stringified array inside a string (double-encoded)
+        if (typeof parsed === 'string') {
+          parsed = JSON.parse(parsed);
+        }
+
+        // If it's now an array, use it
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("❌ Failed to parse passengers:", e);
+    }
+
+    return result;
+  };
 
   // --- FETCH DATA FOR AUTO-POPULATE ---
   useEffect(() => {
     const fetchAirlineDetails = async () => {
       try {
-        // Gagamit ng /api/inquiries/:id
         const res = await fetch(`${API_BASE_URL}/${airlineId}`);
         const result = await res.json();
         
-        // Base sa inquiryController.js, ang success property ay ginagamit
         if (result.success && result.data) {
           const data = result.data;
           
-          // Mapping ng data mula sa backend (flightDetails) patungo sa form state
+          // ✅ USE ENHANCED PARSER
+          const parsedPassengers = parsePassengers(data.passengers);
+
+          console.log("✅ Parsed Passengers:", parsedPassengers);
+
           setFormData({
             fullName: data.fullName || "",
             email: data.email || "",
+            contactNumber: data.contactNumber || "",
             estimatedPrice: data.estimatedPrice || "",
             message: data.message || "",
-            // Kinukuha ang nested flightDetails mula sa inquiry.js model mo
             origin: data.flightDetails?.origin || "",
-            destination: data.flightDetails?.destination || "" ,
-            departureDate: data.flightDetails?.departureDate ? data.flightDetails.departureDate.split("T")[0] : "",
+            destination: data.flightDetails?.destination || "",
+            departureDate: data.flightDetails?.departureDate 
+              ? new Date(data.flightDetails.departureDate).toISOString().split("T")[0] 
+              : "",
             airline: data.flightDetails?.airline || "",
-            existingImage: data.evidenceName || "", // evidenceName ang field sa model mo
+            flightNumber: data.flightDetails?.flightNumber || "",
+            passengers: parsedPassengers,
+            existingFiles: data.deliveredDocuments || [],
           });
 
-          // I-set ang preview kung may existing image (evidenceName)
-          if (data.evidenceName) {
-            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${data.evidenceName}`);
+          // Set file previews for existing files
+          if (data.deliveredDocuments && data.deliveredDocuments.length > 0) {
+            setFilePreviews(data.deliveredDocuments.map(doc => ({
+              url: `http://localhost:5000${doc.fileUrl}`,
+              name: doc.fileName,
+              isExisting: true
+            })));
           }
-        } else {
-            console.error("Failed to fetch data:", result.message);
         }
       } catch (err) {
-        console.error("Error fetching airline data:", err);
+        console.error("❌ Error fetching data:", err);
       } finally {
         setLoading(false);
       }
@@ -81,11 +124,64 @@ const EditAirline = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+  // ✅ SAFE PASSENGER HANDLERS
+  const handlePassengerChange = (index, field, value) => {
+    setFormData((prev) => {
+      let currentArr = Array.isArray(prev.passengers) ? [...prev.passengers] : [];
+      
+      if (currentArr[index]) {
+        currentArr[index] = {
+          ...currentArr[index],
+          [field]: value
+        };
+      }
+
+      return { ...prev, passengers: currentArr };
+    });
+  };
+
+  const addPassenger = () => {
+    setFormData(prev => ({
+      ...prev,
+      passengers: [...prev.passengers, { firstName: "", lastName: "", type: "Adult", age: "" }]
+    }));
+  };
+
+  const removePassenger = (index) => {
+    setFormData(prev => {
+      if (prev.passengers.length > 1) {
+        return { ...prev, passengers: prev.passengers.filter((_, i) => i !== index) };
+      }
+      return prev;
+    });
+  };
+
+  // ✅ FILE HANDLING
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setNewFiles(prev => [...prev, ...files]);
+    
+    // Create previews for new files
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreviews(prev => [...prev, {
+          url: reader.result,
+          name: file.name,
+          isExisting: false
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFile = (index) => {
+    setFilePreviews(prev => prev.filter((_, i) => i !== index));
+    
+    // If it's a new file, remove from newFiles
+    const nonExistingCount = filePreviews.slice(0, index + 1).filter(f => !f.isExisting).length;
+    if (!filePreviews[index].isExisting) {
+      setNewFiles(prev => prev.filter((_, i) => i !== (nonExistingCount - 1)));
     }
   };
 
@@ -95,29 +191,43 @@ const EditAirline = () => {
 
     const data = new FormData();
     
-    // I-append ang top-level fields
+    // Basic fields
     data.append("fullName", formData.fullName);
     data.append("email", formData.email);
+    data.append("contactNumber", formData.contactNumber);
     data.append("estimatedPrice", formData.estimatedPrice);
     data.append("message", formData.message);
     
-    // I-append ang flight details (dapat i-handle ito ng controller sa backend)
+    // Flight details
     data.append("origin", formData.origin);
     data.append("destination", formData.destination);
     data.append("departureDate", formData.departureDate);
     data.append("airline", formData.airline);
+    data.append("flightNumber", formData.flightNumber);
 
-    // 'evidence' ang gamit sa uploadEvidence.single('evidence') sa route mo
-    if (imageFile) {
-      data.append("evidence", imageFile); 
-    }
+    // ✅ PROPERLY STRINGIFY PASSENGERS (SINGLE LEVEL)
+    data.append("passengers", JSON.stringify(formData.passengers));
+
+    // ✅ HANDLE EXISTING FILES
+    const existingFileUrls = filePreviews
+      .filter(f => f.isExisting)
+      .map(f => f.url.replace('http://localhost:5000', ''));
+    
+    data.append("existingFiles", JSON.stringify(existingFileUrls));
+
+    // ✅ APPEND NEW FILES
+    newFiles.forEach(file => {
+      data.append("documents", file);
+    });
 
     try {
       const res = await fetch(`${API_BASE_URL}/update/${airlineId}`, {
         method: "PUT",
         body: data,
       });
+      
       const result = await res.json();
+      
       if (result.success) {
         alert("✅ Airline Booking Updated Successfully!");
         navigate("/services/airlinebooking");
@@ -125,6 +235,7 @@ const EditAirline = () => {
         alert("❌ Error: " + result.message);
       }
     } catch (err) {
+      console.error("❌ Submit Error:", err);
       alert("❌ Server Error: Connection Failed");
     } finally {
       setSubmitting(false);
@@ -160,7 +271,6 @@ const EditAirline = () => {
             <div className="et-grid-layout">
               
               <div className="et-form-left">
-                {/* Client Information Section */}
                 <section className="et-section">
                   <div className="et-section-header">
                     <User size={20} className="et-section-icon" />
@@ -169,20 +279,148 @@ const EditAirline = () => {
                   <div className="et-fields-grid">
                     <div className="et-input-group full-width">
                       <label>Full Name</label>
-                      <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} className="et-input" placeholder="Enter full name" required />
+                      <input 
+                        type="text" 
+                        name="fullName" 
+                        value={formData.fullName} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="Enter full name" 
+                        required 
+                      />
                     </div>
                     <div className="et-input-group">
                       <label>Email Address</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" placeholder="example@mail.com" required />
+                      <input 
+                        type="email" 
+                        name="email" 
+                        value={formData.email} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="example@mail.com" 
+                        required 
+                      />
+                    </div>
+                    <div className="et-input-group">
+                      <label>Contact Number</label>
+                      <input 
+                        type="text" 
+                        name="contactNumber" 
+                        value={formData.contactNumber} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="Contact number" 
+                      />
                     </div>
                     <div className="et-input-group">
                       <label>Fare Amount (PHP)</label>
-                      <input type="number" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="et-input" placeholder="0.00" required />
+                      <input 
+                        type="number" 
+                        name="estimatedPrice" 
+                        value={formData.estimatedPrice} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="0.00" 
+                        required 
+                      />
                     </div>
                   </div>
                 </section>
 
-                {/* Flight Details Section */}
+                <section className="et-section">
+                  <div className="et-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Users size={20} className="et-section-icon" />
+                      <h3>Passenger Manifest ({formData.passengers.length})</h3>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={addPassenger} 
+                      className="et-add-pax-btn" 
+                      style={{ 
+                        padding: '6px 14px', 
+                        borderRadius: '8px', 
+                        backgroundColor: '#3b82f6', 
+                        color: 'white', 
+                        border: 'none', 
+                        cursor: 'pointer', 
+                        fontSize: '13px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      + Add Passenger
+                    </button>
+                  </div>
+                  
+                  <div className="et-passengers-list" style={{ marginTop: '15px' }}>
+                    {formData.passengers.map((pax, index) => (
+                      <div 
+                        key={index} 
+                        className="et-pax-row" 
+                        style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: '1fr 1fr 120px 80px 40px', 
+                          gap: '10px', 
+                          marginBottom: '10px', 
+                          alignItems: 'center',
+                          padding: '10px',
+                          backgroundColor: '#f8fafc',
+                          borderRadius: '8px'
+                        }}
+                      >
+                        <input 
+                          type="text" 
+                          placeholder="First Name" 
+                          value={pax.firstName || ""} 
+                          onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)} 
+                          className="et-input" 
+                          required 
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Last Name" 
+                          value={pax.lastName || ""} 
+                          onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)} 
+                          className="et-input" 
+                          required 
+                        />
+                        <select 
+                          value={pax.type || "Adult"} 
+                          onChange={(e) => handlePassengerChange(index, 'type', e.target.value)} 
+                          className="et-input"
+                        >
+                          <option value="Adult">Adult</option>
+                          <option value="Child">Child</option>
+                          <option value="Infant">Infant</option>
+                        </select>
+                        <input 
+                          type="number" 
+                          placeholder="Age" 
+                          value={pax.age || ""} 
+                          onChange={(e) => handlePassengerChange(index, 'age', e.target.value)} 
+                          className="et-input" 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => removePassenger(index)} 
+                          style={{ 
+                            border: 'none', 
+                            background: 'transparent', 
+                            color: '#ef4444', 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            justifyContent: 'center',
+                            opacity: formData.passengers.length === 1 ? 0.3 : 1,
+                            pointerEvents: formData.passengers.length === 1 ? 'none' : 'auto'
+                          }}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
                 <section className="et-section">
                   <div className="et-section-header">
                     <Plane size={20} className="et-section-icon" />
@@ -191,63 +429,144 @@ const EditAirline = () => {
                   <div className="et-fields-grid">
                     <div className="et-input-group">
                       <label>Origin</label>
-                      <input type="text" name="origin" value={formData.origin} onChange={handleInputChange} className="et-input" placeholder="City or Airport" />
+                      <input 
+                        type="text" 
+                        name="origin" 
+                        value={formData.origin} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="City or Airport" 
+                      />
                     </div>
                     <div className="et-input-group">
                       <label>Destination</label>
-                      <input type="text" name="destination" value={formData.destination} onChange={handleInputChange} className="et-input" placeholder="City or Airport" />
+                      <input 
+                        type="text" 
+                        name="destination" 
+                        value={formData.destination} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="City or Airport" 
+                      />
                     </div>
                     <div className="et-input-group">
                       <label>Departure Date</label>
-                      <input type="date" name="departureDate" value={formData.departureDate} onChange={handleInputChange} className="et-input" />
+                      <input 
+                        type="date" 
+                        name="departureDate" 
+                        value={formData.departureDate} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                      />
                     </div>
                     <div className="et-input-group">
                       <label>Preferred Airline</label>
-                      <input type="text" name="airline" value={formData.airline} onChange={handleInputChange} className="et-input" placeholder="e.g. Philippine Airlines" />
+                      <input 
+                        type="text" 
+                        name="airline" 
+                        value={formData.airline} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="e.g. Philippine Airlines" 
+                      />
+                    </div>
+                    <div className="et-input-group">
+                      <label>Flight Number (Optional)</label>
+                      <input 
+                        type="text" 
+                        name="flightNumber" 
+                        value={formData.flightNumber} 
+                        onChange={handleInputChange} 
+                        className="et-input" 
+                        placeholder="e.g. PR123" 
+                      />
                     </div>
                   </div>
                 </section>
 
-                {/* Message Section */}
                 <section className="et-section">
-                    <div className="et-section-header">
-                        <MessageSquare size={20} className="et-section-icon" />
-                        <h3>Request Message / Notes</h3>
-                    </div>
-                    <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Update special instructions..." />
+                  <div className="et-section-header">
+                    <MessageSquare size={20} className="et-section-icon" />
+                    <h3>Request Message / Notes</h3>
+                  </div>
+                  <textarea 
+                    name="message" 
+                    value={formData.message} 
+                    onChange={handleInputChange} 
+                    className="et-textarea" 
+                    rows="4" 
+                    placeholder="Update special instructions..." 
+                  />
                 </section>
               </div>
 
               <div className="et-form-right">
                 <div className="et-sticky-sidebar">
                   <section className="et-section et-upload-section">
-                    <h3 className="et-upload-title">Ticket / Proof of Booking</h3>
-                    <div className="et-image-upload-container">
-                      {imagePreview ? (
-                        <div className="et-image-preview">
-                          <img src={imagePreview} alt="Preview" />
-                          <div className="et-image-overlay" onClick={() => document.getElementById('airline-img').click()}>
-                             <Upload size={20} />
-                             <span>Change Image</span>
+                    <h3 className="et-upload-title">Booking Documents</h3>
+                    
+                    {/* File Upload Area */}
+                    <label className="et-upload-placeholder" style={{ cursor: 'pointer', marginBottom: '16px' }}>
+                      <Upload size={24} />
+                      <span>Upload Tickets / Proof</span>
+                      <input 
+                        type="file" 
+                        onChange={handleFileChange} 
+                        accept="image/*,.pdf" 
+                        multiple
+                        hidden 
+                      />
+                    </label>
+
+                    {/* File Previews */}
+                    {filePreviews.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {filePreviews.map((file, idx) => (
+                          <div 
+                            key={idx} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              padding: '10px',
+                              backgroundColor: '#f1f5f9',
+                              borderRadius: '8px'
+                            }}
+                          >
+                            <span style={{ fontSize: '13px', color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {file.name}
+                            </span>
+                            <button 
+                              type="button" 
+                              onClick={() => removeFile(idx)}
+                              style={{ 
+                                background: 'transparent', 
+                                border: 'none', 
+                                color: '#ef4444', 
+                                cursor: 'pointer' 
+                              }}
+                            >
+                              <X size={16} />
+                            </button>
                           </div>
-                          <button type="button" className="et-remove-img" onClick={() => {setImagePreview(""); setImageFile(null);}}>
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <label className="et-upload-placeholder">
-                          <Upload size={32} />
-                          <span>Upload Ticket Image</span>
-                          <input type="file" id="airline-img" onChange={handleImageChange} accept="image/*" hidden />
-                        </label>
-                      )}
-                      <input type="file" id="airline-img" onChange={handleImageChange} accept="image/*" hidden />
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </section>
 
                   <div className="et-form-actions">
-                    <button type="button" className="et-btn et-btn--cancel" onClick={() => navigate(-1)}>Cancel</button>
-                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}>
+                    <button 
+                      type="button" 
+                      className="et-btn et-btn--cancel" 
+                      onClick={() => navigate(-1)}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="et-btn et-btn--submit" 
+                      disabled={submitting}
+                    >
                       {submitting ? "Updating..." : "Update Booking"}
                     </button>
                   </div>

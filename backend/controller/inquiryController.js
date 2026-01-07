@@ -65,11 +65,7 @@ const createInquiry = async (req, res) => {
       lengthOfStay
     } = req.body;
 
-updateData.passportDetails = {
-  ...existingInquiry.passportDetails,
-  applicationType: req.body.passportDocument, // Mula sa input ng Admin
-  processingType: req.body.serviceName      // Mula sa input ng Admin
-};
+
 
     // --- [START] SMART PRICE FIX FOR FRONTEND SUBMISSIONS ---
     let finalPrice = parseFloat(estimatedPrice) || 0;
@@ -372,95 +368,119 @@ const getInquiry = async (req, res) => {
 };
 
 // Hanapin ang updateInquiry sa inquiryController.js at i-update ang logic:
+// inquiryController.js
+
 const updateInquiry = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // 1. Hanapin ang existing record
     const existingInquiry = await Inquiry.findById(id);
+    
     if (!existingInquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
 
-    // 2. I-parse ang listahan ng mga files na ititira
-    let remainingFilesList = [];
-    if (req.body.existingFiles) {
-      try {
-        remainingFilesList = JSON.parse(req.body.existingFiles);
-      } catch (e) {
-        remainingFilesList = [];
+    const adminEmail = req.body.adminEmail || 'Admin';
+    const changes = [];
+    const updateData = { ...req.body };
+
+    // --- 1. TRACK TEXT CHANGES & FULL NAME ---
+    const fieldsToWatch = {
+      email: "Email Address",
+      contactNumber: "Contact Number",
+      estimatedPrice: "Price"
+    };
+
+    Object.keys(fieldsToWatch).forEach(field => {
+      if (req.body[field] !== undefined && String(req.body[field]) !== String(existingInquiry[field] || "")) {
+        changes.push(`${fieldsToWatch[field]} (from "${existingInquiry[field] || 'none'}" to "${req.body[field]}")`);
       }
+    });
+
+    const newFullName = `${req.body.givenName || ''} ${req.body.lastName || ''}`.trim();
+    if (newFullName && newFullName !== existingInquiry.fullName) {
+      changes.push(`Name (from "${existingInquiry.fullName}" to "${newFullName}")`);
+      updateData.fullName = newFullName;
     }
 
-    // 3. I-map ang updateData base sa structure ng PassportApplicationModal
-    const updateData = {
-      fullName: req.body.fullName,
-      email: req.body.email,
-      contactNumber: req.body.contactNumber,
-      serviceName: req.body.serviceName, // Ito ang Service / Processing
-      message: req.body.message, 
-      adminRemarks: req.body.message,
-      estimatedPrice: parseFloat(req.body.estimatedPrice) || 0,
-      updatedAt: Date.now()
-    };
+updateData.passportDetails = {
+  ...existingInquiry.passportDetails,
+  applicationType: req.body.passportDocument, // Mula sa input ng Admin
+  processingType: req.body.serviceName      // Mula sa input ng Admin
+};
 
-    // 4. SYNC PASSPORT DETAILS: Inalis ang hardcoded 'NEW' o 'REGULAR'
-    // Kinukuha ang data mula sa passportDocument (Application Type) field ng form
-    updateData.passportDetails = {
-      ...existingInquiry.passportDetails?.toObject(),
-      applicationType: req.body.passportDocument || existingInquiry.passportDetails?.applicationType,
-      processingType: req.body.serviceName || existingInquiry.passportDetails?.processingType
-    };
+if (req.body.passengers) {
+  let parsedPassengers = req.body.passengers;
+  if (typeof parsedPassengers === 'string') {
+    parsedPassengers = JSON.parse(parsedPassengers);
+  }
+  updateData.passengers = parsedPassengers;
+}
+    // --- 2. PASSPORT SPECIFIC LOGIC (Strict Schema Matching) ---
+    // In-update para makuha ang Application Type at Processing Type (serviceName)
+    if (existingInquiry.inquiryType === 'PASSPORT') {
+      const currentPassport = existingInquiry.passportDetails || {};
+      
+      // Kunin ang values mula sa body (na in-append natin sa frontend)
+      const newAppType = req.body.passportDocument || req.body.applicationType || currentPassport.applicationType;
+  const newProcType = req.body.serviceName || currentPassport.processingType;
 
-    // 5. IMPROVED FILE MANAGEMENT
-    const documentMap = new Map();
-    
-    // I-retain ang existing files na hindi dinelete
-    if (existingInquiry.deliveredDocuments) {
-      existingInquiry.deliveredDocuments.forEach(doc => {
-        const fieldKey = doc.fileName.split(' - ')[0].trim();
-        if (remainingFilesList.includes(fieldKey)) {
-          documentMap.set(fieldKey, doc);
-        }
-      });
+      updateData.passportDetails = {
+        ...currentPassport,
+        applicationType: newAppType,
+        processingType: newProcType
+      };
+      
+      // Tracking changes para sa Passport fields
+      if (req.body.applicationType && req.body.applicationType !== currentPassport.applicationType) {
+        changes.push(`App Type (from "${currentPassport.applicationType || 'none'}" to "${newAppType}")`);
+      }
+      
+      if (req.body.serviceName && req.body.serviceName !== currentPassport.processingType) {
+        changes.push(`Processing Type (from "${currentPassport.processingType || 'none'}" to "${newProcType}")`);
+      }
+
+      // I-update din ang main serviceName field para mag-match sa processing type
+      updateData.serviceName = newProcType;
     }
 
-    // Paghawak sa root evidence status
-    if (req.body.hasExistingEvidence === 'false') {
-        updateData.evidenceUrl = '';
-        updateData.evidenceName = '';
-    } else {
-        updateData.evidenceUrl = existingInquiry.evidenceUrl;
-        updateData.evidenceName = existingInquiry.evidenceName;
+    // --- 3. FILE MANAGEMENT (ENHANCED COMPARISON) ---
+    let remainingFilesUrls = [];
+    try {
+      remainingFilesUrls = req.body.existingFiles ? JSON.parse(req.body.existingFiles) : [];
+    } catch (e) { 
+      remainingFilesUrls = []; 
     }
 
-    // 6. I-process ang mga BAGONG upload (Suporta para sa walkInDoc at requirement)
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        const fieldKey = file.fieldname;
-        const fileUrl = `/uploads/documents/${file.filename}`;
+    const filteredDocs = (existingInquiry.deliveredDocuments || []).filter(doc => 
+      remainingFilesUrls.some(remUrl => remUrl.includes(doc.fileUrl) || doc.fileUrl.includes(remUrl))
+    );
 
-        // I-sync sa root evidence kung ang field ay requirement o walkInDoc
-        if (fieldKey === 'evidence' || fieldKey === 'requirement' || fieldKey === 'walkInDoc') {
-            updateData.evidenceUrl = fileUrl;
-            updateData.evidenceName = file.originalname;
-        } 
-        
-        documentMap.set(fieldKey, {
-          fileName: `${fieldKey} - ${file.originalname}`, 
-          fileUrl: fileUrl,
-          uploadedAt: Date.now()
-        });
-      });
+    const newDocs = (req.files || []).map(file => ({
+      fileName: `${file.fieldname} - ${file.originalname}`, 
+      fileUrl: `/uploads/documents/${file.filename}`,
+      uploadedAt: Date.now()
+    }));
+
+    updateData.deliveredDocuments = [...filteredDocs, ...newDocs];
+
+    // --- 4. LOGGING & ADMIN NOTES ---
+    const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' });
+    const newRemarks = req.body.message || ""; 
+
+    if (changes.length > 0 || newRemarks) {
+      const logEntry = changes.length > 0 ? `\n[Log ${timestamp} - ${adminEmail}]: Updated ${changes.join(', ')}.` : "";
+      const remarksEntry = newRemarks ? `\nREMARKS: ${newRemarks}` : "";
+      
+      updateData.adminNotes = (existingInquiry.adminNotes || "") + remarksEntry + logEntry;
     }
 
-    updateData.deliveredDocuments = Array.from(documentMap.values());
+    delete updateData.message; 
+    updateData.updatedAt = Date.now();
 
-    // 7. Isagawa ang update
     const updatedInquiry = await Inquiry.findByIdAndUpdate(
       id, 
       { $set: updateData }, 
-      { new: true }
+      { new: true, runValidators: false }
     );
 
     res.json({ success: true, data: updatedInquiry });
@@ -469,7 +489,6 @@ const updateInquiry = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 const updateInquiryStatus = async (req, res) => {
   try {
     const { status, adminNotes, contactedBy, remarks } = req.body;
@@ -792,4 +811,4 @@ module.exports = {
   getInquiryAnalytics,
   getInquiriesByDateRange,
   toggleArchive
-};
+}; 
