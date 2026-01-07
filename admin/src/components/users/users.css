@@ -1,97 +1,188 @@
+/* ================================================= */
+/* USERS PAGE - MATCHING ADMIN UI EXACTLY (vu- prefix) */
+/* ================================================= */
+
 .vusers-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc;
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    width: 100%;
+    position: relative;
 }
 
 .vusers-main {
     flex: 1;
-    /* Default margin for UNCOLLAPSED sidebar (280px) */
-    margin-left: 280px; 
-    padding: 40px 48px;
+    margin-left: 300px;
+    padding: 40px 80px;
     font-family: 'Segoe UI', Arial, sans-serif;
-    transition: margin-left 0.3s ease; /* Add transition for smooth movement */
+    transition: margin-left 0.3s ease;
+    width: 100%;
 }
 
-/* New rule for when the sidebar IS collapsed (usually around 70px) */
 .vusers-main.sidebar-collapsed {
-    margin-left: 70px;
-}
-
-.vusers-main *,
-.vusers-main *::before,
-.vusers-main *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+    margin-left: 90px;
 }
 
 .vusers-container {
-    max-width: 1200px;
+    max-width: 1320px;
     margin: 0 auto;
+    width: 100%;
 }
 
+/* --- HEADER SECTION --- */
 .vusers-header {
-    margin-bottom: 32px;
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    /* Users/People management themed background */
+    background: url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2070&auto=format&fit=crop') center/cover;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.vusers-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, 
+        rgba(0, 31, 63, 0.92) 0%, 
+        rgba(0, 31, 63, 0.75) 50%, 
+        rgba(255, 140, 66, 0.3) 100%);
+    z-index: 1;
+}
+
+.vusers-header-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
 }
 
 .vusers-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 900;
-    color: #001F3F;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    margin: 0 0 8px 0;
 }
 
 .vusers-subtitle {
-    font-size: 14px;
-    color: #64748b;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.vusers-empty,
-.loading-state,
+.vusers-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #FF8C42 0%, transparent 100%);
+    display: inline-block;
+}
+
+/* --- LOADING STATE --- */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 20px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #FF8C42;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-state p,
+.error-state {
+    color: #64748b;
+    font-size: 15px;
+    font-style: italic;
+}
+
 .error-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 50vh;
-    gap: 12px;
+    min-height: 50vh;
+    gap: 20px;
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    color: #dc2626;
+    font-weight: 600;
     padding: 60px;
 }
 
+/* --- EMPTY STATE --- */
+.vusers-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 60px;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+}
+
 .vusers-empty-icon {
-    font-size: 56px;
+    font-size: 64px;
     margin-bottom: 8px;
 }
 
 .vusers-empty h3 {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 900;
     color: #001F3F;
+    margin: 0;
 }
 
 .vusers-empty p {
     color: #64748b;
-    font-size: 14px;
-    margin-bottom: 16px;
+    font-size: 15px;
+    margin: 0;
 }
 
-.error-state {
-    color: #dc2626;
-    font-weight: 600;
-}
-
+/* --- TABLE WRAPPER & TABLE --- */
 .vusers-table-wrapper {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    overflow: visible;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
 }
 
 .vusers-table {
@@ -100,56 +191,51 @@
 }
 
 .vusers-table thead {
-    background: #001F3F;
+    background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
 }
 
 .vusers-table th {
-    padding: 16px 20px;
+    padding: 18px 20px;
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
     font-size: 11px;
     font-weight: 900;
     color: #fff;
     text-align: left;
-    letter-spacing: 1px;
-}
-
-.vusers-table th:first-child {
-    width: 60px;
-    text-align: center;
+    letter-spacing: 1.5px;
 }
 
 .vusers-table td {
-    padding: 16px 20px;
+    padding: 18px 20px;
     font-size: 14px;
     color: #1e293b;
     border-bottom: 1px solid #e2e8f0;
     vertical-align: middle;
 }
 
-.vusers-table td:first-child {
-    text-align: center;
-    font-weight: 600;
-    color: #64748b;
-}
-
 .vusers-table tbody tr:last-child td {
     border-bottom: none;
+}
+
+.vusers-table tbody tr {
+    transition: all 0.15s ease;
 }
 
 .vusers-table tbody tr:hover {
     background: #f8fafc;
 }
 
+/* --- USER NAME --- */
 .vusers-name {
-    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 13px;
-    font-weight: 900;
+    font-weight: 700;
     color: #001F3F;
+    font-size: 14px;
 }
 
+/* --- ROLE BADGES --- */
 .vusers-role {
-    display: inline-block;
-    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 700;
@@ -158,20 +244,22 @@
 }
 
 .vusers-role--admin {
-    background: #fffbeb;
+    background: #fef3c7;
     color: #d97706;
-    border: 1px solid #fcd34d;
+    border: 1px solid #fde68a;
 }
 
 .vusers-role--user {
-    background: #eff6ff;
-    color: #2563eb;
-    border: 1px solid #bfdbfe;
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
 }
 
+/* --- STATUS BADGES --- */
 .vusers-status {
-    display: inline-block;
-    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 700;
@@ -186,276 +274,164 @@
 }
 
 .vusers-status--inactive {
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
 }
 
+/* --- DATE DISPLAY --- */
 .vusers-date {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     color: #64748b;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .vusers-date svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     color: #94a3b8;
+    flex-shrink: 0;
 }
 
+/* --- ACTION BUTTONS --- */
 .vusers-actions {
     display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 .vusers-action-btn {
     padding: 8px 14px;
-    font-size: 12px;
-    font-weight: 700;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.15s ease;
-    border: none;
-}
-
-.vusers-action-btn--delete {
-    color: #dc2626;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-}
-
-.vusers-action-btn--delete:hover {
-    background: #dc2626;
-    color: #fff;
-    border-color: #dc2626;
-}
-
-.pagination-container {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 15px;
-    margin-top: 24px;
-}
-
-.page-btn {
-    padding: 10px 18px;
     font-size: 13px;
-    font-weight: 700;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.15s ease;
-    color: #001F3F;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-}
-
-.page-btn:hover:not(:disabled) {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-}
-
-.page-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #f8fafc;
-    color: #94a3b8;
-}
-
-.page-info {
-    font-size: 13px;
-    color: #64748b;
     font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+    background: white;
 }
 
-@media (max-width: 1024px) {
+/* ARCHIVE BUTTON - White default, Navy on hover */
+.vusers-action-btn--archive {
+    color: #0f172a;
+    border-color: #e2e8f0;
+}
+
+.vusers-action-btn--archive:hover {
+    background: #0f172a;
+    color: white;
+    border-color: #0f172a;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+/* ================================================= */
+/* RESPONSIVENESS - MATCHING ADMIN EXACTLY          */
+/* ================================================= */
+
+@media (max-width: 1100px) {
+    .vusers-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
+    }
+
     .vusers-table-wrapper {
         overflow-x: auto;
     }
 
     .vusers-table {
-        min-width: 900px;
+        min-width: 1000px;
     }
 }
 
-@media (max-width: 900px) {
-    /* Adjust margin for smaller screens when UNCOLLAPSED */
-    .vusers-main {
-        margin-left: 70px; /* Assuming sidebar is forced collapsed or smaller on mobile */
-        padding: 24px;
+@media (max-width: 768px) {
+    .vusers-main, 
+    .vusers-main.sidebar-collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
     }
 
-    /* Keep the collapsed margin-left consistent with the new base margin on mobile */
-    .vusers-main.sidebar-collapsed {
-        margin-left: 70px;
+    .vusers-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .vusers-title {
+        font-size: 2rem;
+    }
+
+    .vusers-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .vusers-action-btn {
+        padding: 7px 12px;
+        font-size: 12px;
     }
 }
 
 @media (max-width: 640px) {
-    .vusers-main {
-        padding: 16px;
-    }
-
     .vusers-title {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .vusers-subtitle {
+        font-size: 13px;
+    }
+
+    .vusers-header {
+        padding: 30px 24px;
+    }
+
+    .vusers-empty,
+    .error-state,
+    .loading-state {
+        padding: 40px 24px;
+    }
+
+    .vusers-actions {
+        gap: 6px;
+    }
+
+    .vusers-action-btn {
+        padding: 6px 10px;
+        font-size: 11px;
     }
 }
 
-/* --- PAGINATION STYLES (New) --- */
-.pagination-nav {
-    /* Aligns with the table container's style */
-    margin-top: 0;
-    padding: 16px 24px;
-    background-color: white;
-    border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
-    position: sticky; 
-    bottom: 0;
-    z-index: 5;
-    
-    display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .visa-table-container */
-    border-radius: 0 0 12px 12px; 
-}
+@media (max-width: 480px) {
+    .vusers-title {
+        font-size: 1.4rem;
+    }
 
-.pagination-list {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
-    align-items: center;
-}
+    .vusers-header {
+        padding: 28px 20px;
+    }
 
-.pagination-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
-    transition: all 0.2s;
-    min-width: 40px; 
-    text-align: center;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
+    .vusers-actions {
+        gap: 4px;
+    }
 
-.pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
-    border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
-}
+    .vusers-action-btn {
+        padding: 8px;
+        min-width: 36px;
+        justify-content: center;
+    }
 
-.pagination-btn.active {
-    background-color: #0f172a; /* Primary dark color background for active page */
-    border-color: #0f172a;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
-}
+    .vusers-name {
+        font-size: 13px;
+    }
 
-.pagination-btn.active:hover {
-    background-color: #1e293b; /* Slightly darker primary on hover */
-    border-color: #1e293b;
-    transform: translateY(-1px);
-}
-
-.pagination-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background-color: #f8fafc;
-}
-
-/* For previous/next buttons */
-.pagination-btn:first-child,
-.pagination-btn:last-child {
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-/* --- PAGINATION STYLES (New) --- */
-.pagination-nav {
-    /* Aligns with the table container's style */
-    margin-top: 0;
-    padding: 16px 24px;
-    background-color: white;
-    border-top: 1px solid #e2e8f0;
-    
-    /* Stick to the bottom of the table container for better UX */
-    position: sticky; 
-    bottom: 0;
-    z-index: 5;
-    
-    display: flex;
-    justify-content: flex-end; /* Align controls to the right */
-    /* Match the bottom border radius of the .visa-table-container */
-    border-radius: 0 0 10px 10px; /* Adjusted to match table-wrapper border-radius */
-}
-
-.pagination-list {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
-    align-items: center;
-}
-
-.pagination-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: #334155; /* Neutral text color */
-    transition: all 0.2s;
-    min-width: 40px; 
-    text-align: center;
-    /* Removed 'Plus Jakarta Sans' as it might not be available; sticking to default 'Segoe UI' etc. */
-    font-family: 'Segoe UI', Arial, sans-serif;
-}
-
-.pagination-btn:hover:not(:disabled) {
-    background-color: #f1f5f9; /* Light gray hover */
-    border-color: #cbd5e1;
-    color: #0f172a; /* Darker text on hover */
-    transform: translateY(-1px); /* Slight lift on hover */
-}
-
-.pagination-btn.active {
-    background-color: #0f172a; /* Primary dark color background for active page */
-    border-color: #0f172a;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
-}
-
-.pagination-btn.active:hover {
-    background-color: #1e293b; /* Slightly darker primary on hover */
-    border-color: #1e293b;
-    transform: translateY(-1px);
-}
-
-.pagination-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background-color: #f8fafc;
-}
-
-/* For previous/next buttons */
-.pagination-btn:first-child,
-.pagination-btn:last-child {
-    font-weight: 700;
-    text-transform: uppercase;
+    .vusers-table td {
+        padding: 14px 16px;
+        font-size: 13px;
+    }
 }
