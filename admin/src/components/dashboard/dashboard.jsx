@@ -16,7 +16,6 @@ const Dashboard = () => {
   const TIMEOUT_IN_MS = 15 * 60 * 1000;
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  // 🔥 NEW: Section Filter State
   const [selectedSection, setSelectedSection] = useState('all');
   
   const [stats, setStats] = useState({
@@ -264,19 +263,114 @@ const Dashboard = () => {
     }
   };
 
-  const handleExportPDF = () => {
-    const pdfTopPackages = topPackages.map((pkg) => ({
-      ...pkg, revenue: typeof pkg.revenue === 'string' ? pkg.revenue.replace('₱', 'PHP ') : pkg.revenue
-    }));
-    exportToPDF(stats, trendData, pdfTopPackages);
-  };
+// dashboard.jsx - FIXED handleExportPDF function ONLY
+// Replace only this function in your existing dashboard.jsx
 
-  // 🔥 NEW: Section Filter Handler
+const handleExportPDF = async () => {
+    try {
+        console.log('📄 Starting PDF export...');
+        
+        // Get admin info first
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const adminName = adminData.username || adminData.email || 'Admin';
+        const adminId = adminData._id || null;
+        
+        // Generate PDF (this will download it for the user)
+        const pdfTopPackages = topPackages.map((pkg) => ({
+            ...pkg, 
+            revenue: typeof pkg.revenue === 'string' ? pkg.revenue.replace('₱', 'PHP ') : pkg.revenue
+        }));
+        
+        // Just call the export function (it will handle download)
+        exportToPDF(stats, trendData, pdfTopPackages);
+        
+        console.log('✅ PDF downloaded successfully');
+        
+        // Generate timestamp and filename for logging purposes
+        const timestamp = new Date().toISOString().split('T')[0];
+        const pdfFileName = `Dashboard_Report_${timestamp}_${Date.now()}.pdf`;
+        
+        // Create activity log WITHOUT file upload (simpler approach)
+        const activityLogData = {
+            action: 'EXPORT',
+            module: 'System',
+            entity: 'Dashboard Report',
+            user: adminName,
+            userId: adminId,
+            adminId: adminId,
+            severity: 'SUCCESS',
+            description: `Admin "${adminName}" exported dashboard report as PDF`,
+            details: {
+                recordTitle: 'Dashboard Analytics Report',
+                exportFormat: 'PDF',
+                sections: selectedSection === 'all' ? 'All Sections' : selectedSection,
+                fileName: pdfFileName,
+                exportedAt: new Date().toISOString(),
+                affectedRecords: 1,
+                method: 'EXPORT',
+                endpoint: '/dashboard/export-pdf',
+                downloadSuccess: true
+            }
+        };
+
+        console.log('📝 Logging export activity...');
+
+        const logResponse = await fetch('http://localhost:5000/api/activity-logs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(activityLogData)
+        });
+
+        if (logResponse.ok) {
+            const logResult = await logResponse.json();
+            console.log('✅ Activity logged successfully:', logResult);
+        } else {
+            console.error('❌ Failed to log activity:', await logResponse.text());
+        }
+
+    } catch (error) {
+        console.error('❌ Error in PDF export process:', error);
+        alert('Failed to export PDF. Please try again.');
+        
+        // Log error activity
+        try {
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            const adminName = adminData.username || adminData.email || 'Admin';
+            
+            await fetch('http://localhost:5000/api/activity-logs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'EXPORT',
+                    module: 'System',
+                    entity: 'Dashboard Report',
+                    user: adminName,
+                    severity: 'ERROR',
+                    description: `Failed to export dashboard report: ${error.message}`,
+                    details: {
+                        recordTitle: 'Dashboard Analytics Report',
+                        exportFormat: 'PDF',
+                        errorMessage: error.message,
+                        affectedRecords: 0,
+                        method: 'EXPORT',
+                        endpoint: '/dashboard/export-pdf'
+                    }
+                })
+            });
+        } catch (logError) {
+            console.error('Failed to log error activity:', logError);
+        }
+    }
+};
+
   const handleSectionFilter = (section) => {
     setSelectedSection(section);
   };
 
-  // 🔥 NEW: Helper function to check if section should be visible
   const shouldShowSection = (sectionName) => {
     if (selectedSection === 'all') return true;
     return selectedSection === sectionName;
@@ -309,20 +403,16 @@ const Dashboard = () => {
             onSectionFilter={handleSectionFilter}
           />
 
-          {/* Stats Cards - Always show */}
           <StatsCards stats={stats} />
 
-          {/* Revenue Analytics */}
           {shouldShowSection('revenue-analytics') && (
             <RevenueAnalytics stats={stats} revenueBreakdown={revenueBreakdown} />
           )}
 
-          {/* Financial Overview */}
           {shouldShowSection('financial-performance') && (
             <FinancialOverview stats={stats} />
           )}
 
-          {/* Charts Section - Contains Combined Revenue Trends & Booking Status */}
           {(shouldShowSection('combined-revenue') || shouldShowSection('booking-status')) && (
             <ChartsSection 
               trendData={trendData} 
@@ -333,7 +423,6 @@ const Dashboard = () => {
             />
           )}
 
-          {/* Recent Bookings & Top Packages */}
           {(shouldShowSection('recent-bookings') || shouldShowSection('top-packages')) && (
             <div className="dash-grid">
               {shouldShowSection('recent-bookings') && (
