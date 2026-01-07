@@ -1,5 +1,5 @@
 /* ========================================
-   FOOTER STATS - ARCHIVE-LEVEL RESPONSIVE
+   FOOTER STATS - FULLY RESPONSIVE
    ======================================== */
 
 .dash-footer-stats {
@@ -58,10 +58,10 @@
 }
 
 /* ========================================
-   RESPONSIVE BREAKPOINTS (ARCHIVE-LEVEL)
+   RESPONSIVE BREAKPOINTS
    ======================================== */
 
-/* Large Desktop (1400px and below) */
+/* Large Desktop (Max 1400px) */
 @media (max-width: 1400px) {
     .dash-footer-stats {
         gap: 18px;
@@ -72,7 +72,7 @@
     }
 }
 
-/* Desktop/Laptop (1200px and below) */
+/* Desktop/Laptop (Max 1200px) */
 @media (max-width: 1200px) {
     .dash-footer-stats { 
         grid-template-columns: repeat(2, 1fr);
@@ -88,7 +88,7 @@
     }
 }
 
-/* Tablet Landscape (1024px and below) */
+/* Tablet Landscape (Max 1024px) */
 @media (max-width: 1024px) {
     .dash-footer-stats {
         gap: 16px;
@@ -99,7 +99,7 @@
     }
 }
 
-/* Tablet Portrait (900px and below) */
+/* Tablet Portrait (Max 900px) */
 @media (max-width: 900px) {
     .dash-footer-stats {
         gap: 14px;
@@ -119,7 +119,7 @@
     }
 }
 
-/* Tablet Small (768px and below) */
+/* Tablet Small (Max 768px) */
 @media (max-width: 768px) {
     .dash-footer-stats {
         gap: 14px;
@@ -135,7 +135,7 @@
     }
 }
 
-/* Mobile Large (640px and below) */
+/* Mobile Large (Max 640px) */
 @media (max-width: 640px) {
     .dash-footer-stats { 
         grid-template-columns: 1fr;
@@ -161,7 +161,7 @@
     }
 }
 
-/* Mobile Small (480px and below) */
+/* Mobile Small (Max 480px) */
 @media (max-width: 480px) {
     .dash-footer-stats {
         gap: 10px;
@@ -181,7 +181,7 @@
     }
 }
 
-/* Mobile Extra Small (360px and below) */
+/* Mobile Extra Small (Max 360px) */
 @media (max-width: 360px) {
     .dash-footer-stats {
         gap: 8px;

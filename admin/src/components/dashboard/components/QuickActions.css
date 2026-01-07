@@ -1,5 +1,5 @@
 /* ========================================
-   QUICK ACTIONS - ARCHIVE-LEVEL RESPONSIVE
+   QUICK ACTIONS - FULLY RESPONSIVE
    ======================================== */
 
 .dash-actions-grid {
@@ -33,10 +33,21 @@
     transform: translateY(-3px);
 }
 
-.dash-action-btn--blue { border-top-color: #3b82f6; }
-.dash-action-btn--orange { border-top-color: #FF8C42; }
-.dash-action-btn--purple { border-top-color: #8b5cf6; }
-.dash-action-btn--green { border-top-color: #10b981; }
+.dash-action-btn--blue {
+    border-top-color: #3b82f6;
+}
+
+.dash-action-btn--orange {
+    border-top-color: #FF8C42;
+}
+
+.dash-action-btn--purple {
+    border-top-color: #8b5cf6;
+}
+
+.dash-action-btn--green {
+    border-top-color: #10b981;
+}
 
 .dash-action-icon-wrapper {
     margin-bottom: 12px;
@@ -57,14 +68,17 @@
     color: #3b82f6; 
     background: rgba(59, 130, 246, 0.1); 
 }
+
 .dash-action-btn--orange .dash-action-icon-wrapper { 
     color: #FF8C42; 
     background: rgba(255, 140, 66, 0.1); 
 }
+
 .dash-action-btn--purple .dash-action-icon-wrapper { 
     color: #8b5cf6; 
     background: rgba(139, 92, 246, 0.1); 
 }
+
 .dash-action-btn--green .dash-action-icon-wrapper { 
     color: #10b981; 
     background: rgba(16, 185, 129, 0.1); 
@@ -90,10 +104,10 @@
 }
 
 /* ========================================
-   RESPONSIVE BREAKPOINTS (ARCHIVE-LEVEL)
+   RESPONSIVE BREAKPOINTS
    ======================================== */
 
-/* Large Desktop (1400px and below) */
+/* Large Desktop (Max 1400px) */
 @media (max-width: 1400px) {
     .dash-actions-grid {
         gap: 14px;
@@ -105,7 +119,7 @@
     }
 }
 
-/* Desktop/Laptop (1200px and below) */
+/* Desktop/Laptop (Max 1200px) */
 @media (max-width: 1200px) {
     .dash-actions-grid { 
         grid-template-columns: repeat(2, 1fr);
@@ -117,7 +131,7 @@
     }
 }
 
-/* Tablet Landscape (1024px and below) */
+/* Tablet Landscape (Max 1024px) */
 @media (max-width: 1024px) {
     .dash-actions-grid {
         gap: 14px;
@@ -129,7 +143,7 @@
     }
 }
 
-/* Tablet Portrait (900px and below) */
+/* Tablet Portrait (Max 900px) */
 @media (max-width: 900px) {
     .dash-actions-grid {
         padding: 16px;
@@ -154,7 +168,7 @@
     }
 }
 
-/* Tablet Small (768px and below) */
+/* Tablet Small (Max 768px) */
 @media (max-width: 768px) {
     .dash-actions-grid {
         padding: 14px;
@@ -163,10 +177,11 @@
     
     .dash-action-btn {
         padding: 18px 12px;
+        border-radius: 10px;
     }
 }
 
-/* Mobile Large (640px and below) */
+/* Mobile Large (Max 640px) */
 @media (max-width: 640px) {
     .dash-actions-grid { 
         grid-template-columns: 1fr;
@@ -192,7 +207,7 @@
     }
 }
 
-/* Mobile Small (480px and below) */
+/* Mobile Small (Max 480px) */
 @media (max-width: 480px) {
     .dash-actions-grid {
         gap: 10px;
@@ -215,7 +230,7 @@
     }
 }
 
-/* Mobile Extra Small (360px and below) */
+/* Mobile Extra Small (Max 360px) */
 @media (max-width: 360px) {
     .dash-actions-grid {
         gap: 8px;
@@ -223,14 +238,24 @@
     
     .dash-action-btn {
         padding: 14px 10px;
+        border-top-width: 3px;
     }
     
     .dash-action-icon-wrapper {
         padding: 8px;
         margin-bottom: 8px;
     }
+
+    .dash-action-icon-wrapper svg {
+        width: 24px;
+        height: 24px;
+    }
     
     .dash-action-title {
         font-size: 12px;
+    }
+
+    .dash-action-sub {
+        font-size: 9px;
     }
 }

@@ -1,5 +1,5 @@
 /* ========================================
-   REVENUE ANALYTICS - ARCHIVE-LEVEL RESPONSIVE
+   REVENUE ANALYTICS - FULLY RESPONSIVE
    ======================================== */
 
 /* Revenue Analytics Widget Container */
@@ -297,6 +297,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .rev-comparison-label {
@@ -322,10 +323,10 @@
 }
 
 /* ========================================
-   RESPONSIVE BREAKPOINTS (ARCHIVE-LEVEL)
+   RESPONSIVE BREAKPOINTS
    ======================================== */
 
-/* Large Desktop (1400px and below) */
+/* Large Desktop (Max 1400px) */
 @media (max-width: 1400px) {
   .rev-widget {
     padding: 28px;
@@ -336,7 +337,7 @@
   }
 }
 
-/* Desktop/Laptop (1200px and below) */
+/* Desktop/Laptop (Max 1200px) */
 @media (max-width: 1200px) {
   .rev-widget {
     padding: 26px;
@@ -360,7 +361,7 @@
   }
 }
 
-/* Tablet Landscape (1024px and below) */
+/* Tablet Landscape (Max 1024px) */
 @media (max-width: 1024px) {
   .rev-widget {
     padding: 24px;
@@ -389,7 +390,7 @@
   }
 }
 
-/* Tablet Portrait (900px and below) */
+/* Tablet Portrait (Max 900px) */
 @media (max-width: 900px) {
   .rev-widget {
     padding: 20px;
@@ -414,16 +415,24 @@
   }
 }
 
-/* Tablet Small (768px and below) */
+/* Tablet Small (Max 768px) */
 @media (max-width: 768px) {
   .rev-widget {
     padding: 20px;
+    border-radius: 14px;
   }
   
   .rev-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding-bottom: 16px;
+  }
+
+  .rev-header-left {
+    min-width: 0;
+    width: 100%;
   }
   
   .rev-toggle-group {
@@ -459,9 +468,13 @@
   .rev-sources-section {
     padding: 18px;
   }
+
+  .rev-chart-container {
+    margin-bottom: 20px;
+  }
 }
 
-/* Mobile Large (640px and below) */
+/* Mobile Large (Max 640px) */
 @media (max-width: 640px) {
   .rev-widget {
     padding: 16px;
@@ -470,7 +483,8 @@
   
   .rev-header {
     margin-bottom: 20px;
-    padding-bottom: 16px;
+    padding-bottom: 14px;
+    gap: 12px;
   }
   
   .rev-title {
@@ -488,6 +502,7 @@
   
   .rev-summary-card {
     padding: 16px;
+    gap: 12px;
   }
   
   .rev-card-icon {
@@ -518,6 +533,7 @@
   
   .rev-sources-title {
     font-size: 14px;
+    margin-bottom: 14px;
   }
   
   .rev-sources-grid {
@@ -539,14 +555,31 @@
   .rev-toggle-btn {
     font-size: 12px;
     padding: 8px 12px;
+    gap: 6px;
   }
   
   .rev-comparison {
     padding: 16px;
   }
+
+  .rev-chart-container {
+    margin-bottom: 18px;
+  }
+
+  .rev-custom-tooltip {
+    padding: 10px 14px;
+  }
+
+  .rev-tooltip-label {
+    font-size: 12px;
+  }
+
+  .rev-tooltip-item {
+    font-size: 11px;
+  }
 }
 
-/* Mobile Small (480px and below) */
+/* Mobile Small (Max 480px) */
 @media (max-width: 480px) {
   .rev-widget {
     padding: 14px;
@@ -554,7 +587,7 @@
   
   .rev-header {
     margin-bottom: 18px;
-    padding-bottom: 14px;
+    padding-bottom: 12px;
   }
   
   .rev-title {
@@ -578,13 +611,34 @@
   .rev-card-value {
     font-size: 18px;
   }
+
+  .rev-card-label {
+    font-size: 10px;
+  }
+
+  .rev-card-sublabel {
+    font-size: 9px;
+  }
   
   .rev-source-value {
     font-size: 16px;
   }
+
+  .rev-source-label {
+    font-size: 12px;
+  }
+
+  .rev-source-count {
+    font-size: 11px;
+  }
   
   .rev-sources-section {
     padding: 14px;
+  }
+
+  .rev-sources-title {
+    font-size: 13px;
+    margin-bottom: 12px;
   }
   
   .rev-source-item {
@@ -594,14 +648,36 @@
   .rev-comparison-value {
     font-size: 16px;
   }
+
+  .rev-comparison-label {
+    font-size: 10px;
+  }
   
   .rev-toggle-btn {
     font-size: 11px;
     padding: 8px 10px;
   }
+
+  .rev-comparison {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .rev-custom-tooltip {
+    padding: 8px 12px;
+  }
+
+  .rev-tooltip-label {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .rev-tooltip-item {
+    font-size: 10px;
+  }
 }
 
-/* Mobile Extra Small (360px and below) */
+/* Mobile Extra Small (Max 360px) */
 @media (max-width: 360px) {
   .rev-widget {
     padding: 12px;
@@ -609,6 +685,7 @@
   
   .rev-header {
     margin-bottom: 16px;
+    padding-bottom: 10px;
   }
   
   .rev-title {
@@ -621,6 +698,7 @@
   
   .rev-summary-card {
     padding: 12px;
+    gap: 10px;
   }
   
   .rev-card-icon {
@@ -635,16 +713,49 @@
   .rev-card-label {
     font-size: 10px;
   }
+
+  .rev-card-sublabel {
+    font-size: 9px;
+  }
   
   .rev-sources-section {
     padding: 12px;
+  }
+
+  .rev-sources-title {
+    font-size: 12px;
   }
   
   .rev-source-item {
     padding: 12px;
   }
+
+  .rev-source-value {
+    font-size: 15px;
+  }
   
   .rev-comparison {
-    padding: 14px;
+    padding: 12px;
+  }
+
+  .rev-comparison-value {
+    font-size: 15px;
+  }
+
+  .rev-comparison-label {
+    font-size: 9px;
+  }
+
+  .rev-toggle-btn {
+    font-size: 10px;
+    padding: 7px 8px;
+  }
+
+  .rev-summary-grid {
+    gap: 10px;
+  }
+
+  .rev-sources-grid {
+    gap: 10px;
   }
 }

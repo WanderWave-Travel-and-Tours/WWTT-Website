@@ -1,5 +1,5 @@
 /* ========================================
-   DASHBOARD - MAIN LAYOUT (Matches Archive Responsiveness)
+   DASHBOARD - MAIN LAYOUT (FULLY RESPONSIVE - CORRECTED)
    ======================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -19,17 +19,18 @@
 
 /* --- MAIN CONTENT AREA --- */
 .dash-main {
-  margin-left: 260px; /* Matches Archive Expanded Width */
+  margin-left: 260px; /* Matches Sidebar Expanded Width */
   width: calc(100% - 260px);
-  padding: 40px 60px; /* Matches Archive Padding */
+  padding: 40px 60px;
   min-height: 100vh;
   transition: all 0.3s ease;
   position: relative;
+  z-index: 1;
 }
 
 /* Collapsed Sidebar State */
 .dash-main--collapsed {
-  margin-left: 80px !important; /* Matches Archive Collapsed Width */
+  margin-left: 80px !important; /* Matches Sidebar Collapsed Width */
   width: calc(100% - 80px) !important;
   padding: 40px 60px;
 }
@@ -40,7 +41,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 32px; /* Consistent spacing */
+  gap: 32px;
 }
 
 /* Loading State */
@@ -67,8 +68,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* Global Grid for Bottom Section (Recent Bookings + Top Packages) */
-/* This handles the layout where Bookings is wide and Packages is narrow */
+/* Global Grid for Bottom Section */
 .dash-grid {
   display: grid;
   grid-template-columns: 2fr 1fr; 
@@ -77,7 +77,7 @@
 }
 
 /* ========================================
-   RESPONSIVE BREAKPOINTS (STRICT ARCHIVE MATCHING)
+   RESPONSIVE BREAKPOINTS (CORRECTED FOR SIDEBAR)
    ======================================== */
 
 /* Large Desktop (Max 1400px) */
@@ -90,7 +90,7 @@
 /* Laptop/Tablet Landscape (Max 1200px) */
 @media (max-width: 1200px) {
   .dash-grid {
-    grid-template-columns: 1fr; /* Stack Recent Bookings & Top Packages */
+    grid-template-columns: 1fr;
   }
 }
 
@@ -101,19 +101,14 @@
   } 
 }
 
-/* Mobile Large (Max 640px) */
-@media (max-width: 640px) { 
-  .dash-main { 
-    margin-left: 0 !important; 
-    width: 100% !important; 
-    padding: 20px; /* Matches Archive Mobile Padding */
-  }
-  
-  /* Even if collapsed, on mobile it should be full width */
+/* Mobile Large (Max 768px) - CORRECTED APPROACH MATCHING VIEWTESTIMONIALS */
+@media (max-width: 768px) {
+  /* âœ… CORRECTED: Keep margin for collapsed sidebar, don't remove it! */
+  .dash-main, 
   .dash-main--collapsed {
-    margin-left: 0 !important;
-    width: 100% !important;
-    padding: 20px;
+    margin-left: 90px !important; /* Space for collapsed sidebar */
+    width: calc(100% - 90px) !important; /* Full width minus sidebar */
+    padding: 24px 16px !important;
   }
 
   .dash-container {
@@ -121,9 +116,48 @@
   }
 }
 
+/* Mobile Medium (Max 640px) */
+@media (max-width: 640px) { 
+  .dash-main, 
+  .dash-main--collapsed {
+    margin-left: 90px !important;
+    width: calc(100% - 90px) !important;
+    padding: 20px 14px !important;
+  }
+
+  .dash-container {
+    gap: 20px;
+  }
+
+  .dash-grid {
+    gap: 16px;
+  }
+}
+
 /* Mobile Small (Max 480px) */
 @media (max-width: 480px) {
-  .dash-main {
-    padding: 16px;
+  .dash-main,
+  .dash-main--collapsed {
+    margin-left: 90px !important;
+    width: calc(100% - 90px) !important;
+    padding: 18px 12px !important;
+  }
+
+  .dash-container {
+    gap: 18px;
+  }
+}
+
+/* Mobile Extra Small (Max 360px) */
+@media (max-width: 360px) {
+  .dash-main,
+  .dash-main--collapsed {
+    margin-left: 90px !important;
+    width: calc(100% - 90px) !important;
+    padding: 16px 10px !important;
+  }
+
+  .dash-container {
+    gap: 16px;
   }
 }

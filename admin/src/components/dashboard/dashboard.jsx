@@ -13,10 +13,12 @@ import "./dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const TIMEOUT_IN_MS = 15 * 60 * 1000; // 15 Minutes
+  const TIMEOUT_IN_MS = 15 * 60 * 1000;
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  // State initialization
+  // 🔥 NEW: Section Filter State
+  const [selectedSection, setSelectedSection] = useState('all');
+  
   const [stats, setStats] = useState({
     totalBookings: 0, confirmedBookings: 0, pendingBookings: 0, cancelledBookings: 0,
     totalRevenue: 0, totalPackages: 0, totalBlogs: 0, totalPromos: 0,
@@ -31,7 +33,6 @@ const Dashboard = () => {
   const [trendData, setTrendData] = useState([]);
   const [revenueBreakdown, setRevenueBreakdown] = useState({ daily: [], monthly: [] });
 
-  // Sidebar Toggle matching Archive.jsx behavior
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   const handleAutoLogout = useCallback(() => {
@@ -96,7 +97,6 @@ const Dashboard = () => {
     }
 
     try {
-      // Calculation Logic Preserved
       if (!Array.isArray(bookings)) bookings = [];
       if (!Array.isArray(inquiries)) inquiries = [];
 
@@ -177,7 +177,6 @@ const Dashboard = () => {
         thisMonthRevenue: monthTotalRevenue,
       });
 
-      // Trend Data Logic
       const trendData = [];
       for (let i = 5; i >= 0; i--) {
         const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -207,7 +206,6 @@ const Dashboard = () => {
       }
       setTrendData(trendData);
 
-      // Revenue Breakdown Logic
       const dailyBreakdown = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
@@ -241,14 +239,12 @@ const Dashboard = () => {
         })),
       });
 
-      // Recent Bookings Formatting
       setRecentBookings(bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5).map((b) => ({
           id: b._id, client: b.fullName, package: b.packageName,
           date: new Date(b.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
           status: b.status, amount: `₱${(b.totalAmount || 0).toLocaleString()}`,
         })));
 
-      // Top Packages Formatting
       const packageStats = {};
       bookings.forEach((b) => {
         const pkg = b.packageName || "Unknown";
@@ -275,6 +271,17 @@ const Dashboard = () => {
     exportToPDF(stats, trendData, pdfTopPackages);
   };
 
+  // 🔥 NEW: Section Filter Handler
+  const handleSectionFilter = (section) => {
+    setSelectedSection(section);
+  };
+
+  // 🔥 NEW: Helper function to check if section should be visible
+  const shouldShowSection = (sectionName) => {
+    if (selectedSection === 'all') return true;
+    return selectedSection === sectionName;
+  };
+
   if (loading) {
     return (
       <div className="dash-page">
@@ -293,27 +300,50 @@ const Dashboard = () => {
     <div className="dash-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
  
-      {/* Structure strictly follows Archive.jsx:
-         dash-main handles the margins/padding.
-         dash-container holds the content.
-      */}
       <main className={`dash-main ${isSidebarCollapsed ? "dash-main--collapsed" : ""}`}>
         <div className="dash-container">
-          <DashboardHeader stats={stats} onExportPDF={handleExportPDF} />
+          <DashboardHeader 
+            stats={stats} 
+            onDownloadPDF={handleExportPDF}
+            selectedSection={selectedSection}
+            onSectionFilter={handleSectionFilter}
+          />
 
+          {/* Stats Cards - Always show */}
           <StatsCards stats={stats} />
 
-          <RevenueAnalytics stats={stats} revenueBreakdown={revenueBreakdown} />
+          {/* Revenue Analytics */}
+          {shouldShowSection('revenue-analytics') && (
+            <RevenueAnalytics stats={stats} revenueBreakdown={revenueBreakdown} />
+          )}
 
-          <FinancialOverview stats={stats} />
+          {/* Financial Overview */}
+          {shouldShowSection('financial-performance') && (
+            <FinancialOverview stats={stats} />
+          )}
 
-          <ChartsSection trendData={trendData} stats={stats} topPackages={topPackages} />
+          {/* Charts Section - Contains Combined Revenue Trends & Booking Status */}
+          {(shouldShowSection('combined-revenue') || shouldShowSection('booking-status')) && (
+            <ChartsSection 
+              trendData={trendData} 
+              stats={stats} 
+              topPackages={topPackages}
+              showCombinedRevenue={shouldShowSection('combined-revenue')}
+              showBookingStatus={shouldShowSection('booking-status')}
+            />
+          )}
 
-          {/* Grid for Bottom Section */}
-          <div className="dash-grid">
-            <RecentBookings bookings={recentBookings} onViewAll={() => navigate("/booking")} />
-            <TopPackages packages={topPackages} />
-          </div>
+          {/* Recent Bookings & Top Packages */}
+          {(shouldShowSection('recent-bookings') || shouldShowSection('top-packages')) && (
+            <div className="dash-grid">
+              {shouldShowSection('recent-bookings') && (
+                <RecentBookings bookings={recentBookings} onViewAll={() => navigate("/booking")} />
+              )}
+              {shouldShowSection('top-packages') && (
+                <TopPackages packages={topPackages} />
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>
