@@ -113,8 +113,10 @@ const EditPSA = () => {
   const [files, setFiles] = useState({});
   const [existingFiles, setExistingFiles] = useState({});
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
-  const FILE_BASE_URL = "https://wanderwaveph-backend.onrender.com";
+  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
+  const FILE_BASE_URL = "http://localhost:5000";
+  // Add Activity Logs API
+  const LOGS_API_URL = "http://localhost:5000/api/activity-logs";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -295,38 +297,103 @@ const EditPSA = () => {
     );
   };
 
-  const performSubmit = async () => {
+const performSubmit = async () => {
     setSubmitting(true);
-    const data = new FormData();
-    
-    const fullName = `${formData.givenName} ${formData.lastName}`.trim();
-    
-    Object.keys(formData).forEach(key => {
-        data.append(key, formData[key]);
-    });
-    data.append("fullName", fullName);
 
-    if (files.requirement) {
-      data.append("evidence", files.requirement); 
-    }
-    
-    const remainingKeys = Object.keys(existingFiles);
-    data.append("existingFiles", JSON.stringify(remainingKeys));
-    data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
+    // 1. Kunin ang Admin Info mula sa localStorage para sa logs
+    const adminData = JSON.parse(localStorage.getItem('adminUser')) || {};
+    const adminEmail = adminData.email || "Unknown Admin";
+    const adminName = adminData.username || "Admin";
 
     try {
+      // 2. Fetch ang current data bago i-update para sa accurate comparison
+      const currentRes = await fetch(`${API_BASE_URL}/${psaId}`);
+      const currentResult = await currentRes.json();
+      const original = currentResult.data || {};
+
+      // 3. I-prepare ang FormData para sa update request
+      const data = new FormData();
+      const fullName = `${formData.givenName} ${formData.lastName}`.trim();
+      
+      Object.keys(formData).forEach(key => {
+          data.append(key, formData[key]);
+      });
+      data.append("fullName", fullName);
+
+      // File handling logic
+      if (files.requirement) {
+        data.append("evidence", files.requirement); 
+      }
+      
+      const remainingFilesList = Object.values(existingFiles);
+      data.append("existingFiles", JSON.stringify(remainingFilesList));
+      data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
+
+      // 4. Comparison Logic: I-track kung ano ang mga nabagong fields
+      let changes = [];
+      const trackChange = (label, oldVal, newVal) => {
+        const normOld = oldVal ? String(oldVal).trim() : "";
+        const normNew = newVal ? String(newVal).trim() : "";
+        if (normOld !== normNew && normNew !== "") {
+          changes.push(`${label} changed from "${normOld}" to "${normNew}"`);
+        }
+      };
+
+      trackChange("Given Name", original.givenName, formData.givenName);
+      trackChange("Last Name", original.lastName, formData.lastName);
+      trackChange("Email", original.email, formData.email);
+      trackChange("Contact", original.contactNumber, formData.contactNumber);
+      trackChange("Document Type", original.psaDocument, formData.psaDocument);
+      trackChange("Price", original.estimatedPrice, formData.estimatedPrice);
+      trackChange("Admin Remarks", original.adminRemarks || original.message, formData.message);
+
+      if (files.requirement instanceof File) {
+        changes.push(`Updated requirement file: ${files.requirement.name}`);
+      }
+
+      // 5. Isagawa ang Update Request sa Backend
       const res = await fetch(`${API_BASE_URL}/update/${psaId}`, {
         method: "PUT",
         body: data,
       });
       const result = await res.json();
+
       if (result.success) {
+        // 6. Mag-save ng Activity Log kung mayroong mga pagbabago
+        if (changes.length > 0) {
+          try {
+            await fetch(LOGS_API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: 'UPDATE',
+                module: 'PSA',
+                entity: 'PSA Inquiry',
+                entityId: psaId,
+                user: adminName,
+                severity: 'SUCCESS',
+                description: `Admin (${adminEmail}) updated PSA request for ${fullName}.`,
+                details: {
+                  adminEmail,
+                  targetName: fullName,
+                  changes: changes,
+                  // Dito ipinapasa ang bilang ng nabagong fields para sa modal
+                  affectedRecords: changes.length 
+                }
+              }),
+            });
+          } catch (logErr) {
+            console.error("Failed to save activity log:", logErr);
+          }
+        }
+
         toast.success("PSA Request updated successfully!", "Success");
         navigate("/services/psa");
       } else {
         toast.error(result.message || "Failed to update record.", "Error");
       }
     } catch (err) {
+      console.error("Submit Error:", err);
       toast.error("Server connection failed. Please try again.", "Connection Error");
     } finally {
       setSubmitting(false);
@@ -336,19 +403,19 @@ const EditPSA = () => {
   const renderPreviewContent = () => {
     if (!previewFile) return null;
     const { url, name } = previewFile;
-    const isImage = name.match(/\.(jpeg|jpg|gif|png|webp)$/i) || url.startsWith('blob:');
+    const isImage = /\.(jpeg|jpg|gif|png|webp)$/i.test(name) || url.startsWith('blob:');
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
     if (isImage && !isPdf) {
-      return <img src={url} alt="File Preview" className="preview-media-full" />;
+      return <img src={url} alt="File Preview" className="preview-media-full" style={{ width: '100%', borderRadius: '8px' }} />;
     } else if (isPdf) {
-      return <iframe src={url} title="PDF Preview" className="preview-iframe-full" />;
+      return <iframe src={url} title="PDF Preview" className="preview-iframe-full" width="100%" height="500px" style={{ border: 'none' }} />;
     } else {
       return (
-        <div style={{textAlign: 'center', padding: '20px'}}>
-          <FileText size={48} style={{margin: '0 auto 10px'}} />
-          <p>Preview not available for this format.</p>
-          <a href={url} download className="et-view-btn">Download to View</a>
+        <div style={{textAlign: 'center', padding: '40px'}}>
+          <FileText size={64} style={{margin: '0 auto 15px', color: '#64748b'}} />
+          <p style={{ fontWeight: '500' }}>Preview not available for this format.</p>
+          <a href={url} target="_blank" rel="noreferrer" download className="et-view-btn" style={{ display: 'inline-block', marginTop: '10px' }}>Download to View</a>
         </div>
       );
     }
@@ -514,7 +581,9 @@ const EditPSA = () => {
               <span className="preview-filename">{previewFile.name.split('/').pop()}</span>
               <button className="preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
-            <div className="et-modal-preview-body">{renderPreviewContent()}</div>
+            <div className="et-modal-preview-body">
+              {renderPreviewContent()}
+            </div>
             <div className="et-modal-preview-footer">
               <div className="footer-actions-right">
                 <button className="preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>

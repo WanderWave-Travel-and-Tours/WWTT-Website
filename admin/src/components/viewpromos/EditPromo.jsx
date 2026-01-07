@@ -195,7 +195,7 @@ const EditPromo = () => {
     useEffect(() => {
         const fetchPromoDetails = async () => {
             try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`);
+                const response = await fetch(`http://localhost:5000/api/promos/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch promo details');
                 
                 const data = await response.json();
@@ -269,7 +269,7 @@ const EditPromo = () => {
                 data.append('image', imageFile);
             }
 
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
+            const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                 method: 'PUT',
                 body: data, // No Content-Type header
             });
@@ -364,7 +364,7 @@ const EditPromo = () => {
                                                 <div style={{marginBottom: '10px'}}>
                                                      <p style={{fontSize: '12px', color:'#64748b', marginBottom: '8px'}}>Current Image:</p>
                                                     <img 
-                                                        src={`https://wanderwaveph-backend.onrender.com/uploads/${currentImage}`} 
+                                                        src={`http://localhost:5000/uploads/${currentImage}`} 
                                                         alt="Current" 
                                                         style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid #e2e8f0' }} 
                                                         onError={(e) => e.target.style.display = 'none'}

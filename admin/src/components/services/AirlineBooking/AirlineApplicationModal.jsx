@@ -42,7 +42,7 @@ const AirlineApplicationModal = ({ isOpen, onClose, refreshData }) => {
         ...formData, serviceName: "Airline Booking", inquiryType: "FLIGHT_BOOKING",
         message: `Walk-in Booking: ${formData.flightDetails.origin} to ${formData.flightDetails.destination}`
       };
-      const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries', payload);
+      const res = await axios.post('http://localhost:5000/api/inquiries', payload);
       if (res.data.success) { setStep(2); if (refreshData) refreshData(); }
     } catch (error) { alert("Failed to save."); } finally { setIsLoading(false); }
   };

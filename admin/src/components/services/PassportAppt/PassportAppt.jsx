@@ -277,7 +277,7 @@ const PassportAppt = () => {
 
   const fetchPassportServices = async () => {
     try {
-      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/passports");
+      const res = await axios.get("http://localhost:5000/api/passports");
       if (res.data.success) {
         const mapped = res.data.data.map((d) => ({ ...d, id: d._id, desc: d.description }));
         setPassportServices(mapped);
@@ -292,7 +292,7 @@ const PassportAppt = () => {
   const fetchInquiries = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get("https://wanderwaveph-backend.onrender.com/api/inquiries");
+      const response = await axios.get("http://localhost:5000/api/inquiries");
       if (response.data.success) {
         // Filter for PASSPORT inquiries & Not Archived
         const pptRequests = response.data.data.filter(
@@ -355,7 +355,7 @@ const PassportAppt = () => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) setDocuments(response.data.documents || []);
     } catch (error) {
       console.error("Error fetching documents:", error);
@@ -373,7 +373,7 @@ const PassportAppt = () => {
     if (!window.confirm(`Are you sure you want to archive request #${inquiry._id.slice(-6).toUpperCase()}?`)) return;
     try {
       const response = await axios.put(
-        `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/archive`,
+        `http://localhost:5000/api/inquiries/${inquiry._id}/archive`,
         { isArchive: 'Yes' }
       );
       if (response.data.success) {
@@ -402,7 +402,7 @@ const PassportAppt = () => {
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     if (!window.confirm(`Set status to ${newStatus}?`)) return;
     try {
-      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/status`, { status: newStatus });
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, { status: newStatus });
       if (response.data.success) {
         alert("Status updated successfully!");
         fetchInquiries();
@@ -417,7 +417,7 @@ const PassportAppt = () => {
   const handleRequestPayment = async () => {
     if (!window.confirm("Request payment from user?")) return;
     try {
-      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`, { status: "PAYMENT_PENDING" });
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, { status: "PAYMENT_PENDING" });
       if (response.data.success) {
         alert("Payment requested!");
         fetchInquiries();
@@ -438,7 +438,7 @@ const PassportAppt = () => {
       if (contactEvidence) formData.append("evidence", contactEvidence);
       
       const response = await axios.put(
-        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`,
+        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -459,7 +459,7 @@ const PassportAppt = () => {
   const handleConfirmPayment = async () => {
     if (!window.confirm("Confirm payment received?")) return;
     try {
-      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: "Admin" });
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: "Admin" });
       if (response.data.success) {
         alert("Payment confirmed!");
         fetchInquiries();
@@ -479,7 +479,7 @@ const PassportAppt = () => {
 
     try {
       const response = await axios.put(
-        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/deliver-documents`,
+        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -526,7 +526,7 @@ const PassportAppt = () => {
   const handleDeleteService = async (id) => {
     if (!window.confirm("Delete this service?")) return;
     try {
-      await axios.delete(`https://wanderwaveph-backend.onrender.com/api/passports/${id}`);
+      await axios.delete(`http://localhost:5000/api/passports/${id}`);
       fetchPassportServices();
     } catch (err) {
       console.error(err);
@@ -545,9 +545,9 @@ const PassportAppt = () => {
     };
     try {
       if (isEditorOpen && selectedService) {
-        await axios.put(`https://wanderwaveph-backend.onrender.com/api/passports/${selectedService._id}`, payload);
+        await axios.put(`http://localhost:5000/api/passports/${selectedService._id}`, payload);
       } else {
-        await axios.post(`https://wanderwaveph-backend.onrender.com/api/passports`, payload);
+        await axios.post(`http://localhost:5000/api/passports`, payload);
       }
       alert("Service saved!");
       setIsAddFormOpen(false);
@@ -577,7 +577,7 @@ const PassportAppt = () => {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await axios.post("https://wanderwaveph-backend.onrender.com/api/upload", formData);
+      const res = await axios.post("http://localhost:5000/api/upload", formData);
       if (res.data.success) setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
     } catch (err) {
       console.error(err);

@@ -4,7 +4,7 @@ import './viewservice.css';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Plane, BookOpen, Hotel, FileText, Calendar, Ship, HeartHandshake, ShieldCheck, ToggleLeft, ToggleRight } from 'lucide-react'; 
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/services';
+const API_BASE_URL = 'http://localhost:5000/api/services';
 const ADMIN_FETCH_URL = `${API_BASE_URL}/admin/all`;
 
 const ViewServices = () => {
@@ -210,7 +210,7 @@ const ViewServices = () => {
                                         <img 
                                             src={service.image.startsWith('http') 
                                                 ? service.image 
-                                                : `https://wanderwaveph-backend.onrender.com/uploads/${service.image}`
+                                                : `http://localhost:5000/uploads/${service.image}`
                                             } 
                                             alt={service.title} 
                                         />
