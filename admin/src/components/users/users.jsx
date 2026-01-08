@@ -5,7 +5,7 @@ import UserPagination from './Userpagination';
 import { UserCog } from 'lucide-react';
 import './users.css';
 import './Userfilters.css';
-import './UserPagination.css';
+import './Userpagination.css';
 
 // =========================================================================
 // MAIN USERS COMPONENT
