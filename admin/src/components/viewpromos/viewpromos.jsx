@@ -32,7 +32,7 @@ const ViewPromos = () => {
 
     const fetchPromos = async () => {
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
+            const response = await fetch('http://localhost:5000/api/promos');
             if (!response.ok) {
                 throw new Error('Failed to fetch promos');
             }
@@ -67,7 +67,7 @@ const ViewPromos = () => {
         if (window.confirm(`Are you sure you want to archive promo code ${code}?`)) {
             try {
                 // Gumamit ng PUT o PATCH dahil i-uupdate natin ang isArchive property
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
+                const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                     method: 'PUT', // Maaari ring 'PATCH' depende sa setup ng backend mo
                     headers: {
                         'Content-Type': 'application/json',
@@ -154,80 +154,82 @@ const ViewPromos = () => {
                             </button>
                         </div>
                     ) : (
-                        <div className="vpromos-table-wrapper">
-                            <table className="vpromos-table">
-                                <thead>
-                                    <tr>
-                                        <th>CODE</th>
-                                        <th>CATEGORY</th>
-                                        <th>DISCOUNT</th>
-                                        <th>VALID UNTIL</th>
-                                        <th>STATUS</th>
-                                        <th>DESCRIPTION</th>
-                                        <th>ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentPromos.map(promo => {
-                                        const status = getStatus(promo.validUntil);
-                                        return (
-                                            <tr key={promo._id}>
-                                                <td>
-                                                    <span className="vpromos-code">{promo.code}</span>
-                                                </td>
-                                                <td>{promo.category}</td>
-                                                <td>
-                                                    <span className="vpromos-discount">
-                                                        {promo.discountType === 'Percentage' 
-                                                            ? `${promo.discountValue}%` 
-                                                            : `₱${promo.discountValue.toLocaleString()}`
-                                                        }
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="vpromos-date">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                                            <line x1="16" y1="2" x2="16" y2="6"/>
-                                                            <line x1="8" y1="2" x2="8" y2="6"/>
-                                                            <line x1="3" y1="10" x2="21" y2="10"/>
-                                                        </svg>
-                                                        <span>{formatDate(promo.validUntil)}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className={`vpromos-status vpromos-status--${status.toLowerCase()}`}>
-                                                        {status}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className="vpromos-desc">{promo.description}</span>
-                                                </td>
-                                                <td>
-                                                    <div className="vpromos-actions">
-                                                        <button 
-                                                            className="vpromos-action-btn vpromos-action-btn--view"
-                                                            onClick={() => handleViewDetails(promo)}
-                                                            title="View Details"
-                                                        >
-                                                            <Eye size={16} />
-                                                            <span>View</span>
-                                                        </button>
-                                                        <button 
-                                                            className="vpromos-action-btn vpromos-action-btn--archive"
-                                                            onClick={() => handleArchive(promo._id, promo.code)}
-                                                            title="Archive Promo"
-                                                        >
-                                                            <Archive size={16} />
-                                                            <span>Archive</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                        <>
+                            <div className="vpromos-table-wrapper">
+                                <table className="vpromos-table">
+                                    <thead>
+                                        <tr>
+                                            <th>CODE</th>
+                                            <th>CATEGORY</th>
+                                            <th>DISCOUNT</th>
+                                            <th>VALID UNTIL</th>
+                                            <th>STATUS</th>
+                                            <th>DESCRIPTION</th>
+                                            <th>ACTIONS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {currentPromos.map(promo => {
+                                            const status = getStatus(promo.validUntil);
+                                            return (
+                                                <tr key={promo._id}>
+                                                    <td>
+                                                        <span className="vpromos-code">{promo.code}</span>
+                                                    </td>
+                                                    <td>{promo.category}</td>
+                                                    <td>
+                                                        <span className="vpromos-discount">
+                                                            {promo.discountType === 'Percentage' 
+                                                                ? `${promo.discountValue}%` 
+                                                                : `₱${promo.discountValue.toLocaleString()}`
+                                                            }
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="vpromos-date">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                                            </svg>
+                                                            <span>{formatDate(promo.validUntil)}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`vpromos-status vpromos-status--${status.toLowerCase()}`}>
+                                                            {status}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span className="vpromos-desc">{promo.description}</span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="vpromos-actions">
+                                                            <button 
+                                                                className="vpromos-action-btn vpromos-action-btn--view"
+                                                                onClick={() => handleViewDetails(promo)}
+                                                                title="View Details"
+                                                            >
+                                                                <Eye size={16} />
+                                                                <span>View</span>
+                                                            </button>
+                                                            <button 
+                                                                className="vpromos-action-btn vpromos-action-btn--archive"
+                                                                onClick={() => handleArchive(promo._id, promo.code)}
+                                                                title="Archive Promo"
+                                                            >
+                                                                <Archive size={16} />
+                                                                <span>Archive</span>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                             
                             <PromoPagination
                                 totalItems={filteredPromos.length}
@@ -235,7 +237,7 @@ const ViewPromos = () => {
                                 currentPage={currentPage}
                                 onPageChange={setCurrentPage}
                             />
-                        </div>
+                        </>
                     )}
                 </div>
             </main>
@@ -252,4 +254,4 @@ const ViewPromos = () => {
     );
 };
 
-export default ViewPromos; 
+export default ViewPromos;

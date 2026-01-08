@@ -24,6 +24,18 @@ const TestimonialPagination = ({
         }
     };
 
+    const handlePrevious = () => {
+        if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
+        }
+    };
+
     return (
         <nav className="tp-pagination-nav">
             <div className="tp-pagination-info">
@@ -42,9 +54,10 @@ const TestimonialPagination = ({
                 <button
                     type="button"
                     className="tp-pagination-btn tp-jump-arrow tp-hide-on-large"
-                    onClick={() => onPageChange(currentPage - 1)}
+                    onClick={handlePrevious}
                     disabled={currentPage === 1}
                     title="Previous page"
+                    aria-label="Previous page"
                 >
                     <ChevronLeft size={18} />
                 </button>
@@ -66,9 +79,10 @@ const TestimonialPagination = ({
                 <button
                     type="button"
                     className="tp-pagination-btn tp-jump-arrow tp-hide-on-large"
-                    onClick={() => onPageChange(currentPage + 1)}
+                    onClick={handleNext}
                     disabled={currentPage === totalPages}
                     title="Next page"
+                    aria-label="Next page"
                 >
                     <ChevronRight size={18} />
                 </button>

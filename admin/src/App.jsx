@@ -10,6 +10,10 @@ import Settings from './components/settings/settings.jsx';
 import Archive from './components/archive/Archive.jsx';
 import ActivityLogs from './components/activitylogs/ActivityLogs.jsx';
 
+// Admin Management
+import ViewAdmins from './components/admins/ViewAdmin.jsx';
+import AddAdmin from './components/admins/AddAdmin.jsx';
+
 // Packages
 import AddPackage from './components/addpackage/addpackage.jsx';
 import ViewPackages from './components/viewpackages/viewpackages.jsx';
@@ -60,7 +64,7 @@ import CenomarRequest from './components/services/CenomarRequest/CenomarRequest.
 import PassportAppt from './components/services/PassportAppt/PassportAppt.jsx';
 import AirlineBooking from './components/services/AirlineBooking/AirlineBooking.jsx';
 import EditAirline from './components/services/AirlineBooking/EditAirline.jsx';
-import EditCenomar from './components/services/CenomarRequest/EditCenomar.jsx'; // INIDAGDAG NA IMPORT
+import EditCenomar from './components/services/CenomarRequest/EditCenomar.jsx';
 import EditVisa from './components/services/VisaProcessing/EditVisa.jsx';
 import EditPassport from './components/services/PassportAppt/EditPassport.jsx';
 import EditPSA from './components/services/PSASerbilis/EditPSA.jsx';
@@ -85,6 +89,10 @@ function App() {
         <Route path="/activity-logs" element={<ActivityLogs />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/users" element={<Users />} />
+
+        {/* Admin Management Routes */}
+        <Route path="/admins" element={<ViewAdmins />} />
+        <Route path="/add-admin" element={<AddAdmin />} />
 
         {/* Packages */}
         <Route path="/add-package" element={<AddPackage />} />
@@ -138,7 +146,7 @@ function App() {
         
         {/* Airline Booking Routes */}
         <Route path="/services/airlinebooking" element={<AirlineBooking />} />
-        <Route path="/EditAirline/:id" element={<EditAirline />} /> {/* INIDAGDAG NA ROUTE */}
+        <Route path="/EditAirline/:id" element={<EditAirline />} />
         <Route path="/EditCenomar/:id" element={<EditCenomar />} />
         <Route path="/EditVisa/:id" element={<EditVisa />} />
         <Route path="/EditPassport/:id" element={<EditPassport />} />

@@ -1,3 +1,7 @@
+/* ========================================
+   FOOTER STATS - FULLY RESPONSIVE
+   ======================================== */
+
 .dash-footer-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -6,45 +10,198 @@
 
 .dash-footer-stat {
     background: #001F3F;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 24px;
     display: flex;
     align-items: center;
     gap: 16px;
     color: #fff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 31, 63, 0.1);
+}
+
+.dash-footer-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 31, 63, 0.2);
 }
 
 .dash-footer-stat svg {
     color: #FF8C42;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.dash-footer-stat:hover svg {
+    transform: scale(1.1);
 }
 
 .dash-footer-stat div {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
+    min-width: 0;
 }
 
 .dash-footer-stat strong {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
     font-size: 1.5rem;
     font-weight: 900;
+    line-height: 1.1;
 }
 
 .dash-footer-stat span {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    line-height: 1.2;
 }
 
-@media (max-width: 1024px) {
-    .dash-footer-stats { 
-        grid-template-columns: repeat(2, 1fr); 
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* Large Desktop (Max 1400px) */
+@media (max-width: 1400px) {
+    .dash-footer-stats {
+        gap: 18px;
+    }
+    
+    .dash-footer-stat {
+        padding: 22px;
     }
 }
 
+/* Desktop/Laptop (Max 1200px) */
+@media (max-width: 1200px) {
+    .dash-footer-stats { 
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    .dash-footer-stat {
+        padding: 20px;
+    }
+    
+    .dash-footer-stat strong {
+        font-size: 1.35rem;
+    }
+}
+
+/* Tablet Landscape (Max 1024px) */
+@media (max-width: 1024px) {
+    .dash-footer-stats {
+        gap: 16px;
+    }
+    
+    .dash-footer-stat {
+        padding: 20px;
+    }
+}
+
+/* Tablet Portrait (Max 900px) */
+@media (max-width: 900px) {
+    .dash-footer-stats {
+        gap: 14px;
+    }
+    
+    .dash-footer-stat {
+        padding: 18px;
+        border-radius: 10px;
+    }
+    
+    .dash-footer-stat strong {
+        font-size: 1.25rem;
+    }
+    
+    .dash-footer-stat span {
+        font-size: 11px;
+    }
+}
+
+/* Tablet Small (Max 768px) */
+@media (max-width: 768px) {
+    .dash-footer-stats {
+        gap: 14px;
+    }
+    
+    .dash-footer-stat {
+        padding: 18px;
+    }
+    
+    .dash-footer-stat svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Mobile Large (Max 640px) */
 @media (max-width: 640px) {
     .dash-footer-stats { 
-        grid-template-columns: 1fr; 
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .dash-footer-stat {
+        padding: 18px;
+        border-radius: 10px;
+    }
+    
+    .dash-footer-stat strong {
+        font-size: 1.25rem;
+    }
+    
+    .dash-footer-stat span {
+        font-size: 11px;
+    }
+    
+    .dash-footer-stat svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Mobile Small (Max 480px) */
+@media (max-width: 480px) {
+    .dash-footer-stats {
+        gap: 10px;
+    }
+    
+    .dash-footer-stat {
+        padding: 16px;
+        gap: 14px;
+    }
+    
+    .dash-footer-stat strong {
+        font-size: 1.2rem;
+    }
+    
+    .dash-footer-stat span {
+        font-size: 10px;
+    }
+}
+
+/* Mobile Extra Small (Max 360px) */
+@media (max-width: 360px) {
+    .dash-footer-stats {
+        gap: 8px;
+    }
+    
+    .dash-footer-stat {
+        padding: 14px;
+        gap: 12px;
+    }
+    
+    .dash-footer-stat strong {
+        font-size: 1.15rem;
+    }
+    
+    .dash-footer-stat span {
+        font-size: 10px;
+    }
+    
+    .dash-footer-stat svg {
+        width: 18px;
+        height: 18px;
     }
 }

@@ -3,6 +3,25 @@ import axios from "axios";
 import { X, ChevronLeft, CheckCircle, ClipboardList, FileText, User, DollarSign, Briefcase, Building2, GraduationCap, Users, Calendar, Globe, UserCircle, Baby, ChevronRight } from "lucide-react";
 import "./VisaApplicationModal.css";
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log('📊 Admin Data from localStorage:', adminData);
+        
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return {
+            userEmail: 'Unknown Admin',
+            adminId: null
+        };
+    }
+};
+
 const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) => {
   const [step, setStep] = useState(1); // 1: Type Selection, 2: Form, 3: Confirmation
   const [applicantType, setApplicantType] = useState("");
@@ -234,6 +253,10 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
 
     setIsLoading(true);
     try {
+        // 🔥 GET ADMIN DATA
+        const { userEmail, adminId } = getAdminData();
+        console.log('🔍 Submitting Visa Application with admin data:', { userEmail, adminId });
+
         const data = new FormData();
         
         // Use the specific description directly
@@ -258,6 +281,11 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
         
         data.append('visaCountry', country); 
         data.append('estimatedPrice', price); 
+        
+        // 🔥🔥🔥 ADD ADMIN DATA FOR LOGS 🔥🔥🔥
+        data.append('uploader', 'ADMIN_WALKIN');
+        data.append('userEmail', userEmail);
+        data.append('adminId', adminId);
 
         // 2. Append ALL Files
         Object.keys(formData.files).forEach(key => {
@@ -265,7 +293,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
         });
 
         // 3. Send Request
-        const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries/upload-application', data, {
+        const response = await axios.post('http://localhost:5000/api/inquiries/upload-application', data, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
 

@@ -1,32 +1,103 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, Image as ImageIcon, MapPin, DollarSign, Users, X, Plus } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Image as ImageIcon, MapPin, DollarSign, Users, X, Plus, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditHotel.css';
+
+// ✅ Imports for Draft and Toast Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+import { useToast } from "../toast/ToastManager"; 
+
+// 🔥 CUSTOM CONFIRM MODAL COMPONENT (Reference from EditVisa)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const EditHotel = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const toast = useToast(); // ✅ Initialize Toast
+
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     
-    // 👇 ADDED: State for Destinations list
+    // State for Destinations list
     const [destinations, setDestinations] = useState([]);
 
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+    const API_BASE_URL = 'http://localhost:5000';
+
+    // ✅ Confirmation Modal State
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
 
     // --- HELPER: Image URL Builder ---
     const getImageUrl = (imagePath) => {
         if (!imagePath) return null;
         if (imagePath.startsWith('http') || imagePath.startsWith('data:')) return imagePath;
         
-        // Fix backslashes for Windows paths
         let cleanPath = imagePath.replace(/\\/g, '/');
         if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
         
-        // Handle 'uploads' prefix logic
         if (cleanPath.startsWith('uploads/')) return `${API_BASE_URL}/${cleanPath}`;
         return `${API_BASE_URL}/uploads/${cleanPath}`;
     };
@@ -35,7 +106,7 @@ const EditHotel = () => {
     const [formData, setFormData] = useState({
         name: '',
         location: '',
-        city: '', // Controlled by dropdown
+        city: '', 
         country: 'Philippines',
         description: '',
         price: '',
@@ -59,11 +130,151 @@ const EditHotel = () => {
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    useEffect(() => {
+        const updateDraft = async () => {
+            if (isLoading) {
+                setDraftPayload(null);
+                return;
+            }
+
+            const isFormEmpty = 
+                !formData.name && 
+                !formData.location && 
+                !formData.city && 
+                !formData.price && 
+                !formData.maxCapacity && 
+                !mainImageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null);
+                return;
+            }
+
+            let mainImageBase64 = null;
+            let mainImageMeta = null;
+
+            if (mainImageFile) {
+                try {
+                    if (mainImageFile.size < 3 * 1024 * 1024) { 
+                        mainImageBase64 = await fileToBase64(mainImageFile);
+                        mainImageMeta = { name: mainImageFile.name, type: mainImageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Main image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...formData,
+                amenities,
+                mainImage: mainImageBase64,
+                mainImageMeta: mainImageMeta,
+                originalId: id 
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [formData, amenities, mainImageFile, isLoading, id]);
+
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+        if (data.originalId && data.originalId !== id) {
+            console.warn("Draft found but belongs to a different hotel ID. Ignoring.");
+            return;
+        }
+
+        setFormData({
+            name: data.name || '',
+            location: data.location || '',
+            city: data.city || '',
+            country: data.country || 'Philippines',
+            description: data.description || '',
+            price: data.price || '',
+            priceUnit: data.priceUnit || 'per night',
+            maxCapacity: data.maxCapacity || '',
+            featured: data.featured || false
+        });
+
+        if (data.amenities) setAmenities(data.amenities);
+
+        if (data.mainImage && data.mainImageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.mainImage, data.mainImageMeta.name, data.mainImageMeta.type);
+                setMainImageFile(restoredFile);
+                setMainImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore main image:", err);
+            }
+        }
+    };
+
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: `edit-hotel-${id}`,
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: mainImagePreview, 
+        autoRestore: false 
+    });
+
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft && !isLoading) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft, isLoading]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+        toast.info("Draft restored successfully.");
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft();
+        setShowRestoreModal(false);
+        toast.info("Draft discarded.");
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
+
     // --- FETCH DATA ---
     useEffect(() => {
         const loadData = async () => {
             try {
-                // 1. Fetch Destinations (Logic from AddHotel)
                 const destResponse = await fetch(`${API_BASE_URL}/api/packages/all`);
                 const destData = await destResponse.json();
                 
@@ -74,18 +285,16 @@ const EditHotel = () => {
                     setDestinations(uniqueDestinations);
                 }
 
-                // 2. Fetch Hotel Details
                 const response = await fetch(`${API_BASE_URL}/api/hotels/${id}`);
                 if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
                 
                 const result = await response.json();
                 const data = result.data || result;
                 
-                // Populate Fields
                 setFormData({
                     name: data.name || '',
                     location: data.location || '',
-                    city: data.city || '', // Will match with dropdown value
+                    city: data.city || '', 
                     country: data.country || 'Philippines',
                     description: data.description || '',
                     price: data.price || '',
@@ -97,7 +306,6 @@ const EditHotel = () => {
                 if (data.amenities) setAmenities(prev => ({ ...prev, ...data.amenities }));
                 if (data.mainImage) setMainImagePreview(getImageUrl(data.mainImage));
 
-                // Populate Gallery
                 if (data.images && Array.isArray(data.images)) {
                     const formattedGallery = data.images.map(img => ({
                         id: img._id || img,
@@ -109,13 +317,14 @@ const EditHotel = () => {
             } catch (err) {
                 console.error("Load Error:", err);
                 setError(err.message);
+                toast.error("Failed to load hotel details.");
             } finally {
                 setIsLoading(false);
             }
         };
 
         if (id) loadData();
-    }, [id]);
+    }, [id, toast]);
 
     // --- HANDLERS ---
     const handleInputChange = (e) => {
@@ -134,6 +343,7 @@ const EditHotel = () => {
             const reader = new FileReader();
             reader.onloadend = () => setMainImagePreview(reader.result);
             reader.readAsDataURL(file);
+            toast.info(`Selected main cover: ${file.name}`);
         }
     };
 
@@ -145,21 +355,32 @@ const EditHotel = () => {
             id: Math.random().toString(36).substr(2, 9)
         }));
         setNewGalleryFiles(prev => [...prev, ...newFilesWithPreview]);
+        toast.info(`Added ${files.length} photos to gallery.`);
     };
 
     const removeExistingImage = (imgId) => {
         setExistingGallery(prev => prev.filter(img => img.id !== imgId));
         setDeletedImages(prev => [...prev, imgId]); 
+        toast.warning("Photo removed from gallery.");
     };
 
     const removeNewImage = (tempId) => {
         setNewGalleryFiles(prev => prev.filter(img => img.id !== tempId));
+        toast.info("Upload cancelled for this photo.");
     };
 
-    const handleSubmit = async (e) => {
+    // ✅ Confirmation before Save
+    const handleSaveConfirmation = (e) => {
         e.preventDefault();
-        setSubmitting(true);
+        askConfirmation(
+            "Save Changes",
+            "Are you sure you want to update this hotel's information?",
+            () => performSubmit()
+        );
+    };
 
+    const performSubmit = async () => {
+        setSubmitting(true);
         try {
             const formDataToSend = new FormData();
             Object.keys(formData).forEach(key => formDataToSend.append(key, formData[key]));
@@ -182,14 +403,28 @@ const EditHotel = () => {
                 throw new Error(errData.message || 'Failed to update hotel');
             }
 
-            alert('✅ Hotel updated successfully!');
+            toast.success("Hotel updated successfully!");
+            await clearDraft();
             navigate('/view-hotels'); 
         } catch (err) {
             console.error(err);
-            alert(`❌ Failed to update hotel: ${err.message}`);
+            toast.error(`Update failed: ${err.message}`);
         } finally {
             setSubmitting(false);
         }
+    };
+
+    // ✅ Confirmation before Cancel/Back
+    const handleBackClick = () => {
+        askConfirmation(
+            "Discard Changes",
+            "You have unsaved changes. Are you sure you want to go back?",
+            async () => {
+                await clearDraft();
+                navigate('/view-hotels');
+            },
+            "danger"
+        );
     };
 
     if (isLoading) return <div className="eho-page"><div className="eho-loading"><div className="eho-spinner"></div><p>Loading...</p></div></div>;
@@ -197,18 +432,37 @@ const EditHotel = () => {
 
     return (
         <div className="eho-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
+            {/* ✅ CUSTOM CONFIRMATION MODAL */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
+
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             <main className={`eho-main ${isSidebarCollapsed ? "eho-main--collapsed" : ""}`}>
                 <div className="eho-container">
                     <header className="eho-header">
                         <div className="eho-header-content">
-                            <button className="eho-back-btn" onClick={() => navigate('/view-hotels')}><ArrowLeft size={18} /> Back to Hotels</button>
+                            <button className="eho-back-btn" type="button" onClick={handleBackClick}><ArrowLeft size={18} /> Back to Hotels</button>
                             <h1 className="eho-title">EDIT HOTEL</h1>
                             <p className="eho-subtitle">Update property details, pricing, and gallery</p>
                         </div>
                     </header>
 
-                    <form onSubmit={handleSubmit} className="eho-form">
+                    <form onSubmit={handleSaveConfirmation} className="eho-form">
                         
                         {/* 1. Main Cover Image */}
                         <div className="eho-section">
@@ -253,7 +507,7 @@ const EditHotel = () => {
                             </div>
                         </div>
 
-                        {/* 3. Property Details (WITH DESTINATION DROPDOWN) */}
+                        {/* 3. Property Details */}
                         <div className="eho-section">
                             <h2 className="eho-section-title">Property Details</h2>
                             <div className="eho-form-grid">
@@ -262,7 +516,6 @@ const EditHotel = () => {
                                     <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="eho-input" />
                                 </div>
                                 
-                                {/* 👇 DESTINATION DROPDOWN (Matches AddHotel) */}
                                 <div className="eho-form-group">
                                     <label className="eho-label">Destination / City *</label>
                                     <select 
@@ -336,7 +589,14 @@ const EditHotel = () => {
 
                         {/* Actions */}
                         <div className="eho-form-actions">
-                            <button type="button" className="eho-btn eho-btn--cancel" onClick={() => navigate('/view-hotels')} disabled={submitting}>Cancel</button>
+                            <button 
+                                type="button" 
+                                className="eho-btn eho-btn--cancel" 
+                                onClick={handleBackClick} 
+                                disabled={submitting}
+                            >
+                                Cancel
+                            </button>
                             <button type="submit" className="eho-btn eho-btn--submit" disabled={submitting}>{submitting ? 'Updating...' : <><Save size={18} /> Save Changes</>}</button>
                         </div>
                     </form>

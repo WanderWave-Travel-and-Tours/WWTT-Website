@@ -38,13 +38,34 @@ const AirlineApplicationModal = ({ isOpen, onClose, refreshData }) => {
     }
     setIsLoading(true);
     try {
+      // ✅ GET ADMIN DATA FROM LOCALSTORAGE FOR ACTIVITY LOG
+      const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+      const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown Admin';
+      const activeId = adminData.id || adminData._id || null;
+
       const payload = {
-        ...formData, serviceName: "Airline Booking", inquiryType: "FLIGHT_BOOKING",
-        message: `Walk-in Booking: ${formData.flightDetails.origin} to ${formData.flightDetails.destination}`
+        ...formData, 
+        serviceName: "Airline Booking", 
+        inquiryType: "FLIGHT_BOOKING",
+        message: `Walk-in Booking: ${formData.flightDetails.origin} to ${formData.flightDetails.destination}`,
+        // ✅ SEND ADMIN INFO FOR ACTIVITY LOG
+        userEmail: activeUser,
+        adminId: activeId
       };
-      const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries', payload);
-      if (res.data.success) { setStep(2); if (refreshData) refreshData(); }
-    } catch (error) { alert("Failed to save."); } finally { setIsLoading(false); }
+
+      console.log("📤 Submitting Walk-in Booking by:", activeUser);
+
+      const res = await axios.post('http://localhost:5000/api/inquiries', payload);
+      if (res.data.success) { 
+        setStep(2); 
+        if (refreshData) refreshData(); 
+      }
+    } catch (error) { 
+      console.error("❌ Failed to save booking:", error);
+      alert("Failed to save."); 
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const resetAndClose = () => {

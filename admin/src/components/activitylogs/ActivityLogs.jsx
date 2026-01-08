@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../sidebar/sidebar.jsx';
-import { Activity, AlertCircle, CheckCircle, RefreshCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle, RefreshCcw, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import ActivityLogsStats from './ActivityLogsStats';
 import ActivityLogsFilters from './ActivityLogsFilters';
 import ActivityLogsTable from './ActivityLogsTable';
 import ActivityLogsDetailModal from './ActivityLogsDetailModal';
 import ActivityLogsPagination from './ActivityLogsPagination';
+import { exportActivityLogsToPDF } from './utils/activityLogsPdfExport';
 import './ActivityLogs.css';
 
 const ActivityLogs = () => {
@@ -55,7 +56,7 @@ const ActivityLogs = () => {
         
         try {
             // API endpoint
-            const apiUrl = 'https://wanderwaveph-backend.onrender.com/api/activity-logs';
+            const apiUrl = 'http://localhost:5000/api/activity-logs';
             console.log('📡 Fetching from:', apiUrl);
             
             const response = await fetch(apiUrl);
@@ -110,7 +111,7 @@ const ActivityLogs = () => {
             });
             
             console.log('✅ Formatted logs:', formattedLogs.length);
-            console.log('📝 Sample log:', formattedLogs[0]);
+            console.log('🔍 Sample log:', formattedLogs[0]);
             
             setActivityLogs(formattedLogs);
             console.log('✅ Activity logs set to state successfully');
@@ -284,6 +285,18 @@ const ActivityLogs = () => {
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
+    // 🔥 NEW: Export to PDF Handler
+    const handleExportPDF = () => {
+        console.log('📄 Exporting Activity Logs to PDF...');
+        try {
+            exportActivityLogsToPDF(filteredLogs, stats);
+            console.log('✅ PDF Export successful');
+        } catch (error) {
+            console.error('❌ Error exporting PDF:', error);
+            alert('Failed to export PDF. Please try again.');
+        }
+    };
+
     // Format date helper
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -313,27 +326,31 @@ const ActivityLogs = () => {
                             <h1>ACTIVITY LOGS</h1>
                             <p>Monitor and track all system activities and user actions</p>
                         </div>
-                        <button 
-                            className="act-btn-refresh"
-                            onClick={handleRefresh}
-                            disabled={loading}
-                        >
-                            <RefreshCcw size={18} className={loading ? 'spinning' : ''} /> 
-                            {loading ? 'Loading...' : 'Refresh Logs'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button 
+                                className="act-btn-refresh"
+                                onClick={handleExportPDF}
+                                disabled={loading || filteredLogs.length === 0}
+                                style={{ background: '#10b981' }}
+                            >
+                                <Download size={18} /> 
+                                Export PDF
+                            </button>
+                            <button 
+                                className="act-btn-refresh"
+                                onClick={handleRefresh}
+                                disabled={loading}
+                            >
+                                <RefreshCcw size={18} className={loading ? 'spinning' : ''} /> 
+                                {loading ? 'Loading...' : 'Refresh Logs'}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Error Message */}
                     {fetchError && (
-                        <div className="act-error-message" style={{
-                            padding: '12px 20px',
-                            backgroundColor: '#fee',
-                            border: '1px solid #fcc',
-                            borderRadius: '8px',
-                            color: '#c33',
-                            marginBottom: '20px'
-                        }}>
-                            <AlertCircle size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                        <div className="act-error-message">
+                            <AlertCircle size={18} />
                             Error fetching logs: {fetchError}
                         </div>
                     )}

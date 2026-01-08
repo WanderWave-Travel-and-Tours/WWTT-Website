@@ -1,0 +1,439 @@
+/* ========================================
+   SUPPLIER RATE MODALS - ALL MODAL STYLES (sr-)
+   ======================================== */
+
+/* --- MODAL OVERLAY & BASE --- */
+.sr-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    padding: 20px;
+}
+
+.sr-modal {
+    background: white;
+    border-radius: 16px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- MODAL HEADER --- */
+.sr-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(to bottom, #ffffff, #fafbfc);
+}
+
+.sr-modal-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.sr-modal-header button {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sr-modal-header button:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+/* ============================================
+   ADD/EDIT MODAL - FORM STYLES
+   ============================================ */
+.sr-modal form {
+    padding: 32px;
+}
+
+.sr-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.sr-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.sr-form-group.sr-full-width {
+    grid-column: 1 / -1;
+}
+
+.sr-form-group label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sr-form-group input,
+.sr-form-group select,
+.sr-form-group textarea {
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    transition: all 0.2s;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.sr-form-group input:focus,
+.sr-form-group select:focus,
+.sr-form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.sr-form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Selling Price Display */
+.sr-form-group.sr-selling-price {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.sr-form-group.sr-selling-price label {
+    color: white;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.sr-calculated-price {
+    font-size: 32px;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sr-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* ============================================
+   UPLOAD MODAL - SPECIFIC STYLES
+   ============================================ */
+.sr-upload-modal {
+    max-width: 700px;
+}
+
+.sr-upload-content {
+    padding: 32px;
+}
+
+.sr-upload-instructions {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid #e2e8f0;
+}
+
+.sr-upload-instructions h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 12px 0;
+}
+
+.sr-upload-instructions p {
+    color: #64748b;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.sr-upload-instructions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sr-upload-instructions li {
+    padding: 8px 0;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.sr-upload-instructions li strong {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.sr-upload-area {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    background: #f8fafc;
+    transition: all 0.3s;
+}
+
+.sr-upload-area:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.sr-file-upload-label {
+    cursor: pointer;
+    display: block;
+}
+
+.sr-file-upload-label svg {
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+.sr-file-upload-label h3 {
+    font-size: 16px;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+    font-weight: 700;
+}
+
+.sr-file-upload-label p {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0;
+}
+
+.sr-selected-file {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 12px 20px;
+    background: white;
+    border-radius: 8px;
+    color: #0f172a;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+}
+
+/* --- UPLOAD STATUS --- */
+.sr-upload-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.sr-upload-status.loading {
+    background-color: #eff6ff;
+    color: #3b82f6;
+    border: 1px solid #bfdbfe;
+}
+
+.sr-upload-status.success {
+    background-color: #d1fae5;
+    color: #10b981;
+    border: 1px solid #a7f3d0;
+}
+
+.sr-upload-status.error {
+    background-color: #fee2e2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   PREVIEW MODAL - SPECIFIC STYLES
+   ============================================ */
+.sr-preview-modal {
+    max-width: 700px;
+}
+
+.sr-preview-content {
+    padding: 32px;
+}
+
+.sr-preview-stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.sr-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.sr-stat-item svg {
+    color: #10b981;
+}
+
+.sr-preview-content h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 24px 0 16px 0;
+}
+
+.sr-column-mapping {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.sr-mapping-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.sr-mapping-item:last-child {
+    border-bottom: none;
+}
+
+.sr-field-name {
+    min-width: 120px;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: capitalize;
+    font-size: 13px;
+}
+
+.sr-arrow {
+    color: #10b981;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.sr-column-name {
+    color: #3b82f6;
+    font-weight: 700;
+    background: #eff6ff;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.sr-preview-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* ============================================
+   RESPONSIVE - ALL MODALS
+   ============================================ */
+@media (max-width: 768px) {
+    .sr-modal {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .sr-modal-header,
+    .sr-upload-content,
+    .sr-preview-content,
+    .sr-modal form {
+        padding: 20px;
+    }
+
+    .sr-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sr-modal-footer,
+    .sr-preview-actions {
+        flex-direction: column;
+    }
+
+    .sr-modal-footer button,
+    .sr-preview-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .sr-preview-stats {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .sr-upload-area {
+        padding: 30px 20px;
+    }
+
+    .sr-calculated-price {
+        font-size: 28px;
+    }
+}

@@ -1,258 +1,516 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Upload, X, FileText, User, Mail, DollarSign, MessageSquare, MapPin } from "lucide-react";
+import { 
+  ArrowLeft, Upload, X, FileText, User, 
+  DollarSign, Eye, Trash2, HelpCircle, Briefcase
+} from "lucide-react";
+import axios from "axios"; // Gamitin ang axios para mas consistent
 import Sidebar from "../../sidebar/sidebar"; 
-import "./EditPassport.css"; // Ginagamit ang parehong CSS para sa consistent na design
+import { useToast } from "../../toast/ToastManager"; 
+import "./EditPassport.css"; 
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="ep-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 15000 // Higher than preview modal
+    }}>
+      <div className="ep-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button onClick={onCancel} style={{ padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: 'white', cursor: 'pointer' }}>Cancel</button>
+          <button onClick={onConfirm} style={{ padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none', backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6', color: 'white', cursor: 'pointer' }}>Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// FileRow Component
+const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) => (
+  <div className="ep-file-row">
+    <div className="ep-file-info">
+      <span className="ep-file-label">{label}</span>
+      <span className="ep-file-status">
+        {currentFile ? `New file: ${currentFile.name}` : (hasExisting ? "Previously uploaded" : "No file attached")} 
+      </span>
+    </div>
+    <div className="ep-file-actions">
+      {(hasExisting || currentFile) && (
+        <button type="button" className="ep-view-btn" onClick={() => onView(field)} title="View file">
+          <Eye size={14} /> View
+        </button>
+      )}
+      <label className="ep-file-upload-btn">
+        <Upload size={14} /> Upload
+        <input type="file" accept=".docx,.pdf,.png,.webp,.jpg,.jpeg" onChange={(e) => onChange(e, field)} hidden />
+      </label>
+    </div>
+  </div>
+);
 
 const EditPassport = () => {
   const navigate = useNavigate();
   const { id: passportId } = useParams();
+  const toast = useToast(); 
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [originalData, setOriginalData] = useState(null); // Added for comparison
 
-  // Centralized state para sa auto-populate
-  // Ang mga pangalan dito ay tugma sa value attribute ng inputs sa ibaba
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    contactNumber: "",
-    address: "",
-    estimatedPrice: "",
-    message: "",
-    serviceName: "",
-    passportDocument: "",
-    existingImage: "",
+  // Options from PassportApplicationModal
+  const passportOptions = [
+    "New Application",
+    "Renewal",
+    "Lost Passport Replacement",
+  ];
+
+  const processingOptions = [
+    "Regular Processing",
+    "Expedited Processing"
+  ];
+
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
   });
 
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [formData, setFormData] = useState({
+    givenName: "",
+    lastName: "",
+    email: "",
+    contactNumber: "",
+    serviceName: "",      // Mapping to Processing Type
+    estimatedPrice: "",
+    message: "",
+    passportDocument: ""  // UI mapping para sa Application Type dropdown
+  });
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
+  const [files, setFiles] = useState({});
+  const [existingFiles, setExistingFiles] = useState({});
+
+  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
+  const FILE_BASE_URL = "http://localhost:5000";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  // --- FETCH DATA PARA SA AUTO-POPULATE ---
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true, title, message, type,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
   useEffect(() => {
     const fetchPassportDetails = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/${passportId}`);
-        const result = await res.json();
+        const res = await axios.get(`${API_BASE_URL}/${passportId}`);
+        const result = res.data;
         
         if (result.success && result.data) {
           const data = result.data;
           
-          // Dito nilalagay ang current data sa inputs
+          // Split full name if givenName/lastName are not explicitly separate in DB
+          const nameParts = data.fullName ? data.fullName.split(" ") : ["", ""];
+          const lName = nameParts.length > 1 ? nameParts.pop() : "";
+          const gName = nameParts.join(" ");
+
+          const fetchedAppType = data.passportDetails?.applicationType || "";
+          const fetchedProcType = data.passportDetails?.processingType || data.serviceName || "";
+
           setFormData({
-            fullName: data.fullName || "",
+            givenName: data.givenName || gName || "",
+            lastName: data.lastName || lName || "",
             email: data.email || "",
             contactNumber: data.contactNumber || "",
-            address: data.address || "",
+            passportDocument: fetchedAppType, 
+            serviceName: fetchedProcType, 
             estimatedPrice: data.estimatedPrice || "",
-            message: data.message || "",
-            serviceName: data.serviceName || "",
-            passportDocument: data.passportDocument || "",
-            existingImage: data.evidenceName || "", 
+            message: data.adminRemarks || "",
           });
 
-          // I-set ang image preview kung may existing evidence
-          if (data.evidenceName) {
-            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${data.evidenceName}`);
+          // Check for existing documents
+          if (data.evidenceUrl) {
+            setExistingFiles({ requirement: data.evidenceUrl });
           }
-        } else {
-            console.error("Hindi mahanap ang data:", result.message);
         }
       } catch (err) {
-        console.error("Error sa pag-fetch ng VISA data:", err);
+        toast.error("Failed to fetch data.");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
     if (passportId) fetchPassportDetails();
-  }, [passportId]);
+  }, [passportId, toast]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "givenName" || name === "lastName") {
+      const nameRegex = /^[a-zA-Z\sñÑ]*$/; 
+      if (!nameRegex.test(value)) return; 
+    }
+
+    if (name === "contactNumber") {
+      let val = value.replace(/[^0-9+]/g, ""); 
+      if (val.includes("+") && val.indexOf("+") !== 0) val = val.replace(/\+/g, ""); 
+      if (val.length > 20) return;
+      setFormData(prev => ({ ...prev, [name]: val }));
+      return;
+    }
+
+    if (name === "estimatedPrice") {
+      const val = value.replace(/[^0-9]/g, ""); 
+      if (val.length > 7) return;
+      setFormData(prev => ({ ...prev, [name]: val }));
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e) => {
+  const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      setFiles((prev) => ({ ...prev, [fieldName]: file }));
+      setExistingFiles((prev) => {
+        const updated = { ...prev };
+        delete updated[fieldName];
+        return updated;
+      });
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
+  const handleViewFile = (fieldKey) => {
+    if (files[fieldKey]) {
+      const url = URL.createObjectURL(files[fieldKey]);
+      setPreviewFile({ url, name: files[fieldKey].name, fieldKey, isNew: true });
+    } else if (existingFiles[fieldKey]) {
+      const url = existingFiles[fieldKey];
+      const fullUrl = url.startsWith('http') ? url : `${FILE_BASE_URL}${url}`;
+      setPreviewFile({ url: fullUrl, name: url.split('/').pop(), fieldKey, isNew: false });
+    }
+  };
 
-    const data = new FormData();
-    
-    // I-append lahat ng fields para sa update
-    data.append("fullName", formData.fullName);
-    data.append("email", formData.email);
-    data.append("contactNumber", formData.contactNumber);
-    data.append("address", formData.address);
-    data.append("estimatedPrice", formData.estimatedPrice);
-    data.append("message", formData.message);
-    data.append("serviceName", formData.serviceName);
-    data.append("passportDocument", formData.passportDocument);
+  const handleDeleteFile = (fieldKey) => {
+    askConfirmation("Delete Confirmation", "Are you sure you want to delete this file? Changes will be saved once you click Update.", () => {
+      setFiles(prev => {
+        const updated = { ...prev };
+        delete updated[fieldKey];
+        return updated;
+      });
+      setExistingFiles(prev => {
+        const updated = { ...prev };
+        delete updated[fieldKey];
+        return updated;
+      });
+      setPreviewFile(null);
+      toast.info("File removed from list.");
+    }, "danger");
+  };
 
-    if (imageFile) {
-      data.append("evidence", imageFile); 
+  const handleDiscard = () => {
+    askConfirmation(
+      "Discard Changes",
+      "Are you sure you want to discard your changes? All unsaved updates will be lost.",
+      () => navigate(-1),
+      "danger"
+    );
+  };
+
+  const performSubmit = async () => {
+    // Basic Validations
+    if (!formData.email.toLowerCase().endsWith(".com")) {
+      toast.error("Email must end with .com");
+      return;
     }
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/update/${passportId}`, {
+    const digitCount = formData.contactNumber.replace(/[^0-9]/g, "").length;
+    if (digitCount < 8) {
+      toast.error("Contact number must have at least 8 digits.");
+      return;
+    }
+
+    setSubmitting(true);
+    
+    // 🔥 GET ADMIN DATA FOR LOGS
+    const { userEmail, adminId } = getAdminData();
+
+    const data = new FormData();
+    const combinedFullName = `${formData.givenName} ${formData.lastName}`.trim();
+    
+    // Standard Inquiry Fields
+    data.append("fullName", combinedFullName);
+    data.append("email", formData.email);
+    data.append("contactNumber", formData.contactNumber);
+    data.append("estimatedPrice", formData.estimatedPrice);
+    data.append("message", formData.message); // This will map to adminRemarks or message
+    
+    // Passport Specific Details
+    const passportDetails = {
+        applicationType: formData.applicationType,
+        dfaLocation: "Updated via Admin"
+    };
+    data.append("passportDetails", JSON.stringify(passportDetails));
+
+    // 🔥 LOGGING DATA
+    data.append("userEmail", userEmail);
+    data.append("adminId", adminId);
+
+    // File Handling
+    if (files.requirement) {
+        data.append("walkInDoc", files.requirement);
+    }
+
+      // Existing Submit Logic
+      Object.keys(formData).forEach((key) => {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          data.append(key, formData[key]);
+        }
+      });
+
+      data.append("applicationType", formData.passportDocument);
+      const combinedName = `${formData.givenName || ""} ${formData.lastName || ""}`.trim();
+      data.append("fullName", combinedName);
+
+      if (files.requirement) {
+        data.append("requirement", files.requirement);
+      }
+
+      const remainingUrls = Object.values(existingFiles).filter(url => !!url);
+      data.append("existingFiles", JSON.stringify(remainingUrls));
+
+      const response = await fetch(`${API_BASE_URL}/update/${passportId}`, {
         method: "PUT",
         body: data,
       });
-      const result = await res.json();
-      if (result.success) {
-        alert("✅ VISA Request Updated Successfully!");
+
+      const result = await response.json();
+
+    try {
+      const res = await axios.put(`${API_BASE_URL}/update/${passportId}`, data, {
+          headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      if (res.data.success) {
+        toast.success("Passport record updated successfully!");
         navigate("/services/passport");
-      } else {
-        alert("❌ Error: " + result.message);
       }
-    } catch (err) {
-      alert("❌ Server Error: Connection Failed");
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Error updating record.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    askConfirmation("Save Changes", "Confirm updates to this Passport request?", () => performSubmit());
+  };
+
+  const renderPreviewContent = () => {
+    if (!previewFile) return null;
+    const { url, name } = previewFile;
+    const isImage = name.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+    const isPdf = name.toLowerCase().endsWith('.pdf');
+
+    if (isImage && !isPdf) {
+      return <img src={url} alt="Preview" className="ep-preview-media-full" />;
+    } else if (isPdf) {
+      return <iframe src={url} title="PDF Preview" style={{ width: '100%', height: '100%', border: 'none' }} />;
+    } else {
+      return (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <FileText size={64} style={{ margin: '0 auto 20px', color: '#64748b' }} />
+          <p style={{fontSize: '16px', color: '#1e293b'}}>Preview not available for this file format.</p>
+          <a href={url} download className="ep-view-btn" style={{ display: 'inline-flex', marginTop: '15px', padding: '10px 20px' }}>
+            Download to View
+          </a>
+        </div>
+      );
+    }
+  };
+
   if (loading) return (
-    <div className="et-page">
-      <div className="et-loading">
-        <div className="spinner"></div>
-        <p>Hinahanap ang kasalukuyang data ng VISA...</p>
-      </div>
+    <div className="ep-loading-container">
+        <div className="ep-loader"></div>
+        <p>Fetching passport details...</p>
     </div>
   );
 
   return (
-    <div className="et-page">
+    <div className="ep-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      <main className={`et-main ${isSidebarCollapsed ? "et-main--collapsed" : ""}`}>
-        <div className="et-container">
-          
-          <header className="et-header">
-            <div className="et-header-content">
-              <button className="et-back-btn" onClick={() => navigate(-1)}>
-                <ArrowLeft size={18} /> Back to Requests
+      <main className={`ep-main ${isSidebarCollapsed ? "ep-main--collapsed" : ""}`}>
+        <div className="ep-container">
+          <header className="ep-header">
+            <div className="ep-header-content">
+              <button className="ep-back-btn" onClick={handleDiscard}>
+                <ArrowLeft size={20} /> Back
               </button>
-              <h1 className="et-title">Edit VISA Request</h1>
-              <p className="et-subtitle">Baguhin ang impormasyon sa ibaba base sa request ng client</p>
+              <h1 className="ep-title">EDIT PASSPORT REQUEST</h1>
+              <p className="ep-subtitle">Ref No: #{passportId.slice(-6).toUpperCase()}</p>
             </div>
           </header>
 
-          <form onSubmit={handleSubmit} className="et-form">
-            <div className="et-grid-layout">
-              
-              <div className="et-form-left">
-                {/* Section 1: Client Details */}
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <User size={20} className="et-section-icon" />
-                    <h3>Impormasyon ng Client</h3>
-                  </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group full-width">
-                      <label>Full Name</label>
-                      <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} className="et-input" required />
+          <form onSubmit={handleSubmit} className="ep-form">
+            <div className="ep-grid-layout">
+              <div className="ep-form-left">
+                {/* CLIENT INFO SECTION */}
+                <section className="ep-section">
+                  <div className="ep-section-header"><User size={22} className="ep-section-icon" /> <h3>Client Information</h3> </div>
+                  <div className="ep-fields-grid">
+                    <div className="ep-input-group"> 
+                        <label>Given Name</label> 
+                        <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="ep-input" required /> 
                     </div>
-                    <div className="et-input-group">
-                      <label>Email Address</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" required />
+                    <div className="ep-input-group"> 
+                        <label>Last Name</label> 
+                        <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="ep-input" required /> 
                     </div>
-                    <div className="et-input-group">
-                      <label>Contact Number</label>
-                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" />
+                    <div className="ep-input-group"> 
+                        <label>Email</label> 
+                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="ep-input" required /> 
                     </div>
-                    <div className="et-input-group full-width">
-                      <label>Address</label>
-                      <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="et-input" />
+                    <div className="ep-input-group"> 
+                        <label>Contact No</label> 
+                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="ep-input" required /> 
                     </div>
                   </div>
                 </section>
 
-                {/* Section 2: Document & Price */}
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <FileText size={20} className="et-section-icon" />
-                    <h3>Detalye ng Dokumento</h3>
-                  </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group">
-                      <label>Service Name</label>
-                      <input type="text" name="serviceName" value={formData.serviceName} onChange={handleInputChange} className="et-input" />
-                    </div>
-                    <div className="et-input-group">
-                      <label>VISA Document</label>
-                      <input type="text" name="passportDocument" value={formData.passportDocument} onChange={handleInputChange} className="et-input" />
-                    </div>
-                    <div className="et-input-group full-width">
-                      <label>Estimated Price (PHP)</label>
-                      <input type="number" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="et-input" />
+                {/* SERVICE DETAILS SECTION */}
+                <section className="ep-section">
+                  <div className="ep-section-header"><Briefcase size={22} className="ep-section-icon" /> <h3>Service Details</h3> </div>
+                  <div className="ep-fields-grid">
+                    <div className="ep-input-group">
+                      <label>Application Type</label>
+                      <select 
+                        name="passportDocument" 
+                        value={formData.passportDocument} 
+                        onChange={handleInputChange} 
+                        className="ep-input"
+                        required
+                      >
+                        <option value="">Select Application Type</option>
+                        {passportOptions.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </section>
 
-                {/* Section 3: Message */}
-                <section className="et-section">
-                    <div className="et-section-header">
-                        <MessageSquare size={20} className="et-section-icon" />
-                        <h3>Client Message / Admin Notes</h3>
-                    </div>
-                    <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" />
+                {/* ATTACHMENTS SECTION */}
+                <section className="ep-section">
+                  <div className="ep-section-header"><Upload size={22} className="ep-section-icon" /> <h3>Attachments</h3> </div>
+                  <FileRow 
+                    label="Requirement Document" 
+                    field="requirement" 
+                    onChange={handleFileChange} 
+                    onView={() => handleViewFile('requirement')} 
+                    hasExisting={!!existingFiles['requirement']} 
+                    currentFile={files['requirement']} 
+                  />
+                  <p className="ep-hint-text">Supported formats: PDF, JPG, PNG, DOCX (Max 5MB)</p>
                 </section>
               </div>
 
-              {/* Sidebar: Image Upload & Actions */}
-              <div className="et-form-right">
-                <div className="et-sticky-sidebar">
-                  <section className="et-section et-upload-section">
-                    <h3 className="et-upload-title">Evidence / Image</h3>
-                    <div className="et-image-upload-container">
-                      {imagePreview ? (
-                        <div className="et-image-preview">
-                          <img src={imagePreview} alt="Preview" />
-                          <div className="et-image-overlay" onClick={() => document.getElementById('passport-img').click()}>
-                             <Upload size={20} />
-                             <span>Palitan ang Image</span>
-                          </div>
-                          <button type="button" className="et-remove-img" onClick={() => {setImagePreview(""); setImageFile(null);}}>
-                            <X size={16} />
-                          </button>
+              {/* --- Billing & Notes --- */}
+              <div className="ep-form-right">
+                <div className="ep-sticky-sidebar">
+                  {/* BILLING SECTION */}
+                  <section className="ep-section">
+                    <div className="ep-section-header"> <DollarSign size={20} className="ep-section-icon" /> <h3>Billing & Notes</h3> </div>
+                    <div className="ep-input-group"> 
+                        <label>Estimated Price (PHP)</label> 
+                        <div className="ep-price-input-wrapper">
+                            <span className="ep-currency-prefix">₱</span>
+                            <input type="text" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="ep-input ep-price-input" placeholder="0.00" /> 
                         </div>
-                      ) : (
-                        <label className="et-upload-placeholder">
-                          <Upload size={32} />
-                          <span>I-upload ang Evidence</span>
-                          <input type="file" id="passport-img" onChange={handleImageChange} accept="image/*" hidden />
-                        </label>
-                      )}
-                      <input type="file" id="passport-img" onChange={handleImageChange} accept="image/*" hidden />
+                    </div>
+                    <div className="ep-input-group" style={{marginTop: '20px'}}> 
+                        <label>Admin Remarks / Internal Notes</label> 
+                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="ep-textarea" rows="6" placeholder="Add notes about this request..." /> 
                     </div>
                   </section>
 
-                  <div className="et-form-actions">
-                    <button type="button" className="et-btn et-btn--cancel" onClick={() => navigate(-1)}>Cancel</button>
-                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}>
-                      {submitting ? "Sinasave..." : "I-update ang Request"}
+                  {/* FORM ACTIONS */}
+                  <div className="ep-form-actions">
+                    <button type="submit" className="ep-btn ep-btn--submit" disabled={submitting}> 
+                        {submitting ? "SAVING UPDATES..." : "UPDATE REQUEST"} 
+                    </button>
+                    <button type="button" className="ep-btn ep-btn--cancel" onClick={handleDiscard}>
+                        DISCARD CHANGES
                     </button>
                   </div>
                 </div>
               </div>
-
             </div>
           </form>
         </div>
       </main>
+
+      {/* FILE PREVIEW MODAL */}
+      {previewFile && (
+        <div className="ep-modal-overlay" onClick={() => setPreviewFile(null)}>
+          <div className="ep-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
+            <div className="ep-modal-preview-header">
+              <span className="ep-preview-filename">{previewFile.name.split('/').pop()}</span>
+              <button className="ep-close-preview" onClick={() => setPreviewFile(null)}><X size={24} /></button>
+            </div>
+            <div className="ep-modal-preview-body">
+                {renderPreviewContent()}
+            </div>
+            <div className="ep-modal-preview-footer">
+                <button className="ep-delete-file-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
+                  <Trash2 size={18} /> Remove File
+                </button>
+                <button className="ep-close-btn-simple" onClick={() => setPreviewFile(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRMATION DIALOG */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen} 
+        title={confirmConfig.title} 
+        message={confirmConfig.message} 
+        type={confirmConfig.type} 
+        onConfirm={confirmConfig.onConfirm} 
+        onCancel={() => setConfirmConfig({isOpen: false})} 
+      />
     </div>
   );
 };

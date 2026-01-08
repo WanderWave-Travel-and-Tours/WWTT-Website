@@ -1,15 +1,89 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, Calendar } from 'lucide-react';
-import Sidebar from '../sidebar/sidebar'; // Ensure correct path
+import { Save, ArrowLeft, Upload } from 'lucide-react';
+import axios from 'axios';
+import Sidebar from '../sidebar/sidebar';
+import { Save, ArrowLeft, Upload, Calendar, HelpCircle } from 'lucide-react';
 import './EditPoster.css';
+
+// ✅ Imports for Notifications and Draft Functionality
+import { useToast } from "../toast/ToastManager"; 
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+// ✅ Confirmation Modal Component (Patterned after EditVisa)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const EditPoster = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const toast = useToast(); // ✅ Initialize Toast
+
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+
+    // ✅ Confirmation Modal State
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
 
     // Form State
     const [formData, setFormData] = useState({
@@ -20,11 +94,28 @@ const EditPoster = () => {
         description: ''
     });
 
+    // Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
+
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+
+    // ✅ Confirmation Helper
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
     };
 
     // Helper to format date for input type="date"
@@ -34,14 +125,154 @@ const EditPoster = () => {
         return date.toISOString().split('T')[0];
     };
 
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    useEffect(() => {
+        const updateDraft = async () => {
+            if (isLoading) {
+                setDraftPayload(null);
+                return;
+            }
+
+            const isFormEmpty = 
+                !formData.title && 
+                !formData.startDate && 
+                !formData.endDate && 
+                !formData.description && 
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null);
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            if (imageFile) {
+                try {
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...formData,
+                image: imageBase64,
+                imageMeta: imageMeta,
+                originalId: id
+                image: imageBase64, 
+                imageMeta: imageMeta,
+                originalId: id 
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500);
+        }, 500); 
+
+        return () => clearTimeout(timeoutId);
+    }, [formData, imageFile, isLoading, id]);
+
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+        
+        if (data.originalId && data.originalId !== id) {
+            return;
+        }
+
+        setFormData({
+            title: data.title || '',
+            status: data.status || 'Active',
+            startDate: data.startDate || '',
+            endDate: data.endDate || '',
+            description: data.description || ''
+        });
+
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+                toast.info("Image restored from draft."); // ✅ Added Toast
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: `edit-poster-${id}`,
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false
+        autoRestore: false 
+    });
+
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft && !isLoading) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft, isLoading]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+        toast.success("Draft restored successfully!"); // ✅ Added Toast
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft();
+        setShowRestoreModal(false);
+        toast.info("Draft discarded."); // ✅ Added Toast
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
+
     // Fetch Poster Data
     useEffect(() => {
         const fetchPosterDetails = async () => {
             try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/${id}`);
-                if (!response.ok) throw new Error('Failed to fetch poster details');
+                const response = await axios.get(`http://localhost:5000/api/posters/${id}`);
+                const data = response.data;
                 
-                const data = await response.json();
+                // Set Original Data for Activity Logging comparison
+                setOriginalData(data);
                 
                 setFormData({
                     title: data.title || '',
@@ -52,11 +283,11 @@ const EditPoster = () => {
                 });
 
                 if (data.imageUrl) {
-                    setImagePreview(`https://wanderwaveph-backend.onrender.com/${data.imageUrl}`);
+                    setImagePreview(`http://localhost:5000/${data.imageUrl}`);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Could not load poster details. Please check connection.');
+                toast.error('Could not load poster details.'); // ✅ Use Toast instead of alert
             } finally {
                 setIsLoading(false);
             }
@@ -65,7 +296,7 @@ const EditPoster = () => {
         if (id) {
             fetchPosterDetails();
         }
-    }, [id]);
+    }, [id, toast]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -84,42 +315,111 @@ const EditPoster = () => {
                 setImagePreview(reader.result);
             };
             reader.readAsDataURL(file);
+            toast.info(`Selected image: ${file.name}`); // ✅ Added Toast
         }
     };
 
+    // ✅ UPDATED: Handle Submit LOGIC for Activity Logs
     const handleSubmit = async (e) => {
+    // ✅ Confirmation before Saving
+    const handleSaveConfirmation = (e) => {
         e.preventDefault();
+        askConfirmation(
+            "Update Poster",
+            "Are you sure you want to save the changes to this poster?",
+            () => performSubmit()
+        );
+    };
+
+    const performSubmit = async () => {
         setSubmitting(true);
+
+        const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
 
         try {
             const formDataToSend = new FormData();
+            
+            // Append standard fields
             formDataToSend.append("title", formData.title);
             formDataToSend.append("status", formData.status);
             formDataToSend.append("startDate", formData.startDate);
             formDataToSend.append("endDate", formData.endDate);
             formDataToSend.append("description", formData.description);
 
+            // 🔥 Activity Logs: Append Admin Data
+            formDataToSend.append("userEmail", userEmail);
+            formDataToSend.append("adminId", adminId);
+
+            // 🔥 Activity Logs: Track Changes Logic
+            let changes = [];
+            
+            const trackChange = (label, oldVal, newVal) => {
+                const cleanOld = String(oldVal || "").trim();
+                const cleanNew = String(newVal || "").trim();
+                // Avoid logging if both are empty/null effectively
+                if (cleanOld !== cleanNew) {
+                    changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
+                }
+            };
+
+            if (originalData) {
+                trackChange("Title", originalData.title, formData.title);
+                trackChange("Status", originalData.status, formData.status);
+                trackChange("Start Date", formatDateForInput(originalData.startDate), formData.startDate);
+                trackChange("End Date", formatDateForInput(originalData.endDate), formData.endDate);
+                trackChange("Description", originalData.description, formData.description);
+                
+                if (imageFile) {
+                    changes.push(`Poster image was replaced.`);
+                }
+            }
+
+            // Explicitly append changes as JSON string so backend can parse it
+            if (changes.length > 0) {
+                formDataToSend.append("changes", JSON.stringify(changes)); 
+            }
+
+            // Append Image if new one exists
             if (imageFile) {
                 formDataToSend.append("image", imageFile);
+                if (originalData && originalData.imagePublicId) {
+                    formDataToSend.append("imagePublicId", originalData.imagePublicId);
+                }
             }
 
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/update/${id}`, {
-                method: 'PUT',
-                body: formDataToSend,
-            });
+            // ✅ Using axios.put (Correct way to send FormData with logs)
+            // Note: Assuming route is /update/:id based on common pattern, verify route in router file
+            const response = await axios.put(`http://localhost:5000/api/posters/update/${id}`, formDataToSend);
 
-            if (!response.ok) {
-                throw new Error('Failed to update poster');
+            if (response.data) {
+                alert('✅ Poster updated successfully!');
+                await clearDraft(); // Clear draft on success
+                navigate('/view-posters'); 
             }
 
-            alert('✅ Poster updated successfully!');
+            toast.success('Poster updated successfully!'); // ✅ Use Toast instead of alert
+            
+            await clearDraft();
             navigate('/view-posters'); 
         } catch (err) {
             console.error(err);
-            alert('❌ Failed to update poster. Please try again.');
+            toast.error('Failed to update poster. Please try again.'); // ✅ Use Toast instead of alert
         } finally {
             setSubmitting(false);
         }
+    };
+
+    // ✅ Confirmation before Discarding/Canceling
+    const handleDiscard = () => {
+        askConfirmation(
+            "Discard Changes",
+            "Are you sure you want to discard your changes? All unsaved data and drafts for this session will be cleared.",
+            async () => {
+                await clearDraft();
+                navigate('/view-posters');
+            },
+            "danger"
+        );
     };
 
     if (isLoading) {
@@ -138,6 +438,14 @@ const EditPoster = () => {
 
     return (
         <div className="epo-page">
+            
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
@@ -146,10 +454,9 @@ const EditPoster = () => {
             <main className={`epo-main ${isSidebarCollapsed ? "epo-main--collapsed" : ""}`}>
                 <div className="epo-container">
                     
-                    {/* Header */}
                     <header className="epo-header">
                         <div className="epo-header-content">
-                            <button className="epo-back-btn" onClick={() => navigate('/view-posters')}>
+                            <button className="epo-back-btn" onClick={handleDiscard}>
                                 <ArrowLeft size={18} />
                                 Back to Posters
                             </button>
@@ -158,10 +465,8 @@ const EditPoster = () => {
                         </div>
                     </header>
 
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="epo-form">
+                    <form onSubmit={handleSaveConfirmation} className="epo-form">
                         
-                        {/* Section 1: Image Upload */}
                         <div className="epo-section">
                             <h2 className="epo-section-title">Poster Visual</h2>
                             <div className="epo-upload-area">
@@ -191,7 +496,6 @@ const EditPoster = () => {
                             </div>
                         </div>
 
-                        {/* Section 2: Poster Details */}
                         <div className="epo-section">
                             <h2 className="epo-section-title">Poster Details</h2>
                             <div className="epo-form-grid">
@@ -259,12 +563,11 @@ const EditPoster = () => {
                             </div>
                         </div>
 
-                        {/* Footer Actions */}
                         <div className="epo-form-actions">
                             <button 
                                 type="button" 
                                 className="epo-btn epo-btn--cancel" 
-                                onClick={() => navigate('/view-posters')}
+                                onClick={handleDiscard}
                                 disabled={submitting}
                             >
                                 Cancel
@@ -286,6 +589,16 @@ const EditPoster = () => {
                     </form>
                 </div>
             </main>
+
+            {/* ✅ Confirmation Modal */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };

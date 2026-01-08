@@ -8,6 +8,25 @@ import VisaInquiryModal from "./VisaInquiryModal";
 import VisaSettingsModal from "./VisaSettingsModal";
 import VisaApplicationModal from "./VisaApplicationModal"; 
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log('📊 Admin Data from localStorage:', adminData);
+        
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return {
+            userEmail: 'Unknown Admin',
+            adminId: null
+        };
+    }
+};
+
 const VISA_STAT_IMAGES = {
     TOTAL_CONFIGURED: 'https://picsum.photos/seed/visa-total/800/600',
     PENDING: 'https://picsum.photos/seed/visa-pending/800/600',
@@ -273,7 +292,7 @@ const VisaProcessing = () => {
 
   const fetchVisas = async () => {
     try {
-      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/visas");
+      const res = await axios.get("http://localhost:5000/api/visas");
       if (Array.isArray(res.data)) {
         setVisaForms(res.data.map((v) => ({ ...v, id: v._id, desc: v.description })));
       }
@@ -286,7 +305,7 @@ const VisaProcessing = () => {
 
   const fetchInquiries = async () => {
     try {
-      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries?isArchive=No');
+      const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
       if (response.data.success) {
         const visaRequests = response.data.data.filter(inq => 
             (inq.inquiryType === 'VISA') && inq.isArchive === 'No'
@@ -298,11 +317,18 @@ const VisaProcessing = () => {
     }
   };
 
+  // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
   const handleArchive = async (id) => {
     if (window.confirm("Are you sure you want to archive this inquiry?")) {
+      
+      // 🔥 GET ADMIN DATA
+      const { userEmail, adminId } = getAdminData();
+
       try {
-        const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
-          isArchive: "Yes"
+        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+          isArchive: "Yes",
+          userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
+          adminId    // 🔥 ADD ADMIN INFO FOR LOGS
         });
         if (response.data.success) {
           alert("Inquiry archived successfully.");

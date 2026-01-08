@@ -1,13 +1,28 @@
+/* ========================================
+   TOP PACKAGES LIST - FULLY RESPONSIVE
+   ======================================== */
+
 .dash-packages-list {
-    padding: 16px 20px;
+    padding: 0;
+    margin: 0;
 }
 
 .dash-package-item {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 14px 0;
+    padding: 16px 0;
     border-bottom: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.dash-package-item:hover {
+    background-color: #f8fafc;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-left: -8px;
+    margin-right: -8px;
+    border-radius: 8px;
 }
 
 .dash-package-item:last-child {
@@ -18,41 +33,323 @@
     width: 32px;
     height: 32px;
     background: #001F3F;
-    color: #fff;
+    color: white;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 900;
+    font-weight: 800;
     font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.dash-package-item:hover .dash-package-rank {
+    transform: scale(1.1);
 }
 
 .dash-package-info {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    min-width: 0;
+    gap: 2px;
 }
 
 .dash-package-name {
     font-weight: 700;
     color: #1e293b;
     font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
 }
 
 .dash-package-stats {
     font-size: 12px;
     color: #64748b;
+    margin-top: 2px;
+    line-height: 1.3;
 }
 
 .dash-package-trend {
-    background: #ecfdf5;
-    color: #059669;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: #f1f5f9;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.dash-package-item:hover .dash-package-trend {
+    background: #e2e8f0;
+}
+
+/* Empty State */
+.dash-empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.dash-empty-state svg {
+    opacity: 0.5;
+}
+
+.dash-empty-state p {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* Large Desktop (Max 1400px) */
+@media (max-width: 1400px) {
+    .dash-package-item {
+        padding: 14px 0;
+        gap: 14px;
+    }
+}
+
+/* Desktop/Laptop (Max 1200px) */
+@media (max-width: 1200px) {
+    .dash-package-item {
+        padding: 14px 0;
+        gap: 14px;
+    }
+
+    .dash-package-rank {
+        width: 30px;
+        height: 30px;
+        font-size: 13px;
+    }
+
+    .dash-package-name {
+        font-size: 13px;
+    }
+
+    .dash-package-stats {
+        font-size: 11px;
+    }
+}
+
+/* Tablet Landscape (Max 1024px) */
+@media (max-width: 1024px) {
+    .dash-package-item {
+        padding: 13px 0;
+        gap: 12px;
+    }
+
+    .dash-package-trend {
+        width: 26px;
+        height: 26px;
+    }
+
+    .dash-empty-state {
+        padding: 35px;
+    }
+}
+
+/* Tablet Portrait (Max 900px) */
+@media (max-width: 900px) {
+    .dash-package-item {
+        padding: 12px 0;
+    }
+
+    .dash-package-name {
+        font-size: 13px;
+    }
+
+    .dash-package-stats {
+        font-size: 11px;
+    }
+}
+
+/* Tablet Small (Max 768px) */
+@media (max-width: 768px) {
+    .dash-package-item {
+        padding: 12px 0;
+        gap: 12px;
+    }
+
+    .dash-package-rank {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .dash-package-name {
+        font-size: 13px;
+    }
+
+    .dash-package-stats {
+        font-size: 11px;
+    }
+
+    .dash-package-trend {
+        width: 24px;
+        height: 24px;
+    }
+
+    .dash-empty-state {
+        padding: 30px;
+    }
+
+    .dash-empty-state svg {
+        width: 40px;
+        height: 40px;
+    }
+
+    .dash-empty-state p {
+        font-size: 13px;
+    }
+}
+
+/* Mobile Large (Max 640px) */
+@media (max-width: 640px) {
+    .dash-package-item {
+        padding: 12px 0;
+        gap: 12px;
+    }
+
+    .dash-package-item:hover {
+        padding-left: 6px;
+        padding-right: 6px;
+        margin-left: -6px;
+        margin-right: -6px;
+    }
+
+    .dash-package-rank {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    .dash-package-name {
+        font-size: 13px;
+    }
+
+    .dash-package-stats {
+        font-size: 11px;
+    }
+
+    .dash-package-trend {
+        width: 24px;
+        height: 24px;
+    }
+
+    .dash-empty-state {
+        padding: 30px 20px;
+    }
+
+    .dash-empty-state svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .dash-empty-state p {
+        font-size: 12px;
+    }
+}
+
+/* Mobile Small (Max 480px) */
+@media (max-width: 480px) {
+    .dash-package-item {
+        padding: 10px 0;
+        gap: 10px;
+    }
+
+    .dash-package-rank {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .dash-package-name {
+        font-size: 12px;
+    }
+
+    .dash-package-stats {
+        font-size: 10px;
+    }
+
+    .dash-package-trend {
+        width: 22px;
+        height: 22px;
+    }
+
+    .dash-package-trend svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .dash-empty-state {
+        padding: 25px 15px;
+    }
+
+    .dash-empty-state svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .dash-empty-state p {
+        font-size: 11px;
+    }
+}
+
+/* Mobile Extra Small (Max 360px) */
+@media (max-width: 360px) {
+    .dash-package-item {
+        padding: 10px 0;
+        gap: 8px;
+    }
+
+    .dash-package-rank {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
+        border-radius: 6px;
+    }
+
+    .dash-package-name {
+        font-size: 12px;
+    }
+
+    .dash-package-stats {
+        font-size: 10px;
+    }
+
+    .dash-package-trend {
+        width: 20px;
+        height: 20px;
+    }
+
+    .dash-package-trend svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .dash-empty-state {
+        padding: 20px 12px;
+    }
+
+    .dash-empty-state svg {
+        width: 30px;
+        height: 30px;
+    }
+
+    .dash-empty-state p {
+        font-size: 11px;
+    }
 }

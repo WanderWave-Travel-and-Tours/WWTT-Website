@@ -24,7 +24,26 @@ import {
 } from "./PSAModals";
 import PSAApplicationModal from "./PSAApplicationModal";
 
-// Placeholder Images for Stats (Use same logic as CENOMAR if available, else placeholders)
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log('📊 Admin Data from localStorage:', adminData);
+        
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return {
+            userEmail: 'Unknown Admin',
+            adminId: null
+        };
+    }
+};
+
+// Placeholder Images for Stats
 const PSA_STAT_IMAGES = {
     TOTAL_REQUESTS: 'https://picsum.photos/seed/psa-total/800/600',
     PENDING: 'https://picsum.photos/seed/psa-pending/800/600',
@@ -32,7 +51,7 @@ const PSA_STAT_IMAGES = {
     PAID: 'https://picsum.photos/seed/psa-paid/800/600'
 };
 
-// Pagination Component (Matching CenomarPagination)
+// Pagination Component
 const PSAPagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
   const [jumpPageInput, setJumpPageInput] = useState('');
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -97,7 +116,7 @@ const PSAPagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) 
   );
 };
 
-// Stats Component (Matching CenomarStats)
+// Stats Component
 const PSAStats = ({ stats }) => {
     const getStatClass = (label) => {
         return label.toLowerCase().replace(/ /g, '-');
@@ -122,7 +141,7 @@ const PSAStats = ({ stats }) => {
     );
 };
 
-// Filters Component (Matching CenomarFilters)
+// Filters Component
 const PSAFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus, statusOptions, getFilterClassName }) => {
   return (
     <div className="psa-filter-card">
@@ -158,7 +177,7 @@ const PSAFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus, 
   );
 };
 
-// Table Component (Matching CenomarTable)
+// Table Component
 const PSATable = ({ loading, filteredInquiriesCount, currentInquiries, handleViewInquiry, handleArchiveInquiry, startIndex }) => {
     const getStatusBadgeClass = (status) => {
         const normalizedStatus = (status || 'PENDING').toLowerCase();
@@ -310,7 +329,7 @@ const PSASerbilis = () => {
 
   const fetchPSADocs = async () => {
     try {
-      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/psa");
+      const res = await axios.get("http://localhost:5000/api/psa");
       if (Array.isArray(res.data)) {
         const mappedData = res.data.map((p) => ({
           ...p,
@@ -329,7 +348,7 @@ const PSASerbilis = () => {
   const fetchInquiries = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries');
+      const response = await axios.get('http://localhost:5000/api/inquiries');
       if (response.data.success) {
         // Filter: inquiryType ay PSA at isArchive ay No
         const psaRequests = response.data.data.filter(inq => 
@@ -415,11 +434,18 @@ const PSASerbilis = () => {
 
   // --- ACTIONS ---
 
+  // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
   const handleArchiveInquiry = async (id) => {
     if (window.confirm("Are you sure you want to archive this request?")) {
+      
+      // 🔥 GET ADMIN DATA
+      const { userEmail, adminId } = getAdminData();
+
       try {
-        const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
-          isArchive: "Yes"
+        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+          isArchive: "Yes",
+          userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
+          adminId    // 🔥 ADD ADMIN INFO FOR LOGS
         });
         if (response.data.success) {
           alert("Inquiry archived successfully.");
@@ -434,7 +460,7 @@ const PSASerbilis = () => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) {
         setDocuments(response.data.documents || []);
       }
@@ -461,13 +487,21 @@ const PSASerbilis = () => {
     }, 200);
   };
 
+  // 🔥🔥🔥 UPDATED: UPDATE STATUS WITH ADMIN DATA 🔥🔥🔥
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     if(newStatus === 'CANCELLED' && !window.confirm("Are you sure you want to cancel this request?")) return;
     
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+
     try {
       const response = await axios.put(
-        `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/status`,
-        { status: newStatus }
+        `http://localhost:5000/api/inquiries/${inquiryId}/status`,
+        { 
+          status: newStatus,
+          userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
+          adminId    // 🔥 ADD ADMIN INFO FOR LOGS
+        }
       );
 
       if (response.data.success) {
@@ -483,23 +517,32 @@ const PSASerbilis = () => {
     }
   };
 
+  // Calls handleUpdateInquiryStatus which now includes logs
   const handleRequestPayment = async () => {
     if (!window.confirm("Are documents correct? This will notify the user to pay.")) return;
     await handleUpdateInquiryStatus(selectedInquiry._id, 'PAYMENT_PENDING');
   };
 
+  // 🔥🔥🔥 UPDATED: CONTACT WITH ADMIN DATA 🔥🔥🔥
   const submitContactWithRemarks = async () => {
     if (!selectedInquiry) return;
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+
     try {
       const formData = new FormData();
       formData.append('status', 'CONTACTED');
       formData.append('remarks', contactRemarks);
+      formData.append('userEmail', userEmail);   // 🔥 ADD ADMIN INFO FOR LOGS
+      formData.append('adminId', adminId);       // 🔥 ADD ADMIN INFO FOR LOGS
+
       if (contactEvidence) {
         formData.append('evidence', contactEvidence);
       }
 
       const response = await axios.put(
-        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`,
+        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -523,6 +566,7 @@ const PSASerbilis = () => {
     }
   };
 
+  // 🔥🔥🔥 UPDATED: DELIVER DOCS WITH ADMIN DATA 🔥🔥🔥
   const handleDeliverDocuments = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (deliveryFiles.length === 0) {
@@ -530,11 +574,18 @@ const PSASerbilis = () => {
       return;
     }
     
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+
     const formData = new FormData();
     deliveryFiles.forEach(file => formData.append('documents', file));
+    
+    // 🔥 ADD ADMIN INFO FOR LOGS
+    formData.append('userEmail', userEmail);
+    formData.append('adminId', adminId);
 
     try {
-      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
         headers: { 'Content-Type': 'multipart/form-data' } 
       });
       if (response.data.success) {
@@ -626,10 +677,10 @@ const PSASerbilis = () => {
 
     try {
         if (selectedPSA) {
-            await axios.put(`https://wanderwaveph-backend.onrender.com/api/psa/${selectedPSA.id}`, payload);
+            await axios.put(`http://localhost:5000/api/psa/${selectedPSA.id}`, payload);
             alert("Changes saved successfully!");
         } else {
-            await axios.post("https://wanderwaveph-backend.onrender.com/api/psa", payload);
+            await axios.post("http://localhost:5000/api/psa", payload);
             alert("PSA Document created successfully!");
         }
         fetchPSADocs();
@@ -643,7 +694,7 @@ const PSASerbilis = () => {
 
   const handleDeletePSA = async (id) => {
     if (window.confirm("Delete this service?")) {
-        await axios.delete(`https://wanderwaveph-backend.onrender.com/api/psa/${id}`);
+        await axios.delete(`http://localhost:5000/api/psa/${id}`);
         fetchPSADocs();
     }
   };
@@ -667,7 +718,7 @@ const PSASerbilis = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/psa/upload', formData, {
+      const response = await axios.post('http://localhost:5000/api/psa/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -775,6 +826,7 @@ const PSASerbilis = () => {
                 onClose={handleCloseInquiryModal}
                 onUpdateStatus={handleUpdateInquiryStatus}
                 onRequestPayment={handleRequestPayment}
+                // Updated to use the handler that has logs
                 onConfirmPayment={() => handleUpdateInquiryStatus(selectedInquiry._id, "CONFIRMED")}
                 showDeliverDocs={showDeliverDocs}
                 setShowDeliverDocs={setShowDeliverDocs}

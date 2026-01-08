@@ -124,8 +124,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
-            tourType, minPax,  // ✅ ADDED
-            userEmail, adminId
+            userEmail, adminId, changes
         } = req.body;
         
         const logUserId = getValidAdminId(adminId);
@@ -173,26 +172,56 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
 
         const updatedPkg = await Package.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
-        if (!updatedPkg) return res.status(404).json({ status: 'error', error: 'Package not found' });
-
-        // Activity Logging
-        await ActivityLog.create({
-            action: 'UPDATE',
-            module: 'Packages',
-            user: userEmail || 'System Admin',
-            userId: logUserId,
-            severity: 'SUCCESS',
-            description: `Updated tour package: ${title}`,
-            details: {
-                recordTitle: title,
-                recordId: updatedPkg._id,
-                method: 'PUT',
-                endpoint: `/api/packages/edit/${req.params.id}`
+        if (!updatedPkg) {
+            // Cleanup updated image if save fails
+            if (req.file?.filename) {
+                await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
             }
-        });
+            return res.status(404).json({ status: 'error', error: 'Package not found' });
+        }
+
+        // ============================================
+        // ✅ ACTIVITY LOGGING (UPDATED LOGIC)
+        // ============================================
+        try {
+            let logDescription = `Updated tour package: ${title}`;
+
+            // Check if 'changes' exists and append to description
+            // Frontend sends 'changes' as a JSON string via FormData
+            if (changes) {
+                try {
+                    const parsedChanges = JSON.parse(changes); 
+                    if (Array.isArray(parsedChanges) && parsedChanges.length > 0) {
+                        logDescription += `. Changes: ${parsedChanges.join(', ')}`;
+                    }
+                } catch (e) {
+                    // Fallback if parsing fails or if it's a simple string
+                    logDescription += ` details updated.`;
+                }
+            }
+
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Packages',
+                user: userEmail || 'System Admin',
+                userId: logUserId,
+                severity: 'SUCCESS',
+                description: logDescription, // ✅ Log description now includes specific changes
+                details: {
+                    recordTitle: title,
+                    recordId: updatedPkg._id,
+                    method: 'PUT',
+                    endpoint: `/api/packages/edit/${req.params.id}`
+                }
+            });
+            console.log('✅ Activity Log recorded for Update Package');
+        } catch (logError) {
+            console.error('❌ Error logging activity:', logError);
+        }
 
         res.json({ status: 'ok', message: 'Package updated successfully!', data: updatedPkg });
     } catch (err) {
+        console.error("❌ Error updating package:", err);
         res.status(500).json({ status: 'error', error: err.message });
     }
 });
@@ -211,13 +240,14 @@ router.post('/:id/archive', async (req, res) => {
         await pkg.save();
 
         const actionType = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE';
+        const severity = newStatus === 'Yes' ? 'WARNING' : 'SUCCESS';
 
         await ActivityLog.create({
             action: actionType, 
             module: 'Packages',
             user: userEmail || 'System Admin',
             userId: logUserId,
-            severity: 'SUCCESS',
+            severity: severity,
             description: `${newStatus === 'Yes' ? 'Archived' : 'Restored'} package: ${pkg.title}`,
             details: {
                 recordTitle: pkg.title,

@@ -1,10 +1,85 @@
 import React, { useState, useEffect } from 'react';
 import './addpromo.css';
 import Sidebar from '../sidebar/sidebar';
-import { Upload, X } from 'lucide-react'; // Ensure lucide-react is installed
+import { Upload, X, HelpCircle } from 'lucide-react'; 
+
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+// ✅ Imports for Toast and Reference logic
+import { useToast } from "../toast/ToastManager";
+
+// ✅ Reusable Confirmation Modal (Based on EditVisa.jsx reference)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="arc-confirm-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 11000
+        }}>
+            <div className="arc-confirm-modal" style={{
+                backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+                maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+            }}>
+                <div style={{ marginBottom: '1rem' }}>
+                    <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button 
+                        onClick={onCancel}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+                            backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={onConfirm}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+                            backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+                            color: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const AddPromo = () => {
+    const toast = useToast();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    
+    // Modal Config State
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
+
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
@@ -28,6 +103,140 @@ const AddPromo = () => {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOtherCategory, setIsOtherCategory] = useState(false);
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    useEffect(() => {
+        const updateDraft = async () => {
+            const isFormEmpty = 
+                !promoDetails.code &&
+                !promoDetails.description &&
+                !promoDetails.category &&
+                !promoDetails.discountValue &&
+                !promoDetails.startDate &&
+                !promoDetails.usageLimit &&
+                promoDetails.durationType === 'Weekly' && 
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null); 
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            if (imageFile) {
+                try {
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...promoDetails,
+                isOtherCategory, 
+                image: imageBase64, 
+                imageMeta: imageMeta
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500); 
+
+        return () => clearTimeout(timeoutId);
+    }, [promoDetails, isOtherCategory, imageFile]);
+
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+
+        setPromoDetails({
+            code: data.code || '',
+            discount: data.discount || '',
+            validUntil: data.validUntil || '',
+            description: data.description || '',
+            category: data.category || '',
+            discountType: data.discountType || 'Fixed Amount (Peso)',
+            discountValue: data.discountValue || '',
+            durationType: data.durationType || 'Weekly',
+            startDate: data.startDate || '',
+            usageLimit: data.usageLimit || ''
+        });
+
+        setIsOtherCategory(!!data.isOtherCategory);
+
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: 'add-promo', 
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false 
+    });
+
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+        toast.success("Draft restored successfully!");
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft(); 
+        setShowRestoreModal(false);
+        toast.info("Draft discarded.");
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
 
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
@@ -77,7 +286,6 @@ const AddPromo = () => {
         }
     };
 
-    // Handle Image Selection
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -94,10 +302,18 @@ const AddPromo = () => {
     const handleSubmit = async () => {
         if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
             !promoDetails.discountValue || !promoDetails.startDate || !promoDetails.usageLimit) {
-            alert('Please fill in all required fields');
+            toast.warning('Please fill in all required fields');
             return;
         }
 
+        askConfirmation(
+            "Create Promo",
+            `Are you sure you want to create the promo code "${promoDetails.code}"?`,
+            () => performSubmit()
+        );
+    };
+
+    const performSubmit = async () => {
         setIsSubmitting(true);
 
         try {
@@ -111,13 +327,11 @@ const AddPromo = () => {
             formData.append('startDate', promoDetails.startDate);
             formData.append('validUntil', promoDetails.validUntil);
             formData.append('usageLimit', promoDetails.usageLimit);
-
             
             if (imageFile) {
                 formData.append('image', imageFile);
             }
 
-            // User Data for Logs
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
             const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
             const activeId = adminData.id || adminData._id || "";
@@ -125,7 +339,7 @@ const AddPromo = () => {
             formData.append("userEmail", activeUser);
             formData.append("adminId", activeId);
 
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
+            const response = await fetch('http://localhost:5000/api/promos/add', {
                 method: 'POST',
                 body: formData,
             });
@@ -133,10 +347,9 @@ const AddPromo = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert(`Promo Code ${promoDetails.code} added successfully!`);
-                console.log('Saved Promo:', data);
+                toast.success(`Promo Code ${promoDetails.code} added successfully!`);
+                await clearDraft();
 
-                // Reset Form
                 setPromoDetails({
                     code: '',
                     discount: '',
@@ -153,36 +366,62 @@ const AddPromo = () => {
                 setImagePreview(null);
                 setIsOtherCategory(false);
             } else {
-                alert(`Error adding promo: ${data.message || 'Unknown error'}`);
+                toast.error(`Error adding promo: ${data.message || 'Unknown error'}`);
             }
         } catch (error) {
-            console.error('Network Error:', error);
-            alert('Failed to connect to the server.');
+            console.error('❌ Network Error:', error);
+            toast.error('Failed to connect to the server.');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleCancel = () => {
-        setPromoDetails({
-            code: '',
-            discount: '',
-            validUntil: '',
-            description: '',
-            category: '',
-            discountType: 'Fixed Amount (Peso)',
-            discountValue: '',
-            durationType: 'Weekly',
-            startDate: '',
-            usageLimit: ''
-        });
-        setImageFile(null);
-        setImagePreview(null);
-        setIsOtherCategory(false);
+    const handleCancel = async () => {
+        askConfirmation(
+            "Cancel Creation",
+            "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+            async () => {
+                await clearDraft();
+                setPromoDetails({
+                    code: '',
+                    discount: '',
+                    validUntil: '',
+                    description: '',
+                    category: '',
+                    discountType: 'Fixed Amount (Peso)',
+                    discountValue: '',
+                    durationType: 'Weekly',
+                    startDate: '',
+                    usageLimit: ''
+                });
+                setImageFile(null);
+                setImagePreview(null);
+                setIsOtherCategory(false);
+                toast.info("Action cancelled and form cleared.");
+            },
+            "danger"
+        );
     };
 
     return (
         <div className="promo-page">
+            
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
+
             <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
@@ -202,7 +441,6 @@ const AddPromo = () => {
                                 <h2 className="promo-section-title">PROMO DETAILS</h2>
                                 <div className="promo-fields">
                                     
-                                    {/* IMAGE UPLOAD FIELD */}
                                     <div className="promo-field promo-field--full">
                                         <label>Promo Image (Optional)</label>
                                         <div style={{ border: '2px dashed #e2e8f0', borderRadius: '8px', padding: '20px', textAlign: 'center', background: '#f8fafc' }}>
@@ -371,9 +609,7 @@ const AddPromo = () => {
                         <aside className="promo-right">
                             <div className="promo-preview">
                                 <span className="promo-preview-label">PREVIEW</span>
-                                {/* Preview Card */}
                                 <div className="promo-card">
-                                    {/* Image Preview inside card if available */}
                                     {imagePreview && (
                                         <div style={{ height: '140px', overflow: 'hidden' }}>
                                             <img src={imagePreview} alt="Promo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -415,7 +651,6 @@ const AddPromo = () => {
                                     </div>
                                 </div>
 
-                                {/* BUTTONS ACTION */}
                                 <div className="promo-actions">
                                     <button 
                                         type="button" 

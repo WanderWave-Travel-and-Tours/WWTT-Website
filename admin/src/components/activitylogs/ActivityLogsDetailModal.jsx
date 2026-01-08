@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, User, Activity, Globe, Monitor, AlertCircle, CheckCircle, Info, Clock } from 'lucide-react';
+import { X, Calendar, User, Activity, Monitor, AlertCircle, CheckCircle, Info, FileText } from 'lucide-react';
 import './ActivityLogsDetailModal.css'; 
 
 export const ActivityLogsDetailModal = ({ 
@@ -25,6 +25,11 @@ export const ActivityLogsDetailModal = ({
     const severityConfig = getSeverityConfig(selectedLog.severity);
     const SeverityIcon = severityConfig.icon;
 
+    // Check if this is an export action with file details
+    const isExportAction = selectedLog.action === 'EXPORT' && 
+                          selectedLog.details && 
+                          selectedLog.details.fileName;
+
     return (
         <div className="modal-overlay" onClick={closeModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -33,9 +38,9 @@ export const ActivityLogsDetailModal = ({
                         <div className="log-title-group">
                             <h2 className="log-title">Activity Log Details</h2>
                             <div className="log-meta">
-                                <span className="log-ref">ID: {selectedLog.id}</span>
+                                <span className="log-ref">ID: {selectedLog.id || selectedLog._id}</span>
                                 <span className="log-divider">•</span>
-                                <span className="log-date">Log #{selectedLog.logNumber}</span>
+                                <span className="log-date">Log #{selectedLog.logNumber || 'N/A'}</span>
                             </div>
                         </div>
                         <div className={`log-severity-badge log-severity-${severityConfig.color}`}>
@@ -94,27 +99,7 @@ export const ActivityLogsDetailModal = ({
                                 </div>
                                 <div className="log-info-content">
                                     <label className="log-info-label">Timestamp</label>
-                                    <span className="log-info-value">{formatDate(selectedLog.timestamp)}</span>
-                                </div>
-                            </div>
-
-                            <div className="log-info-item">
-                                <div className="log-info-icon" style={{background: '#fef2f2', color: '#991b1b'}}>
-                                    <Globe size={18} />
-                                </div>
-                                <div className="log-info-content">
-                                    <label className="log-info-label">IP Address</label>
-                                    <span className="log-info-value">{selectedLog.ipAddress}</span>
-                                </div>
-                            </div>
-
-                            <div className="log-info-item">
-                                <div className="log-info-icon" style={{background: '#f3e8ff', color: '#6b21a8'}}>
-                                    <Clock size={18} />
-                                </div>
-                                <div className="log-info-content">
-                                    <label className="log-info-label">Duration</label>
-                                    <span className="log-info-value">{selectedLog.details.duration}</span>
+                                    <span className="log-info-value">{formatDate(selectedLog.timestamp || selectedLog.createdAt)}</span>
                                 </div>
                             </div>
                         </div>
@@ -126,81 +111,86 @@ export const ActivityLogsDetailModal = ({
                             <h3 className="log-card-title">Activity Description</h3>
                         </div>
                         <div className="log-message-box">
-                            <p style={{margin:0, color:'#475569'}}>
+                            <p style={{margin:0, color:'#475569', marginBottom: (selectedLog.details?.changes && (Array.isArray(selectedLog.details.changes) ? selectedLog.details.changes.length > 0 : Object.keys(selectedLog.details.changes).length > 0)) ? '10px' : '0'}}>
                                 {selectedLog.description}
                             </p>
+                            
+                            {/* Ipinapakita ang listahan ng mga eksaktong nabago kung meron man */}
+                            {selectedLog.details?.changes && (
+                                <ul style={{ marginTop: '10px', fontSize: '13px', color: '#1e293b', listStyleType: 'none', padding: 0 }}>
+                                    {Array.isArray(selectedLog.details.changes) ? (
+                                        selectedLog.details.changes.map((change, index) => (
+                                            <li key={index} style={{ marginBottom: '6px', paddingLeft: '15px', position: 'relative' }}>
+                                                <span style={{ position: 'absolute', left: 0, color: '#3b82f6' }}>•</span> 
+                                                {change}
+                                            </li>
+                                        ))
+                                    ) : typeof selectedLog.details.changes === 'object' ? (
+                                        Object.entries(selectedLog.details.changes).map(([field, value], index) => (
+                                            <li key={index} style={{ marginBottom: '6px', paddingLeft: '15px', position: 'relative' }}>
+                                                <span style={{ position: 'absolute', left: 0, color: '#3b82f6' }}>•</span> 
+                                                <strong>{field}:</strong> {String(value)}
+                                            </li>
+                                        ))
+                                    ) : null}
+                                </ul>
+                            )}
                         </div>
                     </div>
 
-                    {/* 3. TECHNICAL DETAILS */}
-                    <div className="log-card">
-                        <div className="log-card-header">
-                            <h3 className="log-card-title">Technical Details</h3>
-                        </div>
-                        <div className="log-grid">
-                            <div className="log-info-item">
-                                <div className="log-info-icon" style={{background: '#e0f2fe', color: '#0c4a6e'}}>
-                                    <Monitor size={18} />
-                                </div>
-                                <div className="log-info-content">
-                                    <label className="log-info-label">HTTP Method</label>
-                                    <span className="log-info-value">{selectedLog.details.method}</span>
-                                </div>
+                    {/* 3. EXPORT DETAILS (if export action) */}
+                    {isExportAction && (
+                        <div className="log-card" style={{borderColor: '#10b981', borderWidth: '2px'}}>
+                            <div className="log-card-header">
+                                <h3 className="log-card-title" style={{color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                    <FileText size={18} />
+                                    Export Information
+                                </h3>
                             </div>
                             
-                            <div className="log-info-item">
-                                <div className="log-info-icon" style={{background: '#dcfce7', color: '#14532d'}}>
-                                    <CheckCircle size={18} />
+                            <div className="log-grid">
+                                <div className="log-info-item">
+                                    <div className="log-info-icon" style={{background: '#d1fae5', color: '#065f46'}}>
+                                        <FileText size={18} />
+                                    </div>
+                                    <div className="log-info-content">
+                                        <label className="log-info-label">File Name</label>
+                                        <span className="log-info-value" style={{fontSize: '13px', wordBreak: 'break-all'}}>
+                                            {selectedLog.details.fileName || 'Dashboard Report'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="log-info-content">
-                                    <label className="log-info-label">Status Code</label>
-                                    <span className="log-info-value">{selectedLog.details.statusCode}</span>
-                                </div>
-                            </div>
-                            
-                            <div className="log-info-item">
-                                <div className="log-info-icon" style={{background: '#fef3c7', color: '#713f12'}}>
-                                    <Activity size={18} />
-                                </div>
-                                <div className="log-info-content">
-                                    <label className="log-info-label">Endpoint</label>
-                                    <span className="log-info-value" style={{fontSize: '13px'}}>{selectedLog.details.endpoint}</span>
-                                </div>
-                            </div>
-                            
-                            <div className="log-info-item">
-                                <div className="log-info-icon" style={{background: '#ede9fe', color: '#5b21b6'}}>
-                                    <Info size={18} />
-                                </div>
-                                <div className="log-info-content">
-                                    <label className="log-info-label">Affected Records</label>
-                                    <span className="log-info-value">{selectedLog.details.affectedRecords}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* 4. USER AGENT */}
-                    <div className="log-card">
-                        <div className="log-card-header">
-                            <h3 className="log-card-title">User Agent Information</h3>
-                        </div>
-                        <div className="log-message-box" style={{fontSize: '12px', fontFamily: 'monospace'}}>
-                            {selectedLog.userAgent}
-                        </div>
-                    </div>
+                                <div className="log-info-item">
+                                    <div className="log-info-icon" style={{background: '#dbeafe', color: '#1e40af'}}>
+                                        <FileText size={18} />
+                                    </div>
+                                    <div className="log-info-content">
+                                        <label className="log-info-label">Export Format</label>
+                                        <span className="log-info-value">
+                                            {selectedLog.details.exportFormat || 'PDF'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
 
-                    {/* 5. FULL LOG DATA (For technical review) */}
-                    <div className="log-card">
-                        <div className="log-card-header">
-                            <h3 className="log-card-title">Full Log Data (JSON)</h3>
+                            <div style={{marginTop: '16px', padding: '16px', background: '#f0fdf4', borderRadius: '12px', border: '2px dashed #10b981'}}>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                    <div style={{width: '40px', height: '40px', background: '#10b981', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                                        <CheckCircle size={20} color="white" />
+                                    </div>
+                                    <div>
+                                        <p style={{margin: 0, fontWeight: 700, fontSize: '14px', color: '#065f46'}}>
+                                            Export Completed Successfully
+                                        </p>
+                                        <p style={{margin: '4px 0 0 0', fontSize: '12px', color: '#059669'}}>
+                                            The dashboard report was downloaded to the admin's device
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div className="log-message-box" style={{height: '150px', overflowY: 'auto'}}>
-                            <pre style={{ margin: 0, fontSize: '12px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                                {JSON.stringify(selectedLog, null, 2)}
-                            </pre>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* FOOTER ACTIONS */}

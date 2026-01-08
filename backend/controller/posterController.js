@@ -26,7 +26,7 @@ const addPoster = async (req, res) => {
         await newPoster.save();
 
         // =========================================================
-        // ADDED: CREATE ACTIVITY LOG
+        // CREATE ACTIVITY LOG (ADD)
         // =========================================================
         try {
             await ActivityLog.create({
@@ -36,11 +36,7 @@ const addPoster = async (req, res) => {
                 entityId: newPoster._id,
                 user: userEmail || 'Unknown User',
                 description: `Created new poster: ${title}`,
-                
-                // --- IDAGDAG MO ITO PARA MAGING GREEN (SUCCESS) ---
-                severity: 'SUCCESS', 
-                // -------------------------------------------------
-
+                severity: 'SUCCESS',
                 adminId: adminId || null
             });
             console.log('Activity Log saved for Add Poster');
@@ -84,9 +80,13 @@ const getPosterById = async (req, res) => {
     }
 };
 
+// =========================================================
+// UPDATED: UPDATE POSTER WITH ACTIVITY LOGS
+// =========================================================
 const updatePoster = async (req, res) => {
     try {
-        const { title, description, startDate, endDate, status, imagePublicId } = req.body;
+        // Extract extra fields for logging: userEmail, adminId, changes
+        const { title, description, startDate, endDate, status, imagePublicId, userEmail, adminId, changes } = req.body;
         
         const updateData = {
             title,
@@ -96,8 +96,9 @@ const updatePoster = async (req, res) => {
             status
         };
 
+        // Handle Image Update
         if (req.file) {
-            // Delete old image
+            // Delete old image from Cloudinary if exists
             if (imagePublicId) {
                 try {
                     await cloudinary.uploader.destroy(imagePublicId);
@@ -109,6 +110,7 @@ const updatePoster = async (req, res) => {
             updateData.imagePublicId = req.file.filename;
         }
 
+        // Perform the Update
         const updatedPoster = await Poster.findByIdAndUpdate(
             req.params.id,
             updateData,
@@ -116,8 +118,46 @@ const updatePoster = async (req, res) => {
         );
 
         if (!updatedPoster) return res.status(404).json({ message: 'Poster not found' });
+
+        // =========================================================
+        // ADDED: CREATE ACTIVITY LOG (UPDATE)
+        // =========================================================
+        try {
+            // Format the description based on tracked changes
+            let logDescription = `Updated poster: ${updatedPoster.title}`;
+            
+            if (changes) {
+                // Frontend sends changes as a JSON string via FormData
+                try {
+                    const parsedChanges = JSON.parse(changes);
+                    if (Array.isArray(parsedChanges) && parsedChanges.length > 0) {
+                        logDescription += `. Changes: ${parsedChanges.join(', ')}`;
+                    }
+                } catch (e) {
+                    // Fallback if parsing fails (e.g. simple string)
+                    logDescription += ` details updated.`;
+                }
+            }
+
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Posters',
+                entity: 'Poster',
+                entityId: updatedPoster._id,
+                user: userEmail || 'Unknown User',
+                description: logDescription,
+                severity: 'SUCCESS', // Green status
+                adminId: adminId || null
+            });
+            console.log('Activity Log saved for Update Poster');
+
+        } catch (logError) {
+            console.error('Failed to save activity log for update:', logError);
+            // Don't stop the response just because log failed
+        }
         
         res.status(200).json({ status: "ok", data: updatedPoster });
+
     } catch (error) {
         console.error('Error updating poster:', error);
         res.status(500).json({ message: 'Server Error' });

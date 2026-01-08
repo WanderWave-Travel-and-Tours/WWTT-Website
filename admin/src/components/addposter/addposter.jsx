@@ -1,9 +1,63 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Image as ImageIcon } from 'lucide-react';
-import './addposter.css';
+import { Upload, Image as ImageIcon, HelpCircle, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
+import './addposter.css';
+
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+// ✅ Imports for Toast Notifications
+import { useToast } from '../toast/ToastManager';
+
+// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="arc-confirm-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 11000
+        }}>
+            <div className="arc-confirm-modal" style={{
+                backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+                maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+            }}>
+                <div style={{ marginBottom: '1rem' }}>
+                    <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button 
+                        onClick={onCancel}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+                            backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={onConfirm}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+                            backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+                            color: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const AddPoster = () => {
+    // --- UTILITIES ---
+    const toast = useToast();
+
     // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -21,6 +75,176 @@ const AddPoster = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // --- CONFIRMATION MODAL STATE ---
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    useEffect(() => {
+        const updateDraft = async () => {
+            const isFormEmpty = 
+                !posterDetails.title &&
+                !posterDetails.description &&
+                !posterDetails.startDate &&
+                !posterDetails.endDate &&
+                posterDetails.status === 'Active' && 
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null);
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            if (imageFile) {
+                try {
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...posterDetails,
+                image: imageBase64,
+                imageMeta: imageMeta
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [posterDetails, imageFile]);
+
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+
+        setPosterDetails({
+            title: data.title || '',
+            description: data.description || '',
+            startDate: data.startDate || '',
+            endDate: data.endDate || '',
+            status: data.status || 'Active'
+        });
+
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+                toast.info("Draft image and details restored.");
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        } else {
+            toast.info("Draft details restored.");
+        }
+    };
+
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: 'add-poster',
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false 
+    });
+
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft && draftInfo) {
+            const isDraftEmpty = 
+                !draftInfo.title && 
+                !draftInfo.description && 
+                !draftInfo.startDate && 
+                !draftInfo.endDate && 
+                (draftInfo.status === 'Active' || !draftInfo.status) && 
+                !draftInfo.image;
+
+            if (isDraftEmpty) {
+                clearDraft();
+                setShowRestoreModal(false);
+            } else {
+                setShowRestoreModal(true);
+            }
+        }
+    }, [hasDraft, draftInfo, clearDraft]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft();
+        setShowRestoreModal(false);
+        setPosterDetails({
+            title: '',
+            description: '',
+            startDate: '',
+            endDate: '',
+            status: 'Active'
+        });
+        setImageFile(null);
+        setImagePreview(null);
+        toast.info("Draft discarded.");
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
+
     useEffect(() => {
         return () => {
             if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -36,39 +260,60 @@ const AddPoster = () => {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
-                alert('Please upload a valid image file (JPG, PNG).');
+                toast.error('Please upload a valid image file (JPG, PNG).', 'Invalid File');
                 return;
             }
             setImageFile(file);
             const objectUrl = URL.createObjectURL(file);
             setImagePreview(objectUrl);
+            toast.success("Image selected successfully.");
         }
     };
 
     const removeImage = () => {
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
         setImageFile(null);
         setImagePreview(null);
     };
 
     const handleCancel = () => {
-        setPosterDetails({
-            title: '',
-            description: '',
-            startDate: '',
-            endDate: '',
-            status: 'Active'
-        });
-        setImageFile(null);
-        setImagePreview(null);
+        // ✅ PALIT MULA window.confirm SA CUSTOM MODAL
+        askConfirmation(
+            "Discard Changes",
+            "Are you sure you want to cancel? All unsaved changes will be lost and the draft will be cleared.",
+            async () => {
+                await clearDraft();
+                setPosterDetails({
+                    title: '',
+                    description: '',
+                    startDate: '',
+                    endDate: '',
+                    status: 'Active'
+                });
+                removeImage();
+                toast.info("Form cleared.");
+            },
+            "danger"
+        );
     };
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
+        
         if (!posterDetails.title || !imageFile) {
-            alert('Please provide a title and upload an image.');
+            toast.warning('Please provide a title and upload an image.');
             return;
         }
 
+        // ✅ PALIT MULA window.confirm SA CUSTOM MODAL PARA SA UPLOAD
+        askConfirmation(
+            "Confirm Upload",
+            "Are you sure you want to upload this new poster?",
+            () => performSubmit()
+        );
+    };
+
+    const performSubmit = async () => {
         setIsSubmitting(true);
         const formData = new FormData();
         formData.append('image', imageFile);
@@ -78,9 +323,6 @@ const AddPoster = () => {
         formData.append('endDate', posterDetails.endDate);
         formData.append('status', posterDetails.status);
 
-        // =========================================================
-        // ADDED: KUNIN ANG USER DATA PARA SA ACTIVITY LOGS
-        // =========================================================
         try {
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
             const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
@@ -91,23 +333,31 @@ const AddPoster = () => {
         } catch (err) {
             console.error("Error parsing admin data:", err);
         }
-        // =========================================================
 
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters/add', {
+            const response = await fetch('http://localhost:5000/api/posters/add', {
                 method: 'POST',
                 body: formData,
             });
 
             if (response.ok) {
-                alert('✅ Poster uploaded successfully!');
-                handleCancel();
+                toast.success('Poster uploaded successfully!', 'Success');
+                await clearDraft();
+                
+                setPosterDetails({
+                    title: '',
+                    description: '',
+                    startDate: '',
+                    endDate: '',
+                    status: 'Active'
+                });
+                removeImage();
             } else {
                 const data = await response.json();
-                alert(`❌ Error: ${data.message || 'Failed to upload'}`);
+                toast.error(data.message || 'Failed to upload', 'Server Error');
             }
         } catch (error) {
-            alert('❌ Failed to connect to server.');
+            toast.error('Failed to connect to server.', 'Connection Error');
         } finally {
             setIsSubmitting(false);
         }
@@ -115,11 +365,29 @@ const AddPoster = () => {
 
     return (
         <div className="apstr-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
+            {/* ✅ CUSTOM CONFIRMATION MODAL */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
+
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
             <main className={`apstr-main ${isSidebarCollapsed ? "apstr-main--collapsed" : ""}`}>
                 <div className="apstr-container">
-                    {/* HEADER MATCHED TO PROMO WITH DESTINATION FEEL */}
                     <header className="apstr-header">
                         <div className="apstr-header-content">
                             <h1 className="apstr-title">NEW POSTER</h1>

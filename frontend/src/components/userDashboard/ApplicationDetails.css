@@ -1,14 +1,16 @@
-/* --- Variables & Theming --- */
+/* APPLICATION DETAILS - ENHANCED TRAVEL & TOURS UI */
+/* MODERN, CLEAN, PREMIUM DESIGN */
+
 :root {
     --ad-primary: #f97316;
     --ad-primary-dark: #ea580c;
     --ad-bg: #f8fafc;
     --ad-card-bg: #ffffff;
-    --ad-text-main: #1e293b;
+    --ad-text-main: #0f172a;
     --ad-text-muted: #64748b;
     --ad-border: #e2e8f0;
-    --ad-radius: 16px;
-    --ad-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --ad-radius: 20px;
+    --ad-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 /* --- Base Container --- */
@@ -21,108 +23,160 @@
     box-sizing: border-box;
 }
 
-/* --- HEADER --- */
+/* --- HEADER - Travel Card Style --- */
 .ad-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    background: var(--ad-card-bg);
-    padding: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    padding: 32px;
     border-radius: var(--ad-radius);
-    border: 1px solid var(--ad-border);
-    margin-bottom: 24px;
-    box-shadow: var(--ad-shadow);
-    gap: 16px;
+    border: 2px solid var(--ad-border);
+    margin-bottom: 32px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    gap: 20px;
     flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+}
+
+.ad-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fdba74 100%);
 }
 
 .ad-title {
-    font-size: 1.75rem;
-    font-weight: 800;
-    margin: 0 0 8px 0;
-    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    font-size: 2rem;
+    font-weight: 900;
+    margin: 0 0 12px 0;
+    background: linear-gradient(135deg, #0f172a 0%, #475569 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1.2;
+    letter-spacing: -0.5px;
 }
 
 .ad-id-badge {
-    background: #f1f5f9;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
     color: var(--ad-text-muted);
-    font-family: monospace;
-    padding: 4px 10px;
-    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    padding: 6px 14px;
+    border-radius: 8px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
     display: inline-block;
+    border: 1px solid #cbd5e1;
 }
 
 .ad-status-pill {
-    padding: 8px 16px;
-    border-radius: 99px;
-    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-weight: 800;
     font-size: 0.85rem;
     text-transform: uppercase;
     white-space: nowrap;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Status Colors */
-.status-payment-pending { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
-.status-paid { background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; }
-.status-confirmed { background: #ecfdf5; color: #15803d; border: 1px solid #86efac; }
-.status-completed { background: #fefce8; color: #854d0e; border: 1px solid #fde047; }
-.status-cancelled { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
-.status-pending { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+/* Status Colors - Premium Theme */
+.status-payment-pending { 
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    color: #c2410c; 
+    border: 2px solid #fdba74;
+}
+.status-paid { 
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    color: #7e22ce; 
+    border: 2px solid #d8b4fe;
+}
+.status-confirmed { 
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    color: #15803d; 
+    border: 2px solid #86efac;
+}
+.status-completed { 
+    background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+    color: #854d0e; 
+    border: 2px solid #fde047;
+}
+.status-cancelled { 
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #b91c1c; 
+    border: 2px solid #fca5a5;
+}
+.status-pending { 
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    color: #1d4ed8; 
+    border: 2px solid #93c5fd;
+}
 
-/* --- MAIN LAYOUT (The Magic Part) --- */
+/* --- MAIN LAYOUT --- */
 .ad-grid {
     display: grid;
-    /* Desktop: Left side medyo mas malapad, Right side sakto lang */
     grid-template-columns: 1.4fr 1fr; 
-    gap: 24px;
-    margin-bottom: 32px;
-    
-    /* CRITICAL: Ito ang nagpapapantay sa height nilang dalawa visually */
+    gap: 28px;
+    margin-bottom: 40px;
     align-items: stretch; 
 }
 
-/* --- CARDS --- */
+/* --- CARDS - Enhanced Design --- */
 .ad-card {
     background: var(--ad-card-bg);
     border-radius: var(--ad-radius);
     border: 1px solid var(--ad-border);
-    padding: 28px;
+    padding: 32px;
     box-shadow: var(--ad-shadow);
-
-    /* Flex setup para mag-expand yung loob */
     display: flex;
     flex-direction: column;
-    
-    /* Ito ang susi: Height is 100% of the grid track. 
-       Dahil "stretch" ang grid, kukunin nito ang height ng pinakamahabang content. */
     height: 100%; 
     box-sizing: border-box;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.ad-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+}
+
+.ad-card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
 }
 
 .ad-card-title {
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 1.2rem;
+    font-weight: 800;
     color: var(--ad-text-main);
-    margin: 0 0 24px 0;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--ad-border);
+    margin: 0 0 28px 0;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f8fafc;
     display: flex;
     align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .ad-card-title::before {
     content: '';
     display: block;
-    width: 4px;
-    height: 18px;
-    background: var(--ad-primary);
-    border-radius: 2px;
-    margin-right: 12px;
+    width: 5px;
+    height: 22px;
+    background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+    border-radius: 3px;
+    margin-right: 14px;
 }
 
 /* --- LEFT CONTENT --- */
@@ -130,106 +184,120 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px dashed #f1f5f9;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed #e2e8f0;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
 }
 
 .ad-label {
     color: var(--ad-text-muted);
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 .ad-value {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--ad-text-main);
     text-align: right;
     word-break: break-word;
+    font-size: 0.95rem;
 }
 
 .ad-price-box {
-    background: #fff7ed;
-    border: 1px dashed #fdba74;
-    border-radius: 12px;
-    padding: 16px;
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border: 2px dashed #fdba74;
+    border-radius: 16px;
+    padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 20px 0;
+    margin: 24px 0;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.1);
 }
 
 .ad-price-value {
     color: var(--ad-primary);
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: 1.75rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
 }
 
-/* --- MESSAGE BOX (NO SCROLL LOGIC) --- */
+/* --- MESSAGE BOX --- */
 .ad-message-section {
     display: flex;
     flex-direction: column;
-    /* Flex-grow: 1 means kakainin niya yung extrang space kung mas mahaba ang Right card.
-       Pero kung mahaba ang message, itutulak niya pababa ang container. */
     flex-grow: 1; 
-    margin-top: 16px;
+    margin-top: 20px;
 }
 
 .ad-message-content {
     background: #f8fafc;
-    border: 1px solid var(--ad-border);
-    border-radius: 8px;
-    padding: 16px;
-    font-size: 0.9rem;
-    line-height: 1.6;
+    border: 2px solid var(--ad-border);
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 0.95rem;
+    line-height: 1.7;
     color: #475569;
-    
-    /* CRITICAL FOR "NO SCROLL": */
-    height: auto; /* Kusa siyang lalaki */
-    min-height: 80px; /* Minimum height para hindi sobrang liit pag walang text */
-    flex-grow: 1; /* Mag-eexpand siya para punuin ang card */
-    overflow: visible; /* Walang scrollbar! */
-    white-space: pre-wrap; /* Preserves newlines pero nagw-wrap */
-    word-break: break-word; /* Prevents overflow ng mahabang words */
+    height: auto;
+    min-height: 100px;
+    flex-grow: 1;
+    overflow: visible;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-weight: 500;
 }
 
 /* --- RIGHT SIDE ACTIONS --- */
 .ad-alert-remarks {
-    background: #fff1f2;
-    border: 1px solid #fecdd3;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+    border: 2px solid #fecdd3;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
 }
 
 .ad-alert-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 10px;
+    margin-bottom: 10px;
     color: #9f1239;
 }
-.ad-alert-header h4 { margin: 0; font-size: 0.95rem; font-weight: 700; }
+
+.ad-alert-header h4 { 
+    margin: 0; 
+    font-size: 1rem; 
+    font-weight: 800; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
 .ad-link-btn {
     display: inline-block;
-    margin-top: 10px;
+    margin-top: 12px;
     color: #be123c;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 700;
     text-decoration: none;
+    transition: all 0.2s ease;
 }
 
-/* Status Box Styles */
+.ad-link-btn:hover {
+    color: #9f1239;
+    text-decoration: underline;
+}
+
+/* Status Box Styles - Premium Design */
 .ad-status-box {
     text-align: center;
-    padding: 24px 20px;
-    border-radius: 16px;
-    /* Flex-grow ensures it centers vertically nicely or fills space */
+    padding: 32px 24px;
+    border-radius: 20px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -238,121 +306,239 @@
     width: 100%;
 }
 
-.ad-large-icon { font-size: 3rem; margin-bottom: 12px; }
-.ad-status-box h4 { margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 700; }
-.ad-status-box p { margin: 0; font-size: 0.9rem; line-height: 1.5; }
-.ad-subtext { font-size: 0.85rem !important; color: #059669; margin-top: 4px !important; }
+.ad-large-icon { 
+    font-size: 3.5rem; 
+    margin-bottom: 16px;
+}
 
-/* Box Colors */
-.ad-box-payment { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
-.ad-box-paid { background: #f5f3ff; border: 1px solid #ddd6fe; color: #5b21b6; }
-.ad-box-confirmed { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
-.ad-box-pending { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
-.ad-box-cancelled { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.ad-status-box h4 { 
+    margin: 0 0 10px 0; 
+    font-size: 1.3rem; 
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.ad-status-box p { 
+    margin: 0; 
+    font-size: 0.95rem; 
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.ad-subtext { 
+    font-size: 0.9rem !important; 
+    color: #059669; 
+    margin-top: 6px !important;
+    font-weight: 600 !important;
+}
+
+/* Box Colors - Enhanced Gradients */
+.ad-box-payment { 
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 2px solid #bbf7d0; 
+    color: #166534;
+    box-shadow: 0 4px 16px rgba(22, 101, 52, 0.1);
+}
+
+.ad-box-paid { 
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border: 2px solid #ddd6fe; 
+    color: #5b21b6;
+    box-shadow: 0 4px 16px rgba(91, 33, 182, 0.1);
+}
+
+.ad-box-confirmed { 
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 2px solid #a7f3d0; 
+    color: #065f46;
+    box-shadow: 0 4px 16px rgba(6, 95, 70, 0.1);
+}
+
+.ad-box-pending { 
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 2px solid #bfdbfe; 
+    color: #1e40af;
+    box-shadow: 0 4px 16px rgba(30, 64, 175, 0.1);
+}
+
+.ad-box-cancelled { 
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 2px solid #fecaca; 
+    color: #991b1b;
+    box-shadow: 0 4px 16px rgba(153, 27, 27, 0.1);
+}
 
 .ad-box-completed { 
-    background: #fffbeb; 
-    border: 2px solid #fcd34d; 
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 3px solid #fcd34d; 
     color: #92400e; 
-    padding: 24px 16px;
+    padding: 32px 20px;
     justify-content: flex-start;
+    box-shadow: 0 4px 16px rgba(252, 211, 77, 0.2);
 }
 
 .ad-date-badge {
-    background: rgba(255,255,255,0.6);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    margin: 8px 0 20px 0;
-    font-weight: 600;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin: 10px 0 24px 0;
+    font-weight: 700;
     display: inline-block;
+    border: 1px solid #fde68a;
 }
 
-/* Files List */
+/* Files List - Enhanced Card Style */
 .ad-file-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 12px;
 }
 
 .ad-file-item {
     background: #ffffff;
-    border: 1px solid #fde68a;
-    padding: 12px;
-    border-radius: 10px;
+    border: 2px solid #fde68a;
+    padding: 16px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     text-align: left;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.ad-file-info { flex: 1; overflow: hidden; min-width: 0; }
-.ad-filename { display: block; font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #451a03; }
-.ad-filedate { font-size: 0.75rem; color: #92400e; }
+.ad-file-item:hover {
+    border-color: #fbbf24;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.15);
+    transform: translateX(4px);
+}
+
+.ad-file-info { 
+    flex: 1; 
+    overflow: hidden; 
+    min-width: 0; 
+}
+
+.ad-filename { 
+    display: block; 
+    font-weight: 700; 
+    font-size: 0.95rem; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    color: #451a03;
+    margin-bottom: 4px;
+}
+
+.ad-filedate { 
+    font-size: 0.8rem; 
+    color: #92400e;
+    font-weight: 600;
+}
 
 .ad-btn-download {
-    background: #f59e0b;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     color: white;
-    font-size: 0.8rem;
-    padding: 8px 12px;
-    border-radius: 6px;
+    font-size: 0.85rem;
+    padding: 10px 16px;
+    border-radius: 8px;
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.ad-btn-download:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
 .ad-thank-you {
-    margin-top: 24px;
+    margin-top: 28px;
     background: #ffffff;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 0.9rem;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.95rem;
     color: #15803d;
     width: 100%;
+    text-align: center;
+    border: 2px solid #86efac;
 }
 
 .ad-btn-primary {
     width: 100%;
-    margin-top: 20px;
-    padding: 14px;
-    background: var(--ad-primary);
+    margin-top: 24px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--ad-primary) 0%, var(--ad-primary-dark) 100%);
     color: white;
     border: none;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 1rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1.05rem;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ad-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.45);
+}
+
+.ad-btn-primary:active {
+    transform: translateY(0);
 }
 
 /* --- RESPONSIVE --- */
 
-/* Tablet & Mobile (Below 992px) */
 @media (max-width: 992px) {
     .ad-grid {
-        grid-template-columns: 1fr; /* Stacked na */
-        align-items: start; /* Wala nang stretch, hayaan na natural height */
-        gap: 20px;
+        grid-template-columns: 1fr;
+        align-items: start;
+        gap: 24px;
     }
 
     .ad-card {
-        height: auto; /* Natural height */
+        height: auto;
     }
 }
 
-/* Mobile Specific (Below 480px) */
 @media (max-width: 480px) {
-    .ad-title { font-size: 1.4rem; }
+    .ad-title { font-size: 1.5rem; }
     
-    .ad-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .ad-row { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 6px; 
+    }
+    
     .ad-value { text-align: left; }
     
-    .ad-price-box { flex-direction: column; align-items: flex-start; }
-    .ad-price-value { align-self: flex-end; }
+    .ad-price-box { 
+        flex-direction: column; 
+        align-items: flex-start; 
+    }
     
-    .ad-file-item { flex-direction: column; align-items: flex-start; }
-    .ad-btn-download { width: 100%; text-align: center; margin-top: 8px; }
+    .ad-price-value { 
+        align-self: flex-end; 
+    }
+    
+    .ad-file-item { 
+        flex-direction: column; 
+        align-items: flex-start; 
+    }
+    
+    .ad-btn-download { 
+        width: 100%; 
+        text-align: center; 
+        margin-top: 10px; 
+    }
 }

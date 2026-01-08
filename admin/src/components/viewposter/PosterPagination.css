@@ -3,10 +3,12 @@
    ================================================ */
 
 .pp-pagination-nav {
-    margin-top: 0;
+    margin-top: 20px;
     padding: 16px 24px;
     background-color: white;
     border-top: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -73,8 +75,9 @@
 }
 
 .pp-jump-arrow:hover:not(:disabled) {
-    background: #f8fafc;
-    border-color: #cbd5e1;
+    background: #001F3F;
+    color: white;
+    border-color: #001F3F;
 }
 
 .pp-jump-arrow:disabled {

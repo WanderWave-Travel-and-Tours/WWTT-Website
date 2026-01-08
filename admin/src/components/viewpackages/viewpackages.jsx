@@ -19,7 +19,7 @@ const ViewPackages = () => {
     const [selectedPackage, setSelectedPackage] = useState(null);
     const navigate = useNavigate();
     
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
+    const API_BASE_URL = 'http://localhost:5000/api/packages';
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -43,6 +43,35 @@ const ViewPackages = () => {
         if (!isLoggedIn) navigate('/');
         fetchPackages();
     }, [navigate]);
+
+    // Helper function: PRIORITY - Database first, then Cloudinary
+    const getImageUrl = (image) => {
+        if (!image) return "https://via.placeholder.com/400x300?text=No+Image";
+        
+        // If already a full URL (Cloudinary), use it
+        if (image.startsWith("http")) {
+            return image;
+        }
+        
+        // DEFAULT: Try database/uploads folder first
+        return `http://localhost:5000/uploads/${image}`;
+    };
+
+    // Smart error handler: If database fails, try Cloudinary
+    const handleImageError = (e, pkg) => {
+        e.target.onerror = null; // Prevent infinite loop
+        
+        // If imagePublicId exists, construct Cloudinary URL
+        if (pkg.imagePublicId && pkg.imagePublicId.trim() !== '') {
+            const cloudinaryUrl = `https://res.cloudinary.com/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'dg0cmujxy'}/image/upload/${pkg.imagePublicId}`;
+            console.log(`📸 Fallback to Cloudinary: ${cloudinaryUrl}`);
+            e.target.src = cloudinaryUrl;
+        } else {
+            // No Cloudinary backup, show placeholder
+            console.log(`⚠️ No image found for: ${pkg.title}`);
+            e.target.src = "https://via.placeholder.com/400x300?text=No+Image";
+        }
+    };
 
     const handleArchive = async (packageId) => {
         if (window.confirm("Are you sure you want to archive this package?")) {
@@ -112,67 +141,74 @@ const ViewPackages = () => {
                             <p>Try adjusting your search or filter criteria</p>
                         </div>
                     ) : (
-                        <div className="vt-table-wrapper">
-                            <table className="vt-table">
-                                <thead>
-                                    <tr>
-                                        <th>PACKAGE</th>
-                                        <th>DESTINATION</th>
-                                        <th>DURATION & CAT</th>
-                                        <th>PRICE</th>
-                                        <th>STATUS</th>
-                                        <th>ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentPackages.map((pkg) => (
-                                        <tr key={pkg._id}>
-                                            <td>
-                                                <div className="vt-customer-cell">
-                                                    <div className="vt-image-preview">
-                                                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`} alt={pkg.title} />
-                                                    </div>
-                                                    <span className="vt-customer-name">{pkg.title}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="vt-meta-cell">
-                                                    <div className="vt-source"><MapPin size={14} /><span>{pkg.destination}</span></div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="vt-meta-cell">
-                                                    <div className="vt-source"><Clock size={14} /><span>{pkg.duration}</span></div>
-                                                    <div className="vt-date"><Tag size={14} /><span>{pkg.category}</span></div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="vt-rating">₱{pkg.price.toLocaleString()}</span>
-                                            </td>
-                                            <td>
-                                                <span className="vt-status vt-status--active">Active</span>
-                                            </td>
-                                            <td>
-                                                <div className="vt-actions">
-                                                    <button className="vt-action-btn vt-action-btn--view" onClick={() => handleViewDetails(pkg)}>
-                                                        <Eye size={16} /><span>View</span>
-                                                    </button>
-                                                    <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(pkg._id)}>
-                                                        <Trash2 size={16} /><span>Archive</span>
-                                                    </button>
-                                                </div>
-                                            </td>
+                        <>
+                            <div className="vt-table-wrapper">
+                                <table className="vt-table">
+                                    <thead>
+                                        <tr>
+                                            <th>PACKAGE</th>
+                                            <th>DESTINATION</th>
+                                            <th>DURATION & CAT</th>
+                                            <th>PRICE</th>
+                                            <th>STATUS</th>
+                                            <th>ACTIONS</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {currentPackages.map((pkg) => (
+                                            <tr key={pkg._id}>
+                                                <td>
+                                                    <div className="vt-customer-cell">
+                                                        <div className="vt-image-preview">
+                                                            <img 
+                                                                src={getImageUrl(pkg.image)} 
+                                                                alt={pkg.title}
+                                                                onError={(e) => handleImageError(e, pkg)}
+                                                            />
+                                                        </div>
+                                                        <span className="vt-customer-name">{pkg.title}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="vt-meta-cell">
+                                                        <div className="vt-source"><MapPin size={14} /><span>{pkg.destination}</span></div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="vt-meta-cell">
+                                                        <div className="vt-source"><Clock size={14} /><span>{pkg.duration}</span></div>
+                                                        <div className="vt-date"><Tag size={14} /><span>{pkg.category}</span></div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="vt-rating">₱{pkg.price.toLocaleString()}</span>
+                                                </td>
+                                                <td>
+                                                    <span className="vt-status vt-status--active">Active</span>
+                                                </td>
+                                                <td>
+                                                    <div className="vt-actions">
+                                                        <button className="vt-action-btn vt-action-btn--view" onClick={() => handleViewDetails(pkg)}>
+                                                            <Eye size={16} /><span>View</span>
+                                                        </button>
+                                                        <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(pkg._id)}>
+                                                            <Trash2 size={16} /><span>Archive</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
                             <PackagePagination
                                 totalItems={filteredPackages.length}
                                 itemsPerPage={itemsPerPage}
                                 currentPage={currentPage}
                                 onPageChange={setCurrentPage}
                             />
-                        </div>
+                        </>
                     )}
                 </div>
             </main>

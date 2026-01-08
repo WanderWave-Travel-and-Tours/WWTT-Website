@@ -1,9 +1,27 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { X, CheckCircle, User, Mail, FileText, Upload, DollarSign } from "lucide-react";
-import "./PassportModals.css"; // Reuse your existing modal styles
+import "./PassportModals.css"; 
 
-// FIX: Tinanggal ko ang "export" dito
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log('📊 Admin Data from localStorage:', adminData);
+        
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return {
+            userEmail: 'Unknown Admin',
+            adminId: null
+        };
+    }
+};
+
 const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportServices = [] }) => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,6 +74,10 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportServic
 
     setIsLoading(true);
     try {
+      // 🔥 GET ADMIN DATA
+      const { userEmail, adminId } = getAdminData();
+      console.log('🔍 Submitting Passport Application with admin data:', { userEmail, adminId });
+
       const data = new FormData();
       
       const selectedService = passportServices.find(s => s._id === formData.serviceId);
@@ -78,12 +100,17 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportServic
       };
       data.append('passportDetails', JSON.stringify(passportDetails));
 
+      // 🔥🔥🔥 ADD ADMIN DATA FOR LOGS 🔥🔥🔥
+      data.append('uploader', 'ADMIN_WALKIN');
+      data.append('userEmail', userEmail);
+      data.append('adminId', adminId);
+
       // Append Walk-in attachments
       Object.keys(formData.files).forEach(key => {
         data.append(key, formData.files[key]);
       });
 
-      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries/upload-application', data, {
+      const response = await axios.post('http://localhost:5000/api/inquiries/upload-application', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -208,5 +235,4 @@ const PassportApplicationModal = ({ isOpen, onClose, refreshData, passportServic
   );
 };
 
-// FIX: Nagdagdag ako ng default export sa dulo
 export default PassportApplicationModal;

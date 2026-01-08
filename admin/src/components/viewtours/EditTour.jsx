@@ -1,16 +1,104 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Upload, X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, Trash2, HelpCircle } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
 import "./EditTour.css";
+
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+// ✅ Imports for Toast Management
+import { useToast } from "../toast/ToastManager";
+
+// ✅ Custom Confirmation Modal Component (Pattern from EditVisa)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            type="button"
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            type="button"
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const EditTour = () => {
   const navigate = useNavigate();
   const { id: tourId } = useParams();
+  const toast = useToast(); // ✅ Initialize Toast
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -23,6 +111,9 @@ const EditTour = () => {
     existingImage: "",
   });
 
+  // Store original data to track changes for Activity Logs
+  const [originalData, setOriginalData] = useState(null);
+
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [inclusions, setInclusions] = useState([""]);
@@ -30,7 +121,7 @@ const EditTour = () => {
     { day: 1, title: "", activities: [""] },
   ]);
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/tours";
+  const API_BASE_URL = "http://localhost:5000/api/tours";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -38,7 +129,148 @@ const EditTour = () => {
   const calculatedPrice =
     parseFloat(formData.sellerPrice || 0) + parseFloat(formData.markup || 0);
 
-  // Fetch tour data
+  // =========================================================
+  // ✅ AUTO-DRAFT LOGIC START
+  // =========================================================
+
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const base64ToFile = async (base64String, fileName, mimeType) => {
+    const res = await fetch(base64String);
+    const blob = await res.blob();
+    return new File([blob], fileName, { type: mimeType });
+  };
+
+  const [draftPayload, setDraftPayload] = useState(null);
+
+  useEffect(() => {
+    const updateDraft = async () => {
+      if (loading) {
+        setDraftPayload(null);
+        return;
+      }
+
+      const isFormEmpty = 
+        !formData.title && 
+        !formData.destination && 
+        !formData.sellerPrice && 
+        !formData.markup && 
+        !formData.duration && 
+        !imageFile;
+
+      if (isFormEmpty) {
+        setDraftPayload(null);
+        return;
+      }
+
+      let imageBase64 = null;
+      let imageMeta = null;
+
+      if (imageFile) {
+        try {
+          if (imageFile.size < 3 * 1024 * 1024) { 
+            imageBase64 = await fileToBase64(imageFile);
+            imageMeta = { name: imageFile.name, type: imageFile.type };
+          }
+        } catch (err) {
+          console.warn("Image too large for draft, saving text only.");
+        }
+      }
+
+      setDraftPayload({
+        ...formData,
+        inclusions,
+        itinerary,
+        image: imageBase64,
+        imageMeta: imageMeta,
+        originalId: tourId
+      });
+    };
+
+    const timeoutId = setTimeout(() => {
+      updateDraft();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData, inclusions, itinerary, imageFile, loading, tourId]);
+
+  const restoreDraftData = async (data) => {
+    if (!data) return;
+    
+    if (data.originalId && data.originalId !== tourId) {
+      console.warn("Draft found but belongs to a different tour ID. Ignoring.");
+      return;
+    }
+
+    setFormData({
+      title: data.title || "",
+      destination: data.destination || "",
+      sellerPrice: data.sellerPrice || "",
+      markup: data.markup || "",
+      duration: data.duration || "",
+      category: data.category || "Local",
+      existingImage: data.existingImage || ""
+    });
+
+    if (data.inclusions) setInclusions(data.inclusions);
+    if (data.itinerary) setItinerary(data.itinerary);
+
+    if (data.image && data.imageMeta) {
+      try {
+        const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+        setImageFile(restoredFile);
+        setImagePreview(URL.createObjectURL(restoredFile));
+      } catch (err) {
+        console.error("Failed to restore image:", err);
+      }
+    }
+  };
+
+  const { 
+    clearDraft, 
+    hasDraft, 
+    restoreDraft, 
+    discardDraft,
+    draftInfo 
+  } = useAutoDraft({
+    module: `edit-tour-${tourId}`,
+    formData: draftPayload,
+    setFormData: restoreDraftData,
+    imagePreview: imagePreview, 
+    autoRestore: false 
+  });
+
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+  useEffect(() => {
+    if (hasDraft && !loading) {
+      setShowRestoreModal(true);
+    }
+  }, [hasDraft, loading]);
+
+  const handleRestoreDraft = () => {
+    restoreDraft();
+    setShowRestoreModal(false);
+    toast.info("Draft restored successfully!");
+  };
+
+  const handleDiscardDraft = async () => {
+    await discardDraft();
+    setShowRestoreModal(false);
+    toast.info("Draft discarded.");
+  };
+
+  // =========================================================
+  // ✅ AUTO-DRAFT LOGIC END
+  // =========================================================
+
   useEffect(() => {
     if (!tourId) {
       navigate("/view-tours");
@@ -53,16 +285,17 @@ const EditTour = () => {
         if (result.status === "ok") {
           const tour = result.data;
           
+          // Set Original Data for Activity Logging
+          setOriginalData(tour);
+
           // Handle price fields properly - support both old and new formats
           let sellerPriceValue = 0;
           let markupValue = 0;
           
           if (tour.sellerPrice !== undefined && tour.sellerPrice !== null) {
-            // New format with sellerPrice and markup
             sellerPriceValue = tour.sellerPrice;
             markupValue = tour.markup !== undefined && tour.markup !== null ? tour.markup : 0;
           } else if (tour.price !== undefined && tour.price !== null) {
-            // Old format with only price - treat entire price as seller price
             sellerPriceValue = tour.price;
             markupValue = 0;
           }
@@ -87,27 +320,25 @@ const EditTour = () => {
           );
 
           if (tour.image) {
-            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`);
+            setImagePreview(`http://localhost:5000/uploads/${tour.image}`);
           }
         }
       } catch (err) {
         console.error("Error fetching tour:", err);
-        alert("Failed to load tour data");
+        toast.error("Failed to load tour data");
       } finally {
         setLoading(false);
       }
     };
 
     fetchTourData();
-  }, [tourId, navigate]);
+  }, [tourId, navigate, toast]);
 
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle image upload
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -117,10 +348,10 @@ const EditTour = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
+      toast.info(`Selected image: ${file.name}`);
     }
   };
 
-  // Inclusions handlers
   const handleInclusionChange = (index, value) => {
     const newInclusions = [...inclusions];
     newInclusions[index] = value;
@@ -137,7 +368,6 @@ const EditTour = () => {
     }
   };
 
-  // Itinerary handlers
   const handleItineraryChange = (index, field, value) => {
     const newItinerary = [...itinerary];
     newItinerary[index][field] = value;
@@ -176,7 +406,6 @@ const EditTour = () => {
   const removeItineraryDay = (index) => {
     if (itinerary.length > 1) {
       const newItinerary = itinerary.filter((_, i) => i !== index);
-      // Renumber days
       newItinerary.forEach((item, i) => {
         item.day = i + 1;
       });
@@ -184,21 +413,42 @@ const EditTour = () => {
     }
   };
 
-  // Submit handler
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ✅ New Handle Back/Cancel with Confirmation
+  const handleBack = () => {
+    askConfirmation(
+      "Discard Changes",
+      "Are you sure you want to discard your changes and go back?",
+      async () => {
+        await clearDraft();
+        navigate("/view-tours");
+      }
+    );
+  };
 
+  // ✅ Wrap handleSubmit with Confirmation
+  const handleSubmitConfirmation = (e) => {
+    e.preventDefault();
+    
     if (
       !formData.title ||
       !formData.destination ||
       !formData.sellerPrice ||
       !formData.duration
     ) {
-      alert("Please fill in all required fields");
+      toast.warning("Please fill in all required fields");
       return;
     }
 
+    askConfirmation(
+      "Update Tour",
+      "Are you sure you want to save the changes for this tour package?",
+      () => performSubmit()
+    );
+  };
+
+  const performSubmit = async () => {
     setSubmitting(true);
+    const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
 
     try {
       const formDataToSend = new FormData();
@@ -210,11 +460,54 @@ const EditTour = () => {
       formDataToSend.append("category", formData.category);
       formDataToSend.append("existingImage", formData.existingImage);
 
+      // 🔥 Activity Logs: Append Admin Data
+      formDataToSend.append("userEmail", userEmail);
+      formDataToSend.append("adminId", adminId);
+
+      // 🔥 Activity Logs: Track Changes Logic
+      let changes = [];
+      const trackChange = (label, oldVal, newVal) => {
+          const cleanOld = String(oldVal || "").trim();
+          const cleanNew = String(newVal || "").trim();
+          if (cleanOld !== cleanNew) {
+              changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
+          }
+      };
+
+      if (originalData) {
+          trackChange("Title", originalData.title, formData.title);
+          trackChange("Destination", originalData.destination, formData.destination);
+          trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
+          trackChange("Markup", originalData.markup, formData.markup);
+          trackChange("Duration", originalData.duration, formData.duration);
+          trackChange("Category", originalData.category, formData.category);
+
+          if (imageFile) {
+              changes.push(`Tour image was replaced.`);
+          }
+          
+          // Simple check for arrays (not deep comparison, just checking if stringified versions differ)
+          const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
+          const oldInclusions = originalData.inclusions || [];
+          if (JSON.stringify(filteredInclusions) !== JSON.stringify(oldInclusions)) {
+              changes.push("Inclusions list updated");
+          }
+          
+          // Itinerary check is complex, just flagging if it changed
+          if (itinerary.length !== (originalData.itinerary?.length || 0)) {
+               changes.push("Itinerary days/structure updated");
+          }
+      }
+
+      // Explicitly append changes as JSON string so backend can parse it
+      if (changes.length > 0) {
+          formDataToSend.append("changes", JSON.stringify(changes)); 
+      }
+
       // Filter empty inclusions
       const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
       formDataToSend.append("inclusions", JSON.stringify(filteredInclusions));
 
-      // Filter empty itinerary
       const filteredItinerary = itinerary
         .map((day) => ({
           day: day.day,
@@ -236,14 +529,15 @@ const EditTour = () => {
       const result = await response.json();
 
       if (result.status === "ok") {
-        alert("✅ Tour updated successfully!");
+        toast.success("Tour updated successfully!");
+        await clearDraft();
         navigate("/view-tours");
       } else {
-        alert(`❌ Error: ${result.message || "Failed to update tour"}`);
+        toast.error(`Error: ${result.message || "Failed to update tour"}`);
       }
     } catch (err) {
       console.error("Submit error:", err);
-      alert("❌ Error connecting to server");
+      toast.error("Error connecting to server");
     } finally {
       setSubmitting(false);
     }
@@ -265,13 +559,32 @@ const EditTour = () => {
 
   return (
     <div className="et-page">
+      
+      {/* ✅ RESTORE DRAFT MODAL */}
+      <RestoreDraftModal
+        isOpen={showRestoreModal}
+        onRestore={handleRestoreDraft}
+        onDiscard={handleDiscardDraft}
+        draftInfo={draftInfo}
+      />
+
+      {/* ✅ CUSTOM CONFIRMATION MODAL */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <main className={`et-main ${isSidebarCollapsed ? "et-main--collapsed" : ""}`}>
         <div className="et-container">
           {/* Header */}
           <header className="et-header">
             <div className="et-header-content">
-              <button className="et-back-btn" onClick={() => navigate("/view-tours")}>
+              <button className="et-back-btn" type="button" onClick={handleBack}>
                 <ArrowLeft size={18} />
                 Back to Tours
               </button>
@@ -281,7 +594,7 @@ const EditTour = () => {
           </header>
 
           {/* Form */}
-          <form className="et-form" onSubmit={handleSubmit}>
+          <form className="et-form" onSubmit={handleSubmitConfirmation}>
             {/* Image Upload */}
             <div className="et-section">
               <h2 className="et-section-title">Tour Image</h2>
@@ -547,7 +860,7 @@ const EditTour = () => {
               <button
                 type="button"
                 className="et-btn et-btn--cancel"
-                onClick={() => navigate("/view-tours")}
+                onClick={handleBack}
                 disabled={submitting}
               >
                 Cancel

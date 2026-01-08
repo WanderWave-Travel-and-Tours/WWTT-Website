@@ -98,6 +98,50 @@ exports.getAllHotels = async (req, res) => {
   }
 };
 
+// hotelController.js
+
+// GET ALL ARCHIVED HOTELS
+exports.getArchivedHotels = async (req, res) => {
+    try {
+        // Kinukuha lahat ng hotel na may isArchive: "Yes"
+        const archivedHotels = await Hotel.find({ isArchive: "Yes" }).sort({ archivedAt: -1 });
+        res.status(200).json({
+            success: true,
+            count: archivedHotels.length,
+            data: archivedHotels
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// RESTORE HOTEL FROM ARCHIVE
+exports.restoreHotel = async (req, res) => {
+    try {
+        const hotel = await Hotel.findByIdAndUpdate(
+            req.params.id,
+            { 
+                isArchive: "No", 
+                isActive: true, // I-activate ulit para lumabas sa main list
+                archivedAt: null 
+            },
+            { new: true }
+        );
+
+        if (!hotel) {
+            return res.status(404).json({ success: false, message: "Hotel not found" });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Hotel restored successfully",
+            data: hotel
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // GET HOTEL BY ID
 exports.getHotelById = async (req, res) => {
   try {

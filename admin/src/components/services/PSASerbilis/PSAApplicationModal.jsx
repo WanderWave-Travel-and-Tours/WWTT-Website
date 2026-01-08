@@ -1,7 +1,26 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { X, CheckCircle, User, Mail, FileText, Upload, DollarSign } from "lucide-react";
-import "./PSAModals.css"; // Reuse your existing modal styles
+import "./PSAModals.css"; 
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log('📊 Admin Data from localStorage:', adminData);
+        
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return {
+            userEmail: 'Unknown Admin',
+            adminId: null
+        };
+    }
+};
 
 export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = [] }) => {
   const [step, setStep] = useState(1);
@@ -52,6 +71,10 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
 
     setIsLoading(true);
     try {
+      // 🔥 GET ADMIN DATA
+      const { userEmail, adminId } = getAdminData();
+      console.log('🔍 Submitting PSA Application with admin data:', { userEmail, adminId });
+
       const data = new FormData();
       
       data.append('serviceName', formData.psaDocumentType);
@@ -68,11 +91,15 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
       data.append('documentCategory', 'REQUIREMENT');
       data.append('uploader', 'ADMIN_WALKIN');
 
+      // 🔥🔥🔥 ADD ADMIN DATA FOR LOGS 🔥🔥🔥
+      data.append('userEmail', userEmail);
+      data.append('adminId', adminId);
+
       Object.keys(formData.files).forEach(key => {
         data.append(key, formData.files[key]);
       });
 
-      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries/upload-application', data, {
+      const response = await axios.post('http://localhost:5000/api/inquiries/upload-application', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -147,9 +174,9 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
                 </div>
                 {/* DISPLAY CONFIRMATION OF PRICE */}
                 {selectedPrice > 0 && (
-                     <div style={{marginTop: '10px', padding: '10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#166534', fontSize: '14px', fontWeight: '600'}}>
-                        Current Price: ₱{selectedPrice}
-                     </div>
+                      <div style={{marginTop: '10px', padding: '10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#166534', fontSize: '14px', fontWeight: '600'}}>
+                         Current Price: ₱{selectedPrice}
+                      </div>
                 )}
               </div>
 

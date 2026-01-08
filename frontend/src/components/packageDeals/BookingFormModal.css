@@ -1,4 +1,8 @@
-/* BookingFormModal.css */
+/* BookingFormModal.css - FULLY RESPONSIVE */
+
+/* ============================================
+   BASE STYLES (Desktop First)
+   ============================================ */
 
 /* --- Modal Overlay --- */
 .bfm-overlay {
@@ -29,7 +33,7 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   height: auto;
-  max-height: 90vh;
+  max-height: 75vh; /* REDUCED FROM 82vh to 75vh */
   display: flex;
   flex-direction: column;
   overflow: hidden; 
@@ -80,11 +84,11 @@
 }
 
 .bfm-modal-header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 95, 0.95) 100%);
-    z-index: 1;
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 95, 0.95) 100%);
+  z-index: 1;
 }
 
 .bfm-modal-logo,
@@ -207,6 +211,76 @@
   background: #f8fafc;
 }
 
+/* Custom Scrollbar */
+.bfm-form-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 4px;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.bfm-form-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* --- Progress Section --- */
+.bfm-progress-section {
+  margin-bottom: 20px;
+}
+
+.bfm-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bfm-progress-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bfm-primary-badge {
+  background: #f97316;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.bfm-progress-percent {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.bfm-progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bfm-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fc9c1b, #f97316);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
 /* --- Form Inputs --- */
 .bfm-form-section-header {
   color: #1e3a5f;
@@ -218,6 +292,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .bfm-passenger-badge {
@@ -229,7 +305,11 @@
   font-weight: 700;
 }
 
-.bfm-primary-contact-label { font-size: 0.75rem; color: #f97316; font-weight: 700; }
+.bfm-primary-contact-label { 
+  font-size: 0.75rem; 
+  color: #f97316; 
+  font-weight: 700; 
+}
 
 .bfm-form-grid {
   display: grid;
@@ -237,8 +317,13 @@
   gap: 14px;
 }
 
-.bfm-form-group { margin-bottom: 0; }
-.bfm-form-group.bfm-full-width { grid-column: 1 / -1; }
+.bfm-form-group { 
+  margin-bottom: 0; 
+}
+
+.bfm-form-group.bfm-full-width { 
+  grid-column: 1 / -1; 
+}
 
 .bfm-form-group label { 
   display: block; 
@@ -246,6 +331,14 @@
   font-weight: 700; 
   color: #475569; 
   margin-bottom: 4px; 
+}
+
+.bfm-upload-hint {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  font-weight: 400;
+  display: block;
+  margin-top: 2px;
 }
 
 .bfm-form-group input, 
@@ -257,7 +350,8 @@
   font-size: 0.9rem;
   background-color: white; 
   color: #334155; 
-  box-sizing: border-box; /* Crucial for responsiveness */
+  box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
 .bfm-form-group input:focus, 
@@ -267,25 +361,282 @@
   box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.1);
 }
 
-.bfm-required { color: #ef4444; margin-left: 2px; }
+.bfm-required { 
+  color: #ef4444; 
+  margin-left: 2px; 
+}
 
 /* --- File Upload --- */
-.bfm-file-upload-label {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  padding: 16px; border: 2px dashed #cbd5e1; border-radius: 8px; cursor: pointer; 
-  background: white; text-align: center;
+.bfm-file-upload-box {
+  width: 100%;
 }
-.bfm-upload-text { font-weight: 600; color: #475569; font-size: 0.85rem; }
-.bfm-upload-subtext { font-size: 0.7rem; color: #94a3b8; }
+
+.bfm-file-upload-label {
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 4px;
+  padding: 16px; 
+  border: 2px dashed #cbd5e1; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  background: white; 
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.bfm-file-upload-label:hover {
+  border-color: #fc9c1b;
+  background: #fffbf5;
+}
+
+.bfm-upload-text { 
+  font-weight: 600; 
+  color: #475569; 
+  font-size: 0.85rem; 
+}
+
+.bfm-upload-subtext { 
+  font-size: 0.7rem; 
+  color: #94a3b8; 
+}
 
 .bfm-file-uploaded {
-  display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; 
-  background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 8px 12px; 
+  background: #f0fdf4; 
+  border: 1px solid #86efac; 
+  border-radius: 8px;
 }
-.bfm-file-name { font-size: 0.8rem; font-weight: 600; color: #166534; }
+
+.bfm-file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bfm-file-name { 
+  font-size: 0.8rem; 
+  font-weight: 600; 
+  color: #166534; 
+}
+
 .bfm-remove-file-btn {
-  background: #fff; color: #dc2626; border: 1px solid #fecaca; padding: 4px 10px; 
-  border-radius: 4px; font-size: 0.7rem; cursor: pointer; 
+  background: #fff; 
+  color: #dc2626; 
+  border: 1px solid #fecaca; 
+  padding: 4px 10px; 
+  border-radius: 4px; 
+  font-size: 0.7rem; 
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bfm-remove-file-btn:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+/* --- Payment Section --- */
+.bfm-payment-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.bfm-payment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #1e3a5f;
+}
+
+.bfm-payment-header h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.bfm-payment-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.bfm-payment-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.bfm-payment-card:hover {
+  border-color: #fc9c1b;
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.15);
+}
+
+.bfm-payment-card.active {
+  border-color: #fc9c1b;
+  background: linear-gradient(to bottom, #fffbf5, white);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.2);
+}
+
+.bfm-payment-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bfm-payment-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bfm-payment-card.active .bfm-payment-radio {
+  border-color: #fc9c1b;
+}
+
+.bfm-radio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.bfm-radio-dot.active {
+  background: #fc9c1b;
+}
+
+.bfm-payment-card-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.bfm-recommended-badge {
+  background: #10b981;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.bfm-flexible-badge {
+  background: #3b82f6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.bfm-payment-card-body {
+  padding-left: 30px;
+}
+
+.bfm-payment-amount {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fc9c1b;
+  margin-bottom: 6px;
+}
+
+.bfm-payment-percentage {
+  display: block;
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.bfm-payment-description {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.bfm-payment-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.bfm-payment-benefits li {
+  padding: 3px 0;
+}
+
+.bfm-payment-breakdown {
+  margin-top: 8px;
+  padding: 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+.bfm-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #64748b;
+  padding: 3px 0;
+}
+
+.bfm-breakdown-row strong {
+  color: #1e3a5f;
+  font-weight: 700;
+}
+
+.bfm-payment-summary {
+  background: #fff7ed;
+  border: 2px solid #fc9c1b;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.bfm-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.bfm-summary-row.bfm-remaining {
+  border-top: 1px dashed #fcd34d;
+  margin-top: 6px;
+  padding-top: 8px;
+}
+
+.bfm-amount-highlight {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ea580c;
 }
 
 /* --- Footer Actions --- */
@@ -304,26 +655,121 @@
   font-size: 0.9rem;
   cursor: pointer;
   border: none;
+  transition: all 0.2s ease;
 }
 
-.bfm-back-btn { flex: 1; background: #e2e8f0; color: #475569; }
-.bfm-submit-btn { flex: 2; background: #fc9c1b; color: white; }
+.bfm-back-btn { 
+  flex: 1; 
+  background: #e2e8f0; 
+  color: #475569; 
+}
+
+.bfm-back-btn:hover {
+  background: #cbd5e1;
+}
+
+.bfm-submit-btn { 
+  flex: 2; 
+  background: #fc9c1b; 
+  color: white; 
+}
+
+.bfm-submit-btn:hover:not(:disabled) {
+  background: #ea8c0d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
+}
+
+.bfm-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* ============================================
-   RESPONSIVE (Mobile Specifics)
+   TABLET (641px - 1024px)
    ============================================ */
 
-/* --- MOBILE (Max width: 640px) --- */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .bfm-modal-card {
+    max-width: 600px;
+    max-height: 73vh; /* REDUCED FROM 80vh to 73vh */
+  }
+
+  .bfm-modal-header {
+    padding: 20px 24px;
+  }
+
+  .bfm-modal-logo {
+    height: 28px;
+  }
+
+  .bfm-modal-title {
+    font-size: 1.25rem;
+  }
+
+  .bfm-modal-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .bfm-trip-summary {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .bfm-summary-item {
+    padding: 6px 10px;
+    min-width: 100px;
+  }
+
+  .bfm-summary-label {
+    font-size: 0.55rem;
+  }
+
+  .bfm-summary-value {
+    font-size: 0.8rem;
+  }
+
+  .bfm-form-wrapper {
+    padding: 20px 24px;
+  }
+
+  .bfm-form-grid {
+    gap: 12px;
+  }
+
+  .bfm-form-group input,
+  .bfm-form-group select {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .bfm-payment-options {
+    gap: 8px;
+  }
+
+  .bfm-payment-card {
+    padding: 10px;
+  }
+
+  .bfm-payment-amount {
+    font-size: 1.3rem;
+  }
+}
+
+/* ============================================
+   MOBILE (Max width: 640px)
+   ============================================ */
+
 @media (max-width: 640px) {
   .bfm-overlay {
     padding: 0; 
-    align-items: flex-end; /* Slide up feel */
+    align-items: flex-end;
   }
 
   .bfm-modal-card {
     border-radius: 12px 12px 0 0;
     width: 100%;
-    height: 100dvh; /* Dynamic viewport height */
+    height: 100dvh;
     max-height: 100dvh; 
     max-width: 100%;
   }
@@ -332,9 +778,19 @@
     padding: 16px 20px;
   }
 
-  .bfm-modal-logo { height: 24px; margin-bottom: 8px; }
-  .bfm-modal-title { font-size: 1.1rem; margin-bottom: 2px; }
-  .bfm-modal-subtitle { display: none; } /* Hide on mobile to save space */
+  .bfm-modal-logo { 
+    height: 24px; 
+    margin-bottom: 8px; 
+  }
+
+  .bfm-modal-title { 
+    font-size: 1.1rem; 
+    margin-bottom: 2px; 
+  }
+
+  .bfm-modal-subtitle { 
+    display: none;
+  }
 
   /* Summary Grid on Mobile */
   .bfm-trip-summary {
@@ -342,17 +798,74 @@
     grid-template-columns: 1fr 1fr;
     gap: 6px;
     padding: 8px;
-    margin-bottom: 0; /* Save space */
+    margin-bottom: 0;
   }
   
-  /* Make odd items span full width if needed, or keep compact */
-  .bfm-summary-item { padding: 6px 8px; min-width: auto; }
-  .bfm-summary-value { font-size: 0.8rem; }
-  .bfm-summary-label { font-size: 0.55rem; }
+  .bfm-summary-item { 
+    padding: 6px 8px; 
+    min-width: auto; 
+  }
+
+  .bfm-summary-value { 
+    font-size: 0.75rem;
+    white-space: normal;
+  }
+
+  .bfm-summary-label { 
+    font-size: 0.5rem; 
+  }
+
+  .bfm-summary-subtext {
+    font-size: 0.6rem;
+  }
+
+  .bfm-price {
+    font-size: 0.85rem;
+  }
+
+  .bfm-grand-total-value {
+    font-size: 0.95rem;
+  }
+
+  .bfm-doc-req-box {
+    font-size: 0.7rem;
+    padding: 6px 10px;
+  }
 
   .bfm-form-wrapper {
     padding: 16px 20px;
-    padding-bottom: 40px; /* Space for bottom navigation bars */
+    padding-bottom: 40px;
+  }
+
+  .bfm-progress-section {
+    margin-bottom: 16px;
+  }
+
+  .bfm-progress-label {
+    font-size: 0.75rem;
+  }
+
+  .bfm-primary-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+
+  .bfm-progress-percent {
+    font-size: 0.7rem;
+  }
+
+  .bfm-form-section-header {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+
+  .bfm-passenger-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+
+  .bfm-primary-contact-label {
+    font-size: 0.7rem;
   }
 
   /* Single Column Form on Mobile */
@@ -361,22 +874,100 @@
     gap: 12px;
   }
 
-  .bfm-form-group.bfm-full-width { grid-column: auto; }
+  .bfm-form-group.bfm-full-width { 
+    grid-column: auto; 
+  }
+
+  .bfm-form-group label {
+    font-size: 0.7rem;
+  }
+
+  .bfm-upload-hint {
+    font-size: 0.6rem;
+  }
 
   .bfm-form-group input, 
   .bfm-form-group select {
     padding: 12px;
-    font-size: 1rem; /* Prevent auto-zoom on iPhone */
+    font-size: 1rem;
+  }
+
+  .bfm-file-upload-label {
+    padding: 12px;
+  }
+
+  .bfm-upload-text {
+    font-size: 0.8rem;
+  }
+
+  .bfm-upload-subtext {
+    font-size: 0.65rem;
+  }
+
+  .bfm-file-name {
+    font-size: 0.75rem;
+  }
+
+  /* Payment Section Mobile */
+  .bfm-payment-section {
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+
+  .bfm-payment-header {
+    margin-bottom: 10px;
+  }
+
+  .bfm-payment-header h3 {
+    font-size: 0.85rem;
+  }
+
+  .bfm-payment-options {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .bfm-payment-card {
+    padding: 10px;
+  }
+
+  .bfm-payment-amount {
+    font-size: 1.3rem;
+  }
+
+  .bfm-payment-description {
+    font-size: 0.72rem;
+  }
+
+  .bfm-payment-benefits {
+    font-size: 0.72rem;
+  }
+
+  .bfm-breakdown-row {
+    font-size: 0.72rem;
+  }
+
+  .bfm-payment-summary {
+    padding: 8px 12px;
+  }
+
+  .bfm-summary-row {
+    font-size: 0.78rem;
+  }
+
+  .bfm-amount-highlight {
+    font-size: 1.05rem;
   }
 
   .bfm-actions {
-    flex-direction: column-reverse; /* Back button below Next */
+    flex-direction: column-reverse;
     gap: 12px;
   }
 
   .bfm-back-btn, .bfm-submit-btn {
     width: 100%;
     padding: 14px;
+    font-size: 0.85rem;
   }
   
   .bfm-close-btn {
@@ -384,5 +975,109 @@
     height: 32px;
     top: 12px;
     right: 12px;
+  }
+}
+
+/* ============================================
+   EXTRA SMALL DEVICES (Max width: 375px)
+   ============================================ */
+
+@media (max-width: 375px) {
+  .bfm-modal-title {
+    font-size: 1rem;
+  }
+
+  .bfm-modal-logo {
+    height: 20px;
+  }
+
+  .bfm-summary-value {
+    font-size: 0.7rem;
+  }
+
+  .bfm-summary-label {
+    font-size: 0.45rem;
+  }
+
+  .bfm-form-wrapper {
+    padding: 12px 16px;
+    padding-bottom: 36px;
+  }
+
+  .bfm-form-group input,
+  .bfm-form-group select {
+    padding: 10px;
+    font-size: 0.95rem;
+  }
+
+  .bfm-payment-amount {
+    font-size: 1.2rem;
+  }
+
+  .bfm-actions {
+    gap: 10px;
+  }
+
+  .bfm-back-btn, .bfm-submit-btn {
+    padding: 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ============================================
+   LARGE SCREENS (Min width: 1025px)
+   ============================================ */
+
+@media (min-width: 1025px) {
+  .bfm-modal-card {
+    max-width: 750px;
+    max-height: 75vh; /* REDUCED FROM 82vh to 75vh */
+  }
+
+  .bfm-modal-header {
+    padding: 28px 36px;
+  }
+
+  .bfm-modal-title {
+    font-size: 1.5rem;
+  }
+
+  .bfm-modal-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .bfm-form-wrapper {
+    padding: 28px 36px;
+  }
+
+  .bfm-form-grid {
+    gap: 16px;
+  }
+
+  .bfm-form-group input,
+  .bfm-form-group select {
+    padding: 11px 14px;
+    font-size: 0.95rem;
+  }
+
+  .bfm-payment-options {
+    gap: 12px;
+  }
+
+  .bfm-payment-card {
+    padding: 14px;
+  }
+
+  .bfm-payment-amount {
+    font-size: 1.6rem;
+  }
+
+  .bfm-actions {
+    gap: 12px;
+  }
+
+  .bfm-back-btn, .bfm-submit-btn {
+    padding: 14px;
+    font-size: 0.95rem;
   }
 }

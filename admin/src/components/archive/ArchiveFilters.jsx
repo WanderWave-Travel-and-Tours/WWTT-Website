@@ -97,18 +97,17 @@ const ArchiveFilters = ({
         )}
         
         {/* ORDER 4: SEARCH BOX - Pushed to the right */}
-        <div className="search-box">
-          <Search size={18} className="search-icon" /> 
+        <div className="arc-search-box">
+          <Search size={18} className="arc-search-icon" /> 
           <input
             type="text"
-            className="search-input"
+            className="arc-search-input"
             placeholder="Search by name, ID, or reference..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         
-
       </div>
     </div>
   );

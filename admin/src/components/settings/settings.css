@@ -1,24 +1,26 @@
+/* ================================================= */
+/* SETTINGS PAGE - MATCHING USERS UI EXACTLY        */
+/* ================================================= */
+
 .settings-page {
     display: flex;
     min-height: 100vh;
-    background: #f8fafc; 
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    width: 100%;
+    position: relative;
 }
 
-/* Base style for main content: uses a transition for smooth resizing */
 .settings-main {
     flex: 1;
-    /* Use padding to set an initial position, then transition the margin */
-    padding: 40px 48px;
+    margin-left: 300px;
+    padding: 40px 80px;
     font-family: 'Segoe UI', Arial, sans-serif;
-    
-    /* Set default margin for expanded sidebar (assuming 280px sidebar width) */
-    margin-left: 280px; 
-    transition: margin-left 0.3s ease-in-out; /* Smooth transition */
+    transition: margin-left 0.3s ease;
+    width: 100%;
 }
 
-/* New rule for when the sidebar is collapsed (assuming ~70px collapsed width) */
 .settings-main.collapsed {
-    margin-left: 70px;
+    margin-left: 90px;
 }
 
 .settings-main *,
@@ -28,40 +30,93 @@
 }
 
 .settings-container {
-    max-width: 1000px; 
+    max-width: 1320px;
     margin: 0 auto;
+    width: 100%;
 }
 
+/* --- HEADER SECTION (Matching Users) --- */
 .settings-header {
-    margin-bottom: 32px;
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    /* Settings/Business themed background */
+    background: url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop') center/cover;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.settings-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, 
+        rgba(0, 31, 63, 0.92) 0%, 
+        rgba(0, 31, 63, 0.75) 50%, 
+        rgba(255, 140, 66, 0.3) 100%);
+    z-index: 1;
+}
+
+.settings-header-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
 }
 
 .settings-title {
     font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 900;
-    color: #001F3F; 
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    margin: 0 0 8px 0;
 }
 
 .settings-subtitle {
-    font-size: 14px;
-    color: #64748b;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
+.settings-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #FF8C42 0%, transparent 100%);
+    display: inline-block;
+}
+
+/* --- SETTINGS GRID --- */
 .settings-grid {
     display: flex;
     flex-direction: column;
     gap: 32px;
 }
 
+/* --- SETTINGS SECTIONS --- */
 .settings-section {
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 32px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    transition: all 0.2s ease;
+}
+
+.settings-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 31, 63, 0.08);
 }
 
 .settings-section-header {
@@ -80,6 +135,7 @@
     margin: 0;
 }
 
+/* --- LOGO UPLOAD SECTION --- */
 .logo-upload-wrapper {
     display: flex;
     gap: 24px;
@@ -175,9 +231,10 @@
     border-color: #ef4444;
 }
 
+/* --- SETTINGS FIELDS GRID --- */
 .settings-fields-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); 
+    grid-template-columns: repeat(2, 1fr);
     gap: 24px;
 }
 
@@ -215,7 +272,7 @@
 .settings-field input:focus,
 .settings-field select:focus {
     outline: none;
-    border-color: #FF8C42; 
+    border-color: #FF8C42;
     background: #fff;
     box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
@@ -228,6 +285,7 @@
     border-color: #e2e8f0;
 }
 
+/* --- SETTINGS ACTIONS --- */
 .settings-actions {
     display: flex;
     justify-content: flex-end;
@@ -258,52 +316,100 @@
     transform: translateY(0);
 }
 
-/* MEDIA QUERIES - Ensure these still work with the collapsed state */
+/* ================================================= */
+/* RESPONSIVENESS - MATCHING USERS EXACTLY          */
+/* ================================================= */
 
-@media (max-width: 1024px) {
-    .settings-main {
-        padding: 32px;
+@media (max-width: 1100px) {
+    .settings-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
     }
-    .settings-container {
-        max-width: 100%;
-    }
-}
 
-@media (max-width: 900px) {
-    /* At 900px and below, the sidebar is likely always in its collapsed state (70px) */
     .settings-main {
-        margin-left: 70px; /* Forces the main content to the correct position */
-        padding: 24px;
+        padding: 40px 48px;
     }
 }
 
 @media (max-width: 768px) {
+    .settings-main, 
+    .settings-main.collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+    }
+
+    .settings-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .settings-title {
+        font-size: 2rem;
+    }
+
     .settings-fields-grid {
-        grid-template-columns: 1fr; 
+        grid-template-columns: 1fr;
         gap: 16px;
     }
-    
+
     .logo-upload-wrapper {
         flex-direction: column;
         align-items: center;
         text-align: center;
     }
-    
+
     .logo-info {
         align-items: center;
     }
 }
 
 @media (max-width: 640px) {
-    /* Below this width, the sidebar is likely completely hidden or overlaid, so the main content should take full width */
-    .settings-main {
-        margin-left: 0;
-        padding: 16px;
-    }
     .settings-title {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
+        letter-spacing: 2px;
     }
+
+    .settings-subtitle {
+        font-size: 13px;
+    }
+
+    .settings-header {
+        padding: 30px 24px;
+    }
+
     .btn-save-settings {
         width: 100%;
+    }
+
+    .logo-btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-upload-trigger,
+    .btn-remove-trigger {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-title {
+        font-size: 1.4rem;
+    }
+
+    .settings-header {
+        padding: 28px 20px;
+    }
+
+    .settings-section {
+        padding: 24px 20px;
+    }
+
+    .logo-upload-wrapper {
+        padding: 16px;
     }
 }

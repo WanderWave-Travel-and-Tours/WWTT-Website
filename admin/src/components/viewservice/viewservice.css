@@ -458,9 +458,14 @@
 }
 
 /* =========================
-   RESPONSIVE
+   RESPONSIVE - COMPREHENSIVE BREAKPOINTS
 ========================= */
-@media (max-width: 1024px) {
+
+@media (max-width: 1100px) {
+    .viewservices-main {
+        padding: 32px 40px;
+    }
+
     .viewservices-header {
         flex-direction: column;
         align-items: flex-start;
@@ -469,34 +474,51 @@
 
     .viewservices-grid {
         grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
     }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
     .viewservices-main,
     .viewservices-main--collapsed {
-        margin-left: 70px;
-        padding: 24px;
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
     }
-}
 
-@media (max-width: 640px) {
-    .viewservices-main,
-    .viewservices-main--collapsed {
-        margin-left: 0;
-        padding: 16px;
+    .viewservices-container {
+        max-width: 100%;
+    }
+
+    .viewservices-header {
+        margin-bottom: 24px;
     }
 
     .viewservices-title {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
+        letter-spacing: 0.8px;
+    }
+
+    .viewservices-subtitle {
+        font-size: 13px;
+    }
+
+    .viewservices-btn--add {
+        width: 100%;
+        justify-content: center;
     }
 
     .viewservices-grid {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
 
-    .viewservices-card-title {
-        font-size: 0.85rem;
+    .viewservices-card-image {
+        height: 200px;
+    }
+
+    .viewservices-card-body {
+        padding: 20px;
     }
 
     .viewservices-card-footer {
@@ -512,5 +534,198 @@
     .viewservices-btn-action {
         flex: 1;
         text-align: center;
+    }
+
+    .viewservices-status-bar {
+        padding: 8px 16px 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .viewservices-main,
+    .viewservices-main--collapsed {
+        margin-left: 90px !important;
+        width: calc(100% - 90px) !important;
+        padding: 20px 14px !important;
+    }
+
+    .viewservices-title {
+        font-size: 1.5rem;
+        letter-spacing: 0.5px;
+    }
+
+    .viewservices-subtitle {
+        font-size: 12px;
+    }
+
+    .viewservices-btn {
+        padding: 12px 20px;
+        font-size: 13px;
+    }
+
+    .viewservices-card-title {
+        font-size: 0.85rem;
+        margin-bottom: 16px;
+    }
+
+    .viewservices-card-image {
+        height: 180px;
+    }
+
+    .viewservices-card-category {
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        font-size: 10px;
+    }
+
+    .viewservices-soon-tag {
+        font-size: 14px;
+        padding: 6px 14px;
+    }
+
+    .viewservices-card-info {
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .viewservices-info-row {
+        font-size: 12px;
+        gap: 10px;
+    }
+
+    .viewservices-info-row svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .viewservices-price-label {
+        font-size: 10px;
+    }
+
+    .viewservices-price-value {
+        font-size: 1.25rem;
+    }
+
+    .viewservices-btn-action {
+        padding: 11px 18px;
+        font-size: 12px;
+    }
+
+    .viewservices-empty {
+        padding: 40px 20px;
+        height: 50vh;
+    }
+
+    .viewservices-empty-icon {
+        font-size: 48px;
+    }
+
+    .viewservices-empty h3 {
+        font-size: 1.1rem;
+    }
+
+    .viewservices-empty p {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .viewservices-main,
+    .viewservices-main--collapsed {
+        margin-left: 90px !important;
+        width: calc(100% - 90px) !important;
+        padding: 18px 12px !important;
+    }
+
+    .viewservices-title {
+        font-size: 1.3rem;
+        letter-spacing: 0.3px;
+    }
+
+    .viewservices-subtitle {
+        font-size: 11px;
+    }
+
+    .viewservices-btn {
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+
+    .viewservices-card {
+        border-radius: 10px;
+    }
+
+    .viewservices-card-image {
+        height: 160px;
+    }
+
+    .viewservices-card-body {
+        padding: 16px;
+    }
+
+    .viewservices-card-title {
+        font-size: 0.8rem;
+        margin-bottom: 14px;
+    }
+
+    .viewservices-card-footer {
+        padding-top: 16px;
+        gap: 12px;
+    }
+
+    .viewservices-price-value {
+        font-size: 1.1rem;
+    }
+
+    .viewservices-btn-action {
+        padding: 10px 16px;
+        font-size: 11px;
+    }
+
+    .viewservices-status-bar {
+        padding: 6px 12px 0;
+    }
+
+    .viewservices-status-indicator {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+
+    .viewservices-toggle-btn svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .viewservices-soon-tag {
+        font-size: 12px;
+        padding: 5px 12px;
+        letter-spacing: 1.5px;
+    }
+
+    .viewservices-empty {
+        padding: 30px 16px;
+        height: 40vh;
+    }
+
+    .viewservices-empty-icon {
+        font-size: 40px;
+    }
+
+    .viewservices-empty h3 {
+        font-size: 1rem;
+    }
+
+    .viewservices-empty p {
+        font-size: 12px;
+    }
+
+    .viewservices-loader {
+        height: 50vh;
+    }
+
+    .viewservices-error {
+        height: 50vh;
+        padding: 30px 20px;
     }
 }

@@ -1,0 +1,266 @@
+/* ================================================
+   ADMIN FILTERS CARD (af- prefix)
+   ================================================ */
+
+.af-filter-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 20px; 
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); 
+    position: relative;
+    overflow: hidden;
+}
+
+.af-filter-wrapper {
+    display: flex;
+    gap: 16px; 
+    align-items: center;
+    flex-wrap: wrap;
+    padding-top: 0;
+    flex-direction: row; 
+    justify-content: flex-start;
+}
+
+/* Branding Label - ORDER 1 */
+.af-brand-label {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #0f172a; 
+    flex-shrink: 0;
+    white-space: nowrap;
+    line-height: 1; 
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.af-brand-label span {
+    color: #f59e0b;
+    font-weight: 800;
+}
+
+/* Filter Buttons - ORDER 2 */
+.af-filter-buttons {
+    display: flex;
+    gap: 8px; 
+    flex-wrap: wrap;
+    flex-shrink: 0; 
+    order: 2; 
+}
+
+.af-filter-btn {
+    padding: 10px 18px; 
+    border-radius: 10px; 
+    font-size: 14px; 
+    font-weight: 600;
+    cursor: pointer;
+    background: #f8fafc;
+    border: none; 
+    color: #334155; 
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-transform: capitalize; 
+    height: 44px; 
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+.af-filter-btn:hover:not(.af-active-navy) {
+    background: #f1f5f9;
+}
+
+/* Active State - Navy Blue */
+.af-filter-btn.af-active-navy { 
+    background: #0f172a;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
+}
+
+/* Search Box - ORDER 3 */
+.af-search-box {
+    position: relative;
+    order: 3; 
+    background: white; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 12px; 
+    flex: 1; 
+    min-width: 250px; 
+    max-width: 400px;
+    height: 44px; 
+    padding: 0;
+    margin-left: auto;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.af-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.af-search-input {
+    width: 100%;
+    height: 100%;
+    background: #f8fafc; 
+    border: none; 
+    border-radius: 11px;
+    font-size: 14px;
+    color: #0f172a;
+    padding: 0 12px 0 40px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+.af-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.af-search-input:focus {
+    outline: none;
+}
+
+.af-search-box:focus-within {
+    border-color: #f59e0b; 
+    box-shadow: 0 0 0 1px #f59e0b; 
+}
+
+/* ================================================
+   RESPONSIVE
+   ================================================ */
+
+@media (max-width: 960px) {
+    .af-filter-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .af-brand-label {
+        order: 1; 
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e2e8f0;
+        justify-content: flex-start;
+    }
+    
+    .af-filter-buttons {
+        order: 2; 
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .af-search-box {
+        order: 3; 
+        min-width: 100%;
+        max-width: 100%;
+        height: 44px; 
+        margin-left: 0; 
+    }
+    
+    .af-filter-btn {
+        flex: 1 1 30%;
+        padding: 12px 10px; 
+        font-size: 13px;
+        height: 44px;
+    }
+}
+
+/* Mobile/Small Screens (Below 600px) - FIXED HEIGHT */
+@media (max-width: 600px) {
+    .af-filter-card {
+        padding: 16px;
+    }
+
+    .af-filter-wrapper {
+        gap: 12px;
+    }
+
+    .af-brand-label {
+        font-size: 13px;
+    }
+
+    .af-filter-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    /* FILTER BUTTONS - FORCE MOBILE HEIGHT */
+    .af-filter-btn {
+        width: 100%;
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        font-size: 13px;
+        padding: 8px 16px;
+    }
+
+    /* SEARCH BOX - FORCE MOBILE HEIGHT */
+    .af-search-box {
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        border-radius: 10px;
+    }
+
+    .af-search-input {
+        height: 38px !important;
+        font-size: 13px;
+        padding: 0 12px 0 38px;
+        border-radius: 10px;
+    }
+
+    .af-search-icon {
+        left: 12px;
+    }
+}
+
+/* Extra Small Screens (Below 400px) */
+@media (max-width: 400px) {
+    .af-filter-card {
+        padding: 14px;
+    }
+
+    .af-filter-wrapper {
+        gap: 10px;
+    }
+
+    .af-brand-label {
+        font-size: 12px;
+    }
+
+    .af-filter-btn {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        font-size: 12px;
+        padding: 6px 14px;
+    }
+
+    .af-search-box {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+    }
+
+    .af-search-input {
+        height: 36px !important;
+        font-size: 12px;
+        padding: 0 10px 0 36px;
+    }
+
+    .af-search-icon {
+        left: 10px;
+    }
+}

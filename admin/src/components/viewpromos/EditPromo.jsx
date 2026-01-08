@@ -4,6 +4,24 @@ import { Save, ArrowLeft, Percent, DollarSign, Upload, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditPromo.css'; 
 
+// ✅ Imports for Draft Functionality
+import useAutoDraft from '../../hooks/useAutoDraft';
+import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const EditPromo = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -23,10 +41,16 @@ const EditPromo = () => {
         durationType: 'Weekly' // Default
     });
 
+    // ✅ Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
+
     // Image Handling
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [currentImage, setCurrentImage] = useState(null);
+    
+    // ✅ Store original image public ID for deletion
+    const [existingImagePublicId, setExistingImagePublicId] = useState('');
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -38,15 +62,165 @@ const EditPromo = () => {
         return date.toISOString().split('T')[0];
     };
 
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC START
+    // =========================================================
+
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const base64ToFile = async (base64String, fileName, mimeType) => {
+        const res = await fetch(base64String);
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: mimeType });
+    };
+
+    const [draftPayload, setDraftPayload] = useState(null);
+
+    useEffect(() => {
+        const updateDraft = async () => {
+            if (isLoading) {
+                setDraftPayload(null);
+                return;
+            }
+
+            const isFormEmpty = 
+                !formData.code && 
+                !formData.category && 
+                !formData.discountValue && 
+                !formData.startDate && 
+                !formData.validUntil && 
+                !formData.description && 
+                !imageFile;
+
+            if (isFormEmpty) {
+                setDraftPayload(null);
+                return;
+            }
+
+            let imageBase64 = null;
+            let imageMeta = null;
+
+            if (imageFile) {
+                try {
+                    if (imageFile.size < 3 * 1024 * 1024) { 
+                        imageBase64 = await fileToBase64(imageFile);
+                        imageMeta = { name: imageFile.name, type: imageFile.type };
+                    }
+                } catch (err) {
+                    console.warn("Image too large for draft, saving text only.");
+                }
+            }
+
+            setDraftPayload({
+                ...formData,
+                image: imageBase64,
+                imageMeta: imageMeta,
+                originalId: id
+            });
+        };
+
+        const timeoutId = setTimeout(() => {
+            updateDraft();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [formData, imageFile, isLoading, id]);
+
+    const restoreDraftData = async (data) => {
+        if (!data) return;
+        
+        if (data.originalId && data.originalId !== id) {
+            console.warn("Draft found but belongs to a different promo ID. Ignoring.");
+            return;
+        }
+
+        setFormData({
+            code: data.code || '',
+            category: data.category || '',
+            discountType: data.discountType || 'Percentage',
+            discountValue: data.discountValue || '',
+            startDate: data.startDate || '',
+            validUntil: data.validUntil || '',
+            description: data.description || '',
+            durationType: data.durationType || 'Weekly'
+        });
+
+        if (data.image && data.imageMeta) {
+            try {
+                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                setImageFile(restoredFile);
+                setImagePreview(URL.createObjectURL(restoredFile));
+            } catch (err) {
+                console.error("Failed to restore image:", err);
+            }
+        }
+    };
+
+    const { 
+        clearDraft, 
+        hasDraft, 
+        restoreDraft, 
+        discardDraft,
+        draftInfo 
+    } = useAutoDraft({
+        module: `edit-promo-${id}`,
+        formData: draftPayload,
+        setFormData: restoreDraftData,
+        imagePreview: imagePreview, 
+        autoRestore: false
+    });
+
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+    useEffect(() => {
+        if (hasDraft && !isLoading) {
+            setShowRestoreModal(true);
+        }
+    }, [hasDraft, isLoading]);
+
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardDraft = async () => {
+        await discardDraft();
+        setShowRestoreModal(false);
+    };
+
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
+
     // Fetch Promo Data
     useEffect(() => {
         const fetchPromoDetails = async () => {
             try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`);
+                const response = await fetch(`http://localhost:5000/api/promos/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch promo details');
                 
                 const data = await response.json();
                 
+                // ✅ Save Original Data for Comparison
+                setOriginalData({
+                    code: data.code,
+                    category: data.category,
+                    discountType: data.discountType,
+                    discountValue: data.discountValue,
+                    startDate: formatDateForInput(data.startDate),
+                    validUntil: formatDateForInput(data.validUntil),
+                    description: data.description,
+                    durationType: data.durationType
+                });
+
+                // Set Form Data
                 setFormData({
                     code: data.code || '',
                     category: data.category || '',
@@ -60,6 +234,9 @@ const EditPromo = () => {
 
                 if (data.image) {
                     setCurrentImage(data.image);
+                }
+                if (data.imagePublicId) {
+                    setExistingImagePublicId(data.imagePublicId);
                 }
             } catch (err) {
                 console.error(err);
@@ -82,7 +259,6 @@ const EditPromo = () => {
         }));
     };
 
-    // Image Handlers
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -96,9 +272,13 @@ const EditPromo = () => {
         setImagePreview(null);
     };
 
+    // ✅ UPDATED: Handle Submit with Change Tracking
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
+
+        // 🔥 Get Admin Info
+        const { userEmail, adminId } = getAdminData();
 
         try {
             const data = new FormData();
@@ -111,13 +291,54 @@ const EditPromo = () => {
             data.append('description', formData.description);
             data.append('durationType', formData.durationType);
 
+            // Append Admin Data
+            data.append('userEmail', userEmail);
+            data.append('adminId', adminId);
+
+            // Append Existing Image ID for deletion (if replaced)
+            if (existingImagePublicId) {
+                data.append('existingImagePublicId', existingImagePublicId);
+            }
+
+            // 🔥 Logic: Track Changes
+            let changes = [];
+            
+            const trackChange = (label, oldVal, newVal) => {
+                // Ensure values are strings for safe comparison
+                const cleanOld = String(oldVal || "").trim();
+                const cleanNew = String(newVal || "").trim();
+                if (cleanOld !== cleanNew) {
+                    changes.push(`${label} changed from "${cleanOld}" to "${cleanNew}"`);
+                }
+            };
+
+            if (originalData) {
+                trackChange("Code", originalData.code, formData.code);
+                trackChange("Category", originalData.category, formData.category);
+                trackChange("Discount Type", originalData.discountType, formData.discountType);
+                trackChange("Discount Value", originalData.discountValue, formData.discountValue);
+                trackChange("Start Date", originalData.startDate, formData.startDate);
+                trackChange("Valid Until", originalData.validUntil, formData.validUntil);
+                trackChange("Description", originalData.description, formData.description);
+                trackChange("Duration", originalData.durationType, formData.durationType);
+
+                if (imageFile) {
+                    changes.push("Promo image was replaced.");
+                }
+            }
+
+            // Append Changes Array as JSON string
+            if (changes.length > 0) {
+                data.append('changes', JSON.stringify(changes));
+            }
+
             if (imageFile) {
                 data.append('image', imageFile);
             }
 
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
+            const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                 method: 'PUT',
-                body: data, // No Content-Type header
+                body: data, // No Content-Type header needed for FormData
             });
 
             if (!response.ok) {
@@ -125,6 +346,10 @@ const EditPromo = () => {
             }
 
             alert('✅ Promo updated successfully!');
+            
+            // ✅ CLEAR DRAFT ON SUCCESS
+            await clearDraft();
+            
             navigate('/view-promos'); 
         } catch (err) {
             console.error(err);
@@ -150,6 +375,15 @@ const EditPromo = () => {
 
     return (
         <div className="epr-page">
+            
+            {/* ✅ RESTORE DRAFT MODAL */}
+            <RestoreDraftModal
+                isOpen={showRestoreModal}
+                onRestore={handleRestoreDraft}
+                onDiscard={handleDiscardDraft}
+                draftInfo={draftInfo}
+            />
+
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
             <main className={`epr-main ${isSidebarCollapsed ? "epr-main--collapsed" : ""}`}>
@@ -197,7 +431,7 @@ const EditPromo = () => {
                                                 <div style={{marginBottom: '10px'}}>
                                                      <p style={{fontSize: '12px', color:'#64748b', marginBottom: '8px'}}>Current Image:</p>
                                                     <img 
-                                                        src={`https://wanderwaveph-backend.onrender.com/uploads/${currentImage}`} 
+                                                        src={currentImage} // Assuming Cloudinary URL is stored as full path
                                                         alt="Current" 
                                                         style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid #e2e8f0' }} 
                                                         onError={(e) => e.target.style.display = 'none'}
@@ -242,7 +476,7 @@ const EditPromo = () => {
                                 <div className="epr-form-group">
                                     <label className="epr-label">Category *</label>
                                     <input 
-                                        type="text"
+                                        type="text" 
                                         name="category"
                                         value={formData.category}
                                         onChange={handleChange}
@@ -356,7 +590,10 @@ const EditPromo = () => {
                             <button 
                                 type="button" 
                                 className="epr-btn epr-btn--cancel" 
-                                onClick={() => navigate('/view-promos')}
+                                onClick={async () => {
+                                    await clearDraft(); // Clear draft on cancel
+                                    navigate('/view-promos');
+                                }}
                                 disabled={submitting}
                             >
                                 Cancel
