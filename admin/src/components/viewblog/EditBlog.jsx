@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, User, MessageSquare, HelpCircle } from 'lucide-react';
+import { Save, ArrowLeft, Upload, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
-import './EditTestimonial.css';
+import './EditBlog.css';
 
 // ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
-// ✅ Import Toast and Icons for the Modal
-import { useToast } from "../toast/ToastManager"; 
+// ✅ Import Toast Management
+import { useToast } from '../toast/ToastManager';
 
-// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -25,7 +25,7 @@ const getAdminData = () => {
     }
 };
 
-// 🔥🔥🔥 HELPER COMPONENT - CUSTOM CONFIRM MODAL 🔥🔥🔥
+// ✅ Custom Confirm Modal Component (Base sa EditVisa.jsx reference)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -45,6 +45,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
         <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
           <button 
+            type="button"
             onClick={onCancel}
             style={{
               padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
@@ -54,6 +55,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
             Cancel
           </button>
           <button 
+            type="button"
             onClick={onConfirm}
             style={{
               padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
@@ -69,15 +71,16 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
   );
 };
 
-const EditTestimonial = () => {
+const EditBlog = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const toast = useToast(); // ✅ Initialize Toast
+    const toast = useToast(); // Initialize Toast
+
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
-    // ✅ Confirmation Modal State
+    // ✅ State para sa Confirmation Modal
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
         title: "",
@@ -88,9 +91,11 @@ const EditTestimonial = () => {
 
     // Form State
     const [formData, setFormData] = useState({
-        customerName: '',
-        source: 'Facebook', // Default
-        feedback: ''
+        title: '',
+        author: '',
+        category: '',
+        status: 'Published',
+        content: ''
     });
 
     // Store original data to track changes for Activity Logs
@@ -103,9 +108,7 @@ const EditTestimonial = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
-
-    // ✅ Helper for showing confirmation
+    // Helper function para sa confirmation modal
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -119,11 +122,17 @@ const EditTestimonial = () => {
         });
     };
 
+    // Helper to construct image URL
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return '';
+        if (imagePath.startsWith('http')) return imagePath;
+        return `https://wanderwaveph-backend.onrender.com/${imagePath.replace(/\\/g, '/')}`;
+    };
+
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
 
-    // 1. Helper: File <-> Base64 Converters
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -139,10 +148,8 @@ const EditTestimonial = () => {
         return new File([blob], fileName, { type: mimeType });
     };
 
-    // 2. Draft Payload State
     const [draftPayload, setDraftPayload] = useState(null);
 
-    // 3. Listen to state changes and update Draft Payload
     useEffect(() => {
         const updateDraft = async () => {
             if (isLoading) {
@@ -151,8 +158,10 @@ const EditTestimonial = () => {
             }
 
             const isFormEmpty = 
-                !formData.customerName && 
-                !formData.feedback && 
+                !formData.title && 
+                !formData.author && 
+                !formData.category && 
+                !formData.content && 
                 !imageFile;
 
             if (isFormEmpty) {
@@ -176,9 +185,9 @@ const EditTestimonial = () => {
 
             setDraftPayload({
                 ...formData,
-                image: imageBase64, 
+                image: imageBase64,
                 imageMeta: imageMeta,
-                originalId: id 
+                originalId: id
             });
         };
 
@@ -189,13 +198,14 @@ const EditTestimonial = () => {
         return () => clearTimeout(timeoutId);
     }, [formData, imageFile, isLoading, id]);
 
-    // 4. Restore Function
     const restoreDraftData = async (data) => {
         if (!data) return;
 
-        if (data.customerName) setFormData(prev => ({ ...prev, customerName: data.customerName }));
-        if (data.source) setFormData(prev => ({ ...prev, source: data.source }));
-        if (data.feedback) setFormData(prev => ({ ...prev, feedback: data.feedback }));
+        if (data.title) setFormData(prev => ({ ...prev, title: data.title }));
+        if (data.author) setFormData(prev => ({ ...prev, author: data.author }));
+        if (data.category) setFormData(prev => ({ ...prev, category: data.category }));
+        if (data.status) setFormData(prev => ({ ...prev, status: data.status }));
+        if (data.content) setFormData(prev => ({ ...prev, content: data.content }));
 
         if (data.image && data.imageMeta) {
             try {
@@ -212,7 +222,6 @@ const EditTestimonial = () => {
         }
     };
 
-    // 5. Use the custom hook
     const {
         showRestoreModal,
         draftInfo,
@@ -220,7 +229,7 @@ const EditTestimonial = () => {
         handleDiscardDraft,
         clearDraft
     } = useAutoDraft(
-        `edit-testimonial-${id}`,
+        `edit-blog-${id}`,
         draftPayload,
         restoreDraftData
     );
@@ -229,43 +238,42 @@ const EditTestimonial = () => {
     // ✅ AUTO-DRAFT LOGIC END
     // =========================================================
 
-    // Fetch existing testimonial data
     useEffect(() => {
-        const fetchTestimonial = async () => {
+        const fetchBlog = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`);
-                if (!response.ok) {
-                    throw new Error('Testimonial not found');
-                }
-                const data = await response.json();
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/${id}`);
+                if (!response.ok) throw new Error('Blog not found');
                 
+                const blog = await response.json();
                 setFormData({
-                    customerName: data.customerName || '',
-                    source: data.source || 'Facebook',
-                    feedback: data.feedback || ''
+                    title: blog.title || '',
+                    author: blog.author || '',
+                    category: blog.category || '',
+                    status: blog.status || 'Published',
+                    content: blog.content || ''
                 });
 
-                // Store original data for Activity Log comparison
                 setOriginalData({
-                    customerName: data.customerName || '',
-                    source: data.source || 'Facebook',
-                    feedback: data.feedback || ''
+                    title: blog.title || '',
+                    author: blog.author || '',
+                    category: blog.category || '',
+                    status: blog.status || 'Published',
+                    content: blog.content || ''
                 });
 
-                if (data.customerImage) {
-                    const imageUrl = `${API_BASE_URL}/${data.customerImage.replace(/\\/g, '/')}`;
-                    setImagePreview(imageUrl);
+                if (blog.imageUrl) {
+                    setImagePreview(getImageUrl(blog.imageUrl));
                 }
 
                 setIsLoading(false);
             } catch (err) {
                 console.error(err);
-                toast.error('Failed to load testimonial data.');
+                toast.error('Failed to load blog data.');
                 setIsLoading(false);
             }
         };
 
-        fetchTestimonial();
+        fetchBlog();
     }, [id]);
 
     const handleInputChange = (e) => {
@@ -285,97 +293,80 @@ const EditTestimonial = () => {
         }
     };
 
-    // 🔥🔥🔥 HELPER: IDENTIFY CHANGES FOR ACTIVITY LOGS 🔥🔥🔥
     const getChangedFields = () => {
         if (!originalData) return {};
 
         const changes = {};
-        if (formData.customerName !== originalData.customerName) {
-            changes.customerName = { old: originalData.customerName, new: formData.customerName };
+        if (formData.title !== originalData.title) {
+            changes.title = { old: originalData.title, new: formData.title };
         }
-        if (formData.source !== originalData.source) {
-            changes.source = { old: originalData.source, new: formData.source };
+        if (formData.author !== originalData.author) {
+            changes.author = { old: originalData.author, new: formData.author };
         }
-        if (formData.feedback !== originalData.feedback) {
-            changes.feedback = { old: originalData.feedback, new: formData.feedback };
+        if (formData.category !== originalData.category) {
+            changes.category = { old: originalData.category, new: formData.category };
+        }
+        if (formData.status !== originalData.status) {
+            changes.status = { old: originalData.status, new: formData.status };
+        }
+        if (formData.content !== originalData.content) {
+            changes.content = { old: originalData.content, new: formData.content };
         }
         if (imageFile) {
-            changes.customerImage = { old: 'Existing Image', new: imageFile.name };
+            changes.imageUrl = { old: 'Existing Image', new: imageFile.name };
         }
         return changes;
     };
 
-    const handleSaveConfirmation = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        askConfirmation(
-            "Save Changes?",
-            "Are you sure you want to update this testimonial?",
-            handleActualSave,
-            "primary"
-        );
-    };
-
-    const handleActualSave = async () => {
         setSubmitting(true);
+
         try {
             const formDataToSend = new FormData();
-            formDataToSend.append("customerName", formData.customerName);
-            formDataToSend.append("source", formData.source);
-            formDataToSend.append("feedback", formData.feedback);
+            formDataToSend.append('title', formData.title);
+            formDataToSend.append('author', formData.author);
+            formDataToSend.append('category', formData.category);
+            formDataToSend.append('status', formData.status);
+            formDataToSend.append('content', formData.content);
 
-            // 🔥 INCLUDE ADMIN DATA FOR ACTIVITY LOGS
             const { userEmail, adminId } = getAdminData();
             formDataToSend.append("userEmail", userEmail);
             if (adminId) formDataToSend.append("adminId", adminId);
 
-            // 🔥 INCLUDE CHANGED FIELDS
             const changedFields = getChangedFields();
             formDataToSend.append("changedFields", JSON.stringify(changedFields));
 
             if (imageFile) {
-                formDataToSend.append("customerImage", imageFile);
+                formDataToSend.append('imageUrl', imageFile);
             }
 
-            const response = await fetch(`${API_BASE_URL}/api/testimonials/update/${id}`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/${id}`, {
                 method: 'PUT',
                 body: formDataToSend,
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to update testimonial');
-            }
+            if (!response.ok) throw new Error('Failed to update blog');
 
-            toast.success('Testimonial updated successfully!');
+            toast.success('Blog updated successfully!');
             await clearDraft();
-            navigate('/view-testimonials'); 
+            navigate('/view-blogs');
         } catch (err) {
             console.error(err);
-            toast.error('Failed to update testimonial. Please try again.');
+            toast.error('Failed to update blog. Please try again.');
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleCancelClick = () => {
-        askConfirmation(
-            "Cancel Editing?",
-            "Are you sure you want to cancel? Any unsaved changes and drafts will be cleared.",
-            async () => {
-                await clearDraft();
-                navigate('/view-testimonials');
-            },
-            "danger"
-        );
-    };
-
     if (isLoading) {
         return (
-            <div className="eto-page">
+            <div className="ebl-page">
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                <main className={`eto-main ${isSidebarCollapsed ? "eto-main--collapsed" : ""}`}>
-                    <div className="eto-loading">
-                        <div className="eto-spinner"></div>
-                        <p>Loading testimonial data...</p>
+                <main className={`ebl-main ${isSidebarCollapsed ? "ebl-main--collapsed" : ""}`}>
+                    <div className="ebl-loading">
+                        <div className="ebl-spinner"></div>
+                        <p>Loading blog data...</p>
                     </div>
                 </main>
             </div>
@@ -383,9 +374,7 @@ const EditTestimonial = () => {
     }
 
     return (
-        <div className="eto-page">
-            
-            {/* ✅ RESTORE DRAFT MODAL */}
+        <div className="ebl-page">
             <RestoreDraftModal
                 isOpen={showRestoreModal}
                 onRestore={handleRestoreDraft}
@@ -393,7 +382,177 @@ const EditTestimonial = () => {
                 draftInfo={draftInfo}
             />
 
-            {/* ✅ CUSTOM CONFIRMATION MODAL */}
+            <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                toggleSidebar={toggleSidebar} 
+            />
+            
+            <main className={`ebl-main ${isSidebarCollapsed ? "ebl-main--collapsed" : ""}`}>
+                <div className="ebl-container">
+                    
+                    {/* Header */}
+                    <header className="ebl-header">
+                        <div className="ebl-header-content">
+                            <button className="ebl-back-btn" onClick={() => navigate('/view-blogs')}>
+                                <ArrowLeft size={18} />
+                                Back to Blogs
+                            </button>
+                            <h1 className="ebl-title">EDIT BLOG</h1>
+                            <p className="ebl-subtitle">Update article content and settings</p>
+                        </div>
+                    </header>
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="ebl-form">
+                        
+                        {/* Section 1: Cover Image */}
+                        <div className="ebl-section">
+                            <h2 className="ebl-section-title">Cover Image</h2>
+                            <div className="ebl-upload-area">
+                                <input
+                                    type="file"
+                                    id="blogImageUpload"
+                                    className="ebl-file-input"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                />
+                                <label htmlFor="blogImageUpload" className="ebl-upload-label">
+                                    {imagePreview ? (
+                                        <div className="ebl-image-preview">
+                                            <img src={imagePreview} alt="Preview" />
+                                            <div className="ebl-image-overlay">
+                                                <Upload size={32} />
+                                                <span>Click to change cover image</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="ebl-upload-placeholder">
+                                            <Upload size={48} />
+                                            <span>Click to upload cover image</span>
+                                        </div>
+                                    )}
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Section 2: Blog Details */}
+                        <div className="ebl-section">
+                            <h2 className="ebl-section-title">Article Details</h2>
+                            <div className="ebl-form-grid">
+                                <div className="ebl-form-group">
+                                    <label className="ebl-label">Title *</label>
+                                    <input 
+                                        type="text" 
+                                        name="title"
+                                        value={formData.title}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="ebl-input"
+                                        placeholder="Enter blog title"
+                                    />
+                                </div>
+
+                                <div className="ebl-form-group">
+                                    <label className="ebl-label">Author *</label>
+                                    <input 
+                                        type="text" 
+                                        name="author"
+                                        value={formData.author}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="ebl-input"
+                                        placeholder="Author name"
+                                    />
+                                </div>
+
+                                <div className="ebl-form-group">
+                                    <label className="ebl-label">Category *</label>
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="ebl-select"
+                                    >
+                                        <option value="">Select Category</option>
+                                        <option value="Trending Stories">Trending Stories</option>
+                                        <option value="Travel Guide">Travel Guide</option>
+                                        <option value="News & Updates">News & Updates</option>
+                                        <option value="Latest Promos">Latest Promos</option>
+                                        <option value="Travel Tips">Travel Tips</option>
+                                    </select>
+                                </div>
+
+                                <div className="ebl-form-group">
+                                    <label className="ebl-label">Status *</label>
+                                    <select 
+                                        name="status" 
+                                        value={formData.status} 
+                                        onChange={handleInputChange}
+                                        className="ebl-select"
+                                        required
+                                    >
+                                        <option value="Published">Published</option>
+                                        <option value="Draft">Draft</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 3: Content */}
+                        <div className="ebl-section">
+                            <h2 className="ebl-section-title">Article Content</h2>
+                            <div className="ebl-form-group">
+                                <textarea 
+                                    name="content"
+                                    value={formData.content}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="ebl-textarea"
+                                    placeholder="Write your article content here..."
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div className="ebl-form-actions">
+                            <button 
+                                type="button" 
+                                className="ebl-btn ebl-btn--cancel" 
+                                onClick={() => {
+                                    askConfirmation(
+                                        "Cancel Editing",
+                                        "Are you sure you want to cancel? Any unsaved changes and drafts will be cleared.",
+                                        async () => {
+                                            await clearDraft();
+                                            navigate('/view-blogs');
+                                        },
+                                        "danger"
+                                    );
+                                }}
+                                disabled={submitting}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                className="ebl-btn ebl-btn--submit" 
+                                disabled={submitting}
+                            >
+                                {submitting ? (
+                                    'Updating...' 
+                                ) : (
+                                    <>
+                                        <Save size={18} /> Update Blog
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </main>
+
+            {/* ✅ Confirmation Modal Implementation */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}
@@ -402,138 +561,8 @@ const EditTestimonial = () => {
                 onConfirm={confirmConfig.onConfirm}
                 onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
-
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
-            
-            <main className={`eto-main ${isSidebarCollapsed ? "eto-main--collapsed" : ""}`}>
-                <div className="eto-container">
-                    
-                    {/* Header */}
-                    <header className="eto-header">
-                        <div className="eto-header-content">
-                            <button className="eto-back-btn" type="button" onClick={handleCancelClick}>
-                                <ArrowLeft size={18} />
-                                Back to Testimonials
-                            </button>
-                            <h1 className="eto-title">EDIT TESTIMONIAL</h1>
-                            <p className="eto-subtitle">Update customer feedback and details</p>
-                        </div>
-                    </header>
-
-                    {/* Form */}
-                    <form onSubmit={handleSaveConfirmation} className="eto-form">
-                        
-                        {/* Section 1: Image Upload */}
-                        <div className="eto-section">
-                            <h2 className="eto-section-title">Customer Photo</h2>
-                            <div className="eto-upload-area">
-                                <input
-                                    type="file"
-                                    id="customerImageUpload"
-                                    className="eto-file-input"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                />
-                                <label htmlFor="customerImageUpload" className="eto-upload-label">
-                                    {imagePreview ? (
-                                        <div className="eto-image-preview">
-                                            <img src={imagePreview} alt="Preview" />
-                                            <div className="eto-image-overlay">
-                                                <Upload size={32} />
-                                                <span>Click to change photo</span>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="eto-upload-placeholder">
-                                            <User size={48} />
-                                            <span>Click to upload customer photo</span>
-                                        </div>
-                                    )}
-                                </label>
-                            </div>
-                        </div>
-
-                        {/* Section 2: Testimonial Details */}
-                        <div className="eto-section">
-                            <h2 className="eto-section-title">Testimonial Details</h2>
-                            <div className="eto-form-grid">
-                                <div className="eto-form-group">
-                                    <label className="eto-label">Customer Name *</label>
-                                    <input 
-                                        type="text" 
-                                        name="customerName"
-                                        value={formData.customerName}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="eto-input"
-                                        placeholder="e.g. John Doe"
-                                    />
-                                </div>
-
-                                <div className="eto-form-group">
-                                    <label className="eto-label">Source *</label>
-                                    <select 
-                                        name="source" 
-                                        value={formData.source} 
-                                        onChange={handleInputChange}
-                                        className="eto-select"
-                                        required
-                                    >
-                                        <option value="Facebook">Facebook</option>
-                                        <option value="Google Reviews">Google Reviews</option>
-                                        <option value="Email">Email</option>
-                                        <option value="Direct Message">Direct Message</option>
-                                        <option value="Website">Website</option>
-                                    </select>
-                                </div>
-
-                                <div className="eto-form-group eto-form-group--full">
-                                    <label className="eto-label">Feedback / Message *</label>
-                                    <textarea 
-                                        name="feedback"
-                                        value={formData.feedback}
-                                        onChange={handleInputChange}
-                                        className="eto-textarea"
-                                        rows="6"
-                                        required
-                                        placeholder="Enter what the customer said..."
-                                    ></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Footer Actions */}
-                        <div className="eto-form-actions">
-                            <button 
-                                type="button" 
-                                className="eto-btn eto-btn--cancel" 
-                                onClick={handleCancelClick}
-                                disabled={submitting}
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit" 
-                                className="eto-btn eto-btn--submit" 
-                                disabled={submitting}
-                            >
-                                {submitting ? (
-                                    'Updating...' 
-                                ) : (
-                                    <>
-                                        <Save size={18} /> Update Testimonial
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </main>
         </div>
     );
 };
 
-export default EditTestimonial;
+export default EditBlog;
