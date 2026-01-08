@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search } from 'lucide-react';
-import './UserFilters.css'; 
+import './Userfilters.css'; 
 
 const UserFilters = ({ 
     searchTerm, 
