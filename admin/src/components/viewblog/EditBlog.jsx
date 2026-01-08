@@ -1,19 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Upload } from 'lucide-react';
-import Sidebar from '../sidebar/sidebar'; // Ensure correct path
+import { Save, ArrowLeft, Upload, HelpCircle } from 'lucide-react';
+import Sidebar from '../sidebar/sidebar'; 
 import './EditBlog.css';
 
 // ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// ✅ Import Toast Management
+import { useToast } from '../toast/ToastManager';
+
+// ✅ Custom Confirm Modal Component (Base sa EditVisa.jsx reference)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            type="button"
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            type="button"
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const EditBlog = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const toast = useToast(); // Initialize Toast
+
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+
+    // ✅ State para sa Confirmation Modal
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
 
     // Form State
     const [formData, setFormData] = useState({
@@ -31,6 +91,20 @@ const EditBlog = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
+    // Helper function para sa confirmation modal
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
+
     // Helper to construct image URL
     const getImageUrl = (imagePath) => {
         if (!imagePath) return '';
@@ -42,7 +116,6 @@ const EditBlog = () => {
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
 
-    // 1. Helper: File <-> Base64 Converters
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -58,19 +131,15 @@ const EditBlog = () => {
         return new File([blob], fileName, { type: mimeType });
     };
 
-    // 2. Draft Payload State
     const [draftPayload, setDraftPayload] = useState(null);
 
-    // 3. Listen to state changes and update Draft Payload
     useEffect(() => {
         const updateDraft = async () => {
-            // 🛑 FIX: Don't save draft if data is still loading or form is empty
             if (isLoading) {
                 setDraftPayload(null);
                 return;
             }
 
-            // Check if form is effectively empty/default (to prevent saving empty state on load)
             const isFormEmpty = 
                 !formData.title && 
                 !formData.author && 
@@ -86,10 +155,8 @@ const EditBlog = () => {
             let imageBase64 = null;
             let imageMeta = null;
 
-            // Handle Image Conversion
             if (imageFile) {
                 try {
-                    // Limit draft image size (~3MB limit safety)
                     if (imageFile.size < 3 * 1024 * 1024) { 
                         imageBase64 = await fileToBase64(imageFile);
                         imageMeta = { name: imageFile.name, type: imageFile.type };
@@ -101,24 +168,22 @@ const EditBlog = () => {
 
             setDraftPayload({
                 ...formData,
-                image: imageBase64, // Saved as Base64 string
+                image: imageBase64,
                 imageMeta: imageMeta,
-                originalId: id // Store ID to ensure we only restore draft for THIS blog
+                originalId: id
             });
         };
 
         const timeoutId = setTimeout(() => {
             updateDraft();
-        }, 500); // Debounce
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [formData, imageFile, isLoading, id]);
 
-    // 4. Restore Function
     const restoreDraftData = async (data) => {
         if (!data) return;
         
-        // Safety check: Ensure the draft belongs to the blog we are currently editing
         if (data.originalId && data.originalId !== id) {
             console.warn("Draft found but belongs to a different blog ID. Ignoring.");
             return;
@@ -143,7 +208,6 @@ const EditBlog = () => {
         }
     };
 
-    // 5. Initialize Hook
     const { 
         clearDraft, 
         hasDraft, 
@@ -151,18 +215,16 @@ const EditBlog = () => {
         discardDraft,
         draftInfo 
     } = useAutoDraft({
-        module: `edit-blog-${id}`, // Unique ID per blog post to avoid conflicts
+        module: `edit-blog-${id}`,
         formData: draftPayload,
         setFormData: restoreDraftData,
         imagePreview: imagePreview, 
-        autoRestore: false // Manual via modal
+        autoRestore: false 
     });
 
-    // 6. Modal State
     const [showRestoreModal, setShowRestoreModal] = useState(false);
 
     useEffect(() => {
-        // Only show modal if we have a draft AND we are done loading the original data
         if (hasDraft && !isLoading) {
             setShowRestoreModal(true);
         }
@@ -171,10 +233,11 @@ const EditBlog = () => {
     const handleRestoreDraft = () => {
         restoreDraft();
         setShowRestoreModal(false);
+        toast.info("Draft restored successfully.");
     };
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); // Ensure storage is cleared
+        await discardDraft();
         setShowRestoreModal(false);
     };
 
@@ -182,7 +245,6 @@ const EditBlog = () => {
     // ✅ AUTO-DRAFT LOGIC END
     // =========================================================
 
-    // Fetch Blog Data
     useEffect(() => {
         const fetchBlogDetails = async () => {
             try {
@@ -191,8 +253,6 @@ const EditBlog = () => {
                 
                 const data = await response.json();
                 
-                // Only update state if we haven't restored a draft yet
-                // (Or you can choose to overwrite state and let the draft modal override it later)
                 setFormData({
                     title: data.title || '',
                     author: data.author || '',
@@ -206,7 +266,7 @@ const EditBlog = () => {
                 }
             } catch (err) {
                 console.error(err);
-                alert('Could not load blog details. Please check connection.');
+                toast.error("Could not load blog details.", "Connection Error");
             } finally {
                 setIsLoading(false);
             }
@@ -239,41 +299,42 @@ const EditBlog = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitting(true);
+        
+        askConfirmation(
+            "Update Blog",
+            "Are you sure you want to save the changes to this blog post?",
+            async () => {
+                setSubmitting(true);
+                try {
+                    const formDataToSend = new FormData();
+                    formDataToSend.append("title", formData.title);
+                    formDataToSend.append("author", formData.author);
+                    formDataToSend.append("category", formData.category);
+                    formDataToSend.append("status", formData.status);
+                    formDataToSend.append("content", formData.content);
 
-        try {
-            const formDataToSend = new FormData();
-            formDataToSend.append("title", formData.title);
-            formDataToSend.append("author", formData.author);
-            formDataToSend.append("category", formData.category);
-            formDataToSend.append("status", formData.status);
-            formDataToSend.append("content", formData.content);
+                    if (imageFile) {
+                        formDataToSend.append("image", imageFile);
+                    }
 
-            if (imageFile) {
-                formDataToSend.append("image", imageFile);
+                    const response = await fetch(`http://localhost:5000/api/blogs/${id}`, {
+                        method: 'PUT',
+                        body: formDataToSend,
+                    });
+
+                    if (!response.ok) throw new Error('Failed to update blog');
+
+                    toast.success("Blog post updated successfully!", "Success");
+                    await clearDraft();
+                    navigate('/view-blogs'); 
+                } catch (err) {
+                    console.error(err);
+                    toast.error("Failed to update blog. Please try again.", "Error");
+                } finally {
+                    setSubmitting(false);
+                }
             }
-
-            const response = await fetch(`http://localhost:5000/api/blogs/${id}`, {
-                method: 'PUT',
-                body: formDataToSend,
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to update blog');
-            }
-
-            alert('✅ Blog post updated successfully!');
-            
-            // ✅ CLEAR DRAFT ON SUCCESS
-            await clearDraft();
-            
-            navigate('/view-blogs'); 
-        } catch (err) {
-            console.error(err);
-            alert('❌ Failed to update blog. Please try again.');
-        } finally {
-            setSubmitting(false);
-        }
+        );
     };
 
     if (isLoading) {
@@ -293,7 +354,7 @@ const EditBlog = () => {
     return (
         <div className="ebl-page">
             
-            {/* ✅ RESTORE DRAFT MODAL */}
+            {/* RESTORE DRAFT MODAL */}
             <RestoreDraftModal
                 isOpen={showRestoreModal}
                 onRestore={handleRestoreDraft}
@@ -438,9 +499,16 @@ const EditBlog = () => {
                             <button 
                                 type="button" 
                                 className="ebl-btn ebl-btn--cancel" 
-                                onClick={async () => {
-                                    await clearDraft(); // Clear draft on cancel
-                                    navigate('/view-blogs');
+                                onClick={() => {
+                                    askConfirmation(
+                                        "Cancel Editing",
+                                        "Are you sure you want to cancel? Any unsaved changes and drafts will be cleared.",
+                                        async () => {
+                                            await clearDraft();
+                                            navigate('/view-blogs');
+                                        },
+                                        "danger"
+                                    );
                                 }}
                                 disabled={submitting}
                             >
@@ -463,6 +531,16 @@ const EditBlog = () => {
                     </form>
                 </div>
             </main>
+
+            {/* ✅ Confirmation Modal Implementation */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };

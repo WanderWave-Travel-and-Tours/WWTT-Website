@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 import "./addtours.css";
 import { useToast } from "../toast/ToastManager"; 
+import { HelpCircle } from "lucide-react"; // Added for the modal icon
 
 // Import the renamed sub-components
 import TourBasicInfo from "./TourBasicInfo";
@@ -14,6 +15,50 @@ import TourPreview from "./TourPreview";
 // ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+// --- CUSTOM CONFIRM MODAL COMPONENT (Reference from EditVisa.jsx) ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AddTour = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -31,19 +76,41 @@ const AddTour = () => {
   const [tourMarkupType, setTourMarkupType] = useState("peso");
   const [tourPrice, setTourPrice] = useState("");
   const [tourDuration, setTourDuration] = useState("");
-  const [tourCat, setTourCat] = useState("Local"); // Default value
+  const [tourCat, setTourCat] = useState("Local"); 
   const [tourFile, setTourFile] = useState(null);
   const [tourPreviewUrl, setTourPreviewUrl] = useState(null);
   const [tourIncs, setTourIncs] = useState([""]);
   const [isTourPasteActive, setIsTourPasteActive] = useState(false);
 
+  // --- MODAL CONFIG STATE ---
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
   const tourPasteRef = useRef(null);
 
+  // Helper for Modal
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
+
   // =========================================================
-  // ✅ AUTO-DRAFT LOGIC START (FIXED)
+  // ✅ AUTO-DRAFT LOGIC START
   // =========================================================
 
-  // 1. Helper: File <-> Base64 Converters
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -59,14 +126,10 @@ const AddTour = () => {
     return new File([blob], fileName, { type: mimeType });
   };
 
-  // 2. Draft Payload State
   const [draftPayload, setDraftPayload] = useState(null);
 
-  // 3. Listen to state changes and update Draft Payload
   useEffect(() => {
     const updateDraft = async () => {
-      // 🛑 FIX: Check if form is completely empty/default before saving
-      // This prevents the modal from appearing if the user cleared the form
       const isFormEmpty = 
         !tourTitle && 
         !tourDest && 
@@ -74,22 +137,20 @@ const AddTour = () => {
         !tourMarkup && 
         !tourPrice && 
         !tourDuration && 
-        tourCat === "Local" && // Check against default value
-        (tourIncs.length === 1 && tourIncs[0] === "") && // Check empty inclusions
+        tourCat === "Local" && 
+        (tourIncs.length === 1 && tourIncs[0] === "") && 
         !tourFile;
 
       if (isFormEmpty) {
-        setDraftPayload(null); // Don't save anything if empty
+        setDraftPayload(null);
         return;
       }
 
       let imageBase64 = null;
       let imageMeta = null;
 
-      // Handle Image Conversion
       if (tourFile) {
         try {
-          // Limit draft image size (~3MB limit safety)
           if (tourFile.size < 3 * 1024 * 1024) { 
             imageBase64 = await fileToBase64(tourFile);
             imageMeta = { name: tourFile.name, type: tourFile.type };
@@ -116,12 +177,11 @@ const AddTour = () => {
 
     const timeoutId = setTimeout(() => {
       updateDraft();
-    }, 500); // Debounce
+    }, 500); 
 
     return () => clearTimeout(timeoutId);
   }, [tourTitle, tourDest, tourSupplier, tourMarkup, tourMarkupType, tourPrice, tourDuration, tourCat, tourIncs, tourFile]);
 
-  // 4. Restore Function
   const restoreDraftData = async (data) => {
     if (!data) return;
 
@@ -146,7 +206,6 @@ const AddTour = () => {
     }
   };
 
-  // 5. Initialize Hook
   const { 
     clearDraft, 
     hasDraft, 
@@ -161,7 +220,6 @@ const AddTour = () => {
     autoRestore: false
   });
 
-  // 6. Modal State
   const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   useEffect(() => {
@@ -177,9 +235,9 @@ const AddTour = () => {
   };
 
   const handleDiscardDraft = async () => {
-    await discardDraft(); // Ensure storage is cleared
+    await discardDraft();
     setShowRestoreModal(false);
-    // Note: State is already empty/default here, so the useEffect loop won't trigger a new save
+    toast.info("Draft discarded.");
   };
 
   // =========================================================
@@ -221,6 +279,7 @@ const AddTour = () => {
       setTourFile(sel);
       setTourPreviewUrl(URL.createObjectURL(sel));
       setIsTourPasteActive(false);
+      toast.info(`Selected: ${sel.name}`, "Image Ready");
     }
   };
 
@@ -234,6 +293,7 @@ const AddTour = () => {
             setTourFile(blob);
             setTourPreviewUrl(URL.createObjectURL(blob));
             setIsTourPasteActive(false);
+            toast.success("Image pasted from clipboard!", "Success");
             break;
           }
         }
@@ -262,19 +322,26 @@ const AddTour = () => {
       });
       
       setTourIncs(newTourIncs);
+      toast.info("Multiple inclusions pasted and formatted.", "Inclusions Updated");
     }
   };
 
-  const handleCancel = async () => {
-    if (window.confirm("Are you sure you want to cancel? All unsaved changes will be lost.")) {
-        await clearDraft(); // Clears storage properly
+  const handleCancel = () => {
+    askConfirmation(
+      "Confirm Cancel",
+      "Are you sure you want to cancel? All unsaved changes will be lost.",
+      async () => {
+        await clearDraft();
+        toast.info("Process cancelled.");
         navigate(-1);
-    }
+      },
+      "danger"
+    );
   };
 
-  const handleSubmitTour = async (e) => {
+  const handleSaveConfirmation = (e) => {
     e.preventDefault();
-    
+
     if (!tourFile) {
       toast.error("Please upload an image for the tour.", "Missing Image");
       return;
@@ -290,8 +357,15 @@ const AddTour = () => {
       return;
     }
 
+    askConfirmation(
+      "Publish Tour",
+      `Are you sure you want to publish "${tourTitle}" to the catalog?`,
+      () => performSubmit()
+    );
+  };
+
+  const performSubmit = async () => {
     const finalIncs = tourIncs.filter((item) => item.trim());
-    
     const supplierRateNum = parseFloat(tourSupplier) || 0;
     const markupValueNum = parseFloat(tourMarkup) || 0;
     
@@ -337,7 +411,7 @@ const AddTour = () => {
           6000
         );
 
-        await clearDraft(); // Clears storage
+        await clearDraft();
 
         setTourTitle("");
         setTourDest("");
@@ -352,7 +426,6 @@ const AddTour = () => {
         setTourMarkupType("peso");
 
       } else {
-        console.error("Server error:", data);
         toast.error(
           data.error || "Failed to add tour. Please try again.",
           "Upload Failed",
@@ -360,7 +433,6 @@ const AddTour = () => {
         );
       }
     } catch (err) {
-      console.error("Fetch error:", err);
       toast.error(
         "Unable to connect to server. Please check your connection.",
         "Connection Error",
@@ -379,6 +451,15 @@ const AddTour = () => {
         draftInfo={draftInfo}
       />
 
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <main
         className={`atour-main ${isSidebarCollapsed ? "atour-collapsed" : ""}`}
@@ -392,7 +473,7 @@ const AddTour = () => {
               </p>
             </div>
           </header>
-          <form onSubmit={handleSubmitTour}>
+          <form onSubmit={handleSaveConfirmation}>
             <div className="atour-grid">
               <div className="atour-left">
                 <TourImageUpload

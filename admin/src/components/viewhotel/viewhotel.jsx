@@ -1,14 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Eye, MapPin, Users, Home, CheckCircle } from 'lucide-react';
+import { Archive, Eye, MapPin, Users, Home, CheckCircle, HelpCircle, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import ViewHotelModal from './ViewHotelModal';
 import HotelPagination from './HotelPagination';
 import HotelFilters from './HotelFilters';
+import { useToast } from '../toast/ToastManager'; // Import Toast Management
 import './viewhotel.css';
 
 const API_BASE_URL = 'http://localhost:5000';
 
+// Custom Confirmation Modal Component (Based on EditVisa.jsx reference)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ViewHotels = () => {
+  const toast = useToast(); // Initialize Toast
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -24,10 +70,33 @@ const ViewHotels = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState(null);
 
-  // Get unique cities from hotels
+  // Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
+
+  // Get unique cities from hotels (Filtered to only show non-archived cities)
   const getCities = () => {
     const cities = ['ALL'];
-    const uniqueCities = [...new Set(hotels.map(hotel => hotel.city).filter(Boolean))];
+    const activeHotels = hotels.filter(h => (h.isArchive || "No") === "No");
+    const uniqueCities = [...new Set(activeHotels.map(hotel => hotel.city).filter(Boolean))];
     return [...cities, ...uniqueCities.sort()];
   };
 
@@ -51,15 +120,20 @@ const ViewHotels = () => {
       }
       const data = await response.json();
       if (data.success && Array.isArray(data.data)) {
-        setHotels(data.data);
+        const initializedData = data.data.map(hotel => ({
+          ...hotel,
+          isArchive: hotel.isArchive || "No"
+        }));
+        setHotels(initializedData);
         setCurrentPage(1);
       }
     } catch (error) {
       if (error.name === 'AbortError') {
         console.error('Request timeout - server too slow');
-        alert('Server is taking too long to respond. Please check your connection.');
+        toast.error('Server is taking too long to respond. Please check your connection.', 'Timeout');
       } else {
         console.error('Error fetching hotels:', error);
+        toast.error('Failed to fetch hotels.', 'Error');
       }
     } finally {
       setLoading(false);
@@ -70,27 +144,37 @@ const ViewHotels = () => {
     fetchHotels();
   }, []);
 
-  const handleDelete = async (hotelId, hotelName) => {
-    if (!window.confirm(`Are you sure you want to archive "${hotelName}"?\n\nThis will mark the hotel as inactive.`)) {
-      return;
-    }
+  // Updated handleArchive using Custom Modal and Toast
+  const handleArchive = (hotelId, hotelName) => {
+    askConfirmation(
+      "Archive Hotel",
+      `Are you sure you want to archive "${hotelName}"? This will move it to the Archive page.`,
+      () => performArchive(hotelId),
+      "danger"
+    );
+  };
 
+  const performArchive = async (hotelId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/hotels/${hotelId}`, {
-        method: 'DELETE'
+      const response = await fetch(`${API_BASE_URL}/api/hotels/archive/${hotelId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
       const data = await response.json();
 
       if (data.success) {
-        alert('Hotel archived successfully!');
-        fetchHotels();
+        toast.success('Hotel moved to archive successfully!', 'Archived');
+        fetchHotels(); 
+        if (showDetailModal) setShowDetailModal(false);
       } else {
-        alert('Error archiving hotel: ' + data.message);
+        toast.error('Error archiving hotel: ' + data.message, 'Failed');
       }
     } catch (error) {
       console.error('Error archiving hotel:', error);
-      alert('Failed to archive hotel: ' + error.message);
+      toast.error('Failed to archive hotel: ' + error.message, 'Server Error');
     }
   };
 
@@ -103,33 +187,24 @@ const ViewHotels = () => {
     setShowDetailModal(true);
   };
 
-  // Smart Image URL Logic (Matches Modal Logic)
   const getImageUrl = (hotel) => {
     let imagePath = null;
-
-    // 1. Priority: Main Image
     if (hotel.mainImage) {
       imagePath = hotel.mainImage;
     } 
-    // 2. Fallback: First Gallery Image
     else if (hotel.images && hotel.images.length > 0) {
-      // Handle if images[0] is object or string
       imagePath = typeof hotel.images[0] === 'string' ? hotel.images[0] : hotel.images[0].url;
     }
 
     if (!imagePath) return null;
 
-    // 3. If it's already a full URL or Base64, return immediately
     if (imagePath.startsWith('data:') || imagePath.startsWith('blob:') || imagePath.startsWith('http')) {
       return imagePath;
     }
 
-    // 4. Fix formatting (Windows backslashes to forward slashes)
     let cleanPath = imagePath.replace(/\\/g, '/');
     if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
 
-    // 5. Build Full URL
-    // Prevent double 'uploads/' if the path already has it
     if (cleanPath.startsWith('uploads/')) {
         return `${API_BASE_URL}/${cleanPath}`;
     }
@@ -144,14 +219,12 @@ const ViewHotels = () => {
     }).format(price);
   };
 
-  // Filter and search logic
   const filteredHotels = hotels.filter(hotel => {
+    const isNotArchived = (hotel.isArchive || "No") === "No";
     const matchesSearch = hotel.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           hotel.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           hotel.city?.toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesCity = filterCity === 'ALL' || hotel.city === filterCity;
-    
     let matchesStatus = true;
     if (filterStatus === 'Active') {
       matchesStatus = hotel.isActive === true;
@@ -160,16 +233,15 @@ const ViewHotels = () => {
     } else if (filterStatus === 'Featured') {
       matchesStatus = hotel.featured === true;
     }
-    
-    return matchesSearch && matchesCity && matchesStatus;
+    return isNotArchived && matchesSearch && matchesCity && matchesStatus;
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentHotels = filteredHotels.slice(indexOfFirstItem, indexOfLastItem);
 
-  const activeHotels = hotels.filter(h => h.isActive).length;
-  const featuredHotels = hotels.filter(h => h.featured).length;
+  const activeHotelsCount = hotels.filter(h => h.isActive && (h.isArchive || "No") === "No").length;
+  const featuredHotelsCount = hotels.filter(h => h.featured && (h.isArchive || "No") === "No").length;
 
   const mainClass = `vh-main ${isSidebarCollapsed ? 'vh-main--collapsed' : ''}`;
 
@@ -185,7 +257,7 @@ const ViewHotels = () => {
             <div className="vh-header-content">
               <h1 className="vh-title">HOTEL LIST</h1>
               <p className="vh-subtitle">
-                Managing {hotels.length} properties • {activeHotels} active • {featuredHotels} featured
+                Managing {filteredHotels.length} properties • {activeHotelsCount} active • {featuredHotelsCount} featured
               </p>
             </div>
             <button className="vh-btn vh-btn--add" onClick={() => window.location.href='/add-hotel'}>
@@ -209,17 +281,11 @@ const ViewHotels = () => {
               <div className="vh-spinner"></div>
               <p>Loading hotels from database...</p>
             </div>
-          ) : hotels.length === 0 ? (
-            <div className="vh-empty">
-              <span className="vh-empty-icon">🏨</span>
-              <h3>No hotels yet</h3>
-              <p>Start by adding your first hotel</p>
-            </div>
           ) : filteredHotels.length === 0 ? (
             <div className="vh-empty">
-              <span className="vh-empty-icon">🔍</span>
-              <h3>No hotels found</h3>
-              <p>Try adjusting your search or filter criteria</p>
+              <span className="vh-empty-icon">{hotels.length === 0 ? "🏨" : "🔍"}</span>
+              <h3>{hotels.length === 0 ? "No hotels yet" : "No hotels found"}</h3>
+              <p>{hotels.length === 0 ? "Start by adding your first hotel" : "Try adjusting your search or filter criteria"}</p>
             </div>
           ) : (
             <>
@@ -243,7 +309,6 @@ const ViewHotels = () => {
                         ? Object.values(hotel.amenities).filter(Boolean).length 
                         : 0;
                       
-                      // Use the fixed getImageUrl function here
                       const imageUrl = getImageUrl(hotel);
                       
                       return (
@@ -255,7 +320,7 @@ const ViewHotels = () => {
                                   src={imageUrl} 
                                   alt={hotel.name}
                                   onError={(e) => { 
-                                      e.target.onerror = null; // Prevent infinite loop
+                                      e.target.onerror = null; 
                                       e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; 
                                   }}
                                 />
@@ -330,7 +395,7 @@ const ViewHotels = () => {
                               </button>
                               <button 
                                 className="vh-action-btn vh-action-btn--delete"
-                                onClick={() => handleDelete(hotel._id, hotel.name)}
+                                onClick={() => handleArchive(hotel._id, hotel.name)}
                                 title="Archive"
                               >
                                 <Archive size={16} />
@@ -361,8 +426,19 @@ const ViewHotels = () => {
           hotel={selectedHotel}
           onClose={() => setShowDetailModal(false)}
           onEdit={handleEdit}
+          onArchive={(id) => handleArchive(id, selectedHotel.name)}
         />
       )}
+
+      {/* Confirmation Modal Component */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

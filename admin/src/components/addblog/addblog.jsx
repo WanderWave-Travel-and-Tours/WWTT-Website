@@ -76,6 +76,15 @@ const AddBlog = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // --- UPDATED CONFIRMATION MODAL STATE (ALIGNED WITH EDITVISA) ---
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'primary',
+        onConfirm: () => {}
+    });
+
     const API_BASE_URL = 'http://localhost:5000'; 
 
     // =========================================================

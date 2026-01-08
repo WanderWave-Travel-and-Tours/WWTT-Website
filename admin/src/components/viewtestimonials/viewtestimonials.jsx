@@ -1,12 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import { Trash2, Eye, Calendar, User, Star, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Trash2, Eye, Calendar, User, Star, MessageSquare, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import TestimonialDetailModal from './TestimonialDetailModal';
 import TestimonialPagination from './TestimonialPagination';
 import TestimonialFilters from './TestimonialFilters';
+import { useToast } from '../toast/ToastManager'; // Inimport ang Toast
 import './viewtestimonials.css';
 
+// Custom Confirm Modal Component (Reference from EditVisa.jsx)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ViewTestimonials = () => {
+    const toast = useToast(); // Initialize Toast
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -20,8 +66,30 @@ const ViewTestimonials = () => {
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedTestimonial, setSelectedTestimonial] = useState(null);
+
+    // Modal State for Confirmation
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
     
     const API_BASE_URL = 'http://localhost:5000';
+
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
 
     const getSources = () => {
         const sources = ['ALL'];
@@ -43,11 +111,11 @@ const ViewTestimonials = () => {
                 throw new Error('Failed to fetch testimonials');
             }
             const data = await response.json();
-            // Siguraduhing array ang data bago i-set
             setTestimonials(Array.isArray(data) ? data : []);
             setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching testimonials:', error);
+            toast.error("Failed to load testimonials from database.");
         } finally {
             setLoading(false);
         }
@@ -57,26 +125,35 @@ const ViewTestimonials = () => {
         fetchTestimonials();
     }, []);
 
-    const handleArchive = async (id, name) => {
-        if (window.confirm(`Are you sure you want to archive ${name}'s testimonial?`)) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ isArchive: "Yes" }),
-                });
+    // Ginawang separate function ang API call para matawag sa loob ng confirmation modal
+    const performArchive = async (id) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isArchive: "Yes" }),
+            });
 
-                if (response.ok) {
-                    // I-update ang local state para mawala agad sa listahan pagka-archive
-                    setTestimonials(prev => prev.map(t => t._id === id ? { ...t, isArchive: "Yes" } : t));
-                    alert('Testimonial archived successfully');
-                } else {
-                    alert('Failed to archive testimonial');
-                }
-            } catch (error) {
-                console.error('Error archiving testimonial:', error);
+            if (response.ok) {
+                setTestimonials(prev => prev.map(t => t._id === id ? { ...t, isArchive: "Yes" } : t));
+                toast.success('Testimonial archived successfully');
+                setShowDetailModal(false); // Isara ang detail modal kung galing doon ang archive action
+            } else {
+                toast.error('Failed to archive testimonial');
             }
+        } catch (error) {
+            console.error('Error archiving testimonial:', error);
+            toast.error('An error occurred while archiving.');
         }
+    };
+
+    const handleArchive = (id, name) => {
+        askConfirmation(
+            "Archive Testimonial",
+            `Are you sure you want to archive ${name}'s testimonial? This will remove it from the active list.`,
+            () => performArchive(id),
+            "danger"
+        );
     };
 
     const handleViewDetails = (testimonial) => {
@@ -96,9 +173,7 @@ const ViewTestimonials = () => {
         });
     };
 
-    // FIX: Mas malawak na filtering para tanggapin ang "0" o "No"
     const filteredTestimonials = testimonials.filter(testimonial => {
-        // Ituturing na Active kung ang isArchive ay "No", "0", false, o wala pang value
         const isNotArchived = 
             testimonial.isArchive === "No" || 
             testimonial.isArchive === "0" || 
@@ -118,7 +193,6 @@ const ViewTestimonials = () => {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentTestimonials = filteredTestimonials.slice(indexOfFirstItem, indexOfLastItem);
 
-    // Counter para sa header
     const activeTestimonialsCount = testimonials.filter(t => t.isArchive === "No" || t.isArchive === "0" || !t.isArchive).length;
 
     return (
@@ -151,7 +225,7 @@ const ViewTestimonials = () => {
                         </div>
                     ) : filteredTestimonials.length === 0 ? (
                         <div className="vt-empty">
-                            <span className="vt-empty-icon">{testimonials.length === 0 ? '💬' : '🔍'}</span>
+                            <span className="vt-empty-icon">{testimonials.length === 0 ? '📪' : '🔍'}</span>
                             <h3>{testimonials.length === 0 ? 'No testimonials yet' : 'No testimonials found'}</h3>
                             <p>{testimonials.length === 0 ? 'Start by adding your first customer testimonial' : 'Try adjusting your search or filter criteria'}</p>
                         </div>
@@ -229,7 +303,6 @@ const ViewTestimonials = () => {
                                 </table>
                             </div>
                             
-                            {/* 🔥 PAGINATION IS NOW OUTSIDE THE TABLE WRAPPER! */}
                             <TestimonialPagination
                                 totalItems={filteredTestimonials.length}
                                 itemsPerPage={itemsPerPage}
@@ -241,6 +314,7 @@ const ViewTestimonials = () => {
                 </div>
             </main>
 
+            {/* Testimonial Detail Modal */}
             {showDetailModal && selectedTestimonial && (
                 <TestimonialDetailModal
                     showModal={showDetailModal}
@@ -250,6 +324,16 @@ const ViewTestimonials = () => {
                     getImageUrl={getImageUrl}
                 />
             )}
+
+            {/* Custom Confirmation Modal */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };

@@ -433,7 +433,7 @@ const getAllInquiries = async (req, res) => {
 
 const getInquiry = async (req, res) => {
   try {
-    const inquiry = await Inquiry.findById(req.params.id).populate('serviceId visaId psaId cenomarId');
+    const inquiry = await Inquiry.findById(req.params.id).populate('serviceId visaId cenomarId');
     if (!inquiry) return res.status(404).json({ success: false });
     res.json({ success: true, data: inquiry });
   } catch (error) {
@@ -451,6 +451,9 @@ const updateInquiry = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
 
+    // ✅ FIXED: Initialize changes array to prevent ReferenceError
+    const changes = []; 
+
     let remainingFilesList = [];
     if (req.body.existingFiles) {
       try {
@@ -458,13 +461,7 @@ const updateInquiry = async (req, res) => {
       } catch (e) {
         remainingFilesList = [];
       }
-    });
-
-    const newFullName = `${req.body.givenName || ''} ${req.body.lastName || ''}`.trim();
-    if (newFullName && newFullName !== existingInquiry.fullName) {
-      changes.push(`Name (from "${existingInquiry.fullName}" to "${newFullName}")`);
-      updateData.fullName = newFullName;
-    }
+    };
 
     const updateData = {
       fullName: req.body.fullName,
@@ -476,6 +473,13 @@ const updateInquiry = async (req, res) => {
       estimatedPrice: parseFloat(req.body.estimatedPrice) || 0,
       updatedAt: Date.now()
     };
+    
+    // Check for name change safely now
+    const newFullName = `${req.body.givenName || ''} ${req.body.lastName || ''}`.trim();
+    if (newFullName && newFullName !== existingInquiry.fullName) {
+      changes.push(`Name (from "${existingInquiry.fullName}" to "${newFullName}")`);
+      updateData.fullName = newFullName;
+    }
 
     updateData.passportDetails = {
       ...existingInquiry.passportDetails?.toObject(),
@@ -567,6 +571,7 @@ const updateInquiry = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 const updateInquiryStatus = async (req, res) => {
   try {
     const { status, adminNotes, contactedBy, remarks, userEmail, adminId } = req.body;
@@ -626,7 +631,8 @@ const updateInquiryStatus = async (req, res) => {
 
     res.json({ success: true, data: updated });
   } catch (error) {
-    res.status(500).json({ success: false });
+    console.error('❌ Status Update Error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -1103,4 +1109,4 @@ module.exports = {
   getInquiryAnalytics,
   getInquiriesByDateRange,
   toggleArchive
-}; 
+};

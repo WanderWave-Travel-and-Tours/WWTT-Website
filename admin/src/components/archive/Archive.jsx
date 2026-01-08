@@ -25,6 +25,8 @@ import { fetchArchivedInquiries, restoreInquiry } from './archiveFunctions/inqui
 import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'; 
 import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; 
 import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService';
+// NEW: Hotel Service Added
+import { fetchArchivedHotels, restoreHotel } from './archiveFunctions/hotelService';
 
 // --- Custom Confirmation Modal ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -166,7 +168,6 @@ const ArchiveComponent = () => {
     });
   };
 
-  // Logic to check if item is past 30 days
   const isExpired = (archivedDate) => {
     if (!archivedDate) return false;
     const archived = new Date(archivedDate);
@@ -176,16 +177,12 @@ const ArchiveComponent = () => {
     return diffDays >= ARCHIVE_RETENTION_DAYS;
   };
 
-  // Core Reset Logic: Calculates remaining days strictly against the archived date
   const getDaysRemaining = (archivedDate) => {
     if (!archivedDate) return ARCHIVE_RETENTION_DAYS;
     const archived = new Date(archivedDate);
     const now = new Date();
-    
-    // Difference in full days
     const diffTime = now.getTime() - archived.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
     const remaining = ARCHIVE_RETENTION_DAYS - diffDays;
     return remaining > 0 ? remaining : 0;
   };
@@ -194,14 +191,20 @@ const ArchiveComponent = () => {
     try {
       setLoading(true);
       const results = await Promise.allSettled([
-        fetchArchivedBookings(), fetchArchivedPackages(), fetchArchivedTours(),
-        fetchArchivedTestimonials(), fetchArchivedPromos(), fetchArchivedPosters(),
-        fetchArchivedInquiries(), fetchArchivedBlogs(), fetchArchivedImages(), fetchArchivedUsers()
+        fetchArchivedBookings(), 
+        fetchArchivedPackages(), 
+        fetchArchivedTours(),
+        fetchArchivedTestimonials(), 
+        fetchArchivedPromos(), 
+        fetchArchivedPosters(),
+        fetchArchivedInquiries(), 
+        fetchArchivedBlogs(), 
+        fetchArchivedImages(), 
+        fetchArchivedUsers(),
+        fetchArchivedHotels() // Hotel integration
       ]);
       
       const combinedData = results.map(r => r.status === 'fulfilled' ? r.value : []).flat();
-      
-      // Filter out items that are already expired based on backend timestamp
       const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
 
       const chronologicalData = [...nonExpiredData].sort((a, b) => {
@@ -211,17 +214,12 @@ const ArchiveComponent = () => {
       const formatted = chronologicalData.map((item, index) => {
         const archiveNumber = index + 1; 
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
-        
-        /**
-         * RESET FIX: 
-         * Pinaprioritize ang 'archivedAt'. Kung wala nito (halimbawa nirestore at inarchive ulit),
-         * gagamit ito ng 'new Date()' para magsimula ulit sa saktong 30 days.
-         * Inalis ang fallback sa updatedAt/createdAt para hindi mabawasan ang days base sa lumang edits.
-         */
         const dateRaw = item.archivedAt || new Date().toISOString();
 
         let displayType = item.type || 'Other';
         if (item.role) displayType = item.role.charAt(0).toUpperCase() + item.role.slice(1);
+        
+        // Inquiry Mapping
         if (item.inquiryType) {
            switch(item.inquiryType) {
              case 'VISA': displayType = 'VISA Processing'; break;
@@ -237,12 +235,12 @@ const ArchiveComponent = () => {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber,
-          itemName: item.fullName || item.imageName || item.title || item.itemName || item.name || item.code || 'Unnamed Item', 
+          itemName: item.name || item.fullName || item.title || item.imageName || item.itemName || item.code || 'Unnamed Item', 
           type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
-          daysRemaining: getDaysRemaining(dateRaw), // Ito ang magre-result sa 30 kung dateRaw is now
-          reference: item.email || item.imageUrl || item.author || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
+          daysRemaining: getDaysRemaining(dateRaw),
+          reference: item.email || item.imageUrl || item.author || item.location || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
           status: item.isArchive === "Yes" ? 'Archived' : (item.status || 'Archived'), 
           rawData: item
         };
@@ -295,22 +293,24 @@ const ArchiveComponent = () => {
     setActionLoading(true);
     try {
       let restored = false;
-      if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(item.mongoId);
-      else if (item.type === 'Package') restored = await restorePackage(item.mongoId);
-      else if (item.type === 'Booking') restored = await restoreBooking(item.mongoId);
-      else if (item.type === 'Tour') restored = await restoreTour(item.mongoId);
-      else if (item.type === 'Testimonial') restored = await restoreTestimonial(item.mongoId);
-      else if (item.type === 'Promo') restored = await restorePromo(item.mongoId);
-      else if (item.type === 'Poster') restored = await restorePoster(item.mongoId);
-      else if (item.type === 'Blog') restored = await restoreBlog(item.mongoId);
-      else if (item.type === 'Image Gallery') restored = await restoreImage(item.mongoId);
-      else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(item.mongoId);
+      const id = item.mongoId;
+      if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(id);
+      else if (item.type === 'Package') restored = await restorePackage(id);
+      else if (item.type === 'Booking') restored = await restoreBooking(id);
+      else if (item.type === 'Tour') restored = await restoreTour(id);
+      else if (item.type === 'Testimonial') restored = await restoreTestimonial(id);
+      else if (item.type === 'Promo') restored = await restorePromo(id);
+      else if (item.type === 'Poster') restored = await restorePoster(id);
+      else if (item.type === 'Blog') restored = await restoreBlog(id);
+      else if (item.type === 'Image Gallery') restored = await restoreImage(id);
+      else if (item.type === 'Hotel') restored = await restoreHotel(id); // Added Hotel
+      else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(id);
       
       if (restored) {
-        setArchiveItems(prev => prev.filter(i => i.mongoId !== item.mongoId));
+        setArchiveItems(prev => prev.filter(i => i.mongoId !== id));
         setShowModal(false);
         setSelectedItem(null);
-        toast.success(`Successfully restored: ${item.itemName}. Cooldown reset.`);
+        toast.success(`Successfully restored: ${item.itemName}`);
       }
     } catch (error) {
       toast.error(`Error: ${error.message}`);
@@ -322,7 +322,7 @@ const ArchiveComponent = () => {
   const handleRestore = (item) => { 
     askConfirmation(
       "Restore Item",
-      `Are you sure you want to restore ${item.itemName}? The 30-day archive cooldown will reset completely.`,
+      `Are you sure you want to restore ${item.itemName}?`,
       () => performRestore(item)
     );
   };
@@ -332,24 +332,26 @@ const ArchiveComponent = () => {
     
     askConfirmation(
       "Restore Filtered Items",
-      `Are you sure you want to restore all ${filteredArchiveItems.length} items? This resets their expiration timers.`,
+      `Are you sure you want to restore all ${filteredArchiveItems.length} items?`,
       async () => {
         setActionLoading(true);
         try {
           for (const item of filteredArchiveItems) {
-            if (item.type === 'User' || item.type === 'Admin') await restoreUser(item.mongoId);
-            else if (item.type === 'Package') await restorePackage(item.mongoId);
-            else if (item.type === 'Booking') await restoreBooking(item.mongoId);
-            else if (item.type === 'Tour') await restoreTour(item.mongoId);
-            else if (item.type === 'Testimonial') await restoreTestimonial(item.mongoId);
-            else if (item.type === 'Promo') await restorePromo(item.mongoId);
-            else if (item.type === 'Poster') await restorePoster(item.mongoId);
-            else if (item.type === 'Blog') await restoreBlog(item.mongoId);
-            else if (item.type === 'Image Gallery') await restoreImage(item.mongoId);
-            else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(item.mongoId);
+            const id = item.mongoId;
+            if (item.type === 'User' || item.type === 'Admin') await restoreUser(id);
+            else if (item.type === 'Package') await restorePackage(id);
+            else if (item.type === 'Booking') await restoreBooking(id);
+            else if (item.type === 'Tour') await restoreTour(id);
+            else if (item.type === 'Testimonial') await restoreTestimonial(id);
+            else if (item.type === 'Promo') await restorePromo(id);
+            else if (item.type === 'Poster') await restorePoster(id);
+            else if (item.type === 'Blog') await restoreBlog(id);
+            else if (item.type === 'Image Gallery') await restoreImage(id);
+            else if (item.type === 'Hotel') await restoreHotel(id); // Added Hotel
+            else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(id);
           }
           await fetchArchiveItems();
-          toast.success('Selected items restored and timers reset.');
+          toast.success('Selected items restored.');
         } catch (error) {
           toast.error('An error occurred during bulk restore.');
         } finally { 

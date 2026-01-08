@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Upload, X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, Trash2, HelpCircle } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
 import "./EditTour.css";
 
@@ -8,13 +8,85 @@ import "./EditTour.css";
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// ✅ Imports for Toast Management
+import { useToast } from "../toast/ToastManager";
+
+// ✅ Custom Confirmation Modal Component (Pattern from EditVisa)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            type="button"
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            type="button"
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const EditTour = () => {
   const navigate = useNavigate();
   const { id: tourId } = useParams();
+  const toast = useToast(); // ✅ Initialize Toast
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -46,7 +118,6 @@ const EditTour = () => {
   // ✅ AUTO-DRAFT LOGIC START
   // =========================================================
 
-  // 1. Helper: File <-> Base64 Converters
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -62,19 +133,15 @@ const EditTour = () => {
     return new File([blob], fileName, { type: mimeType });
   };
 
-  // 2. Draft Payload State
   const [draftPayload, setDraftPayload] = useState(null);
 
-  // 3. Listen to state changes and update Draft Payload
   useEffect(() => {
     const updateDraft = async () => {
-      // 🛑 FIX: Don't save draft if data is still loading or form is empty
       if (loading) {
         setDraftPayload(null);
         return;
       }
 
-      // Check if form is effectively empty/default
       const isFormEmpty = 
         !formData.title && 
         !formData.destination && 
@@ -91,10 +158,8 @@ const EditTour = () => {
       let imageBase64 = null;
       let imageMeta = null;
 
-      // Handle Image Conversion
       if (imageFile) {
         try {
-          // Limit draft image size (~3MB limit safety)
           if (imageFile.size < 3 * 1024 * 1024) { 
             imageBase64 = await fileToBase64(imageFile);
             imageMeta = { name: imageFile.name, type: imageFile.type };
@@ -108,24 +173,22 @@ const EditTour = () => {
         ...formData,
         inclusions,
         itinerary,
-        image: imageBase64, // Saved as Base64 string
+        image: imageBase64,
         imageMeta: imageMeta,
-        originalId: tourId // Store ID to ensure we only restore draft for THIS tour
+        originalId: tourId
       });
     };
 
     const timeoutId = setTimeout(() => {
       updateDraft();
-    }, 500); // Debounce
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [formData, inclusions, itinerary, imageFile, loading, tourId]);
 
-  // 4. Restore Function
   const restoreDraftData = async (data) => {
     if (!data) return;
     
-    // Safety check: Ensure the draft belongs to the tour we are currently editing
     if (data.originalId && data.originalId !== tourId) {
       console.warn("Draft found but belongs to a different tour ID. Ignoring.");
       return;
@@ -155,7 +218,6 @@ const EditTour = () => {
     }
   };
 
-  // 5. Initialize Hook
   const { 
     clearDraft, 
     hasDraft, 
@@ -163,18 +225,16 @@ const EditTour = () => {
     discardDraft,
     draftInfo 
   } = useAutoDraft({
-    module: `edit-tour-${tourId}`, // Unique ID per tour to avoid conflicts
+    module: `edit-tour-${tourId}`,
     formData: draftPayload,
     setFormData: restoreDraftData,
     imagePreview: imagePreview, 
-    autoRestore: false // Manual via modal
+    autoRestore: false 
   });
 
-  // 6. Modal State
   const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   useEffect(() => {
-    // Only show modal if we have a draft AND we are done loading the original data
     if (hasDraft && !loading) {
       setShowRestoreModal(true);
     }
@@ -183,18 +243,19 @@ const EditTour = () => {
   const handleRestoreDraft = () => {
     restoreDraft();
     setShowRestoreModal(false);
+    toast.info("Draft restored successfully!");
   };
 
   const handleDiscardDraft = async () => {
-    await discardDraft(); // Ensure storage is cleared
+    await discardDraft();
     setShowRestoreModal(false);
+    toast.info("Draft discarded.");
   };
 
   // =========================================================
   // ✅ AUTO-DRAFT LOGIC END
   // =========================================================
 
-  // Fetch tour data
   useEffect(() => {
     if (!tourId) {
       navigate("/view-tours");
@@ -209,21 +270,17 @@ const EditTour = () => {
         if (result.status === "ok") {
           const tour = result.data;
           
-          // Handle price fields properly - support both old and new formats
           let sellerPriceValue = 0;
           let markupValue = 0;
           
           if (tour.sellerPrice !== undefined && tour.sellerPrice !== null) {
-            // New format with sellerPrice and markup
             sellerPriceValue = tour.sellerPrice;
             markupValue = tour.markup !== undefined && tour.markup !== null ? tour.markup : 0;
           } else if (tour.price !== undefined && tour.price !== null) {
-            // Old format with only price - treat entire price as seller price
             sellerPriceValue = tour.price;
             markupValue = 0;
           }
           
-          // Only update state if we haven't restored a draft yet
           setFormData({
             title: tour.title || "",
             destination: tour.destination || "",
@@ -249,22 +306,20 @@ const EditTour = () => {
         }
       } catch (err) {
         console.error("Error fetching tour:", err);
-        alert("Failed to load tour data");
+        toast.error("Failed to load tour data");
       } finally {
         setLoading(false);
       }
     };
 
     fetchTourData();
-  }, [tourId, navigate]);
+  }, [tourId, navigate, toast]);
 
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle image upload
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -274,10 +329,10 @@ const EditTour = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
+      toast.info(`Selected image: ${file.name}`);
     }
   };
 
-  // Inclusions handlers
   const handleInclusionChange = (index, value) => {
     const newInclusions = [...inclusions];
     newInclusions[index] = value;
@@ -294,7 +349,6 @@ const EditTour = () => {
     }
   };
 
-  // Itinerary handlers
   const handleItineraryChange = (index, field, value) => {
     const newItinerary = [...itinerary];
     newItinerary[index][field] = value;
@@ -333,7 +387,6 @@ const EditTour = () => {
   const removeItineraryDay = (index) => {
     if (itinerary.length > 1) {
       const newItinerary = itinerary.filter((_, i) => i !== index);
-      // Renumber days
       newItinerary.forEach((item, i) => {
         item.day = i + 1;
       });
@@ -341,20 +394,40 @@ const EditTour = () => {
     }
   };
 
-  // Submit handler
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ✅ New Handle Back/Cancel with Confirmation
+  const handleBack = () => {
+    askConfirmation(
+      "Discard Changes",
+      "Are you sure you want to discard your changes and go back?",
+      async () => {
+        await clearDraft();
+        navigate("/view-tours");
+      }
+    );
+  };
 
+  // ✅ Wrap handleSubmit with Confirmation
+  const handleSubmitConfirmation = (e) => {
+    e.preventDefault();
+    
     if (
       !formData.title ||
       !formData.destination ||
       !formData.sellerPrice ||
       !formData.duration
     ) {
-      alert("Please fill in all required fields");
+      toast.warning("Please fill in all required fields");
       return;
     }
 
+    askConfirmation(
+      "Update Tour",
+      "Are you sure you want to save the changes for this tour package?",
+      () => performSubmit()
+    );
+  };
+
+  const performSubmit = async () => {
     setSubmitting(true);
 
     try {
@@ -367,11 +440,9 @@ const EditTour = () => {
       formDataToSend.append("category", formData.category);
       formDataToSend.append("existingImage", formData.existingImage);
 
-      // Filter empty inclusions
       const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
       formDataToSend.append("inclusions", JSON.stringify(filteredInclusions));
 
-      // Filter empty itinerary
       const filteredItinerary = itinerary
         .map((day) => ({
           day: day.day,
@@ -393,18 +464,15 @@ const EditTour = () => {
       const result = await response.json();
 
       if (result.status === "ok") {
-        alert("✅ Tour updated successfully!");
-        
-        // ✅ CLEAR DRAFT ON SUCCESS
+        toast.success("Tour updated successfully!");
         await clearDraft();
-        
         navigate("/view-tours");
       } else {
-        alert(`❌ Error: ${result.message || "Failed to update tour"}`);
+        toast.error(`Error: ${result.message || "Failed to update tour"}`);
       }
     } catch (err) {
       console.error("Submit error:", err);
-      alert("❌ Error connecting to server");
+      toast.error("Error connecting to server");
     } finally {
       setSubmitting(false);
     }
@@ -435,13 +503,23 @@ const EditTour = () => {
         draftInfo={draftInfo}
       />
 
+      {/* ✅ CUSTOM CONFIRMATION MODAL */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <main className={`et-main ${isSidebarCollapsed ? "et-main--collapsed" : ""}`}>
         <div className="et-container">
           {/* Header */}
           <header className="et-header">
             <div className="et-header-content">
-              <button className="et-back-btn" onClick={() => navigate("/view-tours")}>
+              <button className="et-back-btn" type="button" onClick={handleBack}>
                 <ArrowLeft size={18} />
                 Back to Tours
               </button>
@@ -451,7 +529,7 @@ const EditTour = () => {
           </header>
 
           {/* Form */}
-          <form className="et-form" onSubmit={handleSubmit}>
+          <form className="et-form" onSubmit={handleSubmitConfirmation}>
             {/* Image Upload */}
             <div className="et-section">
               <h2 className="et-section-title">Tour Image</h2>
@@ -717,10 +795,7 @@ const EditTour = () => {
               <button
                 type="button"
                 className="et-btn et-btn--cancel"
-                onClick={async () => {
-                    await clearDraft(); // Clear draft on cancel
-                    navigate("/view-tours");
-                }}
+                onClick={handleBack}
                 disabled={submitting}
               >
                 Cancel

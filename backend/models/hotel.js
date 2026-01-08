@@ -164,6 +164,17 @@ const hotelSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // --- ADDED ARCHIVE FIELDS FOR ARCHIVE FUNCTIONALITY ---
+  isArchive: {
+    type: String,
+    enum: ['No', 'Yes'],
+    default: 'No'
+  },
+  archivedAt: {
+    type: Date,
+    default: null
+  },
+  // ------------------------------------------------------
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
