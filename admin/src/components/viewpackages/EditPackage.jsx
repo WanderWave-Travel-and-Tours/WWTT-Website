@@ -8,6 +8,20 @@ import "./editpackage.css";
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const EditPackage = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // Get ID from URL params
@@ -26,7 +40,11 @@ const EditPackage = () => {
     duration: "",
     category: "Local",
     existingImage: "",
+    existingImagePublicId: "" // Added to track existing ID
   });
+
+  // ✅ Store original data to track changes for Activity Logs
+  const [originalData, setOriginalData] = useState(null);
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -135,7 +153,8 @@ const EditPackage = () => {
       markup: data.markup || "",
       duration: data.duration || "",
       category: data.category || "Local",
-      existingImage: data.existingImage || ""
+      existingImage: data.existingImage || "",
+      existingImagePublicId: data.existingImagePublicId || ""
     });
 
     if (data.inclusions) setInclusions(data.inclusions);
@@ -223,9 +242,23 @@ const EditPackage = () => {
             sellerPriceValue = pkg.price;
             markupValue = 0;
           }
+
+          const currentInclusions = pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [""];
+          const currentItinerary = pkg.itinerary && pkg.itinerary.length > 0 ? pkg.itinerary : [{ day: 1, title: "", activities: [""] }];
           
+          // ✅ Save Original Data for Activity Log comparison
+          setOriginalData({
+            title: pkg.title || "",
+            destination: pkg.destination || "",
+            sellerPrice: sellerPriceValue,
+            markup: markupValue,
+            duration: pkg.duration || "",
+            category: pkg.category || "Local",
+            inclusions: currentInclusions,
+            itinerary: currentItinerary
+          });
+
           // Only update state if we haven't restored a draft yet
-          // (Or you can choose to overwrite state and let the draft modal override it later)
           setFormData({
             title: pkg.title || "",
             destination: pkg.destination || "",
@@ -234,19 +267,16 @@ const EditPackage = () => {
             duration: pkg.duration || "",
             category: pkg.category || "Local",
             existingImage: pkg.image || "",
+            existingImagePublicId: pkg.imagePublicId || ""
           });
 
-          setInclusions(
-            pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [""]
-          );
-          setItinerary(
-            pkg.itinerary && pkg.itinerary.length > 0
-              ? pkg.itinerary
-              : [{ day: 1, title: "", activities: [""] }]
-          );
+          setInclusions(currentInclusions);
+          setItinerary(currentItinerary);
 
           if (pkg.image) {
-            setImagePreview(`http://localhost:5000/uploads/${pkg.image}`);
+            // Check if it's a full URL or relative path
+            const imgUrl = pkg.image.startsWith('http') ? pkg.image : `http://localhost:5000/uploads/${pkg.image}`;
+            setImagePreview(imgUrl);
           }
         } else {
           console.error("Error in response:", result.error);
@@ -364,6 +394,9 @@ const EditPackage = () => {
 
     setSubmitting(true);
 
+    // 🔥 Get Admin Info for Logs
+    const { userEmail, adminId } = getAdminData();
+
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
@@ -373,6 +406,9 @@ const EditPackage = () => {
       formDataToSend.append("duration", formData.duration);
       formDataToSend.append("category", formData.category);
       formDataToSend.append("existingImage", formData.existingImage);
+      if (formData.existingImagePublicId) {
+          formDataToSend.append("existingImagePublicId", formData.existingImagePublicId);
+      }
 
       // Filter empty inclusions
       const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
@@ -390,6 +426,51 @@ const EditPackage = () => {
 
       if (imageFile) {
         formDataToSend.append("image", imageFile);
+      }
+
+      // Append Admin Data
+      formDataToSend.append("userEmail", userEmail);
+      formDataToSend.append("adminId", adminId);
+
+      // 🔥 Logic: Track Changes for Activity Logs
+      let changes = [];
+            
+      const trackChange = (label, oldVal, newVal) => {
+          // Ensure values are strings for safe comparison
+          const cleanOld = String(oldVal || "").trim();
+          const cleanNew = String(newVal || "").trim();
+          if (cleanOld !== cleanNew) {
+              changes.push(`${label} changed from "${cleanOld}" to "${cleanNew}"`);
+          }
+      };
+
+      if (originalData) {
+          trackChange("Title", originalData.title, formData.title);
+          trackChange("Destination", originalData.destination, formData.destination);
+          trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
+          trackChange("Markup", originalData.markup, formData.markup);
+          trackChange("Duration", originalData.duration, formData.duration);
+          trackChange("Category", originalData.category, formData.category);
+
+          // Deep Compare Inclusions (Simplistic check)
+          if (JSON.stringify(originalData.inclusions) !== JSON.stringify(filteredInclusions)) {
+             changes.push("Package inclusions were updated.");
+          }
+
+          // Deep Compare Itinerary (Simplistic check)
+          // Note: we compare filtered because form might have empty fields user added but didn't fill
+          if (JSON.stringify(originalData.itinerary) !== JSON.stringify(filteredItinerary)) {
+             changes.push("Package itinerary was updated.");
+          }
+
+          if (imageFile) {
+              changes.push("Package image was replaced.");
+          }
+      }
+
+      // Append Changes Array as JSON string
+      if (changes.length > 0) {
+          formDataToSend.append('changes', JSON.stringify(changes));
       }
 
       console.log("Submitting update for package ID:", packageId);

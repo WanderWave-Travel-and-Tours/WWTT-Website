@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Save, ArrowLeft, Upload } from 'lucide-react';
+import axios from 'axios';
+import Sidebar from '../sidebar/sidebar';
 import { Save, ArrowLeft, Upload, Calendar, HelpCircle } from 'lucide-react';
-import Sidebar from '../sidebar/sidebar'; 
 import './EditPoster.css';
 
 // ✅ Imports for Notifications and Draft Functionality
@@ -9,6 +11,18 @@ import { useToast } from "../toast/ToastManager";
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
 // ✅ Confirmation Modal Component (Patterned after EditVisa)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
@@ -79,6 +93,9 @@ const EditPoster = () => {
         endDate: '',
         description: ''
     });
+
+    // Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
@@ -164,6 +181,9 @@ const EditPoster = () => {
 
             setDraftPayload({
                 ...formData,
+                image: imageBase64,
+                imageMeta: imageMeta,
+                originalId: id
                 image: imageBase64, 
                 imageMeta: imageMeta,
                 originalId: id 
@@ -172,6 +192,7 @@ const EditPoster = () => {
 
         const timeoutId = setTimeout(() => {
             updateDraft();
+        }, 500);
         }, 500); 
 
         return () => clearTimeout(timeoutId);
@@ -215,6 +236,7 @@ const EditPoster = () => {
         formData: draftPayload,
         setFormData: restoreDraftData,
         imagePreview: imagePreview, 
+        autoRestore: false
         autoRestore: false 
     });
 
@@ -246,10 +268,11 @@ const EditPoster = () => {
     useEffect(() => {
         const fetchPosterDetails = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/posters/${id}`);
-                if (!response.ok) throw new Error('Failed to fetch poster details');
+                const response = await axios.get(`http://localhost:5000/api/posters/${id}`);
+                const data = response.data;
                 
-                const data = await response.json();
+                // Set Original Data for Activity Logging comparison
+                setOriginalData(data);
                 
                 setFormData({
                     title: data.title || '',
@@ -296,6 +319,8 @@ const EditPoster = () => {
         }
     };
 
+    // ✅ UPDATED: Handle Submit LOGIC for Activity Logs
+    const handleSubmit = async (e) => {
     // ✅ Confirmation before Saving
     const handleSaveConfirmation = (e) => {
         e.preventDefault();
@@ -309,25 +334,67 @@ const EditPoster = () => {
     const performSubmit = async () => {
         setSubmitting(true);
 
+        const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
+
         try {
             const formDataToSend = new FormData();
+            
+            // Append standard fields
             formDataToSend.append("title", formData.title);
             formDataToSend.append("status", formData.status);
             formDataToSend.append("startDate", formData.startDate);
             formDataToSend.append("endDate", formData.endDate);
             formDataToSend.append("description", formData.description);
 
-            if (imageFile) {
-                formDataToSend.append("image", imageFile);
+            // 🔥 Activity Logs: Append Admin Data
+            formDataToSend.append("userEmail", userEmail);
+            formDataToSend.append("adminId", adminId);
+
+            // 🔥 Activity Logs: Track Changes Logic
+            let changes = [];
+            
+            const trackChange = (label, oldVal, newVal) => {
+                const cleanOld = String(oldVal || "").trim();
+                const cleanNew = String(newVal || "").trim();
+                // Avoid logging if both are empty/null effectively
+                if (cleanOld !== cleanNew) {
+                    changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
+                }
+            };
+
+            if (originalData) {
+                trackChange("Title", originalData.title, formData.title);
+                trackChange("Status", originalData.status, formData.status);
+                trackChange("Start Date", formatDateForInput(originalData.startDate), formData.startDate);
+                trackChange("End Date", formatDateForInput(originalData.endDate), formData.endDate);
+                trackChange("Description", originalData.description, formData.description);
+                
+                if (imageFile) {
+                    changes.push(`Poster image was replaced.`);
+                }
             }
 
-            const response = await fetch(`http://localhost:5000/api/posters/update/${id}`, {
-                method: 'PUT',
-                body: formDataToSend,
-            });
+            // Explicitly append changes as JSON string so backend can parse it
+            if (changes.length > 0) {
+                formDataToSend.append("changes", JSON.stringify(changes)); 
+            }
 
-            if (!response.ok) {
-                throw new Error('Failed to update poster');
+            // Append Image if new one exists
+            if (imageFile) {
+                formDataToSend.append("image", imageFile);
+                if (originalData && originalData.imagePublicId) {
+                    formDataToSend.append("imagePublicId", originalData.imagePublicId);
+                }
+            }
+
+            // ✅ Using axios.put (Correct way to send FormData with logs)
+            // Note: Assuming route is /update/:id based on common pattern, verify route in router file
+            const response = await axios.put(`http://localhost:5000/api/posters/update/${id}`, formDataToSend);
+
+            if (response.data) {
+                alert('✅ Poster updated successfully!');
+                await clearDraft(); // Clear draft on success
+                navigate('/view-posters'); 
             }
 
             toast.success('Poster updated successfully!'); // ✅ Use Toast instead of alert

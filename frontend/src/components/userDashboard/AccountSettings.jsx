@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { ArrowLeft, User, Mail, Lock, Save, Shield, Eye, EyeOff } from 'lucide-react';
 import './AccountSettings.css';
 
-const AccountSettings = ({ user }) => {
+const AccountSettings = ({ user, onNavigateBack }) => {
+    const toast = useToast();
+    
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -10,6 +13,10 @@ const AccountSettings = ({ user }) => {
         newPassword: '',
         confirmPassword: ''
     });
+
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -29,11 +36,28 @@ const AccountSettings = ({ user }) => {
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
 
-        if (!user || !user.id) {
-            console.error("DEBUG: Current User Object:", user);
-            alert("❌ Error: User ID not found. Please try logging in again.");
+        // Validation
+        if (!formData.fullName.trim()) {
+            toast.error("Full name is required");
             return;
         }
+
+        if (!formData.email.trim()) {
+            toast.error("Email address is required");
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+
+        if (!user || !user.id) {
+            console.error("DEBUG: Current User Object:", user);
+            toast.error("User ID not found. Please try logging in again.");
+            return;
+        }
+        
         try {
             const response = await fetch(`http://localhost:5000/api/users/update-profile/${user.id}`, {
                 method: 'PUT',
@@ -47,27 +71,49 @@ const AccountSettings = ({ user }) => {
             const result = await response.json();
 
             if (result.status === "ok") {
-                alert("✅ Profile updated! Please log in again to see changes.");
+                toast.success("Profile updated successfully!");
                 localStorage.setItem('wanderwave_user', JSON.stringify(result.data));
             } else {
-                alert("❌ " + result.message);
+                toast.error(result.message || "Failed to update profile");
             }
         } catch (error) {
-            alert("⚠️ Connection error to server.");
+            console.error("Update Profile Error:", error);
+            toast.error("Connection error to server. Please try again.");
         }
     };
 
     const handleChangePassword = async (e) => {
         e.preventDefault();
         
-        if (!user || !user.id) {
-            console.error("DEBUG: User ID missing in Password Update:", user);
-            alert("❌ Error: User ID not found. Please log in again.");
+        // Validation
+        if (!formData.currentPassword.trim()) {
+            toast.error("Current password is required");
+            return;
+        }
+
+        if (!formData.newPassword.trim()) {
+            toast.error("New password is required");
+            return;
+        }
+
+        if (formData.newPassword.length < 8) {
+            toast.error("Password must be at least 8 characters");
+            return;
+        }
+
+        if (!formData.confirmPassword.trim()) {
+            toast.error("Please confirm your new password");
             return;
         }
 
         if (formData.newPassword !== formData.confirmPassword) {
-            alert("❌ New passwords do not match!");
+            toast.error("New passwords do not match!");
+            return;
+        }
+
+        if (!user || !user.id) {
+            console.error("DEBUG: User ID missing in Password Update:", user);
+            toast.error("User ID not found. Please log in again.");
             return;
         }
 
@@ -83,7 +129,7 @@ const AccountSettings = ({ user }) => {
             const result = await response.json();
 
             if (result.status === "ok") {
-                alert("✅ Password updated successfully!");
+                toast.success("Password updated successfully!");
                 setFormData(prev => ({ 
                     ...prev, 
                     currentPassword: '', 
@@ -91,89 +137,166 @@ const AccountSettings = ({ user }) => {
                     confirmPassword: '' 
                 }));
             } else {
-                alert("❌ " + result.message);
+                toast.error(result.message || "Failed to update password");
             }
         } catch (error) {
             console.error("Password Update Error:", error);
-            alert("⚠️ Connection error to server.");
+            toast.error("Connection error to server. Please try again.");
         }
     };
 
     return (
         <div className="account-settings-container">
+            {/* Back Button */}
+            <button 
+                className="account-back-button" 
+                onClick={onNavigateBack}
+                type="button"
+            >
+                <ArrowLeft size={20} />
+                <span>Back to Dashboard</span>
+            </button>
+
+            {/* Header */}
             <header className="account-settings-header">
-                <h1 className="account-settings-title">MY ACCOUNT</h1>
-                <p className="account-settings-subtitle">Update your personal information and security settings</p>
+                <div className="account-settings-header-content">
+                    <h1 className="account-settings-title">MY ACCOUNT</h1>
+                    <p className="account-settings-subtitle">Update your personal information and security settings</p>
+                </div>
             </header>
 
-            <div className="account-settings-grid">
+            <div className="account-settings-form-wrapper">
+                {/* Section 1: Personal Information */}
                 <section className="account-settings-section">
                     <div className="account-settings-section-header">
+                        <User size={20} className="account-section-icon" />
                         <h2 className="account-settings-section-title">Personal Information</h2>
                     </div>
                     
-                    <form onSubmit={handleUpdateProfile} className="account-fields-grid">
-                        <div className="account-field">
-                            <label>Full Name</label>
-                            <input 
-                                type="text" 
-                                name="fullName"
-                                value={formData.fullName}
-                                onChange={handleChange}
-                                placeholder="Enter your full name"
-                            />
-                        </div>
-                        <div className="account-field">
-                            <label>Email Address</label>
-                            <input 
-                                type="email" 
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                placeholder="email@example.com"
-                            />
+                    <form onSubmit={handleUpdateProfile} className="account-form">
+                        <div className="account-fields-grid">
+                            <div className="account-field">
+                                <label className="account-label">
+                                    Full Name <span className="account-required">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    name="fullName"
+                                    value={formData.fullName}
+                                    onChange={handleChange}
+                                    placeholder="Enter your full name"
+                                    className="account-input"
+                                    required
+                                />
+                            </div>
+                            <div className="account-field">
+                                <label className="account-label">
+                                    Email Address <span className="account-required">*</span>
+                                </label>
+                                <input 
+                                    type="email" 
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder="email@example.com"
+                                    className="account-input"
+                                    required
+                                />
+                            </div>
                         </div>
                         <div className="account-actions">
-                            <button type="submit" className="btn-save-account">Save Changes</button>
+                            <button type="submit" className="account-btn account-btn-save">
+                                <Save size={18} />
+                                Save Changes
+                            </button>
                         </div>
                     </form>
                 </section>
 
+                {/* Section 2: Security & Password */}
                 <section className="account-settings-section">
                     <div className="account-settings-section-header">
+                        <Shield size={20} className="account-section-icon" />
                         <h2 className="account-settings-section-title">Security & Password</h2>
                     </div>
                     
-                    <form onSubmit={handleChangePassword} className="account-fields-grid">
-                        <div className="account-field full-width">
-                            <label>Current Password</label>
-                            <input 
-                                type="password" 
-                                name="currentPassword"
-                                onChange={handleChange}
-                                placeholder="••••••••"
-                            />
-                        </div>
-                        <div className="account-field">
-                            <label>New Password</label>
-                            <input 
-                                type="password" 
-                                name="newPassword"
-                                onChange={handleChange}
-                                placeholder="Min. 8 characters"
-                            />
-                        </div>
-                        <div className="account-field">
-                            <label>Confirm New Password</label>
-                            <input 
-                                type="password" 
-                                name="confirmPassword"
-                                onChange={handleChange}
-                                placeholder="Confirm new password"
-                            />
+                    <form onSubmit={handleChangePassword} className="account-form">
+                        <div className="account-fields-grid">
+                            <div className="account-field account-full-width">
+                                <label className="account-label">
+                                    Current Password <span className="account-required">*</span>
+                                </label>
+                                <div className="account-password-wrapper">
+                                    <input 
+                                        type={showCurrentPassword ? 'text' : 'password'}
+                                        name="currentPassword"
+                                        value={formData.currentPassword}
+                                        onChange={handleChange}
+                                        placeholder="••••••••"
+                                        className="account-input"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="account-toggle-password"
+                                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                    >
+                                        {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="account-field">
+                                <label className="account-label">
+                                    New Password <span className="account-required">*</span>
+                                </label>
+                                <div className="account-password-wrapper">
+                                    <input 
+                                        type={showNewPassword ? 'text' : 'password'}
+                                        name="newPassword"
+                                        value={formData.newPassword}
+                                        onChange={handleChange}
+                                        placeholder="Min. 8 characters"
+                                        className="account-input"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="account-toggle-password"
+                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                    >
+                                        {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="account-field">
+                                <label className="account-label">
+                                    Confirm New Password <span className="account-required">*</span>
+                                </label>
+                                <div className="account-password-wrapper">
+                                    <input 
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        placeholder="Confirm new password"
+                                        className="account-input"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="account-toggle-password"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    >
+                                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div className="account-actions">
-                            <button type="submit" className="btn-save-account secondary">Update Password</button>
+                            <button type="submit" className="account-btn account-btn-secondary">
+                                <Lock size={18} />
+                                Update Password
+                            </button>
                         </div>
                     </form>
                 </section>
@@ -181,5 +304,11 @@ const AccountSettings = ({ user }) => {
         </div>
     );
 };
+
+// Simple toast notification helper
+const useToast = () => ({
+    success: (msg) => alert(msg),
+    error: (msg) => alert(msg)
+});
 
 export default AccountSettings;

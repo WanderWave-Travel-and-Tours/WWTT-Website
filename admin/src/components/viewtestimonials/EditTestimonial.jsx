@@ -8,6 +8,18 @@ import './EditTestimonial.css';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
 // ✅ Import Toast and Icons for the Modal
 import { useToast } from "../toast/ToastManager"; 
 
@@ -78,6 +90,9 @@ const EditTestimonial = () => {
         source: 'Facebook', // Default
         feedback: ''
     });
+
+    // Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
@@ -247,6 +262,10 @@ const EditTestimonial = () => {
                 
                 const data = await response.json();
                 
+                // ✅ Store original data for comparison later
+                setOriginalData(data);
+                
+                // Only update state if not restoring a draft immediately
                 setFormData({
                     customerName: data.customerName || '',
                     source: data.source || 'Facebook',
@@ -320,6 +339,8 @@ const EditTestimonial = () => {
         );
     };
 
+        const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
+
     const performSubmit = async () => {
         setSubmitting(true);
         try {
@@ -327,6 +348,35 @@ const EditTestimonial = () => {
             formDataToSend.append("customerName", formData.customerName);
             formDataToSend.append("source", formData.source);
             formDataToSend.append("feedback", formData.feedback);
+
+            // 🔥 Activity Logs: Append Admin Data
+            formDataToSend.append("userEmail", userEmail);
+            formDataToSend.append("adminId", adminId);
+
+            // 🔥 Activity Logs: Track Changes Logic
+            let changes = [];
+            const trackChange = (label, oldVal, newVal) => {
+                const cleanOld = String(oldVal || "").trim();
+                const cleanNew = String(newVal || "").trim();
+                if (cleanOld !== cleanNew) {
+                    changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
+                }
+            };
+
+            if (originalData) {
+                trackChange("Customer Name", originalData.customerName, formData.customerName);
+                trackChange("Source", originalData.source, formData.source);
+                trackChange("Feedback", originalData.feedback, formData.feedback);
+
+                if (imageFile) {
+                    changes.push("Customer photo was updated");
+                }
+            }
+
+            // Explicitly append changes as JSON string so backend can parse it
+            if (changes.length > 0) {
+                formDataToSend.append("changes", JSON.stringify(changes)); 
+            }
 
             if (imageFile) {
                 formDataToSend.append("customerImage", imageFile);

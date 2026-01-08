@@ -8,6 +8,18 @@ import './EditBlog.css';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
 // ✅ Import Toast Management
 import { useToast } from '../toast/ToastManager';
 
@@ -83,6 +95,9 @@ const EditBlog = () => {
         status: 'Published',
         content: ''
     });
+
+    // Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
@@ -253,6 +268,9 @@ const EditBlog = () => {
                 
                 const data = await response.json();
                 
+                // Set Original Data for Activity Logging comparison
+                setOriginalData(data);
+
                 setFormData({
                     title: data.title || '',
                     author: data.author || '',
@@ -299,6 +317,45 @@ const EditBlog = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
+
+        const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
+
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append("title", formData.title);
+            formDataToSend.append("author", formData.author);
+            formDataToSend.append("category", formData.category);
+            formDataToSend.append("status", formData.status);
+            formDataToSend.append("content", formData.content);
+
+            // 🔥 Activity Logs: Append Admin Data
+            formDataToSend.append("userEmail", userEmail);
+            formDataToSend.append("adminId", adminId);
+
+            // 🔥 Activity Logs: Track Changes Logic
+            let changes = [];
+            if (originalData) {
+                if (originalData.title !== formData.title) changes.push(`Title changed from "${originalData.title}" to "${formData.title}"`);
+                if (originalData.author !== formData.author) changes.push(`Author changed from "${originalData.author}" to "${formData.author}"`);
+                if (originalData.category !== formData.category) changes.push(`Category changed from "${originalData.category}" to "${formData.category}"`);
+                if (originalData.status !== formData.status) changes.push(`Status changed from "${originalData.status}" to "${formData.status}"`);
+                // Note: Content might be too long to log specifically, so we just note it changed
+                if (originalData.content !== formData.content) changes.push(`Blog content was updated.`);
+                
+                if (imageFile) {
+                    changes.push(`Cover image was replaced.`);
+                }
+            }
+            
+            // Send the changes summary to backend (backend can choose to use it or generate its own)
+            if (changes.length > 0) {
+                formDataToSend.append("changes", JSON.stringify(changes)); 
+            }
+
+            if (imageFile) {
+                formDataToSend.append("image", imageFile);
+            }
         
         askConfirmation(
             "Update Blog",
