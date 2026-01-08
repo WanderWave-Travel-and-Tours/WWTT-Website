@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Quote, Camera, Loader2 } from 'lucide-react';
+import { User, Quote, Camera, Loader2, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './addtestimonial.css';
 
@@ -7,7 +7,56 @@ import './addtestimonial.css';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// ✅ Import Toast and ToastManager
+import { useToast } from '../toast/ToastManager';
+
+// ✅ Custom Confirm Modal Component (Reference from EditVisa.jsx)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="arc-confirm-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 11000
+        }}>
+            <div className="arc-confirm-modal" style={{
+                backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+                maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+            }}>
+                <div style={{ marginBottom: '1rem' }}>
+                    <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button 
+                        onClick={onCancel}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+                            backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={onConfirm}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+                            backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+                            color: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AddTestimonial = () => {
+    const toast = useToast(); // ✅ Initialize Toast
+
     // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
@@ -24,11 +73,32 @@ const AddTestimonial = () => {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // --- CONFIRM MODAL STATE ---
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
+
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
 
-    // 1. Helper: File <-> Base64 Converters
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -44,14 +114,10 @@ const AddTestimonial = () => {
         return new File([blob], fileName, { type: mimeType });
     };
 
-    // 2. Draft Payload State
     const [draftPayload, setDraftPayload] = useState(null);
 
-    // 3. Listen to state changes and update Draft Payload
     useEffect(() => {
         const updateDraft = async () => {
-            // 🛑 FIX: Check if form is completely empty before saving
-            // This prevents saving a draft if the user just visited the page or cleared it
             const isFormEmpty = 
                 !testimonialDetails.name && 
                 !testimonialDetails.feedback && 
@@ -59,17 +125,15 @@ const AddTestimonial = () => {
                 !pictureFile;
 
             if (isFormEmpty) {
-                setDraftPayload(null); // Do not save anything
+                setDraftPayload(null);
                 return;
             }
 
             let imageBase64 = null;
             let imageMeta = null;
 
-            // Handle Image Conversion
             if (pictureFile) {
                 try {
-                    // Limit draft image size (~3MB limit safety)
                     if (pictureFile.size < 3 * 1024 * 1024) { 
                         imageBase64 = await fileToBase64(pictureFile);
                         imageMeta = { name: pictureFile.name, type: pictureFile.type };
@@ -81,30 +145,27 @@ const AddTestimonial = () => {
 
             setDraftPayload({
                 ...testimonialDetails,
-                image: imageBase64, // Saved as Base64 string
+                image: imageBase64,
                 imageMeta: imageMeta
             });
         };
 
         const timeoutId = setTimeout(() => {
             updateDraft();
-        }, 500); // Debounce
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [testimonialDetails, pictureFile]);
 
-    // 4. Restore Function
     const restoreDraftData = async (data) => {
         if (!data) return;
 
-        // Restore Text Fields
         setTestimonialDetails({
             name: data.name || '',
             feedback: data.feedback || '',
             source: data.source || '',
         });
 
-        // Restore Image
         if (data.image && data.imageMeta) {
             try {
                 const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
@@ -116,7 +177,6 @@ const AddTestimonial = () => {
         }
     };
 
-    // 5. Initialize Hook
     const { 
         clearDraft, 
         hasDraft, 
@@ -124,14 +184,13 @@ const AddTestimonial = () => {
         discardDraft,
         draftInfo 
     } = useAutoDraft({
-        module: 'add-testimonial', // Unique ID
+        module: 'add-testimonial',
         formData: draftPayload,
         setFormData: restoreDraftData,
         imagePreview: previewUrl, 
-        autoRestore: false // Manual via modal
+        autoRestore: false 
     });
 
-    // 6. Modal State
     const [showRestoreModal, setShowRestoreModal] = useState(false);
 
     useEffect(() => {
@@ -143,11 +202,13 @@ const AddTestimonial = () => {
     const handleRestoreDraft = () => {
         restoreDraft();
         setShowRestoreModal(false);
+        toast.success("Draft restored successfully!");
     };
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); // Ensure draft is cleared from storage
+        await discardDraft();
         setShowRestoreModal(false);
+        toast.info("Draft discarded.");
     };
 
     // =========================================================
@@ -167,27 +228,49 @@ const AddTestimonial = () => {
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setPictureFile(file);
-        if (file) setPreviewUrl(URL.createObjectURL(file));
-    };
-
-    const handleCancel = async () => {
-        if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-            // ✅ CLEAR DRAFT ON CANCEL
-            await clearDraft();
-
-            setTestimonialDetails({
-                name: '',
-                feedback: '',
-                source: '',
-            });
-            setPictureFile(null);
-            setPreviewUrl(null);
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                toast.warning("File is too large. Max limit is 2MB.");
+                return;
+            }
+            setPictureFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+            toast.info("Photo selected.");
         }
     };
 
-    const handleSubmit = async (e) => { 
+    const handleCancel = () => {
+        // ✅ REPLACED window.confirm with Custom Modal
+        askConfirmation(
+            "Cancel Entry",
+            "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+            async () => {
+                await clearDraft();
+                setTestimonialDetails({
+                    name: '',
+                    feedback: '',
+                    source: '',
+                });
+                setPictureFile(null);
+                setPreviewUrl(null);
+                toast.info("Form cleared.");
+            },
+            "danger"
+        );
+    };
+
+    const handleSubmit = (e) => { 
         e.preventDefault();
+        
+        // ✅ ADDED Confirmation before submit
+        askConfirmation(
+            "Submit Testimonial",
+            `Do you want to add this testimonial from ${testimonialDetails.name}?`,
+            () => performSubmit()
+        );
+    };
+
+    const performSubmit = async () => {
         setIsSubmitting(true);
         const formData = new FormData();
 
@@ -199,9 +282,6 @@ const AddTestimonial = () => {
             formData.append('customerImage', pictureFile); 
         }
 
-        // =========================================================
-        // ADDED: KUNIN ANG USER DATA PARA SA ACTIVITY LOGS
-        // =========================================================
         try {
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
             const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
@@ -209,12 +289,9 @@ const AddTestimonial = () => {
 
             formData.append("userEmail", activeUser);
             formData.append("adminId", activeId);
-            
-            console.log("Submitting Testimonial by:", activeUser);
         } catch (err) {
             console.error("Error parsing admin data:", err);
         }
-        // =========================================================
 
         try {
             const response = await fetch('http://localhost:5000/api/testimonials', {
@@ -223,12 +300,10 @@ const AddTestimonial = () => {
             });
 
             if (response.ok) {
-                alert(`Testimonial from ${testimonialDetails.name} added successfully!`);
+                toast.success(`Testimonial from ${testimonialDetails.name} added successfully!`);
                 
-                // ✅ CLEAR DRAFT ON SUCCESS
                 await clearDraft();
 
-                // Reset manually since handleCancel has a confirm
                 setTestimonialDetails({
                     name: '',
                     feedback: '',
@@ -236,14 +311,12 @@ const AddTestimonial = () => {
                 });
                 setPictureFile(null);
                 setPreviewUrl(null);
-                e.target.reset(); 
-
             } else {
-                alert("Error submitting testimonial.");
+                toast.error("Error submitting testimonial.");
             }
         } catch (error) {
             console.error("Error:", error);
-            alert("Something went wrong with the server.");
+            toast.error("Something went wrong with the server.");
         } finally {
             setIsSubmitting(false);
         }
@@ -258,6 +331,16 @@ const AddTestimonial = () => {
                 onRestore={handleRestoreDraft}
                 onDiscard={handleDiscardDraft}
                 draftInfo={draftInfo}
+            />
+
+            {/* ✅ CUSTOM CONFIRMATION MODAL */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
 
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
