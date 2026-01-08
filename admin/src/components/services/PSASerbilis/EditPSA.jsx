@@ -27,12 +27,12 @@ const getAdminData = () => {
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
-    <div className="arc-confirm-overlay" style={{
+    <div className="eps-confirm-overlay" style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', zIndex: 11000
     }}>
-      <div className="arc-confirm-modal" style={{
+      <div className="eps-confirm-modal" style={{
         backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
         maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
       }}>
@@ -69,20 +69,20 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 
 // FileRow Component
 const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) => (
-    <div className="et-file-row">
-      <div className="et-file-info">
-        <span className="et-file-label">{label}</span>
-        <span className="et-file-status">
+    <div className="eps-file-row">
+      <div className="eps-file-info">
+        <span className="eps-file-label">{label}</span>
+        <span className="eps-file-status">
           {currentFile ? `New file: ${currentFile.name}` : (hasExisting ? "Previously uploaded" : "No file attached")} 
         </span>
       </div>
-      <div className="et-file-actions">
+      <div className="eps-file-actions">
         {(hasExisting || currentFile) && (
-          <button type="button" className="et-view-btn" onClick={onView} title="View file">
+          <button type="button" className="eps-view-btn" onClick={onView} title="View file">
             <Eye size={14} /> View
           </button>
         )}
-        <label className="et-file-upload-btn">
+        <label className="eps-file-upload-btn">
           <Upload size={14} /> Upload
           <input 
             type="file" 
@@ -353,86 +353,86 @@ const performSubmit = async () => {
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
     if (isImage && !isPdf) {
-      return <img src={url} alt="File Preview" className="preview-media-full" style={{ width: '100%', borderRadius: '8px' }} />;
+      return <img src={url} alt="File Preview" className="eps-preview-media-full" style={{ width: '100%', borderRadius: '8px' }} />;
     } else if (isPdf) {
-      return <iframe src={url} title="PDF Preview" className="preview-iframe-full" width="100%" height="500px" style={{ border: 'none' }} />;
+      return <iframe src={url} title="PDF Preview" className="eps-preview-iframe-full" width="100%" height="500px" style={{ border: 'none' }} />;
     } else {
       return (
         <div style={{textAlign: 'center', padding: '40px'}}>
           <FileText size={64} style={{margin: '0 auto 15px', color: '#64748b'}} />
           <p style={{ fontWeight: '500' }}>Preview not available for this format.</p>
-          <a href={url} target="_blank" rel="noreferrer" download className="et-view-btn" style={{ display: 'inline-block', marginTop: '10px' }}>Download to View</a>
+          <a href={url} target="_blank" rel="noreferrer" download className="eps-view-btn" style={{ display: 'inline-block', marginTop: '10px' }}>Download to View</a>
         </div>
       );
     }
   };
 
-  if (loading) return <div className="et-loading">Loading PSA Form...</div>;
+  if (loading) return <div className="eps-loading">Loading PSA Form...</div>;
 
   return (
-    <div className="et-page">
+    <div className="eps-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      <main className={`et-main ${isSidebarCollapsed ? "et-main--collapsed" : ""}`}>
-        <div className="et-container">
+      <main className={`eps-main ${isSidebarCollapsed ? "eps-main--collapsed" : ""}`}>
+        <div className="eps-container">
           
-          <header className="et-header">
-            <div className="et-header-content">
-              <button className="et-back-btn" onClick={handleDiscard}>
+          <header className="eps-header">
+            <div className="eps-header-content">
+              <button className="eps-back-btn" onClick={handleDiscard}>
                 <ArrowLeft size={20} /> Back
               </button>
-              <h1 className="et-title">EDIT PSA REQUEST</h1>
-              <p className="et-subtitle">Update PSA inquiry details and documentation</p>
+              <h1 className="eps-title">EDIT PSA REQUEST</h1>
+              <p className="eps-subtitle">Update PSA inquiry details and documentation</p>
             </div>
           </header>
 
-          <form onSubmit={handleSubmit} className="et-form">
-            <div className="et-grid-layout">
-              <div className="et-form-left">
+          <form onSubmit={handleSubmit} className="eps-form">
+            <div className="eps-grid-layout">
+              <div className="eps-form-left">
                 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <User size={22} className="et-section-icon" />
+                <section className="eps-section">
+                  <div className="eps-section-header">
+                    <User size={22} className="eps-section-icon" />
                     <h3>Client Information</h3>
                   </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group">
+                  <div className="eps-fields-grid">
+                    <div className="eps-input-group">
                       <label>Given Name</label>
-                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" placeholder="Letters only" required />
+                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="eps-input" placeholder="Letters only" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="eps-input-group">
                       <label>Last Name</label>
-                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" placeholder="Letters only" required />
+                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="eps-input" placeholder="Letters only" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="eps-input-group">
                       <label>Email</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" placeholder="example@email.com" required />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="eps-input" placeholder="example@email.com" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="eps-input-group">
                       <label>Contact No.</label>
-                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" required />
+                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="eps-input" required />
                     </div>
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <Briefcase size={22} className="et-section-icon" />
+                <section className="eps-section">
+                  <div className="eps-section-header">
+                    <Briefcase size={22} className="eps-section-icon" />
                     <h3>Service Details</h3>
                   </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group full-width">
+                  <div className="eps-fields-grid">
+                    <div className="eps-input-group eps-full-width">
                       <label>PSA Document Type</label>
-                      <input type="text" name="psaDocument" value={formData.psaDocument} onChange={handleInputChange} className="et-input" required />
+                      <input type="text" name="psaDocument" value={formData.psaDocument} onChange={handleInputChange} className="eps-input" required />
                     </div>
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <Upload size={22} className="et-section-icon" />
+                <section className="eps-section">
+                  <div className="eps-section-header">
+                    <Upload size={22} className="eps-section-icon" />
                     <h3>ATTACHMENTS</h3>
                   </div>
-                  <div className="et-file-grid-internal">
+                  <div className="eps-file-grid-internal">
                     <FileRow 
                         label="Requirement Document (ID/Form)" 
                         field="requirement" 
@@ -445,40 +445,40 @@ const performSubmit = async () => {
                 </section>
               </div>
 
-              <div className="et-form-right">
-                <div className="et-sticky-sidebar">
-                  <section className="et-section">
-                    <div className="et-section-header">
-                      <DollarSign size={20} className="et-section-icon" />
+              <div className="eps-form-right">
+                <div className="eps-sticky-sidebar">
+                  <section className="eps-section">
+                    <div className="eps-section-header">
+                      <DollarSign size={20} className="eps-section-icon" />
                       <h3>Financials & Notes</h3>
                     </div>
-                    <div className="et-input-group">
+                    <div className="eps-input-group">
                         <label>Estimated Price (PHP)</label>
-                        <div className="et-input-with-icon">
-                            <span className="input-currency-symbol">₱</span>
+                        <div className="eps-input-with-icon">
+                            <span className="eps-input-currency-symbol">₱</span>
                             <input 
                               type="number" 
                               name="estimatedPrice" 
                               value={formData.estimatedPrice} 
                               onChange={handleInputChange} 
-                              className="et-input currency-padding" 
+                              className="eps-input eps-currency-padding" 
                               step="0.01"
                               min="100"
                               required
                             />
                         </div>
                     </div>
-                    <div className="et-input-group" style={{ marginTop: "15px" }}>
+                    <div className="eps-input-group" style={{ marginTop: "15px" }}>
                        <label>Admin Remarks</label>
-                       <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Internal notes..." />
+                       <textarea name="message" value={formData.message} onChange={handleInputChange} className="eps-textarea" rows="4" placeholder="Internal notes..." />
                     </div>
                   </section>
                   
-                  <div className="et-form-actions">
-                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}>
+                  <div className="eps-form-actions">
+                    <button type="submit" className="eps-btn eps-btn--submit" disabled={submitting}>
                       {submitting ? "SAVING..." : "UPDATE REQUEST"}
                     </button>
-                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>DISCARD</button>
+                    <button type="button" className="eps-btn eps-btn--cancel" onClick={handleDiscard}>DISCARD</button>
                   </div>
                 </div>
               </div>
@@ -488,18 +488,18 @@ const performSubmit = async () => {
       </main>
 
       {previewFile && (
-        <div className="et-modal-overlay" onClick={() => setPreviewFile(null)}>
-          <div className="et-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
-            <div className="et-modal-preview-header">
-              <span className="preview-filename">{previewFile.name.split('/').pop()}</span>
-              <button className="preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
+        <div className="eps-modal-overlay" onClick={() => setPreviewFile(null)}>
+          <div className="eps-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
+            <div className="eps-modal-preview-header">
+              <span className="eps-preview-filename">{previewFile.name.split('/').pop()}</span>
+              <button className="eps-preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
-            <div className="et-modal-preview-body">
+            <div className="eps-modal-preview-body">
               {renderPreviewContent()}
             </div>
-            <div className="et-modal-preview-footer">
-              <div className="footer-actions-right">
-                <button className="preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
+            <div className="eps-modal-preview-footer">
+              <div className="eps-footer-actions-right">
+                <button className="eps-preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
                   <Trash2 size={18} /> Delete File
                 </button>
               </div>
