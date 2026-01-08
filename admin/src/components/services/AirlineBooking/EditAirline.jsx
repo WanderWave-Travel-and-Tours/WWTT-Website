@@ -4,7 +4,7 @@ import { ArrowLeft, Upload, X, Plane, User, Mail, DollarSign, MessageSquare, Use
 import Sidebar from "../../sidebar/sidebar"; 
 import "./EditAirline.css";
 
-// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs)
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -43,8 +43,9 @@ const EditAirline = () => {
 
   const [newFiles, setNewFiles] = useState([]);
   const [filePreviews, setFilePreviews] = useState([]);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
 
-  // Ginawa nating /api/inquiries dahil ito ang nasa inquiryRoute.js mo
   const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -56,22 +57,17 @@ const EditAirline = () => {
     if (!rawPassengers) return result;
 
     try {
-      // If it's already an array
       if (Array.isArray(rawPassengers)) {
         return rawPassengers.length > 0 ? rawPassengers : result;
       }
 
-      // If it's a string, try to parse it
       if (typeof rawPassengers === 'string') {
-        // First parse attempt
         let parsed = JSON.parse(rawPassengers);
         
-        // Check if it's a stringified array inside a string (double-encoded)
         if (typeof parsed === 'string') {
           parsed = JSON.parse(parsed);
         }
 
-        // If it's now an array, use it
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed;
         }
@@ -93,7 +89,6 @@ const EditAirline = () => {
         if (result.success && result.data) {
           const data = result.data;
           
-          // ✅ USE ENHANCED PARSER
           const parsedPassengers = parsePassengers(data.passengers);
 
           console.log("✅ Parsed Passengers:", parsedPassengers);
@@ -115,7 +110,6 @@ const EditAirline = () => {
             existingFiles: data.deliveredDocuments || [],
           });
 
-          // I-set ang preview kung may existing image (evidenceName)
           if (data.evidenceName) {
             setImagePreview(`http://localhost:5000/uploads/${data.evidenceName}`);
           }
@@ -172,7 +166,6 @@ const EditAirline = () => {
     const files = Array.from(e.target.files);
     setNewFiles(prev => [...prev, ...files]);
     
-    // Create previews for new files
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -189,7 +182,6 @@ const EditAirline = () => {
   const removeFile = (index) => {
     setFilePreviews(prev => prev.filter((_, i) => i !== index));
     
-    // If it's a new file, remove from newFiles
     const nonExistingCount = filePreviews.slice(0, index + 1).filter(f => !f.isExisting).length;
     if (!filePreviews[index].isExisting) {
       setNewFiles(prev => prev.filter((_, i) => i !== (nonExistingCount - 1)));
@@ -200,30 +192,25 @@ const EditAirline = () => {
     e.preventDefault();
     setSubmitting(true);
 
-    // 🔥 GET ADMIN DATA (To track who updated the record)
     const { userEmail, adminId } = getAdminData();
 
     const data = new FormData();
     
-    // Basic fields
     data.append("fullName", formData.fullName);
     data.append("email", formData.email);
     data.append("contactNumber", formData.contactNumber);
     data.append("estimatedPrice", formData.estimatedPrice);
     data.append("message", formData.message);
     
-    // Flight details
     data.append("origin", formData.origin);
     data.append("destination", formData.destination);
     data.append("departureDate", formData.departureDate);
     data.append("airline", formData.airline);
     data.append("flightNumber", formData.flightNumber);
 
-    // 🔥 APPEND ADMIN DATA FOR LOGS
     data.append("userEmail", userEmail);
     data.append("adminId", adminId);
 
-    // 'evidence' ang gamit sa uploadEvidence.single('evidence') sa route mo
     if (imageFile) {
       data.append("evidence", imageFile); 
     }
@@ -251,83 +238,86 @@ const EditAirline = () => {
   };
 
   if (loading) return (
-    <div className="et-page">
-      <div className="et-loading">
-        <div className="spinner"></div>
-        <p>Fetching current booking data...</p>
-      </div>
+    <div className="ea-page">
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+      <main className={`ea-main ${isSidebarCollapsed ? "ea-main--collapsed" : ""}`}>
+        <div className="ea-loading">
+          <div className="spinner"></div>
+          <p>Fetching current booking data...</p>
+        </div>
+      </main>
     </div>
   );
 
   return (
-    <div className="et-page">
+    <div className="ea-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      <main className={`et-main ${isSidebarCollapsed ? "et-main--collapsed" : ""}`}>
-        <div className="et-container">
+      <main className={`ea-main ${isSidebarCollapsed ? "ea-main--collapsed" : ""}`}>
+        <div className="ea-container">
           
-          <header className="et-header">
-            <div className="et-header-content">
-              <button className="et-back-btn" onClick={() => navigate(-1)}>
+          <header className="ea-header">
+            <div className="ea-header-content">
+              <button className="ea-back-btn" onClick={() => navigate(-1)}>
                 <ArrowLeft size={18} /> Back to Bookings
               </button>
-              <h1 className="et-title">Edit Airline Booking</h1>
-              <p className="et-subtitle">Review and modify the current passenger or flight details</p>
+              <h1 className="ea-title">Edit Airline Booking</h1>
+              <p className="ea-subtitle">Review and modify the current passenger or flight details</p>
             </div>
           </header>
 
-          <form onSubmit={handleSubmit} className="et-form">
-            <div className="et-grid-layout">
+          <form onSubmit={handleSubmit} className="ea-form">
+            <div className="ea-grid-layout">
               
-              <div className="et-form-left">
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <User size={20} className="et-section-icon" />
+              <div className="ea-form-left">
+                <section className="ea-section">
+                  <div className="ea-section-header">
+                    <User size={20} className="ea-section-icon" />
                     <h3>Client Information</h3>
                   </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group full-width">
+                  <div className="ea-fields-grid">
+                    <div className="ea-input-group full-width">
                       <label>Full Name</label>
                       <input 
                         type="text" 
                         name="fullName" 
                         value={formData.fullName} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                         placeholder="Enter full name" 
                         required 
                       />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ea-input-group">
                       <label>Email Address</label>
                       <input 
                         type="email" 
                         name="email" 
                         value={formData.email} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                         placeholder="example@mail.com" 
                         required 
                       />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ea-input-group">
                       <label>Contact Number</label>
                       <input 
                         type="text" 
                         name="contactNumber" 
                         value={formData.contactNumber} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                         placeholder="Contact number" 
                       />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ea-input-group">
                       <label>Fare Amount (PHP)</label>
                       <input 
                         type="number" 
                         name="estimatedPrice" 
                         value={formData.estimatedPrice} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                         placeholder="0.00" 
                         required 
                       />
@@ -335,53 +325,30 @@ const EditAirline = () => {
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <section className="ea-section">
+                  <div className="ea-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Users size={20} className="et-section-icon" />
+                      <Users size={20} className="ea-section-icon" />
                       <h3>Passenger Manifest ({formData.passengers.length})</h3>
                     </div>
                     <button 
                       type="button" 
                       onClick={addPassenger} 
-                      className="et-add-pax-btn" 
-                      style={{ 
-                        padding: '6px 14px', 
-                        borderRadius: '8px', 
-                        backgroundColor: '#3b82f6', 
-                        color: 'white', 
-                        border: 'none', 
-                        cursor: 'pointer', 
-                        fontSize: '13px',
-                        fontWeight: '600'
-                      }}
+                      className="ea-add-pax-btn"
                     >
                       + Add Passenger
                     </button>
                   </div>
                   
-                  <div className="et-passengers-list" style={{ marginTop: '15px' }}>
+                  <div className="ea-passengers-list" style={{ marginTop: '15px' }}>
                     {formData.passengers.map((pax, index) => (
-                      <div 
-                        key={index} 
-                        className="et-pax-row" 
-                        style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: '1fr 1fr 120px 80px 40px', 
-                          gap: '10px', 
-                          marginBottom: '10px', 
-                          alignItems: 'center',
-                          padding: '10px',
-                          backgroundColor: '#f8fafc',
-                          borderRadius: '8px'
-                        }}
-                      >
+                      <div key={index} className="ea-pax-row">
                         <input 
                           type="text" 
                           placeholder="First Name" 
                           value={pax.firstName || ""} 
                           onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)} 
-                          className="et-input" 
+                          className="ea-input" 
                           required 
                         />
                         <input 
@@ -389,13 +356,13 @@ const EditAirline = () => {
                           placeholder="Last Name" 
                           value={pax.lastName || ""} 
                           onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)} 
-                          className="et-input" 
+                          className="ea-input" 
                           required 
                         />
                         <select 
                           value={pax.type || "Adult"} 
                           onChange={(e) => handlePassengerChange(index, 'type', e.target.value)} 
-                          className="et-input"
+                          className="ea-input"
                         >
                           <option value="Adult">Adult</option>
                           <option value="Child">Child</option>
@@ -406,7 +373,7 @@ const EditAirline = () => {
                           placeholder="Age" 
                           value={pax.age || ""} 
                           onChange={(e) => handlePassengerChange(index, 'age', e.target.value)} 
-                          className="et-input" 
+                          className="ea-input" 
                         />
                         <button 
                           type="button" 
@@ -429,92 +396,91 @@ const EditAirline = () => {
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <Plane size={20} className="et-section-icon" />
+                <section className="ea-section">
+                  <div className="ea-section-header">
+                    <Plane size={20} className="ea-section-icon" />
                     <h3>Flight Details</h3>
                   </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group">
+                  <div className="ea-fields-grid">
+                    <div className="ea-input-group">
                       <label>Origin</label>
                       <input 
                         type="text" 
                         name="origin" 
                         value={formData.origin} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                         placeholder="City or Airport" 
                       />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ea-input-group">
                       <label>Destination</label>
                       <input 
                         type="text" 
                         name="destination" 
                         value={formData.destination} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                         placeholder="City or Airport" 
                       />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ea-input-group">
                       <label>Departure Date</label>
                       <input 
                         type="date" 
                         name="departureDate" 
                         value={formData.departureDate} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                       />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ea-input-group">
                       <label>Preferred Airline</label>
                       <input 
                         type="text" 
                         name="airline" 
                         value={formData.airline} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                         placeholder="e.g. Philippine Airlines" 
                       />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ea-input-group">
                       <label>Flight Number (Optional)</label>
                       <input 
                         type="text" 
                         name="flightNumber" 
                         value={formData.flightNumber} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ea-input" 
                         placeholder="e.g. PR123" 
                       />
                     </div>
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <MessageSquare size={20} className="et-section-icon" />
+                <section className="ea-section">
+                  <div className="ea-section-header">
+                    <MessageSquare size={20} className="ea-section-icon" />
                     <h3>Request Message / Notes</h3>
                   </div>
                   <textarea 
                     name="message" 
                     value={formData.message} 
                     onChange={handleInputChange} 
-                    className="et-textarea" 
+                    className="ea-textarea" 
                     rows="4" 
                     placeholder="Update special instructions..." 
                   />
                 </section>
               </div>
 
-              <div className="et-form-right">
-                <div className="et-sticky-sidebar">
-                  <section className="et-section et-upload-section">
-                    <h3 className="et-upload-title">Booking Documents</h3>
+              <div className="ea-form-right">
+                <div className="ea-sticky-sidebar">
+                  <section className="ea-section ea-upload-section">
+                    <h3 className="ea-upload-title">Booking Documents</h3>
                     
-                    {/* File Upload Area */}
-                    <label className="et-upload-placeholder" style={{ cursor: 'pointer', marginBottom: '16px' }}>
+                    <label className="ea-upload-placeholder" style={{ cursor: 'pointer', marginBottom: '16px' }}>
                       <Upload size={24} />
                       <span>Upload Tickets / Proof</span>
                       <input 
@@ -526,7 +492,6 @@ const EditAirline = () => {
                       />
                     </label>
 
-                    {/* File Previews */}
                     {filePreviews.length > 0 && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {filePreviews.map((file, idx) => (
@@ -562,17 +527,17 @@ const EditAirline = () => {
                     )}
                   </section>
 
-                  <div className="et-form-actions">
+                  <div className="ea-form-actions">
                     <button 
                       type="button" 
-                      className="et-btn et-btn--cancel" 
+                      className="ea-btn ea-btn--cancel" 
                       onClick={() => navigate(-1)}
                     >
                       Cancel
                     </button>
                     <button 
                       type="submit" 
-                      className="et-btn et-btn--submit" 
+                      className="ea-btn ea-btn--submit" 
                       disabled={submitting}
                     >
                       {submitting ? "Updating..." : "Update Booking"}

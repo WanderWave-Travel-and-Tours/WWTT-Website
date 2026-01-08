@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, FileText, User, Loader2, X, AlertTriangle, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 import { useToast } from '../toast/ToastManager'; // Gagamitin ang Toast
 import './addblog.css';
-
+ 
 // --- INTEGRATED CUSTOM CONFIRM MODAL DESIGN FROM EDITVISA ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
     if (!isOpen) return null;
@@ -20,11 +20,11 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
           backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
           maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
         }}>
-          <div style={{ 
-            marginBottom: '1rem', display: 'flex', justifyContent: 'center' 
+          <div style={{
+            marginBottom: '1rem', display: 'flex', justifyContent: 'center'
           }}>
             <div style={{
-              padding: '1rem', borderRadius: '50%', 
+              padding: '1rem', borderRadius: '50%',
               backgroundColor: type === 'danger' ? '#fee2e2' : '#e0f2fe',
               color: type === 'danger' ? '#ef4444' : '#0ea5e9'
             }}>
@@ -52,17 +52,17 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
       </div>
     );
 };
-
+ 
 const AddBlog = () => {
     const navigate = useNavigate();
     const toast = useToast(); // Initialize Toast
-    
+   
     // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-    
+   
     // --- STATE MANAGEMENT ---
     const [blogDetails, setBlogDetails] = useState({
         title: '',
@@ -71,17 +71,26 @@ const AddBlog = () => {
         content: '',
         status: 'Published'
     });
-
+ 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const API_BASE_URL = 'http://localhost:5000'; 
-
+ 
+    // --- UPDATED CONFIRMATION MODAL STATE (ALIGNED WITH EDITVISA) ---
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'primary',
+        onConfirm: () => {}
+    });
+ 
+    const API_BASE_URL = 'http://localhost:5000';
+ 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
-
+ 
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -90,36 +99,36 @@ const AddBlog = () => {
             reader.onerror = (error) => reject(error);
         });
     };
-
+ 
     const base64ToFile = async (base64String, fileName, mimeType) => {
         const res = await fetch(base64String);
         const blob = await res.blob();
         return new File([blob], fileName, { type: mimeType });
     };
-
+ 
     const [draftPayload, setDraftPayload] = useState(null);
-
+ 
     useEffect(() => {
         const updateDraft = async () => {
-            const isFormEmpty = 
+            const isFormEmpty =
                 !blogDetails.title &&
                 !blogDetails.author &&
                 !blogDetails.category &&
                 !blogDetails.content &&
-                blogDetails.status === 'Published' && 
+                blogDetails.status === 'Published' &&
                 !imageFile;
-
+ 
             if (isFormEmpty) {
-                setDraftPayload(null); 
+                setDraftPayload(null);
                 return;
             }
-
+ 
             let imageBase64 = null;
             let imageMeta = null;
-
+ 
             if (imageFile) {
                 try {
-                    if (imageFile.size < 3 * 1024 * 1024) { 
+                    if (imageFile.size < 3 * 1024 * 1024) {
                         imageBase64 = await fileToBase64(imageFile);
                         imageMeta = { name: imageFile.name, type: imageFile.type };
                     }
@@ -127,21 +136,21 @@ const AddBlog = () => {
                     console.warn("Image too large for draft, saving text only.");
                 }
             }
-
+ 
             setDraftPayload({
                 ...blogDetails,
                 image: imageBase64,
                 imageMeta: imageMeta
             });
         };
-
+ 
         const timeoutId = setTimeout(() => {
             updateDraft();
         }, 500);
-
+ 
         return () => clearTimeout(timeoutId);
     }, [blogDetails, imageFile]);
-
+ 
     const restoreDraftData = async (data) => {
         if (!data) return;
         setBlogDetails({
@@ -161,41 +170,41 @@ const AddBlog = () => {
             }
         }
     };
-
-    const { 
-        clearDraft, 
-        hasDraft, 
-        restoreDraft, 
+ 
+    const {
+        clearDraft,
+        hasDraft,
+        restoreDraft,
         discardDraft,
-        draftInfo 
+        draftInfo
     } = useAutoDraft({
-        module: 'add-blog', 
+        module: 'add-blog',
         formData: draftPayload,
         setFormData: restoreDraftData,
-        imagePreview: imagePreview, 
-        autoRestore: false 
+        imagePreview: imagePreview,
+        autoRestore: false
     });
-
+ 
     const [showRestoreModal, setShowRestoreModal] = useState(false);
-
+ 
     useEffect(() => {
         if (hasDraft) {
             setShowRestoreModal(true);
         }
     }, [hasDraft]);
-
+ 
     const handleRestoreDraft = () => {
         restoreDraft();
         setShowRestoreModal(false);
         toast.info("Draft restored successfully.");
     };
-
+ 
     const handleDiscardDraft = async () => {
         await discardDraft();
         setShowRestoreModal(false);
         toast.warning("Draft discarded.");
     };
-
+ 
     // =========================================================
     // CLEANUP IMAGE PREVIEW
     // =========================================================
@@ -206,7 +215,7 @@ const AddBlog = () => {
             }
         };
     }, [imagePreview]);
-
+ 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setBlogDetails(prev => ({
@@ -214,7 +223,7 @@ const AddBlog = () => {
             [name]: value
         }));
     };
-
+ 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -227,12 +236,12 @@ const AddBlog = () => {
             setImagePreview(objectUrl);
         }
     };
-
+ 
     const removeImage = () => {
         setImageFile(null);
         setImagePreview(null);
     };
-
+ 
     // Logic for Final Submission
     const executeSubmit = async () => {
         setIsSubmitting(true);
@@ -243,8 +252,8 @@ const AddBlog = () => {
             formData.append('category', blogDetails.category);
             formData.append('content', blogDetails.content);
             formData.append('status', blogDetails.status);
-            formData.append('image', imageFile); 
-
+            formData.append('image', imageFile);
+ 
             try {
                 const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
                 const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
@@ -254,14 +263,14 @@ const AddBlog = () => {
             } catch (err) {
                 console.error("Error parsing admin data:", err);
             }
-
+ 
             const response = await fetch(`${API_BASE_URL}/api/blogs/add`, {
                 method: 'POST',
-                body: formData, 
+                body: formData,
             });
-
+ 
             const result = await response.json();
-
+ 
             if (response.ok) {
                 toast.success('Blog post created successfully!');
                 await clearDraft();
@@ -281,14 +290,14 @@ const AddBlog = () => {
             setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         }
     };
-
+ 
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
         if (!blogDetails.title || !blogDetails.content || !imageFile) {
             toast.error('Please provide a title, content, and cover image.');
             return;
         }
-
+ 
         setConfirmConfig({
             isOpen: true,
             title: "Publish Blog?",
@@ -297,7 +306,7 @@ const AddBlog = () => {
             onConfirm: executeSubmit
         });
     };
-
+ 
     const handleCancel = () => {
         setConfirmConfig({
             isOpen: true,
@@ -316,23 +325,23 @@ const AddBlog = () => {
             }
         });
     };
-
+ 
     const currentDate = new Date().toLocaleDateString('en-US', {
         year: 'numeric', month: 'long', day: 'numeric'
     });
-
+ 
     return (
         <div className="blog-page">
-            
+           
             <RestoreDraftModal
                 isOpen={showRestoreModal}
                 onRestore={handleRestoreDraft}
                 onDiscard={handleDiscardDraft}
                 draftInfo={draftInfo}
             />
-
+ 
             {/* ✅ APPLIED: CUSTOM CONFIRM MODAL DESIGN FROM EDITVISA */}
-            <CustomConfirmModal 
+            <CustomConfirmModal
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}
                 message={confirmConfig.message}
@@ -340,12 +349,12 @@ const AddBlog = () => {
                 onConfirm={confirmConfig.onConfirm}
                 onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
-
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
+ 
+            <Sidebar
+                isCollapsed={isSidebarCollapsed}
+                toggleSidebar={toggleSidebar}
             />
-            
+           
             <main className={`blog-main ${isSidebarCollapsed ? "blog-main--collapsed" : ""}`}>
                 <div className="blog-container">
                     <header className="blog-header">
@@ -354,7 +363,7 @@ const AddBlog = () => {
                             <p className="blog-subtitle">Share travel tips, news, and stories with your audience</p>
                         </div>
                     </header>
-
+ 
                     <form onSubmit={handleSubmit}>
                         <div className="blog-grid">
                             <div className="blog-left">
@@ -363,12 +372,12 @@ const AddBlog = () => {
                                     {!imagePreview ? (
                                         <div className="b-upload-zone-wrapper">
                                             <label className="b-upload-label-poster" style={{ cursor: 'pointer' }}>
-                                                <input 
-                                                    type="file" 
-                                                    id="blog-upload" 
-                                                    accept="image/*" 
-                                                    onChange={handleImageChange} 
-                                                    hidden 
+                                                <input
+                                                    type="file"
+                                                    id="blog-upload"
+                                                    accept="image/*"
+                                                    onChange={handleImageChange}
+                                                    hidden
                                                 />
                                                 <div className="b-upload-icon-box">
                                                     <Upload size={32} />
@@ -392,7 +401,7 @@ const AddBlog = () => {
                                         </div>
                                     )}
                                 </section>
-
+ 
                                 <section className="blog-section">
                                     <h2 className="blog-section-title">BLOG DETAILS</h2>
                                     <div className="blog-fields">
@@ -407,7 +416,7 @@ const AddBlog = () => {
                                                 required
                                             />
                                         </div>
-
+ 
                                         <div className="blog-field">
                                             <label>Author</label>
                                             <input
@@ -418,7 +427,7 @@ const AddBlog = () => {
                                                 placeholder="e.g., Admin Team"
                                             />
                                         </div>
-
+ 
                                         <div className="blog-field">
                                             <label>Category</label>
                                             <select
@@ -434,7 +443,7 @@ const AddBlog = () => {
                                                 <option value="Tips">Travel Tips</option>
                                             </select>
                                         </div>
-
+ 
                                         <div className="blog-field blog-field--full">
                                             <label>Content Body</label>
                                             <textarea
@@ -446,7 +455,7 @@ const AddBlog = () => {
                                                 required
                                             ></textarea>
                                         </div>
-
+ 
                                         <div className="blog-field">
                                             <label>Status</label>
                                             <select
@@ -461,11 +470,11 @@ const AddBlog = () => {
                                     </div>
                                 </section>
                             </div>
-
+ 
                             <aside className="blog-right">
                                 <div className="blog-preview-card">
                                     <span className="blog-preview-label">BLOG PREVIEW</span>
-                                    
+                                   
                                     <div className="bp-card">
                                         <div className="bp-image-wrapper">
                                             {imagePreview ? (
@@ -479,12 +488,12 @@ const AddBlog = () => {
                                                 <span className="bp-category-tag">{blogDetails.category}</span>
                                             )}
                                         </div>
-                                        
+                                       
                                         <div className="bp-content">
                                             <h3 className="bp-title">
                                                 {blogDetails.title || 'Your Blog Title Here'}
                                             </h3>
-                                            
+                                           
                                             <div className="bp-meta">
                                                 <div className="bp-meta-item">
                                                     <User size={12} />
@@ -494,29 +503,29 @@ const AddBlog = () => {
                                                     <span>• {currentDate}</span>
                                                 </div>
                                             </div>
-
+ 
                                             <p className="bp-excerpt">
-                                                {blogDetails.content 
-                                                    ? blogDetails.content.substring(0, 100) + '...' 
+                                                {blogDetails.content
+                                                    ? blogDetails.content.substring(0, 100) + '...'
                                                     : 'Preview of your blog content will appear here...'}
                                             </p>
-
+ 
                                             <div className="bp-readmore">Read Article →</div>
                                         </div>
                                     </div>
                                 </div>
-
+ 
                                 <div className="blog-actions">
-                                    <button 
-                                        type="button" 
-                                        className="blog-btn blog-btn--cancel" 
+                                    <button
+                                        type="button"
+                                        className="blog-btn blog-btn--cancel"
                                         onClick={handleCancel}
                                         disabled={isSubmitting}
                                     >
                                         Cancel
                                     </button>
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className="blog-btn blog-btn--submit"
                                         disabled={isSubmitting}
                                     >
@@ -533,5 +542,5 @@ const AddBlog = () => {
         </div>
     );
 };
-
+ 
 export default AddBlog;
