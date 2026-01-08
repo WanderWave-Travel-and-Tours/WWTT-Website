@@ -5,7 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const Booking = require('../models/booking');
 const User = require('../models/user');
-const Promo = require('../models/promo'); 
+const Promo = require('../models/promo');
+const ActivityLog = require('../models/ActivityLog'); // ✅ IMPORT ADDED
 const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
 
 const storage = multer.diskStorage({
@@ -164,6 +165,33 @@ router.post('/:id/archive', async (req, res) => {
         const newStatus = booking.isArchive === 'Yes' ? 'No' : 'Yes';
         booking.isArchive = newStatus;
         await booking.save();
+
+        // 👇👇👇 ACTIVITY LOG START (ARCHIVE/RESTORE) 👇👇👇
+        try {
+            const { userEmail, adminId } = req.body;
+            if (userEmail) {
+                await ActivityLog.create({
+                    action: newStatus === 'Yes' ? 'ARCHIVE' : 'UPDATE',
+                    module: 'Bookings',
+                    user: userEmail,
+                    userId: adminId || null,
+                    description: newStatus === 'Yes' 
+                        ? `Archived booking: ${booking.packageName} (${booking.fullName})`
+                        : `Restored booking: ${booking.packageName} (${booking.fullName})`,
+                    severity: newStatus === 'Yes' ? 'WARNING' : 'INFO',
+                    details: {
+                        recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                        recordId: booking._id.toString(),
+                        method: 'POST',
+                        archiveStatus: newStatus
+                    }
+                });
+                console.log('✅ Activity Log saved for Archive/Restore Booking');
+            }
+        } catch (logError) {
+            console.error('⚠️ Failed to save activity log:', logError.message);
+        }
+        // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
         res.json({ 
             status: "ok", 
@@ -452,6 +480,33 @@ router.post('/', upload.any(), async (req, res) => {
 
     console.log(`💰 Booking saved. Returning ID for payment link creation: ${newBooking._id}`);
 
+    // 👇👇👇 ACTIVITY LOG START (CREATE BOOKING) 👇👇👇
+    try {
+        const userEmail = bookingData.userEmail || bookingData.adminEmail || 'System';
+        const adminId = bookingData.adminId || null;
+
+        await ActivityLog.create({
+            action: 'CREATE',
+            module: 'Bookings',
+            user: userEmail,
+            userId: adminId,
+            description: `Created new booking: ${bookingData.packageName} for ${primaryName}`,
+            severity: 'SUCCESS',
+            details: {
+                recordTitle: `${bookingData.packageName} - ${primaryName}`,
+                recordId: newBooking._id.toString(),
+                method: 'POST',
+                totalAmount: bookingData.totalAmount,
+                passengers: passengers.length,
+                includesAirfare: bookingData.includesAirfare || false
+            }
+        });
+        console.log('✅ Activity Log saved for Create Booking');
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
     res.json({
       success: true,
       message: 'Booking saved successfully. Proceed to payment link generation.',
@@ -563,6 +618,31 @@ router.put('/:id/confirm', async (req, res) => {
 
     console.log('✅ Booking confirmed:', id);
 
+    // 👇👇👇 ACTIVITY LOG START (CONFIRM BOOKING) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Bookings',
+                user: userEmail,
+                userId: adminId || null,
+                description: `Confirmed booking: ${booking.packageName} for ${booking.fullName}`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                    recordId: booking._id.toString(),
+                    method: 'PUT',
+                    statusChange: 'pending → confirmed'
+                }
+            });
+            console.log('✅ Activity Log saved for Confirm Booking');
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
     res.json({
       success: true,
       message: 'Booking confirmed successfully',
@@ -598,28 +678,37 @@ router.put('/:id/cancel', async (req, res) => {
       });
     }
 
-    // ✅ OPTIONAL: DECREMENT PROMO USAGE IF BOOKING WAS CONFIRMED
-    // Uncomment this if you want to release promo slots when confirmed bookings are cancelled
-    /*
-    if (booking.status === 'confirmed' && booking.promoId) {
-      try {
-        const promo = await Promo.findById(booking.promoId);
-        if (promo && promo.usedCount > 0) {
-          promo.usedCount -= 1;
-          await promo.save();
-          console.log(`🎟️ Promo usage decremented: ${promo.code} (${promo.usedCount}/${promo.usageLimit || '∞'})`);
-        }
-      } catch (promoError) {
-        console.error('❌ Error decrementing promo usage:', promoError);
-      }
-    }
-    */
-
     booking.status = 'cancelled';
     booking.updatedAt = new Date();
     booking.cancelledAt = new Date();
 
     await booking.save();
+
+    // 👇👇👇 ACTIVITY LOG START (CANCEL BOOKING) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            await ActivityLog.create({
+                action: 'DELETE',
+                module: 'Bookings',
+                user: userEmail,
+                userId: adminId || null,
+                description: `Cancelled booking: ${booking.packageName} for ${booking.fullName}`,
+                severity: 'WARNING',
+                details: {
+                    recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                    recordId: booking._id.toString(),
+                    method: 'PUT',
+                    previousStatus: 'confirmed/pending',
+                    newStatus: 'cancelled'
+                }
+            });
+            console.log('✅ Activity Log saved for Cancel Booking');
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
     res.json({
       success: true,
@@ -775,6 +864,32 @@ router.put('/:id/confirm-balance-payment', async (req, res) => {
     await booking.save();
 
     console.log(`✅ Balance payment confirmed for booking ${id}`);
+
+    // 👇👇👇 ACTIVITY LOG START (BALANCE PAYMENT) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Bookings',
+                user: userEmail,
+                userId: adminId || null,
+                description: `Balance payment confirmed for booking: ${booking.packageName} (${booking.fullName})`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                    recordId: booking._id.toString(),
+                    method: 'PUT',
+                    balancePaid: booking.balancePaidAmount,
+                    paymentType: 'Balance Payment'
+                }
+            });
+            console.log('✅ Activity Log saved for Balance Payment Confirmation');
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
     res.json({
       success: true,

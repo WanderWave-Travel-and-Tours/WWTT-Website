@@ -3,6 +3,25 @@ import axios from "axios";
 import { X, CheckCircle, User, Mail, FileText, Upload, DollarSign } from "lucide-react";
 import "./CenomarModals.css"; // Reuse your existing modal styles
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log('📊 Admin Data from localStorage:', adminData);
+        
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return {
+            userEmail: 'Unknown Admin',
+            adminId: null
+        };
+    }
+};
+
 export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarDocs = [] }) => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +71,10 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
 
     setIsLoading(true);
     try {
+      // 🔥 GET ADMIN DATA
+      const { userEmail, adminId } = getAdminData();
+      console.log('🔍 Submitting with admin data:', { userEmail, adminId });
+      
       const data = new FormData();
       
       data.append('serviceName', formData.cenomarType);
@@ -68,20 +91,27 @@ export const CenomarApplicationModal = ({ isOpen, onClose, refreshData, cenomarD
       data.append('documentCategory', 'REQUIREMENT');
       data.append('uploader', 'ADMIN_WALKIN');
 
+      // 🔥🔥🔥 ADD ADMIN DATA 🔥🔥🔥
+      data.append('userEmail', userEmail);
+      data.append('adminId', adminId);
+
       Object.keys(formData.files).forEach(key => {
         data.append(key, formData.files[key]);
       });
+
+      console.log('📤 FormData prepared with admin info');
 
       const response = await axios.post('http://localhost:5000/api/inquiries/upload-application', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       if (response.data.success) {
+        console.log('✅ CENOMAR application created successfully');
         setStep(2); 
         if (refreshData) refreshData(); 
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("❌ Error creating CENOMAR application:", error);
       alert(error.response?.data?.message || "Failed to add walk-in applicant");
     } finally {
       setIsLoading(false);

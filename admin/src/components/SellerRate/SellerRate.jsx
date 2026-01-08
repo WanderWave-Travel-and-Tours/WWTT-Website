@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import SellerRateStats from './Sellerratestats';
 import SellerRateFilters from './SellerRateFilters';
@@ -6,6 +6,7 @@ import SellerRateTable from './Sellerratetable';
 import SellerRateModal from './Sellerratemodal';
 import SellerRateUploadModal from './SellerRateUploadModal';
 import SellerRatePreviewModal from './SellerRatePreviewModal';
+import PaginationControls from './SellerPaginationControls';
 import { Plus, Upload } from 'lucide-react';
 import { parseFlexibleExcel, previewExcelColumns } from './flexibleExcelParser';
 import './SellerRate.css';
@@ -34,6 +35,10 @@ const SellerRate = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [editingRate, setEditingRate] = useState(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Form State
   const [formData, setFormData] = useState({
@@ -290,18 +295,33 @@ const SellerRate = () => {
   };
 
   // ============================================
-  // FILTER & SEARCH LOGIC
+  // FILTER & SEARCH LOGIC WITH PAGINATION
   // ============================================
-  const filteredRates = rates.filter(rate => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      rate.destination?.toLowerCase().includes(query) ||
-      rate.activity?.toLowerCase().includes(query) ||
-      rate.supplierName?.toLowerCase().includes(query) ||
-      rate.pax?.toLowerCase().includes(query)
-    );
-  });
+  const filteredRates = useMemo(() => {
+    return rates.filter(rate => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        rate.destination?.toLowerCase().includes(query) ||
+        rate.activity?.toLowerCase().includes(query) ||
+        rate.supplierName?.toLowerCase().includes(query) ||
+        rate.pax?.toLowerCase().includes(query)
+      );
+    });
+  }, [rates, searchQuery]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Calculate paginated rates
+  const paginatedRates = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredRates.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredRates, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredRates.length / itemsPerPage);
 
   // ============================================
   // STATS CALCULATION
@@ -370,13 +390,23 @@ const SellerRate = () => {
             onRefresh={fetchRates}
           />
 
-          {/* TABLE */}
+          {/* TABLE - Now shows paginated rates */}
           <SellerRateTable 
             loading={loading}
-            rates={filteredRates}
+            rates={paginatedRates}
             onEdit={handleEdit}
             onArchive={handleArchive}
           />
+
+          {/* PAGINATION - Only show if there are filtered results and multiple pages */}
+          {!loading && filteredRates.length > 0 && totalPages > 1 && (
+            <PaginationControls
+              totalItems={filteredRates.length}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+            />
+          )}
 
           {/* MODALS */}
           <SellerRateModal 

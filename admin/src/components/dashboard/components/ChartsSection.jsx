@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -20,10 +20,23 @@ import { Activity, TrendingUp, Package } from "lucide-react";
 import "./ChartsSection.css";
 
 const ChartsSection = ({ trendData, stats, topPackages }) => {
+  // 🔥 NEW: Track window width for responsive chart margins
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const statusData = [
-    { name: "Confirmed", value: stats?.confirmedBookings || 0, color: "#10b981" }, // Emerald Green
-    { name: "Pending", value: stats?.pendingBookings || 0, color: "#f59e0b" },   // Amber
-    { name: "Cancelled", value: stats?.cancelledBookings || 0, color: "#ef4444" }, // Red
+    { name: "Confirmed", value: stats?.confirmedBookings || 0, color: "#10b981" },
+    { name: "Pending", value: stats?.pendingBookings || 0, color: "#f59e0b" },
+    { name: "Cancelled", value: stats?.cancelledBookings || 0, color: "#ef4444" },
   ];
 
   const packageData = topPackages?.map((pkg) => ({
@@ -49,9 +62,29 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
     return null;
   };
 
+  // 🔥 NEW: Responsive chart margins
+  const chartMargins = isMobile 
+    ? { top: 10, right: 5, left: -10, bottom: 5 }  // Mobile: tighter margins
+    : { top: 10, right: 10, left: 0, bottom: 0 };   // Desktop: normal margins
+
+  // 🔥 NEW: Responsive legend config
+  const legendConfig = isMobile
+    ? { 
+        wrapperStyle: { 
+          paddingTop: '15px',
+          fontSize: '10px'
+        },
+        iconSize: 8
+      }
+    : { 
+        wrapperStyle: { 
+          paddingTop: '20px' 
+        } 
+      };
+
   return (
     <div className="dash-grid">
-      {/* SECTION 1: TRENDS (Full Width) - NOW WITH COMBINED REVENUE */}
+      {/* SECTION 1: TRENDS (Full Width) - NOW WITH RESPONSIVE MARGINS */}
       <section className="dash-section dash-section--wide">
         <div className="dash-section-header">
           <div>
@@ -64,8 +97,8 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
         </div>
         
         <div className="dash-chart-container">
-          <ResponsiveContainer width="100%" height={320}>
-            <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 280 : 320}>
+            <AreaChart data={trendData} margin={chartMargins}>
               <defs>
                 <linearGradient id="colorTotalRevenue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
@@ -81,20 +114,31 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+              <XAxis 
+                dataKey="month" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{fill: '#64748b', fontSize: isMobile ? 10 : 12}} 
+                dy={10} 
+              />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{fill: '#64748b', fontSize: isMobile ? 10 : 12}}
+                width={isMobile ? 40 : 50}
+              />
               <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ paddingTop: '20px' }} />
+              <Legend {...legendConfig} />
               
               {/* Total Revenue Line (Main) */}
               <Area
                 type="monotone"
                 dataKey="totalRevenue"
                 stroke="#8b5cf6"
-                strokeWidth={3}
+                strokeWidth={isMobile ? 2 : 3}
                 fillOpacity={1}
                 fill="url(#colorTotalRevenue)"
-                name="Total Revenue (₱)"
+                name={isMobile ? "Total (₱)" : "Total Revenue (₱)"}
               />
               
               {/* Bookings Revenue */}
@@ -105,7 +149,7 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorBookingsRevenue)"
-                name="Bookings Revenue (₱)"
+                name={isMobile ? "Bookings (₱)" : "Bookings Revenue (₱)"}
               />
               
               {/* Inquiries Revenue */}
@@ -116,7 +160,7 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorInquiriesRevenue)"
-                name="Services Revenue (₱)"
+                name={isMobile ? "Services (₱)" : "Services Revenue (₱)"}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -136,14 +180,14 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
         </div>
         
         <div className="dash-chart-container pie-container">
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 250}>
             <PieChart>
               <Pie
                 data={statusData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={80}
+                innerRadius={isMobile ? 50 : 60}
+                outerRadius={isMobile ? 70 : 80}
                 paddingAngle={5}
                 dataKey="value"
               >
@@ -155,7 +199,7 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
             </PieChart>
           </ResponsiveContainer>
           
-          {/* Centered Total or Label inside Pie (Optional visual) */}
+          {/* Centered Total or Label inside Pie */}
           <div className="pie-center-text">
             <span className="pie-total">{stats?.confirmedBookings + stats?.pendingBookings + stats?.cancelledBookings || 0}</span>
             <span className="pie-label">Total</span>
@@ -186,15 +230,22 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
         </div>
 
         <div className="dash-chart-container">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={packageData} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
+            <BarChart 
+              data={packageData} 
+              layout="vertical" 
+              margin={isMobile 
+                ? { top: 0, right: 10, left: 0, bottom: 0 }
+                : { top: 0, right: 30, left: 10, bottom: 0 }
+              }
+            >
               <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
               <XAxis type="number" hide />
               <YAxis 
                 type="category" 
                 dataKey="name" 
-                width={100} 
-                tick={{fontSize: 12, fill: '#475569'}} 
+                width={isMobile ? 80 : 100} 
+                tick={{fontSize: isMobile ? 10 : 12, fill: '#475569'}} 
                 axisLine={false}
                 tickLine={false}
               />
@@ -202,7 +253,13 @@ const ChartsSection = ({ trendData, stats, topPackages }) => {
                 cursor={{fill: '#f1f5f9'}}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
               />
-              <Bar dataKey="bookings" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20} name="Bookings" />
+              <Bar 
+                dataKey="bookings" 
+                fill="#6366f1" 
+                radius={[0, 4, 4, 0]} 
+                barSize={isMobile ? 16 : 20} 
+                name="Bookings" 
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>

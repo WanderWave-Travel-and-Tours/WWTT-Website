@@ -34,10 +34,30 @@ const ActivityLogsTable = ({
         }
     }
 
-    // Render sort icon with proper rotation based on direction
     const renderSortIcon = () => {
         const rotation = sortOrder === 'desc' ? 'rotate-desc' : 'rotate-asc';
         return <ArrowUpDown size={16} className={`sort-icon ${rotation}`} />;
+    };
+
+    // 🔥 RENDER USER INFO WITH NAME + EMAIL
+    const renderUserInfo = (log) => {
+        if (log.adminInfo && (log.adminInfo.fullName || log.adminInfo.username)) {
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ fontWeight: '600', color: '#0f172a' }}>
+                        {log.adminInfo.fullName || log.adminInfo.username}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        {log.adminInfo.email || log.user}
+                    </div>
+                </div>
+            );
+        }
+        return (
+            <div style={{ fontWeight: '600' }}>
+                {log.user}
+            </div>
+        );
     };
 
     if (loading) {
@@ -101,7 +121,6 @@ const ActivityLogsTable = ({
             <table className="act-table">
                 <thead>
                     <tr>
-                        {/* SORTABLE NO. COLUMN */}
                         <th 
                             style={{ width: '80px' }} 
                             className="sortable-header"
@@ -147,8 +166,9 @@ const ActivityLogsTable = ({
                                 </div>
                             </td>
                             
-                            <td style={{ fontWeight: "600" }}>
-                                {log.user}
+                            {/* 🔥🔥🔥 UPDATED USER CELL 🔥🔥🔥 */}
+                            <td>
+                                {renderUserInfo(log)}
                             </td>
                             
                             <td>

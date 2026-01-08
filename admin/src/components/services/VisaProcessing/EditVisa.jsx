@@ -10,6 +10,20 @@ import Sidebar from "../../sidebar/sidebar";
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditVisa.css"; 
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added from EditPSA logic) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -90,7 +104,6 @@ const EditVisa = () => {
 
   const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
   const FILE_BASE_URL = "http://localhost:5000";
-  const LOGS_API_URL = "http://localhost:5000/api/activity-logs"; // URL para sa logs
 
   const todayObj = new Date();
   const tomorrowObj = new Date(todayObj);
@@ -339,21 +352,12 @@ const EditVisa = () => {
     );
   };
 
-const performSubmit = async () => {
-  setSubmitting(true);
-  
-  // 1. Kunin ang Admin info mula sa localStorage
-  const adminData = JSON.parse(localStorage.getItem('adminUser')) || {};
-  const adminEmail = adminData.email || "Unknown Admin";
-  const adminName = adminData.username || "Admin";
+  const performSubmit = async () => {
+    setSubmitting(true);
+    
+    // 🔥 GET ADMIN DATA (Similar to EditPSA)
+    const { userEmail, adminId } = getAdminData();
 
-  try {
-    // 2. Kunin ang latest data para sa accurate comparison
-    const currentRes = await fetch(`${API_BASE_URL}/${visaId}`);
-    const currentResult = await currentRes.json();
-    const original = currentResult.data || {};
-
-    // 3. Ihanda ang FormData
     const data = new FormData();
     Object.keys(formData).forEach(key => {
       if (key === 'visaType') {
@@ -363,14 +367,25 @@ const performSubmit = async () => {
       }
     });
     data.append('fullName', `${formData.givenName} ${formData.lastName}`);
+    data.append('serviceName', formData.visaType);
+    data.append('givenName', formData.givenName);
+    data.append('lastName', formData.lastName);
+    data.append('email', formData.email);
+    data.append('contactNumber', formData.contactNumber);
+    data.append('otherNames', formData.otherNames);
+    data.append('travelDate', formData.travelDate);
+    data.append('lengthOfStay', formData.lengthOfStay);
+    data.append('message', formData.message); 
+    data.append('estimatedPrice', formData.estimatedPrice);
 
-    // --- FIXED FILE LOGIC START ---
-    // Imbes na Object.keys, Object.values ang kukunin natin dahil ang values 
-    // sa state na ito ay ang mga actual na File URLs (hal. /uploads/documents/xxx.jpg)
-    // Ito ang gagamitin ng backend para malaman kung alin ang HINDI buburahin.
-    const urlsToKeep = Object.values(existingFiles).filter(url => url !== null && url !== undefined);
-    data.append('existingFiles', JSON.stringify(urlsToKeep));
+    // 🔥 APPEND ADMIN DATA FOR LOGS
+    data.append('userEmail', userEmail);
+    data.append('adminId', adminId);
 
+    // Handle Existing Files List
+    data.append('existingFiles', JSON.stringify(Object.keys(existingFiles)));
+
+    // Handle New Files
     Object.keys(files).forEach(key => {
       if (files[key]) data.append(key, files[key]);
     });

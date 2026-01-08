@@ -19,27 +19,30 @@
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  padding: 20px;
+  padding: 10px; /* Reduced padding for mobile optimization */
   animation: cnmFadeIn 0.25s ease;
+  overflow: hidden; /* Prevent body scroll interaction */
 }
 
 .modal-content {
   background: white;
   border-radius: 20px;
   width: 100%;
+  max-width: 850px; 
+  /* Responsive height handling */
   max-height: 90vh;
+  max-height: 90dvh; /* Dynamic Viewport Height for mobile browsers */
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05);
   animation: cnmSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   overflow: hidden;
-  max-width: 850px; 
 }
 
 /* ===== HEADER (CENOMAR UI) ===== */
 .modal-header {
-  padding: 28px 32px;
+  padding: 24px 32px;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
@@ -49,65 +52,125 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  gap: 15px;
 }
 
-.modal-header .cnm-header-content { display: flex; align-items: center; gap: 20px; flex: 1; flex-wrap: wrap; }
-.modal-header .cnm-title-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
-.modal-header h2 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.02em; }
+.modal-header .cnm-header-content { 
+  display: flex; 
+  align-items: center; 
+  gap: 20px; 
+  flex: 1; 
+  flex-wrap: wrap; /* Allows wrapping on small screens */
+}
 
-.modal-header .cnm-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; font-weight: 500; }
+.modal-header .cnm-title-group { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 6px; 
+  flex: 1; 
+  min-width: 200px; 
+}
+
+.modal-header h2 { 
+  font-size: 22px; 
+  font-weight: 800; 
+  color: #0f172a; 
+  margin: 0; 
+  letter-spacing: -0.02em; 
+}
+
+.modal-header .cnm-meta { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-size: 13px; 
+  color: #64748b; 
+  font-weight: 500; 
+  flex-wrap: wrap; /* Safe wrap for long refs */
+}
+
 .modal-header .cnm-ref { font-weight: 700; color: #475569; font-family: "Courier New", monospace; }
 .modal-header .cnm-divider { color: #cbd5e1; }
 .modal-header .cnm-date { color: #64748b; }
 
 .modal-close {
-  background: #f1f5f9; border: none; border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: #64748b; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0;
+  background: #f1f5f9; 
+  border: none; 
+  border-radius: 10px; 
+  width: 40px; 
+  height: 40px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  cursor: pointer; 
+  color: #64748b; 
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+  flex-shrink: 0;
+  margin-left: 10px;
 }
 .modal-close:hover { background: #fee2e2; color: #dc2626; transform: scale(1.05); }
 
 /* ===== STATUS BADGE (CENOMAR UI) ===== */
-.cnm-status-badge { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 12px; border: 2px solid; min-width: 200px; }
+.cnm-status-badge { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  padding: 10px 16px; 
+  border-radius: 12px; 
+  border: 2px solid; 
+  min-width: 200px; 
+}
+
 .cnm-status-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .cnm-status-content { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .cnm-status-label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-.cnm-status-desc { font-size: 11px; opacity: 0.8; font-weight: 600; }
+.cnm-status-desc { font-size: 11px; opacity: 0.8; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 
 /* Status Variants (CENOMAR UI Colors) */
-.cnm-status-amber { background: #fffbeb; border-color: #fde68a; color: #92400e; margin-right: 15px; }
+.cnm-status-amber { background: #fffbeb; border-color: #fde68a; color: #92400e; }
 .cnm-status-amber .cnm-status-icon { background: #fef3c7; color: #f59e0b; }
-.cnm-status-green { background: #f0fdf4; border-color: #bbf7d0; color: #166534; margin-right: 15px; }
+.cnm-status-green { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
 .cnm-status-green .cnm-status-icon { background: #dcfce7; color: #16a34a; }
-.cnm-status-red { background: #fef2f2; border-color: #fecaca; color: #991b1b; margin-right: 15px; }
+.cnm-status-red { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
 .cnm-status-red .cnm-status-icon { background: #fee2e2; color: #dc2626; }
 
 
 /* ===== BODY & SCROLLBAR ===== */
-.modal-body { padding: 28px 32px; overflow-y: auto; flex: 1; }
+.modal-body { 
+  padding: 24px 32px; 
+  overflow-y: auto; 
+  flex: 1; 
+  -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+}
 .modal-body::-webkit-scrollbar { width: 8px; }
 .modal-body::-webkit-scrollbar-track { background: #f8fafc; }
 .modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
 /* ===== CARD STYLES (CENOMAR UI) ===== */
-.cnm-card { background: white; border: 2px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 15px; transition: all 0.2s ease; }
+.cnm-card { background: white; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 15px; transition: all 0.2s ease; }
 .cnm-card:hover { border-color: #cbd5e1; }
 
-.cnm-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.cnm-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
 .cnm-card-title { font-size: 12px; font-weight: 800; color: #64748b; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
-.cnm-badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.cnm-badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
 .cnm-badge-amber { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
+.cnm-badge-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3); }
 
 /* INFO GRID */
-.cnm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-.cnm-info-item { display: flex; gap: 14px; align-items: flex-start; }
+.cnm-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+  gap: 20px; 
+}
+.cnm-info-item { display: flex; gap: 14px; align-items: flex-start; min-width: 0; } /* min-width 0 prevents flex child overflow */
 
 .cnm-info-icon {
   width: 44px; height: 44px; background: linear-gradient(135deg, #fef3c7, #fde68a); color: #f59e0b; border-radius: 12px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
 }
 
-.cnm-info-content { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.cnm-info-content { flex: 1; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
 .cnm-info-label { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .cnm-info-value { font-size: 15px; font-weight: 700; color: #0f172a; word-break: break-word; }
 .cnm-val-amount { color: #16a34a; font-size: 18px; }
@@ -121,6 +184,191 @@
   color: #334155;
   line-height: 1.7;
   border: 2px solid #e2e8f0;
+  word-wrap: break-word;
+}
+
+/* ===== ENHANCED PAYMENT DETAILS SECTION ===== */
+.cnm-payment-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0;
+  margin-bottom: 15px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.cnm-payment-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cnm-payment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-bottom: 2px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cnm-payment-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0;
+}
+
+.cnm-payment-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+
+.cnm-payment-badge.full {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+.cnm-payment-badge.partial {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+}
+
+.cnm-payment-body {
+  padding: 24px 28px;
+}
+
+.cnm-payment-section {
+  margin-bottom: 24px;
+}
+
+.cnm-payment-section:last-child {
+  margin-bottom: 0;
+}
+
+.cnm-payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 15px;
+}
+
+.cnm-payment-row:last-child {
+  border-bottom: none;
+}
+
+.cnm-payment-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 600;
+  min-width: 120px; /* Ensure label doesn't squash too much */
+}
+
+.cnm-payment-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: right;
+  word-break: break-word;
+}
+
+.cnm-payment-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin: 20px 0;
+}
+
+/* Payment Status Box */
+.cnm-payment-status-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-radius: 12px;
+  border: 2px solid;
+  margin-top: 16px;
+  gap: 15px;
+}
+
+.cnm-payment-status-box.paid {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border-color: #86efac;
+}
+
+.cnm-payment-status-box.pending {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border-color: #fca5a5;
+}
+
+.cnm-payment-status-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.cnm-payment-status-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cnm-payment-status-box.paid .cnm-payment-status-title { color: #166534; }
+.cnm-payment-status-box.pending .cnm-payment-status-title { color: #991b1b; }
+
+.cnm-payment-status-amount {
+  font-size: 22px;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.cnm-payment-status-box.paid .cnm-payment-status-amount { color: #15803d; }
+.cnm-payment-status-box.pending .cnm-payment-status-amount { color: #dc2626; }
+
+.cnm-payment-status-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cnm-payment-status-box.paid .cnm-payment-status-icon { background: #86efac; color: #15803d; }
+.cnm-payment-status-box.pending .cnm-payment-status-icon { background: #fca5a5; color: #dc2626; }
+
+.cnm-payment-date {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
 }
 
 /* ===== FOOTER (CENOMAR UI) ===== */
@@ -132,6 +380,7 @@
   justify-content: flex-end;
   gap: 14px;
   border-radius: 0 0 20px 20px;
+  flex-wrap: wrap; /* Allow buttons to wrap */
 }
 
 /* BUTTONS (CENOMAR UI) */
@@ -142,6 +391,9 @@
 }
 .cnm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.cnm-btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+.cnm-btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, #2563eb, #1d4ed8); transform: translateY(-2px); }
+
 .cnm-btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3); }
 .cnm-btn-success:hover:not(:disabled) { background: linear-gradient(135deg, #16a34a, #15803d); transform: translateY(-2px); }
 
@@ -151,23 +403,105 @@
 .cnm-btn-ghost { background: transparent; color: #64748b; }
 .cnm-btn-ghost:hover:not(:disabled) { background: #f1f5f9; color: #0f172a; }
 
-.cnm-btn-danger.cnm-btn-outline { border-color: #fee2e2; background: white; color: #dc2626; }
+.cnm-btn-danger.cnm-btn-outline { border: 2px solid #fee2e2; background: white; color: #dc2626; }
 .cnm-btn-danger.cnm-btn-outline:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; }
 
-
-/* ===== RESPONSIVE (CENOMAR UI) ===== */
-@media (max-width: 768px) {
-  .modal-content { max-height: 95vh; border-radius: 16px; }
-  .modal-header, .modal-body, .modal-footer { padding: 20px; }
-  .modal-header h2 { font-size: 18px; }
-  .modal-header .cnm-header-content { flex-direction: column; align-items: flex-start; gap: 14px; }
-  .cnm-status-badge { min-width: auto; width: 100%; }
-  .cnm-grid { grid-template-columns: 1fr; }
-  .modal-footer { flex-direction: column; }
+/* Utility to push button to left on desktop */
+.cnm-btn-left {
+  margin-right: auto;
 }
 
-@media (max-width: 480px) {
+/* ===== RESPONSIVE MEDIA QUERIES (COMPLETE OVERHAUL) ===== */
+
+/* Tablet and Small Laptops (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .modal-content {
+      width: 95%; /* More fluid width */
+  }
+}
+
+/* Tablet / Large Phones (max-width: 768px) */
+@media (max-width: 768px) {
+  .modal-header, .modal-body, .modal-footer { padding: 20px; }
+  
+  /* Header adjustments */
+  .modal-header h2 { font-size: 18px; }
+  .modal-header .cnm-header-content { align-items: flex-start; }
+  
+  /* Grid: Force 2 columns max, but usually 1 on smaller tablets */
+  .cnm-grid { grid-template-columns: repeat(2, 1fr); }
+  
+  /* Status Badge: Full width on tablet if crowded */
+  .cnm-status-badge { width: 100%; margin-top: 10px; }
+
+  /* Payment Badge */
+  .cnm-payment-header { flex-direction: column; align-items: flex-start; }
+  .cnm-payment-badge { margin-top: 5px; }
+
+  /* Footer buttons: Make them stretch */
+  .modal-footer { 
+      flex-direction: column-reverse; /* Put Close at bottom */
+      gap: 12px;
+  }
+  
+  .cnm-btn { 
+      width: 100%; /* Full width buttons */
+      justify-content: center;
+  }
+  
+  /* Reset auto margin for stacked buttons */
+  .cnm-btn-left { margin-right: 0; }
+}
+
+/* Standard Mobile (max-width: 576px) */
+@media (max-width: 576px) {
+  .modal-content { 
+      max-height: 95dvh; /* Maximize height */
+      border-radius: 16px; 
+  }
+
   .modal-body { padding: 16px; }
-  .cnm-card { padding: 20px; }
-  .cnm-btn { font-size: 13px; padding: 10px 16px; }
+  .cnm-card { padding: 16px; }
+
+  /* Single Column Grid for Information */
+  .cnm-grid { grid-template-columns: 1fr; gap: 16px; }
+
+  /* Header Simplification */
+  .modal-header { padding: 16px; }
+  .modal-header .cnm-meta { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .modal-header .cnm-divider { display: none; } /* Hide dot separator */
+  
+  /* Payment Rows */
+  .cnm-payment-body { padding: 16px; }
+  
+  /* Make payment rows stack if values are long */
+  .cnm-payment-row { 
+      flex-direction: column; 
+      align-items: flex-start; 
+      gap: 6px; 
+  }
+  .cnm-payment-value { text-align: left; }
+  
+  /* Payment Status Box */
+  .cnm-payment-status-box { 
+      flex-direction: column; 
+      text-align: center;
+      padding: 16px;
+  }
+  
+  .cnm-payment-status-left { align-items: center; }
+  .cnm-payment-status-icon { margin-top: 5px; }
+}
+
+/* Small Mobile / Fold Phones (max-width: 380px) */
+@media (max-width: 380px) {
+  .cnm-info-icon { width: 36px; height: 36px; }
+  .cnm-info-icon svg { width: 16px; height: 16px; }
+  
+  .cnm-info-value { font-size: 14px; }
+  .cnm-val-amount { font-size: 16px; }
+  
+  .modal-header h2 { font-size: 16px; }
+  
+  .cnm-btn { font-size: 13px; padding: 10px; }
 }

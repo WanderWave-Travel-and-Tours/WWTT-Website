@@ -69,11 +69,11 @@ const BookingFilters = ({
             </div>
 
             {/* RIGHT: Search Box */}
-            <div className="search-box">
-                <Search size={16} className="search-icon" /> 
+            <div className="bkm-search-box">
+                <Search size={16} className="bkm-search-icon" /> 
                 <input
                     type="text"
-                    className="search-input"
+                    className="bkm-search-input"
                     placeholder="Search by name, ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}

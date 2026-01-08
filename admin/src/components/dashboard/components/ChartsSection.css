@@ -1,3 +1,7 @@
+/* ========================================
+   CHARTS SECTION - FULLY RESPONSIVE (IMPROVED MOBILE CHARTS)
+   ======================================== */
+
 /* Container Layout */
 .dash-grid {
   display: grid;
@@ -23,13 +27,16 @@
 .dash-section {
   background: #ffffff;
   border-radius: 16px;
-  padding: 24px;
+  padding: 28px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
               0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid #f1f5f9;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  overflow: hidden;
 }
 
 .dash-section:hover {
@@ -44,6 +51,8 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .dash-section-title {
@@ -53,12 +62,24 @@
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  line-height: 1.3;
 }
 
 .dash-section-subtitle {
   font-size: 0.85rem;
   color: #64748b;
   margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.dash-section-badge {
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
 }
 
 /* Icon Wrappers */
@@ -70,6 +91,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .icon-wrapper.warning {
@@ -85,7 +108,10 @@
 /* Chart Container */
 .dash-chart-container {
   flex-grow: 1;
-  position: relative; /* For Pie chart centering */
+  position: relative;
+  min-height: 250px;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Pie Chart Specifics */
@@ -95,13 +121,14 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  width: 100%;
 }
 
 .pie-center-text {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -65%); /* Adjusted slightly up */
+  transform: translate(-50%, -65%);
   text-align: center;
   pointer-events: none;
 }
@@ -111,11 +138,13 @@
   font-size: 1.5rem;
   font-weight: 800;
   color: #1e293b;
+  line-height: 1.2;
 }
 
 .pie-label {
   font-size: 0.8rem;
   color: #64748b;
+  line-height: 1.2;
 }
 
 /* Status Summary (Legend below pie) */
@@ -125,6 +154,8 @@
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .status-item {
@@ -145,47 +176,340 @@
   font-size: 0.75rem;
   color: #64748b;
   font-weight: 500;
+  line-height: 1.2;
 }
 
 .status-value {
   font-size: 1rem;
   font-weight: 700;
   color: #1e293b;
+  line-height: 1.2;
 }
 
 /* Custom Tooltip Styling */
 .custom-tooltip {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(255, 255, 255, 0.98);
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+              0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .tooltip-label {
   font-weight: 600;
   color: #334155;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-size: 0.9rem;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 4px;
+  line-height: 1.3;
 }
 
 .tooltip-item {
   font-size: 0.85rem;
-  margin: 2px 0;
+  margin: 4px 0;
   font-weight: 500;
+  line-height: 1.3;
 }
 
-/* Mobile Adjustments */
-@media (max-width: 640px) {
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* Large Desktop (1400px and below) */
+@media (max-width: 1400px) {
   .dash-section {
-    padding: 16px;
+    padding: 24px;
+  }
+  
+  .dash-section-header {
+    margin-bottom: 20px;
+  }
+}
+
+/* Desktop/Laptop (1200px and below) */
+@media (max-width: 1200px) {
+  .dash-grid {
+    gap: 20px;
+  }
+  
+  .dash-section {
+    padding: 24px;
+  }
+}
+
+/* Tablet Landscape (1024px and below) */
+@media (max-width: 1024px) {
+  .dash-grid {
+    gap: 18px;
+    padding: 18px 0;
+  }
+  
+  .dash-section {
+    padding: 22px;
+  }
+  
+  .dash-chart-container {
+    min-height: 220px;
+  }
+}
+
+/* Tablet Portrait (900px and below) */
+@media (max-width: 900px) {
+  .dash-grid {
+    gap: 16px;
+    padding: 16px 0;
+  }
+  
+  .dash-section {
+    padding: 20px;
   }
   
   .dash-section-title {
     font-size: 1rem;
   }
   
+  .dash-section-subtitle {
+    font-size: 0.8rem;
+  }
+}
+
+/* Tablet Small (768px and below) */
+@media (max-width: 768px) {
+  .dash-section {
+    padding: 18px;
+    border-radius: 14px;
+  }
+  
+  .dash-section-header {
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+  
+  .dash-chart-container {
+    min-height: 200px;
+  }
+  
+  .icon-wrapper {
+    padding: 6px;
+  }
+  
   .dash-status-summary {
     gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+}
+
+/* Mobile Large (640px and below) - IMPROVED CHART HANDLING */
+@media (max-width: 640px) {
+  .dash-section {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .dash-section-header {
+    margin-bottom: 14px;
+  }
+  
+  .dash-section-title {
+    font-size: 0.95rem;
+  }
+  
+  .dash-section-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .dash-section-badge {
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+  
+  .dash-status-summary {
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+  
+  .pie-total {
+    font-size: 1.25rem;
+  }
+  
+  .pie-label {
+    font-size: 0.75rem;
+  }
+  
+  .dash-grid {
+    gap: 14px;
+    padding: 14px 0;
+  }
+  
+  /* 🔥 IMPROVED: Better chart height for mobile */
+  .dash-chart-container {
+    min-height: 220px; /* Increased for better legend spacing */
+  }
+  
+  .status-name {
+    font-size: 0.7rem;
+  }
+  
+  .status-value {
+    font-size: 0.9rem;
+  }
+  
+  .custom-tooltip {
+    padding: 10px 12px;
+  }
+  
+  .tooltip-label {
+    font-size: 0.85rem;
+  }
+  
+  .tooltip-item {
+    font-size: 0.8rem;
+  }
+
+  .icon-wrapper {
+    padding: 6px;
+  }
+}
+
+/* Mobile Small (480px and below) - CRITICAL CHART FIXES */
+@media (max-width: 480px) {
+  .dash-section {
+    padding: 14px;
+  }
+  
+  .dash-section-header {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+  
+  .dash-section-title {
+    font-size: 0.9rem;
+  }
+
+  .dash-section-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .dash-section-badge {
+    font-size: 9px;
+    padding: 4px 8px;
+  }
+  
+  /* 🔥 CRITICAL: Increased chart height for mobile legends */
+  .dash-chart-container {
+    min-height: 260px; /* Extra height for legend spacing */
+  }
+  
+  .pie-total {
+    font-size: 1.15rem;
+  }
+
+  .pie-label {
+    font-size: 0.7rem;
+  }
+  
+  .dash-grid {
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .status-name {
+    font-size: 0.65rem;
+  }
+
+  .status-value {
+    font-size: 0.85rem;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+  }
+
+  .dash-status-summary {
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .custom-tooltip {
+    padding: 8px 10px;
+  }
+
+  .tooltip-label {
+    font-size: 0.8rem;
+  }
+
+  .tooltip-item {
+    font-size: 0.75rem;
+  }
+}
+
+/* Mobile Extra Small (360px and below) - MAXIMUM CHART OPTIMIZATION */
+@media (max-width: 360px) {
+  .dash-section {
+    padding: 12px;
+  }
+  
+  .dash-section-header {
+    margin-bottom: 10px;
+  }
+  
+  .dash-section-title {
+    font-size: 0.85rem;
+  }
+  
+  .dash-section-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .dash-section-badge {
+    font-size: 8px;
+    padding: 3px 6px;
+  }
+  
+  /* 🔥 MAXIMUM: Even more height for tiny screens */
+  .dash-chart-container {
+    min-height: 280px; /* Maximum height for legend clarity */
+  }
+
+  .pie-total {
+    font-size: 1.1rem;
+  }
+
+  .pie-label {
+    font-size: 0.65rem;
+  }
+
+  .dash-grid {
+    gap: 10px;
+  }
+
+  .status-name {
+    font-size: 0.6rem;
+  }
+
+  .status-value {
+    font-size: 0.8rem;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    margin-bottom: 2px;
+  }
+
+  .dash-status-summary {
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .icon-wrapper {
+    padding: 5px;
   }
 }

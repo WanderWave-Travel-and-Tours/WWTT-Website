@@ -4,11 +4,25 @@ import {
   ArrowLeft, Upload, X, FileText, User, 
   DollarSign, Eye, Trash2, HelpCircle, Briefcase
 } from "lucide-react";
+import axios from "axios"; // Gamitin ang axios para mas consistent
 import Sidebar from "../../sidebar/sidebar"; 
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditPassport.css"; 
 
-// Reusable Confirm Modal - Updated z-index to 15000 to appear on top of preview
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -101,7 +115,6 @@ const EditPassport = () => {
 
   const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
   const FILE_BASE_URL = "http://localhost:5000";
-  const LOGS_API_URL = "http://localhost:5000/api/activity-logs"; // Logs endpoint
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -118,13 +131,13 @@ const EditPassport = () => {
   useEffect(() => {
     const fetchPassportDetails = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/${passportId}`);
-        const result = await res.json();
+        const res = await axios.get(`${API_BASE_URL}/${passportId}`);
+        const result = res.data;
         
         if (result.success && result.data) {
           const data = result.data;
-          setOriginalData(data); // Store for change tracking
           
+          // Split full name if givenName/lastName are not explicitly separate in DB
           const nameParts = data.fullName ? data.fullName.split(" ") : ["", ""];
           const lName = nameParts.length > 1 ? nameParts.pop() : "";
           const gName = nameParts.join(" ");
@@ -143,24 +156,45 @@ const EditPassport = () => {
             message: data.adminRemarks || "",
           });
 
-          if (data.deliveredDocuments && data.deliveredDocuments.length > 0) {
-            setExistingFiles({ requirement: data.deliveredDocuments[0].fileUrl });
-          } else if (data.evidenceUrl) {
+          // Check for existing documents
+          if (data.evidenceUrl) {
             setExistingFiles({ requirement: data.evidenceUrl });
           }
         }
       } catch (err) {
         toast.error("Failed to fetch data.");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
     if (passportId) fetchPassportDetails();
-  }, [passportId]);
+  }, [passportId, toast]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "givenName" || name === "lastName") {
+      const nameRegex = /^[a-zA-Z\sñÑ]*$/; 
+      if (!nameRegex.test(value)) return; 
+    }
+
+    if (name === "contactNumber") {
+      let val = value.replace(/[^0-9+]/g, ""); 
+      if (val.includes("+") && val.indexOf("+") !== 0) val = val.replace(/\+/g, ""); 
+      if (val.length > 20) return;
+      setFormData(prev => ({ ...prev, [name]: val }));
+      return;
+    }
+
+    if (name === "estimatedPrice") {
+      const val = value.replace(/[^0-9]/g, ""); 
+      if (val.length > 7) return;
+      setFormData(prev => ({ ...prev, [name]: val }));
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -204,45 +238,58 @@ const EditPassport = () => {
     }, "danger");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    askConfirmation("Save Changes", "Confirm updates to this passport request?", () => performSubmit());
+  const handleDiscard = () => {
+    askConfirmation(
+      "Discard Changes",
+      "Are you sure you want to discard your changes? All unsaved updates will be lost.",
+      () => navigate(-1),
+      "danger"
+    );
   };
 
   const performSubmit = async () => {
+    // Basic Validations
+    if (!formData.email.toLowerCase().endsWith(".com")) {
+      toast.error("Email must end with .com");
+      return;
+    }
+
+    const digitCount = formData.contactNumber.replace(/[^0-9]/g, "").length;
+    if (digitCount < 8) {
+      toast.error("Contact number must have at least 8 digits.");
+      return;
+    }
+
     setSubmitting(true);
     
-    // Get Admin info for logging
-    const adminData = JSON.parse(localStorage.getItem('adminUser')) || JSON.parse(localStorage.getItem('user')) || {};
-    const adminEmail = adminData.email || "Unknown Admin";
-    const adminName = adminData.username || adminData.firstName || "Admin";
+    // 🔥 GET ADMIN DATA FOR LOGS
+    const { userEmail, adminId } = getAdminData();
 
-    try {
-      const data = new FormData();
+    const data = new FormData();
+    const combinedFullName = `${formData.givenName} ${formData.lastName}`.trim();
+    
+    // Standard Inquiry Fields
+    data.append("fullName", combinedFullName);
+    data.append("email", formData.email);
+    data.append("contactNumber", formData.contactNumber);
+    data.append("estimatedPrice", formData.estimatedPrice);
+    data.append("message", formData.message); // This will map to adminRemarks or message
+    
+    // Passport Specific Details
+    const passportDetails = {
+        applicationType: formData.applicationType,
+        dfaLocation: "Updated via Admin"
+    };
+    data.append("passportDetails", JSON.stringify(passportDetails));
 
-      // Comparison Logic for Activity Logs
-      let changes = [];
-      const trackChange = (label, oldVal, newVal) => {
-        const normOld = oldVal ? String(oldVal).trim() : "None";
-        const normNew = newVal ? String(newVal).trim() : "None";
-        if (normOld !== normNew) {
-          changes.push(`${label}: "${normOld}" → "${normNew}"`);
-        }
-      };
+    // 🔥 LOGGING DATA
+    data.append("userEmail", userEmail);
+    data.append("adminId", adminId);
 
-      if (originalData) {
-        trackChange("Given Name", originalData.givenName, formData.givenName);
-        trackChange("Last Name", originalData.lastName, formData.lastName);
-        trackChange("Email", originalData.email, formData.email);
-        trackChange("Contact", originalData.contactNumber, formData.contactNumber);
-        trackChange("Application Type", originalData.passportDetails?.applicationType, formData.passportDocument);
-        trackChange("Price", originalData.estimatedPrice, formData.estimatedPrice);
-        trackChange("Remarks", originalData.adminRemarks, formData.message);
-      }
-
-      if (files.requirement) {
-        changes.push(`Uploaded new document: ${files.requirement.name}`);
-      }
+    // File Handling
+    if (files.requirement) {
+        data.append("walkInDoc", files.requirement);
+    }
 
       // Existing Submit Logic
       Object.keys(formData).forEach((key) => {
@@ -270,45 +317,26 @@ const EditPassport = () => {
 
       const result = await response.json();
 
-      if (result.success) {
-        // CREATE ACTIVITY LOG (Same as EditPSA process)
-        if (changes.length > 0) {
-          try {
-            await fetch(LOGS_API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: 'UPDATE',
-                module: 'Passports',
-                entity: 'Passport Inquiry',
-                entityId: passportId,
-                user: adminName,
-                severity: 'SUCCESS',
-                description: `Admin (${adminEmail}) updated passport request for ${combinedName}`,
-                details: {
-                  adminEmail,
-                  targetName: combinedName,
-                  changes: changes,
-                  affectedRecords: 1
-                }
-              }),
-            });
-          } catch (logErr) {
-            console.error("Logging failed:", logErr);
-          }
-        }
+    try {
+      const res = await axios.put(`${API_BASE_URL}/update/${passportId}`, data, {
+          headers: { "Content-Type": "multipart/form-data" }
+      });
 
-        toast.success("Changes saved successfully!");
-        navigate("/services/passport"); 
-      } else {
-        toast.error(result.message || "Failed to update inquiry.");
+      if (res.data.success) {
+        toast.success("Passport record updated successfully!");
+        navigate("/services/passport");
       }
     } catch (error) {
-      console.error("Submission error:", error);
-      toast.error("An error occurred while saving.");
+      console.error(error);
+      toast.error(error.response?.data?.message || "Error updating record.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    askConfirmation("Save Changes", "Confirm updates to this Passport request?", () => performSubmit());
   };
 
   const renderPreviewContent = () => {
@@ -317,12 +345,29 @@ const EditPassport = () => {
     const isImage = name.match(/\.(jpeg|jpg|gif|png|webp)$/i);
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
-    if (isImage) return <img src={url} alt="Preview" style={{ maxWidth: '100%', maxHeight: '70vh', display: 'block', margin: '0 auto' }} />;
-    if (isPdf) return <iframe src={url} title="PDF" style={{ width: '100%', height: '70vh', border: 'none' }} />;
-    return <div style={{textAlign: 'center', padding: '20px'}}>Preview not available.</div>;
+    if (isImage && !isPdf) {
+      return <img src={url} alt="Preview" className="preview-media-full" />;
+    } else if (isPdf) {
+      return <iframe src={url} title="PDF Preview" style={{ width: '100%', height: '100%', border: 'none' }} />;
+    } else {
+      return (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <FileText size={64} style={{ margin: '0 auto 20px', color: '#64748b' }} />
+          <p style={{fontSize: '16px', color: '#1e293b'}}>Preview not available for this file format.</p>
+          <a href={url} download className="et-view-btn" style={{ display: 'inline-flex', marginTop: '15px', padding: '10px 20px' }}>
+            Download to View
+          </a>
+        </div>
+      );
+    }
   };
 
-  if (loading) return <div className="et-loading">Loading...</div>;
+  if (loading) return (
+    <div className="et-loading-container">
+        <div className="et-loader"></div>
+        <p>Fetching passport details...</p>
+    </div>
+  );
 
   return (
     <div className="et-page">
@@ -331,27 +376,41 @@ const EditPassport = () => {
         <div className="et-container">
           <header className="et-header">
             <div className="et-header-content">
-              <button className="et-back-btn" onClick={() => navigate(-1)}><ArrowLeft size={20} /> Back</button>
+              <button className="et-back-btn" onClick={handleDiscard}>
+                <ArrowLeft size={20} /> Back
+              </button>
               <h1 className="et-title">EDIT PASSPORT REQUEST</h1>
-              <p className="et-subtitle">Update application details and documentation</p>
+              <p className="et-subtitle">Ref No: #{passportId.slice(-6).toUpperCase()}</p>
             </div>
           </header>
 
           <form onSubmit={handleSubmit} className="et-form">
             <div className="et-grid-layout">
               <div className="et-form-left">
-                {/* --- Client Information Section --- */}
+                {/* CLIENT INFO SECTION */}
                 <section className="et-section">
                   <div className="et-section-header"><User size={22} /> <h3>Client Information</h3> </div>
                   <div className="et-fields-grid">
-                    <div className="et-input-group"> <label>Given Name</label> <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" required /> </div>
-                    <div className="et-input-group"> <label>Last Name</label> <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" required /> </div>
-                    <div className="et-input-group"> <label>Email</label> <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" required /> </div>
-                    <div className="et-input-group"> <label>Contact No</label> <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" required /> </div>
+                    <div className="et-input-group"> 
+                        <label>Given Name</label> 
+                        <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" required /> 
+                    </div>
+                    <div className="et-input-group"> 
+                        <label>Last Name</label> 
+                        <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" required /> 
+                    </div>
+                    <div className="et-input-group"> 
+                        <label>Email</label> 
+                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" required /> 
+                    </div>
+                    <div className="et-input-group"> 
+                        <label>Contact No</label> 
+                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" required /> 
+                    </div>
                   </div>
                 </section>
 
-                {/* --- Service Details --- */}
+                {/* SERVICE DETAILS SECTION */}
                 <section className="et-section">
                   <div className="et-section-header"><Briefcase size={22} /> <h3>Service Details</h3> </div>
                   <div className="et-fields-grid">
@@ -373,30 +432,48 @@ const EditPassport = () => {
                   </div>
                 </section>
 
-                {/* --- Attachments Section --- */}
+                {/* ATTACHMENTS SECTION */}
                 <section className="et-section">
                   <div className="et-section-header"><Upload size={22} /> <h3>Attachments</h3> </div>
                   <FileRow 
                     label="Requirement Document" 
                     field="requirement" 
                     onChange={handleFileChange} 
-                    onView={handleViewFile} 
+                    onView={() => handleViewFile('requirement')} 
                     hasExisting={!!existingFiles['requirement']} 
                     currentFile={files['requirement']} 
                   />
+                  <p className="et-hint-text">Supported formats: PDF, JPG, PNG, DOCX (Max 5MB)</p>
                 </section>
               </div>
 
               {/* --- Billing & Notes --- */}
               <div className="et-form-right">
                 <div className="et-sticky-sidebar">
+                  {/* BILLING SECTION */}
                   <section className="et-section">
                     <div className="et-section-header"> <DollarSign size={20} /> <h3>Billing & Notes</h3> </div>
-                    <div className="et-input-group"> <label>Estimated Price (PHP)</label> <input type="number" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="et-input" /> </div>
-                    <div className="et-input-group" style={{marginTop: '15px'}}> <label>Admin Remarks</label> <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Enter notes or updates for the client..." /> </div>
+                    <div className="et-input-group"> 
+                        <label>Estimated Price (PHP)</label> 
+                        <div className="et-price-input-wrapper">
+                            <span className="et-currency-prefix">₱</span>
+                            <input type="text" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="et-input et-price-input" placeholder="0.00" /> 
+                        </div>
+                    </div>
+                    <div className="et-input-group" style={{marginTop: '20px'}}> 
+                        <label>Admin Remarks / Internal Notes</label> 
+                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="6" placeholder="Add notes about this request..." /> 
+                    </div>
                   </section>
+
+                  {/* FORM ACTIONS */}
                   <div className="et-form-actions">
-                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}> {submitting ? "SAVING..." : "UPDATE CHANGES"} </button>
+                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}> 
+                        {submitting ? "SAVING UPDATES..." : "UPDATE REQUEST"} 
+                    </button>
+                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>
+                        DISCARD CHANGES
+                    </button>
                   </div>
                 </div>
               </div>
@@ -405,27 +482,28 @@ const EditPassport = () => {
         </div>
       </main>
 
-      {/* --- PREVIEW MODAL --- */}
+      {/* FILE PREVIEW MODAL */}
       {previewFile && (
-        <div className="et-modal-overlay" onClick={() => setPreviewFile(null)} style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 12000
-        }}>
-          <div className="et-modal-preview-wrapper" onClick={e => e.stopPropagation()} style={{
-            backgroundColor: 'white', width: '85%', maxWidth: '1000px', borderRadius: '12px', overflow: 'hidden'
-          }}>
-            <div className="et-modal-preview-header" style={{ padding: '1rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: '600' }}>{previewFile.name}</span>
-              <button onClick={() => setPreviewFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+        <div className="et-modal-overlay" onClick={() => setPreviewFile(null)}>
+          <div className="et-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
+            <div className="et-modal-preview-header">
+              <span className="et-preview-filename">{previewFile.name.split('/').pop()}</span>
+              <button className="et-close-preview" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
-            <div className="et-modal-preview-body" style={{ padding: '20px', minHeight: '400px', overflowY: 'auto' }}>
-              {renderPreviewContent()}
+            <div className="et-modal-preview-body">
+                {renderPreviewContent()}
+            </div>
+            <div className="et-modal-preview-footer">
+                <button className="et-delete-file-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
+                  <Trash2 size={18} /> Remove File
+                </button>
+                <button className="et-close-btn-simple" onClick={() => setPreviewFile(null)}>Close</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- CONFIRM MODAL --- */}
+      {/* CONFIRMATION DIALOG */}
       <CustomConfirmModal 
         isOpen={confirmConfig.isOpen} 
         title={confirmConfig.title} 

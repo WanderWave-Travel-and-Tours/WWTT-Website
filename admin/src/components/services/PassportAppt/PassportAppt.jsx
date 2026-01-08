@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import './PassportAppt.css';
 import PassportApplicationModal from './PassportApplicationModal';
-// Assuming you have these modal files created based on previous context
 import { 
     AppointmentViewModal, 
     PassportContactRemarksModal, 
@@ -18,6 +17,25 @@ import {
 
 // --- 1. DEFINE CONSTANTS & HELPERS FIRST ---
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log('📊 Admin Data from localStorage:', adminData);
+        
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return {
+            userEmail: 'Unknown Admin',
+            adminId: null
+        };
+    }
+};
+
 const PASSPORT_STAT_IMAGES = {
     TOTAL_REQUESTS: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800',
     PENDING: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800',
@@ -25,7 +43,7 @@ const PASSPORT_STAT_IMAGES = {
     PAID: 'https://images.unsplash.com/photo-1550565118-c974fb6c1377?auto=format&fit=crop&q=80&w=800'
 };
 
-// --- 2. SUB-COMPONENTS (Must be outside the main component) ---
+// --- 2. SUB-COMPONENTS ---
 
 const PassportPagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
   const [jumpPageInput, setJumpPageInput] = useState("");
@@ -369,12 +387,21 @@ const PassportAppt = () => {
     fetchDocuments(inquiry._id);
   };
 
+  // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
   const handleArchiveInquiry = async (inquiry) => {
     if (!window.confirm(`Are you sure you want to archive request #${inquiry._id.slice(-6).toUpperCase()}?`)) return;
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+
     try {
       const response = await axios.put(
         `http://localhost:5000/api/inquiries/${inquiry._id}/archive`,
-        { isArchive: 'Yes' }
+        { 
+          isArchive: 'Yes',
+          userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
+          adminId    // 🔥 ADD ADMIN INFO FOR LOGS
+        }
       );
       if (response.data.success) {
         alert("Request archived successfully.");
@@ -399,10 +426,21 @@ const PassportAppt = () => {
     }, 200);
   };
 
+  // 🔥🔥🔥 UPDATED: UPDATE STATUS WITH ADMIN DATA 🔥🔥🔥
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     if (!window.confirm(`Set status to ${newStatus}?`)) return;
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, { status: newStatus });
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, 
+      { 
+        status: newStatus,
+        userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
+        adminId    // 🔥 ADD ADMIN INFO FOR LOGS
+      });
+
       if (response.data.success) {
         alert("Status updated successfully!");
         fetchInquiries();
@@ -416,25 +454,24 @@ const PassportAppt = () => {
 
   const handleRequestPayment = async () => {
     if (!window.confirm("Request payment from user?")) return;
-    try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, { status: "PAYMENT_PENDING" });
-      if (response.data.success) {
-        alert("Payment requested!");
-        fetchInquiries();
-        setSelectedInquiry({ ...selectedInquiry, status: "PAYMENT_PENDING" });
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to request payment");
-    }
+    // Calls the updated status handler which now has logs
+    await handleUpdateInquiryStatus(selectedInquiry._id, "PAYMENT_PENDING");
   };
 
+  // 🔥🔥🔥 UPDATED: CONTACT WITH REMARKS + ADMIN DATA 🔥🔥🔥
   const submitContactWithRemarks = async () => {
     if (!selectedInquiry || !contactRemarks.trim()) return alert("Please enter remarks");
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+
     try {
       const formData = new FormData();
       formData.append("status", "CONTACTED");
       formData.append("remarks", contactRemarks);
+      formData.append("userEmail", userEmail);   // 🔥 ADD ADMIN INFO FOR LOGS
+      formData.append("adminId", adminId);       // 🔥 ADD ADMIN INFO FOR LOGS
+
       if (contactEvidence) formData.append("evidence", contactEvidence);
       
       const response = await axios.put(
@@ -456,10 +493,21 @@ const PassportAppt = () => {
     }
   };
 
+  // 🔥🔥🔥 UPDATED: CONFIRM PAYMENT WITH ADMIN DATA 🔥🔥🔥
   const handleConfirmPayment = async () => {
     if (!window.confirm("Confirm payment received?")) return;
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: "Admin" });
+      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, 
+      { 
+        adminName: "Admin",
+        userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
+        adminId    // 🔥 ADD ADMIN INFO FOR LOGS
+      });
+      
       if (response.data.success) {
         alert("Payment confirmed!");
         fetchInquiries();
@@ -471,11 +519,20 @@ const PassportAppt = () => {
     }
   };
 
+  // 🔥🔥🔥 UPDATED: DELIVER DOCS WITH ADMIN DATA 🔥🔥🔥
   const handleDeliverDocuments = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (deliveryFiles.length === 0) return alert("Select files first");
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+
     const formData = new FormData();
     deliveryFiles.forEach((file) => formData.append("documents", file));
+    
+    // 🔥 ADD ADMIN INFO FOR LOGS
+    formData.append("userEmail", userEmail);
+    formData.append("adminId", adminId);
 
     try {
       const response = await axios.put(

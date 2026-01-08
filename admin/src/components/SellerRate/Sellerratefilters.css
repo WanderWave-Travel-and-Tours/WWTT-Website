@@ -62,6 +62,8 @@
 .sr-search-icon {
     position: absolute;
     left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     color: #94a3b8;
     pointer-events: none;
     z-index: 10;
@@ -77,6 +79,7 @@
     color: #0f172a;
     padding: 0 12px 0 40px;
     font-weight: 500;
+    box-sizing: border-box;
 }
 
 .sr-search-box input::placeholder {
@@ -146,7 +149,7 @@
     }
 }
 
-/* Mobile/Small Screens (Below 600px) */
+/* Mobile/Small Screens (Below 600px) - FIXED HEIGHT */
 @media (max-width: 600px) {
     .sr-filter-card {
         padding: 16px;
@@ -162,25 +165,71 @@
         margin-bottom: 0;
     }
 
+    /* SEARCH BOX - FORCE MOBILE HEIGHT */
     .sr-search-box {
-        height: 44px;
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
         border-radius: 10px;
     }
 
     .sr-search-box input {
-        font-size: 14px;
-        padding: 0 12px 0 40px;
+        height: 38px !important;
+        font-size: 13px;
+        padding: 0 12px 0 38px;
         border-radius: 10px;
     }
 
     .sr-search-icon {
-        left: 14px;
+        left: 12px;
+    }
+
+    /* REFRESH BUTTON - FORCE MOBILE HEIGHT */
+    .sr-refresh-btn {
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        font-size: 13px;
+        padding: 8px 16px;
+        border-radius: 10px;
+    }
+}
+
+/* Extra Small Screens (Below 400px) */
+@media (max-width: 400px) {
+    .sr-filter-card {
+        padding: 14px;
+    }
+
+    .sr-filter-wrapper {
+        gap: 10px;
+    }
+
+    .sr-brand-label {
+        font-size: 12px;
+    }
+
+    .sr-search-box {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+    }
+
+    .sr-search-box input {
+        height: 36px !important;
+        font-size: 12px;
+        padding: 0 10px 0 36px;
+    }
+
+    .sr-search-icon {
+        left: 10px;
     }
 
     .sr-refresh-btn {
-        height: 44px;
-        font-size: 13px;
-        padding: 10px 16px;
-        border-radius: 10px;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        font-size: 12px;
+        padding: 6px 14px;
     }
 }

@@ -4,6 +4,20 @@ import { ArrowLeft, Upload, X, Plane, User, Mail, DollarSign, MessageSquare, Use
 import Sidebar from "../../sidebar/sidebar"; 
 import "./EditAirline.css";
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const EditAirline = () => {
   const navigate = useNavigate();
   const { id: airlineId } = useParams();
@@ -30,6 +44,7 @@ const EditAirline = () => {
   const [newFiles, setNewFiles] = useState([]);
   const [filePreviews, setFilePreviews] = useState([]);
 
+  // Ginawa nating /api/inquiries dahil ito ang nasa inquiryRoute.js mo
   const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -100,13 +115,9 @@ const EditAirline = () => {
             existingFiles: data.deliveredDocuments || [],
           });
 
-          // Set file previews for existing files
-          if (data.deliveredDocuments && data.deliveredDocuments.length > 0) {
-            setFilePreviews(data.deliveredDocuments.map(doc => ({
-              url: `http://localhost:5000${doc.fileUrl}`,
-              name: doc.fileName,
-              isExisting: true
-            })));
+          // I-set ang preview kung may existing image (evidenceName)
+          if (data.evidenceName) {
+            setImagePreview(`http://localhost:5000/uploads/${data.evidenceName}`);
           }
         }
       } catch (err) {
@@ -189,6 +200,9 @@ const EditAirline = () => {
     e.preventDefault();
     setSubmitting(true);
 
+    // 🔥 GET ADMIN DATA (To track who updated the record)
+    const { userEmail, adminId } = getAdminData();
+
     const data = new FormData();
     
     // Basic fields
@@ -205,20 +219,14 @@ const EditAirline = () => {
     data.append("airline", formData.airline);
     data.append("flightNumber", formData.flightNumber);
 
-    // ✅ PROPERLY STRINGIFY PASSENGERS (SINGLE LEVEL)
-    data.append("passengers", JSON.stringify(formData.passengers));
+    // 🔥 APPEND ADMIN DATA FOR LOGS
+    data.append("userEmail", userEmail);
+    data.append("adminId", adminId);
 
-    // ✅ HANDLE EXISTING FILES
-    const existingFileUrls = filePreviews
-      .filter(f => f.isExisting)
-      .map(f => f.url.replace('http://localhost:5000', ''));
-    
-    data.append("existingFiles", JSON.stringify(existingFileUrls));
-
-    // ✅ APPEND NEW FILES
-    newFiles.forEach(file => {
-      data.append("documents", file);
-    });
+    // 'evidence' ang gamit sa uploadEvidence.single('evidence') sa route mo
+    if (imageFile) {
+      data.append("evidence", imageFile); 
+    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/update/${airlineId}`, {

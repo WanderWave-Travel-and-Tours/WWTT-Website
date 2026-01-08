@@ -85,21 +85,29 @@ const Settings = () => {
         }
     };
 
+    const mainClasses = `settings-main ${isSidebarCollapsed ? 'collapsed' : ''}`;
+
     return (
         <div className="settings-page">
-              <Sidebar 
+            <Sidebar 
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
             
-            <main className={`settings-main ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+            <main className={mainClasses}>
                 <div className="settings-container">
+                    {/* HEADER - Matching Users Style */}
                     <header className="settings-header">
-                        <h1 className="settings-title">BUSINESS PROFILE</h1>
-                        <p className="settings-subtitle">Manage your agency's public information and branding</p>
+                        <div className="settings-header-content">
+                            <h1 className="settings-title">BUSINESS PROFILE</h1>
+                            <p className="settings-subtitle">
+                                Manage your agency's public information and branding
+                            </p>
+                        </div>
                     </header>
 
                     <form onSubmit={handleSubmit} className="settings-grid">
+                        {/* GENERAL INFORMATION SECTION */}
                         <section className="settings-section">
                             <div className="settings-section-header">
                                 <h2 className="settings-section-title">General Information</h2>
@@ -166,6 +174,7 @@ const Settings = () => {
                             </div>
                         </section>
 
+                        {/* LOCATION DETAILS SECTION */}
                         <section className="settings-section">
                             <div className="settings-section-header">
                                 <h2 className="settings-section-title">Location Details</h2>

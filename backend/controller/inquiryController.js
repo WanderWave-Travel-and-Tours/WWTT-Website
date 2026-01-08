@@ -2,7 +2,8 @@ const Inquiry = require('../models/inquiry');
 const Service = require('../models/service');
 const User = require('../models/user');
 const Payment = require('../models/payment');
-const CENOMAR = require('../models/cenomar'); // ADDED THIS: Required para makuha ang price
+const CENOMAR = require('../models/cenomar');
+const ActivityLog = require('../models/ActivityLog'); // ✅ ACTIVITY LOG IMPORT
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
 const mongoose = require('mongoose');
 
@@ -13,6 +14,21 @@ const generateTempPassword = () => {
   return `Wander_${numbers}${randomSpecialChar}`;
 };
 
+// 🔥🔥🔥 HELPER: MAP INQUIRY TYPE TO SPECIFIC MODULE NAME 🔥🔥🔥
+const getModuleFromInquiryType = (inquiryType, serviceName) => {
+    const typeMapping = {
+        'FLIGHT_BOOKING': 'Flight Booking',
+        'VISA': 'Visa Application',
+        'PASSPORT': 'Passport',
+        'PSA': 'PSA Documents',
+        'CENOMAR': 'CENOMAR',
+        'GENERAL': 'General Inquiries'
+    };
+    
+    // Return mapped module or default to General Inquiries
+    return typeMapping[inquiryType] || 'General Inquiries';
+};
+
 // --- HELPER PARA SA PRICE MATCHING ---
 const findCorrectPrice = async (serviceName, cenomarDocument) => {
     try {
@@ -21,7 +37,6 @@ const findCorrectPrice = async (serviceName, cenomarDocument) => {
 
         const matchedService = services.find(s => {
             const docType = (s.documentType || "").toLowerCase().trim();
-            // Check matching: "CENOMAR Assistance" matches "CENOMAR"
             return (
                 docType === searchName || 
                 searchName.includes(docType) || 
@@ -35,7 +50,7 @@ const findCorrectPrice = async (serviceName, cenomarDocument) => {
     } catch (error) {
         console.error("Error finding price:", error);
     }
-    return 0; // Default if not found
+    return 0;
 };
 
 const createInquiry = async (req, res) => {
@@ -61,11 +76,11 @@ const createInquiry = async (req, res) => {
       cenomarId,
       cenomarDocument,
       passportDetails,
-      travelDate,      // <--- ADD THIS
-      lengthOfStay
+      travelDate,
+      lengthOfStay,
+      userEmail,  // ✅ FOR ACTIVITY LOG
+      adminId     // ✅ FOR ACTIVITY LOG
     } = req.body;
-
-
 
     // --- [START] SMART PRICE FIX FOR FRONTEND SUBMISSIONS ---
     let finalPrice = parseFloat(estimatedPrice) || 0;
@@ -90,16 +105,16 @@ const createInquiry = async (req, res) => {
     }
 
     // Auto-generate message for PASSPORT
-if (!message && inquiryType === 'PASSPORT' && passportDetails) {
-  const appType = passportDetails.applicationType || '';
-  const procType = passportDetails.processingType || '';
-  
-  if (appType || procType) {
-    message = `Passport Appointment Request${appType ? ': ' + appType : ''}${procType ? ' (' + procType + ')' : ''}`;
-  } else {
-    message = `Passport Appointment Request`;
-  }
-}
+    if (!message && inquiryType === 'PASSPORT' && passportDetails) {
+      const appType = passportDetails.applicationType || '';
+      const procType = passportDetails.processingType || '';
+      
+      if (appType || procType) {
+        message = `Passport Appointment Request${appType ? ': ' + appType : ''}${procType ? ' (' + procType + ')' : ''}`;
+      } else {
+        message = `Passport Appointment Request`;
+      }
+    }
 
     if (!serviceName || !fullName || !email || !message) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
@@ -159,7 +174,7 @@ if (!message && inquiryType === 'PASSPORT' && passportDetails) {
       psaDocument: psaDocument || null,
       psaId: psaId || null,
       inquiryType: inquiryType || 'GENERAL',
-      estimatedPrice: finalPrice, // ✅ USED THE FIXED PRICE HERE
+      estimatedPrice: finalPrice,
       cenomarDocument: cenomarDocument || null,
       cenomarId: cenomarId || null,
       status: 'PENDING',
@@ -250,6 +265,37 @@ if (!message && inquiryType === 'PASSPORT' && passportDetails) {
 
     const createdInquiry = await Inquiry.findById(result.insertedId);
 
+    // 👇👇👇 ACTIVITY LOG START (CREATE INQUIRY) 👇👇👇
+    try {
+        const activeUser = userEmail || 'System';
+        const activeId = adminId || null;
+        
+        // 🔥 GET SPECIFIC MODULE NAME BASED ON INQUIRY TYPE
+        const specificModule = getModuleFromInquiryType(inquiryType, serviceName);
+
+        await ActivityLog.create({
+            action: 'CREATE',
+            module: specificModule,  // 🔥 USE SPECIFIC MODULE (e.g., "Flight Booking" instead of "Inquiries")
+            user: activeUser,
+            userId: activeId,
+            description: `Created new ${specificModule.toLowerCase()}: ${fullName}`,
+            severity: 'SUCCESS',
+            details: {
+                recordTitle: `${specificModule} - ${fullName}`,
+                recordId: result.insertedId.toString(),
+                method: 'POST',
+                inquiryType: inquiryType,
+                serviceName: serviceName,
+                clientName: fullName,
+                clientEmail: email
+            }
+        });
+        console.log(`✅ Activity Log saved: CREATE ${specificModule}`);
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
     res.status(201).json({ 
       success: true, 
       message: 'Inquiry submitted successfully', 
@@ -278,11 +324,12 @@ const createInquiryWithUploads = async (req, res) => {
             contactNumber,
             message,
             visaCountry,
-            estimatedPrice, // This might be coming in as string "0" or "100"
-            cenomarDocument
+            estimatedPrice,
+            cenomarDocument,
+            userEmail,  // ✅ FOR ACTIVITY LOG
+            adminId     // ✅ FOR ACTIVITY LOG
         } = req.body;
 
-        // --- [START] SMART PRICE FIX FOR ADMIN WALK-IN / UPLOADS ---
         let finalPrice = parseFloat(estimatedPrice) || 0;
     
         if (finalPrice === 0) {
@@ -290,7 +337,6 @@ const createInquiryWithUploads = async (req, res) => {
             finalPrice = await findCorrectPrice(serviceName, cenomarDocument);
             console.log(`✅ Uploads Price Auto-Fixed to: ${finalPrice}`);
         }
-        // --- [END] SMART PRICE FIX ---
 
         if (!email || !fullName) {
             return res.status(400).json({ success: false, message: 'Email and Name are required' });
@@ -322,14 +368,43 @@ const createInquiryWithUploads = async (req, res) => {
             contactNumber,
             message: message,
             visaCountry: visaCountry || 'Japan',
-            estimatedPrice: finalPrice, // ✅ SAVES THE CORRECT PRICE
+            estimatedPrice: finalPrice,
             cenomarDocument: cenomarDocument || serviceName,
             status: 'PENDING',
             isArchive: "No", 
             deliveredDocuments: uploadedDocs,
-            uploader: req.body.uploader || 'USER', // Capture uploader source
+            uploader: req.body.uploader || 'USER',
             documentCategory: req.body.documentCategory || 'REQUIREMENT'
         });
+
+        // 👇👇👇 ACTIVITY LOG START (CREATE WITH UPLOADS) 👇👇👇
+        try {
+            const activeUser = userEmail || 'System';
+            
+            // 🔥 GET SPECIFIC MODULE NAME
+            const specificModule = getModuleFromInquiryType(inquiryType || 'GENERAL', serviceName);
+            
+            await ActivityLog.create({
+                action: 'CREATE',
+                module: specificModule,  // 🔥 SPECIFIC MODULE
+                user: activeUser,
+                userId: adminId || null,
+                description: `Created ${specificModule.toLowerCase()} with document uploads: ${fullName}`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${specificModule} - ${fullName}`,
+                    recordId: newInquiry._id.toString(),
+                    method: 'POST',
+                    filesUploaded: uploadedDocs.length,
+                    inquiryType: inquiryType,
+                    serviceName: serviceName
+                }
+            });
+            console.log(`✅ Activity Log saved: CREATE ${specificModule} with uploads`);
+        } catch (logError) {
+            console.error('⚠️ Failed to save activity log:', logError.message);
+        }
+        // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
         res.status(201).json({
             success: true,
@@ -347,7 +422,6 @@ const getAllInquiries = async (req, res) => {
     const { isArchive } = req.query; 
     let filter = {};
     
-    // Default sa "No" para hindi magpakita ang archive sa regular list kung walang query.
     filter.isArchive = isArchive ? isArchive : "No"; 
 
     const inquiries = await Inquiry.find(filter).sort({ createdAt: -1 });
@@ -367,32 +441,22 @@ const getInquiry = async (req, res) => {
   }
 };
 
-// Hanapin ang updateInquiry sa inquiryController.js at i-update ang logic:
-// inquiryController.js
-
 const updateInquiry = async (req, res) => {
   try {
     const { id } = req.params;
+    
     const existingInquiry = await Inquiry.findById(id);
     
     if (!existingInquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
 
-    const adminEmail = req.body.adminEmail || 'Admin';
-    const changes = [];
-    const updateData = { ...req.body };
-
-    // --- 1. TRACK TEXT CHANGES & FULL NAME ---
-    const fieldsToWatch = {
-      email: "Email Address",
-      contactNumber: "Contact Number",
-      estimatedPrice: "Price"
-    };
-
-    Object.keys(fieldsToWatch).forEach(field => {
-      if (req.body[field] !== undefined && String(req.body[field]) !== String(existingInquiry[field] || "")) {
-        changes.push(`${fieldsToWatch[field]} (from "${existingInquiry[field] || 'none'}" to "${req.body[field]}")`);
+    let remainingFilesList = [];
+    if (req.body.existingFiles) {
+      try {
+        remainingFilesList = JSON.parse(req.body.existingFiles);
+      } catch (e) {
+        remainingFilesList = [];
       }
     });
 
@@ -402,76 +466,58 @@ const updateInquiry = async (req, res) => {
       updateData.fullName = newFullName;
     }
 
-updateData.passportDetails = {
-  ...existingInquiry.passportDetails,
-  applicationType: req.body.passportDocument, // Mula sa input ng Admin
-  processingType: req.body.serviceName      // Mula sa input ng Admin
-};
+    const updateData = {
+      fullName: req.body.fullName,
+      email: req.body.email,
+      contactNumber: req.body.contactNumber,
+      serviceName: req.body.serviceName,
+      message: req.body.message, 
+      adminRemarks: req.body.message,
+      estimatedPrice: parseFloat(req.body.estimatedPrice) || 0,
+      updatedAt: Date.now()
+    };
 
-if (req.body.passengers) {
-  let parsedPassengers = req.body.passengers;
-  if (typeof parsedPassengers === 'string') {
-    parsedPassengers = JSON.parse(parsedPassengers);
-  }
-  updateData.passengers = parsedPassengers;
-}
-    // --- 2. PASSPORT SPECIFIC LOGIC (Strict Schema Matching) ---
-    // In-update para makuha ang Application Type at Processing Type (serviceName)
-    if (existingInquiry.inquiryType === 'PASSPORT') {
-      const currentPassport = existingInquiry.passportDetails || {};
-      
-      // Kunin ang values mula sa body (na in-append natin sa frontend)
-      const newAppType = req.body.passportDocument || req.body.applicationType || currentPassport.applicationType;
-  const newProcType = req.body.serviceName || currentPassport.processingType;
+    updateData.passportDetails = {
+      ...existingInquiry.passportDetails?.toObject(),
+      applicationType: req.body.passportDocument || existingInquiry.passportDetails?.applicationType,
+      processingType: req.body.serviceName || existingInquiry.passportDetails?.processingType
+    };
 
-      updateData.passportDetails = {
-        ...currentPassport,
-        applicationType: newAppType,
-        processingType: newProcType
-      };
-      
-      // Tracking changes para sa Passport fields
-      if (req.body.applicationType && req.body.applicationType !== currentPassport.applicationType) {
-        changes.push(`App Type (from "${currentPassport.applicationType || 'none'}" to "${newAppType}")`);
-      }
-      
-      if (req.body.serviceName && req.body.serviceName !== currentPassport.processingType) {
-        changes.push(`Processing Type (from "${currentPassport.processingType || 'none'}" to "${newProcType}")`);
-      }
-
-      // I-update din ang main serviceName field para mag-match sa processing type
-      updateData.serviceName = newProcType;
+    const documentMap = new Map();
+    
+    if (existingInquiry.deliveredDocuments) {
+      existingInquiry.deliveredDocuments.forEach(doc => {
+        const fieldKey = doc.fileName.split(' - ')[0].trim();
+        if (remainingFilesList.includes(fieldKey)) {
+          documentMap.set(fieldKey, doc);
+        }
+      });
     }
 
-    // --- 3. FILE MANAGEMENT (ENHANCED COMPARISON) ---
-    let remainingFilesUrls = [];
-    try {
-      remainingFilesUrls = req.body.existingFiles ? JSON.parse(req.body.existingFiles) : [];
-    } catch (e) { 
-      remainingFilesUrls = []; 
+    if (req.body.hasExistingEvidence === 'false') {
+        updateData.evidenceUrl = '';
+        updateData.evidenceName = '';
+    } else {
+        updateData.evidenceUrl = existingInquiry.evidenceUrl;
+        updateData.evidenceName = existingInquiry.evidenceName;
     }
 
-    const filteredDocs = (existingInquiry.deliveredDocuments || []).filter(doc => 
-      remainingFilesUrls.some(remUrl => remUrl.includes(doc.fileUrl) || doc.fileUrl.includes(remUrl))
-    );
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        const fieldKey = file.fieldname;
+        const fileUrl = `/uploads/documents/${file.filename}`;
 
-    const newDocs = (req.files || []).map(file => ({
-      fileName: `${file.fieldname} - ${file.originalname}`, 
-      fileUrl: `/uploads/documents/${file.filename}`,
-      uploadedAt: Date.now()
-    }));
-
-    updateData.deliveredDocuments = [...filteredDocs, ...newDocs];
-
-    // --- 4. LOGGING & ADMIN NOTES ---
-    const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' });
-    const newRemarks = req.body.message || ""; 
-
-    if (changes.length > 0 || newRemarks) {
-      const logEntry = changes.length > 0 ? `\n[Log ${timestamp} - ${adminEmail}]: Updated ${changes.join(', ')}.` : "";
-      const remarksEntry = newRemarks ? `\nREMARKS: ${newRemarks}` : "";
-      
-      updateData.adminNotes = (existingInquiry.adminNotes || "") + remarksEntry + logEntry;
+        if (fieldKey === 'evidence' || fieldKey === 'requirement' || fieldKey === 'walkInDoc') {
+            updateData.evidenceUrl = fileUrl;
+            updateData.evidenceName = file.originalname;
+        } 
+        
+        documentMap.set(fieldKey, {
+          fileName: `${fieldKey} - ${file.originalname}`, 
+          fileUrl: fileUrl,
+          uploadedAt: Date.now()
+        });
+      });
     }
 
     delete updateData.message; 
@@ -483,6 +529,38 @@ if (req.body.passengers) {
       { new: true, runValidators: false }
     );
 
+    // 👇👇👇 ACTIVITY LOG START (UPDATE INQUIRY) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            // 🔥 GET SPECIFIC MODULE NAME
+            const specificModule = getModuleFromInquiryType(
+                updatedInquiry.inquiryType || 'GENERAL', 
+                updatedInquiry.serviceName
+            );
+            
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: specificModule,  // 🔥 SPECIFIC MODULE
+                user: userEmail,
+                userId: adminId || null,
+                description: `Updated ${specificModule.toLowerCase()}: ${updatedInquiry.fullName}`,
+                severity: 'INFO',
+                details: {
+                    recordTitle: `${specificModule} - ${updatedInquiry.fullName}`,
+                    recordId: id,
+                    method: 'PUT',
+                    inquiryType: updatedInquiry.inquiryType,
+                    serviceName: updatedInquiry.serviceName
+                }
+            });
+            console.log(`✅ Activity Log saved: UPDATE ${specificModule}`);
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
     res.json({ success: true, data: updatedInquiry });
   } catch (error) {
     console.error('Update Error:', error);
@@ -491,8 +569,16 @@ if (req.body.passengers) {
 };
 const updateInquiryStatus = async (req, res) => {
   try {
-    const { status, adminNotes, contactedBy, remarks } = req.body;
+    const { status, adminNotes, contactedBy, remarks, userEmail, adminId } = req.body;
     const evidenceFile = req.file;
+    
+    const inquiry = await Inquiry.findById(req.params.id);
+    if (!inquiry) {
+      return res.status(404).json({ success: false, message: 'Inquiry not found' });
+    }
+
+    const previousStatus = inquiry.status;
+    
     const updateData = { status, adminNotes, updatedAt: Date.now() };
     if (remarks) updateData.remarks = remarks;
     if (evidenceFile) {
@@ -503,7 +589,41 @@ const updateInquiryStatus = async (req, res) => {
       updateData.contactedAt = Date.now();
       updateData.contactedBy = contactedBy;
     }
+    
     const updated = await Inquiry.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+    // 👇👇👇 ACTIVITY LOG START (UPDATE STATUS) 👇👇👇
+    try {
+        const activeUser = userEmail || 'System';
+        
+        // 🔥 GET SPECIFIC MODULE NAME
+        const specificModule = getModuleFromInquiryType(
+            inquiry.inquiryType || 'GENERAL', 
+            inquiry.serviceName
+        );
+        
+        await ActivityLog.create({
+            action: 'UPDATE',
+            module: specificModule,  // 🔥 SPECIFIC MODULE
+            user: activeUser,
+            userId: adminId || null,
+            description: `Updated ${specificModule.toLowerCase()} status: ${inquiry.fullName} (${previousStatus} → ${status})`,
+            severity: status === 'CANCELLED' ? 'WARNING' : 'INFO',
+            details: {
+                recordTitle: `${specificModule} - ${inquiry.fullName}`,
+                recordId: req.params.id,
+                method: 'PUT',
+                statusChange: `${previousStatus} → ${status}`,
+                remarks: remarks || null,
+                inquiryType: inquiry.inquiryType
+            }
+        });
+        console.log(`✅ Activity Log saved: UPDATE STATUS ${specificModule}`);
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
     res.json({ success: true, data: updated });
   } catch (error) {
     res.status(500).json({ success: false });
@@ -512,7 +632,50 @@ const updateInquiryStatus = async (req, res) => {
 
 const deleteInquiry = async (req, res) => {
   try {
+    const inquiry = await Inquiry.findById(req.params.id);
+    if (!inquiry) {
+      return res.status(404).json({ success: false, message: 'Inquiry not found' });
+    }
+
+    const inquiryInfo = {
+      type: inquiry.inquiryType,
+      name: inquiry.fullName,
+      id: inquiry._id.toString()
+    };
+
     await Inquiry.findByIdAndDelete(req.params.id);
+
+    // 👇👇👇 ACTIVITY LOG START (DELETE INQUIRY) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            // 🔥 GET SPECIFIC MODULE NAME
+            const specificModule = getModuleFromInquiryType(
+                inquiryInfo.type, 
+                inquiry.serviceName
+            );
+            
+            await ActivityLog.create({
+                action: 'DELETE',
+                module: specificModule,  // 🔥 SPECIFIC MODULE
+                user: userEmail,
+                userId: adminId || null,
+                description: `Deleted ${specificModule.toLowerCase()}: ${inquiryInfo.name}`,
+                severity: 'WARNING',
+                details: {
+                    recordTitle: `${specificModule} - ${inquiryInfo.name}`,
+                    recordId: inquiryInfo.id,
+                    method: 'DELETE',
+                    inquiryType: inquiryInfo.type
+                }
+            });
+            console.log(`✅ Activity Log saved: DELETE ${specificModule}`);
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false });
@@ -540,6 +703,8 @@ const getInquiryStats = async (req, res) => {
 const markAsPaid = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userEmail, adminId } = req.body;
+    
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       {
@@ -572,6 +737,37 @@ const markAsPaid = async (req, res) => {
       });
     }
 
+    // 👇👇👇 ACTIVITY LOG START (MARK AS PAID) 👇👇👇
+    try {
+        if (userEmail) {
+            // 🔥 GET SPECIFIC MODULE NAME
+            const specificModule = getModuleFromInquiryType(
+                inquiry.inquiryType || 'GENERAL', 
+                inquiry.serviceName
+            );
+            
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: specificModule,  // 🔥 SPECIFIC MODULE
+                user: userEmail,
+                userId: adminId || null,
+                description: `Marked ${specificModule.toLowerCase()} as PAID: ${inquiry.fullName}`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${specificModule} - ${inquiry.fullName}`,
+                    recordId: id,
+                    method: 'PUT',
+                    paymentAmount: inquiry.estimatedPrice,
+                    inquiryType: inquiry.inquiryType
+                }
+            });
+            console.log(`✅ Activity Log saved: MARK AS PAID ${specificModule}`);
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
     res.json({
       success: true,
       message: 'Payment status updated successfully',
@@ -589,7 +785,7 @@ const markAsPaid = async (req, res) => {
 const confirmPayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { adminName } = req.body;
+    const { adminName, userEmail, adminId } = req.body;
 
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
@@ -606,6 +802,37 @@ const confirmPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
 
+    // 👇👇👇 ACTIVITY LOG START (CONFIRM PAYMENT) 👇👇👇
+    try {
+        if (userEmail) {
+            // 🔥 GET SPECIFIC MODULE NAME
+            const specificModule = getModuleFromInquiryType(
+                inquiry.inquiryType || 'GENERAL', 
+                inquiry.serviceName
+            );
+            
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: specificModule,  // 🔥 SPECIFIC MODULE
+                user: userEmail,
+                userId: adminId || null,
+                description: `Confirmed payment for ${specificModule.toLowerCase()}: ${inquiry.fullName}`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${specificModule} - ${inquiry.fullName}`,
+                    recordId: id,
+                    method: 'PUT',
+                    confirmedBy: adminName || 'Admin',
+                    inquiryType: inquiry.inquiryType
+                }
+            });
+            console.log(`✅ Activity Log saved: CONFIRM PAYMENT ${specificModule}`);
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
     res.json({
       success: true,
       message: 'Payment confirmed successfully',
@@ -619,6 +846,7 @@ const confirmPayment = async (req, res) => {
 const deliverDocuments = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userEmail, adminId } = req.body;
     const files = req.files;
 
     if (!files || files.length === 0) {
@@ -645,6 +873,37 @@ const deliverDocuments = async (req, res) => {
     if (!inquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
+
+    // 👇👇👇 ACTIVITY LOG START (DELIVER DOCUMENTS) 👇👇👇
+    try {
+        if (userEmail) {
+            // 🔥 GET SPECIFIC MODULE NAME
+            const specificModule = getModuleFromInquiryType(
+                inquiry.inquiryType || 'GENERAL', 
+                inquiry.serviceName
+            );
+            
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: specificModule,  // 🔥 SPECIFIC MODULE
+                user: userEmail,
+                userId: adminId || null,
+                description: `Delivered documents for ${specificModule.toLowerCase()}: ${inquiry.fullName}`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${specificModule} - ${inquiry.fullName}`,
+                    recordId: id,
+                    method: 'PUT',
+                    documentsDelivered: uploadedDocs.length,
+                    inquiryType: inquiry.inquiryType
+                }
+            });
+            console.log(`✅ Activity Log saved: DELIVER DOCUMENTS ${specificModule}`);
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
     res.json({
       success: true,
@@ -775,7 +1034,7 @@ const getInquiriesByDateRange = async (req, res) => {
 const toggleArchive = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isArchive } = req.body; 
+    const { isArchive, userEmail, adminId } = req.body; 
 
     if (!['Yes', 'No'].includes(isArchive)) {
       return res.status(400).json({ success: false, message: 'Invalid value for isArchive' });
@@ -788,6 +1047,39 @@ const toggleArchive = async (req, res) => {
     );
 
     if (!inquiry) return res.status(404).json({ success: false, message: 'Inquiry not found' });
+
+    // 👇👇👇 ACTIVITY LOG START (ARCHIVE/RESTORE) 👇👇👇
+    try {
+        if (userEmail) {
+            // 🔥 GET SPECIFIC MODULE NAME
+            const specificModule = getModuleFromInquiryType(
+                inquiry.inquiryType || 'GENERAL', 
+                inquiry.serviceName
+            );
+            
+            await ActivityLog.create({
+                action: isArchive === 'Yes' ? 'ARCHIVE' : 'UPDATE',
+                module: specificModule,  // 🔥 SPECIFIC MODULE
+                user: userEmail,
+                userId: adminId || null,
+                description: isArchive === 'Yes' 
+                    ? `Archived ${specificModule.toLowerCase()}: ${inquiry.fullName}`
+                    : `Restored ${specificModule.toLowerCase()}: ${inquiry.fullName}`,
+                severity: isArchive === 'Yes' ? 'WARNING' : 'INFO',
+                details: {
+                    recordTitle: `${specificModule} - ${inquiry.fullName}`,
+                    recordId: id,
+                    method: 'PUT',
+                    archiveStatus: isArchive,
+                    inquiryType: inquiry.inquiryType
+                }
+            });
+            console.log(`✅ Activity Log saved: ${isArchive === 'Yes' ? 'ARCHIVE' : 'RESTORE'} ${specificModule}`);
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
     res.json({ success: true, message: `Inquiry archive status set to ${isArchive}`, data: inquiry });
   } catch (error) {

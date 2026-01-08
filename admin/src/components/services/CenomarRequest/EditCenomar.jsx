@@ -4,9 +4,24 @@ import {
   ArrowLeft, Upload, X, FileText, User, MessageSquare, 
   DollarSign, Eye, Trash2, HelpCircle, Briefcase
 } from "lucide-react";
+import axios from "axios"; // Added for better integration
 import Sidebar from "../../sidebar/sidebar"; 
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditCenomar.css"; 
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Para sa Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 // Reusable Confirm Modal (Patterned after EditPSA)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -115,7 +130,6 @@ const EditCenomar = () => {
 
   const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
   const FILE_BASE_URL = "http://localhost:5000";
-  const LOGS_API_URL = "http://localhost:5000/api/activity-logs";
 
   const cenomarOptions = [
     { label: "CENOMAR - ₱150", value: "CENOMAR - ₱150", price: 150 },
@@ -335,11 +349,7 @@ const EditCenomar = () => {
 
   const performSubmit = async () => {
     setSubmitting(true);
-
-    const adminData = JSON.parse(localStorage.getItem('adminUser')) || {};
-    const adminName = adminData.username || adminData.name || "Admin";
-    const adminEmail = adminData.email || "N/A";
-
+    const { userEmail, adminId } = getAdminData(); // Get current admin info
     const data = new FormData();
     const fullName = `${formData.givenName} ${formData.lastName}`.trim();
     
@@ -347,6 +357,8 @@ const EditCenomar = () => {
         data.append(key, formData[key]);
     });
     data.append("fullName", fullName);
+    data.append("userEmail", userEmail); // For Activity Log
+    data.append("adminId", adminId);     // For Activity Log
 
     // Backend usually expects 'evidence' for the requirement file
     if (files.requirement) {
@@ -378,43 +390,14 @@ const EditCenomar = () => {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/update/${cenomarId}`, {
-        method: "PUT",
-        body: data, 
-      });
+      // Changed to axios for consistency with logs implementation
+      const res = await axios.put(`${API_BASE_URL}/update/${cenomarId}`, data);
       
-      const result = await res.json();
-
-      if (result.success) {
-        if (changes.length > 0) {
-          try {
-            await fetch(LOGS_API_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'UPDATE',
-                module: 'CENOMAR',
-                entity: 'CENOMAR Request',
-                entityId: cenomarId,
-                user: adminName,
-                severity: 'SUCCESS',
-                description: `Admin updated CENOMAR request for ${fullName}.`,
-                details: {
-                  recordTitle: fullName,
-                  changes: changes,
-                  adminEmail: adminEmail
-                }
-              })
-            });
-          } catch (logErr) {
-            console.error("Failed to save activity log:", logErr);
-          }
-        }
-
-        toast.success("CENOMAR Request updated successfully!", "Update Success");
+      if (res.data.success) {
+        toast.success("CENOMAR Request updated successfully!", "Success");
         navigate("/services/cenomar");
       } else {
-        toast.error(result.message || "Failed to update record.", "Update Error");
+        toast.error(res.data.message || "Failed to update record.", "Error");
       }
     } catch (err) {
       console.error("Submission error:", err);

@@ -68,6 +68,7 @@
     height: 44px; 
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     font-family: 'Segoe UI', Arial, sans-serif;
+    box-sizing: border-box;
 }
 
 .uf-filter-btn:hover:not(.uf-active-navy) {
@@ -96,6 +97,8 @@
     padding: 0;
     margin-left: auto;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
 }
 
 .uf-search-icon {
@@ -118,6 +121,7 @@
     color: #0f172a;
     padding: 0 12px 0 40px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    box-sizing: border-box;
 }
 
 .uf-search-input::placeholder {
@@ -161,7 +165,7 @@
         order: 3; 
         min-width: 100%;
         max-width: 100%;
-        height: 48px; 
+        height: 44px; 
         margin-left: 0; 
     }
     
@@ -169,16 +173,94 @@
         flex: 1 1 30%;
         padding: 12px 10px; 
         font-size: 13px;
-        height: 48px;
+        height: 44px;
     }
 }
 
+/* Mobile/Small Screens (Below 600px) - FIXED HEIGHT */
 @media (max-width: 600px) {
+    .uf-filter-card {
+        padding: 16px;
+    }
+
+    .uf-filter-wrapper {
+        gap: 12px;
+    }
+
+    .uf-brand-label {
+        font-size: 13px;
+    }
+
     .uf-filter-buttons {
         flex-direction: column;
+        gap: 8px;
     }
     
+    /* FILTER BUTTONS - FORCE MOBILE HEIGHT */
     .uf-filter-btn {
         width: 100%;
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        font-size: 13px;
+        padding: 8px 16px;
+    }
+
+    /* SEARCH BOX - FORCE MOBILE HEIGHT */
+    .uf-search-box {
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        border-radius: 10px;
+    }
+
+    .uf-search-input {
+        height: 38px !important;
+        font-size: 13px;
+        padding: 0 12px 0 38px;
+        border-radius: 10px;
+    }
+
+    .uf-search-icon {
+        left: 12px;
+    }
+}
+
+/* Extra Small Screens (Below 400px) */
+@media (max-width: 400px) {
+    .uf-filter-card {
+        padding: 14px;
+    }
+
+    .uf-filter-wrapper {
+        gap: 10px;
+    }
+
+    .uf-brand-label {
+        font-size: 12px;
+    }
+
+    .uf-filter-btn {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        font-size: 12px;
+        padding: 6px 14px;
+    }
+
+    .uf-search-box {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+    }
+
+    .uf-search-input {
+        height: 36px !important;
+        font-size: 12px;
+        padding: 0 10px 0 36px;
+    }
+
+    .uf-search-icon {
+        left: 10px;
     }
 }

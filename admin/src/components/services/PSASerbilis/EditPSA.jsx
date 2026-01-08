@@ -4,9 +4,24 @@ import {
   ArrowLeft, Upload, X, FileText, User, 
   MessageSquare, DollarSign, MapPin, HelpCircle, Briefcase, Eye, Trash2
 } from "lucide-react";
+import axios from "axios"; 
 import Sidebar from "../../sidebar/sidebar"; 
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditPSA.css"; 
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Para sa Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 // Reusable Confirm Modal
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -115,8 +130,6 @@ const EditPSA = () => {
 
   const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
   const FILE_BASE_URL = "http://localhost:5000";
-  // Add Activity Logs API
-  const LOGS_API_URL = "http://localhost:5000/api/activity-logs";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -136,8 +149,8 @@ const EditPSA = () => {
   useEffect(() => {
     const fetchPSADetails = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/${psaId}`);
-        const result = await res.json();
+        const res = await axios.get(`${API_BASE_URL}/${psaId}`);
+        const result = res.data;
         
         if (result.success && result.data) {
           const data = result.data;
@@ -281,7 +294,7 @@ const EditPSA = () => {
     const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/;
     
     if (!strictEmailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email format (e.g., user@email.com). Suffixes after .com are not allowed.", "Invalid Email");
+      toast.error("Please enter a valid email format (e.g., user@email.com).", "Invalid Email");
       return;
     }
 
@@ -299,6 +312,17 @@ const EditPSA = () => {
 
 const performSubmit = async () => {
     setSubmitting(true);
+    const { userEmail, adminId } = getAdminData(); 
+    const data = new FormData();
+    
+    const fullName = `${formData.givenName} ${formData.lastName}`.trim();
+    
+    Object.keys(formData).forEach(key => {
+        data.append(key, formData[key]);
+    });
+    data.append("fullName", fullName);
+    data.append("userEmail", userEmail); 
+    data.append("adminId", adminId);
 
     // 1. Kunin ang Admin Info mula sa localStorage para sa logs
     const adminData = JSON.parse(localStorage.getItem('adminUser')) || {};
@@ -306,91 +330,13 @@ const performSubmit = async () => {
     const adminName = adminData.username || "Admin";
 
     try {
-      // 2. Fetch ang current data bago i-update para sa accurate comparison
-      const currentRes = await fetch(`${API_BASE_URL}/${psaId}`);
-      const currentResult = await currentRes.json();
-      const original = currentResult.data || {};
-
-      // 3. I-prepare ang FormData para sa update request
-      const data = new FormData();
-      const fullName = `${formData.givenName} ${formData.lastName}`.trim();
+      const res = await axios.put(`${API_BASE_URL}/update/${psaId}`, data);
       
-      Object.keys(formData).forEach(key => {
-          data.append(key, formData[key]);
-      });
-      data.append("fullName", fullName);
-
-      // File handling logic
-      if (files.requirement) {
-        data.append("evidence", files.requirement); 
-      }
-      
-      const remainingFilesList = Object.values(existingFiles);
-      data.append("existingFiles", JSON.stringify(remainingFilesList));
-      data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
-
-      // 4. Comparison Logic: I-track kung ano ang mga nabagong fields
-      let changes = [];
-      const trackChange = (label, oldVal, newVal) => {
-        const normOld = oldVal ? String(oldVal).trim() : "";
-        const normNew = newVal ? String(newVal).trim() : "";
-        if (normOld !== normNew && normNew !== "") {
-          changes.push(`${label} changed from "${normOld}" to "${normNew}"`);
-        }
-      };
-
-      trackChange("Given Name", original.givenName, formData.givenName);
-      trackChange("Last Name", original.lastName, formData.lastName);
-      trackChange("Email", original.email, formData.email);
-      trackChange("Contact", original.contactNumber, formData.contactNumber);
-      trackChange("Document Type", original.psaDocument, formData.psaDocument);
-      trackChange("Price", original.estimatedPrice, formData.estimatedPrice);
-      trackChange("Admin Remarks", original.adminRemarks || original.message, formData.message);
-
-      if (files.requirement instanceof File) {
-        changes.push(`Updated requirement file: ${files.requirement.name}`);
-      }
-
-      // 5. Isagawa ang Update Request sa Backend
-      const res = await fetch(`${API_BASE_URL}/update/${psaId}`, {
-        method: "PUT",
-        body: data,
-      });
-      const result = await res.json();
-
-      if (result.success) {
-        // 6. Mag-save ng Activity Log kung mayroong mga pagbabago
-        if (changes.length > 0) {
-          try {
-            await fetch(LOGS_API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: 'UPDATE',
-                module: 'PSA',
-                entity: 'PSA Inquiry',
-                entityId: psaId,
-                user: adminName,
-                severity: 'SUCCESS',
-                description: `Admin (${adminEmail}) updated PSA request for ${fullName}.`,
-                details: {
-                  adminEmail,
-                  targetName: fullName,
-                  changes: changes,
-                  // Dito ipinapasa ang bilang ng nabagong fields para sa modal
-                  affectedRecords: changes.length 
-                }
-              }),
-            });
-          } catch (logErr) {
-            console.error("Failed to save activity log:", logErr);
-          }
-        }
-
+      if (res.data.success) {
         toast.success("PSA Request updated successfully!", "Success");
         navigate("/services/psa");
       } else {
-        toast.error(result.message || "Failed to update record.", "Error");
+        toast.error(res.data.message || "Failed to update record.", "Error");
       }
     } catch (err) {
       console.error("Submit Error:", err);
@@ -451,39 +397,15 @@ const performSubmit = async () => {
                   <div className="et-fields-grid">
                     <div className="et-input-group">
                       <label>Given Name</label>
-                      <input 
-                        type="text" 
-                        name="givenName" 
-                        value={formData.givenName} 
-                        onChange={handleInputChange} 
-                        className="et-input" 
-                        placeholder="Letters only"
-                        required 
-                      />
+                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" placeholder="Letters only" required />
                     </div>
                     <div className="et-input-group">
                       <label>Last Name</label>
-                      <input 
-                        type="text" 
-                        name="lastName" 
-                        value={formData.lastName} 
-                        onChange={handleInputChange} 
-                        className="et-input" 
-                        placeholder="Letters only"
-                        required 
-                      />
+                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" placeholder="Letters only" required />
                     </div>
                     <div className="et-input-group">
                       <label>Email</label>
-                      <input 
-                        type="email" 
-                        name="email" 
-                        value={formData.email} 
-                        onChange={handleInputChange} 
-                        className="et-input" 
-                        placeholder="example@email.com"
-                        required 
-                      />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" placeholder="example@email.com" required />
                     </div>
                     <div className="et-input-group">
                       <label>Contact No.</label>
@@ -548,14 +470,7 @@ const performSubmit = async () => {
                     </div>
                     <div className="et-input-group" style={{ marginTop: "15px" }}>
                        <label>Admin Remarks</label>
-                       <textarea 
-                        name="message" 
-                        value={formData.message} 
-                        onChange={handleInputChange} 
-                        className="et-textarea" 
-                        rows="4" 
-                        placeholder="Internal notes..." 
-                       />
+                       <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Internal notes..." />
                     </div>
                   </section>
                   
@@ -563,9 +478,7 @@ const performSubmit = async () => {
                     <button type="submit" className="et-btn et-btn--submit" disabled={submitting}>
                       {submitting ? "SAVING..." : "UPDATE REQUEST"}
                     </button>
-                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>
-                      DISCARD
-                    </button>
+                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>DISCARD</button>
                   </div>
                 </div>
               </div>
