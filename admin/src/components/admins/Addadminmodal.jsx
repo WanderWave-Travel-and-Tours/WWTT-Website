@@ -10,7 +10,7 @@ import {
   Shield,
   UserPlus
 } from 'lucide-react';
-import './AddAdminModal.css';
+import './Addadminmodal.css';
 import axios from 'axios';
 
 const AddAdminModal = ({ isOpen, onClose, onAdminAdded }) => {
