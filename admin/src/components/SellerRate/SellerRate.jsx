@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import SellerRateStats from './Sellerratestats';
-import SellerRateFilters from './SellerRateFilters';
+import SellerRateFilters from './Sellerratefilters';
 import SellerRateTable from './Sellerratetable';
 import SellerRateModal from './Sellerratemodal';
 import SellerRateUploadModal from './SellerRateUploadModal';

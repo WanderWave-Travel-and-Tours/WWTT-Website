@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Save } from 'lucide-react';
-import './SellerRateModal.css';
+import './Sellerratemodal.css';
 
 const SellerRateModal = ({ 
   show, 

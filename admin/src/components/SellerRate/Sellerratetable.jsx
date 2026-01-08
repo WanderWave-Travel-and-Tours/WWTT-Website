@@ -1,6 +1,6 @@
 import React from 'react';
 import { Edit2, Archive } from 'lucide-react';
-import './SellerRateTable.css';
+import './Sellerratetable.css';
 
 const SellerRateTable = ({ loading, rates, onEdit, onArchive }) => {
   
