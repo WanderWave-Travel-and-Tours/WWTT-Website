@@ -494,3 +494,29 @@
         font-size: 12px;
     }
 }
+
+/* Idagdag ito sa dulo ng iyong addblog.css */
+
+.arc-confirm-overlay {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.arc-confirm-modal {
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Hover effects para sa buttons ng modal */
+.arc-confirm-modal button:hover {
+    filter: brightness(0.9);
+    transition: all 0.2s;
+}
