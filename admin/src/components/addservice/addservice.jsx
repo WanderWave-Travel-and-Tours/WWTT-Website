@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { HelpCircle } from "lucide-react"; // Para sa confirmation modal icon
 import Sidebar from "../sidebar/sidebar";
 import ServiceImageUpload from "./ServiceImageUpload";
 import ServiceDetails from "./ServiceDetails";
@@ -11,12 +12,82 @@ import "./addservice.css";
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// ✅ Import Toast Manager
+import { useToast } from "../toast/ToastManager";
+
+// ✅ Custom Confirm Modal Component (Reference from EditVisa.jsx)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AddService = () => {
   const navigate = useNavigate();
+  const toast = useToast(); // ✅ Initialize Toast
 
   // Sidebar state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
+  // ✅ Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
 
   // Service form state
   const [formState, setFormState] = useState({
@@ -40,7 +111,6 @@ const AddService = () => {
   // ✅ AUTO-DRAFT LOGIC START
   // =========================================================
 
-  // 1. Helper: File <-> Base64 Converters
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -56,14 +126,10 @@ const AddService = () => {
     return new File([blob], fileName, { type: mimeType });
   };
 
-  // 2. Draft Payload State
   const [draftPayload, setDraftPayload] = useState(null);
 
-  // 3. Listen to state changes and update Draft Payload
   useEffect(() => {
     const updateDraft = async () => {
-      // 🛑 FIX: Check if form is completely empty/default before saving
-      // This prevents the modal from appearing if the user cleared the form or just visited
       const isFormEmpty = 
         !formState.title && 
         !formState.description && 
@@ -72,22 +138,20 @@ const AddService = () => {
         !formState.order && 
         !formState.hasSubCollection && 
         !formState.subCollectionName && 
-        formState.category === "DOCUMENTATION" && // Check against default
-        (formState.requirements.length === 1 && formState.requirements[0] === "") && // Empty reqs
+        formState.category === "DOCUMENTATION" && 
+        (formState.requirements.length === 1 && formState.requirements[0] === "") && 
         !file;
 
       if (isFormEmpty) {
-        setDraftPayload(null); // Do not save anything
+        setDraftPayload(null);
         return;
       }
 
       let imageBase64 = null;
       let imageMeta = null;
 
-      // Handle Image Conversion
       if (file) {
         try {
-          // Limit draft image size (~3MB limit safety)
           if (file.size < 3 * 1024 * 1024) { 
             imageBase64 = await fileToBase64(file);
             imageMeta = { name: file.name, type: file.type };
@@ -99,23 +163,21 @@ const AddService = () => {
 
       setDraftPayload({
         ...formState,
-        image: imageBase64, // Saved as Base64 string
+        image: imageBase64,
         imageMeta: imageMeta
       });
     };
 
     const timeoutId = setTimeout(() => {
       updateDraft();
-    }, 500); // Debounce
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [formState, file]);
 
-  // 4. Restore Function
   const restoreDraftData = async (data) => {
     if (!data) return;
 
-    // Restore Form Fields
     setFormState({
       title: data.title || "",
       description: data.description || "",
@@ -129,7 +191,6 @@ const AddService = () => {
       requirements: data.requirements || [""],
     });
 
-    // Restore Image
     if (data.image && data.imageMeta) {
       try {
         const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
@@ -141,7 +202,6 @@ const AddService = () => {
     }
   };
 
-  // 5. Initialize Hook
   const { 
     clearDraft, 
     hasDraft, 
@@ -149,14 +209,13 @@ const AddService = () => {
     discardDraft,
     draftInfo 
   } = useAutoDraft({
-    module: 'add-service', // Unique ID
+    module: 'add-service',
     formData: draftPayload,
     setFormData: restoreDraftData,
     imagePreview: previewUrl, 
-    autoRestore: false // Manual via modal
+    autoRestore: false 
   });
 
-  // 6. Modal State
   const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   useEffect(() => {
@@ -168,40 +227,58 @@ const AddService = () => {
   const handleRestoreDraft = () => {
     restoreDraft();
     setShowRestoreModal(false);
+    toast.info("Draft restored successfully.", "Draft System");
   };
 
   const handleDiscardDraft = async () => {
-    await discardDraft(); // Ensure storage is cleared
+    await discardDraft();
     setShowRestoreModal(false);
+    toast.info("Draft discarded.");
   };
 
   // =========================================================
   // ✅ AUTO-DRAFT LOGIC END
   // =========================================================
 
-  // Update form field
   const updateField = (field, value) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Update requirements array
   const updateRequirements = (newRequirements) => {
     setFormState((prev) => ({ ...prev, requirements: newRequirements }));
   };
 
-  // Handle Cancel
-  const handleCancel = async () => {
-    if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-      // ✅ CLEAR DRAFT ON CANCEL
-      await clearDraft();
-      navigate(-1);
-    }
+  // ✅ Updated Handle Cancel with Custom Modal
+  const handleCancel = () => {
+    askConfirmation(
+      "Discard Changes",
+      "Are you sure you want to cancel? All unsaved changes will be lost.",
+      async () => {
+        await clearDraft();
+        toast.info("Changes discarded.");
+        navigate(-1);
+      },
+      "danger"
+    );
   };
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
+  // ✅ Updated Handle Submit with Custom Modal
+  const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (!file) {
+      toast.warning("Please upload an image for the service.", "Missing Attachment");
+      return;
+    }
+
+    askConfirmation(
+      "Publish Service",
+      "Are you sure you want to publish this new service?",
+      () => performSubmit()
+    );
+  };
+
+  const performSubmit = async () => {
     const processedRequirements = formState.requirements.filter(
       (item) => item.trim().length > 0
     );
@@ -226,14 +303,8 @@ const AddService = () => {
 
     if (file) {
       formData.append("image", file);
-    } else {
-      alert("Please upload an image for the service.");
-      return;
     }
 
-    // =========================================================
-    // USER DATA HANDLING
-    // =========================================================
     try {
       const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
       const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
@@ -241,12 +312,9 @@ const AddService = () => {
 
       formData.append("userEmail", activeUser);
       formData.append("adminId", activeId);
-      
-      console.log("Submitting Service by:", activeUser); 
     } catch (err) {
       console.error("Error parsing admin data:", err);
     }
-    // =========================================================
 
     try {
       const response = await fetch("http://localhost:5000/api/services", {
@@ -256,9 +324,7 @@ const AddService = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert("✅ Service Added Successfully!");
-        
-        // ✅ CLEAR DRAFT ON SUCCESS
+        toast.success("Service added successfully!");
         await clearDraft();
 
         // Reset form
@@ -276,13 +342,15 @@ const AddService = () => {
         });
         setFile(null);
         setPreviewUrl(null);
+        
+        // Navigate back or to list after success
+        setTimeout(() => navigate("/services"), 1500);
       } else {
-        console.error("Server error:", data);
-        alert("❌ Error: " + (data.message || "Server error"));
+        toast.error(data.message || "Failed to save service", "Server Error");
       }
     } catch (error) {
       console.error("Fetch error:", error);
-      alert("❌ Error connecting to server");
+      toast.error("Error connecting to server. Please try again later.", "Connection Failed");
     }
   };
 
@@ -295,6 +363,16 @@ const AddService = () => {
         onRestore={handleRestoreDraft}
         onDiscard={handleDiscardDraft}
         draftInfo={draftInfo}
+      />
+
+      {/* ✅ CUSTOM CONFIRMATION MODAL */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />

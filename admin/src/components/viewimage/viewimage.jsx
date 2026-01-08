@@ -1,12 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Calendar, Eye, Image as ImageIcon } from 'lucide-react';
+import { Archive, Calendar, Eye, Image as ImageIcon, HelpCircle, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import ImageDetailModal from './ImageDetailModal';
 import ImagePagination from './ImagePagination';
 import ImageFilters from './ImageFilters';
+import { useToast } from "../toast/ToastManager"; // In-import ang Toast
 import './viewimage.css';
 
+// --- CUSTOM CONFIRMATION MODAL COMPONENT (Based on EditVisa.jsx) ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ViewImage = () => {
+    const toast = useToast(); // Initialize Toast
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -21,10 +67,33 @@ const ViewImage = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
 
+    // Confirmation State
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
     const fileTypeOptions = ['ALL', 'JPG', 'PNG', 'GIF', 'WEBP', 'SVG'];
 
     const getFilterClassName = (type) => {
         return filterFileType === type ? 'if-active-navy' : '';
+    };
+
+    // Helper function for confirmation (Based on EditVisa logic)
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
     };
 
     useEffect(() => {
@@ -43,50 +112,52 @@ const ViewImage = () => {
             const data = await response.json();
             console.log('🖼️ Fetched images:', data);
             
-            // FILTER: I-set lamang sa state ang mga images na "No" ang isArchive status
             const activeImages = data.filter(img => img.isArchive === "No");
             setImages(activeImages);
             
             setCurrentPage(1);
         } catch (error) {
             console.error('❌ Error fetching images:', error);
-            alert('Failed to load images. Make sure the backend is running.');
+            toast.error("Failed to load images. Make sure the backend is running.");
         } finally {
             setLoading(false);
         }
     };
 
-    // UPDATED: Ang function na ito ay nagpapalit na ngayon ng isArchive status sa "Yes"
-    const handleArchive = async (id, imageName) => {
-        if (window.confirm(`Are you sure you want to archive "${imageName || 'this image'}"?`)) {
-            try {
-                // Gagamit tayo ng PATCH/PUT para i-update ang field sa database
-                const response = await fetch(`http://localhost:5000/api/images/${id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ isArchive: 'Yes' })
-                });
-                
-                if (response.ok) {
-                    // I-remove sa UI state ang image dahil "Yes" na ang status nito
-                    const updatedImages = images.filter(img => img._id !== id);
-                    setImages(updatedImages);
-                    alert('Image archived successfully');
+    // Updated handleArchive with Custom Confirmation and Toast
+    const handleArchive = (id, imageName) => {
+        askConfirmation(
+            "Archive Image",
+            `Are you sure you want to archive "${imageName || 'this image'}"?`,
+            async () => {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/images/${id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ isArchive: 'Yes' })
+                    });
                     
-                    const maxPage = Math.ceil(updatedImages.length / itemsPerPage);
-                    if (currentPage > maxPage && maxPage > 0) {
-                        setCurrentPage(maxPage);
+                    if (response.ok) {
+                        const updatedImages = images.filter(img => img._id !== id);
+                        setImages(updatedImages);
+                        toast.success('Image archived successfully');
+                        
+                        const maxPage = Math.ceil(updatedImages.length / itemsPerPage);
+                        if (currentPage > maxPage && maxPage > 0) {
+                            setCurrentPage(maxPage);
+                        }
+                    } else {
+                        toast.error('Failed to archive image');
                     }
-                } else {
-                    alert('Failed to archive image');
+                } catch (error) {
+                    console.error('Error archiving:', error);
+                    toast.error('Server error while archiving');
                 }
-            } catch (error) {
-                console.error('Error archiving:', error);
-                alert('Server error while archiving');
-            }
-        }
+            },
+            "danger"
+        );
     };
 
     const handleViewDetails = (image) => {
@@ -103,11 +174,8 @@ const ViewImage = () => {
         });
     };
 
-    // Filter and search logic (Still based on active images in state)
     const filteredImages = images.filter(image => {
         const matchesSearch = (image.imageName || '').toLowerCase().includes(searchTerm.toLowerCase());
-        
-        // Get file extension from image name
         const fileExtension = (image.imageName?.split('.').pop() || '').toUpperCase();
         const matchesFileType = filterFileType === 'ALL' || fileExtension === filterFileType;
         
@@ -138,7 +206,6 @@ const ViewImage = () => {
                         </button>
                     </header>
 
-                    {/* IMAGE FILTERS */}
                     <ImageFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -236,7 +303,6 @@ const ViewImage = () => {
                                 </table>
                             </div>
                             
-                            {/* 🔥 PAGINATION IS NOW OUTSIDE THE TABLE WRAPPER! */}
                             <ImagePagination
                                 totalItems={filteredImages.length}
                                 itemsPerPage={itemsPerPage}
@@ -256,6 +322,16 @@ const ViewImage = () => {
                     handleArchive={handleArchive}
                 />
             )}
+
+            {/* --- CUSTOM CONFIRMATION MODAL RENDER --- */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };

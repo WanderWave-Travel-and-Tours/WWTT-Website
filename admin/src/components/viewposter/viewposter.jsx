@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Archive, Calendar, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios'; // ✅ Switched to axios for consistency with logs
+import { Archive, Calendar, Eye, EyeOff, Search, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import PosterDetailModal from './PosterDetailModal';
 import PosterPagination from './PosterPagination';
 import PosterFilters from './PosterFilters';
+import { useToast } from '../toast/ToastManager'; // Inimport ang Toast
 import './viewposter.css';
 
 // 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
@@ -19,9 +21,52 @@ const getAdminData = () => {
         console.error('❌ Error getting admin data:', error);
         return { userEmail: 'Unknown Admin', adminId: null };
     }
+// 🔥 Custom Confirm Modal Component (Reference from EditVisa.jsx)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const ViewPoster = () => {
+    const toast = useToast(); // Initialize Toast
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -36,10 +81,33 @@ const ViewPoster = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedPoster, setSelectedPoster] = useState(null);
 
+    // State para sa Confirmation Modal
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
     const statusOptions = ['ALL', 'Active', 'Inactive'];
 
     const getFilterClassName = (status) => {
         return filterStatus === status ? 'pf-active-navy' : '';
+    };
+
+    // Helper function para sa confirmation modal
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
     };
 
     useEffect(() => {
@@ -54,11 +122,17 @@ const ViewPoster = () => {
             
             // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
             const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
+            const response = await fetch('http://localhost:5000/api/posters');
+            if (!response.ok) throw new Error('Failed to fetch');
+            const data = await response.json();
+            
+            const nonArchivedPosters = data.filter(poster => poster.isArchive === "No");
             setPosters(nonArchivedPosters);
             
             setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching posters:', error);
+            toast.error("Failed to load posters from server.");
         } finally {
             setLoading(false);
         }
@@ -92,11 +166,41 @@ const ViewPoster = () => {
                     
                     // Isara ang modal kung ito ay nakabukas
                     if (showDetailModal) setShowDetailModal(false);
+    // Binago para gamitin ang Confirmation Modal sa halip na window.confirm
+    const handleArchive = (id, title) => {
+        askConfirmation(
+            "Archive Poster",
+            `Are you sure you want to archive "${title}"? This will remove it from the active list.`,
+            () => performArchive(id),
+            "danger"
+        );
+    };
+
+    const performArchive = async (id) => {
+        try {
+            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, { 
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isArchive: 'Yes' }) 
+            });
+
+            if (response.ok) {
+                const updatedPosters = posters.filter(poster => poster._id !== id);
+                setPosters(updatedPosters);
+                toast.success('Poster archived successfully');
+                
+                const maxPage = Math.ceil(updatedPosters.length / itemsPerPage);
+                if (currentPage > maxPage && maxPage > 0) {
+                    setCurrentPage(maxPage);
                 }
-            } catch (error) {
-                console.error('Error archiving:', error);
-                alert('Server error while archiving');
+                
+                if (showDetailModal) setShowDetailModal(false);
+            } else {
+                toast.error('Failed to archive poster');
             }
+        } catch (error) {
+            console.error('Error archiving:', error);
+            toast.error('Server error while archiving');
         }
     };
 
@@ -126,6 +230,13 @@ const ViewPoster = () => {
         } catch (error) {
             console.error('Error updating status:', error);
             alert('Failed to update status');
+                toast.info(`Poster status updated to ${newStatus}`);
+            } else {
+                toast.error('Failed to update status');
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            toast.error('Error updating status');
         }
     };
 
@@ -143,7 +254,6 @@ const ViewPoster = () => {
         });
     };
 
-    // Filter at search logic para sa table
     const filteredPosters = posters.filter(poster => {
         const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === 'ALL' || poster.status === filterStatus;
@@ -309,6 +419,16 @@ const ViewPoster = () => {
                     handleArchive={handleArchive}
                 />
             )}
+
+            {/* Global Confirmation Modal */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };

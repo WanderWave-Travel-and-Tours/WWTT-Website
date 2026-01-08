@@ -3,9 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft, Upload } from 'lucide-react';
 import axios from 'axios';
 import Sidebar from '../sidebar/sidebar';
+import { Save, ArrowLeft, Upload, Calendar, HelpCircle } from 'lucide-react';
 import './EditPoster.css';
 
-// ✅ Imports for Draft Functionality
+// ✅ Imports for Notifications and Draft Functionality
+import { useToast } from "../toast/ToastManager"; 
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
@@ -21,14 +23,67 @@ const getAdminData = () => {
         console.error('❌ Error getting admin data:', error);
         return { userEmail: 'Unknown Admin', adminId: null };
     }
+// ✅ Confirmation Modal Component (Patterned after EditVisa)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const EditPoster = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const toast = useToast(); // ✅ Initialize Toast
+
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+
+    // ✅ Confirmation Modal State
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
 
     // Form State
     const [formData, setFormData] = useState({
@@ -47,6 +102,20 @@ const EditPoster = () => {
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+
+    // ✅ Confirmation Helper
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
     };
 
     // Helper to format date for input type="date"
@@ -115,12 +184,16 @@ const EditPoster = () => {
                 image: imageBase64,
                 imageMeta: imageMeta,
                 originalId: id
+                image: imageBase64, 
+                imageMeta: imageMeta,
+                originalId: id 
             });
         };
 
         const timeoutId = setTimeout(() => {
             updateDraft();
         }, 500);
+        }, 500); 
 
         return () => clearTimeout(timeoutId);
     }, [formData, imageFile, isLoading, id]);
@@ -129,7 +202,6 @@ const EditPoster = () => {
         if (!data) return;
         
         if (data.originalId && data.originalId !== id) {
-            console.warn("Draft found but belongs to a different poster ID. Ignoring.");
             return;
         }
 
@@ -146,6 +218,7 @@ const EditPoster = () => {
                 const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
                 setImageFile(restoredFile);
                 setImagePreview(URL.createObjectURL(restoredFile));
+                toast.info("Image restored from draft."); // ✅ Added Toast
             } catch (err) {
                 console.error("Failed to restore image:", err);
             }
@@ -164,6 +237,7 @@ const EditPoster = () => {
         setFormData: restoreDraftData,
         imagePreview: imagePreview, 
         autoRestore: false
+        autoRestore: false 
     });
 
     const [showRestoreModal, setShowRestoreModal] = useState(false);
@@ -177,11 +251,13 @@ const EditPoster = () => {
     const handleRestoreDraft = () => {
         restoreDraft();
         setShowRestoreModal(false);
+        toast.success("Draft restored successfully!"); // ✅ Added Toast
     };
 
     const handleDiscardDraft = async () => {
         await discardDraft();
         setShowRestoreModal(false);
+        toast.info("Draft discarded."); // ✅ Added Toast
     };
 
     // =========================================================
@@ -211,7 +287,7 @@ const EditPoster = () => {
                 }
             } catch (err) {
                 console.error(err);
-                alert('Could not load poster details. Please check connection.');
+                toast.error('Could not load poster details.'); // ✅ Use Toast instead of alert
             } finally {
                 setIsLoading(false);
             }
@@ -220,7 +296,7 @@ const EditPoster = () => {
         if (id) {
             fetchPosterDetails();
         }
-    }, [id]);
+    }, [id, toast]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -239,12 +315,23 @@ const EditPoster = () => {
                 setImagePreview(reader.result);
             };
             reader.readAsDataURL(file);
+            toast.info(`Selected image: ${file.name}`); // ✅ Added Toast
         }
     };
 
     // ✅ UPDATED: Handle Submit LOGIC for Activity Logs
     const handleSubmit = async (e) => {
+    // ✅ Confirmation before Saving
+    const handleSaveConfirmation = (e) => {
         e.preventDefault();
+        askConfirmation(
+            "Update Poster",
+            "Are you sure you want to save the changes to this poster?",
+            () => performSubmit()
+        );
+    };
+
+    const performSubmit = async () => {
         setSubmitting(true);
 
         const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
@@ -309,12 +396,30 @@ const EditPoster = () => {
                 await clearDraft(); // Clear draft on success
                 navigate('/view-posters'); 
             }
+
+            toast.success('Poster updated successfully!'); // ✅ Use Toast instead of alert
+            
+            await clearDraft();
+            navigate('/view-posters'); 
         } catch (err) {
             console.error(err);
-            alert('❌ Failed to update poster. Please try again.');
+            toast.error('Failed to update poster. Please try again.'); // ✅ Use Toast instead of alert
         } finally {
             setSubmitting(false);
         }
+    };
+
+    // ✅ Confirmation before Discarding/Canceling
+    const handleDiscard = () => {
+        askConfirmation(
+            "Discard Changes",
+            "Are you sure you want to discard your changes? All unsaved data and drafts for this session will be cleared.",
+            async () => {
+                await clearDraft();
+                navigate('/view-posters');
+            },
+            "danger"
+        );
     };
 
     if (isLoading) {
@@ -334,7 +439,6 @@ const EditPoster = () => {
     return (
         <div className="epo-page">
             
-            {/* ✅ RESTORE DRAFT MODAL */}
             <RestoreDraftModal
                 isOpen={showRestoreModal}
                 onRestore={handleRestoreDraft}
@@ -350,10 +454,9 @@ const EditPoster = () => {
             <main className={`epo-main ${isSidebarCollapsed ? "epo-main--collapsed" : ""}`}>
                 <div className="epo-container">
                     
-                    {/* Header */}
                     <header className="epo-header">
                         <div className="epo-header-content">
-                            <button className="epo-back-btn" onClick={() => navigate('/view-posters')}>
+                            <button className="epo-back-btn" onClick={handleDiscard}>
                                 <ArrowLeft size={18} />
                                 Back to Posters
                             </button>
@@ -362,10 +465,8 @@ const EditPoster = () => {
                         </div>
                     </header>
 
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="epo-form">
+                    <form onSubmit={handleSaveConfirmation} className="epo-form">
                         
-                        {/* Section 1: Image Upload */}
                         <div className="epo-section">
                             <h2 className="epo-section-title">Poster Visual</h2>
                             <div className="epo-upload-area">
@@ -395,7 +496,6 @@ const EditPoster = () => {
                             </div>
                         </div>
 
-                        {/* Section 2: Poster Details */}
                         <div className="epo-section">
                             <h2 className="epo-section-title">Poster Details</h2>
                             <div className="epo-form-grid">
@@ -463,15 +563,11 @@ const EditPoster = () => {
                             </div>
                         </div>
 
-                        {/* Footer Actions */}
                         <div className="epo-form-actions">
                             <button 
                                 type="button" 
                                 className="epo-btn epo-btn--cancel" 
-                                onClick={async () => {
-                                    await clearDraft(); // Clear draft on cancel
-                                    navigate('/view-posters');
-                                }}
+                                onClick={handleDiscard}
                                 disabled={submitting}
                             >
                                 Cancel
@@ -493,6 +589,16 @@ const EditPoster = () => {
                     </form>
                 </div>
             </main>
+
+            {/* ✅ Confirmation Modal */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };

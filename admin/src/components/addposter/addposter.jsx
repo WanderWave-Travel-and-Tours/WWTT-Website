@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import { Upload, Image as ImageIcon, HelpCircle, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './addposter.css';
 
@@ -7,7 +7,57 @@ import './addposter.css';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// ✅ Imports for Toast Notifications
+import { useToast } from '../toast/ToastManager';
+
+// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="arc-confirm-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 11000
+        }}>
+            <div className="arc-confirm-modal" style={{
+                backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+                maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+            }}>
+                <div style={{ marginBottom: '1rem' }}>
+                    <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button 
+                        onClick={onCancel}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+                            backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={onConfirm}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+                            backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+                            color: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AddPoster = () => {
+    // --- UTILITIES ---
+    const toast = useToast();
+
     // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -25,11 +75,32 @@ const AddPoster = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // --- CONFIRMATION MODAL STATE ---
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
+
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
 
-    // 1. Helper: File <-> Base64 Converters
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -45,34 +116,28 @@ const AddPoster = () => {
         return new File([blob], fileName, { type: mimeType });
     };
 
-    // 2. Draft Payload State
     const [draftPayload, setDraftPayload] = useState(null);
 
-    // 3. Listen to state changes and update Draft Payload
     useEffect(() => {
         const updateDraft = async () => {
-            // 🛑 FIX 1: Check if form is completely empty/default before saving
-            // This prevents overwriting a valid draft with an empty one, or saving an empty start state
             const isFormEmpty = 
                 !posterDetails.title &&
                 !posterDetails.description &&
                 !posterDetails.startDate &&
                 !posterDetails.endDate &&
-                posterDetails.status === 'Active' && // Check default
+                posterDetails.status === 'Active' && 
                 !imageFile;
 
             if (isFormEmpty) {
-                setDraftPayload(null); // Do not save anything
+                setDraftPayload(null);
                 return;
             }
 
             let imageBase64 = null;
             let imageMeta = null;
 
-            // Handle Image Conversion
             if (imageFile) {
                 try {
-                    // Limit draft image size (~3MB limit safety)
                     if (imageFile.size < 3 * 1024 * 1024) { 
                         imageBase64 = await fileToBase64(imageFile);
                         imageMeta = { name: imageFile.name, type: imageFile.type };
@@ -84,23 +149,21 @@ const AddPoster = () => {
 
             setDraftPayload({
                 ...posterDetails,
-                image: imageBase64, // Saved as Base64 string
+                image: imageBase64,
                 imageMeta: imageMeta
             });
         };
 
         const timeoutId = setTimeout(() => {
             updateDraft();
-        }, 500); // Debounce
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [posterDetails, imageFile]);
 
-    // 4. Restore Function
     const restoreDraftData = async (data) => {
         if (!data) return;
 
-        // Restore Text Fields
         setPosterDetails({
             title: data.title || '',
             description: data.description || '',
@@ -109,19 +172,20 @@ const AddPoster = () => {
             status: data.status || 'Active'
         });
 
-        // Restore Image
         if (data.image && data.imageMeta) {
             try {
                 const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
                 setImageFile(restoredFile);
                 setImagePreview(URL.createObjectURL(restoredFile));
+                toast.info("Draft image and details restored.");
             } catch (err) {
                 console.error("Failed to restore image:", err);
             }
+        } else {
+            toast.info("Draft details restored.");
         }
     };
 
-    // 5. Initialize Hook
     const { 
         clearDraft, 
         hasDraft, 
@@ -129,20 +193,17 @@ const AddPoster = () => {
         discardDraft,
         draftInfo 
     } = useAutoDraft({
-        module: 'add-poster', // Unique ID
+        module: 'add-poster',
         formData: draftPayload,
         setFormData: restoreDraftData,
         imagePreview: imagePreview, 
-        autoRestore: false // Manual via modal
+        autoRestore: false 
     });
 
-    // 6. Modal State with Smart Check
     const [showRestoreModal, setShowRestoreModal] = useState(false);
 
     useEffect(() => {
         if (hasDraft && draftInfo) {
-            // 🛑 FIX 2: Check if the *saved* draft is actually empty (contains only defaults)
-            // If it is empty, silently clear it and DO NOT show the modal
             const isDraftEmpty = 
                 !draftInfo.title && 
                 !draftInfo.description && 
@@ -152,7 +213,7 @@ const AddPoster = () => {
                 !draftInfo.image;
 
             if (isDraftEmpty) {
-                clearDraft(); // Auto-clear ghost drafts
+                clearDraft();
                 setShowRestoreModal(false);
             } else {
                 setShowRestoreModal(true);
@@ -166,10 +227,8 @@ const AddPoster = () => {
     };
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); // Ensure storage is cleared
+        await discardDraft();
         setShowRestoreModal(false);
-        
-        // Reset state to defaults to ensure isFormEmpty logic takes over
         setPosterDetails({
             title: '',
             description: '',
@@ -179,6 +238,7 @@ const AddPoster = () => {
         });
         setImageFile(null);
         setImagePreview(null);
+        toast.info("Draft discarded.");
     };
 
     // =========================================================
@@ -200,12 +260,13 @@ const AddPoster = () => {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
-                alert('Please upload a valid image file (JPG, PNG).');
+                toast.error('Please upload a valid image file (JPG, PNG).', 'Invalid File');
                 return;
             }
             setImageFile(file);
             const objectUrl = URL.createObjectURL(file);
             setImagePreview(objectUrl);
+            toast.success("Image selected successfully.");
         }
     };
 
@@ -215,29 +276,44 @@ const AddPoster = () => {
         setImagePreview(null);
     };
 
-    const handleCancel = async () => {
-        if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-            // ✅ CLEAR DRAFT ON CANCEL
-            await clearDraft();
-
-            setPosterDetails({
-                title: '',
-                description: '',
-                startDate: '',
-                endDate: '',
-                status: 'Active'
-            });
-            removeImage();
-        }
+    const handleCancel = () => {
+        // ✅ PALIT MULA window.confirm SA CUSTOM MODAL
+        askConfirmation(
+            "Discard Changes",
+            "Are you sure you want to cancel? All unsaved changes will be lost and the draft will be cleared.",
+            async () => {
+                await clearDraft();
+                setPosterDetails({
+                    title: '',
+                    description: '',
+                    startDate: '',
+                    endDate: '',
+                    status: 'Active'
+                });
+                removeImage();
+                toast.info("Form cleared.");
+            },
+            "danger"
+        );
     };
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
+        
         if (!posterDetails.title || !imageFile) {
-            alert('Please provide a title and upload an image.');
+            toast.warning('Please provide a title and upload an image.');
             return;
         }
 
+        // ✅ PALIT MULA window.confirm SA CUSTOM MODAL PARA SA UPLOAD
+        askConfirmation(
+            "Confirm Upload",
+            "Are you sure you want to upload this new poster?",
+            () => performSubmit()
+        );
+    };
+
+    const performSubmit = async () => {
         setIsSubmitting(true);
         const formData = new FormData();
         formData.append('image', imageFile);
@@ -247,9 +323,6 @@ const AddPoster = () => {
         formData.append('endDate', posterDetails.endDate);
         formData.append('status', posterDetails.status);
 
-        // =========================================================
-        // ADDED: KUNIN ANG USER DATA PARA SA ACTIVITY LOGS
-        // =========================================================
         try {
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
             const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
@@ -260,7 +333,6 @@ const AddPoster = () => {
         } catch (err) {
             console.error("Error parsing admin data:", err);
         }
-        // =========================================================
 
         try {
             const response = await fetch('http://localhost:5000/api/posters/add', {
@@ -269,12 +341,9 @@ const AddPoster = () => {
             });
 
             if (response.ok) {
-                alert('✅ Poster uploaded successfully!');
-                
-                // ✅ CLEAR DRAFT ON SUCCESS
+                toast.success('Poster uploaded successfully!', 'Success');
                 await clearDraft();
                 
-                // Reset Form manually
                 setPosterDetails({
                     title: '',
                     description: '',
@@ -283,13 +352,12 @@ const AddPoster = () => {
                     status: 'Active'
                 });
                 removeImage();
-
             } else {
                 const data = await response.json();
-                alert(`❌ Error: ${data.message || 'Failed to upload'}`);
+                toast.error(data.message || 'Failed to upload', 'Server Error');
             }
         } catch (error) {
-            alert('❌ Failed to connect to server.');
+            toast.error('Failed to connect to server.', 'Connection Error');
         } finally {
             setIsSubmitting(false);
         }
@@ -304,6 +372,16 @@ const AddPoster = () => {
                 onRestore={handleRestoreDraft}
                 onDiscard={handleDiscardDraft}
                 draftInfo={draftInfo}
+            />
+
+            {/* ✅ CUSTOM CONFIRMATION MODAL */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
 
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
