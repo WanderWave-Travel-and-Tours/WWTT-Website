@@ -8,6 +8,20 @@ import './EditPromo.css';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const EditPromo = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -27,10 +41,16 @@ const EditPromo = () => {
         durationType: 'Weekly' // Default
     });
 
+    // ✅ Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
+
     // Image Handling
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [currentImage, setCurrentImage] = useState(null);
+    
+    // ✅ Store original image public ID for deletion
+    const [existingImagePublicId, setExistingImagePublicId] = useState('');
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -46,7 +66,6 @@ const EditPromo = () => {
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
 
-    // 1. Helper: File <-> Base64 Converters
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -62,19 +81,15 @@ const EditPromo = () => {
         return new File([blob], fileName, { type: mimeType });
     };
 
-    // 2. Draft Payload State
     const [draftPayload, setDraftPayload] = useState(null);
 
-    // 3. Listen to state changes and update Draft Payload
     useEffect(() => {
         const updateDraft = async () => {
-            // 🛑 FIX: Don't save draft if data is still loading or form is empty
             if (isLoading) {
                 setDraftPayload(null);
                 return;
             }
 
-            // Check if form is effectively empty/default
             const isFormEmpty = 
                 !formData.code && 
                 !formData.category && 
@@ -92,10 +107,8 @@ const EditPromo = () => {
             let imageBase64 = null;
             let imageMeta = null;
 
-            // Handle Image Conversion
             if (imageFile) {
                 try {
-                    // Limit draft image size (~3MB limit safety)
                     if (imageFile.size < 3 * 1024 * 1024) { 
                         imageBase64 = await fileToBase64(imageFile);
                         imageMeta = { name: imageFile.name, type: imageFile.type };
@@ -107,24 +120,22 @@ const EditPromo = () => {
 
             setDraftPayload({
                 ...formData,
-                image: imageBase64, // Saved as Base64 string
+                image: imageBase64,
                 imageMeta: imageMeta,
-                originalId: id // Store ID to ensure we only restore draft for THIS promo
+                originalId: id
             });
         };
 
         const timeoutId = setTimeout(() => {
             updateDraft();
-        }, 500); // Debounce
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [formData, imageFile, isLoading, id]);
 
-    // 4. Restore Function
     const restoreDraftData = async (data) => {
         if (!data) return;
         
-        // Safety check: Ensure the draft belongs to the promo we are currently editing
         if (data.originalId && data.originalId !== id) {
             console.warn("Draft found but belongs to a different promo ID. Ignoring.");
             return;
@@ -152,7 +163,6 @@ const EditPromo = () => {
         }
     };
 
-    // 5. Initialize Hook
     const { 
         clearDraft, 
         hasDraft, 
@@ -160,18 +170,16 @@ const EditPromo = () => {
         discardDraft,
         draftInfo 
     } = useAutoDraft({
-        module: `edit-promo-${id}`, // Unique ID per promo to avoid conflicts
+        module: `edit-promo-${id}`,
         formData: draftPayload,
         setFormData: restoreDraftData,
         imagePreview: imagePreview, 
-        autoRestore: false // Manual via modal
+        autoRestore: false
     });
 
-    // 6. Modal State
     const [showRestoreModal, setShowRestoreModal] = useState(false);
 
     useEffect(() => {
-        // Only show modal if we have a draft AND we are done loading the original data
         if (hasDraft && !isLoading) {
             setShowRestoreModal(true);
         }
@@ -183,7 +191,7 @@ const EditPromo = () => {
     };
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); // Ensure storage is cleared
+        await discardDraft();
         setShowRestoreModal(false);
     };
 
@@ -200,7 +208,19 @@ const EditPromo = () => {
                 
                 const data = await response.json();
                 
-                // Only update state if we haven't restored a draft yet
+                // ✅ Save Original Data for Comparison
+                setOriginalData({
+                    code: data.code,
+                    category: data.category,
+                    discountType: data.discountType,
+                    discountValue: data.discountValue,
+                    startDate: formatDateForInput(data.startDate),
+                    validUntil: formatDateForInput(data.validUntil),
+                    description: data.description,
+                    durationType: data.durationType
+                });
+
+                // Set Form Data
                 setFormData({
                     code: data.code || '',
                     category: data.category || '',
@@ -214,6 +234,9 @@ const EditPromo = () => {
 
                 if (data.image) {
                     setCurrentImage(data.image);
+                }
+                if (data.imagePublicId) {
+                    setExistingImagePublicId(data.imagePublicId);
                 }
             } catch (err) {
                 console.error(err);
@@ -236,7 +259,6 @@ const EditPromo = () => {
         }));
     };
 
-    // Image Handlers
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -250,9 +272,13 @@ const EditPromo = () => {
         setImagePreview(null);
     };
 
+    // ✅ UPDATED: Handle Submit with Change Tracking
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
+
+        // 🔥 Get Admin Info
+        const { userEmail, adminId } = getAdminData();
 
         try {
             const data = new FormData();
@@ -265,13 +291,54 @@ const EditPromo = () => {
             data.append('description', formData.description);
             data.append('durationType', formData.durationType);
 
+            // Append Admin Data
+            data.append('userEmail', userEmail);
+            data.append('adminId', adminId);
+
+            // Append Existing Image ID for deletion (if replaced)
+            if (existingImagePublicId) {
+                data.append('existingImagePublicId', existingImagePublicId);
+            }
+
+            // 🔥 Logic: Track Changes
+            let changes = [];
+            
+            const trackChange = (label, oldVal, newVal) => {
+                // Ensure values are strings for safe comparison
+                const cleanOld = String(oldVal || "").trim();
+                const cleanNew = String(newVal || "").trim();
+                if (cleanOld !== cleanNew) {
+                    changes.push(`${label} changed from "${cleanOld}" to "${cleanNew}"`);
+                }
+            };
+
+            if (originalData) {
+                trackChange("Code", originalData.code, formData.code);
+                trackChange("Category", originalData.category, formData.category);
+                trackChange("Discount Type", originalData.discountType, formData.discountType);
+                trackChange("Discount Value", originalData.discountValue, formData.discountValue);
+                trackChange("Start Date", originalData.startDate, formData.startDate);
+                trackChange("Valid Until", originalData.validUntil, formData.validUntil);
+                trackChange("Description", originalData.description, formData.description);
+                trackChange("Duration", originalData.durationType, formData.durationType);
+
+                if (imageFile) {
+                    changes.push("Promo image was replaced.");
+                }
+            }
+
+            // Append Changes Array as JSON string
+            if (changes.length > 0) {
+                data.append('changes', JSON.stringify(changes));
+            }
+
             if (imageFile) {
                 data.append('image', imageFile);
             }
 
             const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                 method: 'PUT',
-                body: data, // No Content-Type header
+                body: data, // No Content-Type header needed for FormData
             });
 
             if (!response.ok) {
@@ -364,7 +431,7 @@ const EditPromo = () => {
                                                 <div style={{marginBottom: '10px'}}>
                                                      <p style={{fontSize: '12px', color:'#64748b', marginBottom: '8px'}}>Current Image:</p>
                                                     <img 
-                                                        src={`http://localhost:5000/uploads/${currentImage}`} 
+                                                        src={currentImage} // Assuming Cloudinary URL is stored as full path
                                                         alt="Current" 
                                                         style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid #e2e8f0' }} 
                                                         onError={(e) => e.target.style.display = 'none'}

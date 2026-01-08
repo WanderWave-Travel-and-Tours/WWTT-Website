@@ -1,10 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Calendar, Eye, EyeOff, Search } from 'lucide-react';
+import { Archive, Calendar, Eye, EyeOff } from 'lucide-react';
+import axios from 'axios'; // ✅ Switched to axios for consistency with logs
 import Sidebar from '../sidebar/sidebar';
 import PosterDetailModal from './PosterDetailModal';
 import PosterPagination from './PosterPagination';
 import PosterFilters from './PosterFilters';
 import './viewposter.css';
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 const ViewPoster = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -34,13 +49,11 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
-            // Kinukuha ang lahat ng posters mula sa backend
-            const response = await fetch('http://localhost:5000/api/posters');
-            if (!response.ok) throw new Error('Failed to fetch');
-            const data = await response.json();
+            // ✅ Using axios.get
+            const response = await axios.get('http://localhost:5000/api/posters');
             
             // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
-            const nonArchivedPosters = data.filter(poster => poster.isArchive === "No");
+            const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
             setPosters(nonArchivedPosters);
             
             setCurrentPage(1);
@@ -51,18 +64,22 @@ const ViewPoster = () => {
         }
     };
 
+    // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
     const handleArchive = async (id, title) => {
         if (window.confirm(`Are you sure you want to archive "${title}"?`)) {
+            
+            // 🔥 GET ADMIN DATA
+            const { userEmail, adminId } = getAdminData();
+
             try {
-                // UPDATE: Binago ang endpoint patungong /status at method patungong PUT
-                // Pinapasa natin ang { isArchive: 'Yes' } para i-update ang field sa database
-                const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, { 
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ isArchive: 'Yes' }) 
+                // ✅ Using axios.put and sending admin data for logs
+                const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
+                    isArchive: 'Yes',
+                    userEmail,  // 🔥 ADD ADMIN INFO
+                    adminId     // 🔥 ADD ADMIN INFO
                 });
 
-                if (response.ok) {
+                if (response.data) {
                     // Alisin sa UI ang poster na na-archive na para mawala sa table
                     const updatedPosters = posters.filter(poster => poster._id !== id);
                     setPosters(updatedPosters);
@@ -75,8 +92,6 @@ const ViewPoster = () => {
                     
                     // Isara ang modal kung ito ay nakabukas
                     if (showDetailModal) setShowDetailModal(false);
-                } else {
-                    alert('Failed to archive poster');
                 }
             } catch (error) {
                 console.error('Error archiving:', error);
@@ -85,28 +100,32 @@ const ViewPoster = () => {
         }
     };
 
+    // 🔥🔥🔥 UPDATED: TOGGLE STATUS WITH ADMIN DATA 🔥🔥🔥
     const toggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         
+        // 🔥 GET ADMIN DATA
+        const { userEmail, adminId } = getAdminData();
+
         try {
-            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
+            // ✅ Using axios.put and sending admin data for logs
+            const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, {
+                status: newStatus,
+                userEmail,  // 🔥 ADD ADMIN INFO
+                adminId     // 🔥 ADD ADMIN INFO
             });
 
-            if (response.ok) {
+            if (response.data) {
                 setPosters(posters.map(p => 
                     p._id === id ? { ...p, status: newStatus } : p
                 ));
                 if (selectedPoster && selectedPoster._id === id) {
                     setSelectedPoster({ ...selectedPoster, status: newStatus });
                 }
-            } else {
-                alert('Failed to update status');
             }
         } catch (error) {
             console.error('Error updating status:', error);
+            alert('Failed to update status');
         }
     };
 
@@ -234,7 +253,12 @@ const ViewPoster = () => {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span className={`vp-status vp-status--${poster.status.toLowerCase()}`}>
+                                                    <span 
+                                                        className={`vp-status vp-status--${poster.status.toLowerCase()}`}
+                                                        style={{ cursor: 'pointer' }}
+                                                        onClick={() => toggleStatus(poster._id, poster.status)}
+                                                        title="Click to toggle status"
+                                                    >
                                                         {poster.status === 'Active' ? <Eye size={12} /> : <EyeOff size={12} />}
                                                         {poster.status}
                                                     </span>

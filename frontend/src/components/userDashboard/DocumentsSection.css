@@ -1,10 +1,12 @@
-/* DOCUMENTS SECTION - Modern Upload Interface */
+/* DOCUMENTS SECTION - ENHANCED TRAVEL & TOURS UI */
+/* MODERN, CLEAN, PREMIUM DESIGN */
+
 .ud-docs-wrapper { 
-    background: white;
-    border: 1px solid var(--ud-border-color);
-    border-radius: 24px;
-    padding: 40px; 
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 2px solid var(--ud-border-color);
+    border-radius: 28px;
+    padding: 48px; 
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
     max-width: 1400px; 
     margin-inline: auto;
     position: relative;
@@ -18,35 +20,45 @@
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, #f97316 0%, #fbbf24 50%, #f97316 100%);
+    background: linear-gradient(90deg, #f97316 0%, #fb923c 30%, #fbbf24 60%, #f97316 100%);
 }
 
 .ud-docs-header { 
     text-align: center; 
-    margin-bottom: 40px;
+    margin-bottom: 48px;
 }
 
 .ud-docs-header h2 {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--ud-primary);
-    margin-bottom: 8px;
+    font-size: 2.2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #0f172a 0%, #475569 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
 }
 
 .ud-docs-header p {
     color: var(--ud-text-secondary);
-    font-size: 1rem;
+    font-size: 1.05rem;
+    font-weight: 500;
 }
 
-/* Document Section - Ticket Style */
+/* Document Section - Premium Card Style */
 .ud-doc-section { 
-    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    background: #ffffff;
     border: 2px solid var(--ud-border-color);
-    border-radius: 20px;
-    padding: 32px; 
-    margin-bottom: 28px;
+    border-radius: 24px;
+    padding: 36px; 
+    margin-bottom: 32px;
     position: relative;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.ud-doc-section:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
 }
 
 .ud-doc-section::before {
@@ -57,57 +69,60 @@
     bottom: 0;
     width: 6px;
     background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
-    border-radius: 20px 0 0 20px;
+    border-radius: 24px 0 0 24px;
 }
 
 .ud-doc-section-head { 
     display: flex; 
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-}
-
-.ud-doc-section-head h3 {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--ud-primary);
-}
-
-.ud-doc-count { 
-    background: white;
-    padding: 8px 16px; 
-    border-radius: 20px;
-    font-size: 0.85rem;
-    border: 2px solid var(--ud-border-color);
-    font-weight: 600;
-    color: var(--ud-text-secondary);
-}
-
-/* Requirements Grid */
-.ud-req-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
-    gap: 12px; 
     margin-bottom: 28px;
 }
 
+.ud-doc-section-head h3 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--ud-primary);
+    letter-spacing: -0.3px;
+}
+
+.ud-doc-count { 
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 8px 18px; 
+    border-radius: 100px;
+    font-size: 0.85rem;
+    border: 2px solid var(--ud-border-color);
+    font-weight: 700;
+    color: var(--ud-text-secondary);
+}
+
+/* Requirements Grid - Modern Layout */
+.ud-req-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+    gap: 14px; 
+    margin-bottom: 32px;
+}
+
 .ud-req-item { 
-    background: white;
-    border: 1px solid var(--ud-border-color);
-    padding: 14px 16px; 
-    border-radius: 12px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border: 2px solid var(--ud-border-color);
+    padding: 16px 18px; 
+    border-radius: 14px;
     display: flex; 
-    gap: 12px;
+    gap: 14px;
     align-items: center;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    color: #334155;
 }
 
 .ud-req-item:hover {
     border-color: #f97316;
-    background: #fff7ed;
-    transform: translateX(4px);
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    transform: translateX(6px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
 }
 
 .ud-req-item svg { 
@@ -115,14 +130,14 @@
     flex-shrink: 0;
 }
 
-/* Upload Zone - Travel Boarding Pass Style */
+/* Upload Zone - Premium Interactive Design */
 .ud-upload-zone { 
-    background: white;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
     border: 3px dashed #cbd5e1;
-    border-radius: 16px;
-    padding: 48px 32px; 
+    border-radius: 20px;
+    padding: 56px 36px; 
     text-align: center; 
-    transition: all 0.3s ease;
+    transition: all 0.4s ease;
     cursor: pointer;
     position: relative;
     overflow: hidden;
@@ -135,8 +150,8 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.1), transparent);
-    transition: left 0.5s ease;
+    background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.12), transparent);
+    transition: left 0.6s ease;
 }
 
 .ud-upload-zone:hover::before {
@@ -148,34 +163,37 @@
     border-color: #f97316;
     background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
     transform: scale(1.01);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15);
 }
 
 .ud-upload-icon { 
     color: #f97316;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     animation: ud-float 3s ease-in-out infinite;
 }
 
 @keyframes ud-float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+    50% { transform: translateY(-12px); }
 }
 
 .ud-upload-text h4 {
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 1.2rem;
+    font-weight: 800;
     color: var(--ud-primary);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    letter-spacing: -0.2px;
 }
 
 .ud-upload-text p {
     color: var(--ud-text-secondary);
-    font-size: 0.95rem;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .ud-browse-link { 
     color: #f97316;
-    font-weight: 700; 
+    font-weight: 800; 
     cursor: pointer; 
     text-decoration: underline;
     transition: all 0.2s ease;
@@ -185,23 +203,23 @@
     color: #ea580c;
 }
 
-/* Uploaded Files Grid */
+/* Uploaded Files Grid - Premium Card Layout */
 .ud-files-grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
-    gap: 16px; 
-    margin-top: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+    gap: 18px; 
+    margin-top: 28px;
 }
 
 .ud-file-card { 
-    background: white;
+    background: #ffffff;
     border: 2px solid var(--ud-border-color);
-    border-radius: 12px;
-    padding: 16px; 
+    border-radius: 16px;
+    padding: 18px; 
     display: flex; 
     align-items: center; 
-    gap: 12px;
-    transition: all 0.2s ease;
+    gap: 14px;
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
@@ -212,19 +230,22 @@
     left: 0;
     top: 0;
     bottom: 0;
-    width: 4px;
+    width: 5px;
     background: linear-gradient(180deg, #10b981 0%, #059669 100%);
 }
 
 .ud-file-card:hover {
     border-color: #10b981;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15);
 }
 
 .ud-file-icon {
     color: #10b981;
     flex-shrink: 0;
+    background: #ecfdf5;
+    padding: 10px;
+    border-radius: 10px;
 }
 
 .ud-file-info {
@@ -233,26 +254,28 @@
 }
 
 .ud-file-name { 
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap; 
     overflow: hidden; 
     text-overflow: ellipsis; 
     display: block;
     color: var(--ud-text-primary);
     margin-bottom: 4px;
+    font-size: 0.95rem;
 }
 
 .ud-file-size {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--ud-text-secondary);
+    font-weight: 600;
 }
 
 .ud-remove-file { 
     background: #fee2e2;
     border: none; 
     color: #dc2626;
-    width: 32px; 
-    height: 32px; 
+    width: 36px; 
+    height: 36px; 
     border-radius: 50%; 
     display: flex; 
     align-items: center; 
@@ -267,68 +290,71 @@
     transform: rotate(90deg);
 }
 
-/* Upload Progress */
+/* Upload Progress - Modern Style */
 .ud-progress-container { 
-    height: 10px;
+    height: 12px;
     background: #e2e8f0;
-    border-radius: 10px;
-    margin-top: 24px;
+    border-radius: 100px;
+    margin-top: 28px;
     overflow: hidden;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .ud-progress-bar { 
     height: 100%;
-    background: linear-gradient(90deg, #f97316 0%, #fbbf24 100%);
+    background: linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fbbf24 100%);
     transition: width 0.3s ease;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+    border-radius: 100px;
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
 }
 
-/* Submit Area */
+/* Submit Area - Premium Button Design */
 .ud-submit-area { 
-    margin-top: 40px; 
+    margin-top: 48px; 
     text-align: center;
 }
 
 .ud-submit-btn { 
-    padding: 18px 56px;
+    padding: 20px 64px;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     color: white; 
     border: none; 
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 1.05rem;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 1.1rem;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.3);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.35);
     transition: all 0.3s ease;
     letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .ud-submit-btn:hover {
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.45);
 }
 
 .ud-submit-btn:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
 }
 
 .ud-submit-note {
-    margin-top: 12px;
-    font-size: 0.85rem;
+    margin-top: 14px;
+    font-size: 0.9rem;
     color: var(--ud-text-secondary);
     font-style: italic;
+    font-weight: 500;
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
     .ud-docs-wrapper {
-        padding: 24px;
+        padding: 32px 28px;
     }
     
     .ud-doc-section {
-        padding: 20px;
+        padding: 28px 24px;
     }
     
     .ud-req-grid {
@@ -337,5 +363,41 @@
     
     .ud-files-grid {
         grid-template-columns: 1fr;
+    }
+
+    .ud-docs-header h2 {
+        font-size: 1.8rem;
+    }
+
+    .ud-upload-zone {
+        padding: 40px 24px;
+    }
+
+    .ud-submit-btn {
+        padding: 18px 48px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .ud-docs-wrapper {
+        padding: 24px 20px;
+    }
+
+    .ud-doc-section {
+        padding: 24px 20px;
+    }
+
+    .ud-docs-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .ud-upload-zone {
+        padding: 36px 20px;
+    }
+
+    .ud-submit-btn {
+        width: 100%;
+        padding: 16px 40px;
     }
 }

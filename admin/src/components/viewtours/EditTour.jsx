@@ -8,6 +8,20 @@ import "./EditTour.css";
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const EditTour = () => {
   const navigate = useNavigate();
   const { id: tourId } = useParams();
@@ -26,6 +40,9 @@ const EditTour = () => {
     category: "Local",
     existingImage: "",
   });
+
+  // Store original data to track changes for Activity Logs
+  const [originalData, setOriginalData] = useState(null);
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -209,6 +226,9 @@ const EditTour = () => {
         if (result.status === "ok") {
           const tour = result.data;
           
+          // Set Original Data for Activity Logging
+          setOriginalData(tour);
+
           // Handle price fields properly - support both old and new formats
           let sellerPriceValue = 0;
           let markupValue = 0;
@@ -356,6 +376,7 @@ const EditTour = () => {
     }
 
     setSubmitting(true);
+    const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
 
     try {
       const formDataToSend = new FormData();
@@ -366,6 +387,50 @@ const EditTour = () => {
       formDataToSend.append("duration", formData.duration);
       formDataToSend.append("category", formData.category);
       formDataToSend.append("existingImage", formData.existingImage);
+
+      // 🔥 Activity Logs: Append Admin Data
+      formDataToSend.append("userEmail", userEmail);
+      formDataToSend.append("adminId", adminId);
+
+      // 🔥 Activity Logs: Track Changes Logic
+      let changes = [];
+      const trackChange = (label, oldVal, newVal) => {
+          const cleanOld = String(oldVal || "").trim();
+          const cleanNew = String(newVal || "").trim();
+          if (cleanOld !== cleanNew) {
+              changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
+          }
+      };
+
+      if (originalData) {
+          trackChange("Title", originalData.title, formData.title);
+          trackChange("Destination", originalData.destination, formData.destination);
+          trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
+          trackChange("Markup", originalData.markup, formData.markup);
+          trackChange("Duration", originalData.duration, formData.duration);
+          trackChange("Category", originalData.category, formData.category);
+
+          if (imageFile) {
+              changes.push(`Tour image was replaced.`);
+          }
+          
+          // Simple check for arrays (not deep comparison, just checking if stringified versions differ)
+          const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
+          const oldInclusions = originalData.inclusions || [];
+          if (JSON.stringify(filteredInclusions) !== JSON.stringify(oldInclusions)) {
+              changes.push("Inclusions list updated");
+          }
+          
+          // Itinerary check is complex, just flagging if it changed
+          if (itinerary.length !== (originalData.itinerary?.length || 0)) {
+               changes.push("Itinerary days/structure updated");
+          }
+      }
+
+      // Explicitly append changes as JSON string so backend can parse it
+      if (changes.length > 0) {
+          formDataToSend.append("changes", JSON.stringify(changes)); 
+      }
 
       // Filter empty inclusions
       const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");

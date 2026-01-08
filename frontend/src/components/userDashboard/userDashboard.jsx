@@ -227,6 +227,10 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     };
 
+    const handleNavigateBackToDashboard = () => {
+        setCurrentView('applications');
+    };
+
     return (
         <div className="ud-wrapper">
             <TopNavbar 
@@ -256,7 +260,10 @@ const UserDashboard = ({ user, onLogout }) => {
 
                 <main className="ud-main-content">
                     {currentView === 'settings' ? (
-                    <AccountSettings user={user} />
+                        <AccountSettings 
+                            user={user} 
+                            onNavigateBack={handleNavigateBackToDashboard}
+                        />
                     ) : selectedInquiry ? (
                         <ApplicationDetails 
                             inquiry={selectedInquiry}

@@ -1,12 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, Calendar } from 'lucide-react';
-import Sidebar from '../sidebar/sidebar'; // Ensure correct path
+import { Save, ArrowLeft, Upload } from 'lucide-react';
+import axios from 'axios';
+import Sidebar from '../sidebar/sidebar';
 import './EditPoster.css';
 
 // ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 const EditPoster = () => {
     const { id } = useParams();
@@ -23,6 +38,9 @@ const EditPoster = () => {
         endDate: '',
         description: ''
     });
+
+    // Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
@@ -42,7 +60,6 @@ const EditPoster = () => {
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
 
-    // 1. Helper: File <-> Base64 Converters
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -58,19 +75,15 @@ const EditPoster = () => {
         return new File([blob], fileName, { type: mimeType });
     };
 
-    // 2. Draft Payload State
     const [draftPayload, setDraftPayload] = useState(null);
 
-    // 3. Listen to state changes and update Draft Payload
     useEffect(() => {
         const updateDraft = async () => {
-            // 🛑 FIX: Don't save draft if data is still loading or form is empty
             if (isLoading) {
                 setDraftPayload(null);
                 return;
             }
 
-            // Check if form is effectively empty/default
             const isFormEmpty = 
                 !formData.title && 
                 !formData.startDate && 
@@ -86,10 +99,8 @@ const EditPoster = () => {
             let imageBase64 = null;
             let imageMeta = null;
 
-            // Handle Image Conversion
             if (imageFile) {
                 try {
-                    // Limit draft image size (~3MB limit safety)
                     if (imageFile.size < 3 * 1024 * 1024) { 
                         imageBase64 = await fileToBase64(imageFile);
                         imageMeta = { name: imageFile.name, type: imageFile.type };
@@ -101,24 +112,22 @@ const EditPoster = () => {
 
             setDraftPayload({
                 ...formData,
-                image: imageBase64, // Saved as Base64 string
+                image: imageBase64,
                 imageMeta: imageMeta,
-                originalId: id // Store ID to ensure we only restore draft for THIS poster
+                originalId: id
             });
         };
 
         const timeoutId = setTimeout(() => {
             updateDraft();
-        }, 500); // Debounce
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [formData, imageFile, isLoading, id]);
 
-    // 4. Restore Function
     const restoreDraftData = async (data) => {
         if (!data) return;
         
-        // Safety check: Ensure the draft belongs to the poster we are currently editing
         if (data.originalId && data.originalId !== id) {
             console.warn("Draft found but belongs to a different poster ID. Ignoring.");
             return;
@@ -143,7 +152,6 @@ const EditPoster = () => {
         }
     };
 
-    // 5. Initialize Hook
     const { 
         clearDraft, 
         hasDraft, 
@@ -151,18 +159,16 @@ const EditPoster = () => {
         discardDraft,
         draftInfo 
     } = useAutoDraft({
-        module: `edit-poster-${id}`, // Unique ID per poster to avoid conflicts
+        module: `edit-poster-${id}`,
         formData: draftPayload,
         setFormData: restoreDraftData,
         imagePreview: imagePreview, 
-        autoRestore: false // Manual via modal
+        autoRestore: false
     });
 
-    // 6. Modal State
     const [showRestoreModal, setShowRestoreModal] = useState(false);
 
     useEffect(() => {
-        // Only show modal if we have a draft AND we are done loading the original data
         if (hasDraft && !isLoading) {
             setShowRestoreModal(true);
         }
@@ -174,7 +180,7 @@ const EditPoster = () => {
     };
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); // Ensure storage is cleared
+        await discardDraft();
         setShowRestoreModal(false);
     };
 
@@ -186,12 +192,12 @@ const EditPoster = () => {
     useEffect(() => {
         const fetchPosterDetails = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/posters/${id}`);
-                if (!response.ok) throw new Error('Failed to fetch poster details');
+                const response = await axios.get(`http://localhost:5000/api/posters/${id}`);
+                const data = response.data;
                 
-                const data = await response.json();
+                // Set Original Data for Activity Logging comparison
+                setOriginalData(data);
                 
-                // Only update state if not restoring a draft immediately (handled by logic above)
                 setFormData({
                     title: data.title || '',
                     status: data.status || 'Active',
@@ -236,37 +242,73 @@ const EditPoster = () => {
         }
     };
 
+    // ✅ UPDATED: Handle Submit LOGIC for Activity Logs
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
 
+        const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
+
         try {
             const formDataToSend = new FormData();
+            
+            // Append standard fields
             formDataToSend.append("title", formData.title);
             formDataToSend.append("status", formData.status);
             formDataToSend.append("startDate", formData.startDate);
             formDataToSend.append("endDate", formData.endDate);
             formDataToSend.append("description", formData.description);
 
+            // 🔥 Activity Logs: Append Admin Data
+            formDataToSend.append("userEmail", userEmail);
+            formDataToSend.append("adminId", adminId);
+
+            // 🔥 Activity Logs: Track Changes Logic
+            let changes = [];
+            
+            const trackChange = (label, oldVal, newVal) => {
+                const cleanOld = String(oldVal || "").trim();
+                const cleanNew = String(newVal || "").trim();
+                // Avoid logging if both are empty/null effectively
+                if (cleanOld !== cleanNew) {
+                    changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
+                }
+            };
+
+            if (originalData) {
+                trackChange("Title", originalData.title, formData.title);
+                trackChange("Status", originalData.status, formData.status);
+                trackChange("Start Date", formatDateForInput(originalData.startDate), formData.startDate);
+                trackChange("End Date", formatDateForInput(originalData.endDate), formData.endDate);
+                trackChange("Description", originalData.description, formData.description);
+                
+                if (imageFile) {
+                    changes.push(`Poster image was replaced.`);
+                }
+            }
+
+            // Explicitly append changes as JSON string so backend can parse it
+            if (changes.length > 0) {
+                formDataToSend.append("changes", JSON.stringify(changes)); 
+            }
+
+            // Append Image if new one exists
             if (imageFile) {
                 formDataToSend.append("image", imageFile);
+                if (originalData && originalData.imagePublicId) {
+                    formDataToSend.append("imagePublicId", originalData.imagePublicId);
+                }
             }
 
-            const response = await fetch(`http://localhost:5000/api/posters/update/${id}`, {
-                method: 'PUT',
-                body: formDataToSend,
-            });
+            // ✅ Using axios.put (Correct way to send FormData with logs)
+            // Note: Assuming route is /update/:id based on common pattern, verify route in router file
+            const response = await axios.put(`http://localhost:5000/api/posters/update/${id}`, formDataToSend);
 
-            if (!response.ok) {
-                throw new Error('Failed to update poster');
+            if (response.data) {
+                alert('✅ Poster updated successfully!');
+                await clearDraft(); // Clear draft on success
+                navigate('/view-posters'); 
             }
-
-            alert('✅ Poster updated successfully!');
-            
-            // ✅ CLEAR DRAFT ON SUCCESS
-            await clearDraft();
-            
-            navigate('/view-posters'); 
         } catch (err) {
             console.error(err);
             alert('❌ Failed to update poster. Please try again.');
