@@ -6,6 +6,25 @@ import { InquiryModal, ServiceListModal, ServiceEditorModal, ContactRemarksModal
 import "./CenomarRequest.css";
 import { CenomarApplicationModal } from "./CenomarApplicationModal";
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        console.log('📊 Admin Data from localStorage:', adminData);
+        
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return {
+            userEmail: 'Unknown Admin',
+            adminId: null
+        };
+    }
+};
+
 // Destination Images for Stats Cards
 const CENOMAR_STAT_IMAGES = {
     TOTAL_REQUESTS: 'https://picsum.photos/seed/cenomar-total/800/600',
@@ -292,11 +311,9 @@ const CenomarRequest = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/inquiries');
       if (response.data.success) {
-        // FILTER: inquiryType ay CENOMAR at isArchive ay No
         const cenomarRequests = response.data.data.filter(inq => 
           inq.inquiryType === 'CENOMAR' && inq.isArchive === 'No'
         );
-        // Sort by newest first
         cenomarRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setInquiries(cenomarRequests);
       }
@@ -307,7 +324,6 @@ const CenomarRequest = () => {
     }
   };
 
-  // --- FILTERING LOGIC ---
   const filteredInquiries = useMemo(() => {
     let list = inquiries;
     const lowerSearchTerm = searchTerm.toLowerCase();
@@ -390,13 +406,26 @@ const CenomarRequest = () => {
     fetchDocuments(inquiry._id);
   };
 
+  // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
   const handleArchiveInquiry = async (id) => {
     if (!window.confirm("Are you sure you want to archive this request?")) return;
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+    
     try {
-      const res = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, { isArchive: "Yes" });
+      const res = await axios.put(
+        `http://localhost:5000/api/inquiries/${id}/archive`, 
+        { 
+          isArchive: "Yes",
+          userEmail,  // 🔥 ADD ADMIN INFO
+          adminId     // 🔥 ADD ADMIN INFO
+        }
+      );
+      
       if (res.data.success) {
         alert("Inquiry archived successfully!");
-        fetchInquiries(); // Refresh list
+        fetchInquiries();
         if (isInquiryModalOpen) handleCloseInquiryModal();
       }
     } catch (error) {
@@ -418,14 +447,29 @@ const CenomarRequest = () => {
     }, 200);
   };
 
+  // 🔥🔥🔥 UPDATED: UPDATE STATUS WITH ADMIN DATA 🔥🔥🔥
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     if (!window.confirm(`Set status to ${newStatus}?`)) return;
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+    
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, { status: newStatus });
+      const response = await axios.put(
+        `http://localhost:5000/api/inquiries/${inquiryId}/status`, 
+        { 
+          status: newStatus,
+          userEmail,  // 🔥 ADD ADMIN INFO
+          adminId     // 🔥 ADD ADMIN INFO
+        }
+      );
+      
       if (response.data.success) {
         alert('Status updated successfully!'); 
         fetchInquiries();
-        if (selectedInquiry && selectedInquiry._id === inquiryId) setSelectedInquiry({ ...selectedInquiry, status: newStatus });
+        if (selectedInquiry && selectedInquiry._id === inquiryId) {
+          setSelectedInquiry({ ...selectedInquiry, status: newStatus });
+        }
       }
     } catch (error) { 
         console.error(error); 
@@ -433,10 +477,23 @@ const CenomarRequest = () => {
     }
   };
 
+  // 🔥🔥🔥 UPDATED: REQUEST PAYMENT WITH ADMIN DATA 🔥🔥🔥
   const handleRequestPayment = async () => {
     if (!window.confirm("Request payment from user?")) return;
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+    
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, { status: 'PAYMENT_PENDING' });
+      const response = await axios.put(
+        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, 
+        { 
+          status: 'PAYMENT_PENDING',
+          userEmail,  // 🔥 ADD ADMIN INFO
+          adminId     // 🔥 ADD ADMIN INFO
+        }
+      );
+      
       if (response.data.success) {
         alert('Payment requested!'); 
         fetchInquiries();
@@ -448,14 +505,28 @@ const CenomarRequest = () => {
     }
   };
 
+  // 🔥🔥🔥 UPDATED: CONTACT WITH REMARKS + ADMIN DATA 🔥🔥🔥
   const submitContactWithRemarks = async () => {
     if (!selectedInquiry || !contactRemarks.trim()) return alert('Please enter remarks');
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+    
     try {
       const formData = new FormData();
       formData.append('status', 'CONTACTED');
       formData.append('remarks', contactRemarks);
+      formData.append('userEmail', userEmail);   // 🔥 ADD ADMIN INFO
+      formData.append('adminId', adminId);       // 🔥 ADD ADMIN INFO
+      
       if (contactEvidence) formData.append('evidence', contactEvidence);
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      
+      const response = await axios.put(
+        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, 
+        formData, 
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      
       if (response.data.success) {
         alert('Status updated to CONTACTED!'); 
         fetchInquiries();
@@ -470,10 +541,23 @@ const CenomarRequest = () => {
     }
   };
 
+  // 🔥🔥🔥 UPDATED: CONFIRM PAYMENT WITH ADMIN DATA 🔥🔥🔥
   const handleConfirmPayment = async () => {
     if (!window.confirm("Confirm payment received?")) return;
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+    
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, { adminName: 'Admin' });
+      const response = await axios.put(
+        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, 
+        { 
+          adminName: 'Admin',
+          userEmail,  // 🔥 ADD ADMIN INFO
+          adminId     // 🔥 ADD ADMIN INFO
+        }
+      );
+      
       if (response.data.success) {
         alert('Payment confirmed!'); 
         fetchInquiries();
@@ -485,16 +569,26 @@ const CenomarRequest = () => {
     }
   };
 
+  // 🔥🔥🔥 UPDATED: DELIVER DOCUMENTS WITH ADMIN DATA 🔥🔥🔥
   const handleDeliverDocuments = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (deliveryFiles.length === 0) return alert('Select files first');
+    
+    // 🔥 GET ADMIN DATA
+    const { userEmail, adminId } = getAdminData();
+    
     const formData = new FormData();
     deliveryFiles.forEach(file => formData.append('documents', file));
+    formData.append('userEmail', userEmail);   // 🔥 ADD ADMIN INFO
+    formData.append('adminId', adminId);       // 🔥 ADD ADMIN INFO
 
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
-        headers: { 'Content-Type': 'multipart/form-data' } 
-      });
+      const response = await axios.put(
+        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, 
+        formData, 
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      
       if (response.data.success) {
         alert('Documents sent successfully!');
         fetchInquiries(); 
@@ -503,7 +597,10 @@ const CenomarRequest = () => {
         setDeliveryFiles([]);
         setShowDeliverDocs(true); 
       }
-    } catch (error) { console.error(error); alert('Failed to send documents'); }
+    } catch (error) { 
+        console.error(error); 
+        alert('Failed to send documents'); 
+    }
   };
 
   // --- CMS HANDLERS ---
@@ -534,8 +631,13 @@ const CenomarRequest = () => {
 
   const handleDeleteCENOMAR = async (id) => {
     if (!window.confirm("Delete this service?")) return;
-    try { await axios.delete(`http://localhost:5000/api/cenomar/${id}`); fetchCENOMARDocs(); } 
-    catch(err) { console.error(err); alert("Failed to delete"); }
+    try { 
+        await axios.delete(`http://localhost:5000/api/cenomar/${id}`); 
+        fetchCENOMARDocs(); 
+    } catch(err) { 
+        console.error(err); 
+        alert("Failed to delete"); 
+    }
   };
 
   const handleSaveChanges = async () => {
@@ -547,11 +649,22 @@ const CenomarRequest = () => {
       downloadableForms: downloadForms, 
       processSteps: stepsProcess
     };
+    
     try {
-      if (isEditorOpen && selectedCENOMAR) await axios.put(`http://localhost:5000/api/cenomar/${selectedCENOMAR._id}`, payload);
-      else await axios.post(`http://localhost:5000/api/cenomar`, payload);
-      alert("Service saved!"); setIsAddFormOpen(false); setIsCENOMARFormsOpen(true); fetchCENOMARDocs();
-    } catch (err) { console.error(err); alert("Failed to save"); }
+      if (isEditorOpen && selectedCENOMAR) {
+        await axios.put(`http://localhost:5000/api/cenomar/${selectedCENOMAR._id}`, payload);
+      } else {
+        await axios.post(`http://localhost:5000/api/cenomar`, payload);
+      }
+      
+      alert("Service saved!"); 
+      setIsAddFormOpen(false); 
+      setIsCENOMARFormsOpen(true); 
+      fetchCENOMARDocs();
+    } catch (err) { 
+        console.error(err); 
+        alert("Failed to save"); 
+    }
   };
 
   const toggleAccordion = (section) => setAccordionState((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -568,11 +681,15 @@ const CenomarRequest = () => {
   const handleDirectFileUpload = async (e) => {
     const file = e.target.files[0]; 
     if (!file) return;
+    
     const formData = new FormData(); 
     formData.append('file', file);
+    
     try {
       const res = await axios.post('http://localhost:5000/api/upload', formData);
-      if (res.data.success) setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
+      if (res.data.success) {
+        setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
+      }
     } catch(err) { 
         console.error(err); 
         alert("Upload failed"); 
@@ -664,7 +781,6 @@ const CenomarRequest = () => {
         <InquiryModal 
           inquiry={selectedInquiry}
           documents={documents}
-          // [CRITICAL] Passing the list of services to the modal so it can find the price
           cenomarDocs={cenomarDocs}
           onClose={handleCloseInquiryModal}
           onUpdateStatus={handleUpdateInquiryStatus}

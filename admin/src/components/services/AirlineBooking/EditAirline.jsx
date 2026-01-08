@@ -4,6 +4,20 @@ import { ArrowLeft, Upload, X, Plane, User, Mail, DollarSign, MessageSquare } fr
 import Sidebar from "../../sidebar/sidebar"; 
 import "./EditAirline.css";
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const EditAirline = () => {
   const navigate = useNavigate();
   const { id: airlineId } = useParams();
@@ -93,6 +107,9 @@ const EditAirline = () => {
     e.preventDefault();
     setSubmitting(true);
 
+    // 🔥 GET ADMIN DATA (To track who updated the record)
+    const { userEmail, adminId } = getAdminData();
+
     const data = new FormData();
     
     // I-append ang top-level fields
@@ -106,6 +123,10 @@ const EditAirline = () => {
     data.append("destination", formData.destination);
     data.append("departureDate", formData.departureDate);
     data.append("airline", formData.airline);
+
+    // 🔥 APPEND ADMIN DATA FOR LOGS
+    data.append("userEmail", userEmail);
+    data.append("adminId", adminId);
 
     // 'evidence' ang gamit sa uploadEvidence.single('evidence') sa route mo
     if (imageFile) {

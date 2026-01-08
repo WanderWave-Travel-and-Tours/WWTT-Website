@@ -8,7 +8,6 @@ const AdminSchema = new mongoose.Schema({
         required: true, 
         unique: true 
     },
-    // ✅ ADD EMAIL FIELD FOR LOGIN
     email: {
         type: String,
         required: true,
@@ -19,6 +18,13 @@ const AdminSchema = new mongoose.Schema({
     password: { 
         type: String, 
         required: true 
+    },
+    // 🔥 ADD FULLNAME FOR ACTIVITY LOGS
+    fullName: {
+        type: String,
+        default: function() {
+            return this.username; // Fallback to username if no fullName
+        }
     },
     businessName: {
         type: String,
@@ -32,7 +38,6 @@ const AdminSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
-    // ✅ ADD TIMESTAMPS
     lastLogin: {
         type: Date,
         default: null
@@ -42,7 +47,7 @@ const AdminSchema = new mongoose.Schema({
         default: true
     }
 }, {
-    timestamps: true // Automatically adds createdAt and updatedAt
+    timestamps: true
 });
 
 // Hash password before saving
@@ -67,5 +72,6 @@ AdminSchema.methods.comparePassword = function (candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
 };
 
-const AdminModel = mongoose.model("admins", AdminSchema);
+// 🔥 EXPORT AS 'Admin' MODEL (important for populate)
+const AdminModel = mongoose.model("Admin", AdminSchema);
 module.exports = AdminModel;

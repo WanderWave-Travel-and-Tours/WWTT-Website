@@ -4,9 +4,24 @@ import {
   ArrowLeft, Upload, X, FileText, User, 
   MessageSquare, DollarSign, MapPin, HelpCircle, Briefcase, Eye, Trash2
 } from "lucide-react";
+import axios from "axios"; 
 import Sidebar from "../../sidebar/sidebar"; 
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditPSA.css"; 
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Para sa Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 // Reusable Confirm Modal
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -134,8 +149,8 @@ const EditPSA = () => {
   useEffect(() => {
     const fetchPSADetails = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/${psaId}`);
-        const result = await res.json();
+        const res = await axios.get(`${API_BASE_URL}/${psaId}`);
+        const result = res.data;
         
         if (result.success && result.data) {
           const data = result.data;
@@ -279,7 +294,7 @@ const EditPSA = () => {
     const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/;
     
     if (!strictEmailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email format (e.g., user@email.com). Suffixes after .com are not allowed.", "Invalid Email");
+      toast.error("Please enter a valid email format (e.g., user@email.com).", "Invalid Email");
       return;
     }
 
@@ -297,6 +312,7 @@ const EditPSA = () => {
 
   const performSubmit = async () => {
     setSubmitting(true);
+    const { userEmail, adminId } = getAdminData(); 
     const data = new FormData();
     
     const fullName = `${formData.givenName} ${formData.lastName}`.trim();
@@ -305,6 +321,8 @@ const EditPSA = () => {
         data.append(key, formData[key]);
     });
     data.append("fullName", fullName);
+    data.append("userEmail", userEmail); 
+    data.append("adminId", adminId);
 
     if (files.requirement) {
       data.append("evidence", files.requirement); 
@@ -315,16 +333,13 @@ const EditPSA = () => {
     data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/update/${psaId}`, {
-        method: "PUT",
-        body: data,
-      });
-      const result = await res.json();
-      if (result.success) {
+      const res = await axios.put(`${API_BASE_URL}/update/${psaId}`, data);
+      
+      if (res.data.success) {
         toast.success("PSA Request updated successfully!", "Success");
         navigate("/services/psa");
       } else {
-        toast.error(result.message || "Failed to update record.", "Error");
+        toast.error(res.data.message || "Failed to update record.", "Error");
       }
     } catch (err) {
       toast.error("Server connection failed. Please try again.", "Connection Error");
@@ -384,39 +399,15 @@ const EditPSA = () => {
                   <div className="et-fields-grid">
                     <div className="et-input-group">
                       <label>Given Name</label>
-                      <input 
-                        type="text" 
-                        name="givenName" 
-                        value={formData.givenName} 
-                        onChange={handleInputChange} 
-                        className="et-input" 
-                        placeholder="Letters only"
-                        required 
-                      />
+                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" placeholder="Letters only" required />
                     </div>
                     <div className="et-input-group">
                       <label>Last Name</label>
-                      <input 
-                        type="text" 
-                        name="lastName" 
-                        value={formData.lastName} 
-                        onChange={handleInputChange} 
-                        className="et-input" 
-                        placeholder="Letters only"
-                        required 
-                      />
+                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" placeholder="Letters only" required />
                     </div>
                     <div className="et-input-group">
                       <label>Email</label>
-                      <input 
-                        type="email" 
-                        name="email" 
-                        value={formData.email} 
-                        onChange={handleInputChange} 
-                        className="et-input" 
-                        placeholder="example@email.com"
-                        required 
-                      />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" placeholder="example@email.com" required />
                     </div>
                     <div className="et-input-group">
                       <label>Contact No.</label>
@@ -481,14 +472,7 @@ const EditPSA = () => {
                     </div>
                     <div className="et-input-group" style={{ marginTop: "15px" }}>
                        <label>Admin Remarks</label>
-                       <textarea 
-                        name="message" 
-                        value={formData.message} 
-                        onChange={handleInputChange} 
-                        className="et-textarea" 
-                        rows="4" 
-                        placeholder="Internal notes..." 
-                       />
+                       <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Internal notes..." />
                     </div>
                   </section>
                   
@@ -496,9 +480,7 @@ const EditPSA = () => {
                     <button type="submit" className="et-btn et-btn--submit" disabled={submitting}>
                       {submitting ? "SAVING..." : "UPDATE REQUEST"}
                     </button>
-                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>
-                      DISCARD
-                    </button>
+                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>DISCARD</button>
                   </div>
                 </div>
               </div>

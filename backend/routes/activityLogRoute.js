@@ -4,11 +4,22 @@ const ActivityLog = require('../models/ActivityLog');
 const path = require('path');
 const fs = require('fs');
 
+// Try to import Admin model, but don't fail if it doesn't exist
+let Admin = null;
+try {
+    Admin = require('../models/admin');
+} catch (err) {
+    try {
+        Admin = require('../models/admin');
+    } catch (err2) {
+        console.log('⚠️ Admin model not found, user population will be skipped');
+    }
+}
+
 // Ensure exports directory exists
 const exportsDir = path.join(__dirname, '../uploads/exports');
 if (!fs.existsSync(exportsDir)) {
     fs.mkdirSync(exportsDir, { recursive: true });
-    console.log('✅ Exports directory created:', exportsDir);
 }
 
 // ===================================================================
@@ -16,7 +27,7 @@ if (!fs.existsSync(exportsDir)) {
 // ===================================================================
 router.post('/upload-pdf', async (req, res) => {
     try {
-        const { fileName, fileData, fileType } = req.body;
+        const { fileName, fileData } = req.body;
 
         if (!fileName || !fileData) {
             return res.status(400).json({
@@ -25,26 +36,14 @@ router.post('/upload-pdf', async (req, res) => {
             });
         }
 
-        console.log('📤 Uploading PDF file:', fileName);
-
-        // Extract base64 data (remove data:application/pdf;base64, prefix)
         const base64Data = fileData.replace(/^data:application\/pdf;base64,/, '');
-        
-        // Generate unique filename with timestamp
         const timestamp = Date.now();
         const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
         const uniqueFileName = `${timestamp}_${sanitizedFileName}`;
-        
-        // File path
         const filePath = path.join(exportsDir, uniqueFileName);
         
-        // Write file to disk
         fs.writeFileSync(filePath, base64Data, 'base64');
-        
-        // Create URL for accessing the file
         const fileUrl = `/uploads/exports/${uniqueFileName}`;
-        
-        console.log('✅ PDF file saved successfully:', filePath);
         
         res.status(200).json({
             success: true,
@@ -76,7 +75,6 @@ router.get('/download-pdf/:fileName', (req, res) => {
         const { fileName } = req.params;
         const filePath = path.join(exportsDir, fileName);
 
-        // Check if file exists
         if (!fs.existsSync(filePath)) {
             return res.status(404).json({
                 success: false,
@@ -84,9 +82,6 @@ router.get('/download-pdf/:fileName', (req, res) => {
             });
         }
 
-        console.log('📥 Downloading PDF file:', fileName);
-
-        // Send file
         res.download(filePath, fileName, (err) => {
             if (err) {
                 console.error('❌ Error downloading file:', err);
@@ -119,14 +114,12 @@ router.post('/', async (req, res) => {
             severity, description, ipAddress, userAgent, details
         } = req.body;
 
-        // Validate required fields
         if (!action || !module || !user || !description) {
             return res.status(400).json({ 
                 error: 'Missing required fields: action, module, user, description'
             });
         }
 
-        // Create new activity log
         const activityLog = new ActivityLog({
             action,
             module,
@@ -143,7 +136,6 @@ router.post('/', async (req, res) => {
         });
 
         await activityLog.save();
-        console.log('✅ Activity log created:', activityLog._id);
 
         res.status(201).json({
             success: true,
@@ -171,7 +163,7 @@ router.post('/', async (req, res) => {
 });
 
 // ===================================================================
-// 📋 GET ALL ACTIVITY LOGS
+// 📋 GET ALL ACTIVITY LOGS (WITH OPTIONAL USER POPULATION)
 // ===================================================================
 router.get('/', async (req, res) => {
     try {
@@ -187,7 +179,6 @@ router.get('/', async (req, res) => {
             search
         } = req.query;
 
-        // Build query filter
         const filter = {};
 
         if (action && action !== 'ALL') {
@@ -220,15 +211,43 @@ router.get('/', async (req, res) => {
             ];
         }
 
-        // Execute query
-        const logs = await ActivityLog.find(filter)
+        let query = ActivityLog.find(filter)
             .sort({ createdAt: -1 })
-            .limit(parseInt(limit))
-            .lean();
+            .limit(parseInt(limit));
 
-        console.log(`📊 Fetched ${logs.length} activity logs`);
+        // Only populate if Admin model exists
+        if (Admin) {
+            query = query
+                .populate({
+                    path: 'userId',
+                    select: 'username email fullName',
+                    model: Admin
+                })
+                .populate({
+                    path: 'adminId',
+                    select: 'username email fullName',
+                    model: Admin
+                });
+        }
 
-        res.status(200).json(logs);
+        const logs = await query.lean();
+
+        // Enhance logs with user info
+        const enhancedLogs = logs.map(log => {
+            const userInfo = log.userId || log.adminId;
+            
+            return {
+                ...log,
+                adminInfo: userInfo ? {
+                    id: userInfo._id,
+                    username: userInfo.username || null,
+                    email: userInfo.email || null,
+                    fullName: userInfo.fullName || userInfo.username || null
+                } : null
+            };
+        });
+
+        res.status(200).json(enhancedLogs);
 
     } catch (error) {
         console.error('❌ Error fetching activity logs:', error);
@@ -247,7 +266,23 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const log = await ActivityLog.findById(id);
+        let query = ActivityLog.findById(id);
+
+        if (Admin) {
+            query = query
+                .populate({
+                    path: 'userId',
+                    select: 'username email fullName',
+                    model: Admin
+                })
+                .populate({
+                    path: 'adminId',
+                    select: 'username email fullName',
+                    model: Admin
+                });
+        }
+
+        const log = await query;
 
         if (!log) {
             return res.status(404).json({
@@ -256,9 +291,20 @@ router.get('/:id', async (req, res) => {
             });
         }
 
+        const userInfo = log.userId || log.adminId;
+        const enhancedLog = {
+            ...log.toObject(),
+            adminInfo: userInfo ? {
+                id: userInfo._id,
+                username: userInfo.username || null,
+                email: userInfo.email || null,
+                fullName: userInfo.fullName || userInfo.username || null
+            } : null
+        };
+
         res.status(200).json({
             success: true,
-            data: log
+            data: enhancedLog
         });
 
     } catch (error) {
@@ -323,10 +369,17 @@ router.get('/module/:module', async (req, res) => {
         const { module } = req.params;
         const { limit = 100 } = req.query;
 
-        const logs = await ActivityLog.find({ module })
+        let query = ActivityLog.find({ module })
             .sort({ createdAt: -1 })
-            .limit(parseInt(limit))
-            .lean();
+            .limit(parseInt(limit));
+
+        if (Admin) {
+            query = query
+                .populate('userId', 'username email fullName')
+                .populate('adminId', 'username email fullName');
+        }
+
+        const logs = await query.lean();
 
         res.status(200).json({
             success: true,
@@ -351,15 +404,22 @@ router.get('/user/:userId', async (req, res) => {
         const { userId } = req.params;
         const { limit = 100 } = req.query;
 
-        const logs = await ActivityLog.find({ 
+        let query = ActivityLog.find({ 
             $or: [
                 { userId: userId },
                 { adminId: userId }
             ]
         })
             .sort({ createdAt: -1 })
-            .limit(parseInt(limit))
-            .lean();
+            .limit(parseInt(limit));
+
+        if (Admin) {
+            query = query
+                .populate('userId', 'username email fullName')
+                .populate('adminId', 'username email fullName');
+        }
+
+        const logs = await query.lean();
 
         res.status(200).json({
             success: true,
@@ -392,19 +452,15 @@ router.delete('/:id', async (req, res) => {
             });
         }
 
-        // Delete associated PDF file if exists
         if (log.details && log.details.filePath) {
             try {
                 if (fs.existsSync(log.details.filePath)) {
                     fs.unlinkSync(log.details.filePath);
-                    console.log('🗑️ Associated PDF file deleted:', log.details.filePath);
                 }
             } catch (fileError) {
                 console.error('⚠️ Could not delete associated file:', fileError);
             }
         }
-
-        console.log(`🗑️ Activity log deleted: ${id}`);
 
         res.status(200).json({
             success: true,
@@ -434,8 +490,6 @@ router.delete('/cleanup/old', async (req, res) => {
             createdAt: { $lt: cutoffDate }
         });
 
-        console.log(`🧹 Cleaned up ${result.deletedCount} old logs (older than ${days} days)`);
-
         res.status(200).json({
             success: true,
             message: `Deleted ${result.deletedCount} old logs`,
@@ -452,13 +506,11 @@ router.delete('/cleanup/old', async (req, res) => {
 });
 
 // ===================================================================
-// ⚠️ CLEAR ALL LOGS (DANGEROUS)
+// ⚠️ CLEAR ALL LOGS
 // ===================================================================
 router.delete('/clear/all', async (req, res) => {
     try {
         const result = await ActivityLog.deleteMany({});
-
-        console.log(`⚠️ ALL LOGS CLEARED: ${result.deletedCount} logs deleted`);
 
         res.status(200).json({
             success: true,

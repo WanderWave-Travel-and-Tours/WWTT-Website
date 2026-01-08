@@ -4,9 +4,24 @@ import {
   ArrowLeft, Upload, X, User, 
   DollarSign, Eye, HelpCircle, Briefcase, Trash2, FileText
 } from "lucide-react";
+import axios from "axios"; // Gamitin ang axios para mas consistent
 import Sidebar from "../../sidebar/sidebar"; 
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditPassport.css"; 
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
@@ -94,11 +109,13 @@ const EditPassport = () => {
   useEffect(() => {
     const fetchPassportDetails = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/${passportId}`);
-        const result = await res.json();
+        const res = await axios.get(`${API_BASE_URL}/${passportId}`);
+        const result = res.data;
         
         if (result.success && result.data) {
           const data = result.data;
+          
+          // Split full name if givenName/lastName are not explicitly separate in DB
           const nameParts = data.fullName ? data.fullName.split(" ") : ["", ""];
           const lName = nameParts.length > 1 ? nameParts.pop() : "";
           const gName = nameParts.join(" ");
@@ -113,6 +130,7 @@ const EditPassport = () => {
             message: data.adminRemarks || data.message || "",
           });
 
+          // Check for existing documents
           if (data.evidenceUrl) {
             setExistingFiles({ requirement: data.evidenceUrl });
           } else if (data.deliveredDocuments && data.deliveredDocuments.length > 0) {
@@ -125,13 +143,14 @@ const EditPassport = () => {
         }
       } catch (err) {
         toast.error("Failed to fetch data.");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
     if (passportId) fetchPassportDetails();
-  }, [passportId, API_BASE_URL, toast]); // Fixed dependency array
+  }, [passportId, toast]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -143,9 +162,7 @@ const EditPassport = () => {
 
     if (name === "contactNumber") {
       let val = value.replace(/[^0-9+]/g, ""); 
-      if (val.includes("+") && val.indexOf("+") !== 0) {
-        val = val.replace(/\+/g, ""); 
-      }
+      if (val.includes("+") && val.indexOf("+") !== 0) val = val.replace(/\+/g, ""); 
       if (val.length > 20) return;
       setFormData(prev => ({ ...prev, [name]: val }));
       return;
@@ -153,7 +170,7 @@ const EditPassport = () => {
 
     if (name === "estimatedPrice") {
       const val = value.replace(/[^0-9]/g, ""); 
-      if (val.length > 6) return;
+      if (val.length > 7) return;
       setFormData(prev => ({ ...prev, [name]: val }));
       return;
     }
@@ -209,7 +226,6 @@ const EditPassport = () => {
     );
   };
 
-  // ADDED: Confirmation logic for Back and Discard buttons
   const handleDiscard = () => {
     askConfirmation(
       "Discard Changes",
@@ -220,6 +236,7 @@ const EditPassport = () => {
   };
 
   const performSubmit = async () => {
+    // Basic Validations
     if (!formData.email.toLowerCase().endsWith(".com")) {
       toast.error("Email must end with .com");
       return;
@@ -232,30 +249,51 @@ const EditPassport = () => {
     }
 
     setSubmitting(true);
+    
+    // 🔥 GET ADMIN DATA FOR LOGS
+    const { userEmail, adminId } = getAdminData();
+
     const data = new FormData();
     const combinedFullName = `${formData.givenName} ${formData.lastName}`.trim();
     
+    // Standard Inquiry Fields
     data.append("fullName", combinedFullName);
     data.append("email", formData.email);
     data.append("contactNumber", formData.contactNumber);
-    data.append("passportDocument", formData.applicationType); 
     data.append("estimatedPrice", formData.estimatedPrice);
-    data.append("message", formData.message);
+    data.append("message", formData.message); // This will map to adminRemarks or message
+    
+    // Passport Specific Details
+    const passportDetails = {
+        applicationType: formData.applicationType,
+        dfaLocation: "Updated via Admin"
+    };
+    data.append("passportDetails", JSON.stringify(passportDetails));
 
-    if (files.requirement) data.append("walkInDoc", files.requirement);
+    // 🔥 LOGGING DATA
+    data.append("userEmail", userEmail);
+    data.append("adminId", adminId);
+
+    // File Handling
+    if (files.requirement) {
+        data.append("walkInDoc", files.requirement);
+    }
 
     data.append("existingFiles", JSON.stringify(Object.keys(existingFiles)));
     data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/update/${passportId}`, { method: "PUT", body: data });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Updated successfully!");
+      const res = await axios.put(`${API_BASE_URL}/update/${passportId}`, data, {
+          headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      if (res.data.success) {
+        toast.success("Passport record updated successfully!");
         navigate("/services/passport");
       }
     } catch (error) {
-      toast.error("Error updating record.");
+      console.error(error);
+      toast.error(error.response?.data?.message || "Error updating record.");
     } finally {
       setSubmitting(false);
     }
@@ -263,7 +301,7 @@ const EditPassport = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    askConfirmation("Save Changes", "Update this Passport request?", () => performSubmit());
+    askConfirmation("Save Changes", "Confirm updates to this Passport request?", () => performSubmit());
   };
 
   const renderPreviewContent = () => {
@@ -278,16 +316,23 @@ const EditPassport = () => {
       return <iframe src={url} title="PDF Preview" style={{ width: '100%', height: '100%', border: 'none' }} />;
     } else {
       return (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          <FileText size={48} style={{ margin: '0 auto 10px', color: '#64748b' }} />
-          <p>Preview not available for this format.</p>
-          <a href={url} download className="et-view-btn" style={{ display: 'inline-flex', marginTop: '10px' }}>Download to View</a>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <FileText size={64} style={{ margin: '0 auto 20px', color: '#64748b' }} />
+          <p style={{fontSize: '16px', color: '#1e293b'}}>Preview not available for this file format.</p>
+          <a href={url} download className="et-view-btn" style={{ display: 'inline-flex', marginTop: '15px', padding: '10px 20px' }}>
+            Download to View
+          </a>
         </div>
       );
     }
   };
 
-  if (loading) return <div className="et-loading">Loading...</div>;
+  if (loading) return (
+    <div className="et-loading-container">
+        <div className="et-loader"></div>
+        <p>Fetching passport details...</p>
+    </div>
+  );
 
   return (
     <div className="et-page">
@@ -296,28 +341,41 @@ const EditPassport = () => {
         <div className="et-container">
           <header className="et-header">
             <div className="et-header-content">
-              {/* BACK BUTTON WITH CONFIRMATION */}
               <button className="et-back-btn" onClick={handleDiscard}>
                 <ArrowLeft size={20} /> Back
               </button>
               <h1 className="et-title">EDIT PASSPORT REQUEST</h1>
-              <p className="et-subtitle">Update application details and documentation</p>
+              <p className="et-subtitle">Ref No: #{passportId.slice(-6).toUpperCase()}</p>
             </div>
           </header>
 
           <form onSubmit={handleSubmit} className="et-form">
             <div className="et-grid-layout">
               <div className="et-form-left">
+                {/* CLIENT INFO SECTION */}
                 <section className="et-section">
                   <div className="et-section-header"><User size={22} /> <h3>Client Information</h3> </div>
                   <div className="et-fields-grid">
-                    <div className="et-input-group"> <label>Given Name</label> <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" required /> </div>
-                    <div className="et-input-group"> <label>Last Name</label> <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" required /> </div>
-                    <div className="et-input-group"> <label>Email</label> <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" required /> </div>
-                    <div className="et-input-group"> <label>Contact No</label> <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" required /> </div>
+                    <div className="et-input-group"> 
+                        <label>Given Name</label> 
+                        <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" required /> 
+                    </div>
+                    <div className="et-input-group"> 
+                        <label>Last Name</label> 
+                        <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" required /> 
+                    </div>
+                    <div className="et-input-group"> 
+                        <label>Email</label> 
+                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" required /> 
+                    </div>
+                    <div className="et-input-group"> 
+                        <label>Contact No</label> 
+                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" required /> 
+                    </div>
                   </div>
                 </section>
 
+                {/* SERVICE DETAILS SECTION */}
                 <section className="et-section">
                   <div className="et-section-header"><Briefcase size={22} /> <h3>Service Details</h3> </div>
                   <div className="et-fields-grid">
@@ -339,23 +397,47 @@ const EditPassport = () => {
                   </div>
                 </section>
 
+                {/* ATTACHMENTS SECTION */}
                 <section className="et-section">
                   <div className="et-section-header"><Upload size={22} /> <h3>Attachments</h3> </div>
-                  <FileRow label="Requirement Document" field="requirement" onChange={handleFileChange} onView={() => handleViewFile('requirement')} hasExisting={!!existingFiles['requirement']} currentFile={files['requirement']} />
+                  <FileRow 
+                    label="Requirement Document" 
+                    field="requirement" 
+                    onChange={handleFileChange} 
+                    onView={() => handleViewFile('requirement')} 
+                    hasExisting={!!existingFiles['requirement']} 
+                    currentFile={files['requirement']} 
+                  />
+                  <p className="et-hint-text">Supported formats: PDF, JPG, PNG, DOCX (Max 5MB)</p>
                 </section>
               </div>
 
               <div className="et-form-right">
                 <div className="et-sticky-sidebar">
+                  {/* BILLING SECTION */}
                   <section className="et-section">
                     <div className="et-section-header"> <DollarSign size={20} /> <h3>Billing & Notes</h3> </div>
-                    <div className="et-input-group"> <label>Estimated Price (PHP)</label> <input type="text" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="et-input" /> </div>
-                    <div className="et-input-group" style={{marginTop: '15px'}}> <label>Admin Remarks</label> <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" /> </div>
+                    <div className="et-input-group"> 
+                        <label>Estimated Price (PHP)</label> 
+                        <div className="et-price-input-wrapper">
+                            <span className="et-currency-prefix">₱</span>
+                            <input type="text" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="et-input et-price-input" placeholder="0.00" /> 
+                        </div>
+                    </div>
+                    <div className="et-input-group" style={{marginTop: '20px'}}> 
+                        <label>Admin Remarks / Internal Notes</label> 
+                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="6" placeholder="Add notes about this request..." /> 
+                    </div>
                   </section>
+
+                  {/* FORM ACTIONS */}
                   <div className="et-form-actions">
-                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}> {submitting ? "SAVING..." : "UPDATE REQUEST"} </button>
-                    {/* DISCARD BUTTON WITH CONFIRMATION */}
-                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>DISCARD</button>
+                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}> 
+                        {submitting ? "SAVING UPDATES..." : "UPDATE REQUEST"} 
+                    </button>
+                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>
+                        DISCARD CHANGES
+                    </button>
                   </div>
                 </div>
               </div>
@@ -364,25 +446,28 @@ const EditPassport = () => {
         </div>
       </main>
 
+      {/* FILE PREVIEW MODAL */}
       {previewFile && (
         <div className="et-modal-overlay" onClick={() => setPreviewFile(null)}>
           <div className="et-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
             <div className="et-modal-preview-header">
-              <span style={{ fontWeight: 600, color: '#1e293b' }}>{previewFile.name.split('/').pop()}</span>
-              <button onClick={() => setPreviewFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+              <span className="et-preview-filename">{previewFile.name.split('/').pop()}</span>
+              <button className="et-close-preview" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
-            <div className="et-modal-preview-body" style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+            <div className="et-modal-preview-body">
                 {renderPreviewContent()}
             </div>
-            <div className="et-modal-preview-footer" style={{ padding: '15px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', background: 'white' }}>
-                <button className="et-view-btn" style={{ color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }} onClick={() => handleDeleteFile(previewFile.fieldKey)}>
-                  <Trash2 size={16} style={{ marginRight: '6px' }} /> Remove File
+            <div className="et-modal-preview-footer">
+                <button className="et-delete-file-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
+                  <Trash2 size={18} /> Remove File
                 </button>
+                <button className="et-close-btn-simple" onClick={() => setPreviewFile(null)}>Close</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* CONFIRMATION DIALOG */}
       <CustomConfirmModal 
         isOpen={confirmConfig.isOpen} 
         title={confirmConfig.title} 

@@ -30,6 +30,20 @@ const AirlineBooking = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
+    // ✅ GET ADMIN DATA FOR ACTIVITY LOGS
+    const getAdminData = () => {
+        try {
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            return {
+                userEmail: adminData.email || adminData.username || adminData.user || 'Unknown Admin',
+                adminId: adminData.id || adminData._id || null
+            };
+        } catch (error) {
+            console.error('Error parsing admin data:', error);
+            return { userEmail: 'Unknown Admin', adminId: null };
+        }
+    };
+
     useEffect(() => {
         const handleResize = () => setSidebarCollapsed(window.innerWidth <= 1024);
         window.addEventListener('resize', handleResize);
@@ -109,10 +123,18 @@ const AirlineBooking = () => {
     const handleUpdateStatus = async (id, newStatus) => {
         const action = `Update status to ${newStatus}`;
         if(!window.confirm(`Are you sure you want to ${action}?`)) return;
+        
         try {
+            // ✅ GET ADMIN DATA
+            const { userEmail, adminId } = getAdminData();
+
             const response = await axios.put(
                 `http://localhost:5000/api/inquiries/${id}/status`,
-                { status: newStatus }
+                { 
+                    status: newStatus,
+                    userEmail,  // ✅ SEND FOR ACTIVITY LOG
+                    adminId     // ✅ SEND FOR ACTIVITY LOG
+                }
             );
 
             if (response.data.success) {
@@ -134,8 +156,15 @@ const AirlineBooking = () => {
         
         if (window.confirm('Send payment request to client?')) {
             try {
+                // ✅ GET ADMIN DATA
+                const { userEmail, adminId } = getAdminData();
+
                 const response = await axios.post(
-                    `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`
+                    `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`,
+                    {
+                        userEmail,  // ✅ SEND FOR ACTIVITY LOG
+                        adminId     // ✅ SEND FOR ACTIVITY LOG
+                    }
                 );
                 
                 if (response.data.success) {
@@ -154,9 +183,17 @@ const AirlineBooking = () => {
     const handleArchiveBooking = async (id) => {
         if (window.confirm('Are you sure you want to archive this inquiry?')) {
             try {
-                const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
-                    isArchive: 'Yes'
-                });
+                // ✅ GET ADMIN DATA
+                const { userEmail, adminId } = getAdminData();
+
+                const response = await axios.put(
+                    `http://localhost:5000/api/inquiries/${id}/archive`, 
+                    {
+                        isArchive: 'Yes',
+                        userEmail,  // ✅ SEND FOR ACTIVITY LOG
+                        adminId     // ✅ SEND FOR ACTIVITY LOG
+                    }
+                );
 
                 if (response.data.success) {
                     alert('Inquiry archived successfully!');
@@ -173,10 +210,16 @@ const AirlineBooking = () => {
     // Submit contact with remarks
     const submitContactWithRemarks = async () => {
         if (!selectedBooking || !contactRemarks.trim()) return alert('Please enter remarks');
+        
         try {
+            // ✅ GET ADMIN DATA
+            const { userEmail, adminId } = getAdminData();
+
             const formData = new FormData();
             formData.append('status', 'CONTACTED');
             formData.append('remarks', contactRemarks);
+            formData.append('userEmail', userEmail);   // ✅ SEND FOR ACTIVITY LOG
+            formData.append('adminId', adminId);       // ✅ SEND FOR ACTIVITY LOG
             if (contactEvidence) formData.append('evidence', contactEvidence);
 
             const response = await axios.put(
@@ -193,7 +236,10 @@ const AirlineBooking = () => {
                 setSelectedBooking({ ...selectedBooking, status: 'CONTACTED' });
                 setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
             }
-        } catch (error) { console.error(error); alert('Failed to report issue'); }
+        } catch (error) { 
+            console.error(error); 
+            alert('Failed to report issue'); 
+        }
     };
 
     const handleCloseViewModal = () => {

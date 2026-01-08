@@ -4,9 +4,24 @@ import {
   ArrowLeft, Upload, X, FileText, User, MessageSquare, 
   DollarSign, Eye, Trash2, HelpCircle, Briefcase
 } from "lucide-react";
+import axios from "axios"; // Added for better integration
 import Sidebar from "../../sidebar/sidebar"; 
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditCenomar.css"; 
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Para sa Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 // Reusable Confirm Modal (Patterned after EditPSA)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -325,6 +340,7 @@ const EditCenomar = () => {
 
   const performSubmit = async () => {
     setSubmitting(true);
+    const { userEmail, adminId } = getAdminData(); // Get current admin info
     const data = new FormData();
     
     const fullName = `${formData.givenName} ${formData.lastName}`.trim();
@@ -333,6 +349,8 @@ const EditCenomar = () => {
         data.append(key, formData[key]);
     });
     data.append("fullName", fullName);
+    data.append("userEmail", userEmail); // For Activity Log
+    data.append("adminId", adminId);     // For Activity Log
 
     if (files.requirement) {
       data.append("evidence", files.requirement); 
@@ -343,16 +361,14 @@ const EditCenomar = () => {
     data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/update/${cenomarId}`, {
-        method: "PUT",
-        body: data,
-      });
-      const result = await res.json();
-      if (result.success) {
+      // Changed to axios for consistency with logs implementation
+      const res = await axios.put(`${API_BASE_URL}/update/${cenomarId}`, data);
+      
+      if (res.data.success) {
         toast.success("CENOMAR Request updated successfully!", "Success");
         navigate("/services/cenomar");
       } else {
-        toast.error(result.message || "Failed to update record.", "Error");
+        toast.error(res.data.message || "Failed to update record.", "Error");
       }
     } catch (err) {
       toast.error("Server connection failed. Please try again.", "Connection Error");
@@ -477,8 +493,8 @@ const EditCenomar = () => {
                         <input type="text" name="estimatedPrice" value={formData.estimatedPrice} readOnly className="et-input" style={{ background: '#f8fafc' }} />
                     </div>
                     <div className="et-input-group" style={{ marginTop: "15px" }}>
-                       <label>Admin Remarks</label>
-                       <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Internal notes..." />
+                        <label>Admin Remarks</label>
+                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Internal notes..." />
                     </div>
                   </section>
                   

@@ -10,6 +10,20 @@ import Sidebar from "../../sidebar/sidebar";
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditVisa.css"; 
 
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added from EditPSA logic) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -293,6 +307,10 @@ const EditVisa = () => {
 
   const performSubmit = async () => {
     setSubmitting(true);
+    
+    // 🔥 GET ADMIN DATA (Similar to EditPSA)
+    const { userEmail, adminId } = getAdminData();
+
     const data = new FormData();
     data.append('fullName', `${formData.givenName} ${formData.lastName}`);
     data.append('serviceName', formData.visaType);
@@ -306,8 +324,14 @@ const EditVisa = () => {
     data.append('message', formData.message); 
     data.append('estimatedPrice', formData.estimatedPrice);
 
+    // 🔥 APPEND ADMIN DATA FOR LOGS
+    data.append('userEmail', userEmail);
+    data.append('adminId', adminId);
+
+    // Handle Existing Files List
     data.append('existingFiles', JSON.stringify(Object.keys(existingFiles)));
 
+    // Handle New Files
     Object.keys(files).forEach(key => {
       data.append(key, files[key]);
     });
