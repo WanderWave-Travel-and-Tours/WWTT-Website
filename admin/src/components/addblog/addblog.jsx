@@ -1,13 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2, FileText, User, Loader2 } from 'lucide-react';
+import { Upload, Trash2, FileText, User, Loader2, X, AlertTriangle, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import { useNavigate } from 'react-router-dom'; 
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+import { useToast } from '../toast/ToastManager'; // Gagamitin ang Toast
 import './addblog.css';
+
+// --- INTEGRATED CUSTOM CONFIRM MODAL DESIGN FROM EDITVISA ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+    if (!isOpen) return null;
+    return (
+      <div className="arc-confirm-overlay" style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', zIndex: 11000
+      }}>
+        <div className="arc-confirm-modal" style={{
+          backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+          maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ 
+            marginBottom: '1rem', display: 'flex', justifyContent: 'center' 
+          }}>
+            <div style={{
+              padding: '1rem', borderRadius: '50%', 
+              backgroundColor: type === 'danger' ? '#fee2e2' : '#e0f2fe',
+              color: type === 'danger' ? '#ef4444' : '#0ea5e9'
+            }}>
+              <AlertTriangle size={32} />
+            </div>
+          </div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+          <p style={{ color: '#64748b', marginBottom: '2rem', lineHeight: '1.5' }}>{message}</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button onClick={onCancel} style={{
+              padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', color: '#64748b', fontWeight: '500', cursor: 'pointer'
+            }}>
+              Cancel
+            </button>
+            <button onClick={onConfirm} style={{
+              padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#0ea5e9',
+              color: 'white', fontWeight: '500', cursor: 'pointer'
+            }}>
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+};
 
 const AddBlog = () => {
     const navigate = useNavigate();
+    const toast = useToast(); // Initialize Toast
     
     // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -34,7 +82,6 @@ const AddBlog = () => {
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
 
-    // 1. Helper: File <-> Base64 Converters
     const fileToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -50,33 +97,28 @@ const AddBlog = () => {
         return new File([blob], fileName, { type: mimeType });
     };
 
-    // 2. Draft Payload State
     const [draftPayload, setDraftPayload] = useState(null);
 
-    // 3. Listen to state changes and update Draft Payload
     useEffect(() => {
         const updateDraft = async () => {
-            // 🛑 FIX: Check if form is completely empty/default before saving
             const isFormEmpty = 
                 !blogDetails.title &&
                 !blogDetails.author &&
                 !blogDetails.category &&
                 !blogDetails.content &&
-                blogDetails.status === 'Published' && // Check default
+                blogDetails.status === 'Published' && 
                 !imageFile;
 
             if (isFormEmpty) {
-                setDraftPayload(null); // Do not save anything
+                setDraftPayload(null); 
                 return;
             }
 
             let imageBase64 = null;
             let imageMeta = null;
 
-            // Handle Image Conversion
             if (imageFile) {
                 try {
-                    // Limit draft image size (~3MB limit safety)
                     if (imageFile.size < 3 * 1024 * 1024) { 
                         imageBase64 = await fileToBase64(imageFile);
                         imageMeta = { name: imageFile.name, type: imageFile.type };
@@ -88,23 +130,20 @@ const AddBlog = () => {
 
             setDraftPayload({
                 ...blogDetails,
-                image: imageBase64, // Saved as Base64 string
+                image: imageBase64,
                 imageMeta: imageMeta
             });
         };
 
         const timeoutId = setTimeout(() => {
             updateDraft();
-        }, 500); // Debounce
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [blogDetails, imageFile]);
 
-    // 4. Restore Function
     const restoreDraftData = async (data) => {
         if (!data) return;
-
-        // Restore Blog Details
         setBlogDetails({
             title: data.title || '',
             author: data.author || '',
@@ -112,8 +151,6 @@ const AddBlog = () => {
             content: data.content || '',
             status: data.status || 'Published'
         });
-
-        // Restore Image
         if (data.image && data.imageMeta) {
             try {
                 const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
@@ -125,7 +162,6 @@ const AddBlog = () => {
         }
     };
 
-    // 5. Initialize Hook
     const { 
         clearDraft, 
         hasDraft, 
@@ -133,14 +169,13 @@ const AddBlog = () => {
         discardDraft,
         draftInfo 
     } = useAutoDraft({
-        module: 'add-blog', // Unique ID
+        module: 'add-blog', 
         formData: draftPayload,
         setFormData: restoreDraftData,
         imagePreview: imagePreview, 
-        autoRestore: false // Manual via modal
+        autoRestore: false 
     });
 
-    // 6. Modal State
     const [showRestoreModal, setShowRestoreModal] = useState(false);
 
     useEffect(() => {
@@ -152,16 +187,14 @@ const AddBlog = () => {
     const handleRestoreDraft = () => {
         restoreDraft();
         setShowRestoreModal(false);
+        toast.info("Draft restored successfully.");
     };
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); // Ensure storage is cleared
+        await discardDraft();
         setShowRestoreModal(false);
+        toast.warning("Draft discarded.");
     };
-
-    // =========================================================
-    // ✅ AUTO-DRAFT LOGIC END
-    // =========================================================
 
     // =========================================================
     // CLEANUP IMAGE PREVIEW
@@ -186,7 +219,7 @@ const AddBlog = () => {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
-                alert('Please upload a valid image file (JPG, PNG).');
+                toast.error('Please upload a valid image file (JPG, PNG).');
                 return;
             }
             setImageFile(file);
@@ -200,15 +233,9 @@ const AddBlog = () => {
         setImagePreview(null);
     };
 
-    const handleSubmit = async (e) => {
-        if (e) e.preventDefault();
-        if (!blogDetails.title || !blogDetails.content || !imageFile) {
-            alert('Please provide a title, content, and cover image.');
-            return;
-        }
-
+    // Logic for Final Submission
+    const executeSubmit = async () => {
         setIsSubmitting(true);
-
         try {
             const formData = new FormData();
             formData.append('title', blogDetails.title);
@@ -222,11 +249,8 @@ const AddBlog = () => {
                 const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
                 const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
                 const activeId = adminData.id || adminData._id || "";
-
                 formData.append("userEmail", activeUser);
                 formData.append("adminId", activeId);
-                
-                console.log("Submitting Blog by:", activeUser);
             } catch (err) {
                 console.error("Error parsing admin data:", err);
             }
@@ -239,49 +263,58 @@ const AddBlog = () => {
             const result = await response.json();
 
             if (response.ok) {
-                alert('✅ Blog post created successfully!');
-                
-                // ✅ CLEAR DRAFT ON SUCCESS
+                toast.success('Blog post created successfully!');
                 await clearDraft();
-                
-                // Manually reset form since handleCancel has confirm logic
                 setBlogDetails({
-                    title: '',
-                    author: '',
-                    category: '',
-                    content: '',
-                    status: 'Published'
+                    title: '', author: '', category: '', content: '', status: 'Published'
                 });
                 setImageFile(null);
                 setImagePreview(null);
-
             } else {
-                alert(`❌ Error: ${result.message || 'Failed to create blog'}`);
+                toast.error(result.message || 'Failed to create blog');
             }
-
         } catch (error) {
             console.error('Error submitting blog:', error);
-            alert('❌ Server error. Please check if backend is running.');
+            toast.error('Server error. Please check if backend is running.');
         } finally {
             setIsSubmitting(false);
+            setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         }
     };
 
-    const handleCancel = async () => {
-        if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-            // ✅ CLEAR DRAFT ON CANCEL
-            await clearDraft();
-
-            setBlogDetails({
-                title: '',
-                author: '',
-                category: '',
-                content: '',
-                status: 'Published'
-            });
-            setImageFile(null);
-            setImagePreview(null);
+    const handleSubmit = (e) => {
+        if (e) e.preventDefault();
+        if (!blogDetails.title || !blogDetails.content || !imageFile) {
+            toast.error('Please provide a title, content, and cover image.');
+            return;
         }
+
+        setConfirmConfig({
+            isOpen: true,
+            title: "Publish Blog?",
+            message: "Are you sure you want to publish this blog post now?",
+            type: "primary",
+            onConfirm: executeSubmit
+        });
+    };
+
+    const handleCancel = () => {
+        setConfirmConfig({
+            isOpen: true,
+            title: "Discard Changes?",
+            message: "Are you sure you want to cancel? All unsaved changes in this blog post will be lost.",
+            type: "danger",
+            onConfirm: async () => {
+                await clearDraft();
+                setBlogDetails({
+                    title: '', author: '', category: '', content: '', status: 'Published'
+                });
+                setImageFile(null);
+                setImagePreview(null);
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                toast.info("Form has been reset.");
+            }
+        });
     };
 
     const currentDate = new Date().toLocaleDateString('en-US', {
@@ -291,12 +324,21 @@ const AddBlog = () => {
     return (
         <div className="blog-page">
             
-            {/* ✅ RESTORE DRAFT MODAL */}
             <RestoreDraftModal
                 isOpen={showRestoreModal}
                 onRestore={handleRestoreDraft}
                 onDiscard={handleDiscardDraft}
                 draftInfo={draftInfo}
+            />
+
+            {/* ✅ APPLIED: CUSTOM CONFIRM MODAL DESIGN FROM EDITVISA */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
 
             <Sidebar 

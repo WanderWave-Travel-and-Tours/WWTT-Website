@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
-  ArrowLeft, Upload, X, User, 
-  DollarSign, Eye, HelpCircle, Briefcase, Trash2, FileText
+  ArrowLeft, Upload, X, FileText, User, 
+  DollarSign, Eye, Trash2, HelpCircle, Briefcase
 } from "lucide-react";
 import axios from "axios"; // Gamitin ang axios para mas consistent
 import Sidebar from "../../sidebar/sidebar"; 
@@ -26,22 +26,30 @@ const getAdminData = () => {
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
-    <div className="et-confirm-overlay">
-      <div className="et-confirm-modal">
+    <div className="et-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 15000 // Higher than preview modal
+    }}>
+      <div className="et-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
         <div style={{ marginBottom: '1rem' }}>
           <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
         </div>
-        <h3>{title}</h3>
-        <p>{message}</p>
-        <div className="et-confirm-buttons">
-          <button onClick={onCancel} className="et-confirm-btn-cancel">Cancel</button>
-          <button onClick={onConfirm} className={`et-confirm-btn-confirm ${type === 'danger' ? 'btn-danger' : 'btn-primary'}`}>Confirm</button>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button onClick={onCancel} style={{ padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: 'white', cursor: 'pointer' }}>Cancel</button>
+          <button onClick={onConfirm} style={{ padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none', backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6', color: 'white', cursor: 'pointer' }}>Confirm</button>
         </div>
       </div>
     </div>
   );
 };
 
+// FileRow Component
 const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) => (
   <div className="et-file-row">
     <div className="et-file-info">
@@ -52,7 +60,7 @@ const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) =
     </div>
     <div className="et-file-actions">
       {(hasExisting || currentFile) && (
-        <button type="button" className="et-view-btn" onClick={onView} title="View file">
+        <button type="button" className="et-view-btn" onClick={() => onView(field)} title="View file">
           <Eye size={14} /> View
         </button>
       )}
@@ -73,6 +81,19 @@ const EditPassport = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
+  const [originalData, setOriginalData] = useState(null); // Added for comparison
+
+  // Options from PassportApplicationModal
+  const passportOptions = [
+    "New Application",
+    "Renewal",
+    "Lost Passport Replacement",
+  ];
+
+  const processingOptions = [
+    "Regular Processing",
+    "Expedited Processing"
+  ];
 
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
@@ -83,9 +104,10 @@ const EditPassport = () => {
     lastName: "",
     email: "",
     contactNumber: "",
-    applicationType: "", 
+    serviceName: "",      // Mapping to Processing Type
     estimatedPrice: "",
     message: "",
+    passportDocument: ""  // UI mapping para sa Application Type dropdown
   });
 
   const [files, setFiles] = useState({});
@@ -98,7 +120,7 @@ const EditPassport = () => {
 
   const askConfirmation = (title, message, onConfirm, type = "primary") => {
     setConfirmConfig({
-      isOpen: true, title: title, message: message, type: type,
+      isOpen: true, title, message, type,
       onConfirm: () => {
         onConfirm();
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
@@ -120,25 +142,23 @@ const EditPassport = () => {
           const lName = nameParts.length > 1 ? nameParts.pop() : "";
           const gName = nameParts.join(" ");
 
+          const fetchedAppType = data.passportDetails?.applicationType || "";
+          const fetchedProcType = data.passportDetails?.processingType || data.serviceName || "";
+
           setFormData({
             givenName: data.givenName || gName || "",
             lastName: data.lastName || lName || "",
             email: data.email || "",
             contactNumber: data.contactNumber || "",
-            applicationType: data.passportDetails?.applicationType || "", 
+            passportDocument: fetchedAppType, 
+            serviceName: fetchedProcType, 
             estimatedPrice: data.estimatedPrice || "",
-            message: data.adminRemarks || data.message || "",
+            message: data.adminRemarks || "",
           });
 
           // Check for existing documents
           if (data.evidenceUrl) {
             setExistingFiles({ requirement: data.evidenceUrl });
-          } else if (data.deliveredDocuments && data.deliveredDocuments.length > 0) {
-            const foundDoc = data.deliveredDocuments.find(doc => 
-                doc.fileName.toLowerCase().includes("walkindoc") || 
-                doc.fileName.toLowerCase().includes("requirement")
-            );
-            if (foundDoc) setExistingFiles({ requirement: foundDoc.fileUrl });
           }
         }
       } catch (err) {
@@ -181,49 +201,41 @@ const EditPassport = () => {
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
-      askConfirmation(
-        "Upload Confirmation",
-        `Are you sure you want to upload "${file.name}"?`,
-        () => {
-          setFiles((prev) => ({ ...prev, [fieldName]: file }));
-          toast.info("File prepared for upload.");
-        }
-      );
+      setFiles((prev) => ({ ...prev, [fieldName]: file }));
+      setExistingFiles((prev) => {
+        const updated = { ...prev };
+        delete updated[fieldName];
+        return updated;
+      });
     }
   };
 
   const handleViewFile = (fieldKey) => {
     if (files[fieldKey]) {
-      setPreviewFile({ url: URL.createObjectURL(files[fieldKey]), name: files[fieldKey].name, fieldKey, isNew: true });
+      const url = URL.createObjectURL(files[fieldKey]);
+      setPreviewFile({ url, name: files[fieldKey].name, fieldKey, isNew: true });
     } else if (existingFiles[fieldKey]) {
       const url = existingFiles[fieldKey];
-      setPreviewFile({ url: url.startsWith('http') ? url : `${FILE_BASE_URL}${url}`, name: url, fieldKey, isNew: false });
+      const fullUrl = url.startsWith('http') ? url : `${FILE_BASE_URL}${url}`;
+      setPreviewFile({ url: fullUrl, name: url.split('/').pop(), fieldKey, isNew: false });
     }
   };
 
   const handleDeleteFile = (fieldKey) => {
-    askConfirmation(
-      "Remove File",
-      "Are you sure you want to remove this file?",
-      () => {
-        if (files[fieldKey]) {
-          setFiles((prev) => {
-            const newFiles = { ...prev };
-            delete newFiles[fieldKey];
-            return newFiles;
-          });
-        } else {
-          setExistingFiles((prev) => {
-            const newExisting = { ...prev };
-            delete newExisting[fieldKey];
-            return newExisting;
-          });
-        }
-        setPreviewFile(null);
-        toast.success("File removed.");
-      },
-      "danger"
-    );
+    askConfirmation("Delete Confirmation", "Are you sure you want to delete this file? Changes will be saved once you click Update.", () => {
+      setFiles(prev => {
+        const updated = { ...prev };
+        delete updated[fieldKey];
+        return updated;
+      });
+      setExistingFiles(prev => {
+        const updated = { ...prev };
+        delete updated[fieldKey];
+        return updated;
+      });
+      setPreviewFile(null);
+      toast.info("File removed from list.");
+    }, "danger");
   };
 
   const handleDiscard = () => {
@@ -279,8 +291,31 @@ const EditPassport = () => {
         data.append("walkInDoc", files.requirement);
     }
 
-    data.append("existingFiles", JSON.stringify(Object.keys(existingFiles)));
-    data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
+      // Existing Submit Logic
+      Object.keys(formData).forEach((key) => {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          data.append(key, formData[key]);
+        }
+      });
+
+      data.append("applicationType", formData.passportDocument);
+      const combinedName = `${formData.givenName || ""} ${formData.lastName || ""}`.trim();
+      data.append("fullName", combinedName);
+
+      if (files.requirement) {
+        data.append("requirement", files.requirement);
+      }
+
+      const remainingUrls = Object.values(existingFiles).filter(url => !!url);
+      data.append("existingFiles", JSON.stringify(remainingUrls));
+      data.append("adminEmail", adminEmail);
+
+      const response = await fetch(`${API_BASE_URL}/update/${passportId}`, {
+        method: "PUT",
+        body: data,
+      });
+
+      const result = await response.json();
 
     try {
       const res = await axios.put(`${API_BASE_URL}/update/${passportId}`, data, {
@@ -307,7 +342,7 @@ const EditPassport = () => {
   const renderPreviewContent = () => {
     if (!previewFile) return null;
     const { url, name } = previewFile;
-    const isImage = name.match(/\.(jpeg|jpg|gif|png|webp)$/i) || url.startsWith('blob:');
+    const isImage = name.match(/\.(jpeg|jpg|gif|png|webp)$/i);
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
     if (isImage && !isPdf) {
@@ -379,19 +414,19 @@ const EditPassport = () => {
                 <section className="et-section">
                   <div className="et-section-header"><Briefcase size={22} /> <h3>Service Details</h3> </div>
                   <div className="et-fields-grid">
-                    <div className="et-input-group full-width">
+                    <div className="et-input-group">
                       <label>Application Type</label>
                       <select 
-                        name="applicationType" 
-                        value={formData.applicationType} 
+                        name="passportDocument" 
+                        value={formData.passportDocument} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="et-input"
                         required
                       >
-                        <option value="" disabled>Select Application Type</option>
-                        <option value="NEW">New Application</option>
-                        <option value="RENEWAL">Renewal</option>
-                        <option value="LOST">Lost Passport</option>
+                        <option value="">Select Application Type</option>
+                        {passportOptions.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -412,6 +447,7 @@ const EditPassport = () => {
                 </section>
               </div>
 
+              {/* --- Billing & Notes --- */}
               <div className="et-form-right">
                 <div className="et-sticky-sidebar">
                   {/* BILLING SECTION */}

@@ -38,9 +38,9 @@ export const ActivityLogsDetailModal = ({
                         <div className="log-title-group">
                             <h2 className="log-title">Activity Log Details</h2>
                             <div className="log-meta">
-                                <span className="log-ref">ID: {selectedLog.id}</span>
+                                <span className="log-ref">ID: {selectedLog.id || selectedLog._id}</span>
                                 <span className="log-divider">•</span>
-                                <span className="log-date">Log #{selectedLog.logNumber}</span>
+                                <span className="log-date">Log #{selectedLog.logNumber || 'N/A'}</span>
                             </div>
                         </div>
                         <div className={`log-severity-badge log-severity-${severityConfig.color}`}>
@@ -99,7 +99,7 @@ export const ActivityLogsDetailModal = ({
                                 </div>
                                 <div className="log-info-content">
                                     <label className="log-info-label">Timestamp</label>
-                                    <span className="log-info-value">{formatDate(selectedLog.timestamp)}</span>
+                                    <span className="log-info-value">{formatDate(selectedLog.timestamp || selectedLog.createdAt)}</span>
                                 </div>
                             </div>
                         </div>
@@ -111,9 +111,30 @@ export const ActivityLogsDetailModal = ({
                             <h3 className="log-card-title">Activity Description</h3>
                         </div>
                         <div className="log-message-box">
-                            <p style={{margin:0, color:'#475569'}}>
+                            <p style={{margin:0, color:'#475569', marginBottom: (selectedLog.details?.changes && (Array.isArray(selectedLog.details.changes) ? selectedLog.details.changes.length > 0 : Object.keys(selectedLog.details.changes).length > 0)) ? '10px' : '0'}}>
                                 {selectedLog.description}
                             </p>
+                            
+                            {/* Ipinapakita ang listahan ng mga eksaktong nabago kung meron man */}
+                            {selectedLog.details?.changes && (
+                                <ul style={{ marginTop: '10px', fontSize: '13px', color: '#1e293b', listStyleType: 'none', padding: 0 }}>
+                                    {Array.isArray(selectedLog.details.changes) ? (
+                                        selectedLog.details.changes.map((change, index) => (
+                                            <li key={index} style={{ marginBottom: '6px', paddingLeft: '15px', position: 'relative' }}>
+                                                <span style={{ position: 'absolute', left: 0, color: '#3b82f6' }}>•</span> 
+                                                {change}
+                                            </li>
+                                        ))
+                                    ) : typeof selectedLog.details.changes === 'object' ? (
+                                        Object.entries(selectedLog.details.changes).map(([field, value], index) => (
+                                            <li key={index} style={{ marginBottom: '6px', paddingLeft: '15px', position: 'relative' }}>
+                                                <span style={{ position: 'absolute', left: 0, color: '#3b82f6' }}>•</span> 
+                                                <strong>{field}:</strong> {String(value)}
+                                            </li>
+                                        ))
+                                    ) : null}
+                                </ul>
+                            )}
                         </div>
                     </div>
 

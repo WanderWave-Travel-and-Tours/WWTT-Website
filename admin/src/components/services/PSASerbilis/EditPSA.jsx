@@ -310,7 +310,7 @@ const EditPSA = () => {
     );
   };
 
-  const performSubmit = async () => {
+const performSubmit = async () => {
     setSubmitting(true);
     const { userEmail, adminId } = getAdminData(); 
     const data = new FormData();
@@ -324,13 +324,10 @@ const EditPSA = () => {
     data.append("userEmail", userEmail); 
     data.append("adminId", adminId);
 
-    if (files.requirement) {
-      data.append("evidence", files.requirement); 
-    }
-    
-    const remainingKeys = Object.keys(existingFiles);
-    data.append("existingFiles", JSON.stringify(remainingKeys));
-    data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
+    // 1. Kunin ang Admin Info mula sa localStorage para sa logs
+    const adminData = JSON.parse(localStorage.getItem('adminUser')) || {};
+    const adminEmail = adminData.email || "Unknown Admin";
+    const adminName = adminData.username || "Admin";
 
     try {
       const res = await axios.put(`${API_BASE_URL}/update/${psaId}`, data);
@@ -342,6 +339,7 @@ const EditPSA = () => {
         toast.error(res.data.message || "Failed to update record.", "Error");
       }
     } catch (err) {
+      console.error("Submit Error:", err);
       toast.error("Server connection failed. Please try again.", "Connection Error");
     } finally {
       setSubmitting(false);
@@ -351,19 +349,19 @@ const EditPSA = () => {
   const renderPreviewContent = () => {
     if (!previewFile) return null;
     const { url, name } = previewFile;
-    const isImage = name.match(/\.(jpeg|jpg|gif|png|webp)$/i) || url.startsWith('blob:');
+    const isImage = /\.(jpeg|jpg|gif|png|webp)$/i.test(name) || url.startsWith('blob:');
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
     if (isImage && !isPdf) {
-      return <img src={url} alt="File Preview" className="preview-media-full" />;
+      return <img src={url} alt="File Preview" className="preview-media-full" style={{ width: '100%', borderRadius: '8px' }} />;
     } else if (isPdf) {
-      return <iframe src={url} title="PDF Preview" className="preview-iframe-full" />;
+      return <iframe src={url} title="PDF Preview" className="preview-iframe-full" width="100%" height="500px" style={{ border: 'none' }} />;
     } else {
       return (
-        <div style={{textAlign: 'center', padding: '20px'}}>
-          <FileText size={48} style={{margin: '0 auto 10px'}} />
-          <p>Preview not available for this format.</p>
-          <a href={url} download className="et-view-btn">Download to View</a>
+        <div style={{textAlign: 'center', padding: '40px'}}>
+          <FileText size={64} style={{margin: '0 auto 15px', color: '#64748b'}} />
+          <p style={{ fontWeight: '500' }}>Preview not available for this format.</p>
+          <a href={url} target="_blank" rel="noreferrer" download className="et-view-btn" style={{ display: 'inline-block', marginTop: '10px' }}>Download to View</a>
         </div>
       );
     }
@@ -496,7 +494,9 @@ const EditPSA = () => {
               <span className="preview-filename">{previewFile.name.split('/').pop()}</span>
               <button className="preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
-            <div className="et-modal-preview-body">{renderPreviewContent()}</div>
+            <div className="et-modal-preview-body">
+              {renderPreviewContent()}
+            </div>
             <div className="et-modal-preview-footer">
               <div className="footer-actions-right">
                 <button className="preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { HelpCircle } from "lucide-react"; 
 import Sidebar from '../sidebar/sidebar';
 import HotelImageUpload from './HotelImageUpload';
 import HotelDetails from './HotelDetails';
@@ -21,6 +22,28 @@ const AddHotel = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
+  // ✅ Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
+
   // --- STATE MANAGEMENT ---
   const [hotelDetails, setHotelDetails] = useState({
     name: '',
@@ -28,16 +51,8 @@ const AddHotel = () => {
     price: '',
     maxCapacity: 4,
     amenities: {
-      wifi: false,
-      parking: false,
-      pool: false,
-      gym: false,
-      restaurant: false,
-      spa: false,
-      airConditioning: false,
-      roomService: false,
-      laundry: false,
-      bar: false
+      wifi: false, parking: false, pool: false, gym: false, restaurant: false,
+      spa: false, airConditioning: false, roomService: false, laundry: false, bar: false
     }
   });
 
@@ -50,10 +65,71 @@ const AddHotel = () => {
   const [loading, setLoading] = useState(true);
 
   // =========================================================
+  // ✅ VALIDATION LOGIC START
+  // =========================================================
+
+  // Helper para sa Image Validation (JPG, JPEG, PNG, WebP)
+  const isValidImage = (file) => {
+    const allowedExtensions = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    return allowedExtensions.includes(file.type);
+  };
+
+  // Custom setFile handler with validation
+  const handleSetFile = (selectedFile) => {
+    if (selectedFile) {
+      if (!isValidImage(selectedFile)) {
+        toast.error('Invalid image format. Please use JPG, JPEG, PNG, or WebP.', 'File Error');
+        return;
+      }
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+    }
+  };
+
+  // Custom setGalleryFiles handler with validation
+  const handleSetGalleryFiles = (filesOrUpdater) => {
+    if (typeof filesOrUpdater === 'function') {
+      setGalleryFiles(prev => {
+        const updated = filesOrUpdater(prev);
+        const lastAdded = updated[updated.length - 1];
+        if (lastAdded && lastAdded.file && !isValidImage(lastAdded.file)) {
+          toast.error('Invalid gallery image format. Only JPG, JPEG, PNG, and WebP are allowed.', 'File Error');
+          return prev; 
+        }
+        return updated;
+      });
+    } else {
+      const allValid = filesOrUpdater.every(f => isValidImage(f.file));
+      if (!allValid) {
+        toast.error('Some files were rejected. Please use JPG, JPEG, PNG, or WebP.', 'File Error');
+        setGalleryFiles(filesOrUpdater.filter(f => isValidImage(f.file)));
+      } else {
+        setGalleryFiles(filesOrUpdater);
+      }
+    }
+  };
+
+  // Handle amount/digits only validation (Price & Max Capacity)
+  const updateField = (field, value) => {
+    if (field === 'price' || field === 'maxCapacity') {
+      // ✅ Digits only validation (remove anything not a number)
+      const digitsOnly = value.replace(/\D/g, '');
+      
+      // ✅ Max 6 digits validation
+      if (digitsOnly.length <= 6) {
+        setHotelDetails(prev => ({ ...prev, [field]: digitsOnly }));
+      } else {
+        toast.warning('Maximum of 6 digits only for this field.', 'Limit Reached');
+      }
+    } else {
+      setHotelDetails(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  // =========================================================
   // ✅ AUTO-DRAFT LOGIC START
   // =========================================================
 
-  // 1. Helper: File <-> Base64 Converters
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -69,32 +145,27 @@ const AddHotel = () => {
     return new File([blob], fileName, { type: mimeType });
   };
 
-  // 2. Draft Payload State
   const [draftPayload, setDraftPayload] = useState(null);
 
-  // 3. Listen to state changes and update Draft Payload
   useEffect(() => {
     const updateDraft = async () => {
-      // 🛑 FIX: Check if form is completely empty/default before saving
-      // This prevents the modal from appearing if the user cleared the form or just visited
       const isFormEmpty = 
         !hotelDetails.name && 
         !hotelDetails.destination && 
         !hotelDetails.price && 
-        hotelDetails.maxCapacity === 4 && // Check against default
-        type === "Budget" && // Check against default
+        hotelDetails.maxCapacity === 4 && 
+        type === "Budget" && 
         !file && 
         galleryFiles.length === 0;
 
       if (isFormEmpty) {
-        setDraftPayload(null); // Do not save anything
+        setDraftPayload(null);
         return;
       }
 
       let mainImageBase64 = null;
       let mainImageMeta = null;
 
-      // Handle Main Image Conversion
       if (file) {
         try {
           if (file.size < 3 * 1024 * 1024) { 
@@ -102,12 +173,9 @@ const AddHotel = () => {
             mainImageMeta = { name: file.name, type: file.type };
           }
         } catch (err) {
-          console.warn("Main image too large for draft, saving text only.");
+          console.warn("Main image too large for draft.");
         }
       }
-
-      // We are not saving gallery images to draft to avoid LocalStorage overflow, 
-      // but we save the count so we know they existed (optional)
 
       setDraftPayload({
         ...hotelDetails,
@@ -119,24 +187,16 @@ const AddHotel = () => {
 
     const timeoutId = setTimeout(() => {
       updateDraft();
-    }, 500); // Debounce
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [hotelDetails, type, file, galleryFiles]);
 
-  // 4. Restore Function
   const restoreDraftData = async (data) => {
     if (!data) return;
-
     const { selectedRoomType, mainImage, mainImageMeta, ...rest } = data;
-    
-    // Restore Room Type
     if (selectedRoomType) setType(selectedRoomType);
-    
-    // Restore Hotel Details
     setHotelDetails(rest);
-
-    // Restore Main Image
     if (mainImage && mainImageMeta) {
       try {
         const restoredFile = await base64ToFile(mainImage, mainImageMeta.name, mainImageMeta.type);
@@ -148,28 +208,18 @@ const AddHotel = () => {
     }
   };
 
-  // 5. Initialize Hook
-  const { 
-    clearDraft, 
-    hasDraft, 
-    restoreDraft, 
-    discardDraft,
-    draftInfo 
-  } = useAutoDraft({
-    module: 'add-hotel', // Unique key for this module
+  const { clearDraft, hasDraft, restoreDraft, discardDraft, draftInfo } = useAutoDraft({
+    module: 'add-hotel',
     formData: draftPayload,
     setFormData: restoreDraftData,
     imagePreview: previewUrl, 
-    autoRestore: false // Manual via modal
+    autoRestore: false 
   });
 
-  // 6. Modal State
   const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   useEffect(() => {
-    if (hasDraft) {
-      setShowRestoreModal(true);
-    }
+    if (hasDraft) setShowRestoreModal(true);
   }, [hasDraft]);
 
   const handleRestoreDraft = () => {
@@ -178,13 +228,8 @@ const AddHotel = () => {
     toast.success('Draft restored successfully', 'Draft Recovered');
   };
 
-  const handleDiscardDraft = async () => {
-    await discardDraft(); // Ensure storage is cleared
-    setShowRestoreModal(false);
-  };
-
   // =========================================================
-  // ✅ AUTO-DRAFT LOGIC END
+  // ✅ DATA FETCHING & EVENT HANDLERS
   // =========================================================
 
   useEffect(() => {
@@ -196,7 +241,6 @@ const AddHotel = () => {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/packages/all`);
       const data = await response.json();
-      
       if (data.status === 'ok' && Array.isArray(data.data)) {
         const uniqueDestinations = [...new Set(
           data.data.map(pkg => pkg.destination).filter(dest => dest && dest.trim() !== '')
@@ -204,24 +248,16 @@ const AddHotel = () => {
         setDestinations(uniqueDestinations);
       }
     } catch (error) {
-      console.error('Error fetching destinations:', error);
       toast.error('Failed to load destinations', 'Connection Error'); 
     } finally {
       setLoading(false);
     }
   };
 
-  const updateField = (field, value) => {
-    setHotelDetails(prev => ({ ...prev, [field]: value }));
-  };
-
   const handleAmenityChange = (amenityId) => {
     setHotelDetails(prev => ({
       ...prev,
-      amenities: {
-        ...prev.amenities,
-        [amenityId]: !prev.amenities[amenityId]
-      }
+      amenities: { ...prev.amenities, [amenityId]: !prev.amenities[amenityId] }
     }));
   };
 
@@ -234,56 +270,45 @@ const AddHotel = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validation
+    // ✅ Form Validation before Confirmation
     if (!hotelDetails.name || !hotelDetails.destination || !hotelDetails.price) {
       toast.error('Please fill in all required fields', 'Validation Error'); 
       window.scrollTo(0, 0);
       return;
     }
 
-    if (isNaN(hotelDetails.price) || Number(hotelDetails.price) <= 0) {
-      toast.error('Please enter a valid price', 'Validation Error'); 
-      window.scrollTo(0, 0);
+    // ✅ Minimum Amount Validation (Min 1)
+    if (Number(hotelDetails.price) < 1) {
+      toast.error('Price must be at least 1.', 'Validation Error');
       return;
     }
 
-    setIsSubmitting(true);
+    askConfirmation(
+      "Publish Hotel",
+      `Are you sure you want to add "${hotelDetails.name}" to the catalog?`,
+      () => performSubmit()
+    );
+  };
 
+  const performSubmit = async () => {
+    setIsSubmitting(true);
     try {
       let mainImageBase64 = '';
-      if (file) {
-        mainImageBase64 = await convertToBase64(file);
-        console.log('Main image converted to base64, length:', mainImageBase64.length);
-      }
+      if (file) mainImageBase64 = await convertToBase64(file);
 
       const galleryImagesBase64 = [];
       for (const item of galleryFiles) {
-        try {
-          const base64 = await convertToBase64(item.file);
-          galleryImagesBase64.push({ 
-            url: base64, 
-            caption: item.caption || '' 
-          });
-        } catch (err) {
-          console.error('Error converting gallery image:', err);
-        }
+        const base64 = await convertToBase64(item.file);
+        galleryImagesBase64.push({ url: base64, caption: item.caption || '' });
       }
 
-      console.log('Gallery images converted:', galleryImagesBase64.length);
-
-      // Extract city from destination
       const cityName = hotelDetails.destination.split(',')[0].trim();
-
-      // =========================================================
-      // 1. KUNIN ANG USER DATA PARA SA ACTIVITY LOGS
-      // =========================================================
       const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
       const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
       const activeId = adminData.id || adminData._id || "";
-      // =========================================================
 
       const hotelPayload = {
         name: hotelDetails.name,
@@ -304,88 +329,72 @@ const AddHotel = () => {
           available: 5,
           description: `Standard ${type} room`
         }],
-        // Isama ang user data sa payload
         userEmail: activeUser,
         adminId: activeId
       };
 
-      console.log('Sending hotel payload:', {
-        ...hotelPayload,
-        mainImage: mainImageBase64 ? `[BASE64 ${mainImageBase64.length} chars]` : 'none',
-        images: `[${galleryImagesBase64.length} images]`
-      });
-
       const response = await fetch(`${API_BASE_URL}/api/hotels`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(hotelPayload)
       });
 
       const data = await response.json();
-      console.log('Server response:', data);
 
       if (data.success) {
-        toast.success(`${hotelDetails.name} has been added successfully!`, 'Hotel Added'); 
+        toast.success(`${hotelDetails.name} added successfully!`, 'Success'); 
         window.scrollTo(0, 0);
-        
-        // ✅ CLEAR DRAFT ON SUCCESS
         await clearDraft();
-
-        // Reset form
-        setHotelDetails({
-          name: '',
-          destination: '',
-          price: '',
-          maxCapacity: 4,
-          amenities: {
-            wifi: false,
-            parking: false,
-            pool: false,
-            gym: false,
-            restaurant: false,
-            spa: false,
-            airConditioning: false,
-            roomService: false,
-            laundry: false,
-            bar: false
-          }
-        });
-        setFile(null);
-        setPreviewUrl(null);
-        setGalleryFiles([]);
-        setType("Budget");
+        resetForm();
       } else {
         toast.error(data.message || 'Failed to save hotel', 'Save Failed'); 
-        window.scrollTo(0, 0);
       }
     } catch (err) {
-      console.error('Error saving hotel:', err);
       toast.error('Please check if your backend is running', 'Connection Error'); 
-      window.scrollTo(0, 0);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = async () => {
-    if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-      // ✅ CLEAR DRAFT ON CANCEL
-      await clearDraft();
-      navigate('/view-hotels');
-    }
+  const resetForm = () => {
+    setHotelDetails({
+      name: '', destination: '', price: '', maxCapacity: 4,
+      amenities: {
+        wifi: false, parking: false, pool: false, gym: false, restaurant: false,
+        spa: false, airConditioning: false, roomService: false, laundry: false, bar: false
+      }
+    });
+    setFile(null); setPreviewUrl(null); setGalleryFiles([]); setType("Budget");
+  };
+
+  const handleCancel = () => {
+    askConfirmation(
+      "Discard Changes",
+      "Are you sure you want to cancel? All unsaved changes will be lost.",
+      async () => {
+        await clearDraft();
+        navigate('/view-hotels');
+      },
+      "danger"
+    );
   };
 
   return (
     <div className="atour-page">
-      
-      {/* ✅ RESTORE DRAFT MODAL */}
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
-        onDiscard={handleDiscardDraft}
+        onDiscard={async () => { await discardDraft(); setShowRestoreModal(false); }}
         draftInfo={draftInfo}
+      />
+
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
@@ -403,7 +412,7 @@ const AddHotel = () => {
               <div className="atour-left">
                 <HotelImageUpload
                   file={file}
-                  setFile={setFile}
+                  setFile={handleSetFile}
                   previewUrl={previewUrl}
                   setPreviewUrl={setPreviewUrl}
                 />
@@ -420,7 +429,7 @@ const AddHotel = () => {
 
                 <HotelGallery
                   galleryFiles={galleryFiles}
-                  setGalleryFiles={setGalleryFiles}
+                  setGalleryFiles={handleSetGalleryFiles}
                 />
 
                 <HotelAmenities
@@ -436,19 +445,10 @@ const AddHotel = () => {
                   type={type}
                 />
                 <div className="atour-actions">
-                  <button 
-                    type="button" 
-                    className="atour-btn atour-btn--cancel" 
-                    onClick={handleCancel}
-                    disabled={isSubmitting}
-                  >
+                  <button type="button" className="atour-btn atour-btn--cancel" onClick={handleCancel} disabled={isSubmitting}>
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
-                    className="atour-btn atour-btn--submit" 
-                    disabled={isSubmitting}
-                  >
+                  <button type="submit" className="atour-btn atour-btn--submit" disabled={isSubmitting}>
                     {isSubmitting ? 'Publishing...' : 'Publish Hotel'}
                   </button>
                 </div>

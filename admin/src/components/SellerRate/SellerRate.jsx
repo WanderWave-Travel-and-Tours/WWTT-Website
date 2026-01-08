@@ -233,9 +233,26 @@ const SellerRate = () => {
     }
   };
 
-  // ============================================
-  // TABLE ACTION HANDLERS
-  // ============================================
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this rate?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/seller-rates/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('Rate deleted!');
+        fetchRates();
+      } else {
+        alert('Failed to delete rate');
+      }
+    } catch (error) {
+      console.error('Error deleting rate:', error);
+      alert('Error deleting rate');
+    }
+  };
+
   const handleEdit = (rate) => {
     setEditingRate(rate);
     setFormData({

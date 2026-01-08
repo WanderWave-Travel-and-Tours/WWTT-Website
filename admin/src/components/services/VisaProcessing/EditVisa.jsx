@@ -129,36 +129,85 @@ const EditVisa = () => {
     });
   };
 
+  // ✅ LOGGING FUNCTION
+  const logActivity = async (action, description, details = {}) => {
+    try {
+      const adminToken = localStorage.getItem('token'); // Siguraduhing tama ang key ng token mo
+      const adminUser = localStorage.getItem('adminEmail') || 'Admin';
+
+      await fetch(LOGS_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify({
+          action: action, // Ito ang magiging 'UPDATE'
+          module: 'Visas',
+          entity: 'Visa Inquiry',
+          entityId: visaId,
+          user: adminUser,
+          severity: 'SUCCESS',
+          description: description,
+          details: details
+        })
+      });
+    } catch (err) {
+      console.error("Failed to log activity:", err);
+    }
+  };
+
   useEffect(() => {
     const fetchVisaDetails = async () => {
       try {
+        setLoading(true);
         const res = await fetch(`${API_BASE_URL}/${visaId}`);
         const result = await res.json();
         
         if (result.success && result.data) {
-          const data = result.data;
-          const rawSource = data.message || "";
-          const dateMatch = rawSource.match(/Travel Date:\s*([\d{4}-\d{2}-\d{2}]+)/);
-          const stayMatch = rawSource.match(/Length of Stay:\s*(\d+)/);
+          const d = result.data;
+
+          const formatForInput = (dateValue) => {
+            if (!dateValue) return "";
+            const date = new Date(dateValue);
+            return isNaN(date.getTime()) ? "" : date.toISOString().split('T')[0];
+          };
+
+          let cleanMessage = d.adminRemarks || d.message || "";
+          let existingTravelDate = formatForInput(d.travelDate);
+          let existingStay = d.lengthOfStay || "";
+
+          if (!existingTravelDate && cleanMessage.includes("Travel Date:")) {
+              const match = cleanMessage.match(/Travel Date:\s*([^\n\r|]*)/);
+              if (match) existingTravelDate = formatForInput(match[1].trim());
+          }
+
+          if (!existingStay && cleanMessage.includes("Length of Stay:")) {
+              const match = cleanMessage.match(/Length of Stay:\s*([^\n\r|]*)/);
+              if (match) existingStay = match[1].trim();
+          }
+
+          cleanMessage = cleanMessage
+              .replace(/Travel Date:.*(\n|$)/, "")
+              .replace(/Length of Stay:.*(\n|$)/, "")
+              .trim();
 
           setFormData({
-            givenName: data.givenName || data.fullName?.split(' ')[0] || "",
-            lastName: data.lastName || data.fullName?.split(' ').slice(1).join(' ') || "",
-            email: data.email || "",
-            contactNumber: data.contactNumber || "",
-            otherNames: data.otherNames || "",
-            travelDate: (data.travelDate || data.flightDetails?.departureDate) 
-              ? new Date(data.travelDate || data.flightDetails?.departureDate).toISOString().split('T')[0] 
-              : (dateMatch ? dateMatch[1] : ""),
-            lengthOfStay: data.lengthOfStay || data.flightDetails?.duration || (stayMatch ? stayMatch[1] : ""), 
-            visaType: data.serviceName || "",
-            message: data.adminRemarks || "", 
-            estimatedPrice: data.estimatedPrice || ""
+            givenName: d.givenName || d.fullName?.split(' ')[0] || "",
+            lastName: d.lastName || d.fullName?.split(' ').slice(1).join(' ') || "",
+            email: d.email || "",
+            contactNumber: d.contactNumber || "",
+            otherNames: d.otherNames || "",
+            travelDate: existingTravelDate, 
+            lengthOfStay: existingStay, 
+            visaType: d.serviceName || "",
+            message: cleanMessage, 
+            estimatedPrice: d.estimatedPrice || ""
           });
 
-          if (data.deliveredDocuments) {
+          if (d.deliveredDocuments) {
             const fileMap = {};
-            data.deliveredDocuments.forEach(doc => {
+            d.deliveredDocuments.forEach(doc => {
               const fieldKey = doc.fileName.split(' - ')[0].trim(); 
               fileMap[fieldKey] = doc.fileUrl;
             });
@@ -166,8 +215,7 @@ const EditVisa = () => {
           }
         }
       } catch (err) {
-        console.error("Error fetching visa data:", err);
-        toast.error("Failed to load application details.", "Fetch Error");
+        console.error("Fetch Error:", err);
       } finally {
         setLoading(false);
       }
@@ -281,7 +329,6 @@ const EditVisa = () => {
   const handleSaveConfirmation = (e) => {
     e.preventDefault();
 
-    // ✅ Strict Email Format Validation (Must end in exactly .com)
     const emailRegex = /^[^\s@]+@[^\s@]+\.com$/;
     if (!emailRegex.test(formData.email)) {
       toast.warning("Please enter a valid email address ending with .com");
@@ -312,6 +359,13 @@ const EditVisa = () => {
     const { userEmail, adminId } = getAdminData();
 
     const data = new FormData();
+    Object.keys(formData).forEach(key => {
+      if (key === 'visaType') {
+        data.append('serviceName', formData[key]);
+      } else {
+        data.append(key, formData[key]);
+      }
+    });
     data.append('fullName', `${formData.givenName} ${formData.lastName}`);
     data.append('serviceName', formData.visaType);
     data.append('givenName', formData.givenName);
@@ -333,27 +387,88 @@ const EditVisa = () => {
 
     // Handle New Files
     Object.keys(files).forEach(key => {
-      data.append(key, files[key]);
+      if (files[key]) data.append(key, files[key]);
+    });
+    // --- FIXED FILE LOGIC END ---
+
+    // 🎯 4. MAHIGPIT NA COMPARISON LOGIC (Specific Actions Only)
+    let changes = [];
+
+    const trackManualChange = (label, oldVal, newVal) => {
+      // Normalize values (iwas false positive sa null vs empty string)
+      const normalizedOld = oldVal ? String(oldVal).trim() : "";
+      const normalizedNew = newVal ? String(newVal).trim() : "";
+
+      // Special handling para sa Dates
+      if (label === "Travel Date" && normalizedOld && normalizedNew) {
+        if (normalizedOld.split('T')[0] === normalizedNew) return;
+      }
+
+      // Check kung nagbago talaga at hindi empty ang bagong input
+      if (normalizedOld !== normalizedNew && normalizedNew !== "") {
+        changes.push(`${label} changed to "${normalizedNew}"`);
+      }
+    };
+
+    // I-track lang ang fields na manual mong binago
+    trackManualChange("Given Name", original.givenName, formData.givenName);
+    trackManualChange("Last Name", original.lastName, formData.lastName);
+    trackManualChange("Email", original.email, formData.email);
+    trackManualChange("Contact", original.contactNumber, formData.contactNumber);
+    trackManualChange("Visa Type", original.serviceName, formData.visaType);
+    trackManualChange("Travel Date", original.travelDate, formData.travelDate);
+    trackManualChange("Price", original.estimatedPrice, formData.estimatedPrice);
+
+    // Track Files (Dapat instanceof File para sure na manual upload)
+    Object.keys(files).forEach(key => {
+      if (files[key] instanceof File) {
+        changes.push(`Replaced ${key} file with "${files[key].name}"`);
+      }
     });
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/update/${visaId}`, {
-        method: "PUT",
-        body: data,
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("The visa application has been updated successfully!", "Success");
-        navigate("/services/visa");
-      } else {
-        toast.error(`Update failed: ${result.message}`, "Error");
+    // 5. Isagawa ang Update
+    const res = await fetch(`${API_BASE_URL}/update/${visaId}`, {
+      method: "PUT",
+      body: data,
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      // 🎯 6. I-POST ANG LOG (Kung may real changes lang)
+      if (changes.length > 0) {
+        await fetch(`http://localhost:5000/api/activity-logs`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: 'UPDATE',
+            module: 'Visas',
+            entity: 'Visa Application',
+            entityId: visaId,
+            user: adminName,
+            severity: 'SUCCESS',
+            // DESCRIPTION: Email + Specific Actions
+            description: `Admin (${adminEmail}) updated: ${changes.join('; ')}`,
+            details: {
+              adminEmail: adminEmail,
+              affectedRecords: changes.length, // Bilang ng binagong fields/files
+              actions: changes
+            }
+          }),
+        });
       }
-    } catch (err) {
-      toast.error("Could not connect to the server. Please check your internet connection.", "Connection Error");
-    } finally {
-      setSubmitting(false);
+
+      toast.success("Visa updated successfully!");
+      navigate("/services/visa");
+    } else {
+      toast.error(result.message || "Update failed");
     }
-  };
+  } catch (err) {
+    console.error("Submit Error:", err);
+    toast.error("An error occurred.");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const renderPreviewContent = () => {
     if (!previewFile) return null;
@@ -494,7 +609,7 @@ const EditVisa = () => {
                     <FileRow label="Passport" field="passport" onChange={handleFileChange} onView={() => handleViewFile('passport')} hasExisting={!!existingFiles['passport']} currentFile={files['passport']} />
                     <FileRow label="Photo" field="photo" onChange={handleFileChange} onView={() => handleViewFile('photo')} hasExisting={!!existingFiles['photo']} currentFile={files['photo']} />
                     <FileRow label="Accomplished Application Form" field="appForm" onChange={handleFileChange} onView={() => handleViewFile('appForm')} hasExisting={!!existingFiles['appForm']} currentFile={files['appForm']} />
-                    <FileRow label="PSA Marriage Certificate" field="psaMarriage" onChange={handleFileChange} onView={() => handleFileChange(e, 'psaMarriage')} hasExisting={!!existingFiles['psaMarriage']} currentFile={files['psaMarriage']} />
+                    <FileRow label="PSA Marriage Certificate" field="psaMarriage" onChange={handleFileChange} onView={() => handleViewFile('psaMarriage')} hasExisting={!!existingFiles['psaMarriage']} currentFile={files['psaMarriage']} />
                     <FileRow label="PSA Birth Certificate" field="psaBirth" onChange={handleFileChange} onView={() => handleViewFile('psaBirth')} hasExisting={!!existingFiles['psaBirth']} currentFile={files['psaBirth']} />
                     <FileRow label="Baptismal / Form 137" field="baptismal" onChange={handleFileChange} onView={() => handleViewFile('baptismal')} hasExisting={!!existingFiles['baptismal']} currentFile={files['baptismal']} />
                     <FileRow label="Daily Schedule" field="schedule" onChange={handleFileChange} onView={() => handleViewFile('schedule')} hasExisting={!!existingFiles['schedule']} currentFile={files['schedule']} />

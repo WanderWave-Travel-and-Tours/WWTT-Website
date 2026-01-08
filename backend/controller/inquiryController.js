@@ -446,6 +446,7 @@ const updateInquiry = async (req, res) => {
     const { id } = req.params;
     
     const existingInquiry = await Inquiry.findById(id);
+    
     if (!existingInquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
@@ -457,6 +458,12 @@ const updateInquiry = async (req, res) => {
       } catch (e) {
         remainingFilesList = [];
       }
+    });
+
+    const newFullName = `${req.body.givenName || ''} ${req.body.lastName || ''}`.trim();
+    if (newFullName && newFullName !== existingInquiry.fullName) {
+      changes.push(`Name (from "${existingInquiry.fullName}" to "${newFullName}")`);
+      updateData.fullName = newFullName;
     }
 
     const updateData = {
@@ -513,12 +520,13 @@ const updateInquiry = async (req, res) => {
       });
     }
 
-    updateData.deliveredDocuments = Array.from(documentMap.values());
+    delete updateData.message; 
+    updateData.updatedAt = Date.now();
 
     const updatedInquiry = await Inquiry.findByIdAndUpdate(
       id, 
       { $set: updateData }, 
-      { new: true }
+      { new: true, runValidators: false }
     );
 
     // 👇👇👇 ACTIVITY LOG START (UPDATE INQUIRY) 👇👇👇
@@ -559,7 +567,6 @@ const updateInquiry = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 const updateInquiryStatus = async (req, res) => {
   try {
     const { status, adminNotes, contactedBy, remarks, userEmail, adminId } = req.body;
@@ -1096,4 +1103,4 @@ module.exports = {
   getInquiryAnalytics,
   getInquiriesByDateRange,
   toggleArchive
-};
+}; 
