@@ -4,7 +4,7 @@ import SellerRateStats from './Sellerratestats';
 import SellerRateFilters from './Sellerratefilters';
 import SellerRateTable from './Sellerratetable';
 import SellerRateModal from './Sellerratemodal';
-import SellerRateUploadModal from './SellerRateUploadModal';
+import SellerRateUploadModal from './Sellerrateuploadmodal';
 import SellerRatePreviewModal from './SellerRatePreviewModal';
 import PaginationControls from './SellerPaginationControls';
 import { Plus, Upload } from 'lucide-react';
