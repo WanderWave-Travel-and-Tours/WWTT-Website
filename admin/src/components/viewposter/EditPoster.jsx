@@ -268,7 +268,7 @@ const EditPoster = () => {
     useEffect(() => {
         const fetchPosterDetails = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/posters/${id}`);
+                const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/posters/${id}`);
                 const data = response.data;
                 
                 // Set Original Data for Activity Logging comparison
@@ -283,7 +283,7 @@ const EditPoster = () => {
                 });
 
                 if (data.imageUrl) {
-                    setImagePreview(`http://localhost:5000/${data.imageUrl}`);
+                    setImagePreview(`https://wanderwaveph-backend.onrender.com/${data.imageUrl}`);
                 }
             } catch (err) {
                 console.error(err);
@@ -389,7 +389,7 @@ const EditPoster = () => {
 
             // ✅ Using axios.put (Correct way to send FormData with logs)
             // Note: Assuming route is /update/:id based on common pattern, verify route in router file
-            const response = await axios.put(`http://localhost:5000/api/posters/update/${id}`, formDataToSend);
+            const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/update/${id}`, formDataToSend);
 
             if (response.data) {
                 alert('✅ Poster updated successfully!');

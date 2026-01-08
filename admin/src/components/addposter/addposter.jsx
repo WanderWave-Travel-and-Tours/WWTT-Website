@@ -335,7 +335,7 @@ const AddPoster = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/posters/add', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters/add', {
                 method: 'POST',
                 body: formData,
             });

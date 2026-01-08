@@ -24,7 +24,7 @@ const Settings = () => {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/admin/settings');
+                const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/settings');
                 const result = await response.json();
                 if (result.status === 'ok') {
                     setSettings({
@@ -65,7 +65,7 @@ const Settings = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/admin/update-settings', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/update-settings', {
                 method: 'PUT',
                 body: formData
             });
@@ -118,7 +118,7 @@ const Settings = () => {
                                     {previewUrl ? (
                                         <img src={previewUrl} alt="Preview" />
                                     ) : settings.businessLogo ? (
-                                        <img src={`http://localhost:5000/uploads/${settings.businessLogo}`} alt="Business Logo" />
+                                        <img src={`https://wanderwaveph-backend.onrender.com/uploads/${settings.businessLogo}`} alt="Business Logo" />
                                     ) : (
                                         <div className="logo-placeholder">✈️</div>
                                     )}

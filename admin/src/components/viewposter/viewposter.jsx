@@ -118,11 +118,11 @@ const ViewPoster = () => {
         setLoading(true);
         try {
             // ✅ Using axios.get
-            const response = await axios.get('http://localhost:5000/api/posters');
+            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/posters');
             
             // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
             const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
-            const response = await fetch('http://localhost:5000/api/posters');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters');
             if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
             
@@ -147,7 +147,7 @@ const ViewPoster = () => {
 
             try {
                 // ✅ Using axios.put and sending admin data for logs
-                const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
+                const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
                     isArchive: 'Yes',
                     userEmail,  // 🔥 ADD ADMIN INFO
                     adminId     // 🔥 ADD ADMIN INFO
@@ -178,7 +178,7 @@ const ViewPoster = () => {
 
     const performArchive = async (id) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, { 
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ isArchive: 'Yes' }) 
@@ -213,7 +213,7 @@ const ViewPoster = () => {
 
         try {
             // ✅ Using axios.put and sending admin data for logs
-            const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, {
+            const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, {
                 status: newStatus,
                 userEmail,  // 🔥 ADD ADMIN INFO
                 adminId     // 🔥 ADD ADMIN INFO
@@ -333,7 +333,7 @@ const ViewPoster = () => {
                                                 <td>
                                                     <div className="vp-image-preview">
                                                         <img 
-                                                            src={`http://localhost:5000/${poster.imageUrl}`} 
+                                                            src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
                                                             alt={poster.title}
                                                         />
                                                     </div>
