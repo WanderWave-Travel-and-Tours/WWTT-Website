@@ -27,12 +27,12 @@ const getAdminData = () => {
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
-    <div className="arc-confirm-overlay" style={{
+    <div className="ec-confirm-overlay" style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', zIndex: 11000
     }}>
-      <div className="arc-confirm-modal" style={{
+      <div className="ec-confirm-modal" style={{
         backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
         maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
       }}>
@@ -69,20 +69,20 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 
 // FileRow Component (Patterned after EditPSA)
 const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) => (
-    <div className="et-file-row">
-      <div className="et-file-info">
-        <span className="et-file-label">{label}</span>
-        <span className="et-file-status">
+    <div className="ec-file-row">
+      <div className="ec-file-info">
+        <span className="ec-file-label">{label}</span>
+        <span className="ec-file-status">
           {currentFile ? `New file: ${currentFile.name}` : (hasExisting ? "Previously uploaded" : "No file attached")} 
         </span>
       </div>
-      <div className="et-file-actions">
+      <div className="ec-file-actions">
         {(hasExisting || currentFile) && (
-          <button type="button" className="et-view-btn" onClick={() => onView(field)} title="View file">
+          <button type="button" className="ec-view-btn" onClick={() => onView(field)} title="View file">
             <Eye size={14} /> View
           </button>
         )}
-        <label className="et-file-upload-btn">
+        <label className="ec-file-upload-btn">
           <Upload size={14} /> Upload
           <input 
             type="file" 
@@ -422,68 +422,68 @@ const EditCenomar = () => {
         <div style={{textAlign: 'center', padding: '40px'}}>
           <FileText size={64} style={{margin: '0 auto 20px', color: '#64748b'}} />
           <p>Preview not available for this format.</p>
-          <a href={url} download={name} className="et-view-btn" style={{marginTop: '15px', display: 'inline-block'}}>Download to View</a>
+          <a href={url} download={name} className="ec-view-btn" style={{marginTop: '15px', display: 'inline-block'}}>Download to View</a>
         </div>
       );
     }
   };
 
-  if (loading) return <div className="et-loading">Loading CENOMAR Form...</div>;
+  if (loading) return <div className="ec-loading">Loading CENOMAR Form...</div>;
 
   return (
-    <div className="et-page">
+    <div className="ec-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      <main className={`et-main ${isSidebarCollapsed ? "et-main--collapsed" : ""}`}>
-        <div className="et-container">
+      <main className={`ec-main ${isSidebarCollapsed ? "ec-main--collapsed" : ""}`}>
+        <div className="ec-container">
           
-          <header className="et-header">
-            <div className="et-header-content">
-              <button className="et-back-btn" onClick={handleDiscard}>
+          <header className="ec-header">
+            <div className="ec-header-content">
+              <button className="ec-back-btn" onClick={handleDiscard}>
                 <ArrowLeft size={20} /> Back
               </button>
-              <h1 className="et-title">EDIT CENOMAR REQUEST</h1>
-              <p className="et-subtitle">Update details and documentation</p>
+              <h1 className="ec-title">EDIT CENOMAR REQUEST</h1>
+              <p className="ec-subtitle">Update details and documentation</p>
             </div>
           </header>
 
-          <form onSubmit={handleSubmit} className="et-form">
-            <div className="et-grid-layout">
-              <div className="et-form-left">
+          <form onSubmit={handleSubmit} className="ec-form">
+            <div className="ec-grid-layout">
+              <div className="ec-form-left">
                 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <User size={22} className="et-section-icon" />
+                <section className="ec-section">
+                  <div className="ec-section-header">
+                    <User size={22} className="ec-section-icon" />
                     <h3>Client Information</h3>
                   </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group">
+                  <div className="ec-fields-grid">
+                    <div className="ec-input-group">
                       <label>Given Name</label>
-                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" placeholder="Letters only" required />
+                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="ec-input" placeholder="Letters only" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ec-input-group">
                       <label>Last Name</label>
-                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" placeholder="Letters only" required />
+                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="ec-input" placeholder="Letters only" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ec-input-group">
                       <label>Email</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" placeholder="user@email.com" required />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="ec-input" placeholder="user@email.com" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ec-input-group">
                       <label>Contact No.</label>
-                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" placeholder="+63..." required />
+                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="ec-input" placeholder="+63..." required />
                     </div>
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <Briefcase size={22} className="et-section-icon" />
+                <section className="ec-section">
+                  <div className="ec-section-header">
+                    <Briefcase size={22} className="ec-section-icon" />
                     <h3>Service Details</h3>
                   </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group full-width">
+                  <div className="ec-fields-grid">
+                    <div className="ec-input-group ec-full-width">
                       <label>CENOMAR Service *</label>
-                      <select name="cenomarDocument" value={formData.cenomarDocument} onChange={handleInputChange} className="et-input" required>
+                      <select name="cenomarDocument" value={formData.cenomarDocument} onChange={handleInputChange} className="ec-input" required>
                         <option value="" disabled>Select Service Type</option>
                         {cenomarOptions.map((opt, i) => (
                           <option key={i} value={opt.value}>{opt.label}</option>
@@ -493,12 +493,12 @@ const EditCenomar = () => {
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <Upload size={22} className="et-section-icon" />
+                <section className="ec-section">
+                  <div className="ec-section-header">
+                    <Upload size={22} className="ec-section-icon" />
                     <h3>ATTACHMENTS</h3>
                   </div>
-                  <div className="et-file-grid-internal">
+                  <div className="ec-file-grid-internal">
                     <FileRow 
                         label="Requirement Document (ID/Form)" 
                         field="requirement" 
@@ -511,28 +511,28 @@ const EditCenomar = () => {
                 </section>
               </div>
 
-              <div className="et-form-right">
-                <div className="et-sticky-sidebar">
-                  <section className="et-section">
-                    <div className="et-section-header">
-                      <DollarSign size={20} className="et-section-icon" />
+              <div className="ec-form-right">
+                <div className="ec-sticky-sidebar">
+                  <section className="ec-section">
+                    <div className="ec-section-header">
+                      <DollarSign size={20} className="ec-section-icon" />
                       <h3>Billing & Notes</h3>
                     </div>
-                    <div className="et-input-group">
+                    <div className="ec-input-group">
                         <label>Estimated Price (PHP)</label>
-                        <input type="text" name="estimatedPrice" value={formData.estimatedPrice} readOnly className="et-input" style={{ background: '#f8fafc' }} />
+                        <input type="text" name="estimatedPrice" value={formData.estimatedPrice} readOnly className="ec-input" style={{ background: '#f8fafc' }} />
                     </div>
-                    <div className="et-input-group" style={{ marginTop: "15px" }}>
+                    <div className="ec-input-group" style={{ marginTop: "15px" }}>
                         <label>Admin Remarks</label>
-                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="4" placeholder="Internal notes..." />
+                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="ec-textarea" rows="4" placeholder="Internal notes..." />
                     </div>
                   </section>
                   
-                  <div className="et-form-actions">
-                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}>
+                  <div className="ec-form-actions">
+                    <button type="submit" className="ec-btn ec-btn--submit" disabled={submitting}>
                       {submitting ? "SAVING..." : "UPDATE REQUEST"}
                     </button>
-                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>DISCARD</button>
+                    <button type="button" className="ec-btn ec-btn--cancel" onClick={handleDiscard}>DISCARD</button>
                   </div>
                 </div>
               </div>
@@ -542,16 +542,16 @@ const EditCenomar = () => {
       </main>
 
       {previewFile && (
-        <div className="et-modal-overlay" onClick={() => setPreviewFile(null)}>
-          <div className="et-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
-            <div className="et-modal-preview-header">
-              <span className="preview-filename">{previewFile.name}</span>
-              <button className="preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
+        <div className="ec-modal-overlay" onClick={() => setPreviewFile(null)}>
+          <div className="ec-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
+            <div className="ec-modal-preview-header">
+              <span className="ec-preview-filename">{previewFile.name}</span>
+              <button className="ec-preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
-            <div className="et-modal-preview-body">{renderPreviewContent()}</div>
-            <div className="et-modal-preview-footer">
-              <div className="footer-actions-right">
-                <button className="preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
+            <div className="ec-modal-preview-body">{renderPreviewContent()}</div>
+            <div className="ec-modal-preview-footer">
+              <div className="ec-footer-actions-right">
+                <button className="ec-preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
                   <Trash2 size={18} /> Delete File
                 </button>
               </div>

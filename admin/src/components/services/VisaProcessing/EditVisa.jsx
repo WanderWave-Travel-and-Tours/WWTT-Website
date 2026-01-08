@@ -27,12 +27,12 @@ const getAdminData = () => {
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
-    <div className="arc-confirm-overlay" style={{
+    <div className="ev-confirm-overlay" style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', zIndex: 11000
     }}>
-      <div className="arc-confirm-modal" style={{
+      <div className="ev-confirm-modal" style={{
         backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
         maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
       }}>
@@ -66,6 +66,33 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
     </div>
   );
 };
+
+const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) => (
+  <div className="ev-file-row">
+    <div className="ev-file-info">
+      <span className="ev-file-label">{label}</span>
+      <span className="ev-file-status">
+        {currentFile ? `New file: ${currentFile.name}` : (hasExisting ? "Previously uploaded" : "No file attached")} 
+      </span>
+    </div>
+    <div className="ev-file-actions">
+      {(hasExisting || currentFile) && (
+        <button type="button" className="ev-view-btn" onClick={onView} title="View file">
+          <Eye size={14} /> View
+        </button>
+      )}
+      <label className="ev-file-upload-btn">
+        <Upload size={14} /> Upload
+        <input 
+          type="file" 
+          accept=".docx,.pdf,.png,.webp,.jpg,.jpeg"
+          onChange={(e) => onChange(e, field)} 
+          hidden 
+        />
+      </label>
+    </div>
+  </div>
+);
 
 const EditVisa = () => {
   const navigate = useNavigate();
@@ -247,22 +274,19 @@ const EditVisa = () => {
       
       const data = new FormData();
       
-      // ✅ LOGIC FROM AIRLINE/PSA: Pass necessary fields correctly
       data.append('fullName', `${formData.givenName} ${formData.lastName}`.trim());
       data.append('email', formData.email);
       data.append('contactNumber', formData.contactNumber);
       data.append('serviceName', formData.visaType);
       data.append('estimatedPrice', formData.estimatedPrice);
-      data.append('message', formData.message); // Admin Notes
+      data.append('message', formData.message);
       data.append('travelDate', formData.travelDate);
       data.append('lengthOfStay', formData.lengthOfStay);
       data.append('userEmail', userEmail);
       data.append('adminId', adminId);
 
-      // Handle Existing Files (para hindi mabura yung hindi pinalitan)
       data.append('existingFiles', JSON.stringify(Object.keys(existingFiles)));
 
-      // Handle New Files
       Object.keys(files).forEach(key => {
         if (files[key]) {
           data.append(key, files[key]);
@@ -297,39 +321,39 @@ const EditVisa = () => {
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
     if (isImage && !isPdf) {
-      return <img src={url} alt="File Preview" className="preview-media-full" />;
+      return <img src={url} alt="File Preview" className="ev-preview-media-full" />;
     } else {
-      return <iframe src={url} title="Document Preview" className="preview-iframe-full" />;
+      return <iframe src={url} title="Document Preview" className="ev-preview-iframe-full" />;
     }
   };
 
-  if (loading) return <div className="et-loading">Loading Visa Form...</div>;
+  if (loading) return <div className="ev-loading">Loading Visa Form...</div>;
 
   return (
-    <div className="et-page">
+    <div className="ev-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      <main className={`et-main ${isSidebarCollapsed ? "et-main--collapsed" : ""}`}>
-        <div className="et-container">
-          <header className="et-header">
-            <div className="et-header-content">
-              <button className="et-back-btn" type="button" onClick={handleDiscard}>
+      <main className={`ev-main ${isSidebarCollapsed ? "ev-main--collapsed" : ""}`}>
+        <div className="ev-container">
+          <header className="ev-header">
+            <div className="ev-header-content">
+              <button className="ev-back-btn" type="button" onClick={handleDiscard}>
                 <ArrowLeft size={20} /> Back
               </button>
-              <h1 className="et-title">Edit Visa Application</h1>
-              <p className="et-subtitle">Update applicant details and requirements</p>
+              <h1 className="ev-title">EDIT VISA APPLICATION</h1>
+              <p className="ev-subtitle">Update applicant details and requirements</p>
             </div>
           </header>
 
-          <form onSubmit={handleSaveConfirmation} className="et-form">
-            <div className="et-grid-layout">
-              <div className="et-form-left">
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <Calendar size={22} className="et-section-icon" />
+          <form onSubmit={handleSaveConfirmation} className="ev-form">
+            <div className="ev-grid-layout">
+              <div className="ev-form-left">
+                <section className="ev-section">
+                  <div className="ev-section-header">
+                    <Calendar size={22} className="ev-section-icon" />
                     <h3>Application Details</h3>
                   </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group">
+                  <div className="ev-fields-grid">
+                    <div className="ev-input-group">
                       <label>Travel Date</label>
                       <input 
                         type="date" 
@@ -338,18 +362,18 @@ const EditVisa = () => {
                         onChange={handleInputChange} 
                         min={minTravelDate}
                         max={maxTravelDate}
-                        className="et-input" 
+                        className="ev-input" 
                         required
                       />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ev-input-group">
                       <label>Length of Stay (Days)</label>
                       <input 
                         type="text" 
                         name="lengthOfStay" 
                         value={formData.lengthOfStay} 
                         onChange={handleInputChange} 
-                        className="et-input" 
+                        className="ev-input" 
                         placeholder="e.g. 15"
                         required
                       />
@@ -357,52 +381,52 @@ const EditVisa = () => {
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <Globe size={22} className="et-section-icon" />
+                <section className="ev-section">
+                  <div className="ev-section-header">
+                    <Globe size={22} className="ev-section-icon" />
                     <h3>Visa Request</h3>
                   </div>
-                  <div className="et-input-group full-width">
+                  <div className="ev-input-group ev-full-width">
                     <label>Visa Type</label>
-                    <input type="text" name="visaType" value={formData.visaType} onChange={handleInputChange} className="et-input" />
+                    <input type="text" name="visaType" value={formData.visaType} onChange={handleInputChange} className="ev-input" />
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <User size={22} className="et-section-icon" />
+                <section className="ev-section">
+                  <div className="ev-section-header">
+                    <User size={22} className="ev-section-icon" />
                     <h3>Client Information</h3>
                   </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group">
+                  <div className="ev-fields-grid">
+                    <div className="ev-input-group">
                       <label>Given Name</label>
-                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" required />
+                      <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="ev-input" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ev-input-group">
                       <label>Last Name</label>
-                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" required />
+                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="ev-input" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ev-input-group">
                       <label>Email Address</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" required />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="ev-input" required />
                     </div>
-                    <div className="et-input-group">
+                    <div className="ev-input-group">
                       <label>Contact Number</label>
-                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" required />
+                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="ev-input" required />
                     </div>
-                    <div className="et-input-group full-width">
+                    <div className="ev-input-group ev-full-width">
                       <label>Other Names (Optional)</label>
-                      <input type="text" name="otherNames" value={formData.otherNames} onChange={handleInputChange} className="et-input" />
+                      <input type="text" name="otherNames" value={formData.otherNames} onChange={handleInputChange} className="ev-input" />
                     </div>
                   </div>
                 </section>
 
-                <section className="et-section">
-                  <div className="et-section-header">
-                    <FileText size={22} className="et-section-icon" />
+                <section className="ev-section">
+                  <div className="ev-section-header">
+                    <FileText size={22} className="ev-section-icon" />
                     <h3>Primary Requirements</h3>
                   </div>
-                  <div className="et-file-grid-internal">
+                  <div className="ev-file-grid-internal">
                     <FileRow label="Passport" field="passport" onChange={handleFileChange} onView={() => handleViewFile('passport')} hasExisting={!!existingFiles['passport']} currentFile={files['passport']} />
                     <FileRow label="Photo" field="photo" onChange={handleFileChange} onView={() => handleViewFile('photo')} hasExisting={!!existingFiles['photo']} currentFile={files['photo']} />
                     <FileRow label="Accomplished Application Form" field="appForm" onChange={handleFileChange} onView={() => handleViewFile('appForm')} hasExisting={!!existingFiles['appForm']} currentFile={files['appForm']} />
@@ -413,8 +437,8 @@ const EditVisa = () => {
                   </div>
                 </section>
 
-                <div className="et-show-more-container">
-                    <button type="button" className="et-show-more-btn" onClick={() => setShowMore(!showMore)}>
+                <div className="ev-show-more-container">
+                    <button type="button" className="ev-show-more-btn" onClick={() => setShowMore(!showMore)}>
                       {showMore ? (
                         <><ChevronUp size={18} /> Show Less Requirements</>
                       ) : (
@@ -424,37 +448,37 @@ const EditVisa = () => {
                 </div>
 
                 {showMore && (
-                  <div className="et-extra-requirements-wrapper">
-                    <section className="et-section animate-fade-in">
-                      <div className="et-section-header">
-                        <Briefcase size={22} className="et-section-icon" />
+                  <div className="ev-extra-requirements-wrapper">
+                    <section className="ev-section ev-animate-fade-in">
+                      <div className="ev-section-header">
+                        <Briefcase size={22} className="ev-section-icon" />
                         <h3>If Employed</h3>
                       </div>
-                      <div className="et-file-grid-internal">
+                      <div className="ev-file-grid-internal">
                         <FileRow label="Original Signed COE" field="coe" onChange={handleFileChange} onView={() => handleViewFile('coe')} hasExisting={!!existingFiles['coe']} currentFile={files['coe']} />
                         <FileRow label="Company ID" field="companyId" onChange={handleFileChange} onView={() => handleViewFile('companyId')} hasExisting={!!existingFiles['companyId']} currentFile={files['companyId']} />
                         <FileRow label="PRC/IBP Card" field="prcId" onChange={handleFileChange} onView={() => handleViewFile('prcId')} hasExisting={!!existingFiles['prcId']} currentFile={files['prcId']} />
                       </div>
                     </section>
 
-                    <section className="et-section animate-fade-in">
-                      <div className="et-section-header">
-                        <Building2 size={22} className="et-section-icon" />
+                    <section className="ev-section ev-animate-fade-in">
+                      <div className="ev-section-header">
+                        <Building2 size={22} className="ev-section-icon" />
                         <h3>If Business Owner</h3>
                       </div>
-                      <div className="et-file-grid-internal">
+                      <div className="ev-file-grid-internal">
                         <FileRow label="DTI or SEC Permit" field="dtiSec" onChange={handleFileChange} onView={() => handleViewFile('dtiSec')} hasExisting={!!existingFiles['dtiSec']} currentFile={files['dtiSec']} />
                         <FileRow label="BIR company registration" field="birReg" onChange={handleFileChange} onView={() => handleViewFile('birReg')} hasExisting={!!existingFiles['birReg']} currentFile={files['birReg']} />
                         <FileRow label="Business Permit" field="businessPermit" onChange={handleFileChange} onView={() => handleViewFile('businessPermit')} hasExisting={!!existingFiles['businessPermit']} currentFile={files['businessPermit']} />
                       </div>
                     </section>
 
-                    <section className="et-section animate-fade-in">
-                      <div className="et-section-header">
-                        <GraduationCap size={22} className="et-section-icon" />
+                    <section className="ev-section ev-animate-fade-in">
+                      <div className="ev-section-header">
+                        <GraduationCap size={22} className="ev-section-icon" />
                         <h3>If Student</h3>
                       </div>
-                      <div className="et-file-grid-internal">
+                      <div className="ev-file-grid-internal">
                         <FileRow label="School Certificate" field="schoolCert" onChange={handleFileChange} onView={() => handleViewFile('schoolCert')} hasExisting={!!existingFiles['schoolCert']} currentFile={files['schoolCert']} />
                         <FileRow label="School ID" field="schoolId" onChange={handleFileChange} onView={() => handleViewFile('schoolId')} hasExisting={!!existingFiles['schoolId']} currentFile={files['schoolId']} />
                       </div>
@@ -463,22 +487,22 @@ const EditVisa = () => {
                 )}
               </div>
 
-              <div className="et-form-right">
-                <div className="et-sticky-sidebar">
-                  <section className="et-section">
-                    <div className="et-section-header">
-                      <MessageSquare size={20} className="et-section-icon" />
+              <div className="ev-form-right">
+                <div className="ev-sticky-sidebar">
+                  <section className="ev-section">
+                    <div className="ev-section-header">
+                      <MessageSquare size={20} className="ev-section-icon" />
                       <h3>Admin Remarks</h3>
                     </div>
-                    <div className="et-input-group">
-                       <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="5" placeholder="Notes..." />
+                    <div className="ev-input-group">
+                       <textarea name="message" value={formData.message} onChange={handleInputChange} className="ev-textarea" rows="5" placeholder="Notes..." />
                     </div>
                   </section>
-                  <div className="et-form-actions">
-                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}>
+                  <div className="ev-form-actions">
+                    <button type="submit" className="ev-btn ev-btn--submit" disabled={submitting}>
                       {submitting ? "Updating..." : "Save Changes"}
                     </button>
-                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>Discard</button>
+                    <button type="button" className="ev-btn ev-btn--cancel" onClick={handleDiscard}>Discard</button>
                   </div>
                 </div>
               </div>
@@ -488,16 +512,16 @@ const EditVisa = () => {
       </main>
 
       {previewFile && (
-        <div className="et-modal-overlay" onClick={() => setPreviewFile(null)}>
-          <div className="et-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
-            <div className="et-modal-preview-header">
-              <span className="preview-filename">{previewFile.name.split('/').pop()}</span>
-              <button className="preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
+        <div className="ev-modal-overlay" onClick={() => setPreviewFile(null)}>
+          <div className="ev-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
+            <div className="ev-modal-preview-header">
+              <span className="ev-preview-filename">{previewFile.name.split('/').pop()}</span>
+              <button className="ev-preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
-            <div className="et-modal-preview-body">{renderPreviewContent()}</div>
-            <div className="et-modal-preview-footer">
-              <div className="footer-actions-right">
-                <button className="preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
+            <div className="ev-modal-preview-body">{renderPreviewContent()}</div>
+            <div className="ev-modal-preview-footer">
+              <div className="ev-footer-actions-right">
+                <button className="ev-preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
                   <Trash2 size={18} /> Delete File
                 </button>
               </div>
@@ -517,32 +541,5 @@ const EditVisa = () => {
     </div>
   );
 };
-
-const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) => (
-  <div className="et-file-row">
-    <div className="et-file-info">
-      <span className="et-file-label">{label}</span>
-      <span className="et-file-status">
-        {currentFile ? `New file: ${currentFile.name}` : (hasExisting ? "Previously uploaded" : "No file attached")} 
-      </span>
-    </div>
-    <div className="et-file-actions">
-      {(hasExisting || currentFile) && (
-        <button type="button" className="et-view-btn" onClick={onView} title="View file">
-          <Eye size={14} /> View
-        </button>
-      )}
-      <label className="et-file-upload-btn">
-        <Upload size={14} /> Upload
-        <input 
-          type="file" 
-          accept=".docx,.pdf,.png,.webp,.jpg,.jpeg"
-          onChange={(e) => onChange(e, field)} 
-          hidden 
-        />
-      </label>
-    </div>
-  </div>
-);
 
 export default EditVisa;

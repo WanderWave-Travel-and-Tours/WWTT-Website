@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle } from "lucide-react"; 
+import { HelpCircle } from "lucide-react";
 import Sidebar from '../sidebar/sidebar';
 import HotelImageUpload from './HotelImageUpload';
 import HotelDetails from './HotelDetails';
 import HotelAmenities from './HotelAmenities';
 import HotelGallery from './HotelGallery';
 import HotelPreview from './HotelPreview';
-import { useToast } from '../toast/ToastManager'; 
+import { useToast } from '../toast/ToastManager';
 import './addhotel.css';
-
+ 
 // ✅ Imports needed for Draft functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
-
+ 
 const API_BASE_URL = 'http://localhost:5000';
-
+ 
 // ✅ Custom Confirmation Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
@@ -35,7 +35,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
         <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
         <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button 
+          <button
             onClick={onCancel}
             style={{
               padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
@@ -44,7 +44,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
           >
             Cancel
           </button>
-          <button 
+          <button
             onClick={onConfirm}
             style={{
               padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
@@ -59,13 +59,13 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
     </div>
   );
 };
-
+ 
 const AddHotel = () => {
   const navigate = useNavigate();
-  const toast = useToast(); 
+  const toast = useToast();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-
+ 
   // ✅ Confirmation Modal State
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -74,7 +74,7 @@ const AddHotel = () => {
     onConfirm: () => {},
     type: "primary"
   });
-
+ 
   const askConfirmation = (title, message, onConfirm, type = "primary") => {
     setConfirmConfig({
       isOpen: true,
@@ -87,7 +87,7 @@ const AddHotel = () => {
       type
     });
   };
-
+ 
   // --- STATE MANAGEMENT ---
   const [hotelDetails, setHotelDetails] = useState({
     name: '',
@@ -99,7 +99,7 @@ const AddHotel = () => {
       spa: false, airConditioning: false, roomService: false, laundry: false, bar: false
     }
   });
-
+ 
   const [destinations, setDestinations] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [file, setFile] = useState(null);
@@ -107,17 +107,17 @@ const AddHotel = () => {
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [type, setType] = useState("Budget");
   const [loading, setLoading] = useState(true);
-
+ 
   // =========================================================
   // ✅ VALIDATION LOGIC START
   // =========================================================
-
+ 
   // Helper para sa Image Validation (JPG, JPEG, PNG, WebP)
   const isValidImage = (file) => {
     const allowedExtensions = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     return allowedExtensions.includes(file.type);
   };
-
+ 
   // Custom setFile handler with validation
   const handleSetFile = (selectedFile) => {
     if (selectedFile) {
@@ -129,7 +129,7 @@ const AddHotel = () => {
       setPreviewUrl(URL.createObjectURL(selectedFile));
     }
   };
-
+ 
   // Custom setGalleryFiles handler with validation
   const handleSetGalleryFiles = (filesOrUpdater) => {
     if (typeof filesOrUpdater === 'function') {
@@ -138,7 +138,7 @@ const AddHotel = () => {
         const lastAdded = updated[updated.length - 1];
         if (lastAdded && lastAdded.file && !isValidImage(lastAdded.file)) {
           toast.error('Invalid gallery image format. Only JPG, JPEG, PNG, and WebP are allowed.', 'File Error');
-          return prev; 
+          return prev;
         }
         return updated;
       });
@@ -152,13 +152,13 @@ const AddHotel = () => {
       }
     }
   };
-
+ 
   // Handle amount/digits only validation (Price & Max Capacity)
   const updateField = (field, value) => {
     if (field === 'price' || field === 'maxCapacity') {
       // ✅ Digits only validation (remove anything not a number)
       const digitsOnly = value.replace(/\D/g, '');
-      
+     
       // ✅ Max 6 digits validation
       if (digitsOnly.length <= 6) {
         setHotelDetails(prev => ({ ...prev, [field]: digitsOnly }));
@@ -169,11 +169,11 @@ const AddHotel = () => {
       setHotelDetails(prev => ({ ...prev, [field]: value }));
     }
   };
-
+ 
   // =========================================================
   // ✅ AUTO-DRAFT LOGIC START
   // =========================================================
-
+ 
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -182,37 +182,37 @@ const AddHotel = () => {
       reader.onerror = (error) => reject(error);
     });
   };
-
+ 
   const base64ToFile = async (base64String, fileName, mimeType) => {
     const res = await fetch(base64String);
     const blob = await res.blob();
     return new File([blob], fileName, { type: mimeType });
   };
-
+ 
   const [draftPayload, setDraftPayload] = useState(null);
-
+ 
   useEffect(() => {
     const updateDraft = async () => {
-      const isFormEmpty = 
-        !hotelDetails.name && 
-        !hotelDetails.destination && 
-        !hotelDetails.price && 
-        hotelDetails.maxCapacity === 4 && 
-        type === "Budget" && 
-        !file && 
+      const isFormEmpty =
+        !hotelDetails.name &&
+        !hotelDetails.destination &&
+        !hotelDetails.price &&
+        hotelDetails.maxCapacity === 4 &&
+        type === "Budget" &&
+        !file &&
         galleryFiles.length === 0;
-
+ 
       if (isFormEmpty) {
         setDraftPayload(null);
         return;
       }
-
+ 
       let mainImageBase64 = null;
       let mainImageMeta = null;
-
+ 
       if (file) {
         try {
-          if (file.size < 3 * 1024 * 1024) { 
+          if (file.size < 3 * 1024 * 1024) {
             mainImageBase64 = await fileToBase64(file);
             mainImageMeta = { name: file.name, type: file.type };
           }
@@ -220,7 +220,7 @@ const AddHotel = () => {
           console.warn("Main image too large for draft.");
         }
       }
-
+ 
       setDraftPayload({
         ...hotelDetails,
         selectedRoomType: type,
@@ -228,14 +228,14 @@ const AddHotel = () => {
         mainImageMeta: mainImageMeta
       });
     };
-
+ 
     const timeoutId = setTimeout(() => {
       updateDraft();
     }, 500);
-
+ 
     return () => clearTimeout(timeoutId);
   }, [hotelDetails, type, file, galleryFiles]);
-
+ 
   const restoreDraftData = async (data) => {
     if (!data) return;
     const { selectedRoomType, mainImage, mainImageMeta, ...rest } = data;
@@ -251,35 +251,35 @@ const AddHotel = () => {
       }
     }
   };
-
+ 
   const { clearDraft, hasDraft, restoreDraft, discardDraft, draftInfo } = useAutoDraft({
     module: 'add-hotel',
     formData: draftPayload,
     setFormData: restoreDraftData,
-    imagePreview: previewUrl, 
-    autoRestore: false 
+    imagePreview: previewUrl,
+    autoRestore: false
   });
-
+ 
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-
+ 
   useEffect(() => {
     if (hasDraft) setShowRestoreModal(true);
   }, [hasDraft]);
-
+ 
   const handleRestoreDraft = () => {
     restoreDraft();
     setShowRestoreModal(false);
     toast.success('Draft restored successfully', 'Draft Recovered');
   };
-
+ 
   // =========================================================
   // ✅ DATA FETCHING & EVENT HANDLERS
   // =========================================================
-
+ 
   useEffect(() => {
     fetchDestinations();
   }, []);
-
+ 
   const fetchDestinations = async () => {
     try {
       setLoading(true);
@@ -292,19 +292,19 @@ const AddHotel = () => {
         setDestinations(uniqueDestinations);
       }
     } catch (error) {
-      toast.error('Failed to load destinations', 'Connection Error'); 
+      toast.error('Failed to load destinations', 'Connection Error');
     } finally {
       setLoading(false);
     }
   };
-
+ 
   const handleAmenityChange = (amenityId) => {
     setHotelDetails(prev => ({
       ...prev,
       amenities: { ...prev.amenities, [amenityId]: !prev.amenities[amenityId] }
     }));
   };
-
+ 
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const fileReader = new FileReader();
@@ -313,47 +313,47 @@ const AddHotel = () => {
       fileReader.onerror = (error) => reject(error);
     });
   };
-
+ 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+   
     // ✅ Form Validation before Confirmation
     if (!hotelDetails.name || !hotelDetails.destination || !hotelDetails.price) {
-      toast.error('Please fill in all required fields', 'Validation Error'); 
+      toast.error('Please fill in all required fields', 'Validation Error');
       window.scrollTo(0, 0);
       return;
     }
-
+ 
     // ✅ Minimum Amount Validation (Min 1)
     if (Number(hotelDetails.price) < 1) {
       toast.error('Price must be at least 1.', 'Validation Error');
       return;
     }
-
+ 
     askConfirmation(
       "Publish Hotel",
       `Are you sure you want to add "${hotelDetails.name}" to the catalog?`,
       () => performSubmit()
     );
   };
-
+ 
   const performSubmit = async () => {
     setIsSubmitting(true);
     try {
       let mainImageBase64 = '';
       if (file) mainImageBase64 = await convertToBase64(file);
-
+ 
       const galleryImagesBase64 = [];
       for (const item of galleryFiles) {
         const base64 = await convertToBase64(item.file);
         galleryImagesBase64.push({ url: base64, caption: item.caption || '' });
       }
-
+ 
       const cityName = hotelDetails.destination.split(',')[0].trim();
       const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
       const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
       const activeId = adminData.id || adminData._id || "";
-
+ 
       const hotelPayload = {
         name: hotelDetails.name,
         location: hotelDetails.destination,
@@ -376,30 +376,30 @@ const AddHotel = () => {
         userEmail: activeUser,
         adminId: activeId
       };
-
+ 
       const response = await fetch(`${API_BASE_URL}/api/hotels`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(hotelPayload)
       });
-
+ 
       const data = await response.json();
-
+ 
       if (data.success) {
-        toast.success(`${hotelDetails.name} added successfully!`, 'Success'); 
+        toast.success(`${hotelDetails.name} added successfully!`, 'Success');
         window.scrollTo(0, 0);
         await clearDraft();
         resetForm();
       } else {
-        toast.error(data.message || 'Failed to save hotel', 'Save Failed'); 
+        toast.error(data.message || 'Failed to save hotel', 'Save Failed');
       }
     } catch (err) {
-      toast.error('Please check if your backend is running', 'Connection Error'); 
+      toast.error('Please check if your backend is running', 'Connection Error');
     } finally {
       setIsSubmitting(false);
     }
   };
-
+ 
   const resetForm = () => {
     setHotelDetails({
       name: '', destination: '', price: '', maxCapacity: 4,
@@ -410,7 +410,7 @@ const AddHotel = () => {
     });
     setFile(null); setPreviewUrl(null); setGalleryFiles([]); setType("Budget");
   };
-
+ 
   const handleCancel = () => {
     askConfirmation(
       "Discard Changes",
@@ -422,7 +422,7 @@ const AddHotel = () => {
       "danger"
     );
   };
-
+ 
   return (
     <div className="atour-page">
       <RestoreDraftModal
@@ -431,8 +431,8 @@ const AddHotel = () => {
         onDiscard={async () => { await discardDraft(); setShowRestoreModal(false); }}
         draftInfo={draftInfo}
       />
-
-      <CustomConfirmModal 
+ 
+      <CustomConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
         message={confirmConfig.message}
@@ -440,7 +440,7 @@ const AddHotel = () => {
         onConfirm={confirmConfig.onConfirm}
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
-
+ 
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <main className={`atour-main ${isSidebarCollapsed ? 'atour-collapsed' : ''}`}>
         <div className="atour-container">
@@ -450,7 +450,7 @@ const AddHotel = () => {
               <p className="atour-subtitle">Register a new accommodation partner to your catalog</p>
             </div>
           </header>
-
+ 
           <form onSubmit={handleSubmit}>
             <div className="atour-grid">
               <div className="atour-left">
@@ -460,7 +460,7 @@ const AddHotel = () => {
                   previewUrl={previewUrl}
                   setPreviewUrl={setPreviewUrl}
                 />
-
+ 
                 <HotelDetails
                   hotelDetails={hotelDetails}
                   updateField={updateField}
@@ -470,18 +470,18 @@ const AddHotel = () => {
                   loading={loading}
                   fetchDestinations={fetchDestinations}
                 />
-
+ 
                 <HotelGallery
                   galleryFiles={galleryFiles}
                   setGalleryFiles={handleSetGalleryFiles}
                 />
-
+ 
                 <HotelAmenities
                   amenities={hotelDetails.amenities}
                   handleAmenityChange={handleAmenityChange}
                 />
               </div>
-
+ 
               <aside className="atour-right">
                 <HotelPreview
                   hotelDetails={hotelDetails}
@@ -504,5 +504,5 @@ const AddHotel = () => {
     </div>
   );
 };
-
+ 
 export default AddHotel;

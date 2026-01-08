@@ -26,12 +26,12 @@ const getAdminData = () => {
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
-    <div className="et-confirm-overlay" style={{
+    <div className="ep-confirm-overlay" style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', zIndex: 15000 // Higher than preview modal
     }}>
-      <div className="et-confirm-modal" style={{
+      <div className="ep-confirm-modal" style={{
         backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
         maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
       }}>
@@ -51,20 +51,20 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 
 // FileRow Component
 const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) => (
-  <div className="et-file-row">
-    <div className="et-file-info">
-      <span className="et-file-label">{label}</span>
-      <span className="et-file-status">
+  <div className="ep-file-row">
+    <div className="ep-file-info">
+      <span className="ep-file-label">{label}</span>
+      <span className="ep-file-status">
         {currentFile ? `New file: ${currentFile.name}` : (hasExisting ? "Previously uploaded" : "No file attached")} 
       </span>
     </div>
-    <div className="et-file-actions">
+    <div className="ep-file-actions">
       {(hasExisting || currentFile) && (
-        <button type="button" className="et-view-btn" onClick={() => onView(field)} title="View file">
+        <button type="button" className="ep-view-btn" onClick={() => onView(field)} title="View file">
           <Eye size={14} /> View
         </button>
       )}
-      <label className="et-file-upload-btn">
+      <label className="ep-file-upload-btn">
         <Upload size={14} /> Upload
         <input type="file" accept=".docx,.pdf,.png,.webp,.jpg,.jpeg" onChange={(e) => onChange(e, field)} hidden />
       </label>
@@ -308,7 +308,6 @@ const EditPassport = () => {
 
       const remainingUrls = Object.values(existingFiles).filter(url => !!url);
       data.append("existingFiles", JSON.stringify(remainingUrls));
-      data.append("adminEmail", adminEmail);
 
       const response = await fetch(`${API_BASE_URL}/update/${passportId}`, {
         method: "PUT",
@@ -346,7 +345,7 @@ const EditPassport = () => {
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
     if (isImage && !isPdf) {
-      return <img src={url} alt="Preview" className="preview-media-full" />;
+      return <img src={url} alt="Preview" className="ep-preview-media-full" />;
     } else if (isPdf) {
       return <iframe src={url} title="PDF Preview" style={{ width: '100%', height: '100%', border: 'none' }} />;
     } else {
@@ -354,7 +353,7 @@ const EditPassport = () => {
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <FileText size={64} style={{ margin: '0 auto 20px', color: '#64748b' }} />
           <p style={{fontSize: '16px', color: '#1e293b'}}>Preview not available for this file format.</p>
-          <a href={url} download className="et-view-btn" style={{ display: 'inline-flex', marginTop: '15px', padding: '10px 20px' }}>
+          <a href={url} download className="ep-view-btn" style={{ display: 'inline-flex', marginTop: '15px', padding: '10px 20px' }}>
             Download to View
           </a>
         </div>
@@ -363,64 +362,64 @@ const EditPassport = () => {
   };
 
   if (loading) return (
-    <div className="et-loading-container">
-        <div className="et-loader"></div>
+    <div className="ep-loading-container">
+        <div className="ep-loader"></div>
         <p>Fetching passport details...</p>
     </div>
   );
 
   return (
-    <div className="et-page">
+    <div className="ep-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      <main className={`et-main ${isSidebarCollapsed ? "et-main--collapsed" : ""}`}>
-        <div className="et-container">
-          <header className="et-header">
-            <div className="et-header-content">
-              <button className="et-back-btn" onClick={handleDiscard}>
+      <main className={`ep-main ${isSidebarCollapsed ? "ep-main--collapsed" : ""}`}>
+        <div className="ep-container">
+          <header className="ep-header">
+            <div className="ep-header-content">
+              <button className="ep-back-btn" onClick={handleDiscard}>
                 <ArrowLeft size={20} /> Back
               </button>
-              <h1 className="et-title">EDIT PASSPORT REQUEST</h1>
-              <p className="et-subtitle">Ref No: #{passportId.slice(-6).toUpperCase()}</p>
+              <h1 className="ep-title">EDIT PASSPORT REQUEST</h1>
+              <p className="ep-subtitle">Ref No: #{passportId.slice(-6).toUpperCase()}</p>
             </div>
           </header>
 
-          <form onSubmit={handleSubmit} className="et-form">
-            <div className="et-grid-layout">
-              <div className="et-form-left">
+          <form onSubmit={handleSubmit} className="ep-form">
+            <div className="ep-grid-layout">
+              <div className="ep-form-left">
                 {/* CLIENT INFO SECTION */}
-                <section className="et-section">
-                  <div className="et-section-header"><User size={22} /> <h3>Client Information</h3> </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group"> 
+                <section className="ep-section">
+                  <div className="ep-section-header"><User size={22} className="ep-section-icon" /> <h3>Client Information</h3> </div>
+                  <div className="ep-fields-grid">
+                    <div className="ep-input-group"> 
                         <label>Given Name</label> 
-                        <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="et-input" required /> 
+                        <input type="text" name="givenName" value={formData.givenName} onChange={handleInputChange} className="ep-input" required /> 
                     </div>
-                    <div className="et-input-group"> 
+                    <div className="ep-input-group"> 
                         <label>Last Name</label> 
-                        <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="et-input" required /> 
+                        <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="ep-input" required /> 
                     </div>
-                    <div className="et-input-group"> 
+                    <div className="ep-input-group"> 
                         <label>Email</label> 
-                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="et-input" required /> 
+                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="ep-input" required /> 
                     </div>
-                    <div className="et-input-group"> 
+                    <div className="ep-input-group"> 
                         <label>Contact No</label> 
-                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="et-input" required /> 
+                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} className="ep-input" required /> 
                     </div>
                   </div>
                 </section>
 
                 {/* SERVICE DETAILS SECTION */}
-                <section className="et-section">
-                  <div className="et-section-header"><Briefcase size={22} /> <h3>Service Details</h3> </div>
-                  <div className="et-fields-grid">
-                    <div className="et-input-group">
+                <section className="ep-section">
+                  <div className="ep-section-header"><Briefcase size={22} className="ep-section-icon" /> <h3>Service Details</h3> </div>
+                  <div className="ep-fields-grid">
+                    <div className="ep-input-group">
                       <label>Application Type</label>
                       <select 
                         name="passportDocument" 
                         value={formData.passportDocument} 
                         onChange={handleInputChange} 
-                        className="et-input"
+                        className="ep-input"
                         required
                       >
                         <option value="">Select Application Type</option>
@@ -433,8 +432,8 @@ const EditPassport = () => {
                 </section>
 
                 {/* ATTACHMENTS SECTION */}
-                <section className="et-section">
-                  <div className="et-section-header"><Upload size={22} /> <h3>Attachments</h3> </div>
+                <section className="ep-section">
+                  <div className="ep-section-header"><Upload size={22} className="ep-section-icon" /> <h3>Attachments</h3> </div>
                   <FileRow 
                     label="Requirement Document" 
                     field="requirement" 
@@ -443,35 +442,35 @@ const EditPassport = () => {
                     hasExisting={!!existingFiles['requirement']} 
                     currentFile={files['requirement']} 
                   />
-                  <p className="et-hint-text">Supported formats: PDF, JPG, PNG, DOCX (Max 5MB)</p>
+                  <p className="ep-hint-text">Supported formats: PDF, JPG, PNG, DOCX (Max 5MB)</p>
                 </section>
               </div>
 
               {/* --- Billing & Notes --- */}
-              <div className="et-form-right">
-                <div className="et-sticky-sidebar">
+              <div className="ep-form-right">
+                <div className="ep-sticky-sidebar">
                   {/* BILLING SECTION */}
-                  <section className="et-section">
-                    <div className="et-section-header"> <DollarSign size={20} /> <h3>Billing & Notes</h3> </div>
-                    <div className="et-input-group"> 
+                  <section className="ep-section">
+                    <div className="ep-section-header"> <DollarSign size={20} className="ep-section-icon" /> <h3>Billing & Notes</h3> </div>
+                    <div className="ep-input-group"> 
                         <label>Estimated Price (PHP)</label> 
-                        <div className="et-price-input-wrapper">
-                            <span className="et-currency-prefix">₱</span>
-                            <input type="text" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="et-input et-price-input" placeholder="0.00" /> 
+                        <div className="ep-price-input-wrapper">
+                            <span className="ep-currency-prefix">₱</span>
+                            <input type="text" name="estimatedPrice" value={formData.estimatedPrice} onChange={handleInputChange} className="ep-input ep-price-input" placeholder="0.00" /> 
                         </div>
                     </div>
-                    <div className="et-input-group" style={{marginTop: '20px'}}> 
+                    <div className="ep-input-group" style={{marginTop: '20px'}}> 
                         <label>Admin Remarks / Internal Notes</label> 
-                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="et-textarea" rows="6" placeholder="Add notes about this request..." /> 
+                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="ep-textarea" rows="6" placeholder="Add notes about this request..." /> 
                     </div>
                   </section>
 
                   {/* FORM ACTIONS */}
-                  <div className="et-form-actions">
-                    <button type="submit" className="et-btn et-btn--submit" disabled={submitting}> 
+                  <div className="ep-form-actions">
+                    <button type="submit" className="ep-btn ep-btn--submit" disabled={submitting}> 
                         {submitting ? "SAVING UPDATES..." : "UPDATE REQUEST"} 
                     </button>
-                    <button type="button" className="et-btn et-btn--cancel" onClick={handleDiscard}>
+                    <button type="button" className="ep-btn ep-btn--cancel" onClick={handleDiscard}>
                         DISCARD CHANGES
                     </button>
                   </div>
@@ -484,20 +483,20 @@ const EditPassport = () => {
 
       {/* FILE PREVIEW MODAL */}
       {previewFile && (
-        <div className="et-modal-overlay" onClick={() => setPreviewFile(null)}>
-          <div className="et-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
-            <div className="et-modal-preview-header">
-              <span className="et-preview-filename">{previewFile.name.split('/').pop()}</span>
-              <button className="et-close-preview" onClick={() => setPreviewFile(null)}><X size={24} /></button>
+        <div className="ep-modal-overlay" onClick={() => setPreviewFile(null)}>
+          <div className="ep-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
+            <div className="ep-modal-preview-header">
+              <span className="ep-preview-filename">{previewFile.name.split('/').pop()}</span>
+              <button className="ep-close-preview" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
-            <div className="et-modal-preview-body">
+            <div className="ep-modal-preview-body">
                 {renderPreviewContent()}
             </div>
-            <div className="et-modal-preview-footer">
-                <button className="et-delete-file-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
+            <div className="ep-modal-preview-footer">
+                <button className="ep-delete-file-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
                   <Trash2 size={18} /> Remove File
                 </button>
-                <button className="et-close-btn-simple" onClick={() => setPreviewFile(null)}>Close</button>
+                <button className="ep-close-btn-simple" onClick={() => setPreviewFile(null)}>Close</button>
             </div>
           </div>
         </div>
