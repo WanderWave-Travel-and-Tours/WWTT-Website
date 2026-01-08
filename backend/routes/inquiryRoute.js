@@ -22,22 +22,22 @@ const fs = require('fs');
 
 // 🔥 HELPER: MAP INQUIRY TYPE TO SPECIFIC MODULE NAME
 const getModuleFromInquiryType = (inquiryType, serviceName) => {
-    const typeMapping = {
-        'FLIGHT_BOOKING': 'Flight Booking',
-        'VISA': 'Visa Application',
-        'PASSPORT': 'Passport',
-        'PSA': 'PSA Documents',
-        'CENOMAR': 'CENOMAR',
-        'GENERAL': 'General Inquiries'
-    };
-    
-    return typeMapping[inquiryType] || 'General Inquiries';
+  const typeMapping = {
+    'FLIGHT_BOOKING': 'Flight Booking',
+    'VISA': 'Visa Application',
+    'PASSPORT': 'Passport',
+    'PSA': 'PSA Documents',
+    'CENOMAR': 'CENOMAR',
+    'GENERAL': 'General Inquiries'
+  };
+  
+  return typeMapping[inquiryType] || 'General Inquiries';
 };
 
 // Siguraduhin na exist ang upload directory
 const uploadDir = path.join(__dirname, '../uploads/documents');
-if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
  
 const evidenceStorage = multer.diskStorage({
@@ -96,76 +96,76 @@ router.put('/:id/deliver-documents', uploadDocuments.array('documents', 10), del
 
 // ✅✅✅ REQUEST PAYMENT ROUTE (WITH SPECIFIC MODULE SUPPORT) ✅✅✅
 router.post('/:id/request-payment', async (req, res) => {
-    try {
-        const { userEmail, adminId } = req.body;
-        
-        const Inquiry = require('../models/inquiry');
-        const ActivityLog = require('../models/ActivityLog');
-        
-        // Get inquiry details
-        const inquiry = await Inquiry.findById(req.params.id);
-        
-        if (!inquiry) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Inquiry not found' 
-            });
-        }
-
-        // Update status to PAYMENT_PENDING
-        inquiry.status = 'PAYMENT_PENDING';
-        inquiry.updatedAt = Date.now();
-        await inquiry.save();
-
-        console.log(`✅ Payment requested for inquiry ${req.params.id}`);
-
-        // 👇👇👇 ACTIVITY LOG START (PAYMENT REQUEST WITH SPECIFIC MODULE) 👇👇👇
-        try {
-            if (userEmail) {
-                // 🔥 GET SPECIFIC MODULE NAME BASED ON INQUIRY TYPE
-                const specificModule = getModuleFromInquiryType(
-                    inquiry.inquiryType || 'GENERAL', 
-                    inquiry.serviceName
-                );
-                
-                await ActivityLog.create({
-                    action: 'UPDATE',
-                    module: specificModule,  // 🔥 SPECIFIC MODULE (e.g., "Flight Booking", "Visa Application")
-                    user: userEmail,
-                    userId: adminId || null,
-                    description: `Payment requested for ${specificModule.toLowerCase()}: ${inquiry.fullName}`,
-                    severity: 'INFO',
-                    details: {
-                        recordTitle: `${specificModule} - ${inquiry.fullName}`,
-                        recordId: inquiry._id.toString(),
-                        method: 'POST',
-                        action: 'Payment Request Sent',
-                        estimatedPrice: inquiry.estimatedPrice,
-                        inquiryType: inquiry.inquiryType,
-                        serviceName: inquiry.serviceName
-                    }
-                });
-                console.log(`✅ Activity Log saved: PAYMENT REQUEST ${specificModule}`);
-            }
-        } catch (logError) {
-            console.error('⚠️ Failed to save activity log:', logError.message);
-        }
-        // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
-        res.json({ 
-            success: true, 
-            message: 'Payment request sent successfully', 
-            data: inquiry 
-        });
-        
-    } catch (error) {
-        console.error('❌ Error requesting payment:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Server error requesting payment',
-            error: error.message 
-        });
+  try {
+    const { userEmail, adminId } = req.body;
+    
+    const Inquiry = require('../models/inquiry');
+    const ActivityLog = require('../models/ActivityLog');
+    
+    // Get inquiry details
+    const inquiry = await Inquiry.findById(req.params.id);
+    
+    if (!inquiry) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Inquiry not found' 
+      });
     }
+
+    // Update status to PAYMENT_PENDING
+    inquiry.status = 'PAYMENT_PENDING';
+    inquiry.updatedAt = Date.now();
+    await inquiry.save();
+
+    console.log(`✅ Payment requested for inquiry ${req.params.id}`);
+
+    // 👇👇👇 ACTIVITY LOG START (PAYMENT REQUEST WITH SPECIFIC MODULE) 👇👇👇
+    try {
+      if (userEmail) {
+        // 🔥 GET SPECIFIC MODULE NAME BASED ON INQUIRY TYPE
+        const specificModule = getModuleFromInquiryType(
+          inquiry.inquiryType || 'GENERAL', 
+          inquiry.serviceName
+        );
+        
+        await ActivityLog.create({
+          action: 'UPDATE',
+          module: specificModule,  // 🔥 SPECIFIC MODULE (e.g., "Flight Booking", "Visa Application")
+          user: userEmail,
+          userId: adminId || null,
+          description: `Payment requested for ${specificModule.toLowerCase()}: ${inquiry.fullName}`,
+          severity: 'INFO',
+          details: {
+            recordTitle: `${specificModule} - ${inquiry.fullName}`,
+            recordId: inquiry._id.toString(),
+            method: 'POST',
+            action: 'Payment Request Sent',
+            estimatedPrice: inquiry.estimatedPrice,
+            inquiryType: inquiry.inquiryType,
+            serviceName: inquiry.serviceName
+          }
+        });
+        console.log(`✅ Activity Log saved: PAYMENT REQUEST ${specificModule}`);
+      }
+    } catch (logError) {
+      console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
+    res.json({ 
+      success: true, 
+      message: 'Payment request sent successfully', 
+      data: inquiry 
+    });
+    
+  } catch (error) {
+    console.error('❌ Error requesting payment:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error requesting payment',
+      error: error.message 
+    });
+  }
 });
 
 module.exports = router;
