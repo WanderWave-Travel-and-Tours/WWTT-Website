@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
-import UserFilters from './UserFilters';
+import UserFilters from './Userfilters';
 import UserPagination from './Userpagination';
 import { UserCog } from 'lucide-react';
 import './users.css';
-import './UserFilters.css';
+import './Userfilters.css';
 import './UserPagination.css';
 
 // =========================================================================
