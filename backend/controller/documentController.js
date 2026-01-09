@@ -1,7 +1,7 @@
 const Document = require('../models/document');
 const { cloudinary } = require('../config/cloudinary');
 
-// ✅ UPLOAD DOCUMENTS FUNCTION
+// ✅ UPLOAD DOCUMENTS FUNCTION (FIXED)
 const uploadDocuments = async (req, res) => {
   try {
     console.log('📥 Upload request received');
@@ -10,10 +10,20 @@ const uploadDocuments = async (req, res) => {
 
     const { inquiryId, userId } = req.body;
 
-    if (!inquiryId || !userId) {
+    // ✅ BETTER ERROR MESSAGE
+    if (!inquiryId) {
       return res.status(400).json({ 
         success: false,
-        message: 'Inquiry ID and User ID are required' 
+        message: 'Inquiry ID is required',
+        received: { inquiryId, userId }
+      });
+    }
+
+    if (!userId || userId === 'undefined') {
+      return res.status(400).json({ 
+        success: false,
+        message: 'User ID is required',
+        received: { inquiryId, userId }
       });
     }
 
@@ -29,7 +39,7 @@ const uploadDocuments = async (req, res) => {
       sections = Array.isArray(req.body.sections) ? req.body.sections : [req.body.sections];
     }
 
-    console.log('📝 Processing', req.files.length, 'files');
+    console.log('📋 Processing', req.files.length, 'files');
     console.log('📋 Sections:', sections);
 
     const documents = [];
@@ -39,13 +49,15 @@ const uploadDocuments = async (req, res) => {
 
       console.log(`Saving file ${i + 1}:`, file.originalname);
 
+      // ✅ ADDED filePath and fixed field names
       const document = await Document.create({
         inquiryId,
         userId,
         fileName: file.filename,
         originalName: file.originalname,
         fileUrl: file.path,
-        filePublicId: file.filename,
+        filePath: file.path,  // ✅ ADDED - same as fileUrl for Cloudinary
+        filePublicId: file.filename,  // ✅ CHANGED from imagePublicId
         fileSize: file.size,
         fileType: file.mimetype,
         section: section,
