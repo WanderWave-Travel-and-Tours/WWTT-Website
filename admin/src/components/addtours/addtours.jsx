@@ -137,7 +137,9 @@ const AddTour = () => {
         !tourMarkup && 
         !tourPrice && 
         !tourDuration && 
-        tourCat === "Local" && 
+        tourCat === "Local" &&
+        tourType === "private" &&  // ✅ ADDED
+        !minPax &&                 // ✅ ADDED 
         (tourIncs.length === 1 && tourIncs[0] === "") && 
         !tourFile;
 
@@ -169,6 +171,8 @@ const AddTour = () => {
         price: tourPrice,
         duration: tourDuration,
         category: tourCat,
+        tourType: tourType,      
+        minPax: minPax,     
         inclusions: tourIncs,
         image: imageBase64,
         imageMeta: imageMeta
@@ -181,6 +185,10 @@ const AddTour = () => {
 
     return () => clearTimeout(timeoutId);
   }, [tourTitle, tourDest, tourSupplier, tourMarkup, tourMarkupType, tourPrice, tourDuration, tourCat, tourIncs, tourFile]);
+
+  const [tourType, setTourType] = useState("private"); // "private" or "joiners"
+  const [minPax, setMinPax] = useState(""); // Only for joiners
+
 
   const restoreDraftData = async (data) => {
     if (!data) return;
@@ -357,6 +365,11 @@ const AddTour = () => {
       return;
     }
 
+    if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+      toast.error("Please enter minimum pax for joiner tours.", "Missing Min Pax");
+      return;
+    }
+
     askConfirmation(
       "Publish Tour",
       `Are you sure you want to publish "${tourTitle}" to the catalog?`,
@@ -387,6 +400,12 @@ const AddTour = () => {
     formData.append("category", tourCat);
     formData.append("inclusions", JSON.stringify(finalIncs));
     formData.append("image", tourFile);
+    formData.append("tourType", tourType); 
+
+    if (tourType === 'joiners') {
+      formData.append("minPax", parseInt(minPax));
+    }
+
 
     const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
     const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
@@ -398,7 +417,7 @@ const AddTour = () => {
     toast.info("Uploading tour package...", "Please Wait", 2000);
 
     try {
-      const res = await fetch("https://wanderwaveph-backend.onrender.com/api/tours/add", {
+      const res = await fetch("http://localhost:5000/api/tours/add", {
         method: "POST",
         body: formData,
       });
@@ -420,6 +439,8 @@ const AddTour = () => {
         setTourPrice("");
         setTourDuration("");
         setTourCat("Local");
+        setTourType("private");  // ✅ ADDED
+        setMinPax("");           // ✅ ADDED
         setTourFile(null);
         setTourPreviewUrl(null);
         setTourIncs([""]);
@@ -495,6 +516,10 @@ const AddTour = () => {
                   setDuration={setTourDuration}
                   category={tourCat}
                   setCategory={setTourCat}
+                  tourType={tourType}         
+                  setTourType={setTourType}    
+                  minPax={minPax}             
+                  setMinPax={setMinPax}       
                 />
                 <TourPricing
                   supp={tourSupplier}
@@ -528,6 +553,8 @@ const AddTour = () => {
                   price={tourPrice}
                   dur={tourDuration}
                   incs={tourIncs}
+                  tourType={tourType}          // ✅ ADDED
+                  minPax={minPax}  
                 />
                 <div className="atour-actions">
                   <button

@@ -41,7 +41,6 @@ const tourSchema = new mongoose.Schema({
     type: [String], 
     default: [] 
   },
-  // ADDED: Itinerary field
   itinerary: {
     type: [{
       day: { type: Number, required: true },
@@ -49,6 +48,26 @@ const tourSchema = new mongoose.Schema({
       activities: { type: [String], default: [] }
     }],
     default: []
+  },
+  // ✅ NEW: Tour Type Fields
+  tourType: { 
+    type: String, 
+    enum: ['private', 'joiners'], 
+    default: 'private' 
+  },
+  minPax: { 
+    type: Number, 
+    default: null,
+    validate: {
+      validator: function(value) {
+        // Only validate if tourType is joiners
+        if (this.tourType === 'joiners') {
+          return value != null && value >= 1;
+        }
+        return true; // No validation for private tours
+      },
+      message: 'Minimum pax is required for joiner tours and must be at least 1'
+    }
   },
   image: { 
     type: String, 
@@ -74,11 +93,17 @@ tourSchema.methods.calculatePrice = function() {
   return this.price;
 };
 
-// Pre-save middleware to ensure price is calculated
+// Pre-save middleware to ensure price is calculated and clear minPax for private tours
 tourSchema.pre('save', function(next) {
   if (this.isModified('sellerPrice') || this.isModified('markup')) {
     this.price = this.sellerPrice + this.markup;
   }
+  
+  // Clear minPax if tour type is private
+  if (this.tourType === 'private') {
+    this.minPax = null;
+  }
+  
   next();
 });
 

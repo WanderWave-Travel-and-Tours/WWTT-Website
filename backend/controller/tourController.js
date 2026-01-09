@@ -18,8 +18,9 @@ exports.createTour = async (req, res) => {
       markup, 
       inclusions,
       itinerary,
+      tourType,     
+      minPax,       
       isArchive,
-      // Admin Info galing sa Frontend
       userEmail,
       adminId
     } = req.body;
@@ -29,6 +30,13 @@ exports.createTour = async (req, res) => {
       return res.status(400).json({ 
         status: 'error',
         error: 'Missing required fields' 
+      });
+    }
+
+    if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+      return res.status(400).json({ 
+        status: 'error',
+        error: 'Minimum pax is required for joiner tours' 
       });
     }
 
@@ -88,7 +96,7 @@ exports.createTour = async (req, res) => {
     const totalPrice = sPrice + mkup;
 
     // Create new tour
-    const newTour = new Tour({
+    const tourData = {
       title: title.trim(),
       destination: destination.trim(),
       duration: duration.trim(),
@@ -99,17 +107,18 @@ exports.createTour = async (req, res) => {
       inclusions: parsedInclusions,
       itinerary: parsedItinerary,
       image: req.file.filename,
+      tourType: tourType || 'private', 
       isArchive: isArchive || 'No'
-    });
+    };
 
-    // Save to database
+    if (tourType === 'joiners' && minPax) {
+      tourData.minPax = parseInt(minPax);
+    }
+
+    const newTour = new Tour(tourData);
     await newTour.save();
     
-    // =========================================================
-    // 2. INSERT ACTIVITY LOG HERE (AFTER SAVING)
-    // =========================================================
     try {
-      // Sanitize ID para iwas CastError (kung sakaling "null" string ang pumasok)
       let logUserId = null;
       if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
           logUserId = adminId;
@@ -117,7 +126,7 @@ exports.createTour = async (req, res) => {
 
       await ActivityLog.create({
           action: 'CREATE',
-          module: 'Tours', // Pinalitan ko ng 'Tours' para specific
+          module: 'Tours', 
           user: userEmail || 'System Admin',
           userId: logUserId,
           severity: 'SUCCESS',
@@ -132,9 +141,7 @@ exports.createTour = async (req, res) => {
       console.log('✅ Activity Log recorded for New Tour');
     } catch (logError) {
       console.error('❌ Error logging activity:', logError);
-      // Hindi natin haharangin ang success response kahit mag-fail ang log
     }
-    // =========================================================
 
     console.log('Tour saved successfully:', newTour);
 

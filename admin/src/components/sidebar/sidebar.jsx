@@ -238,7 +238,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
       const adminToken = localStorage.getItem('adminToken');
 
-      await fetch('https://wanderwaveph-backend.onrender.com/api/admin/logout', {
+      await fetch('http://localhost:5000/api/admin/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
