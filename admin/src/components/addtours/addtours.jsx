@@ -18,7 +18,7 @@ import useAutoDraft from "../../hooks/useAutoDraft";
 import RestoreDraftModal from "../../components/RestoreDraftModal/RestoreDraftModal";
 
 // --- CUSTOM CONFIRM MODAL COMPONENT (Reference from EditVisa.jsx) ---
-const CustomConfirmModal = ({
+/*const CustomConfirmModal = ({
   isOpen,
   title,
   message,
@@ -113,7 +113,7 @@ const CustomConfirmModal = ({
       </div>
     </div>
   );
-};
+};*/
 
 const AddTour = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
