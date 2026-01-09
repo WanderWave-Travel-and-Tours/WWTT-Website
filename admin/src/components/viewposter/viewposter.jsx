@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Calendar, Eye, EyeOff } from 'lucide-react';
-import axios from 'axios'; // ✅ Switched to axios for consistency with logs
 import { Archive, Calendar, Eye, EyeOff, Search, HelpCircle } from 'lucide-react';
+import axios from 'axios';
 import Sidebar from '../sidebar/sidebar';
 import PosterDetailModal from './PosterDetailModal';
 import PosterPagination from './PosterPagination';
 import PosterFilters from './PosterFilters';
-import { useToast } from '../toast/ToastManager'; // Inimport ang Toast
+import { useToast } from '../toast/ToastManager';
 import './viewposter.css';
 
 // 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
@@ -21,6 +20,8 @@ const getAdminData = () => {
         console.error('❌ Error getting admin data:', error);
         return { userEmail: 'Unknown Admin', adminId: null };
     }
+};
+
 // 🔥 Custom Confirm Modal Component (Reference from EditVisa.jsx)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
@@ -66,7 +67,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewPoster = () => {
-    const toast = useToast(); // Initialize Toast
+    const toast = useToast();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -117,16 +118,10 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
-            // ✅ Using axios.get
             const response = await axios.get('http://localhost:5000/api/posters');
             
             // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
             const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
-            const response = await fetch('http://localhost:5000/api/posters');
-            if (!response.ok) throw new Error('Failed to fetch');
-            const data = await response.json();
-            
-            const nonArchivedPosters = data.filter(poster => poster.isArchive === "No");
             setPosters(nonArchivedPosters);
             
             setCurrentPage(1);
@@ -140,104 +135,64 @@ const ViewPoster = () => {
 
     // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
     const handleArchive = async (id, title) => {
-        if (window.confirm(`Are you sure you want to archive "${title}"?`)) {
-            
-            // 🔥 GET ADMIN DATA
-            const { userEmail, adminId } = getAdminData();
-
-            try {
-                // ✅ Using axios.put and sending admin data for logs
-                const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
-                    isArchive: 'Yes',
-                    userEmail,  // 🔥 ADD ADMIN INFO
-                    adminId     // 🔥 ADD ADMIN INFO
-                });
-
-                if (response.data) {
-                    // Alisin sa UI ang poster na na-archive na para mawala sa table
-                    const updatedPosters = posters.filter(poster => poster._id !== id);
-                    setPosters(updatedPosters);
-                    alert('Poster archived successfully');
-                    
-                    const maxPage = Math.ceil(updatedPosters.length / itemsPerPage);
-                    if (currentPage > maxPage && maxPage > 0) {
-                        setCurrentPage(maxPage);
-                    }
-                    
-                    // Isara ang modal kung ito ay nakabukas
-                    if (showDetailModal) setShowDetailModal(false);
-    // Binago para gamitin ang Confirmation Modal sa halip na window.confirm
-    const handleArchive = (id, title) => {
         askConfirmation(
-            "Archive Poster",
-            `Are you sure you want to archive "${title}"? This will remove it from the active list.`,
-            () => performArchive(id),
+            "Archive Poster?",
+            `Are you sure you want to archive "${title}"?`,
+            async () => {
+                const { userEmail, adminId } = getAdminData();
+
+                try {
+                    const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
+                        isArchive: 'Yes',
+                        userEmail,
+                        adminId
+                    });
+
+                    if (response.data) {
+                        const updatedPosters = posters.filter(poster => poster._id !== id);
+                        setPosters(updatedPosters);
+                        toast.success('Poster archived successfully!');
+                    }
+                } catch (error) {
+                    console.error('Error archiving poster:', error);
+                    toast.error('Failed to archive poster.');
+                }
+            },
             "danger"
         );
-    };
-
-    const performArchive = async (id) => {
-        try {
-            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, { 
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isArchive: 'Yes' }) 
-            });
-
-            if (response.ok) {
-                const updatedPosters = posters.filter(poster => poster._id !== id);
-                setPosters(updatedPosters);
-                toast.success('Poster archived successfully');
-                
-                const maxPage = Math.ceil(updatedPosters.length / itemsPerPage);
-                if (currentPage > maxPage && maxPage > 0) {
-                    setCurrentPage(maxPage);
-                }
-                
-                if (showDetailModal) setShowDetailModal(false);
-            } else {
-                toast.error('Failed to archive poster');
-            }
-        } catch (error) {
-            console.error('Error archiving:', error);
-            toast.error('Server error while archiving');
-        }
     };
 
     // 🔥🔥🔥 UPDATED: TOGGLE STATUS WITH ADMIN DATA 🔥🔥🔥
     const toggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         
-        // 🔥 GET ADMIN DATA
-        const { userEmail, adminId } = getAdminData();
+        askConfirmation(
+            "Change Status?",
+            `Change poster status to ${newStatus}?`,
+            async () => {
+                const { userEmail, adminId } = getAdminData();
 
-        try {
-            // ✅ Using axios.put and sending admin data for logs
-            const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, {
-                status: newStatus,
-                userEmail,  // 🔥 ADD ADMIN INFO
-                adminId     // 🔥 ADD ADMIN INFO
-            });
+                try {
+                    const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
+                        status: newStatus,
+                        userEmail,
+                        adminId
+                    });
 
-            if (response.data) {
-                setPosters(posters.map(p => 
-                    p._id === id ? { ...p, status: newStatus } : p
-                ));
-                if (selectedPoster && selectedPoster._id === id) {
-                    setSelectedPoster({ ...selectedPoster, status: newStatus });
+                    if (response.data) {
+                        const updatedPosters = posters.map(poster =>
+                            poster._id === id ? { ...poster, status: newStatus } : poster
+                        );
+                        setPosters(updatedPosters);
+                        toast.success(`Status changed to ${newStatus}!`);
+                    }
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    toast.error('Failed to update status.');
                 }
-            }
-        } catch (error) {
-            console.error('Error updating status:', error);
-            alert('Failed to update status');
-                toast.info(`Poster status updated to ${newStatus}`);
-            } else {
-                toast.error('Failed to update status');
-            }
-        } catch (error) {
-            console.error('Error updating status:', error);
-            toast.error('Error updating status');
-        }
+            },
+            "primary"
+        );
     };
 
     const handleViewDetails = (poster) => {
@@ -246,23 +201,21 @@ const ViewPoster = () => {
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        if (!dateString) return '--';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     };
 
     const filteredPosters = posters.filter(poster => {
-        const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (poster.description && poster.description.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesStatus = filterStatus === 'ALL' || poster.status === filterStatus;
         return matchesSearch && matchesStatus;
     });
 
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentPosters = filteredPosters.slice(indexOfFirstItem, indexOfLastItem);
+    const indexOfLastPoster = currentPage * itemsPerPage;
+    const indexOfFirstPoster = indexOfLastPoster - itemsPerPage;
+    const currentPosters = filteredPosters.slice(indexOfFirstPoster, indexOfLastPoster);
 
     const activePosters = posters.filter(p => p.status === 'Active').length;
 
@@ -272,7 +225,8 @@ const ViewPoster = () => {
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
-            <main className={`vp-main ${isSidebarCollapsed ? 'vp-main--collapsed' : ''}`}>
+            
+            <main className={`vp-main ${isSidebarCollapsed ? "vp-main--collapsed" : ""}`}>
                 <div className="vp-container">
                     <header className="vp-header">
                         <div className="vp-header-content">

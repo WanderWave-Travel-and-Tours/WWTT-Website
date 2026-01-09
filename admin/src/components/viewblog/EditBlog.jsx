@@ -8,6 +8,9 @@ import './EditBlog.css';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// ✅ Import Toast Management
+import { useToast } from '../toast/ToastManager';
+
 // 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
 const getAdminData = () => {
     try {
@@ -20,8 +23,7 @@ const getAdminData = () => {
         console.error('❌ Error getting admin data:', error);
         return { userEmail: 'Unknown Admin', adminId: null };
     }
-// ✅ Import Toast Management
-import { useToast } from '../toast/ToastManager';
+};
 
 // ✅ Custom Confirm Modal Component (Base sa EditVisa.jsx reference)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -198,109 +200,85 @@ const EditBlog = () => {
 
     const restoreDraftData = async (data) => {
         if (!data) return;
-        
-        if (data.originalId && data.originalId !== id) {
-            console.warn("Draft found but belongs to a different blog ID. Ignoring.");
-            return;
-        }
 
-        setFormData({
-            title: data.title || '',
-            author: data.author || '',
-            category: data.category || '',
-            status: data.status || 'Published',
-            content: data.content || ''
-        });
+        if (data.title) setFormData(prev => ({ ...prev, title: data.title }));
+        if (data.author) setFormData(prev => ({ ...prev, author: data.author }));
+        if (data.category) setFormData(prev => ({ ...prev, category: data.category }));
+        if (data.status) setFormData(prev => ({ ...prev, status: data.status }));
+        if (data.content) setFormData(prev => ({ ...prev, content: data.content }));
 
         if (data.image && data.imageMeta) {
             try {
-                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                const restoredFile = await base64ToFile(
+                    data.image, 
+                    data.imageMeta.name, 
+                    data.imageMeta.type
+                );
                 setImageFile(restoredFile);
-                setImagePreview(URL.createObjectURL(restoredFile));
+                setImagePreview(data.image);
             } catch (err) {
                 console.error("Failed to restore image:", err);
             }
         }
     };
 
-    const { 
-        clearDraft, 
-        hasDraft, 
-        restoreDraft, 
-        discardDraft,
-        draftInfo 
-    } = useAutoDraft({
-        module: `edit-blog-${id}`,
-        formData: draftPayload,
-        setFormData: restoreDraftData,
-        imagePreview: imagePreview, 
-        autoRestore: false 
-    });
-
-    const [showRestoreModal, setShowRestoreModal] = useState(false);
-
-    useEffect(() => {
-        if (hasDraft && !isLoading) {
-            setShowRestoreModal(true);
-        }
-    }, [hasDraft, isLoading]);
-
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-        toast.info("Draft restored successfully.");
-    };
-
-    const handleDiscardDraft = async () => {
-        await discardDraft();
-        setShowRestoreModal(false);
-    };
+    const {
+        showRestoreModal,
+        draftInfo,
+        handleRestoreDraft,
+        handleDiscardDraft,
+        clearDraft
+    } = useAutoDraft(
+        `edit-blog-${id}`,
+        draftPayload,
+        restoreDraftData
+    );
 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC END
     // =========================================================
 
     useEffect(() => {
-        const fetchBlogDetails = async () => {
+        const fetchBlog = async () => {
             try {
                 const response = await fetch(`http://localhost:5000/api/blogs/${id}`);
-                if (!response.ok) throw new Error('Failed to fetch blog details');
+                if (!response.ok) throw new Error('Blog not found');
                 
-                const data = await response.json();
-                
-                // Set Original Data for Activity Logging comparison
-                setOriginalData(data);
-
+                const blog = await response.json();
                 setFormData({
-                    title: data.title || '',
-                    author: data.author || '',
-                    category: data.category || '',
-                    status: data.status || 'Published',
-                    content: data.content || ''
+                    title: blog.title || '',
+                    author: blog.author || '',
+                    category: blog.category || '',
+                    status: blog.status || 'Published',
+                    content: blog.content || ''
                 });
 
-                if (data.imageUrl) {
-                    setImagePreview(getImageUrl(data.imageUrl));
+                setOriginalData({
+                    title: blog.title || '',
+                    author: blog.author || '',
+                    category: blog.category || '',
+                    status: blog.status || 'Published',
+                    content: blog.content || ''
+                });
+
+                if (blog.imageUrl) {
+                    setImagePreview(getImageUrl(blog.imageUrl));
                 }
+
+                setIsLoading(false);
             } catch (err) {
                 console.error(err);
-                toast.error("Could not load blog details.", "Connection Error");
-            } finally {
+                toast.error('Failed to load blog data.');
                 setIsLoading(false);
             }
         };
 
-        if (id) {
-            fetchBlogDetails();
-        }
+        fetchBlog();
     }, [id]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -315,83 +293,70 @@ const EditBlog = () => {
         }
     };
 
+    const getChangedFields = () => {
+        if (!originalData) return {};
+
+        const changes = {};
+        if (formData.title !== originalData.title) {
+            changes.title = { old: originalData.title, new: formData.title };
+        }
+        if (formData.author !== originalData.author) {
+            changes.author = { old: originalData.author, new: formData.author };
+        }
+        if (formData.category !== originalData.category) {
+            changes.category = { old: originalData.category, new: formData.category };
+        }
+        if (formData.status !== originalData.status) {
+            changes.status = { old: originalData.status, new: formData.status };
+        }
+        if (formData.content !== originalData.content) {
+            changes.content = { old: originalData.content, new: formData.content };
+        }
+        if (imageFile) {
+            changes.imageUrl = { old: 'Existing Image', new: imageFile.name };
+        }
+        return changes;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
 
-        const { userEmail, adminId } = getAdminData(); // 🔥 Get current admin info
-
         try {
             const formDataToSend = new FormData();
-            formDataToSend.append("title", formData.title);
-            formDataToSend.append("author", formData.author);
-            formDataToSend.append("category", formData.category);
-            formDataToSend.append("status", formData.status);
-            formDataToSend.append("content", formData.content);
+            formDataToSend.append('title', formData.title);
+            formDataToSend.append('author', formData.author);
+            formDataToSend.append('category', formData.category);
+            formDataToSend.append('status', formData.status);
+            formDataToSend.append('content', formData.content);
 
-            // 🔥 Activity Logs: Append Admin Data
+            const { userEmail, adminId } = getAdminData();
             formDataToSend.append("userEmail", userEmail);
-            formDataToSend.append("adminId", adminId);
+            if (adminId) formDataToSend.append("adminId", adminId);
 
-            // 🔥 Activity Logs: Track Changes Logic
-            let changes = [];
-            if (originalData) {
-                if (originalData.title !== formData.title) changes.push(`Title changed from "${originalData.title}" to "${formData.title}"`);
-                if (originalData.author !== formData.author) changes.push(`Author changed from "${originalData.author}" to "${formData.author}"`);
-                if (originalData.category !== formData.category) changes.push(`Category changed from "${originalData.category}" to "${formData.category}"`);
-                if (originalData.status !== formData.status) changes.push(`Status changed from "${originalData.status}" to "${formData.status}"`);
-                // Note: Content might be too long to log specifically, so we just note it changed
-                if (originalData.content !== formData.content) changes.push(`Blog content was updated.`);
-                
-                if (imageFile) {
-                    changes.push(`Cover image was replaced.`);
-                }
-            }
-            
-            // Send the changes summary to backend (backend can choose to use it or generate its own)
-            if (changes.length > 0) {
-                formDataToSend.append("changes", JSON.stringify(changes)); 
-            }
+            const changedFields = getChangedFields();
+            formDataToSend.append("changedFields", JSON.stringify(changedFields));
 
             if (imageFile) {
-                formDataToSend.append("image", imageFile);
+                formDataToSend.append('imageUrl', imageFile);
             }
-        
-        askConfirmation(
-            "Update Blog",
-            "Are you sure you want to save the changes to this blog post?",
-            async () => {
-                setSubmitting(true);
-                try {
-                    const formDataToSend = new FormData();
-                    formDataToSend.append("title", formData.title);
-                    formDataToSend.append("author", formData.author);
-                    formDataToSend.append("category", formData.category);
-                    formDataToSend.append("status", formData.status);
-                    formDataToSend.append("content", formData.content);
 
-                    if (imageFile) {
-                        formDataToSend.append("image", imageFile);
-                    }
+            const response = await fetch(`http://localhost:5000/api/blogs/${id}`, {
+                method: 'PUT',
+                body: formDataToSend,
+            });
 
-                    const response = await fetch(`http://localhost:5000/api/blogs/${id}`, {
-                        method: 'PUT',
-                        body: formDataToSend,
-                    });
+            if (!response.ok) throw new Error('Failed to update blog');
 
-                    if (!response.ok) throw new Error('Failed to update blog');
-
-                    toast.success("Blog post updated successfully!", "Success");
-                    await clearDraft();
-                    navigate('/view-blogs'); 
-                } catch (err) {
-                    console.error(err);
-                    toast.error("Failed to update blog. Please try again.", "Error");
-                } finally {
-                    setSubmitting(false);
-                }
-            }
-        );
+            toast.success('Blog updated successfully!');
+            await clearDraft();
+            navigate('/view-blogs');
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to update blog. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (isLoading) {
@@ -410,8 +375,6 @@ const EditBlog = () => {
 
     return (
         <div className="ebl-page">
-            
-            {/* RESTORE DRAFT MODAL */}
             <RestoreDraftModal
                 isOpen={showRestoreModal}
                 onRestore={handleRestoreDraft}

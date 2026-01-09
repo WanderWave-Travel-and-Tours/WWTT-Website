@@ -1,10 +1,13 @@
-/* --- BOOKING FILTERS (Refined Dropdown Style) --- */
+/* ========================================
+   BOOKING FILTERS - FULLY RESPONSIVE
+   ======================================== */
+
 .bkm-filter-card {
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 16px 24px; 
-    margin-bottom: 24px;
+    padding: 14px 20px; 
+    margin-bottom: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); 
     display: flex;
     align-items: center;
@@ -14,7 +17,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    gap: 32px;
+    gap: 24px;
     flex-wrap: wrap;
 }
 
@@ -22,9 +25,9 @@
 .bkm-brand-section {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-shrink: 0;
-    padding-right: 24px;
+    padding-right: 20px;
     border-right: 1px solid #e2e8f0;
 }
 
@@ -36,16 +39,16 @@
 }
 
 .bkm-brand-label {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
     color: #0f172a; 
     line-height: 1; 
 }
 
 .bkm-brand-label span {
-    color: #f59e0b; /* Accent Color */
+    color: #f59e0b;
     margin-left: 4px;
 }
 
@@ -55,20 +58,20 @@
     align-items: center;
     justify-content: space-between;
     flex: 1;
-    gap: 24px;
+    gap: 20px;
     flex-wrap: wrap;
 }
 
 .bkm-filters-row {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 20px;
 }
 
 .bkm-filter-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .bkm-filter-item label {
@@ -81,7 +84,7 @@
 /* Custom Select Dropdown */
 .bkm-select-wrapper {
     position: relative;
-    width: 200px;
+    width: 180px;
 }
 
 .bkm-select {
@@ -91,7 +94,7 @@
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
-    padding: 8px 32px 8px 12px;
+    padding: 7px 28px 7px 10px;
     font-size: 13px;
     font-weight: 600;
     color: #334155;
@@ -122,18 +125,18 @@
 /* --- RIGHT: SEARCH BOX --- */
 .bkm-search-box {
     position: relative;
-    min-width: 280px;
+    min-width: 240px;
 }
 
 .bkm-search-input {
     width: 100%;
-    height: 38px;
+    height: 34px;
     background: white; 
     border: 1px solid #e2e8f0; 
     border-radius: 6px;
     font-size: 13px;
     color: #0f172a;
-    padding: 0 12px 0 36px; 
+    padding: 0 12px 0 34px; 
     transition: all 0.2s;
 }
 
@@ -152,10 +155,195 @@
     pointer-events: none;
 }
 
-/* --- RESPONSIVE --- */
-@media (max-width: 1024px) {
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* Large Desktop (Max 1400px) */
+@media (max-width: 1400px) {
+    .bkm-filter-card {
+        padding: 14px 18px;
+    }
+
     .bkm-filter-wrapper {
         gap: 20px;
+    }
+
+    .bkm-controls-group {
+        gap: 18px;
+    }
+
+    .bkm-filters-row {
+        gap: 18px;
+    }
+
+    .bkm-select-wrapper {
+        width: 170px;
+    }
+
+    .bkm-search-box {
+        min-width: 220px;
+    }
+}
+
+/* Desktop/Laptop - VERTICAL STACK (Max 1200px to 904px) */
+@media (max-width: 1200px) and (min-width: 905px) {
+    .bkm-filter-card {
+        padding: 14px 18px;
+    }
+
+    .bkm-filter-wrapper {
+        gap: 12px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .bkm-brand-section {
+        padding-right: 0;
+        padding-bottom: 10px;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        width: 100%;
+    }
+
+    .bkm-brand-label {
+        font-size: 14px;
+    }
+
+    .bkm-controls-group {
+        gap: 10px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .bkm-filters-row {
+        gap: 10px;
+        width: 100%;
+        flex-direction: row;
+    }
+
+    .bkm-filter-item {
+        gap: 6px;
+        flex: 1;
+    }
+
+    .bkm-filter-item label {
+        font-size: 12px;
+    }
+
+    .bkm-select-wrapper {
+        width: 100%;
+    }
+
+    .bkm-select {
+        font-size: 12px;
+        padding: 7px 28px 7px 10px;
+    }
+
+    .bkm-search-box {
+        min-width: 100%;
+        width: 100%;
+    }
+
+    .bkm-search-input {
+        height: 34px;
+        font-size: 12px;
+    }
+}
+
+/* Desktop/Laptop - HORIZONTAL (Max 904px) */
+@media (max-width: 904px) and (min-width: 769px) {
+    .bkm-filter-card {
+        padding: 14px 18px;
+    }
+
+    .bkm-filter-wrapper {
+        gap: 20px;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .bkm-brand-section {
+        padding-right: 18px;
+        padding-bottom: 0;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: none;
+        width: auto;
+    }
+
+    .bkm-brand-label {
+        font-size: 13px;
+    }
+
+    .bkm-controls-group {
+        gap: 16px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        flex: 1;
+    }
+
+    .bkm-filters-row {
+        gap: 14px;
+        width: auto;
+        flex-direction: row;
+    }
+
+    .bkm-filter-item {
+        gap: 7px;
+        flex: 0;
+    }
+
+    .bkm-filter-item label {
+        font-size: 12px;
+    }
+
+    .bkm-select-wrapper {
+        width: 140px;
+    }
+
+    .bkm-select {
+        font-size: 12px;
+        padding: 6px 26px 6px 9px;
+    }
+
+    .bkm-search-box {
+        min-width: 200px;
+        width: auto;
+        flex: 1;
+    }
+
+    .bkm-search-input {
+        height: 32px;
+        font-size: 12px;
+    }
+}
+
+/* Tablet Landscape (Max 1024px) */
+@media (max-width: 1024px) {
+    .bkm-filter-card {
+        padding: 12px 16px;
+    }
+
+    .bkm-brand-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .bkm-search-icon {
+        width: 15px;
+        height: 15px;
+    }
+}
+
+/* Tablet Portrait - VERTICAL STACK (Max 900px) */
+@media (max-width: 900px) and (min-width: 769px) {
+    .bkm-filter-card {
+        padding: 12px 14px;
+    }
+
+    .bkm-filter-wrapper {
+        gap: 12px;
         flex-direction: column;
         align-items: stretch;
     }
@@ -163,7 +351,7 @@
     .bkm-brand-section {
         border-right: none;
         border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 16px;
+        padding-bottom: 10px;
         padding-right: 0;
         width: 100%;
     }
@@ -171,19 +359,18 @@
     .bkm-controls-group {
         flex-direction: column;
         align-items: stretch;
-        gap: 16px;
+        gap: 10px;
     }
 
     .bkm-filters-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
+        flex-direction: row;
+        gap: 10px;
+        width: 100%;
     }
 
     .bkm-filter-item {
-        flex-direction: column;
-        align-items: flex-start;
         gap: 6px;
+        flex: 1;
     }
 
     .bkm-select-wrapper {
@@ -192,5 +379,302 @@
 
     .bkm-search-box {
         min-width: 100%;
+    }
+}
+
+/* Tablet Small (Max 768px) */
+@media (max-width: 768px) {
+    .bkm-filter-card {
+        padding: 10px 12px;
+        margin-bottom: 18px;
+    }
+
+    .bkm-filter-wrapper {
+        gap: 10px;
+    }
+
+    .bkm-brand-section {
+        padding-bottom: 8px;
+        gap: 8px;
+    }
+
+    .bkm-brand-icon svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .bkm-brand-label {
+        font-size: 12px;
+        letter-spacing: 0.4px;
+    }
+
+    .bkm-controls-group {
+        gap: 10px;
+        flex-direction: column;
+    }
+
+    .bkm-filters-row {
+        gap: 10px;
+        width: 100%;
+    }
+
+    .bkm-filter-item {
+        gap: 6px;
+        flex: 1;
+        min-width: calc(50% - 5px);
+    }
+
+    .bkm-filter-item label {
+        font-size: 11px;
+    }
+
+    .bkm-select-wrapper {
+        width: 100%;
+    }
+
+    .bkm-select {
+        font-size: 11px;
+        padding: 6px 26px 6px 9px;
+    }
+
+    .bkm-select-icon {
+        width: 13px;
+        height: 13px;
+        right: 8px;
+    }
+
+    .bkm-search-box {
+        min-width: 100%;
+    }
+
+    .bkm-search-input {
+        height: 30px;
+        font-size: 11px;
+        padding-left: 30px;
+    }
+
+    .bkm-search-icon {
+        width: 14px;
+        height: 14px;
+        left: 9px;
+    }
+}
+
+/* Mobile Large (Max 640px) */
+@media (max-width: 640px) {
+    .bkm-filter-card {
+        padding: 12px;
+        margin-bottom: 18px;
+        border-radius: 10px;
+    }
+
+    .bkm-filter-wrapper {
+        gap: 12px;
+    }
+
+    .bkm-brand-section {
+        padding-bottom: 10px;
+        gap: 8px;
+    }
+
+    .bkm-brand-icon svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .bkm-brand-label {
+        font-size: 11px;
+        letter-spacing: 0.3px;
+    }
+
+    .bkm-controls-group {
+        gap: 10px;
+    }
+
+    .bkm-filters-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .bkm-filter-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        min-width: 100%;
+    }
+
+    .bkm-filter-item label {
+        font-size: 10px;
+    }
+
+    .bkm-select {
+        font-size: 11px;
+        padding: 6px 26px 6px 9px;
+        border-radius: 5px;
+    }
+
+    .bkm-select-icon {
+        width: 12px;
+        height: 12px;
+        right: 7px;
+    }
+
+    .bkm-search-input {
+        height: 30px;
+        font-size: 11px;
+        padding-left: 30px;
+        border-radius: 5px;
+    }
+
+    .bkm-search-icon {
+        width: 13px;
+        height: 13px;
+        left: 8px;
+    }
+}
+
+/* Mobile Medium (Max 480px) */
+@media (max-width: 480px) {
+    .bkm-filter-card {
+        padding: 10px;
+        margin-bottom: 16px;
+        border-radius: 8px;
+    }
+
+    .bkm-filter-wrapper {
+        gap: 10px;
+    }
+
+    .bkm-brand-section {
+        padding-bottom: 8px;
+        gap: 7px;
+    }
+
+    .bkm-brand-icon svg {
+        width: 13px;
+        height: 13px;
+    }
+
+    .bkm-brand-label {
+        font-size: 10px;
+        letter-spacing: 0.2px;
+    }
+
+    .bkm-controls-group {
+        gap: 8px;
+    }
+
+    .bkm-filters-row {
+        gap: 8px;
+    }
+
+    .bkm-filter-item {
+        gap: 5px;
+    }
+
+    .bkm-filter-item label {
+        font-size: 9px;
+        font-weight: 700;
+    }
+
+    .bkm-select {
+        font-size: 10px;
+        padding: 5px 24px 5px 8px;
+        border-radius: 4px;
+    }
+
+    .bkm-select-icon {
+        width: 11px;
+        height: 11px;
+        right: 6px;
+    }
+
+    .bkm-search-input {
+        height: 28px;
+        font-size: 10px;
+        padding-left: 28px;
+        padding-right: 8px;
+        border-radius: 4px;
+    }
+
+    .bkm-search-icon {
+        width: 12px;
+        height: 12px;
+        left: 7px;
+    }
+}
+
+/* Mobile Small (Max 360px) */
+@media (max-width: 360px) {
+    .bkm-filter-card {
+        padding: 8px;
+        margin-bottom: 14px;
+        border-radius: 6px;
+    }
+
+    .bkm-filter-wrapper {
+        gap: 8px;
+    }
+
+    .bkm-brand-section {
+        padding-bottom: 6px;
+        gap: 6px;
+    }
+
+    .bkm-brand-icon svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .bkm-brand-label {
+        font-size: 9px;
+        letter-spacing: 0.1px;
+    }
+
+    .bkm-controls-group {
+        gap: 6px;
+    }
+
+    .bkm-filters-row {
+        gap: 6px;
+    }
+
+    .bkm-filter-item {
+        gap: 4px;
+    }
+
+    .bkm-filter-item label {
+        font-size: 8px;
+        font-weight: 700;
+    }
+
+    .bkm-select {
+        font-size: 9px;
+        padding: 4px 22px 4px 7px;
+        border-radius: 4px;
+    }
+
+    .bkm-select-icon {
+        width: 10px;
+        height: 10px;
+        right: 5px;
+    }
+
+    .bkm-search-input {
+        height: 26px;
+        font-size: 9px;
+        padding-left: 26px;
+        padding-right: 7px;
+        border-radius: 4px;
+    }
+
+    .bkm-search-icon {
+        width: 11px;
+        height: 11px;
+        left: 6px;
+    }
+
+    .bkm-search-input::placeholder {
+        font-size: 8px;
     }
 }
