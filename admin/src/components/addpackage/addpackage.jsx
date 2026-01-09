@@ -82,6 +82,11 @@ const AddPackage = () => {
     const [price, setPrice] = useState("");
     const [duration, setDuration] = useState("");
     const [category, setCategory] = useState("Local Tour");
+    
+    // ✅ NEW: Tour Type State
+    const [tourType, setTourType] = useState("private"); // "private" or "joiners"
+    const [minPax, setMinPax] = useState(""); // Only for joiners
+    
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [inclusions, setInclusions] = useState([""]);
@@ -422,6 +427,13 @@ const AddPackage = () => {
         formData.append("markup", markupInPeso.toString());
         formData.append("duration", duration);
         formData.append("category", category === "Local Tour" ? "Local" : "International");
+        
+        // ✅ NEW: Append tour type and minPax
+        formData.append("tourType", tourType);
+        if (tourType === "joiners") {
+            formData.append("minPax", parseInt(minPax));
+        }
+        
         formData.append("inclusions", JSON.stringify(processedInclusions));
         formData.append("itinerary", JSON.stringify(cleanedItinerary));
         formData.append("image", file);
@@ -434,7 +446,7 @@ const AddPackage = () => {
         formData.append("adminId", activeId); 
 
         try {
-            const response = await fetch("http://localhost:5000/api/packages/add", {
+            const response = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/add", {
                 method: "POST",
                 body: formData,
                 headers: {
@@ -452,7 +464,10 @@ const AddPackage = () => {
                 // Reset Form
                 setTitle(""); setDestination(""); setSupplierRate("");
                 setMarkupValue(""); setPrice(""); setDuration("");
-                setCategory("Local Tour"); setFile(null); setPreviewUrl(null);
+                setCategory("Local Tour"); 
+                setTourType("private"); // ✅ Reset tour type
+                setMinPax(""); // ✅ Reset minPax
+                setFile(null); setPreviewUrl(null);
                 setInclusions([""]);
                 setItinerary([{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
                 setMarkupType("peso");
@@ -526,6 +541,8 @@ const AddPackage = () => {
                                     destination={destination} setDestination={setDestination}
                                     duration={duration} setDuration={setDuration}
                                     category={category} setCategory={setCategory}
+                                    tourType={tourType} setTourType={setTourType}
+                                    minPax={minPax} setMinPax={setMinPax}
                                 />
                                 <PricingCalculator
                                     supplierRate={supplierRate}
@@ -559,6 +576,8 @@ const AddPackage = () => {
                                     title={title} destination={destination}
                                     price={price} duration={duration}
                                     inclusions={inclusions} itinerary={itinerary}
+                                    tourType={tourType}
+                                    minPax={minPax}
                                 />
                                 <div className="apkg-actions">
                                     <button type="button" className="apkg-btn apkg-btn--cancel" onClick={handleCancel}>Cancel</button>

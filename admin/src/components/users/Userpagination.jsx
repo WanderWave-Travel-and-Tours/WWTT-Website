@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import './UserPagination.css';
+import './Userpagination.css';
 
 const UserPagination = ({ 
     totalItems, 

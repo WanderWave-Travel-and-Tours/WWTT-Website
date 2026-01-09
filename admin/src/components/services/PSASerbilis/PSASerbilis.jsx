@@ -329,7 +329,7 @@ const PSASerbilis = () => {
 
   const fetchPSADocs = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/psa");
+      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/psa");
       if (Array.isArray(res.data)) {
         const mappedData = res.data.map((p) => ({
           ...p,
@@ -348,7 +348,7 @@ const PSASerbilis = () => {
   const fetchInquiries = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/inquiries');
+      const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries');
       if (response.data.success) {
         // Filter: inquiryType ay PSA at isArchive ay No
         const psaRequests = response.data.data.filter(inq => 
@@ -442,7 +442,7 @@ const PSASerbilis = () => {
       const { userEmail, adminId } = getAdminData();
 
       try {
-        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+        const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
           isArchive: "Yes",
           userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
           adminId    // 🔥 ADD ADMIN INFO FOR LOGS
@@ -460,7 +460,7 @@ const PSASerbilis = () => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) {
         setDocuments(response.data.documents || []);
       }
@@ -496,7 +496,7 @@ const PSASerbilis = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${inquiryId}/status`,
+        `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/status`,
         { 
           status: newStatus,
           userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
@@ -542,7 +542,7 @@ const PSASerbilis = () => {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`,
+        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -585,7 +585,7 @@ const PSASerbilis = () => {
     formData.append('adminId', adminId);
 
     try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
+      const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/deliver-documents`, formData, { 
         headers: { 'Content-Type': 'multipart/form-data' } 
       });
       if (response.data.success) {
@@ -677,10 +677,10 @@ const PSASerbilis = () => {
 
     try {
         if (selectedPSA) {
-            await axios.put(`http://localhost:5000/api/psa/${selectedPSA.id}`, payload);
+            await axios.put(`https://wanderwaveph-backend.onrender.com/api/psa/${selectedPSA.id}`, payload);
             alert("Changes saved successfully!");
         } else {
-            await axios.post("http://localhost:5000/api/psa", payload);
+            await axios.post("https://wanderwaveph-backend.onrender.com/api/psa", payload);
             alert("PSA Document created successfully!");
         }
         fetchPSADocs();
@@ -694,7 +694,7 @@ const PSASerbilis = () => {
 
   const handleDeletePSA = async (id) => {
     if (window.confirm("Delete this service?")) {
-        await axios.delete(`http://localhost:5000/api/psa/${id}`);
+        await axios.delete(`https://wanderwaveph-backend.onrender.com/api/psa/${id}`);
         fetchPSADocs();
     }
   };
@@ -718,7 +718,7 @@ const PSASerbilis = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/psa/upload', formData, {
+      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/psa/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

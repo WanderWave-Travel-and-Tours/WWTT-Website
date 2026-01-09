@@ -10,7 +10,7 @@ import {
   Shield,
   UserPlus
 } from 'lucide-react';
-import './AddAdminModal.css';
+import './Addadminmodal.css';
 import axios from 'axios';
 
 const AddAdminModal = ({ isOpen, onClose, onAdminAdded }) => {
@@ -102,7 +102,7 @@ const AddAdminModal = ({ isOpen, onClose, onAdminAdded }) => {
       };
 
       const response = await axios.post(
-        'http://localhost:5000/api/admin/create', 
+        'https://wanderwaveph-backend.onrender.com/api/admin/create', 
         adminData,
         {
           headers: {

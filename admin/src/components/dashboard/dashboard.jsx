@@ -71,22 +71,22 @@ const Dashboard = () => {
     let bookings = [], packages = [], blogs = [], promos = [], testimonials = [], inquiries = [];
 
     try {
-      const bookingsRes = await fetch("http://localhost:5000/api/admin/bookings");
+      const bookingsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/admin/bookings");
       if (bookingsRes.ok) bookings = await bookingsRes.json();
       
-      const packagesRes = await fetch("http://localhost:5000/api/packages");
+      const packagesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/packages");
       if (packagesRes.ok) packages = await packagesRes.json();
 
-      const blogsRes = await fetch("http://localhost:5000/api/blogs");
+      const blogsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/blogs");
       if (blogsRes.ok) blogs = await blogsRes.json();
 
-      const promosRes = await fetch("http://localhost:5000/api/promos");
+      const promosRes = await fetch("https://wanderwaveph-backend.onrender.com/api/promos");
       if (promosRes.ok) promos = await promosRes.json();
 
-      const testimonialsRes = await fetch("http://localhost:5000/api/testimonials");
+      const testimonialsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/testimonials");
       if (testimonialsRes.ok) testimonials = await testimonialsRes.json();
 
-      const inquiriesRes = await fetch("http://localhost:5000/api/inquiries");
+      const inquiriesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/inquiries");
       if (inquiriesRes.ok) {
         const inquiriesData = await inquiriesRes.json();
         inquiries = inquiriesData.data || inquiriesData || [];
@@ -315,7 +315,7 @@ const handleExportPDF = async () => {
 
         console.log('📝 Logging export activity...');
 
-        const logResponse = await fetch('http://localhost:5000/api/activity-logs', {
+        const logResponse = await fetch('https://wanderwaveph-backend.onrender.com/api/activity-logs', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -339,7 +339,7 @@ const handleExportPDF = async () => {
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
             const adminName = adminData.username || adminData.email || 'Admin';
             
-            await fetch('http://localhost:5000/api/activity-logs', {
+            await fetch('https://wanderwaveph-backend.onrender.com/api/activity-logs', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

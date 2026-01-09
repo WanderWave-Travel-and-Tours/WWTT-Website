@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Upload, FileText, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
-import './SellerRateModal.css';
+import './Sellerratemodal.css';
 
 const SellerRateUploadModal = ({ 
   show, 

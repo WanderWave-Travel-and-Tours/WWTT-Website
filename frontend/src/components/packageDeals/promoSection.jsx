@@ -25,7 +25,7 @@ function PromoSection({ onBookNow }) {
   useEffect(() => {
     const fetchPromos = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/promos');
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
         const data = await response.json();
 
         if (Array.isArray(data)) {
@@ -38,7 +38,7 @@ function PromoSection({ onBookNow }) {
           const formattedPromos = activePromos.map(p => {
             // Check if backend provided an image, otherwise use fallback
             const imageUrl = p.image 
-                ? `http://localhost:5000/uploads/${p.image}` 
+                ? `https://wanderwaveph-backend.onrender.com/uploads/${p.image}` 
                 : getPromoFallbackImage(p.durationType);
 
             return {

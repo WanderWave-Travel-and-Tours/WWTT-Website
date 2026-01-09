@@ -53,7 +53,7 @@ const EditPackage = () => {
     { day: 1, title: "", activities: [""] },
   ]);
 
-  const API_BASE_URL = "http://localhost:5000/api/packages";
+  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/packages";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -275,7 +275,7 @@ const EditPackage = () => {
 
           if (pkg.image) {
             // Check if it's a full URL or relative path
-            const imgUrl = pkg.image.startsWith('http') ? pkg.image : `http://localhost:5000/uploads/${pkg.image}`;
+            const imgUrl = pkg.image.startsWith('http') ? pkg.image : `https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`;
             setImagePreview(imgUrl);
           }
         } else {

@@ -51,7 +51,7 @@ const PromoDetailModal = ({
 
     // Construct Image URL
     const imageUrl = selectedPromo.image 
-        ? `http://localhost:5000/uploads/${selectedPromo.image}` 
+        ? `https://wanderwaveph-backend.onrender.com/uploads/${selectedPromo.image}` 
         : null;
 
     return (

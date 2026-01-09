@@ -103,7 +103,7 @@ const EditTestimonial = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    const API_BASE_URL = 'http://localhost:5000';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
     // ✅ Helper for showing confirmation
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
