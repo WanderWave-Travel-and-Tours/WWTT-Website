@@ -4,13 +4,25 @@ const { cloudinary } = require('../config/cloudinary');
 // ✅ UPLOAD DOCUMENTS FUNCTION (FIXED)
 const uploadDocuments = async (req, res) => {
   try {
-    console.log('📥 Upload request received');
-    console.log('Body:', req.body);
-    console.log('Files:', req.files);
+    console.log('📥 ===== UPLOAD REQUEST START =====');
+    console.log('📋 Body:', req.body);
+    console.log('📁 Files:', req.files ? req.files.length : 0);
+    
+    // Log each file detail
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, idx) => {
+        console.log(`File ${idx + 1}:`, {
+          originalname: file.originalname,
+          filename: file.filename,
+          path: file.path,
+          size: file.size,
+          mimetype: file.mimetype
+        });
+      });
+    }
 
     const { inquiryId, userId } = req.body;
 
-    // ✅ BETTER ERROR MESSAGE
     if (!inquiryId) {
       return res.status(400).json({ 
         success: false,
@@ -43,44 +55,81 @@ const uploadDocuments = async (req, res) => {
     console.log('📋 Sections:', sections);
 
     const documents = [];
+    const errors = [];
+
     for (let i = 0; i < req.files.length; i++) {
-      const file = req.files[i];
-      const section = sections[i] || 'General Documents';
+      try {
+        const file = req.files[i];
+        const section = sections[i] || 'General Documents';
 
-      console.log(`Saving file ${i + 1}:`, file.originalname);
+        console.log(`\n💾 Saving file ${i + 1}/${req.files.length}:`);
+        console.log('   Original name:', file.originalname);
+        console.log('   Cloudinary path:', file.path);
+        console.log('   Cloudinary filename:', file.filename);
+        console.log('   Section:', section);
 
-      // ✅ ADDED filePath and fixed field names
-      const document = await Document.create({
-        inquiryId,
-        userId,
-        fileName: file.filename,
-        originalName: file.originalname,
-        fileUrl: file.path,
-        filePath: file.path,  // ✅ ADDED - same as fileUrl for Cloudinary
-        filePublicId: file.filename,  // ✅ CHANGED from imagePublicId
-        fileSize: file.size,
-        fileType: file.mimetype,
-        section: section,
-        uploadDate: new Date()
-      });
+        // ✅ Verify file was uploaded to Cloudinary
+        if (!file.path || !file.filename) {
+          throw new Error(`File ${file.originalname} was not uploaded to Cloudinary`);
+        }
 
-      documents.push(document);
-      console.log(`✅ File ${i + 1} saved:`, document.originalName);
+        // ✅ Create document - WITHOUT filePath
+        const document = await Document.create({
+          inquiryId,
+          userId,
+          fileName: file.filename,        // Cloudinary generated name
+          originalName: file.originalname, // User's original filename
+          fileUrl: file.path,              // Full Cloudinary URL
+          filePublicId: file.filename,     // For deletion later
+          fileSize: file.size,
+          fileType: file.mimetype,
+          section: section,
+          uploadDate: new Date()
+        });
+
+        documents.push(document);
+        console.log(`   ✅ Saved to database with ID: ${document._id}`);
+
+      } catch (fileError) {
+        console.error(`   ❌ Error processing file ${i + 1}:`, fileError);
+        errors.push({
+          file: req.files[i]?.originalname || 'unknown',
+          error: fileError.message
+        });
+      }
     }
 
-    console.log(`✅ ${documents.length} documents uploaded successfully`);
+    console.log('\n📊 Upload Summary:');
+    console.log(`   Success: ${documents.length}/${req.files.length}`);
+    console.log(`   Errors: ${errors.length}`);
+    if (errors.length > 0) {
+      console.log('   Error details:', errors);
+    }
+    console.log('===== UPLOAD REQUEST END =====\n');
+
+    if (documents.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: 'All uploads failed',
+        errors: errors
+      });
+    }
 
     res.status(201).json({
       success: true,
       message: `${documents.length} document(s) uploaded successfully`,
-      documents: documents
+      documents: documents,
+      errors: errors.length > 0 ? errors : undefined
     });
 
   } catch (error) {
-    console.error('❌ Upload error:', error);
+    console.error('❌ FATAL UPLOAD ERROR:', error);
+    console.error('Stack trace:', error.stack);
+    
     res.status(500).json({ 
       success: false,
-      message: error.message || 'Failed to upload documents' 
+      message: error.message || 'Failed to upload documents',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
