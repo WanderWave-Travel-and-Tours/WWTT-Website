@@ -167,7 +167,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
       "Confirm that payment has been received?",
       async () => {
         try {
-            const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiry._id}/confirm-payment`, {
+            const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/confirm-payment`, {
                 adminName: 'Admin' 
             });
             if (response.data.success) {

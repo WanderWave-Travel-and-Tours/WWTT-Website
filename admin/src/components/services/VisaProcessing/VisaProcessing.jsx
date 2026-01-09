@@ -404,7 +404,7 @@ const VisaProcessing = () => {
         async () => {
             const { userEmail, adminId } = getAdminData();
             try {
-                const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+                const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
                     isArchive: "Yes",
                     userEmail, 
                     adminId    

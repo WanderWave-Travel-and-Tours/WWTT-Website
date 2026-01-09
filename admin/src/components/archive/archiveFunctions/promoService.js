@@ -28,7 +28,7 @@ export const fetchArchivedPromos = async () => {
 
 export const restorePromo = async (id) => {
     try {
-        const response = await fetch(`http://localhost:5000/api/promos/${id}/archive`, {
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}/archive`, {
             method: 'POST', // Dapat POST dahil ito ang nasa route mo
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 

@@ -163,7 +163,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.put(
-                        `http://localhost:5000/api/inquiries/${id}/status`,
+                        `https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/status`,
                         { 
                             status: newStatus,
                             userEmail,
@@ -199,7 +199,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.post(
-                        `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`,
+                        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/request-payment`,
                         { userEmail, adminId }
                     );
                     
@@ -227,7 +227,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.put(
-                        `http://localhost:5000/api/inquiries/${id}/archive`, 
+                        `https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, 
                         { 
                             isArchive: 'Yes',
                             userEmail,

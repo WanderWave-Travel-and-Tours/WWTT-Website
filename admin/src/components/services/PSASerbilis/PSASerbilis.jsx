@@ -466,7 +466,7 @@ const PSASerbilis = () => {
         const { userEmail, adminId } = getAdminData();
 
         try {
-          const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+          const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, {
             isArchive: "Yes",
             userEmail,
             adminId
@@ -735,7 +735,7 @@ const PSASerbilis = () => {
       message: "Are you sure you want to delete this service? This action cannot be undone.",
       type: "danger",
       onConfirm: async () => {
-        await axios.delete(`http://localhost:5000/api/psa/${id}`);
+        await axios.delete(`https://wanderwaveph-backend.onrender.com/api/psa/${id}`);
         fetchPSADocs();
         alert("Service deleted successfully.");
       }

@@ -446,7 +446,7 @@ const CenomarRequestContent = () => {
         
         try {
           const res = await axios.put(
-            `http://localhost:5000/api/inquiries/${id}/archive`, 
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, 
             { 
               isArchive: "Yes",
               userEmail,
@@ -490,7 +490,7 @@ const CenomarRequestContent = () => {
         
         try {
           const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${inquiryId}/status`, 
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/status`, 
             { 
               status: newStatus,
               userEmail,
@@ -523,7 +523,7 @@ const CenomarRequestContent = () => {
         
         try {
           const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`, 
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`, 
             { 
               status: 'PAYMENT_PENDING',
               userEmail,
@@ -591,7 +591,7 @@ const CenomarRequestContent = () => {
         
         try {
           const response = await axios.put(
-            `http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, 
+            `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/confirm-payment`, 
             { 
               adminName: 'Admin',
               userEmail,
@@ -628,7 +628,7 @@ const CenomarRequestContent = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`,
+        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/deliver-documents`,
         formData, 
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -679,7 +679,7 @@ const CenomarRequestContent = () => {
       type: "danger",
       onConfirm: async () => {
         try { 
-            await axios.delete(`http://localhost:5000/api/cenomar/${id}`); 
+            await axios.delete(`https://wanderwaveph-backend.onrender.com/api/cenomar/${id}`); 
             toast.success("Service deleted successfully!");
             fetchCENOMARDocs(); 
         } catch(err) { 
