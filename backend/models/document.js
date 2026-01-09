@@ -23,10 +23,11 @@ const documentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  filePath: {
-    type: String,
-    required: true
-  },
+  // ❌ TANGGALIN ANG filePath - hindi naman ito ginagamit sa controller
+  // filePath: {
+  //   type: String,
+  //   required: true
+  // },
   fileSize: {
     type: Number,
     required: true
@@ -48,9 +49,9 @@ const documentSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
-  imagePublicId: {
-      type: String,
-      default: ''
+  filePublicId: {
+    type: String,
+    default: ''
   },
   notes: {
     type: String,

@@ -184,16 +184,17 @@ const AddTour = () => {
 
   useEffect(() => {
     const updateDraft = async () => {
-      const isFormEmpty =
-        !tourTitle &&
-        !tourDest &&
-        !tourSupplier &&
-        !tourMarkup &&
-        !tourPrice &&
-        !tourDuration &&
+      const isFormEmpty = 
+        !tourTitle && 
+        !tourDest && 
+        !tourSupplier && 
+        !tourMarkup && 
+        !tourPrice && 
+        !tourDuration && 
         tourCat === "Local" &&
-        tourIncs.length === 1 &&
-        tourIncs[0] === "" &&
+        tourType === "private" &&  // ✅ ADDED
+        !minPax &&                 // ✅ ADDED 
+        (tourIncs.length === 1 && tourIncs[0] === "") && 
         !tourFile;
 
       if (isFormEmpty) {
@@ -224,6 +225,8 @@ const AddTour = () => {
         price: tourPrice,
         duration: tourDuration,
         category: tourCat,
+        tourType: tourType,      
+        minPax: minPax,     
         inclusions: tourIncs,
         image: imageBase64,
         imageMeta: imageMeta,
@@ -235,18 +238,11 @@ const AddTour = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [
-    tourTitle,
-    tourDest,
-    tourSupplier,
-    tourMarkup,
-    tourMarkupType,
-    tourPrice,
-    tourDuration,
-    tourCat,
-    tourIncs,
-    tourFile,
-  ]);
+  }, [tourTitle, tourDest, tourSupplier, tourMarkup, tourMarkupType, tourPrice, tourDuration, tourCat, tourIncs, tourFile]);
+
+  const [tourType, setTourType] = useState("private"); // "private" or "joiners"
+  const [minPax, setMinPax] = useState(""); // Only for joiners
+
 
   const restoreDraftData = async (data) => {
     if (!data) return;
@@ -451,6 +447,16 @@ useEffect(() => {
       return;
     }
 
+    if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+      toast.error("Please enter minimum pax for joiner tours.", "Missing Min Pax");
+      return;
+    }
+
+    if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+      toast.error("Please enter minimum pax for joiner tours.", "Missing Min Pax");
+      return;
+    }
+
     // ✅ TOAST: Validation passed
     toast.success(
       "All fields validated successfully!",
@@ -483,16 +489,21 @@ const performSubmit = async () => {
   
   markupInPeso = Math.round(markupInPeso * 100) / 100;
 
-  // Build FormData
-  const formData = new FormData();
-  formData.append("title", tourTitle.trim());
-  formData.append("destination", tourDest.trim());
-  formData.append("sellerPrice", supplierRateNum.toString());
-  formData.append("markup", markupInPeso.toString());
-  formData.append("duration", tourDuration.trim());
-  formData.append("category", tourCat);
-  formData.append("inclusions", JSON.stringify(finalIncs));
-  formData.append("image", tourFile);
+    const formData = new FormData();
+    formData.append("title", tourTitle.trim());
+    formData.append("destination", tourDest.trim());
+    formData.append("sellerPrice", supplierRateNum.toString());
+    formData.append("markup", markupInPeso.toString());
+    formData.append("duration", tourDuration.trim());
+    formData.append("category", tourCat);
+    formData.append("inclusions", JSON.stringify(finalIncs));
+    formData.append("image", tourFile);
+    formData.append("tourType", tourType); 
+
+    if (tourType === 'joiners') {
+      formData.append("minPax", parseInt(minPax));
+    }
+
 
   // Get admin data
   const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -521,28 +532,21 @@ const performSubmit = async () => {
         5000
       );
 
-      // Clear draft
-      await clearDraft();
-      
-      // ✅ TOAST: Form reset
-      toast.info(
-        "Form cleared and ready for next tour entry.",
-        "🔄 Ready",
-        3000
-      );
+        await clearDraft();
 
-      // Reset form
-      setTourTitle("");
-      setTourDest("");
-      setTourSupplier("");
-      setTourMarkup("");
-      setTourPrice("");
-      setTourDuration("");
-      setTourCat("Local");
-      setTourFile(null);
-      setTourPreviewUrl(null);
-      setTourIncs([""]);
-      setTourMarkupType("peso");
+        setTourTitle("");
+        setTourDest("");
+        setTourSupplier("");
+        setTourMarkup("");
+        setTourPrice("");
+        setTourDuration("");
+        setTourCat("Local");
+        setTourType("private");  // ✅ ADDED
+        setMinPax("");           // ✅ ADDED
+        setTourFile(null);
+        setTourPreviewUrl(null);
+        setTourIncs([""]);
+        setTourMarkupType("peso");
 
     } else {
       // ✅ TOAST: Server error
@@ -627,6 +631,10 @@ const performSubmit = async () => {
                   setDuration={setTourDuration}
                   category={tourCat}
                   setCategory={setTourCat}
+                  tourType={tourType}         
+                  setTourType={setTourType}    
+                  minPax={minPax}             
+                  setMinPax={setMinPax}       
                 />
                 <TourPricing
                   supp={tourSupplier}
@@ -660,6 +668,8 @@ const performSubmit = async () => {
                   price={tourPrice}
                   dur={tourDuration}
                   incs={tourIncs}
+                  tourType={tourType}          // ✅ ADDED
+                  minPax={minPax}  
                 />
                 <div className="atour-actions">
                   <button
