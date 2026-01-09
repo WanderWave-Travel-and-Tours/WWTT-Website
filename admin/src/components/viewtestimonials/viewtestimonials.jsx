@@ -125,7 +125,6 @@ const ViewTestimonials = () => {
         fetchTestimonials();
     }, []);
 
-    // Ginawang separate function ang API call para matawag sa loob ng confirmation modal
     const performArchive = async (id) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`, {
@@ -137,7 +136,7 @@ const ViewTestimonials = () => {
             if (response.ok) {
                 setTestimonials(prev => prev.map(t => t._id === id ? { ...t, isArchive: "Yes" } : t));
                 toast.success('Testimonial archived successfully');
-                setShowDetailModal(false); // Isara ang detail modal kung galing doon ang archive action
+                setShowDetailModal(false); 
             } else {
                 toast.error('Failed to archive testimonial');
             }
@@ -173,21 +172,27 @@ const ViewTestimonials = () => {
         });
     };
 
-    const filteredTestimonials = testimonials.filter(testimonial => {
-        const isNotArchived = 
-            testimonial.isArchive === "No" || 
-            testimonial.isArchive === "0" || 
-            !testimonial.isArchive || 
-            testimonial.isArchive === false;
+    // FILTERING AND SORTING LOGIC
+    const filteredTestimonials = testimonials
+        .filter(testimonial => {
+            const isNotArchived = 
+                testimonial.isArchive === "No" || 
+                testimonial.isArchive === "0" || 
+                !testimonial.isArchive || 
+                testimonial.isArchive === false;
 
-        const matchesSearch = 
-            (testimonial.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (testimonial.feedback || "").toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = 
+                (testimonial.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (testimonial.feedback || "").toLowerCase().includes(searchTerm.toLowerCase());
+                
+            const matchesSource = filterSource === 'ALL' || testimonial.source === filterSource;
             
-        const matchesSource = filterSource === 'ALL' || testimonial.source === filterSource;
-        
-        return isNotArchived && matchesSearch && matchesSource;
-    });
+            return isNotArchived && matchesSearch && matchesSource;
+        })
+        // ITO ANG DINAGDAG: Sort by date descending (Newest first)
+        .sort((a, b) => {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;

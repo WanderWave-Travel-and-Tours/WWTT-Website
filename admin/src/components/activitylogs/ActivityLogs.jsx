@@ -100,6 +100,8 @@ const ActivityLogs = () => {
                     timestamp: log.createdAt || new Date().toISOString(),
                     ipAddress: log.ipAddress || 'N/A',
                     userAgent: log.userAgent || 'N/A',
+                    // 🔥🔥🔥 INCLUDE ADMIN INFO HERE 🔥🔥🔥
+                    adminInfo: log.adminInfo || null,
                     details: log.details || {
                         affectedRecords: 0,
                         duration: 'N/A',
@@ -142,7 +144,7 @@ const ActivityLogs = () => {
         console.log('⏳ loading state changed:', loading);
     }, [loading]);
 
-    // Filter and Sort Logic
+    // 🔥🔥🔥 FIXED FILTER AND SORT LOGIC 🔥🔥🔥
     const getFilteredAndSortedLogs = () => {
         console.log('🔍 Filtering logs...');
         let filtered = [...activityLogs];
@@ -150,28 +152,43 @@ const ActivityLogs = () => {
         // Filter by action type
         if (selectedActionType !== 'ALL') {
             filtered = filtered.filter(log => log.action === selectedActionType);
+            console.log(`🔍 After action filter (${selectedActionType}):`, filtered.length);
         }
 
         // Filter by module
         if (selectedModule !== 'ALL Modules') {
             filtered = filtered.filter(log => log.module === selectedModule);
+            console.log(`🔍 After module filter (${selectedModule}):`, filtered.length);
         }
 
         // Filter by severity
         if (selectedSeverity !== 'ALL Severity') {
             filtered = filtered.filter(log => log.severity === selectedSeverity);
+            console.log(`🔍 After severity filter (${selectedSeverity}):`, filtered.length);
         }
 
-        // Search filter
+        // Search filter - Enhanced to include adminInfo
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(log =>
-                (log.id && log.id.toLowerCase().includes(query)) ||
-                (log.action && log.action.toLowerCase().includes(query)) ||
-                (log.module && log.module.toLowerCase().includes(query)) ||
-                (log.user && log.user.toLowerCase().includes(query)) ||
-                (log.description && log.description.toLowerCase().includes(query))
-            );
+            filtered = filtered.filter(log => {
+                // Basic fields
+                const matchesBasic = 
+                    (log.id && log.id.toLowerCase().includes(query)) ||
+                    (log.action && log.action.toLowerCase().includes(query)) ||
+                    (log.module && log.module.toLowerCase().includes(query)) ||
+                    (log.user && log.user.toLowerCase().includes(query)) ||
+                    (log.description && log.description.toLowerCase().includes(query));
+                
+                // Admin info fields
+                const matchesAdminInfo = log.adminInfo && (
+                    (log.adminInfo.fullName && log.adminInfo.fullName.toLowerCase().includes(query)) ||
+                    (log.adminInfo.username && log.adminInfo.username.toLowerCase().includes(query)) ||
+                    (log.adminInfo.email && log.adminInfo.email.toLowerCase().includes(query))
+                );
+                
+                return matchesBasic || matchesAdminInfo;
+            });
+            console.log(`🔍 After search filter ("${searchQuery}"):`, filtered.length);
         }
 
         // Sort by timestamp
@@ -183,7 +200,7 @@ const ActivityLogs = () => {
             }
         });
 
-        console.log('📊 Filtered logs count:', filtered.length);
+        console.log('📊 Final filtered logs count:', filtered.length);
         return filtered;
     };
 

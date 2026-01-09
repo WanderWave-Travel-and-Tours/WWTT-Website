@@ -221,14 +221,16 @@ const AddPoster = () => {
         }
     }, [hasDraft, draftInfo, clearDraft]);
 
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-    };
+const handleRestoreDraft = () => {
+    restoreDraft();
+    setShowRestoreModal(false);
+    toast.success('Your poster draft has been restored!', '✅ Draft Restored', 3000);
+};
 
     const handleDiscardDraft = async () => {
         await discardDraft();
         setShowRestoreModal(false);
+        toast.info('Draft has been discarded.', '🗑️ Discarded');
         setPosterDetails({
             title: '',
             description: '',
@@ -256,112 +258,136 @@ const AddPoster = () => {
         setPosterDetails(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                toast.error('Please upload a valid image file (JPG, PNG).', 'Invalid File');
-                return;
-            }
-            setImageFile(file);
-            const objectUrl = URL.createObjectURL(file);
-            setImagePreview(objectUrl);
-            toast.success("Image selected successfully.");
-        }
-    };
-
-    const removeImage = () => {
-        if (imagePreview) URL.revokeObjectURL(imagePreview);
-        setImageFile(null);
-        setImagePreview(null);
-    };
-
-    const handleCancel = () => {
-        // ✅ PALIT MULA window.confirm SA CUSTOM MODAL
-        askConfirmation(
-            "Discard Changes",
-            "Are you sure you want to cancel? All unsaved changes will be lost and the draft will be cleared.",
-            async () => {
-                await clearDraft();
-                setPosterDetails({
-                    title: '',
-                    description: '',
-                    startDate: '',
-                    endDate: '',
-                    status: 'Active'
-                });
-                removeImage();
-                toast.info("Form cleared.");
-            },
-            "danger"
-        );
-    };
-
-    const handleSubmit = async (e) => {
-        if (e) e.preventDefault();
-        
-        if (!posterDetails.title || !imageFile) {
-            toast.warning('Please provide a title and upload an image.');
+const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please upload a valid image file (JPG, PNG).', '❌ Invalid File');
             return;
         }
+        setImageFile(file);
+        const objectUrl = URL.createObjectURL(file);
+        setImagePreview(objectUrl);
+        toast.success(`Image "${file.name}" uploaded successfully!`, '✅ Image Added');
+    }
+};
 
-        // ✅ PALIT MULA window.confirm SA CUSTOM MODAL PARA SA UPLOAD
-        askConfirmation(
-            "Confirm Upload",
-            "Are you sure you want to upload this new poster?",
-            () => performSubmit()
-        );
-    };
+const removeImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
+    toast.info('Poster image removed.', '🗑️ Image Removed');
+};
 
-    const performSubmit = async () => {
-        setIsSubmitting(true);
-        const formData = new FormData();
-        formData.append('image', imageFile);
-        formData.append('title', posterDetails.title);
-        formData.append('description', posterDetails.description);
-        formData.append('startDate', posterDetails.startDate);
-        formData.append('endDate', posterDetails.endDate);
-        formData.append('status', posterDetails.status);
-
-        try {
-            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-            const activeId = adminData.id || adminData._id || "";
-
-            formData.append("userEmail", activeUser);
-            formData.append("adminId", activeId);
-        } catch (err) {
-            console.error("Error parsing admin data:", err);
-        }
-
-        try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters/add', {
-                method: 'POST',
-                body: formData,
+    const handleCancel = () => {
+    askConfirmation(
+        "Discard Changes",
+        "Are you sure you want to cancel? All unsaved changes will be lost and the draft will be cleared.",
+        async () => {
+            await clearDraft();
+            setPosterDetails({
+                title: '',
+                description: '',
+                startDate: '',
+                endDate: '',
+                status: 'Active'
             });
+            removeImage();
+            toast.info('Action cancelled and form cleared.', '❌ Cancelled');
+        },
+        "danger"
+    );
+};
 
-            if (response.ok) {
-                toast.success('Poster uploaded successfully!', 'Success');
-                await clearDraft();
-                
-                setPosterDetails({
-                    title: '',
-                    description: '',
-                    startDate: '',
-                    endDate: '',
-                    status: 'Active'
-                });
-                removeImage();
-            } else {
-                const data = await response.json();
-                toast.error(data.message || 'Failed to upload', 'Server Error');
-            }
-        } catch (error) {
-            toast.error('Failed to connect to server.', 'Connection Error');
-        } finally {
-            setIsSubmitting(false);
+const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    
+    if (!posterDetails.title || !imageFile) {
+        toast.warning('Please provide a title and upload an image.', '⚠️ Incomplete Form');
+        return;
+    }
+
+    toast.success('All fields validated successfully!', '✅ Ready to Upload', 2000);
+
+    askConfirmation(
+        "Confirm Upload",
+        "Are you sure you want to upload this new poster?",
+        () => performSubmit()
+    );
+};
+
+const performSubmit = async () => {
+    setIsSubmitting(true);
+    
+    toast.info('Uploading poster...', '📤 Please Wait', 2000);
+    
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    formData.append('title', posterDetails.title);
+    formData.append('description', posterDetails.description);
+    formData.append('startDate', posterDetails.startDate);
+    formData.append('endDate', posterDetails.endDate);
+    formData.append('status', posterDetails.status);
+
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        const activeId = adminData.id || adminData._id || "";
+
+        formData.append("userEmail", activeUser);
+        formData.append("adminId", activeId);
+    } catch (err) {
+        console.error("Error parsing admin data:", err);
+    }
+
+    try {
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters/add', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (response.ok) {
+            toast.success(
+                `Poster "${posterDetails.title}" has been uploaded successfully!`,
+                '✅ Poster Uploaded',
+                5000
+            );
+            await clearDraft();
+            
+            toast.info(
+                'Form cleared and ready for new poster entry.',
+                '🔄 Ready',
+                3000
+            );
+            
+            setPosterDetails({
+                title: '',
+                description: '',
+                startDate: '',
+                endDate: '',
+                status: 'Active'
+            });
+            removeImage();
+        } else {
+            const data = await response.json();
+            const errorMessage = data.message || 'Unknown error occurred';
+            toast.error(
+                `Failed to upload poster: ${errorMessage}`,
+                '❌ Upload Failed',
+                5000
+            );
         }
-    };
+    } catch (error) {
+        console.error('❌ Network Error:', error);
+        toast.error(
+            `Unable to connect to server: ${error.message}. Please check your connection.`,
+            '❌ Connection Error',
+            6000
+        );
+    } finally {
+        setIsSubmitting(false);
+    }
+};
 
     return (
         <div className="apstr-page">

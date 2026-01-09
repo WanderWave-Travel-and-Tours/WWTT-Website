@@ -78,25 +78,6 @@ export const PSAInquiryModal = ({
             </div>
           </div>
           <div className="psam-header-actions" style={{ display: 'flex', gap: '10px' }}>
-            {/* EDIT BUTTON ADDED HERE */}
-            <button 
-              className="psam-edit-btn" 
-              onClick={() => navigate(`/edit-psa/${inquiry._id}`)}
-              title="Edit Full Details"
-              style={{
-                background: '#f1f5f9',
-                border: 'none',
-                padding: '8px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                color: '#3b82f6',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Edit size={20} />
-            </button>
             <button className="psam-close-btn" onClick={onClose} aria-label="Close modal">
               <X size={20} />
             </button>
@@ -266,15 +247,6 @@ export const PSAInquiryModal = ({
               <h3 className="psam-card-title">Quick Actions</h3>
             </div>
             <div className="psam-action-grid">
-
-              {/* INTEGRATED EDIT BUTTON IN ACTIONS GRID AS WELL */}
-              <button className="psam-action-btn psam-action-primary" style={{ backgroundColor: '#eff6ff', color: '#3b82f6', border: '1px solid #dbeafe' }} onClick={() => navigate(`/edit-psa/${inquiry._id}`)}>
-                <div className="psam-action-icon"><Edit size={18} /></div>
-                <div className="psam-action-content">
-                  <span className="psam-action-label">Edit Info</span>
-                  <span className="psam-action-desc">Update form data</span>
-                </div>
-              </button>
 
 
               <button className="psam-action-btn psam-action-secondary" onClick={() => onUpdateStatus(inquiry._id, "PENDING")}>

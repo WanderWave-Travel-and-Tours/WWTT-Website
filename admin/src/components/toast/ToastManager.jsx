@@ -1,4 +1,4 @@
-// ToastManager.jsx
+
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import Toast from './Toast';
 import './Toast.css';
@@ -16,7 +16,7 @@ export const useToast = () => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'success', title = null, duration = 5000) => {
+  const addToast = useCallback((message, type = 'success', title = null, duration = 4000) => {
     const id = Date.now() + Math.random();
     const newToast = { id, message, type, title, duration };
     
@@ -34,6 +34,7 @@ export const ToastProvider = ({ children }) => {
     error: (message, title, duration) => addToast(message, 'error', title, duration),
     warning: (message, title, duration) => addToast(message, 'warning', title, duration),
     info: (message, title, duration) => addToast(message, 'info', title, duration),
+    neutral: (message, title, duration) => addToast(message, 'neutral', title, duration),
   };
 
   return (

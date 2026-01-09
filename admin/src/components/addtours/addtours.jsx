@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 import "./addtours.css";
-import { useToast } from "../toast/ToastManager"; 
+import { useToast } from "../toast/ToastManager";
 import { HelpCircle } from "lucide-react"; // Added for the modal icon
 
 // Import the renamed sub-components
@@ -13,43 +13,97 @@ import TourInclusions from "./TourInclusions";
 import TourPreview from "./TourPreview";
 
 // ✅ Imports for Draft Functionality
-import useAutoDraft from '../../hooks/useAutoDraft';
-import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+import useAutoDraft from "../../hooks/useAutoDraft";
+import RestoreDraftModal from "../../components/RestoreDraftModal/RestoreDraftModal";
 
 // --- CUSTOM CONFIRM MODAL COMPONENT (Reference from EditVisa.jsx) ---
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+const CustomConfirmModal = ({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  type = "primary",
+}) => {
   if (!isOpen) return null;
   return (
-    <div className="arc-confirm-overlay" style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 11000
-    }}>
-      <div className="arc-confirm-modal" style={{
-        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+    <div
+      className="arc-confirm-overlay"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 11000,
+      }}
+    >
+      <div
+        className="arc-confirm-modal"
+        style={{
+          backgroundColor: "white",
+          padding: "2rem",
+          borderRadius: "12px",
+          maxWidth: "400px",
+          width: "90%",
+          textAlign: "center",
+          boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
+        }}
+      >
+        <div style={{ marginBottom: "1rem" }}>
+          <HelpCircle
+            size={48}
+            color={type === "danger" ? "#ef4444" : "#3b82f6"}
+            style={{ margin: "0 auto" }}
+          />
         </div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button 
+        <h3
+          style={{
+            fontSize: "1.25rem",
+            fontWeight: "700",
+            marginBottom: "0.5rem",
+            color: "#1e293b",
+          }}
+        >
+          {title}
+        </h3>
+        <p
+          style={{
+            color: "#64748b",
+            marginBottom: "1.5rem",
+            lineHeight: "1.5",
+          }}
+        >
+          {message}
+        </p>
+        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+          <button
             onClick={onCancel}
             style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+              padding: "0.5rem 1.25rem",
+              borderRadius: "6px",
+              border: "1px solid #e2e8f0",
+              backgroundColor: "white",
+              cursor: "pointer",
+              fontWeight: "500",
             }}
           >
             Cancel
           </button>
-          <button 
+          <button
             onClick={onConfirm}
             style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-              color: 'white', cursor: 'pointer', fontWeight: '500'
+              padding: "0.5rem 1.25rem",
+              borderRadius: "6px",
+              border: "none",
+              backgroundColor: type === "danger" ? "#ef4444" : "#3b82f6",
+              color: "white",
+              cursor: "pointer",
+              fontWeight: "500",
             }}
           >
             Confirm
@@ -76,7 +130,7 @@ const AddTour = () => {
   const [tourMarkupType, setTourMarkupType] = useState("peso");
   const [tourPrice, setTourPrice] = useState("");
   const [tourDuration, setTourDuration] = useState("");
-  const [tourCat, setTourCat] = useState("Local"); 
+  const [tourCat, setTourCat] = useState("Local");
   const [tourFile, setTourFile] = useState(null);
   const [tourPreviewUrl, setTourPreviewUrl] = useState(null);
   const [tourIncs, setTourIncs] = useState([""]);
@@ -88,7 +142,7 @@ const AddTour = () => {
     title: "",
     message: "",
     onConfirm: () => {},
-    type: "primary"
+    type: "primary",
   });
 
   const tourPasteRef = useRef(null);
@@ -101,9 +155,9 @@ const AddTour = () => {
       message,
       onConfirm: () => {
         onConfirm();
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
       },
-      type
+      type,
     });
   };
 
@@ -153,7 +207,7 @@ const AddTour = () => {
 
       if (tourFile) {
         try {
-          if (tourFile.size < 3 * 1024 * 1024) { 
+          if (tourFile.size < 3 * 1024 * 1024) {
             imageBase64 = await fileToBase64(tourFile);
             imageMeta = { name: tourFile.name, type: tourFile.type };
           }
@@ -175,13 +229,13 @@ const AddTour = () => {
         minPax: minPax,     
         inclusions: tourIncs,
         image: imageBase64,
-        imageMeta: imageMeta
+        imageMeta: imageMeta,
       });
     };
 
     const timeoutId = setTimeout(() => {
       updateDraft();
-    }, 500); 
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [tourTitle, tourDest, tourSupplier, tourMarkup, tourMarkupType, tourPrice, tourDuration, tourCat, tourIncs, tourFile]);
@@ -205,7 +259,11 @@ const AddTour = () => {
 
     if (data.image && data.imageMeta) {
       try {
-        const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+        const restoredFile = await base64ToFile(
+          data.image,
+          data.imageMeta.name,
+          data.imageMeta.type
+        );
         setTourFile(restoredFile);
         setTourPreviewUrl(URL.createObjectURL(restoredFile));
       } catch (err) {
@@ -214,19 +272,14 @@ const AddTour = () => {
     }
   };
 
-  const { 
-    clearDraft, 
-    hasDraft, 
-    restoreDraft, 
-    discardDraft, 
-    draftInfo 
-  } = useAutoDraft({
-    module: 'add-tour',
-    formData: draftPayload,
-    setFormData: restoreDraftData,
-    imagePreview: tourPreviewUrl, 
-    autoRestore: false
-  });
+  const { clearDraft, hasDraft, restoreDraft, discardDraft, draftInfo } =
+    useAutoDraft({
+      module: "add-tour",
+      formData: draftPayload,
+      setFormData: restoreDraftData,
+      imagePreview: tourPreviewUrl,
+      autoRestore: false,
+    });
 
   const [showRestoreModal, setShowRestoreModal] = useState(false);
 
@@ -236,17 +289,21 @@ const AddTour = () => {
     }
   }, [hasDraft]);
 
-  const handleRestoreDraft = () => {
-    restoreDraft();
-    setShowRestoreModal(false);
-    toast.success("Draft restored successfully", "Welcome Back");
-  };
+const handleRestoreDraft = () => {
+  restoreDraft();
+  setShowRestoreModal(false);
+  
+  // ✅ TOAST
+  toast.success("Your draft has been restored successfully!", "✅ Welcome Back", 3000);
+};
 
-  const handleDiscardDraft = async () => {
-    await discardDraft();
-    setShowRestoreModal(false);
-    toast.info("Draft discarded.");
-  };
+const handleDiscardDraft = async () => {
+  await discardDraft();
+  setShowRestoreModal(false);
+  
+  // ✅ TOAST
+  toast.info("Draft has been discarded.", "🗑️ Discarded");
+};
 
   // =========================================================
   // ✅ AUTO-DRAFT LOGIC END
@@ -287,50 +344,62 @@ const AddTour = () => {
       setTourFile(sel);
       setTourPreviewUrl(URL.createObjectURL(sel));
       setIsTourPasteActive(false);
-      toast.info(`Selected: ${sel.name}`, "Image Ready");
+
+      // ✅ TOAST
+      toast.success(
+        `Image "${sel.name}" uploaded successfully!`,
+        "✅ Image Ready"
+      );
     }
   };
 
-  useEffect(() => {
-    const handleGlobalTourPaste = (e) => {
-      if (isTourPasteActive) {
-        const items = e.clipboardData?.items;
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].type.indexOf("image") !== -1) {
-            const blob = items[i].getAsFile();
-            setTourFile(blob);
-            setTourPreviewUrl(URL.createObjectURL(blob));
-            setIsTourPasteActive(false);
-            toast.success("Image pasted from clipboard!", "Success");
-            break;
-          }
+useEffect(() => {
+  const handleGlobalTourPaste = (e) => {
+    if (isTourPasteActive) {
+      const items = e.clipboardData?.items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          const blob = items[i].getAsFile();
+          setTourFile(blob);
+          setTourPreviewUrl(URL.createObjectURL(blob));
+          setIsTourPasteActive(false);
+          
+          // ✅ TOAST
+          toast.success("Image pasted from clipboard!", "✅ Success");
+          break;
         }
       }
-    };
-    document.addEventListener("paste", handleGlobalTourPaste);
-    return () => document.removeEventListener("paste", handleGlobalTourPaste);
-  }, [isTourPasteActive]);
+    }
+  };
+  document.addEventListener("paste", handleGlobalTourPaste);
+  return () => document.removeEventListener("paste", handleGlobalTourPaste);
+}, [isTourPasteActive, toast]);
 
   const handleTourInclusionPaste = (index, e) => {
-    const pastedText = e.clipboardData.getData('text');
-    const lines = pastedText.split(/\r?\n/).filter(line => line.trim());
-    
+    const pastedText = e.clipboardData.getData("text");
+    const lines = pastedText.split(/\r?\n/).filter((line) => line.trim());
+
     if (lines.length > 1) {
       e.preventDefault();
-      const cleanedLines = lines.map(line => {
-        return line.replace(/^[✓✔️☑️•\s]+/, '').trim();
+      const cleanedLines = lines.map((line) => {
+        return line.replace(/^[✓✔️☑️•\s]+/, "").trim();
       });
-      
+
       const newTourIncs = [...tourIncs];
       newTourIncs[index] = cleanedLines[0];
-      
-      cleanedLines.slice(1).forEach(line => {
+
+      cleanedLines.slice(1).forEach((line) => {
         newTourIncs.splice(index + 1, 0, line);
         index++;
       });
-      
+
       setTourIncs(newTourIncs);
-      toast.info("Multiple inclusions pasted and formatted.", "Inclusions Updated");
+
+      // ✅ TOAST
+      toast.info(
+        `${lines.length} inclusions pasted and formatted.`,
+        "📋 Inclusions Updated"
+      );
     }
   };
 
@@ -340,7 +409,13 @@ const AddTour = () => {
       "Are you sure you want to cancel? All unsaved changes will be lost.",
       async () => {
         await clearDraft();
-        toast.info("Process cancelled.");
+
+        // ✅ TOAST
+        toast.info(
+          "Process cancelled. Returning to previous page.",
+          "❌ Cancelled"
+        );
+
         navigate(-1);
       },
       "danger"
@@ -350,18 +425,25 @@ const AddTour = () => {
   const handleSaveConfirmation = (e) => {
     e.preventDefault();
 
+    // ✅ TOAST: Validation start
     if (!tourFile) {
-      toast.error("Please upload an image for the tour.", "Missing Image");
+      toast.warning("Please upload an image for the tour.", "⚠️ Missing Image");
       return;
     }
 
     if (!tourTitle.trim() || !tourDest.trim() || !tourDuration.trim()) {
-      toast.error("Please fill in all required fields.", "Incomplete Form");
+      toast.warning(
+        "Please fill in all required fields (Title, Destination, Duration).",
+        "⚠️ Incomplete Form"
+      );
       return;
     }
 
     if (!tourSupplier || !tourMarkup) {
-      toast.error("Please enter supplier rate and markup.", "Missing Pricing");
+      toast.warning(
+        "Please enter supplier rate and markup.",
+        "⚠️ Missing Pricing"
+      );
       return;
     }
 
@@ -370,6 +452,19 @@ const AddTour = () => {
       return;
     }
 
+    if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+      toast.error("Please enter minimum pax for joiner tours.", "Missing Min Pax");
+      return;
+    }
+
+    // ✅ TOAST: Validation passed
+    toast.success(
+      "All fields validated successfully!",
+      "✅ Ready to Publish",
+      2000
+    );
+
+    // Show confirmation
     askConfirmation(
       "Publish Tour",
       `Are you sure you want to publish "${tourTitle}" to the catalog?`,
@@ -377,19 +472,22 @@ const AddTour = () => {
     );
   };
 
-  const performSubmit = async () => {
-    const finalIncs = tourIncs.filter((item) => item.trim());
-    const supplierRateNum = parseFloat(tourSupplier) || 0;
-    const markupValueNum = parseFloat(tourMarkup) || 0;
-    
-    let markupInPeso = 0;
-    if (tourMarkupType === "percentage") {
-      markupInPeso = (supplierRateNum * markupValueNum) / 100;
-    } else {
-      markupInPeso = markupValueNum;
-    }
-    
-    markupInPeso = Math.round(markupInPeso * 100) / 100;
+const performSubmit = async () => {
+  // Process inclusions
+  const finalIncs = tourIncs.filter((item) => item.trim());
+  
+  // Calculate pricing
+  const supplierRateNum = parseFloat(tourSupplier) || 0;
+  const markupValueNum = parseFloat(tourMarkup) || 0;
+  
+  let markupInPeso = 0;
+  if (tourMarkupType === "percentage") {
+    markupInPeso = (supplierRateNum * markupValueNum) / 100;
+  } else {
+    markupInPeso = markupValueNum;
+  }
+  
+  markupInPeso = Math.round(markupInPeso * 100) / 100;
 
     const formData = new FormData();
     formData.append("title", tourTitle.trim());
@@ -407,28 +505,32 @@ const AddTour = () => {
     }
 
 
-    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-    const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-    const activeId = adminData.id || adminData._id || "";
+  // Get admin data
+  const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+  const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+  const activeId = adminData.id || adminData._id || "";
 
-    formData.append("userEmail", activeUser);
-    formData.append("adminId", activeId);
+  formData.append("userEmail", activeUser);
+  formData.append("adminId", activeId);
 
-    toast.info("Uploading tour package...", "Please Wait", 2000);
+  // ✅ TOAST: Upload started
+  toast.info("Uploading tour package to server...", "📤 Please Wait", 2000);
 
-    try {
-      const res = await fetch("https://wanderwaveph-backend.onrender.com/api/tours/add", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.status === 'ok') {
-        toast.success(
-          `${tourTitle} has been added to ${tourCat} tours!`,
-          "Tour Published Successfully",
-          6000
-        );
+  try {
+    const res = await fetch("https://wanderwaveph-backend.onrender.com/api/tours/add", {
+      method: "POST",
+      body: formData,
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok && data.status === 'ok') {
+      // ✅ TOAST: Success
+      toast.success(
+        `"${tourTitle}" has been added to ${tourCat} tours!`,
+        "✅ Tour Published Successfully",
+        5000
+      );
 
         await clearDraft();
 
@@ -446,25 +548,32 @@ const AddTour = () => {
         setTourIncs([""]);
         setTourMarkupType("peso");
 
-      } else {
-        toast.error(
-          data.error || "Failed to add tour. Please try again.",
-          "Upload Failed",
-          6000
-        );
-      }
-    } catch (err) {
+    } else {
+      // ✅ TOAST: Server error
+      const errorMessage = data.error || data.message || "Failed to add tour. Please try again.";
+      console.error('Server error:', data);
+      
       toast.error(
-        "Unable to connect to server. Please check your connection.",
-        "Connection Error",
-        6000
+        errorMessage,
+        "❌ Upload Failed",
+        5000
       );
     }
-  };
+    
+  } catch (err) {
+    console.error('Connection error:', err);
+    
+    // ✅ TOAST: Connection error
+    toast.error(
+      `Unable to connect to server: ${err.message}. Please check your connection.`,
+      "❌ Connection Error",
+      6000
+    );
+  }
+};
 
   return (
     <div className="atour-page">
-      
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -472,13 +581,15 @@ const AddTour = () => {
         draftInfo={draftInfo}
       />
 
-      <CustomConfirmModal 
+      <CustomConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
         message={confirmConfig.message}
         type={confirmConfig.type}
         onConfirm={confirmConfig.onConfirm}
-        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() =>
+          setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        }
       />
 
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
@@ -500,9 +611,13 @@ const AddTour = () => {
                 <TourImageUpload
                   previewUrl={tourPreviewUrl}
                   handleFileChange={handleTourFile}
+                  // Sa loob ng TourImageUpload call:
                   clearImage={() => {
                     setTourFile(null);
                     setTourPreviewUrl(null);
+
+                    // ✅ TOAST
+                    toast.info("Image removed.", "🗑️ Cleared");
                   }}
                   isPasteActive={isTourPasteActive}
                   activatePasteArea={() => setIsTourPasteActive(true)}
