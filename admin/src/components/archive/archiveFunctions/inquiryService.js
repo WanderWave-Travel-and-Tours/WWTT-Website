@@ -1,3 +1,4 @@
+
 // src/components/archive/archiveFunctions/inquiryService.js
 import axios from 'axios';
 

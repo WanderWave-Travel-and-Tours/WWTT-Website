@@ -6,14 +6,14 @@ const CENOMAR = require('../models/cenomar');
 const ActivityLog = require('../models/ActivityLog'); // ✅ ACTIVITY LOG IMPORT
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
 const mongoose = require('mongoose');
-
+ 
 const generateTempPassword = () => {
   const numbers = Math.floor(100000 + Math.random() * 900000);
   const specialChars = '!@#$%^&*';
   const randomSpecialChar = specialChars.charAt(Math.floor(Math.random() * specialChars.length));
   return `Wander_${numbers}${randomSpecialChar}`;
 };
-
+ 
 // 🔥🔥🔥 HELPER: MAP INQUIRY TYPE TO SPECIFIC MODULE NAME 🔥🔥🔥
 const getModuleFromInquiryType = (inquiryType, serviceName) => {
     const typeMapping = {
@@ -24,26 +24,26 @@ const getModuleFromInquiryType = (inquiryType, serviceName) => {
         'CENOMAR': 'CENOMAR',
         'GENERAL': 'General Inquiries'
     };
-    
+   
     // Return mapped module or default to General Inquiries
     return typeMapping[inquiryType] || 'General Inquiries';
 };
-
+ 
 // --- HELPER PARA SA PRICE MATCHING ---
 const findCorrectPrice = async (serviceName, cenomarDocument) => {
     try {
         const services = await CENOMAR.find();
         const searchName = (serviceName || cenomarDocument || "").toLowerCase().trim();
-
+ 
         const matchedService = services.find(s => {
             const docType = (s.documentType || "").toLowerCase().trim();
             return (
-                docType === searchName || 
-                searchName.includes(docType) || 
+                docType === searchName ||
+                searchName.includes(docType) ||
                 docType.includes(searchName)
             );
         });
-
+ 
         if (matchedService) {
             return Number(matchedService.price);
         }
@@ -52,11 +52,11 @@ const findCorrectPrice = async (serviceName, cenomarDocument) => {
     }
     return 0;
 };
-
+ 
 const createInquiry = async (req, res) => {
   try {
     console.log('🔥 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
-
+ 
     let {
       serviceId,
       serviceName,
@@ -81,21 +81,21 @@ const createInquiry = async (req, res) => {
       userEmail,  // ✅ FOR ACTIVITY LOG
       adminId     // ✅ FOR ACTIVITY LOG
     } = req.body;
-
+ 
     // --- [START] SMART PRICE FIX FOR FRONTEND SUBMISSIONS ---
     let finalPrice = parseFloat(estimatedPrice) || 0;
-    
+   
     if (finalPrice === 0) {
         console.log("⚠️ Price is 0. Attempting to auto-fix based on Service Name...");
         finalPrice = await findCorrectPrice(serviceName, cenomarDocument);
         console.log(`✅ Price Auto-Fixed to: ${finalPrice}`);
     }
     // --- [END] SMART PRICE FIX ---
-
+ 
     console.log('🔍 PASSENGERS TYPE:', typeof passengers);
     console.log('🔍 PASSENGERS IS ARRAY?:', Array.isArray(passengers));
     console.log('🔍 PASSENGERS VALUE:', passengers);
-
+ 
     // Auto-generate message for FLIGHT_BOOKING
     if (!message && inquiryType === 'FLIGHT_BOOKING') {
       const origin = flightDetails?.origin || 'Unknown';
@@ -103,45 +103,45 @@ const createInquiry = async (req, res) => {
       const date = flightDetails?.departureDate || '';
       message = `Flight Booking Request: ${origin} ➜ ${dest} on ${date}`;
     }
-
+ 
     // Auto-generate message for PASSPORT
     if (!message && inquiryType === 'PASSPORT' && passportDetails) {
       const appType = passportDetails.applicationType || '';
       const procType = passportDetails.processingType || '';
-      
+     
       if (appType || procType) {
         message = `Passport Appointment Request${appType ? ': ' + appType : ''}${procType ? ' (' + procType + ')' : ''}`;
       } else {
         message = `Passport Appointment Request`;
       }
     }
-
+ 
     if (!serviceName || !fullName || !email || !message) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
     }
-
+ 
     // ✅ USER CREATION
     let existingUser;
     let isNewUser = false;
     let tempPassword = null;
-
+ 
     try {
       existingUser = await User.findOne({ email });
-      
+     
       if (!existingUser) {
         isNewUser = true;
         tempPassword = generateTempPassword();
         const baseUsername = email.split('@')[0].toLowerCase();
-
+ 
         existingUser = await User.create({
-          fullName, 
-          email, 
-          username: `${baseUsername}${Date.now()}`, 
+          fullName,
+          email,
+          username: `${baseUsername}${Date.now()}`,
           password: tempPassword
         });
-        
+       
         console.log('✅ New user created:', existingUser.email);
-
+ 
         try {
           await sendNewUserToGHL(email, fullName, tempPassword, serviceName);
         } catch (ghlError) {
@@ -149,7 +149,7 @@ const createInquiry = async (req, res) => {
         }
       } else {
         console.log('✅ Existing user found:', existingUser.email);
-        
+       
         try {
           await sendInquiryToGHL(email, fullName, serviceName, message);
         } catch (ghlError) {
@@ -159,7 +159,7 @@ const createInquiry = async (req, res) => {
     } catch (userError) {
       console.error('❌ User Creation/Lookup Error:', userError);
     }
-
+ 
     const inquiryDoc = {
       _id: new mongoose.Types.ObjectId(),
       serviceId: serviceId || null,
@@ -178,7 +178,7 @@ const createInquiry = async (req, res) => {
       cenomarDocument: cenomarDocument || null,
       cenomarId: cenomarId || null,
       status: 'PENDING',
-      isArchive: "No", 
+      isArchive: "No",
       remarks: '',
       evidenceUrl: '',
       evidenceName: '',
@@ -194,7 +194,7 @@ const createInquiry = async (req, res) => {
       travelDate: travelDate || flightDetails?.departureDate || null,
       lengthOfStay: lengthOfStay || flightDetails?.duration || null
     };
-
+ 
     if (flightDetails) {
       if (typeof flightDetails === 'string') {
         try {
@@ -208,7 +208,7 @@ const createInquiry = async (req, res) => {
     } else {
       inquiryDoc.flightDetails = {};
     }
-
+ 
     if (passportDetails) {
       if (typeof passportDetails === 'string') {
         try {
@@ -222,7 +222,7 @@ const createInquiry = async (req, res) => {
     } else {
       inquiryDoc.passportDetails = {};
     }
-
+ 
     let passengersArray = [];
     if (passengers) {
       if (typeof passengers === 'string') {
@@ -233,7 +233,7 @@ const createInquiry = async (req, res) => {
           passengers = [];
         }
       }
-      
+     
       if (Array.isArray(passengers)) {
         passengersArray = passengers.map(p => {
           if (typeof p === 'string') {
@@ -243,7 +243,7 @@ const createInquiry = async (req, res) => {
               return null;
             }
           }
-          
+         
           return {
             firstName: String(p.firstName || '').trim(),
             lastName: String(p.lastName || '').trim(),
@@ -256,23 +256,23 @@ const createInquiry = async (req, res) => {
         }).filter(p => p !== null);
       }
     }
-
+ 
     inquiryDoc.passengers = passengersArray;
     console.log('💾 Final Document to Insert:', JSON.stringify(inquiryDoc, null, 2));
-
+ 
     const result = await mongoose.connection.db.collection('inquiries').insertOne(inquiryDoc);
     console.log('✅ Inquiry Inserted Successfully:', result.insertedId);
-
+ 
     const createdInquiry = await Inquiry.findById(result.insertedId);
-
+ 
     // 👇👇👇 ACTIVITY LOG START (CREATE INQUIRY) 👇👇👇
     try {
         const activeUser = userEmail || 'System';
         const activeId = adminId || null;
-        
+       
         // 🔥 GET SPECIFIC MODULE NAME BASED ON INQUIRY TYPE
         const specificModule = getModuleFromInquiryType(inquiryType, serviceName);
-
+ 
         await ActivityLog.create({
             action: 'CREATE',
             module: specificModule,  // 🔥 USE SPECIFIC MODULE (e.g., "Flight Booking" instead of "Inquiries")
@@ -295,29 +295,29 @@ const createInquiry = async (req, res) => {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
     // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
-    res.status(201).json({ 
-      success: true, 
-      message: 'Inquiry submitted successfully', 
-      isNewUser, 
-      data: createdInquiry 
+ 
+    res.status(201).json({
+      success: true,
+      message: 'Inquiry submitted successfully',
+      isNewUser,
+      data: createdInquiry
     });
-
+ 
   } catch (error) {
     console.error('❌❌❌ CREATE INQUIRY ERROR:', error);
     console.error('Error Message:', error.message);
-    
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error: ' + error.message 
+   
+    res.status(500).json({
+      success: false,
+      message: 'Server error: ' + error.message
     });
   }
 };
-
+ 
 const createInquiryWithUploads = async (req, res) => {
     try {
         const {
-            serviceName, 
+            serviceName,
             inquiryType,
             fullName,
             email,
@@ -329,27 +329,27 @@ const createInquiryWithUploads = async (req, res) => {
             userEmail,  // ✅ FOR ACTIVITY LOG
             adminId     // ✅ FOR ACTIVITY LOG
         } = req.body;
-
+ 
         let finalPrice = parseFloat(estimatedPrice) || 0;
-    
+   
         if (finalPrice === 0) {
             console.log("⚠️ Uploads Price is 0. Attempting to auto-fix...");
             finalPrice = await findCorrectPrice(serviceName, cenomarDocument);
             console.log(`✅ Uploads Price Auto-Fixed to: ${finalPrice}`);
         }
-
+ 
         if (!email || !fullName) {
             return res.status(400).json({ success: false, message: 'Email and Name are required' });
         }
-
+ 
         const uploadedDocs = (req.files || []).map(file => ({
-            fileName: `${file.fieldname} - ${file.originalname}`, 
+            fileName: `${file.fieldname} - ${file.originalname}`,
             fileUrl: `/uploads/documents/${file.filename}`,
             uploadedAt: Date.now()
         }));
-
+ 
         let existingUser = await User.findOne({ email });
-        
+       
         if (!existingUser) {
              try {
                 const baseUsername = email.split('@')[0].toLowerCase();
@@ -359,9 +359,9 @@ const createInquiryWithUploads = async (req, res) => {
                 });
              } catch(e) { console.error("User creation error", e); }
         }
-
+ 
         const newInquiry = await Inquiry.create({
-            serviceName: serviceName || 'Visa Application', 
+            serviceName: serviceName || 'Visa Application',
             inquiryType: inquiryType || 'VISA',
             fullName,
             email,
@@ -371,19 +371,19 @@ const createInquiryWithUploads = async (req, res) => {
             estimatedPrice: finalPrice,
             cenomarDocument: cenomarDocument || serviceName,
             status: 'PENDING',
-            isArchive: "No", 
+            isArchive: "No",
             deliveredDocuments: uploadedDocs,
             uploader: req.body.uploader || 'USER',
             documentCategory: req.body.documentCategory || 'REQUIREMENT'
         });
-
+ 
         // 👇👇👇 ACTIVITY LOG START (CREATE WITH UPLOADS) 👇👇👇
         try {
             const activeUser = userEmail || 'System';
-            
+           
             // 🔥 GET SPECIFIC MODULE NAME
             const specificModule = getModuleFromInquiryType(inquiryType || 'GENERAL', serviceName);
-            
+           
             await ActivityLog.create({
                 action: 'CREATE',
                 module: specificModule,  // 🔥 SPECIFIC MODULE
@@ -405,7 +405,7 @@ const createInquiryWithUploads = async (req, res) => {
             console.error('⚠️ Failed to save activity log:', logError.message);
         }
         // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
+ 
         res.status(201).json({
             success: true,
             message: 'Application submitted successfully',
@@ -416,21 +416,21 @@ const createInquiryWithUploads = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error processing application' });
     }
 };
-
+ 
 const getAllInquiries = async (req, res) => {
   try {
-    const { isArchive } = req.query; 
+    const { isArchive } = req.query;
     let filter = {};
-    
-    filter.isArchive = isArchive ? isArchive : "No"; 
-
+   
+    filter.isArchive = isArchive ? isArchive : "No";
+ 
     const inquiries = await Inquiry.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: inquiries });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+ 
 const getInquiry = async (req, res) => {
   try {
     const inquiry = await Inquiry.findById(req.params.id).populate('serviceId visaId cenomarId');
@@ -440,64 +440,81 @@ const getInquiry = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
-
+ 
 const updateInquiry = async (req, res) => {
   try {
-    const { id } = req.params;
-    
+    const { id } = req.params; 
+   
     const existingInquiry = await Inquiry.findById(id);
-    
+   
     if (!existingInquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
-
-    // ✅ FIXED: Initialize changes array to prevent ReferenceError
-    const changes = []; 
-
+ 
+    const changes = [];
+ 
+    // 🔥 FIX: Mas ligtas na pag-parse ng existingFiles
     let remainingFilesList = [];
     if (req.body.existingFiles) {
       try {
+        // Ito ang listahan ng Keys (e.g., "passport", "photo") na GUSTONG ITIRA ng user
         remainingFilesList = JSON.parse(req.body.existingFiles);
       } catch (e) {
+        console.error("Error parsing existingFiles:", e);
         remainingFilesList = [];
       }
     };
-
+ 
+    // Build update object
     const updateData = {
-      fullName: req.body.fullName,
-      email: req.body.email,
-      contactNumber: req.body.contactNumber,
-      serviceName: req.body.serviceName,
-      message: req.body.message, 
-      adminRemarks: req.body.message,
-      estimatedPrice: parseFloat(req.body.estimatedPrice) || 0,
+      fullName: req.body.fullName || existingInquiry.fullName,
+      email: req.body.email || existingInquiry.email,
+      contactNumber: req.body.contactNumber || existingInquiry.contactNumber,
+      serviceName: req.body.serviceName || existingInquiry.serviceName,
+      inquiryType: req.body.inquiryType || existingInquiry.inquiryType,
+      cenomarDocument: req.body.cenomarDocument || existingInquiry.cenomarDocument,
+      psaDocument: req.body.psaDocument || existingInquiry.psaDocument,
+      
+      message: req.body.message, // Laging i-update ang message kung may bago
+      adminRemarks: req.body.message || existingInquiry.adminRemarks, // Sync adminRemarks
+      estimatedPrice: parseFloat(req.body.estimatedPrice) || existingInquiry.estimatedPrice,
+      
+      // 🔥 FIX: Siguraduhin na ma-uupdate ang Travel Date at Stay
+      travelDate: req.body.travelDate || existingInquiry.travelDate,
+      lengthOfStay: req.body.lengthOfStay || existingInquiry.lengthOfStay,
+      
+      status: req.body.status || existingInquiry.status,
       updatedAt: Date.now()
     };
-    
-    // Check for name change safely now
+   
+    // Check for name change logic (Optional logging)
     const newFullName = `${req.body.givenName || ''} ${req.body.lastName || ''}`.trim();
-    if (newFullName && newFullName !== existingInquiry.fullName) {
-      changes.push(`Name (from "${existingInquiry.fullName}" to "${newFullName}")`);
+    if (newFullName && newFullName !== "" && newFullName !== existingInquiry.fullName) {
+      changes.push(`Name changed from "${existingInquiry.fullName}" to "${newFullName}"`);
       updateData.fullName = newFullName;
     }
-
-    updateData.passportDetails = {
-      ...existingInquiry.passportDetails?.toObject(),
-      applicationType: req.body.passportDocument || existingInquiry.passportDetails?.applicationType,
-      processingType: req.body.serviceName || existingInquiry.passportDetails?.processingType
-    };
-
+ 
+    // 🔥 DOCUMENT HANDLING (FIXED DELETION LOGIC)
     const documentMap = new Map();
-    
-    if (existingInquiry.deliveredDocuments) {
+   
+    // 1. Process Existing Files (FILTERING)
+    // Kung wala sa remainingFilesList, ibig sabihin binura na ng user sa Frontend -> 'wag isama sa Map.
+    if (existingInquiry.deliveredDocuments && Array.isArray(existingInquiry.deliveredDocuments)) {
       existingInquiry.deliveredDocuments.forEach(doc => {
-        const fieldKey = doc.fileName.split(' - ')[0].trim();
-        if (remainingFilesList.includes(fieldKey)) {
-          documentMap.set(fieldKey, doc);
+        // Kunin ang key bago ang " - "
+        const separatorIndex = doc.fileName.indexOf(' - ');
+        if (separatorIndex !== -1) {
+            const fieldKey = doc.fileName.substring(0, separatorIndex).trim();
+            
+            // Check kung nasa whitelist (remainingFilesList)
+            if (remainingFilesList.includes(fieldKey)) {
+                documentMap.set(fieldKey, doc);
+            }
         }
       });
     }
-
+ 
+    // 2. Handle Evidence/Receipt URL
     if (req.body.hasExistingEvidence === 'false') {
         updateData.evidenceUrl = '';
         updateData.evidenceName = '';
@@ -505,47 +522,52 @@ const updateInquiry = async (req, res) => {
         updateData.evidenceUrl = existingInquiry.evidenceUrl;
         updateData.evidenceName = existingInquiry.evidenceName;
     }
-
+ 
+    // 3. Process NEW Uploads (Overwrite existing keys if needed)
     if (req.files && req.files.length > 0) {
       req.files.forEach(file => {
         const fieldKey = file.fieldname;
         const fileUrl = `/uploads/documents/${file.filename}`;
-
+ 
+        // Special handling para sa evidence
         if (fieldKey === 'evidence' || fieldKey === 'requirement' || fieldKey === 'walkInDoc') {
             updateData.evidenceUrl = fileUrl;
             updateData.evidenceName = file.originalname;
-        } 
-        
+        }
+       
+        // Add to Map (Overwrites existing entry with same key)
         documentMap.set(fieldKey, {
-          fileName: `${fieldKey} - ${file.originalname}`, 
+          fileName: `${fieldKey} - ${file.originalname}`,
           fileUrl: fileUrl,
           uploadedAt: Date.now()
         });
       });
     }
-
-    delete updateData.message; 
+ 
+    // Convert Map back to Array
+    updateData.deliveredDocuments = Array.from(documentMap.values());
+ 
+    delete updateData.message; // Clean up temp field if not in schema (optional)
     updateData.updatedAt = Date.now();
-
+ 
+    // UPDATE DATABASE
     const updatedInquiry = await Inquiry.findByIdAndUpdate(
-      id, 
-      { $set: updateData }, 
+      id,
+      { $set: updateData },
       { new: true, runValidators: false }
     );
-
-    // 👇👇👇 ACTIVITY LOG START (UPDATE INQUIRY) 👇👇👇
+ 
+    // 👇 ACTIVITY LOG (Keep existing logic)
     try {
         const { userEmail, adminId } = req.body;
         if (userEmail) {
-            // 🔥 GET SPECIFIC MODULE NAME
             const specificModule = getModuleFromInquiryType(
-                updatedInquiry.inquiryType || 'GENERAL', 
+                updatedInquiry.inquiryType || 'GENERAL',
                 updatedInquiry.serviceName
             );
-            
             await ActivityLog.create({
                 action: 'UPDATE',
-                module: specificModule,  // 🔥 SPECIFIC MODULE
+                module: specificModule,
                 user: userEmail,
                 userId: adminId || null,
                 description: `Updated ${specificModule.toLowerCase()}: ${updatedInquiry.fullName}`,
@@ -554,36 +576,35 @@ const updateInquiry = async (req, res) => {
                     recordTitle: `${specificModule} - ${updatedInquiry.fullName}`,
                     recordId: id,
                     method: 'PUT',
+                    changes: changes,
                     inquiryType: updatedInquiry.inquiryType,
-                    serviceName: updatedInquiry.serviceName
+                    docCount: updatedInquiry.deliveredDocuments.length
                 }
             });
-            console.log(`✅ Activity Log saved: UPDATE ${specificModule}`);
         }
     } catch (logError) {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
-    // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
+ 
     res.json({ success: true, data: updatedInquiry });
   } catch (error) {
     console.error('Update Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+ 
 const updateInquiryStatus = async (req, res) => {
   try {
     const { status, adminNotes, contactedBy, remarks, userEmail, adminId } = req.body;
     const evidenceFile = req.file;
-    
+   
     const inquiry = await Inquiry.findById(req.params.id);
     if (!inquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
-
+ 
     const previousStatus = inquiry.status;
-    
+   
     const updateData = { status, adminNotes, updatedAt: Date.now() };
     if (remarks) updateData.remarks = remarks;
     if (evidenceFile) {
@@ -594,19 +615,19 @@ const updateInquiryStatus = async (req, res) => {
       updateData.contactedAt = Date.now();
       updateData.contactedBy = contactedBy;
     }
-    
+   
     const updated = await Inquiry.findByIdAndUpdate(req.params.id, updateData, { new: true });
-
+ 
     // 👇👇👇 ACTIVITY LOG START (UPDATE STATUS) 👇👇👇
     try {
         const activeUser = userEmail || 'System';
-        
+       
         // 🔥 GET SPECIFIC MODULE NAME
         const specificModule = getModuleFromInquiryType(
-            inquiry.inquiryType || 'GENERAL', 
+            inquiry.inquiryType || 'GENERAL',
             inquiry.serviceName
         );
-        
+       
         await ActivityLog.create({
             action: 'UPDATE',
             module: specificModule,  // 🔥 SPECIFIC MODULE
@@ -628,39 +649,39 @@ const updateInquiryStatus = async (req, res) => {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
     // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
+ 
     res.json({ success: true, data: updated });
   } catch (error) {
     console.error('❌ Status Update Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+ 
 const deleteInquiry = async (req, res) => {
   try {
     const inquiry = await Inquiry.findById(req.params.id);
     if (!inquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
-
+ 
     const inquiryInfo = {
       type: inquiry.inquiryType,
       name: inquiry.fullName,
       id: inquiry._id.toString()
     };
-
+ 
     await Inquiry.findByIdAndDelete(req.params.id);
-
+ 
     // 👇👇👇 ACTIVITY LOG START (DELETE INQUIRY) 👇👇👇
     try {
         const { userEmail, adminId } = req.body;
         if (userEmail) {
             // 🔥 GET SPECIFIC MODULE NAME
             const specificModule = getModuleFromInquiryType(
-                inquiryInfo.type, 
+                inquiryInfo.type,
                 inquiry.serviceName
             );
-            
+           
             await ActivityLog.create({
                 action: 'DELETE',
                 module: specificModule,  // 🔥 SPECIFIC MODULE
@@ -681,13 +702,13 @@ const deleteInquiry = async (req, res) => {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
     // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
+ 
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false });
   }
 };
-
+ 
 const getInquiriesByEmail = async (req, res) => {
   try {
     const inquiries = await Inquiry.find({ email: req.params.email }).sort({ createdAt: -1 });
@@ -696,7 +717,7 @@ const getInquiriesByEmail = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
-
+ 
 const getInquiryStats = async (req, res) => {
   try {
     const count = await Inquiry.countDocuments();
@@ -705,12 +726,12 @@ const getInquiryStats = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
-
+ 
 const markAsPaid = async (req, res) => {
   try {
     const { id } = req.params;
     const { userEmail, adminId } = req.body;
-    
+   
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       {
@@ -719,13 +740,13 @@ const markAsPaid = async (req, res) => {
       },
       { new: true }
     );
-
+ 
     if (!inquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
-
+ 
     const paymentRecord = await Payment.findOne({ inquiryId: id });
-
+ 
     if (paymentRecord) {
       paymentRecord.status = 'PAID';
       paymentRecord.paidAt = Date.now();
@@ -742,16 +763,16 @@ const markAsPaid = async (req, res) => {
         paidAt: Date.now()
       });
     }
-
+ 
     // 👇👇👇 ACTIVITY LOG START (MARK AS PAID) 👇👇👇
     try {
         if (userEmail) {
             // 🔥 GET SPECIFIC MODULE NAME
             const specificModule = getModuleFromInquiryType(
-                inquiry.inquiryType || 'GENERAL', 
+                inquiry.inquiryType || 'GENERAL',
                 inquiry.serviceName
             );
-            
+           
             await ActivityLog.create({
                 action: 'UPDATE',
                 module: specificModule,  // 🔥 SPECIFIC MODULE
@@ -773,13 +794,13 @@ const markAsPaid = async (req, res) => {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
     // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
+ 
     res.json({
       success: true,
       message: 'Payment status updated successfully',
       data: inquiry
     });
-
+ 
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -787,12 +808,12 @@ const markAsPaid = async (req, res) => {
     });
   }
 };
-
+ 
 const confirmPayment = async (req, res) => {
   try {
     const { id } = req.params;
     const { adminName, userEmail, adminId } = req.body;
-
+ 
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       {
@@ -803,20 +824,20 @@ const confirmPayment = async (req, res) => {
       },
       { new: true }
     );
-
+ 
     if (!inquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
-
+ 
     // 👇👇👇 ACTIVITY LOG START (CONFIRM PAYMENT) 👇👇👇
     try {
         if (userEmail) {
             // 🔥 GET SPECIFIC MODULE NAME
             const specificModule = getModuleFromInquiryType(
-                inquiry.inquiryType || 'GENERAL', 
+                inquiry.inquiryType || 'GENERAL',
                 inquiry.serviceName
             );
-            
+           
             await ActivityLog.create({
                 action: 'UPDATE',
                 module: specificModule,  // 🔥 SPECIFIC MODULE
@@ -838,7 +859,7 @@ const confirmPayment = async (req, res) => {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
     // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
+ 
     res.json({
       success: true,
       message: 'Payment confirmed successfully',
@@ -848,23 +869,23 @@ const confirmPayment = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-
+ 
 const deliverDocuments = async (req, res) => {
   try {
     const { id } = req.params;
     const { userEmail, adminId } = req.body;
     const files = req.files;
-
+ 
     if (!files || files.length === 0) {
       return res.status(400).json({ success: false, message: 'No files uploaded' });
     }
-
+ 
     const uploadedDocs = files.map(file => ({
       fileName: file.originalname,
       fileUrl: `/uploads/documents/${file.filename}`,
       uploadedAt: Date.now()
     }));
-
+ 
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       {
@@ -875,20 +896,20 @@ const deliverDocuments = async (req, res) => {
       },
       { new: true }
     );
-
+ 
     if (!inquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
-
+ 
     // 👇👇👇 ACTIVITY LOG START (DELIVER DOCUMENTS) 👇👇👇
     try {
         if (userEmail) {
             // 🔥 GET SPECIFIC MODULE NAME
             const specificModule = getModuleFromInquiryType(
-                inquiry.inquiryType || 'GENERAL', 
+                inquiry.inquiryType || 'GENERAL',
                 inquiry.serviceName
             );
-            
+           
             await ActivityLog.create({
                 action: 'UPDATE',
                 module: specificModule,  // 🔥 SPECIFIC MODULE
@@ -910,7 +931,7 @@ const deliverDocuments = async (req, res) => {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
     // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
+ 
     res.json({
       success: true,
       message: 'Documents delivered successfully',
@@ -920,7 +941,7 @@ const deliverDocuments = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-
+ 
 const getInquiryAnalytics = async (req, res) => {
   try {
     const inquiries = await Inquiry.find();
@@ -930,24 +951,24 @@ const getInquiryAnalytics = async (req, res) => {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+   
     const todayRevenue = completedInquiries
       .filter(i => {
         const updated = new Date(i.updatedAt);
         return updated >= today && updated < tomorrow;
       })
       .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
-    
+   
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
-
+ 
     const monthRevenue = completedInquiries
       .filter(i => {
         const updated = new Date(i.updatedAt);
         return updated >= startOfMonth && updated <= endOfMonth;
       })
       .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
-    
+   
     const revenueByService = {};
     completedInquiries.forEach(inquiry => {
       const service = inquiry.serviceName || 'Other';
@@ -960,7 +981,7 @@ const getInquiryAnalytics = async (req, res) => {
       revenueByService[service].count += 1;
       revenueByService[service].revenue += inquiry.estimatedPrice || 0;
     });
-    
+   
     const statusBreakdown = {
       completed: completedInquiries.length,
       pending: inquiries.filter(i => i.status === 'PENDING').length,
@@ -968,7 +989,7 @@ const getInquiryAnalytics = async (req, res) => {
       paid: inquiries.filter(i => i.status === 'PAID' || i.status === 'CONFIRMED').length,
       cancelled: inquiries.filter(i => i.status === 'CANCELLED').length,
     };
-    
+   
     res.json({
       success: true,
       data: {
@@ -982,32 +1003,32 @@ const getInquiryAnalytics = async (req, res) => {
         recentInquiries: inquiries.slice(0, 10)
       }
     });
-    
+   
   } catch (error) {
     console.error('Error fetching inquiries analytics:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching analytics', 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching analytics',
+      error: error.message
     });
   }
 };
-
+ 
 const getInquiriesByDateRange = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    
+   
     if (!startDate || !endDate) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Start date and end date are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Start date and end date are required'
       });
     }
-    
+   
     const start = new Date(startDate);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
-    
+   
     const inquiries = await Inquiry.find({
       updatedAt: {
         $gte: start,
@@ -1015,9 +1036,9 @@ const getInquiriesByDateRange = async (req, res) => {
       },
       status: 'COMPLETED'
     });
-    
+   
     const totalRevenue = inquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
-    
+   
     res.json({
       success: true,
       data: {
@@ -1026,49 +1047,49 @@ const getInquiriesByDateRange = async (req, res) => {
         inquiries
       }
     });
-    
+   
   } catch (error) {
     console.error('Error fetching inquiries by date range:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching inquiries', 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching inquiries',
+      error: error.message
     });
   }
 };
-
+ 
 const toggleArchive = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isArchive, userEmail, adminId } = req.body; 
-
+    const { isArchive, userEmail, adminId } = req.body;
+ 
     if (!['Yes', 'No'].includes(isArchive)) {
       return res.status(400).json({ success: false, message: 'Invalid value for isArchive' });
     }
-
+ 
     const inquiry = await Inquiry.findByIdAndUpdate(
       id,
       { isArchive, updatedAt: Date.now() },
       { new: true }
     );
-
+ 
     if (!inquiry) return res.status(404).json({ success: false, message: 'Inquiry not found' });
-
+ 
     // 👇👇👇 ACTIVITY LOG START (ARCHIVE/RESTORE) 👇👇👇
     try {
         if (userEmail) {
             // 🔥 GET SPECIFIC MODULE NAME
             const specificModule = getModuleFromInquiryType(
-                inquiry.inquiryType || 'GENERAL', 
+                inquiry.inquiryType || 'GENERAL',
                 inquiry.serviceName
             );
-            
+           
             await ActivityLog.create({
                 action: isArchive === 'Yes' ? 'ARCHIVE' : 'UPDATE',
                 module: specificModule,  // 🔥 SPECIFIC MODULE
                 user: userEmail,
                 userId: adminId || null,
-                description: isArchive === 'Yes' 
+                description: isArchive === 'Yes'
                     ? `Archived ${specificModule.toLowerCase()}: ${inquiry.fullName}`
                     : `Restored ${specificModule.toLowerCase()}: ${inquiry.fullName}`,
                 severity: isArchive === 'Yes' ? 'WARNING' : 'INFO',
@@ -1086,7 +1107,7 @@ const toggleArchive = async (req, res) => {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
     // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
+ 
     res.json({ success: true, message: `Inquiry archive status set to ${isArchive}`, data: inquiry });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -1095,7 +1116,7 @@ const toggleArchive = async (req, res) => {
  
 module.exports = {
   createInquiry,
-  createInquiryWithUploads, 
+  createInquiryWithUploads,
   getAllInquiries,
   getInquiry,
   updateInquiryStatus,

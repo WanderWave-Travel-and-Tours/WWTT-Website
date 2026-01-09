@@ -1,0 +1,102 @@
+/* Eto ang sikreto para maging consistent ang Font */
+.arc-confirm-root {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Force standard box-sizing para hindi masira ang padding/width */
+.arc-confirm-root * {
+    box-sizing: border-box !important;
+    margin: 0;
+    padding: 0;
+}
+
+.arc-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999; /* Sobrang taas para laging nasa ibabaw */
+}
+
+.arc-confirm-modal {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: modalPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.arc-confirm-icon-container {
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: center;
+}
+
+.icon-danger { color: #ef4444; }
+.icon-primary { color: #3b82f6; }
+
+.arc-confirm-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.arc-confirm-message {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin-bottom: 1.75rem;
+    line-height: 1.6;
+}
+
+.arc-confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Consistent Button Styles */
+.btn-cancel, .btn-confirm {
+    padding: 0.625rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.btn-cancel {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+.btn-cancel:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.bg-danger { background-color: #ef4444; color: white; }
+.bg-danger:hover { background-color: #dc2626; }
+
+.bg-primary { background-color: #3b82f6; color: white; }
+.bg-primary:hover { background-color: #2563eb; }
+
+/* Animation para sa pag-pop ng modal */
+@keyframes modalPop {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}

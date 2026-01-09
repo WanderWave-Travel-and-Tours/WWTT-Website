@@ -86,18 +86,19 @@ router.post('/add', upload.single('image'), async (req, res) => {
     }
 });
 
-// 2. GET SINGLE PROMO
-router.get('/:id', async (req, res) => {
+// 2. GET ALL PROMOS (INCLUDING ARCHIVED) 
+// IMPORTANT: Inuna ito bago ang /:id para hindi mag-conflict
+router.get('/all', async (req, res) => {
     try {
-        const promo = await Promo.findById(req.params.id);
-        if (!promo) return res.status(404).json({ message: "Promo not found" });
-        res.status(200).json(promo);
+        const promos = await Promo.find().sort({ createdAt: -1 });
+        res.status(200).json(promos);
     } catch (err) {
-        res.status(500).json(err);
+        console.error('❌ Error fetching all promos:', err);
+        res.status(500).json({ message: "Server Error", error: err.message });
     }
 });
 
-// 3. GET ALL ACTIVE PROMOS
+// 3. GET ALL ACTIVE PROMOS (isArchive: "No")
 router.get('/', async (req, res) => {
     try {
         const promos = await Promo.find({ isArchive: "No" }).sort({ createdAt: -1 });
@@ -107,11 +108,12 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 4. GET ALL PROMOS (INCLUDING ARCHIVED)
-router.get('/all', async (req, res) => {
+// 4. GET SINGLE PROMO
+router.get('/:id', async (req, res) => {
     try {
-        const promos = await Promo.find().sort({ createdAt: -1 });
-        res.status(200).json(promos);
+        const promo = await Promo.findById(req.params.id);
+        if (!promo) return res.status(404).json({ message: "Promo not found" });
+        res.status(200).json(promo);
     } catch (err) {
         res.status(500).json(err);
     }
@@ -198,7 +200,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-// 6. ARCHIVE/RESTORE PROMO
+// 6. ARCHIVE/RESTORE PROMO (Modified to handle Toggle logic)
 router.post('/:id/archive', async (req, res) => {
     try {
         const { userEmail, adminId } = req.body;
@@ -207,6 +209,7 @@ router.post('/:id/archive', async (req, res) => {
         const promo = await Promo.findById(req.params.id);
         if (!promo) return res.status(404).json({ status: "error", message: "Promo not found" });
 
+        // Toggle logic: If "Yes", make it "No". If "No", make it "Yes".
         const newStatus = promo.isArchive === 'Yes' ? 'No' : 'Yes';
         promo.isArchive = newStatus;
         await promo.save();

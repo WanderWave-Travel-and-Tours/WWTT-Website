@@ -4,6 +4,7 @@ import Sidebar from "../sidebar/sidebar";
 import "./addtours.css";
 import { useToast } from "../toast/ToastManager";
 import { HelpCircle } from "lucide-react"; // Added for the modal icon
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 
 // Import the renamed sub-components
 import TourBasicInfo from "./TourBasicInfo";
@@ -148,7 +149,7 @@ const AddTour = () => {
   const tourPasteRef = useRef(null);
 
   // Helper for Modal
-  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+const askConfirmation = (title, message, onConfirm, type = "primary") => {
     setConfirmConfig({
       isOpen: true,
       title,
@@ -403,20 +404,13 @@ useEffect(() => {
     }
   };
 
-  const handleCancel = () => {
+const handleCancel = () => {
     askConfirmation(
       "Confirm Cancel",
-      "Are you sure you want to cancel? All unsaved changes will be lost.",
+      "Are you sure you want to leave? Your progress will be lost.",
       async () => {
         await clearDraft();
-
-        // ✅ TOAST
-        toast.info(
-          "Process cancelled. Returning to previous page.",
-          "❌ Cancelled"
-        );
-
-        navigate(-1);
+        navigate("/dashboard"); // Gamitin ang navigate() ng react-router-dom
       },
       "danger"
     );

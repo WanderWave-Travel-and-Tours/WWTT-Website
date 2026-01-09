@@ -25,7 +25,6 @@ import { fetchArchivedInquiries, restoreInquiry } from './archiveFunctions/inqui
 import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'; 
 import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; 
 import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService';
-// NEW: Hotel Service Added
 import { fetchArchivedHotels, restoreHotel } from './archiveFunctions/hotelService';
 
 // --- Custom Confirmation Modal ---
@@ -187,7 +186,7 @@ const ArchiveComponent = () => {
     return remaining > 0 ? remaining : 0;
   };
 
-  const fetchArchiveItems = async () => {
+  const fetchArchiveItems = useCallback(async () => {
     try {
       setLoading(true);
       const results = await Promise.allSettled([
@@ -201,25 +200,32 @@ const ArchiveComponent = () => {
         fetchArchivedBlogs(), 
         fetchArchivedImages(), 
         fetchArchivedUsers(),
-        fetchArchivedHotels() // Hotel integration
+        fetchArchivedHotels()
       ]);
       
       const combinedData = results.map(r => r.status === 'fulfilled' ? r.value : []).flat();
-      const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt));
+      
+      const nonExpiredData = combinedData.filter(item => !isExpired(item.archivedAt || item.updatedAt));
 
       const chronologicalData = [...nonExpiredData].sort((a, b) => {
-        return new Date(a.archivedAt || 0) - new Date(b.archivedAt || 0);
+        return new Date(a.archivedAt || a.updatedAt || 0) - new Date(b.archivedAt || b.updatedAt || 0);
       });
 
       const formatted = chronologicalData.map((item, index) => {
         const archiveNumber = index + 1; 
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
-        const dateRaw = item.archivedAt || new Date().toISOString();
+        const dateRaw = item.archivedAt || item.updatedAt || new Date().toISOString();
 
         let displayType = item.type || 'Other';
+        
+        // --- TYPE MAPPING LOGIC ---
         if (item.role) displayType = item.role.charAt(0).toUpperCase() + item.role.slice(1);
         
-        // Inquiry Mapping
+        // Check for specific properties to determine type if not clearly defined
+        if (item.discountValue || displayType === 'Promo') displayType = 'Promo';
+        if (item.packageName) displayType = 'Package';
+        if (item.referenceNumber && !item.inquiryType) displayType = 'Booking';
+
         if (item.inquiryType) {
            switch(item.inquiryType) {
              case 'VISA': displayType = 'VISA Processing'; break;
@@ -227,6 +233,8 @@ const ArchiveComponent = () => {
              case 'CENOMAR': displayType = 'CENOMAR'; break;
              case 'PASSPORT': displayType = 'Passport Appt'; break; 
              case 'FLIGHT_BOOKING': displayType = 'Airline Booking'; break;
+             case 'HOTEL_BOOKING': displayType = 'Hotel Booking'; break;
+             case 'TOUR_ARRANGEMENT': displayType = 'Tour Arrangements'; break;
              default: displayType = item.inquiryType;
            }
         }
@@ -235,14 +243,14 @@ const ArchiveComponent = () => {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber,
-          itemName: item.name || item.fullName || item.title || item.imageName || item.itemName || item.code || 'Unnamed Item', 
+          itemName: item.code || item.packageName || item.name || item.fullName || item.title || item.imageName || item.itemName || 'Unnamed Item', 
           type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
-          reference: item.email || item.imageUrl || item.author || item.location || item.reference || item.referenceNumber || item.code || item.slug || item._id?.substring(0, 8) || 'N/A',
+          reference: item.referenceNumber || item.code || item.reference || item.email || item.author || item._id?.substring(0, 8) || 'N/A',
           status: item.isArchive === "Yes" ? 'Archived' : (item.status || 'Archived'), 
-          rawData: item
+          rawData: item.rawData || item
         };
       });
 
@@ -253,9 +261,9 @@ const ArchiveComponent = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
   
-  useEffect(() => { fetchArchiveItems(); }, []);
+  useEffect(() => { fetchArchiveItems(); }, [fetchArchiveItems]);
 
   useEffect(() => {
     let filtered = [...archiveItems];
@@ -294,6 +302,7 @@ const ArchiveComponent = () => {
     try {
       let restored = false;
       const id = item.mongoId;
+      
       if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(id);
       else if (item.type === 'Package') restored = await restorePackage(id);
       else if (item.type === 'Booking') restored = await restoreBooking(id);
@@ -303,7 +312,7 @@ const ArchiveComponent = () => {
       else if (item.type === 'Poster') restored = await restorePoster(id);
       else if (item.type === 'Blog') restored = await restoreBlog(id);
       else if (item.type === 'Image Gallery') restored = await restoreImage(id);
-      else if (item.type === 'Hotel') restored = await restoreHotel(id); // Added Hotel
+      else if (item.type === 'Hotel') restored = await restoreHotel(id);
       else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(id);
       
       if (restored) {
@@ -347,7 +356,7 @@ const ArchiveComponent = () => {
             else if (item.type === 'Poster') await restorePoster(id);
             else if (item.type === 'Blog') await restoreBlog(id);
             else if (item.type === 'Image Gallery') await restoreImage(id);
-            else if (item.type === 'Hotel') await restoreHotel(id); // Added Hotel
+            else if (item.type === 'Hotel') await restoreHotel(id);
             else if (SERVICE_SUBTYPES_LIST.includes(item.type)) await restoreInquiry(id);
           }
           await fetchArchiveItems();

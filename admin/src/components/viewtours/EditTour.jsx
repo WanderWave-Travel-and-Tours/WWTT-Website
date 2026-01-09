@@ -23,12 +23,12 @@ const getAdminData = () => {
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
-    <div className="arc-confirm-overlay" style={{
+    <div className="ev-confirm-overlay" style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', zIndex: 11000
     }}>
-      <div className="arc-confirm-modal" style={{
+      <div className="ev-confirm-modal" style={{
         backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
         maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
       }}>
@@ -39,7 +39,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
         <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
           <button 
-            type="button"
+            type="button" 
             onClick={onCancel}
             style={{
               padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
@@ -49,7 +49,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
             Cancel
           </button>
           <button 
-            type="button"
+            type="button" 
             onClick={onConfirm}
             style={{
               padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',

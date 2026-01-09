@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { X, CheckCircle, User, Mail, FileText, Upload, DollarSign } from "lucide-react";
+import { X, CheckCircle, User, Mail, FileText, Upload, DollarSign, HelpCircle } from "lucide-react";
 import "./PSAModals.css"; 
+// Inimport ang Toast Manager
+import { useToast } from "../../toast/ToastManager"; 
 
 // 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
 const getAdminData = () => {
@@ -22,10 +24,64 @@ const getAdminData = () => {
     }
 };
 
+// --- CUSTOM CONFIRMATION MODAL (Based on EditVisa.jsx pattern) ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="ev-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="ev-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = [] }) => {
+  const toast = useToast(); // Initialize Toast
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   
+  // State para sa Confirmation Modal
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
   // Dedicated state para sa presyo para sure na nahahawakan natin
   const [selectedPrice, setSelectedPrice] = useState(0);
 
@@ -40,6 +96,20 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
   });
 
   if (!isOpen) return null;
+
+  // Helper function para mag-trigger ng modal
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -60,15 +130,26 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
         ...prev,
         files: { ...prev.files, [fieldName]: file }
       }));
+      toast.info(`Selected file: ${file.name}`); // Gamit ang Toast
     }
   };
 
-  const submitApplication = async () => {
+  // Function na mag-ti-trigger ng confirmation bago mag-submit
+  const handleCreateConfirm = () => {
     if (!formData.email || !formData.givenName || !formData.psaDocumentType) {
-      alert("Please fill in Name, Email, and Document Type.");
+      toast.warning("Please fill in Name, Email, and Document Type.");
       return;
     }
 
+    askConfirmation(
+      "Create Request",
+      `Are you sure you want to create a walk-in request for ${formData.givenName} ${formData.lastName}?`,
+      () => submitApplication(),
+      "primary"
+    );
+  };
+
+  const submitApplication = async () => {
     setIsLoading(true);
     try {
       // 🔥 GET ADMIN DATA
@@ -104,12 +185,13 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
       });
 
       if (response.data.success) {
+        toast.success("Application created successfully!");
         setStep(2); 
         if (refreshData) refreshData(); 
       }
     } catch (error) {
       console.error("Error:", error);
-      alert(error.response?.data?.message || "Failed to add walk-in applicant");
+      toast.error(error.response?.data?.message || "Failed to add walk-in applicant");
     } finally {
       setIsLoading(false);
     }
@@ -122,8 +204,23 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
     onClose();
   };
 
+  // Handle Close with confirmation if there is data
+  const handleHeaderClose = () => {
+    if (formData.givenName || formData.email) {
+        askConfirmation(
+            "Discard Changes",
+            "You have unsaved changes. Are you sure you want to close?",
+            () => resetAndClose(),
+            "danger"
+        );
+    } else {
+        resetAndClose();
+    }
+  };
+
   return (
-    <div className="psam-overlay" onClick={(e) => e.target.className === "psam-overlay" && onClose()}>
+    <>
+    <div className="psam-overlay" onClick={(e) => e.target.className === "psam-overlay" && handleHeaderClose()}>
       <div className={`psam-modal ${step === 1 ? "psam-modal-lg" : "psam-modal-sm"}`}>
         
         {step === 1 && (
@@ -133,7 +230,7 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
                 <h2 className="psam-title">Add Walk-in Requester</h2>
                 <span className="psam-subtitle">Register a new PSA request manually</span>
               </div>
-              <button className="psam-close-btn" onClick={onClose}><X size={20} /></button>
+              <button className="psam-close-btn" onClick={handleHeaderClose}><X size={20} /></button>
             </div>
             
             <div className="psam-body">
@@ -196,8 +293,8 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
             </div>
 
             <div className="psam-footer">
-              <button className="psam-btn psam-btn-ghost" onClick={resetAndClose}>Cancel</button>
-              <button className="psam-btn psam-btn-primary" onClick={submitApplication} disabled={isLoading}>
+              <button className="psam-btn psam-btn-ghost" onClick={handleHeaderClose}>Cancel</button>
+              <button className="psam-btn psam-btn-primary" onClick={handleCreateConfirm} disabled={isLoading}>
                 {isLoading ? "Saving..." : "Create Request"}
               </button>
             </div>
@@ -214,6 +311,17 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
         )}
       </div>
     </div>
+
+    {/* Render the Custom Confirmation Modal */}
+    <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+    />
+    </>
   );
 };
 

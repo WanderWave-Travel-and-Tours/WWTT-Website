@@ -3,13 +3,61 @@ import axios from "axios";
 import { 
   X, CreditCard, CheckCircle, Upload, Send, FileText, 
   AlertCircle, Clock, User, Mail, DollarSign, Calendar, 
-  Package, TrendingUp, Globe, Flag, Edit 
+  Package, TrendingUp, Globe, Flag, Edit, HelpCircle 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom"; 
+import { useToast } from "../../toast/ToastManager"; // Inimport ang Toast
 import "./VisaInquiryModal.css"; 
+
+// Custom Confirmation Modal Component (Reference from EditVisa.jsx)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="ev-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="ev-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            type="button" 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            type="button" 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
   const navigate = useNavigate(); 
+  const toast = useToast(); // Initialize Toast
   const [documents, setDocuments] = useState([]);
   const [showContactRemarks, setShowContactRemarks] = useState(false);
   const [contactRemarks, setContactRemarks] = useState("");
@@ -19,6 +67,24 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
   // Delivery States
   const [showDeliverDocs, setShowDeliverDocs] = useState(false);
   const [deliveryFiles, setDeliveryFiles] = useState([]);
+
+  // Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
+  });
+
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
 
   useEffect(() => {
     if (inquiry) {
@@ -40,9 +106,9 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
   };
 
   // --- EDIT FUNCTION HANDLER ---
- const handleEditClick = () => {
-  navigate(`/EditVisa/${inquiry._id}`);
-};
+  const handleEditClick = () => {
+    navigate(`/EditVisa/${inquiry._id}`);
+  };
 
   const handleUpdateStatus = async (status) => {
     try {
@@ -51,12 +117,12 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
             { status }
         );
         if (response.data.success) {
-            alert('Status updated successfully!');
+            toast.success('Status updated successfully!');
             setLocalInquiryStatus(status);
             refreshData(); 
         }
     } catch (error) {
-        alert('Failed to update status');
+        toast.error('Failed to update status');
     }
   };
 
@@ -74,7 +140,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
         );
 
         if (response.data.success) {
-            alert('Status updated to CONTACTED with remarks!');
+            toast.success('Status updated to CONTACTED with remarks!');
             setLocalInquiryStatus('CONTACTED');
             refreshData();
             setShowContactRemarks(false);
@@ -83,34 +149,42 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Failed to update status');
+        toast.error('Failed to update status');
     }
   };
 
-  const handleRequestPayment = async () => {
-    if (!window.confirm("Are documents correct? This will notify the user to pay.")) return;
-    await handleUpdateStatus('PAYMENT_PENDING');
+  const handleRequestPayment = () => {
+    askConfirmation(
+      "Request Payment",
+      "Are documents correct? This will notify the user to pay.",
+      () => handleUpdateStatus('PAYMENT_PENDING')
+    );
   };
 
-  const handleConfirmPayment = async () => {
-    if (!window.confirm("Confirm that payment has been received?")) return;
-    try {
-        const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiry._id}/confirm-payment`, {
-            adminName: 'Admin' 
-        });
-        if (response.data.success) {
-            alert("Payment Confirmed! You can now process the visa.");
-            setLocalInquiryStatus('CONFIRMED');
-            refreshData();
+  const handleConfirmPayment = () => {
+    askConfirmation(
+      "Confirm Payment",
+      "Confirm that payment has been received?",
+      async () => {
+        try {
+            const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiry._id}/confirm-payment`, {
+                adminName: 'Admin' 
+            });
+            if (response.data.success) {
+                toast.success("Payment Confirmed! You can now process the visa.");
+                setLocalInquiryStatus('CONFIRMED');
+                refreshData();
+            }
+        } catch (error) {
+            toast.error("Failed to confirm payment");
         }
-    } catch (error) {
-        alert("Failed to confirm payment");
-    }
+      }
+    );
   };
 
   const handleDeliverDocuments = async () => {
     if (deliveryFiles.length === 0) {
-        alert("Please select files to upload.");
+        toast.warning("Please select files to upload.");
         return;
     }
 
@@ -125,7 +199,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
         );
 
         if (response.data.success) {
-            alert("Documents delivered successfully! Request marked as COMPLETED.");
+            toast.success("Documents delivered successfully! Request marked as COMPLETED.");
             setLocalInquiryStatus('COMPLETED');
             setDeliveryFiles([]);
             setShowDeliverDocs(false);
@@ -133,7 +207,7 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
         }
     } catch (error) {
         console.error("Delivery Error:", error);
-        alert("Failed to deliver documents.");
+        toast.error("Failed to deliver documents.");
     }
   };
 
@@ -286,7 +360,11 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                 <div className="vim-upload-wrapper">
                   <input
                     type="file" multiple accept=".pdf,.jpg,.png,.jpeg"
-                    onChange={(e) => setDeliveryFiles(Array.from(e.target.files))}
+                    onChange={(e) => {
+                        const newFiles = Array.from(e.target.files);
+                        setDeliveryFiles(newFiles);
+                        toast.info(`${newFiles.length} file(s) selected.`);
+                    }}
                     className="vim-hidden-input" id="visa-delivery-files"
                   />
                   <label htmlFor="visa-delivery-files" className="vim-upload-label" style={{ background: 'white', borderStyle: 'dashed' }}>
@@ -324,7 +402,13 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                     <button className="vim-btn vim-btn-ghost" onClick={() => { setDeliveryFiles([]); if(localInquiryStatus !== 'COMPLETED') setShowDeliverDocs(false); }}>
                       Cancel
                     </button>
-                    <button className="vim-btn vim-btn-primary" onClick={handleDeliverDocuments}>
+                    <button className="vim-btn vim-btn-primary" onClick={() => {
+                        askConfirmation(
+                            "Send Documents",
+                            "Confirm sending these documents to the user? This will finalize the request.",
+                            handleDeliverDocuments
+                        )
+                    }}>
                       <Send size={16} /><span>{localInquiryStatus === 'COMPLETED' ? 'Send Additional' : 'Send & Complete'}</span>
                     </button>
                   </div>
@@ -436,7 +520,9 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                 <h3 className="vim-card-title">Quick Actions</h3>
               </div>
               <div className="vim-action-grid">
-                <button className="vim-action-btn vim-action-secondary" onClick={() => handleUpdateStatus("PENDING")}>
+                <button className="vim-action-btn vim-action-secondary" onClick={() => {
+                  askConfirmation("Update Status", "Return this request to Pending Review?", () => handleUpdateStatus("PENDING"));
+                }}>
                   <div className="vim-action-icon"><Clock size={18} /></div>
                   <div className="vim-action-content">
                     <span className="vim-action-label">Set Pending</span>
@@ -460,7 +546,9 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                   </div>
                 </button>
 
-                <button className="vim-action-btn vim-action-success" onClick={() => handleUpdateStatus("COMPLETED")}>
+                <button className="vim-action-btn vim-action-success" onClick={() => {
+                  askConfirmation("Complete Request", "Mark this visa request as Completed?", () => handleUpdateStatus("COMPLETED"));
+                }}>
                   <div className="vim-action-icon"><CheckCircle size={18} /></div>
                   <div className="vim-action-content">
                     <span className="vim-action-label">Mark Complete</span>
@@ -468,7 +556,9 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                   </div>
                 </button>
 
-                <button className="vim-action-btn vim-action-danger" onClick={() => handleUpdateStatus("CANCELLED")}>
+                <button className="vim-action-btn vim-action-danger" onClick={() => {
+                  askConfirmation("Cancel Request", "Are you sure you want to cancel this request? This cannot be undone.", () => handleUpdateStatus("CANCELLED"), "danger");
+                }}>
                   <div className="vim-action-icon"><X size={18} /></div>
                   <div className="vim-action-content">
                     <span className="vim-action-label">Cancel Request</span>
@@ -547,17 +637,40 @@ const VisaInquiryModal = ({ isOpen, onClose, inquiry, refreshData }) => {
                     <div className="vim-form-group">
                         <label className="vim-form-label">Attach Evidence (Optional)</label>
                         <div className="vim-file-wrapper">
-                            <input type="file" className="vim-hidden-input" id="ev-file" onChange={(e) => setContactEvidence(e.target.files[0])} />
+                            <input type="file" className="vim-hidden-input" id="ev-file" onChange={(e) => {
+                                setContactEvidence(e.target.files[0]);
+                                if(e.target.files[0]) toast.info(`Evidence attached: ${e.target.files[0].name}`);
+                            }} />
                             <label htmlFor="ev-file" className="vim-file-btn"><Upload size={18}/><span>Choose file</span></label>
                         </div>
                     </div>
-                    <button className="vim-btn vim-btn-primary vim-btn-block" onClick={submitContactWithRemarks}>
+                    <button className="vim-btn vim-btn-primary vim-btn-block" onClick={() => {
+                        if(!contactRemarks.trim()) {
+                            toast.warning("Please provide remarks.");
+                            return;
+                        }
+                        askConfirmation(
+                            "Send Report",
+                            "This will notify the user about the issue. Proceed?",
+                            submitContactWithRemarks
+                        );
+                    }}>
                         <Send size={16} /><span>Send Report</span>
                     </button>
                 </div>
             </div>
         </div>
       )}
+
+      {/* RENDER THE CONFIRMATION MODAL */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </>
   );
 };
