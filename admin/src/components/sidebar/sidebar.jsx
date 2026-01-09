@@ -349,12 +349,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Testimonials', path: '/view-testimonials', icon: ClipboardList },
               ]}
             />
-          </ul>
-        </div>
-
-        <div className="menu-group">
-          <h3 className={`menu-title ${isCollapsed ? 'hidden' : ''}`}>Management</h3>
-          <ul className="nav-list">
             <DropdownMenu 
               title="Services" 
               icon={Wrench} 
@@ -379,6 +373,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 { name: 'Bills', path: '/services/billspayment', icon: DollarSign },
               ]}
             />
+          </ul>
+        </div>
+
+        <div className="menu-group">
+          <h3 className={`menu-title ${isCollapsed ? 'hidden' : ''}`}>Management</h3>
+          <ul className="nav-list">
             <MenuItem 
                 path="/seller-rate" 
                 icon={TrendingUp} 
