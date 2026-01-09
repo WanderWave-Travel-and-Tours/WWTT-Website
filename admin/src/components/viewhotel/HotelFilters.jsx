@@ -1,5 +1,5 @@
-import React from 'react';
-import { Search, Hotel } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Filter, ChevronDown } from 'lucide-react';
 import './HotelFilters.css';
 
 const HotelFilters = ({ 
@@ -12,61 +12,145 @@ const HotelFilters = ({
     cityOptions,
     statusOptions
 }) => {
+    const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
+    const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+
+    const handleCitySelect = (city) => {
+        setFilterCity(city);
+        setIsCityDropdownOpen(false);
+    };
+
+    const handleStatusSelect = (status) => {
+        setFilterStatus(status);
+        setIsStatusDropdownOpen(false);
+    };
+
+    const getCityLabel = () => {
+        if (filterCity === 'ALL') return 'All Cities';
+        return filterCity;
+    };
+
+    const getStatusLabel = () => {
+        if (filterStatus === 'ALL') return 'All Status';
+        return filterStatus;
+    };
+
     return (
-        <div className="hf-filter-card">
-            <div className="hf-filter-wrapper">
+        <div className="hotel-filter-card">
+            <div className="hotel-filter-wrapper">
                 
-                {/* ORDER 1: Branding Label */}
-                <div className="hf-brand-label">
-                    <Hotel size={20} style={{marginRight: '8px', color: '#64748b'}}/>
-                    HOTEL <span>FILTERS</span>
+                {/* LEFT: Branding */}
+                <div className="hotel-brand-section">
+                    <div className="hotel-brand-icon">
+                        <Filter size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="hotel-brand-label">
+                        HOTEL <span>FILTERS</span>
+                    </div>
                 </div>
                 
-                {/* ORDER 2: City Filter Dropdown */}
-                <div className="hf-select-group">
-                    <label htmlFor="city-select" className="hf-select-label">City:</label>
-                    <select
-                        id="city-select"
-                        className="hf-filter-select"
-                        value={filterCity}
-                        onChange={(e) => setFilterCity(e.target.value)}
-                    >
-                        {cityOptions.map(city => (
-                            <option key={city} value={city}>
-                                {city === 'ALL' ? 'All Cities' : city}
-                            </option>
-                        ))}
-                    </select>
+                <div className="hotel-controls-group">
+                    {/* MIDDLE LEFT: City Dropdown */}
+                    <div className="hotel-filter-container">
+                        <label>City:</label>
+                        <div className="hotel-select-wrapper">
+                            <button 
+                                className="hotel-select-btn"
+                                onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+                            >
+                                <span className="hotel-select-label">{getCityLabel()}</span>
+                                <ChevronDown 
+                                    size={14} 
+                                    className={`hotel-select-icon ${isCityDropdownOpen ? 'hotel-select-icon--open' : ''}`}
+                                />
+                            </button>
+
+                            {isCityDropdownOpen && (
+                                <>
+                                    <div 
+                                        className="hotel-dropdown-overlay" 
+                                        onClick={() => setIsCityDropdownOpen(false)}
+                                    />
+                                    <div className="hotel-dropdown-menu">
+                                        {cityOptions.map((city) => (
+                                            <button
+                                                key={city}
+                                                className={`hotel-dropdown-item ${
+                                                    filterCity === city ? 'hotel-dropdown-item--active' : ''
+                                                }`}
+                                                onClick={() => handleCitySelect(city)}
+                                            >
+                                                <span className="hotel-dropdown-label">
+                                                    {city === 'ALL' ? 'All Cities' : city}
+                                                </span>
+                                                {filterCity === city && (
+                                                    <span className="hotel-dropdown-check">✓</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* MIDDLE RIGHT: Status Dropdown */}
+                    <div className="hotel-filter-container">
+                        <label>Status:</label>
+                        <div className="hotel-select-wrapper">
+                            <button 
+                                className="hotel-select-btn"
+                                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                            >
+                                <span className="hotel-select-label">{getStatusLabel()}</span>
+                                <ChevronDown 
+                                    size={14} 
+                                    className={`hotel-select-icon ${isStatusDropdownOpen ? 'hotel-select-icon--open' : ''}`}
+                                />
+                            </button>
+
+                            {isStatusDropdownOpen && (
+                                <>
+                                    <div 
+                                        className="hotel-dropdown-overlay" 
+                                        onClick={() => setIsStatusDropdownOpen(false)}
+                                    />
+                                    <div className="hotel-dropdown-menu">
+                                        {statusOptions.map((status) => (
+                                            <button
+                                                key={status}
+                                                className={`hotel-dropdown-item ${
+                                                    filterStatus === status ? 'hotel-dropdown-item--active' : ''
+                                                }`}
+                                                onClick={() => handleStatusSelect(status)}
+                                            >
+                                                <span className="hotel-dropdown-label">
+                                                    {status === 'ALL' ? 'All Status' : status}
+                                                </span>
+                                                {filterStatus === status && (
+                                                    <span className="hotel-dropdown-check">✓</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT: Search Box */}
+                    <div className="hotel-search-box">
+                        <Search size={16} className="hotel-search-icon" /> 
+                        <input
+                            type="text"
+                            className="hotel-search-input"
+                            placeholder="Search hotel name or location..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                 </div>
-                
-                {/* ORDER 3: Status Filter Dropdown */}
-                <div className="hf-select-group">
-                    <label htmlFor="status-select" className="hf-select-label">Status:</label>
-                    <select
-                        id="status-select"
-                        className="hf-filter-select"
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                    >
-                        {statusOptions.map(status => (
-                            <option key={status} value={status}>
-                                {status === 'ALL' ? 'All Status' : status}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                
-                {/* ORDER 4: Search Box */}
-                <div className="hf-search-box">
-                    <Search size={18} className="hf-search-icon" /> 
-                    <input
-                        type="text"
-                        className="hf-search-input"
-                        placeholder="Search hotel name or location..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
+
             </div>
         </div>
     );

@@ -133,8 +133,15 @@
 }
 
 .filter-icon {
-  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  color: #001F3F;
+}
+
+.filter-icon svg {
+  stroke-width: 2.5;
 }
 
 .filter-label {

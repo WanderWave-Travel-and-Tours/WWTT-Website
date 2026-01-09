@@ -118,7 +118,7 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/posters');
+            const response = await axios.get('http://localhost:5000/api/posters');
             
             // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
             const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
@@ -142,7 +142,7 @@ const ViewPoster = () => {
                 const { userEmail, adminId } = getAdminData();
 
                 try {
-                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                    const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
                         isArchive: 'Yes',
                         userEmail,
                         adminId
@@ -173,7 +173,7 @@ const ViewPoster = () => {
                 const { userEmail, adminId } = getAdminData();
 
                 try {
-                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                    const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
                         status: newStatus,
                         userEmail,
                         adminId
@@ -287,7 +287,7 @@ const ViewPoster = () => {
                                                 <td>
                                                     <div className="vp-image-preview">
                                                         <img 
-                                                            src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
+                                                            src={`http://localhost:5000/${poster.imageUrl}`} 
                                                             alt={poster.title}
                                                         />
                                                     </div>
