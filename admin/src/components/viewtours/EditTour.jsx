@@ -3,15 +3,23 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, X, Plus, Trash2, HelpCircle } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
 import "./EditTour.css";
-
-// ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
-
-// ✅ Imports for Toast Management
 import { useToast } from "../toast/ToastManager";
 
-// ✅ Custom Confirmation Modal Component (Pattern from EditVisa)
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+}; 
+
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -60,13 +68,12 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 const EditTour = () => {
   const navigate = useNavigate();
   const { id: tourId } = useParams();
-  const toast = useToast(); // ✅ Initialize Toast
+  const toast = useToast(); 
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // ✅ Confirmation Modal State
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: "",
@@ -88,7 +95,6 @@ const EditTour = () => {
     });
   };
 
-  // Form state
   const [formData, setFormData] = useState({
     title: "",
     destination: "",
@@ -99,6 +105,8 @@ const EditTour = () => {
     existingImage: "",
   });
 
+  const [originalData, setOriginalData] = useState(null);
+
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [inclusions, setInclusions] = useState([""]);
@@ -106,17 +114,13 @@ const EditTour = () => {
     { day: 1, title: "", activities: [""] },
   ]);
 
-  const API_BASE_URL = "http://localhost:5000/api/tours";
+  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/tours";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  // Calculate final price
   const calculatedPrice =
     parseFloat(formData.sellerPrice || 0) + parseFloat(formData.markup || 0);
 
-  // =========================================================
-  // ✅ AUTO-DRAFT LOGIC START
-  // =========================================================
 
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -252,10 +256,6 @@ const EditTour = () => {
     toast.info("Draft discarded.");
   };
 
-  // =========================================================
-  // ✅ AUTO-DRAFT LOGIC END
-  // =========================================================
-
   useEffect(() => {
     if (!tourId) {
       navigate("/view-tours");
@@ -270,6 +270,7 @@ const EditTour = () => {
         if (result.status === "ok") {
           const tour = result.data;
           
+          setOriginalData(tour);
           let sellerPriceValue = 0;
           let markupValue = 0;
           
@@ -301,7 +302,7 @@ const EditTour = () => {
           );
 
           if (tour.image) {
-            setImagePreview(`http://localhost:5000/uploads/${tour.image}`);
+            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`);
           }
         }
       } catch (err) {
@@ -394,7 +395,6 @@ const EditTour = () => {
     }
   };
 
-  // ✅ New Handle Back/Cancel with Confirmation
   const handleBack = () => {
     askConfirmation(
       "Discard Changes",
@@ -406,7 +406,6 @@ const EditTour = () => {
     );
   };
 
-  // ✅ Wrap handleSubmit with Confirmation
   const handleSubmitConfirmation = (e) => {
     e.preventDefault();
     
@@ -429,6 +428,7 @@ const EditTour = () => {
 
   const performSubmit = async () => {
     setSubmitting(true);
+    const { userEmail, adminId } = getAdminData();
 
     try {
       const formDataToSend = new FormData();
@@ -439,6 +439,44 @@ const EditTour = () => {
       formDataToSend.append("duration", formData.duration);
       formDataToSend.append("category", formData.category);
       formDataToSend.append("existingImage", formData.existingImage);
+      formDataToSend.append("userEmail", userEmail);
+      formDataToSend.append("adminId", adminId);
+
+      let changes = [];
+      const trackChange = (label, oldVal, newVal) => {
+          const cleanOld = String(oldVal || "").trim();
+          const cleanNew = String(newVal || "").trim();
+          if (cleanOld !== cleanNew) {
+              changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
+          }
+      };
+
+      if (originalData) {
+          trackChange("Title", originalData.title, formData.title);
+          trackChange("Destination", originalData.destination, formData.destination);
+          trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
+          trackChange("Markup", originalData.markup, formData.markup);
+          trackChange("Duration", originalData.duration, formData.duration);
+          trackChange("Category", originalData.category, formData.category);
+
+          if (imageFile) {
+              changes.push(`Tour image was replaced.`);
+          }
+          
+          const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
+          const oldInclusions = originalData.inclusions || [];
+          if (JSON.stringify(filteredInclusions) !== JSON.stringify(oldInclusions)) {
+              changes.push("Inclusions list updated");
+          }
+          
+          if (itinerary.length !== (originalData.itinerary?.length || 0)) {
+               changes.push("Itinerary days/structure updated");
+          }
+      }
+
+      if (changes.length > 0) {
+          formDataToSend.append("changes", JSON.stringify(changes)); 
+      }
 
       const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
       formDataToSend.append("inclusions", JSON.stringify(filteredInclusions));
@@ -495,7 +533,6 @@ const EditTour = () => {
   return (
     <div className="et-page">
       
-      {/* ✅ RESTORE DRAFT MODAL */}
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -503,7 +540,6 @@ const EditTour = () => {
         draftInfo={draftInfo}
       />
 
-      {/* ✅ CUSTOM CONFIRMATION MODAL */}
       <CustomConfirmModal 
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}

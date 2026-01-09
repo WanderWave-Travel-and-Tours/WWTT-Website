@@ -1,7 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Bell, ChevronDown } from 'lucide-react';
+import { Download, Bell, ChevronDown, BarChart2, TrendingUp, Activity, Calendar, Award } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import './DashboardHeader.css';
+
+// Custom Peso Sign Icon Component
+const PesoSign = ({ size = 18 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M5 6h9a4 4 0 0 1 0 8H5" />
+    <line x1="3" y1="10" x2="11" y2="10" />
+    <line x1="3" y1="14" x2="11" y2="14" />
+    <line x1="5" y1="4" x2="5" y2="20" />
+  </svg>
+);
 
 const DashboardHeader = ({ 
   onSectionFilter,
@@ -13,15 +32,15 @@ const DashboardHeader = ({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
   const sections = [
-    { value: 'all', label: 'All Sections', icon: '📊' },
-    { value: 'revenue-analytics', label: 'Revenue Analytics', icon: '💰' },
-    { value: 'financial-performance', label: 'Financial Performance', icon: '💼' },
-    { value: 'combined-revenue', label: 'Combined Revenue Trends', icon: '📉' },
-    { value: 'recent-bookings', label: 'Recent Bookings', icon: '🎫' },
-    { value: 'top-packages', label: 'Top Performing Packages', icon: '🏆' },
+    { value: 'all', label: 'All Sections', icon: 'BarChart2' },
+    { value: 'revenue-analytics', label: 'Revenue Analytics', icon: 'PesoSign' },
+    { value: 'financial-performance', label: 'Financial Performance', icon: 'TrendingUp' },
+    { value: 'combined-revenue', label: 'Combined Revenue Trends', icon: 'Activity' },
+    { value: 'recent-bookings', label: 'Recent Bookings', icon: 'Calendar' },
+    { value: 'top-packages', label: 'Top Performing Packages', icon: 'Award' },
   ];
 
   // Fetch unread count
@@ -83,7 +102,31 @@ const DashboardHeader = ({
 
   const getSelectedIcon = () => {
     const selected = sections.find(s => s.value === selectedSection);
-    return selected ? selected.icon : '📊';
+    if (!selected) return BarChart2;
+    
+    const iconMap = {
+      'BarChart2': BarChart2,
+      'PesoSign': PesoSign,
+      'TrendingUp': TrendingUp,
+      'Activity': Activity,
+      'Calendar': Calendar,
+      'Award': Award
+    };
+    
+    return iconMap[selected.icon] || BarChart2;
+  };
+
+  const getIconComponent = (iconName) => {
+    const iconMap = {
+      'BarChart2': BarChart2,
+      'PesoSign': PesoSign,
+      'TrendingUp': TrendingUp,
+      'Activity': Activity,
+      'Calendar': Calendar,
+      'Award': Award
+    };
+    
+    return iconMap[iconName] || BarChart2;
   };
 
   const handleNotificationClick = () => {
@@ -98,6 +141,8 @@ const DashboardHeader = ({
       window.location.href = '/activity-logs';
     }
   };
+
+  const SelectedIcon = getSelectedIcon();
 
   return (
     <div className="dash-header">
@@ -115,7 +160,9 @@ const DashboardHeader = ({
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             title="Filter Dashboard Sections"
           >
-            <span className="filter-icon">{getSelectedIcon()}</span>
+            <span className="filter-icon">
+              <SelectedIcon size={18} />
+            </span>
             <span className="filter-label">{getSelectedLabel()}</span>
             <ChevronDown 
               size={16} 
@@ -130,21 +177,26 @@ const DashboardHeader = ({
                 onClick={() => setIsDropdownOpen(false)}
               />
               <div className="dash-dropdown-menu">
-                {sections.map((section) => (
-                  <button
-                    key={section.value}
-                    className={`dash-dropdown-item ${
-                      selectedSection === section.value ? 'dash-dropdown-item--active' : ''
-                    }`}
-                    onClick={() => handleSectionSelect(section.value)}
-                  >
-                    <span className="dropdown-icon">{section.icon}</span>
-                    <span className="dropdown-label">{section.label}</span>
-                    {selectedSection === section.value && (
-                      <span className="dropdown-check">✓</span>
-                    )}
-                  </button>
-                ))}
+                {sections.map((section) => {
+                  const IconComponent = getIconComponent(section.icon);
+                  return (
+                    <button
+                      key={section.value}
+                      className={`dash-dropdown-item ${
+                        selectedSection === section.value ? 'dash-dropdown-item--active' : ''
+                      }`}
+                      onClick={() => handleSectionSelect(section.value)}
+                    >
+                      <span className="dropdown-icon">
+                        <IconComponent size={18} />
+                      </span>
+                      <span className="dropdown-label">{section.label}</span>
+                      {selectedSection === section.value && (
+                        <span className="dropdown-check">✓</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}

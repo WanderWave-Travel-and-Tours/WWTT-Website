@@ -58,7 +58,7 @@ const ArchiveTable = ({
                 <th>Archive ID</th>
                 <th>Item Name</th>
                 <th>Type</th>
-                <th>Reference</th>
+                <th style={{ width: '250px' }}>Reference</th>
                 <th>Date Archived</th>
                 <th style={{ width: '120px' }}>Expires In</th>
                 <th>Status</th>
@@ -120,8 +120,11 @@ const ArchiveTable = ({
                                 </div>
                             </td>
                             
+                            {/* UPDATED: Reference column with truncation wrapper */}
                             <td>
-                                {item.reference}
+                                <div className="reference-text-truncate" title={item.reference}>
+                                    {item.reference}
+                                </div>
                             </td>
                             
                             <td>

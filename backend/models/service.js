@@ -19,9 +19,9 @@ const serviceSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // UPDATED: Removed enum to allow custom categories from "Other" input
   category: {
     type: String,
-    enum: ['TRAVEL', 'DOCUMENTATION', 'FINANCIAL', 'OTHER'],
     required: true
   },
   hasSubCollection: {

@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 // Ginamit ang useToast mula sa ToastManager base sa iyong request
 import { useToast } from '../toast/ToastManager';
 
-const API_BASE_URL = 'http://localhost:5000/api/tours';
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/tours';
 
 // --- CUSTOM CONFIRMATION MODAL COMPONENT (Reference from EditVisa.jsx) ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -197,7 +197,7 @@ const ViewTours = () => {
                                                 <td>
                                                     <div className="vt-customer-cell">
                                                         <div className="vt-image-preview">
-                                                            <img src={`http://localhost:5000/uploads/${tour.image}`} alt="" />
+                                                            <img src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} alt="" />
                                                         </div>
                                                         <span className="vt-customer-name">{tour.title.toUpperCase()}</span>
                                                     </div>

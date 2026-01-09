@@ -1,13 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft, Upload, Calendar, HelpCircle } from 'lucide-react';
-import Sidebar from '../sidebar/sidebar'; 
+import axios from 'axios';
+import Sidebar from '../sidebar/sidebar';
 import './EditPoster.css';
 
 // ✅ Imports for Notifications and Draft Functionality
 import { useToast } from "../toast/ToastManager"; 
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
+
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 // ✅ Confirmation Modal Component (Patterned after EditVisa)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -79,6 +94,9 @@ const EditPoster = () => {
         endDate: '',
         description: ''
     });
+
+    // Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
@@ -172,115 +190,91 @@ const EditPoster = () => {
 
         const timeoutId = setTimeout(() => {
             updateDraft();
-        }, 500); 
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [formData, imageFile, isLoading, id]);
 
     const restoreDraftData = async (data) => {
         if (!data) return;
-        
-        if (data.originalId && data.originalId !== id) {
-            return;
-        }
 
-        setFormData({
-            title: data.title || '',
-            status: data.status || 'Active',
-            startDate: data.startDate || '',
-            endDate: data.endDate || '',
-            description: data.description || ''
-        });
+        if (data.title) setFormData(prev => ({ ...prev, title: data.title }));
+        if (data.status) setFormData(prev => ({ ...prev, status: data.status }));
+        if (data.startDate) setFormData(prev => ({ ...prev, startDate: data.startDate }));
+        if (data.endDate) setFormData(prev => ({ ...prev, endDate: data.endDate }));
+        if (data.description) setFormData(prev => ({ ...prev, description: data.description }));
 
         if (data.image && data.imageMeta) {
             try {
-                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                const restoredFile = await base64ToFile(
+                    data.image, 
+                    data.imageMeta.name, 
+                    data.imageMeta.type
+                );
                 setImageFile(restoredFile);
-                setImagePreview(URL.createObjectURL(restoredFile));
-                toast.info("Image restored from draft."); // ✅ Added Toast
+                setImagePreview(data.image);
             } catch (err) {
                 console.error("Failed to restore image:", err);
             }
         }
     };
 
-    const { 
-        clearDraft, 
-        hasDraft, 
-        restoreDraft, 
-        discardDraft,
-        draftInfo 
-    } = useAutoDraft({
-        module: `edit-poster-${id}`,
-        formData: draftPayload,
-        setFormData: restoreDraftData,
-        imagePreview: imagePreview, 
-        autoRestore: false 
-    });
-
-    const [showRestoreModal, setShowRestoreModal] = useState(false);
-
-    useEffect(() => {
-        if (hasDraft && !isLoading) {
-            setShowRestoreModal(true);
-        }
-    }, [hasDraft, isLoading]);
-
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-        toast.success("Draft restored successfully!"); // ✅ Added Toast
-    };
-
-    const handleDiscardDraft = async () => {
-        await discardDraft();
-        setShowRestoreModal(false);
-        toast.info("Draft discarded."); // ✅ Added Toast
-    };
+    const {
+        showRestoreModal,
+        draftInfo,
+        handleRestoreDraft,
+        handleDiscardDraft,
+        clearDraft
+    } = useAutoDraft(
+        `edit-poster-${id}`,
+        draftPayload,
+        restoreDraftData
+    );
 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC END
     // =========================================================
 
-    // Fetch Poster Data
     useEffect(() => {
-        const fetchPosterDetails = async () => {
+        const fetchPoster = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/posters/${id}`);
-                if (!response.ok) throw new Error('Failed to fetch poster details');
-                
-                const data = await response.json();
-                
+                const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/posters/${id}`);
+                const poster = response.data;
+
                 setFormData({
-                    title: data.title || '',
-                    status: data.status || 'Active',
-                    startDate: formatDateForInput(data.startDate),
-                    endDate: formatDateForInput(data.endDate),
-                    description: data.description || ''
+                    title: poster.title || '',
+                    status: poster.status || 'Active',
+                    startDate: formatDateForInput(poster.startDate) || '',
+                    endDate: formatDateForInput(poster.endDate) || '',
+                    description: poster.description || ''
                 });
 
-                if (data.imageUrl) {
-                    setImagePreview(`http://localhost:5000/${data.imageUrl}`);
+                setOriginalData({
+                    title: poster.title || '',
+                    status: poster.status || 'Active',
+                    startDate: formatDateForInput(poster.startDate) || '',
+                    endDate: formatDateForInput(poster.endDate) || '',
+                    description: poster.description || ''
+                });
+
+                if (poster.imageUrl) {
+                    setImagePreview(`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`);
                 }
+
+                setIsLoading(false);
             } catch (err) {
                 console.error(err);
-                toast.error('Could not load poster details.'); // ✅ Use Toast instead of alert
-            } finally {
+                toast.error('Failed to load poster data.');
                 setIsLoading(false);
             }
         };
 
-        if (id) {
-            fetchPosterDetails();
-        }
-    }, [id, toast]);
+        fetchPoster();
+    }, [id]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -292,61 +286,82 @@ const EditPoster = () => {
                 setImagePreview(reader.result);
             };
             reader.readAsDataURL(file);
-            toast.info(`Selected image: ${file.name}`); // ✅ Added Toast
         }
     };
 
-    // ✅ Confirmation before Saving
+    const getChangedFields = () => {
+        if (!originalData) return {};
+
+        const changes = {};
+        if (formData.title !== originalData.title) {
+            changes.title = { old: originalData.title, new: formData.title };
+        }
+        if (formData.status !== originalData.status) {
+            changes.status = { old: originalData.status, new: formData.status };
+        }
+        if (formData.startDate !== originalData.startDate) {
+            changes.startDate = { old: originalData.startDate, new: formData.startDate };
+        }
+        if (formData.endDate !== originalData.endDate) {
+            changes.endDate = { old: originalData.endDate, new: formData.endDate };
+        }
+        if (formData.description !== originalData.description) {
+            changes.description = { old: originalData.description, new: formData.description };
+        }
+        if (imageFile) {
+            changes.imageUrl = { old: 'Existing Image', new: imageFile.name };
+        }
+        return changes;
+    };
+
     const handleSaveConfirmation = (e) => {
         e.preventDefault();
         askConfirmation(
-            "Update Poster",
-            "Are you sure you want to save the changes to this poster?",
-            () => performSubmit()
+            "Save Changes?",
+            "Are you sure you want to update this poster?",
+            handleActualSave,
+            "primary"
         );
     };
 
-    const performSubmit = async () => {
+    const handleActualSave = async () => {
         setSubmitting(true);
-
         try {
             const formDataToSend = new FormData();
-            formDataToSend.append("title", formData.title);
-            formDataToSend.append("status", formData.status);
-            formDataToSend.append("startDate", formData.startDate);
-            formDataToSend.append("endDate", formData.endDate);
-            formDataToSend.append("description", formData.description);
+            formDataToSend.append('title', formData.title);
+            formDataToSend.append('status', formData.status);
+            formDataToSend.append('startDate', formData.startDate);
+            formDataToSend.append('endDate', formData.endDate);
+            formDataToSend.append('description', formData.description);
+
+            const { userEmail, adminId } = getAdminData();
+            formDataToSend.append("userEmail", userEmail);
+            if (adminId) formDataToSend.append("adminId", adminId);
+
+            const changedFields = getChangedFields();
+            formDataToSend.append("changedFields", JSON.stringify(changedFields));
 
             if (imageFile) {
-                formDataToSend.append("image", imageFile);
+                formDataToSend.append('imageUrl', imageFile);
             }
 
-            const response = await fetch(`http://localhost:5000/api/posters/update/${id}`, {
-                method: 'PUT',
-                body: formDataToSend,
-            });
+            await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/update/${id}`, formDataToSend);
 
-            if (!response.ok) {
-                throw new Error('Failed to update poster');
-            }
-
-            toast.success('Poster updated successfully!'); // ✅ Use Toast instead of alert
-            
+            toast.success('Poster updated successfully!');
             await clearDraft();
-            navigate('/view-posters'); 
+            navigate('/view-posters');
         } catch (err) {
             console.error(err);
-            toast.error('Failed to update poster. Please try again.'); // ✅ Use Toast instead of alert
+            toast.error('Failed to update poster. Please try again.');
         } finally {
             setSubmitting(false);
         }
     };
 
-    // ✅ Confirmation before Discarding/Canceling
     const handleDiscard = () => {
         askConfirmation(
-            "Discard Changes",
-            "Are you sure you want to discard your changes? All unsaved data and drafts for this session will be cleared.",
+            "Cancel Editing?",
+            "Are you sure you want to cancel? Any unsaved changes and drafts will be cleared.",
             async () => {
                 await clearDraft();
                 navigate('/view-posters');

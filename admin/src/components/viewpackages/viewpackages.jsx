@@ -20,7 +20,7 @@ const ViewPackages = () => {
     const [selectedPackage, setSelectedPackage] = useState(null);
     const navigate = useNavigate();
     
-    const API_BASE_URL = 'http://localhost:5000/api/packages';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -55,7 +55,7 @@ const ViewPackages = () => {
         }
         
         // DEFAULT: Try database/uploads folder first
-        return `http://localhost:5000/uploads/${image}`;
+        return `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
     };
 
     // Smart error handler: If database fails, try Cloudinary

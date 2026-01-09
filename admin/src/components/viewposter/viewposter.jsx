@@ -1,11 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Archive, Calendar, Eye, EyeOff, Search, HelpCircle } from 'lucide-react';
+import axios from 'axios';
 import Sidebar from '../sidebar/sidebar';
 import PosterDetailModal from './PosterDetailModal';
 import PosterPagination from './PosterPagination';
 import PosterFilters from './PosterFilters';
-import { useToast } from '../toast/ToastManager'; // Inimport ang Toast
+import { useToast } from '../toast/ToastManager';
 import './viewposter.css';
+
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
 
 // 🔥 Custom Confirm Modal Component (Reference from EditVisa.jsx)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -52,7 +67,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewPoster = () => {
-    const toast = useToast(); // Initialize Toast
+    const toast = useToast();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -103,11 +118,10 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/posters');
-            if (!response.ok) throw new Error('Failed to fetch');
-            const data = await response.json();
+            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/posters');
             
-            const nonArchivedPosters = data.filter(poster => poster.isArchive === "No");
+            // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
+            const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
             setPosters(nonArchivedPosters);
             
             setCurrentPage(1);
@@ -119,69 +133,66 @@ const ViewPoster = () => {
         }
     };
 
-    // Binago para gamitin ang Confirmation Modal sa halip na window.confirm
-    const handleArchive = (id, title) => {
+    // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
+    const handleArchive = async (id, title) => {
         askConfirmation(
-            "Archive Poster",
-            `Are you sure you want to archive "${title}"? This will remove it from the active list.`,
-            () => performArchive(id),
+            "Archive Poster?",
+            `Are you sure you want to archive "${title}"?`,
+            async () => {
+                const { userEmail, adminId } = getAdminData();
+
+                try {
+                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                        isArchive: 'Yes',
+                        userEmail,
+                        adminId
+                    });
+
+                    if (response.data) {
+                        const updatedPosters = posters.filter(poster => poster._id !== id);
+                        setPosters(updatedPosters);
+                        toast.success('Poster archived successfully!');
+                    }
+                } catch (error) {
+                    console.error('Error archiving poster:', error);
+                    toast.error('Failed to archive poster.');
+                }
+            },
             "danger"
         );
     };
 
-    const performArchive = async (id) => {
-        try {
-            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, { 
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isArchive: 'Yes' }) 
-            });
-
-            if (response.ok) {
-                const updatedPosters = posters.filter(poster => poster._id !== id);
-                setPosters(updatedPosters);
-                toast.success('Poster archived successfully');
-                
-                const maxPage = Math.ceil(updatedPosters.length / itemsPerPage);
-                if (currentPage > maxPage && maxPage > 0) {
-                    setCurrentPage(maxPage);
-                }
-                
-                if (showDetailModal) setShowDetailModal(false);
-            } else {
-                toast.error('Failed to archive poster');
-            }
-        } catch (error) {
-            console.error('Error archiving:', error);
-            toast.error('Server error while archiving');
-        }
-    };
-
+    // 🔥🔥🔥 UPDATED: TOGGLE STATUS WITH ADMIN DATA 🔥🔥🔥
     const toggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         
-        try {
-            const response = await fetch(`http://localhost:5000/api/posters/${id}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
+        askConfirmation(
+            "Change Status?",
+            `Change poster status to ${newStatus}?`,
+            async () => {
+                const { userEmail, adminId } = getAdminData();
 
-            if (response.ok) {
-                setPosters(posters.map(p => 
-                    p._id === id ? { ...p, status: newStatus } : p
-                ));
-                if (selectedPoster && selectedPoster._id === id) {
-                    setSelectedPoster({ ...selectedPoster, status: newStatus });
+                try {
+                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                        status: newStatus,
+                        userEmail,
+                        adminId
+                    });
+
+                    if (response.data) {
+                        const updatedPosters = posters.map(poster =>
+                            poster._id === id ? { ...poster, status: newStatus } : poster
+                        );
+                        setPosters(updatedPosters);
+                        toast.success(`Status changed to ${newStatus}!`);
+                    }
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    toast.error('Failed to update status.');
                 }
-                toast.info(`Poster status updated to ${newStatus}`);
-            } else {
-                toast.error('Failed to update status');
-            }
-        } catch (error) {
-            console.error('Error updating status:', error);
-            toast.error('Error updating status');
-        }
+            },
+            "primary"
+        );
     };
 
     const handleViewDetails = (poster) => {
@@ -190,23 +201,21 @@ const ViewPoster = () => {
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        if (!dateString) return '--';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     };
 
     const filteredPosters = posters.filter(poster => {
-        const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (poster.description && poster.description.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesStatus = filterStatus === 'ALL' || poster.status === filterStatus;
         return matchesSearch && matchesStatus;
     });
 
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentPosters = filteredPosters.slice(indexOfFirstItem, indexOfLastItem);
+    const indexOfLastPoster = currentPage * itemsPerPage;
+    const indexOfFirstPoster = indexOfLastPoster - itemsPerPage;
+    const currentPosters = filteredPosters.slice(indexOfFirstPoster, indexOfLastPoster);
 
     const activePosters = posters.filter(p => p.status === 'Active').length;
 
@@ -216,7 +225,8 @@ const ViewPoster = () => {
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
-            <main className={`vp-main ${isSidebarCollapsed ? 'vp-main--collapsed' : ''}`}>
+            
+            <main className={`vp-main ${isSidebarCollapsed ? "vp-main--collapsed" : ""}`}>
                 <div className="vp-container">
                     <header className="vp-header">
                         <div className="vp-header-content">
@@ -277,7 +287,7 @@ const ViewPoster = () => {
                                                 <td>
                                                     <div className="vp-image-preview">
                                                         <img 
-                                                            src={`http://localhost:5000/${poster.imageUrl}`} 
+                                                            src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
                                                             alt={poster.title}
                                                         />
                                                     </div>
@@ -307,7 +317,12 @@ const ViewPoster = () => {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span className={`vp-status vp-status--${poster.status.toLowerCase()}`}>
+                                                    <span 
+                                                        className={`vp-status vp-status--${poster.status.toLowerCase()}`}
+                                                        style={{ cursor: 'pointer' }}
+                                                        onClick={() => toggleStatus(poster._id, poster.status)}
+                                                        title="Click to toggle status"
+                                                    >
                                                         {poster.status === 'Active' ? <Eye size={12} /> : <EyeOff size={12} />}
                                                         {poster.status}
                                                     </span>

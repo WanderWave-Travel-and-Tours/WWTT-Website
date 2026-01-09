@@ -1,47 +1,160 @@
-.account-settings-page {
-    display: flex;
-    min-height: 100vh;
-    background: #f8fafc;
-}
-
-.account-settings-main {
-    flex: 1;
-    padding: 40px 48px;
-    margin-left: 280px;
-    transition: margin-left 0.3s ease-in-out;
-}
-
-.account-settings-main.collapsed {
-    margin-left: 70px;
-}
+/* ACCOUNT SETTINGS - MATCHING ADDADMIN UI PATTERN */
+/* COMPLETE RESPONSIVE DESIGN */
 
 .account-settings-container {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
+    width: 100%;
+}
+
+/* BACK BUTTON */
+.account-back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #001f3f 0%, #0a2847 100%);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 14px rgba(0, 31, 63, 0.25);
+}
+
+.account-back-button:hover {
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
+    transform: translateX(-6px);
+    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
+}
+
+.account-back-button:active {
+    transform: translateX(-4px) scale(0.98);
+}
+
+/* HEADER DESIGN */
+.account-settings-header {
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: url('https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=2074&auto=format&fit=crop') center/cover;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+}
+
+.account-settings-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 31, 63, 0.92) 0%, rgba(0, 31, 63, 0.75) 100%);
+    z-index: 1;
+}
+
+.account-settings-header-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .account-settings-title {
-    font-family: 'Arial Black', sans-serif;
-    font-size: 2rem;
-    color: #001F3F;
-    margin-bottom: 6px;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Arial Black', 'Segoe UI', sans-serif;
 }
 
+.account-settings-subtitle {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.account-settings-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: #FF8C42;
+}
+
+/* FORM WRAPPER */
+.account-settings-form-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* SECTIONS */
 .account-settings-section {
     background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 32px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    position: relative;
+}
+
+.account-settings-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+    position: relative;
+}
+
+.account-settings-section-header::before {
+    content: '';
+    position: absolute;
+    left: -32px;
+    top: 0;
+    bottom: 16px;
+    width: 4px;
+    background: #FF8C42;
+    border-radius: 0 2px 2px 0;
+}
+
+.account-section-icon {
+    color: #001f3f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .account-settings-section-title {
-    font-family: 'Arial Black', sans-serif;
     font-size: 13px;
-    color: #001F3F;
+    font-weight: 900;
+    color: #001f3f;
+    margin: 0;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.8px;
+    font-family: 'Arial Black', 'Segoe UI', sans-serif;
+}
+
+/* FORM */
+.account-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 .account-fields-grid {
@@ -50,44 +163,322 @@
     gap: 20px;
 }
 
-.account-field.full-width {
+.account-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.account-field.account-full-width {
     grid-column: 1 / -1;
 }
 
-.account-field label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 8px;
+.account-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     display: block;
 }
 
-.account-field input {
+.account-required {
+    color: #dc2626;
+    margin-left: 4px;
+    font-weight: 900;
+}
+
+.account-input {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #f8fafc;
+    padding: 13px 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.2s;
+    background: #fff;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    box-sizing: border-box;
 }
 
-.btn-save-account {
-    padding: 12px 24px;
-    background: #FF8C42;
-    color: white;
+.account-input:focus {
+    outline: none;
+    border-color: #FF8C42;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.account-input::placeholder {
+    color: #94a3b8;
+}
+
+/* Password Input Wrapper */
+.account-password-wrapper {
+    position: relative;
+}
+
+.account-password-wrapper .account-input {
+    padding-right: 48px;
+}
+
+.account-toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
     border: none;
-    border-radius: 8px;
-    font-weight: 700;
+    color: #94a3b8;
     cursor: pointer;
-    transition: 0.2s;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    border-radius: 6px;
 }
 
-.btn-save-account.secondary {
-    background: #1e293b;
+.account-toggle-password:hover {
+    color: #FF8C42;
+    background: #f1f5f9;
 }
 
+/* ACTIONS */
 .account-actions {
-    grid-column: 1 / -1;
     display: flex;
     justify-content: flex-end;
-    margin-top: 10px;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 20px 0 0 0;
+    border-top: 1px solid #f0f0f0;
+}
+
+.account-btn {
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.account-btn-save {
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
+}
+
+.account-btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
+}
+
+.account-btn-secondary {
+    background: #1e293b;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(30, 41, 59, 0.3);
+}
+
+.account-btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(30, 41, 59, 0.4);
+    background: #334155;
+}
+
+.account-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+@media (max-width: 1100px) {
+    .account-settings-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
+    }
+
+    .account-fields-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .account-field.account-full-width {
+        grid-column: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .account-back-button {
+        padding: 10px 20px;
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+
+    .account-settings-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .account-settings-title {
+        font-size: 2rem;
+    }
+
+    .account-settings-subtitle {
+        font-size: 14px;
+    }
+
+    .account-settings-section {
+        padding: 24px 20px;
+    }
+
+    .account-settings-section-header::before {
+        left: -20px;
+    }
+}
+
+@media (max-width: 640px) {
+    .account-back-button {
+        padding: 10px 18px;
+        font-size: 12px;
+        margin-bottom: 16px;
+    }
+
+    .account-settings-title {
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .account-settings-subtitle {
+        font-size: 13px;
+    }
+
+    .account-settings-subtitle::before {
+        width: 30px;
+    }
+
+    .account-settings-header {
+        padding: 30px 24px;
+    }
+
+    .account-settings-section {
+        padding: 20px 16px;
+    }
+
+    .account-settings-section-header {
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+    }
+
+    .account-settings-section-header::before {
+        left: -16px;
+        width: 3px;
+    }
+
+    .account-section-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .account-settings-section-title {
+        font-size: 12px;
+        letter-spacing: 1.5px;
+    }
+
+    .account-label {
+        font-size: 10px;
+    }
+
+    .account-input {
+        padding: 11px 14px;
+        font-size: 13px;
+    }
+
+    .account-actions {
+        flex-direction: column;
+        padding-top: 16px;
+    }
+
+    .account-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 24px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .account-back-button {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 20px;
+        font-size: 12px;
+        margin-bottom: 14px;
+    }
+
+    .account-settings-title {
+        font-size: 1.4rem;
+        letter-spacing: 1.5px;
+    }
+
+    .account-settings-subtitle {
+        font-size: 12px;
+    }
+
+    .account-settings-subtitle::before {
+        width: 25px;
+        height: 2px;
+    }
+
+    .account-settings-header {
+        padding: 28px 20px;
+        min-height: 160px;
+    }
+
+    .account-settings-section {
+        padding: 16px 12px;
+    }
+
+    .account-settings-section-header {
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+    }
+
+    .account-settings-section-header::before {
+        left: -12px;
+    }
+
+    .account-settings-section-title {
+        font-size: 11px;
+    }
+
+    .account-label {
+        font-size: 10px;
+        margin-bottom: 6px;
+    }
+
+    .account-input {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .account-btn {
+        padding: 10px 20px;
+        font-size: 12px;
+    }
+
+    .account-actions {
+        padding-top: 12px;
+        gap: 10px;
+    }
 }

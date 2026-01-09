@@ -43,6 +43,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, 
             duration, category, inclusions, itinerary,
+            tourType, minPax,  // ✅ ADDED
             userEmail, adminId 
         } = req.body;
 
@@ -55,11 +56,17 @@ router.post('/add', upload.single('image'), async (req, res) => {
             return res.status(400).json({ status: 'error', error: 'Image is required' });
         }
 
+        // ✅ Validate tourType and minPax
+        if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+            return res.status(400).json({ status: 'error', error: 'Minimum pax is required for joiner tours' });
+        }
+
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
         const logUserId = getValidAdminId(adminId);
 
-        const newPackage = new Package({
+        // ✅ Prepare package data with tourType and minPax
+        const packageData = {
             title,
             destination,
             sellerPrice: sellerPriceNum,
@@ -67,13 +74,20 @@ router.post('/add', upload.single('image'), async (req, res) => {
             price: sellerPriceNum + markupNum,
             duration,
             category,
+            tourType: tourType || 'private', // ✅ ADDED
             image: req.file.path, // Cloudinary Secure URL
             imagePublicId: req.file.filename, // Cloudinary ID for deletion later
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
             isArchive: 'No'
-        });
+        };
 
+        // ✅ Only add minPax if tourType is joiners
+        if (tourType === 'joiners' && minPax) {
+            packageData.minPax = parseInt(minPax);
+        }
+
+        const newPackage = new Package(packageData);
         const savedPackage = await newPackage.save();
 
         // Activity Logging
@@ -110,12 +124,17 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
-            userEmail, adminId
+            userEmail, adminId, changes
         } = req.body;
         
         const logUserId = getValidAdminId(adminId);
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
+
+        // ✅ Validate tourType and minPax
+        if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
+            return res.status(400).json({ status: 'error', error: 'Minimum pax is required for joiner tours' });
+        }
 
         const updateData = {
             title,
@@ -125,9 +144,17 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             price: sellerPriceNum + markupNum,
             duration,
             category,
+            tourType: tourType || 'private',  // ✅ ADDED
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
+
+        // ✅ Handle minPax based on tourType
+        if (tourType === 'joiners' && minPax) {
+            updateData.minPax = parseInt(minPax);
+        } else if (tourType === 'private') {
+            updateData.minPax = null; // Clear minPax for private tours
+        }
 
         // If a new image is uploaded
         if (req.file) {
@@ -145,26 +172,56 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
 
         const updatedPkg = await Package.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
-        if (!updatedPkg) return res.status(404).json({ status: 'error', error: 'Package not found' });
-
-        // Activity Logging
-        await ActivityLog.create({
-            action: 'UPDATE',
-            module: 'Packages',
-            user: userEmail || 'System Admin',
-            userId: logUserId,
-            severity: 'SUCCESS',
-            description: `Updated tour package: ${title}`,
-            details: {
-                recordTitle: title,
-                recordId: updatedPkg._id,
-                method: 'PUT',
-                endpoint: `/api/packages/edit/${req.params.id}`
+        if (!updatedPkg) {
+            // Cleanup updated image if save fails
+            if (req.file?.filename) {
+                await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
             }
-        });
+            return res.status(404).json({ status: 'error', error: 'Package not found' });
+        }
+
+        // ============================================
+        // ✅ ACTIVITY LOGGING (UPDATED LOGIC)
+        // ============================================
+        try {
+            let logDescription = `Updated tour package: ${title}`;
+
+            // Check if 'changes' exists and append to description
+            // Frontend sends 'changes' as a JSON string via FormData
+            if (changes) {
+                try {
+                    const parsedChanges = JSON.parse(changes); 
+                    if (Array.isArray(parsedChanges) && parsedChanges.length > 0) {
+                        logDescription += `. Changes: ${parsedChanges.join(', ')}`;
+                    }
+                } catch (e) {
+                    // Fallback if parsing fails or if it's a simple string
+                    logDescription += ` details updated.`;
+                }
+            }
+
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Packages',
+                user: userEmail || 'System Admin',
+                userId: logUserId,
+                severity: 'SUCCESS',
+                description: logDescription, // ✅ Log description now includes specific changes
+                details: {
+                    recordTitle: title,
+                    recordId: updatedPkg._id,
+                    method: 'PUT',
+                    endpoint: `/api/packages/edit/${req.params.id}`
+                }
+            });
+            console.log('✅ Activity Log recorded for Update Package');
+        } catch (logError) {
+            console.error('❌ Error logging activity:', logError);
+        }
 
         res.json({ status: 'ok', message: 'Package updated successfully!', data: updatedPkg });
     } catch (err) {
+        console.error("❌ Error updating package:", err);
         res.status(500).json({ status: 'error', error: err.message });
     }
 });
@@ -183,13 +240,14 @@ router.post('/:id/archive', async (req, res) => {
         await pkg.save();
 
         const actionType = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE';
+        const severity = newStatus === 'Yes' ? 'WARNING' : 'SUCCESS';
 
         await ActivityLog.create({
             action: actionType, 
             module: 'Packages',
             user: userEmail || 'System Admin',
             userId: logUserId,
-            severity: 'SUCCESS',
+            severity: severity,
             description: `${newStatus === 'Yes' ? 'Archived' : 'Restored'} package: ${pkg.title}`,
             details: {
                 recordTitle: pkg.title,

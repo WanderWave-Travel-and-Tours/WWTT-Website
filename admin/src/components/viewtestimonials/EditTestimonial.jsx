@@ -11,6 +11,20 @@ import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftMo
 // ✅ Import Toast and Icons for the Modal
 import { useToast } from "../toast/ToastManager"; 
 
+// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+const getAdminData = () => {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        return {
+            userEmail: adminData.email || adminData.username || 'Unknown Admin',
+            adminId: adminData._id || adminData.id || null
+        };
+    } catch (error) {
+        console.error('❌ Error getting admin data:', error);
+        return { userEmail: 'Unknown Admin', adminId: null };
+    }
+};
+
 // 🔥🔥🔥 HELPER COMPONENT - CUSTOM CONFIRM MODAL 🔥🔥🔥
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
@@ -79,6 +93,9 @@ const EditTestimonial = () => {
         feedback: ''
     });
 
+    // Store original data to track changes for Activity Logs
+    const [originalData, setOriginalData] = useState(null);
+
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
 
@@ -86,7 +103,7 @@ const EditTestimonial = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    const API_BASE_URL = 'http://localhost:5000';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
     // ✅ Helper for showing confirmation
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
@@ -175,76 +192,51 @@ const EditTestimonial = () => {
     // 4. Restore Function
     const restoreDraftData = async (data) => {
         if (!data) return;
-        if (data.originalId && data.originalId !== id) {
-            console.warn("Draft found but belongs to a different testimonial ID. Ignoring.");
-            return;
-        }
 
-        setFormData({
-            customerName: data.customerName || '',
-            source: data.source || 'Facebook',
-            feedback: data.feedback || ''
-        });
+        if (data.customerName) setFormData(prev => ({ ...prev, customerName: data.customerName }));
+        if (data.source) setFormData(prev => ({ ...prev, source: data.source }));
+        if (data.feedback) setFormData(prev => ({ ...prev, feedback: data.feedback }));
 
         if (data.image && data.imageMeta) {
             try {
-                const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
+                const restoredFile = await base64ToFile(
+                    data.image, 
+                    data.imageMeta.name, 
+                    data.imageMeta.type
+                );
                 setImageFile(restoredFile);
-                setImagePreview(URL.createObjectURL(restoredFile));
-                toast.info("Draft content and image restored.");
+                setImagePreview(data.image);
             } catch (err) {
                 console.error("Failed to restore image:", err);
             }
-        } else {
-            toast.info("Draft text restored.");
         }
     };
 
-    // 5. Initialize Hook
-    const { 
-        clearDraft, 
-        hasDraft, 
-        restoreDraft, 
-        discardDraft,
-        draftInfo 
-    } = useAutoDraft({
-        module: `edit-testimonial-${id}`, 
-        formData: draftPayload,
-        setFormData: restoreDraftData,
-        imagePreview: imagePreview, 
-        autoRestore: false 
-    });
-
-    // 6. Modal State
-    const [showRestoreModal, setShowRestoreModal] = useState(false);
-
-    useEffect(() => {
-        if (hasDraft && !isLoading) {
-            setShowRestoreModal(true);
-        }
-    }, [hasDraft, isLoading]);
-
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-    };
-
-    const handleDiscardDraft = async () => {
-        await discardDraft(); 
-        setShowRestoreModal(false);
-    };
+    // 5. Use the custom hook
+    const {
+        showRestoreModal,
+        draftInfo,
+        handleRestoreDraft,
+        handleDiscardDraft,
+        clearDraft
+    } = useAutoDraft(
+        `edit-testimonial-${id}`,
+        draftPayload,
+        restoreDraftData
+    );
 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC END
     // =========================================================
 
-    // Fetch Testimonial Data
+    // Fetch existing testimonial data
     useEffect(() => {
-        const fetchTestimonialDetails = async () => {
+        const fetchTestimonial = async () => {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`);
-                if (!response.ok) throw new Error('Failed to fetch testimonial details');
-                
+                if (!response.ok) {
+                    throw new Error('Testimonial not found');
+                }
                 const data = await response.json();
                 
                 setFormData({
@@ -253,31 +245,32 @@ const EditTestimonial = () => {
                     feedback: data.feedback || ''
                 });
 
+                // Store original data for Activity Log comparison
+                setOriginalData({
+                    customerName: data.customerName || '',
+                    source: data.source || 'Facebook',
+                    feedback: data.feedback || ''
+                });
+
                 if (data.customerImage) {
-                    const imgUrl = data.customerImage.startsWith('http') 
-                        ? data.customerImage 
-                        : `${API_BASE_URL}/${data.customerImage}`;
-                    setImagePreview(imgUrl);
+                    const imageUrl = `${API_BASE_URL}/${data.customerImage.replace(/\\/g, '/')}`;
+                    setImagePreview(imageUrl);
                 }
+
+                setIsLoading(false);
             } catch (err) {
                 console.error(err);
-                toast.error('Could not load testimonial details.');
-            } finally {
+                toast.error('Failed to load testimonial data.');
                 setIsLoading(false);
             }
         };
 
-        if (id) {
-            fetchTestimonialDetails();
-        }
-    }, [id, toast]);
+        fetchTestimonial();
+    }, [id]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -289,44 +282,55 @@ const EditTestimonial = () => {
                 setImagePreview(reader.result);
             };
             reader.readAsDataURL(file);
-            toast.info(`Selected image: ${file.name}`);
         }
     };
 
-    // ✅ Handlers for Confirmation Modals
-    const handleCancelClick = () => {
-        askConfirmation(
-            "Discard Changes",
-            "Are you sure you want to discard your changes and go back?",
-            async () => {
-                await clearDraft();
-                navigate('/view-testimonials');
-            }
-        );
+    // 🔥🔥🔥 HELPER: IDENTIFY CHANGES FOR ACTIVITY LOGS 🔥🔥🔥
+    const getChangedFields = () => {
+        if (!originalData) return {};
+
+        const changes = {};
+        if (formData.customerName !== originalData.customerName) {
+            changes.customerName = { old: originalData.customerName, new: formData.customerName };
+        }
+        if (formData.source !== originalData.source) {
+            changes.source = { old: originalData.source, new: formData.source };
+        }
+        if (formData.feedback !== originalData.feedback) {
+            changes.feedback = { old: originalData.feedback, new: formData.feedback };
+        }
+        if (imageFile) {
+            changes.customerImage = { old: 'Existing Image', new: imageFile.name };
+        }
+        return changes;
     };
 
     const handleSaveConfirmation = (e) => {
         e.preventDefault();
-        // Basic validation before asking
-        if (!formData.customerName || !formData.feedback) {
-            toast.warning("Please fill in all required fields.");
-            return;
-        }
-
         askConfirmation(
-            "Update Testimonial",
-            "Are you sure you want to save the changes to this testimonial?",
-            () => performSubmit()
+            "Save Changes?",
+            "Are you sure you want to update this testimonial?",
+            handleActualSave,
+            "primary"
         );
     };
 
-    const performSubmit = async () => {
+    const handleActualSave = async () => {
         setSubmitting(true);
         try {
             const formDataToSend = new FormData();
             formDataToSend.append("customerName", formData.customerName);
             formDataToSend.append("source", formData.source);
             formDataToSend.append("feedback", formData.feedback);
+
+            // 🔥 INCLUDE ADMIN DATA FOR ACTIVITY LOGS
+            const { userEmail, adminId } = getAdminData();
+            formDataToSend.append("userEmail", userEmail);
+            if (adminId) formDataToSend.append("adminId", adminId);
+
+            // 🔥 INCLUDE CHANGED FIELDS
+            const changedFields = getChangedFields();
+            formDataToSend.append("changedFields", JSON.stringify(changedFields));
 
             if (imageFile) {
                 formDataToSend.append("customerImage", imageFile);
@@ -350,6 +354,18 @@ const EditTestimonial = () => {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleCancelClick = () => {
+        askConfirmation(
+            "Cancel Editing?",
+            "Are you sure you want to cancel? Any unsaved changes and drafts will be cleared.",
+            async () => {
+                await clearDraft();
+                navigate('/view-testimonials');
+            },
+            "danger"
+        );
     };
 
     if (isLoading) {

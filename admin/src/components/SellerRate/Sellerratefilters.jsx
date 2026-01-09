@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, RefreshCw, Package } from 'lucide-react';
-import './SellerRateFilters.css';
+import './Sellerratefilters.css';
 
 const SellerRateFilters = ({ searchQuery, setSearchQuery, onRefresh }) => {
   return (

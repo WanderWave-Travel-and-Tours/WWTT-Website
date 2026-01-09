@@ -76,6 +76,7 @@ import BillsPayment from './components/services/BillsPayment/BillsPayment.jsx';
 import MarriageCertificate from './components/services/MarriageCertificate/MarriageCertificate.jsx';
 import Users from './components/users/users.jsx';
 import SellerRate from './components/SellerRate/SellerRate.jsx'
+import EditService from './components/viewservice/EditService.jsx';
 
 function App() {
   return (
@@ -139,6 +140,7 @@ function App() {
         {/* --- SERVICE MANAGEMENT ROUTES --- */}
         <Route path="/add-service" element={<AddService />} />
         <Route path="/view-services" element={<ViewServices />} />
+        <Route path="/edit-service/:id" element={<EditService />} />
         <Route path="/services/visa" element={<VisaProcessing />} />
         <Route path="/services/psa" element={<PSASerbilis />} />
         <Route path="/services/cenomar" element={<CenomarRequest />} />

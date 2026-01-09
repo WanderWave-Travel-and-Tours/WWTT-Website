@@ -308,7 +308,7 @@ const PassportAppt = () => {
 
   const fetchPassportServices = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/passports");
+      const res = await axios.get("https://wanderwaveph-backend.onrender.com/api/passports");
       if (res.data.success) {
         const mapped = res.data.data.map((d) => ({ ...d, id: d._id, desc: d.description }));
         setPassportServices(mapped);
@@ -324,7 +324,7 @@ const PassportAppt = () => {
   const fetchInquiries = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get("http://localhost:5000/api/inquiries");
+      const response = await axios.get("https://wanderwaveph-backend.onrender.com/api/inquiries");
       if (response.data.success) {
         const pptRequests = response.data.data.filter(
           (inq) => (inq.inquiryType === "PASSPORT" || (inq.serviceName && inq.serviceName.toUpperCase().includes("PASSPORT"))) 
@@ -387,7 +387,7 @@ const PassportAppt = () => {
 
   const fetchDocuments = async (inquiryId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+      const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
       if (response.data.success) setDocuments(response.data.documents || []);
     } catch (error) {
       console.error("Error fetching documents:", error);
@@ -505,7 +505,7 @@ const PassportAppt = () => {
       if (contactEvidence) formData.append("evidence", contactEvidence);
       
       const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/status`,
+        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedInquiry._id}/status`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -646,9 +646,9 @@ const PassportAppt = () => {
     };
     try {
       if (isEditorOpen && selectedService) {
-        await axios.put(`http://localhost:5000/api/passports/${selectedService._id}`, payload);
+        await axios.put(`https://wanderwaveph-backend.onrender.com/api/passports/${selectedService._id}`, payload);
       } else {
-        await axios.post(`http://localhost:5000/api/passports`, payload);
+        await axios.post(`https://wanderwaveph-backend.onrender.com/api/passports`, payload);
       }
       toast.success("Service saved successfully!");
       setIsAddFormOpen(false);

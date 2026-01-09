@@ -199,16 +199,16 @@ const AddTestimonial = () => {
         }
     }, [hasDraft]);
 
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-        toast.success("Draft restored successfully!");
-    };
+const handleRestoreDraft = () => {
+    restoreDraft();
+    setShowRestoreModal(false);
+    toast.success('Your testimonial draft has been restored successfully!', '✅ Draft Restored', 3000);
+};
 
     const handleDiscardDraft = async () => {
         await discardDraft();
         setShowRestoreModal(false);
-        toast.info("Draft discarded.");
+        toast.info('Draft has been discarded.', '🗑️ Discarded');
     };
 
     // =========================================================
@@ -226,101 +226,125 @@ const AddTestimonial = () => {
         setTestimonialDetails(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                toast.warning("File is too large. Max limit is 2MB.");
-                return;
-            }
-            setPictureFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-            toast.info("Photo selected.");
+const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        if (file.size > 2 * 1024 * 1024) {
+            toast.warning('File is too large. Maximum size is 2MB.', '⚠️ File Too Large');
+            return;
         }
-    };
+        setPictureFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+        toast.success(`Customer photo "${file.name}" selected successfully!`, '✅ Photo Selected');
+    }
+};
 
     const handleCancel = () => {
-        // ✅ REPLACED window.confirm with Custom Modal
-        askConfirmation(
-            "Cancel Entry",
-            "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
-            async () => {
-                await clearDraft();
-                setTestimonialDetails({
-                    name: '',
-                    feedback: '',
-                    source: '',
-                });
-                setPictureFile(null);
-                setPreviewUrl(null);
-                toast.info("Form cleared.");
-            },
-            "danger"
-        );
-    };
+    askConfirmation(
+        "Cancel Entry",
+        "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+        async () => {
+            await clearDraft();
+            setTestimonialDetails({
+                name: '',
+                feedback: '',
+                source: '',
+            });
+            setPictureFile(null);
+            setPreviewUrl(null);
+            toast.info('Action cancelled and form cleared.', '❌ Cancelled');
+        },
+        "danger"
+    );
+};
 
-    const handleSubmit = (e) => { 
-        e.preventDefault();
-        
-        // ✅ ADDED Confirmation before submit
-        askConfirmation(
-            "Submit Testimonial",
-            `Do you want to add this testimonial from ${testimonialDetails.name}?`,
-            () => performSubmit()
-        );
-    };
+const handleSubmit = (e) => { 
+    e.preventDefault();
+    
+    if (!testimonialDetails.name || !testimonialDetails.feedback || !testimonialDetails.source) {
+        toast.warning('Please fill in all required fields.', '⚠️ Incomplete Form');
+        return;
+    }
+    
+    toast.success('All fields validated successfully!', '✅ Ready to Submit', 2000);
+    
+    askConfirmation(
+        "Submit Testimonial",
+        `Do you want to add this testimonial from "${testimonialDetails.name}"?`,
+        () => performSubmit()
+    );
+};
 
     const performSubmit = async () => {
-        setIsSubmitting(true);
-        const formData = new FormData();
+    setIsSubmitting(true);
+    
+    toast.info('Submitting testimonial...', '📤 Please Wait', 2000);
+    
+    const formData = new FormData();
 
-        formData.append('customerName', testimonialDetails.name); 
-        formData.append('source', testimonialDetails.source);
-        formData.append('feedback', testimonialDetails.feedback);
+    formData.append('customerName', testimonialDetails.name); 
+    formData.append('source', testimonialDetails.source);
+    formData.append('feedback', testimonialDetails.feedback);
 
-        if (pictureFile) {
-            formData.append('customerImage', pictureFile); 
-        }
+    if (pictureFile) {
+        formData.append('customerImage', pictureFile); 
+    }
 
-        try {
-            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-            const activeId = adminData.id || adminData._id || "";
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        const activeId = adminData.id || adminData._id || "";
 
-            formData.append("userEmail", activeUser);
-            formData.append("adminId", activeId);
-        } catch (err) {
-            console.error("Error parsing admin data:", err);
-        }
+        formData.append("userEmail", activeUser);
+        formData.append("adminId", activeId);
+    } catch (err) {
+        console.error("Error parsing admin data:", err);
+    }
 
-        try {
-            const response = await fetch('http://localhost:5000/api/testimonials', {
-                method: 'POST',
-                body: formData, 
+    try {
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials', {
+            method: 'POST',
+            body: formData, 
+        });
+
+        if (response.ok) {
+            toast.success(
+                `Testimonial from "${testimonialDetails.name}" has been added successfully!`,
+                '✅ Testimonial Added',
+                5000
+            );
+            
+            await clearDraft();
+            
+            toast.info('Form cleared and ready for new testimonial entry.', '🔄 Ready', 3000);
+
+            setTestimonialDetails({
+                name: '',
+                feedback: '',
+                source: '',
             });
-
-            if (response.ok) {
-                toast.success(`Testimonial from ${testimonialDetails.name} added successfully!`);
-                
-                await clearDraft();
-
-                setTestimonialDetails({
-                    name: '',
-                    feedback: '',
-                    source: '',
-                });
-                setPictureFile(null);
-                setPreviewUrl(null);
-            } else {
-                toast.error("Error submitting testimonial.");
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            toast.error("Something went wrong with the server.");
-        } finally {
-            setIsSubmitting(false);
+            setPictureFile(null);
+            setPreviewUrl(null);
+        } else {
+            const data = await response.json();
+            const errorMessage = data.message || 'Unknown error occurred';
+            toast.error(
+                `Failed to submit testimonial: ${errorMessage}`,
+                '❌ Submission Failed',
+                5000
+            );
         }
-    };
+    } catch (error) {
+        console.error('❌ Network Error:', error);
+        toast.error(
+            `Unable to connect to server: ${error.message}. Please check if backend is running.`,
+            '❌ Connection Error',
+            6000
+        );
+    } finally {
+        setIsSubmitting(false);
+    }
+};
 
     return (
         <div className="testi-page">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { HelpCircle } from "lucide-react"; // Para sa confirmation modal icon
+import { HelpCircle } from "lucide-react"; 
 import Sidebar from "../sidebar/sidebar";
 import ServiceImageUpload from "./ServiceImageUpload";
 import ServiceDetails from "./ServiceDetails";
@@ -15,7 +15,7 @@ import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftMo
 // ✅ Import Toast Manager
 import { useToast } from "../toast/ToastManager";
 
-// ✅ Custom Confirm Modal Component (Reference from EditVisa.jsx)
+// ✅ Custom Confirm Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -61,11 +61,14 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 
 const AddService = () => {
   const navigate = useNavigate();
-  const toast = useToast(); // ✅ Initialize Toast
+  const toast = useToast();
 
   // Sidebar state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
+  // Submission State
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ✅ Confirmation Modal State
   const [confirmConfig, setConfirmConfig] = useState({
@@ -225,15 +228,15 @@ const AddService = () => {
   }, [hasDraft]);
 
   const handleRestoreDraft = () => {
-    restoreDraft();
-    setShowRestoreModal(false);
-    toast.info("Draft restored successfully.", "Draft System");
+      restoreDraft();
+      setShowRestoreModal(false);
+      toast.success('Your service draft has been restored successfully!', '✅ Draft Restored', 3000);
   };
 
   const handleDiscardDraft = async () => {
-    await discardDraft();
-    setShowRestoreModal(false);
-    toast.info("Draft discarded.");
+      await discardDraft();
+      setShowRestoreModal(false);
+      toast.info('Draft has been discarded.', '🗑️ Discarded');
   };
 
   // =========================================================
@@ -248,116 +251,122 @@ const AddService = () => {
     setFormState((prev) => ({ ...prev, requirements: newRequirements }));
   };
 
-  // ✅ Updated Handle Cancel with Custom Modal
   const handleCancel = () => {
     askConfirmation(
-      "Discard Changes",
-      "Are you sure you want to cancel? All unsaved changes will be lost.",
-      async () => {
-        await clearDraft();
-        toast.info("Changes discarded.");
-        navigate(-1);
-      },
-      "danger"
+        "Discard Changes",
+        "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+        async () => {
+            await clearDraft();
+            toast.info('Action cancelled. Redirecting...', '❌ Cancelled');
+            navigate(-1);
+        },
+        "danger"
     );
   };
 
-  // ✅ Updated Handle Submit with Custom Modal
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!file) {
-      toast.warning("Please upload an image for the service.", "Missing Attachment");
-      return;
+        toast.warning('Please upload an image for the service.', '⚠️ Missing Image');
+        return;
+    }
+
+    if (!formState.title || !formState.description || !formState.price) {
+        toast.warning('Please fill in all required fields (Title, Description, Price).', '⚠️ Incomplete Form');
+        return;
     }
 
     askConfirmation(
-      "Publish Service",
-      "Are you sure you want to publish this new service?",
-      () => performSubmit()
+        "Publish Service",
+        `Are you sure you want to publish "${formState.title}" service?`,
+        () => performSubmit()
     );
   };
 
   const performSubmit = async () => {
-    const processedRequirements = formState.requirements.filter(
-      (item) => item.trim().length > 0
-    );
+    setIsSubmitting(true);
+    const loadingToast = toast.info('Publishing service...', '📤 Please Wait', 0);
 
-    const priceNum = parseFloat(formState.price) || 0;
-    const orderNum = parseInt(formState.order) || 0;
+    const processedRequirements = formState.requirements.filter(
+        (item) => item.trim().length > 0
+    );
 
     const formData = new FormData();
     formData.append("title", formState.title);
     formData.append("description", formState.description);
     formData.append("icon", formState.icon);
     formData.append("category", formState.category);
-    formData.append("price", priceNum.toString());
-    formData.append("order", orderNum.toString());
+    formData.append("price", (parseFloat(formState.price) || 0).toString());
+    formData.append("order", (parseInt(formState.order) || 0).toString());
     formData.append("isActive", formState.isActive.toString());
     formData.append("hasSubCollection", formState.hasSubCollection.toString());
-    formData.append(
-      "subCollectionName",
-      formState.hasSubCollection ? formState.subCollectionName : ""
-    );
+    formData.append("subCollectionName", formState.hasSubCollection ? formState.subCollectionName : "");
     formData.append("requirements", JSON.stringify(processedRequirements));
 
     if (file) {
-      formData.append("image", file);
+        formData.append("image", file);
     }
 
     try {
-      const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-      const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-      const activeId = adminData.id || adminData._id || "";
-
-      formData.append("userEmail", activeUser);
-      formData.append("adminId", activeId);
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        formData.append("userEmail", adminData.email || adminData.username || 'Unknown User');
+        formData.append("adminId", adminData.id || adminData._id || "");
     } catch (err) {
-      console.error("Error parsing admin data:", err);
+        console.error("Error parsing admin data:", err);
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/services", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success("Service added successfully!");
-        await clearDraft();
-
-        // Reset form
-        setFormState({
-          title: "",
-          description: "",
-          icon: "",
-          category: "DOCUMENTATION",
-          price: "",
-          order: "",
-          isActive: true,
-          hasSubCollection: false,
-          subCollectionName: "",
-          requirements: [""],
+        const response = await fetch("https://wanderwaveph-backend.onrender.com/api/services", {
+            method: "POST",
+            body: formData,
         });
-        setFile(null);
-        setPreviewUrl(null);
-        
-        // Navigate back or to list after success
-        setTimeout(() => navigate("/services"), 1500);
-      } else {
-        toast.error(data.message || "Failed to save service", "Server Error");
-      }
+        const data = await response.json();
+
+        if (response.ok) {
+            toast.success(
+                `Service "${formState.title}" has been published successfully!`,
+                '✅ Service Published',
+                5000
+            );
+
+            // ✅ TANGGALIN ANG REDIRECTION: Mananatili sa page pero ire-reset ang form
+            await clearDraft();
+
+            // Reset Form Fields
+            setFormState({
+                title: "",
+                description: "",
+                icon: "",
+                category: "DOCUMENTATION",
+                price: "",
+                order: "",
+                isActive: true,
+                hasSubCollection: false,
+                subCollectionName: "",
+                requirements: [""],
+            });
+            setFile(null);
+            setPreviewUrl(null);
+            
+            // Focus back to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        } else {
+            const errorMessage = data.message || 'Unknown error occurred';
+            toast.error(`Failed to save service: ${errorMessage}`, '❌ Save Failed');
+        }
     } catch (error) {
-      console.error("Fetch error:", error);
-      toast.error("Error connecting to server. Please try again later.", "Connection Failed");
+        console.error('❌ Network Error:', error);
+        toast.error(`Unable to connect to server. Please check your connection.`, '❌ Connection Error');
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
   return (
     <div className="svc-page">
       
-      {/* ✅ RESTORE DRAFT MODAL */}
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -365,7 +374,6 @@ const AddService = () => {
         draftInfo={draftInfo}
       />
 
-      {/* ✅ CUSTOM CONFIRMATION MODAL */}
       <CustomConfirmModal 
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
@@ -377,11 +385,7 @@ const AddService = () => {
 
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      <main
-        className={`svc-main ${
-          isSidebarCollapsed ? "svc-main--collapsed" : ""
-        }`}
-      >
+      <main className={`svc-main ${isSidebarCollapsed ? "svc-main--collapsed" : ""}`}>
         <div className="svc-container">
           <header className="svc-header">
             <div className="svc-header-content">
@@ -423,11 +427,16 @@ const AddService = () => {
                     type="button"
                     className="svc-btn svc-btn--cancel"
                     onClick={handleCancel}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="svc-btn svc-btn--submit">
-                    Publish
+                  <button 
+                    type="submit" 
+                    className="svc-btn svc-btn--submit"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Publishing..." : "Publish"}
                   </button>
                 </div>
               </aside>

@@ -7,7 +7,7 @@ import HotelFilters from './HotelFilters';
 import { useToast } from '../toast/ToastManager'; // Import Toast Management
 import './viewhotel.css';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
 // Custom Confirmation Modal Component (Based on EditVisa.jsx reference)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {

@@ -1,184 +1,789 @@
-/* ================================================
-   POSTER FILTERS CARD (pf- prefix)
-   ================================================ */
+/* ========================================
+   POSTER FILTERS - FULLY RESPONSIVE
+   ======================================== */
 
-.pf-filter-card {
+.poster-filter-card {
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 12px 20px; 
-    margin-bottom: 32px;
+    padding: 14px 20px; 
+    margin-bottom: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); 
-    position: relative;
-    overflow: hidden;
-}
-
-.pf-filter-wrapper {
     display: flex;
-    gap: 16px; 
     align-items: center;
-    flex-wrap: wrap;
-    padding-top: 0;
-    flex-direction: row; 
-    justify-content: flex-start;
 }
 
-/* Branding Label - ORDER 1 */
-.pf-brand-label {
+.poster-filter-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+/* --- LEFT: BRANDING --- */
+.poster-brand-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    padding-right: 20px;
+    border-right: 1px solid #e2e8f0;
+}
+
+.poster-brand-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+}
+
+.poster-brand-label {
     font-size: 14px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
     color: #0f172a; 
-    flex-shrink: 0;
-    white-space: nowrap;
     line-height: 1; 
+}
+
+.poster-brand-label span {
+    color: #f59e0b;
+    margin-left: 4px;
+}
+
+/* --- MIDDLE & RIGHT CONTROLS --- */
+.poster-controls-group {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-family: 'Segoe UI', Arial, sans-serif;
-}
-
-.pf-brand-label span {
-    color: #f59e0b;
-    font-weight: 800;
-}
-
-/* Filter Buttons - ORDER 2 */
-.pf-filter-buttons {
-    display: flex;
-    gap: 8px; 
+    justify-content: space-between;
+    flex: 1;
+    gap: 20px;
     flex-wrap: wrap;
-    flex-shrink: 0; 
-    order: 2; 
 }
 
-.pf-filter-btn {
-    padding: 10px 18px; 
-    border-radius: 10px; 
-    font-size: 14px; 
-    font-weight: 600;
-    cursor: pointer;
-    background: #f8fafc;
-    border: none; 
-    color: #334155; 
-    transition: all 0.2s;
-    white-space: nowrap;
-    text-transform: capitalize; 
-    height: 44px; 
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    font-family: 'Segoe UI', Arial, sans-serif;
-}
-
-.pf-filter-btn:hover:not(.pf-active-navy) {
-    background: #f1f5f9;
-}
-
-/* Active State - Navy Blue */
-.pf-filter-btn.pf-active-navy { 
-    background: #0f172a;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
-}
-
-/* Search Box - ORDER 3 */
-.pf-search-box {
+.poster-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     position: relative;
-    order: 3; 
-    background: white; 
-    border: 1px solid #cbd5e1; 
-    border-radius: 12px; 
-    flex: 1; 
-    min-width: 250px; 
-    max-width: 400px;
-    height: 44px; 
-    padding: 0;
-    margin-left: auto;
-    transition: all 0.2s ease;
 }
 
-.pf-search-icon {
+.poster-filter-container label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+/* Custom Dropdown Button */
+.poster-select-wrapper {
+    position: relative;
+    width: 200px;
+}
+
+.poster-select-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 8px;
+}
+
+.poster-select-btn:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.poster-select-btn:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+}
+
+.poster-select-label {
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.poster-select-icon {
+    flex-shrink: 0;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+}
+
+.poster-select-icon--open {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Overlay */
+.poster-dropdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 998;
+}
+
+/* Dropdown Menu */
+.poster-dropdown-menu {
     position: absolute;
-    left: 14px;
+    top: calc(100% + 8px);
+    left: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    min-width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 999;
+    padding: 8px;
+}
+
+.poster-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    font-size: 13px;
+    color: #334155;
+    font-weight: 600;
+}
+
+.poster-dropdown-item:hover {
+    background: #fff5ed;
+    color: #001F3F;
+}
+
+.poster-dropdown-item--active {
+    background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.poster-dropdown-item--active:hover {
+    background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
+}
+
+.poster-dropdown-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.poster-dropdown-check {
+    font-size: 14px;
+    font-weight: 700;
+    color: #FF8C42;
+    flex-shrink: 0;
+}
+
+/* Scrollbar Styling */
+.poster-dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.poster-dropdown-menu::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.poster-dropdown-menu::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.poster-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* --- RIGHT: SEARCH BOX --- */
+.poster-search-box {
+    position: relative;
+    min-width: 240px;
+}
+
+.poster-search-input {
+    width: 100%;
+    height: 34px;
+    background: white; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 6px;
+    font-size: 13px;
+    color: #0f172a;
+    padding: 0 12px 0 34px; 
+    transition: all 0.2s;
+}
+
+.poster-search-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+}
+
+.poster-search-icon {
+    position: absolute;
+    left: 10px;
     top: 50%;
     transform: translateY(-50%);
     color: #94a3b8;
     pointer-events: none;
-    z-index: 10;
 }
 
-.pf-search-input {
-    width: 100%;
-    height: 100%;
-    background: #f8fafc; 
-    border: none; 
-    border-radius: 11px;
-    font-size: 14px;
-    color: #0f172a;
-    padding: 0 12px 0 40px;
-    font-family: 'Segoe UI', Arial, sans-serif;
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* Large Desktop (Max 1400px) */
+@media (max-width: 1400px) {
+    .poster-filter-card {
+        padding: 14px 18px;
+    }
+
+    .poster-filter-wrapper {
+        gap: 20px;
+    }
+
+    .poster-controls-group {
+        gap: 18px;
+    }
+
+    .poster-select-wrapper {
+        width: 180px;
+    }
+
+    .poster-search-box {
+        min-width: 220px;
+    }
 }
 
-.pf-search-input::placeholder {
-    color: #94a3b8;
-}
+/* Desktop/Laptop - VERTICAL STACK (Max 1200px to 905px) */
+@media (max-width: 1200px) and (min-width: 905px) {
+    .poster-filter-card {
+        padding: 14px 18px;
+    }
 
-.pf-search-input:focus {
-    outline: none;
-}
-
-.pf-search-box:focus-within {
-    border-color: #f59e0b; 
-    box-shadow: 0 0 0 1px #f59e0b; 
-}
-
-/* ================================================
-   RESPONSIVE
-   ================================================ */
-
-@media (max-width: 960px) {
-    .pf-filter-wrapper {
+    .poster-filter-wrapper {
+        gap: 12px;
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
     }
-    
-    .pf-brand-label {
-        order: 1; 
-        padding-bottom: 8px;
+
+    .poster-brand-section {
+        padding-right: 0;
+        padding-bottom: 10px;
+        border-right: none;
         border-bottom: 1px solid #e2e8f0;
-        justify-content: flex-start;
-    }
-    
-    .pf-filter-buttons {
-        order: 2; 
         width: 100%;
-        justify-content: space-between;
     }
-    
-    .pf-search-box {
-        order: 3; 
+
+    .poster-brand-label {
+        font-size: 14px;
+    }
+
+    .poster-controls-group {
+        gap: 10px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .poster-filter-container {
+        gap: 8px;
+        width: 100%;
+    }
+
+    .poster-filter-container label {
+        font-size: 12px;
+    }
+
+    .poster-select-wrapper {
+        width: 100%;
+        flex: 1;
+    }
+
+    .poster-select-btn {
+        font-size: 12px;
+        padding: 7px 10px;
+    }
+
+    .poster-search-box {
         min-width: 100%;
-        max-width: 100%;
-        height: 48px; 
-        margin-left: 0; 
+        width: 100%;
     }
-    
-    .pf-filter-btn {
-        flex: 1 1 30%;
-        padding: 12px 10px; 
-        font-size: 13px;
-        height: 48px;
+
+    .poster-search-input {
+        height: 34px;
+        font-size: 12px;
     }
 }
 
-@media (max-width: 600px) {
-    .pf-filter-buttons {
+/* Desktop/Laptop - HORIZONTAL (Max 904px to 769px) */
+@media (max-width: 904px) and (min-width: 769px) {
+    .poster-filter-card {
+        padding: 14px 18px;
+    }
+
+    .poster-filter-wrapper {
+        gap: 20px;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .poster-brand-section {
+        padding-right: 18px;
+        padding-bottom: 0;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: none;
+        width: auto;
+    }
+
+    .poster-brand-label {
+        font-size: 13px;
+    }
+
+    .poster-controls-group {
+        gap: 16px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        flex: 1;
+    }
+
+    .poster-filter-container {
+        gap: 8px;
+        flex: 0;
+        width: auto;
+    }
+
+    .poster-filter-container label {
+        font-size: 12px;
+    }
+
+    .poster-select-wrapper {
+        width: 160px;
+    }
+
+    .poster-select-btn {
+        font-size: 12px;
+        padding: 6px 9px;
+    }
+
+    .poster-search-box {
+        min-width: 200px;
+        width: auto;
+        flex: 1;
+    }
+
+    .poster-search-input {
+        height: 32px;
+        font-size: 12px;
+    }
+}
+
+/* Tablet Landscape (Max 1024px) */
+@media (max-width: 1024px) {
+    .poster-filter-card {
+        padding: 12px 16px;
+    }
+
+    .poster-brand-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .poster-search-icon {
+        width: 15px;
+        height: 15px;
+    }
+}
+
+/* Tablet Portrait - VERTICAL STACK (Max 900px to 769px) */
+@media (max-width: 900px) and (min-width: 769px) {
+    .poster-filter-card {
+        padding: 12px 14px;
+    }
+
+    .poster-filter-wrapper {
+        gap: 12px;
         flex-direction: column;
+        align-items: stretch;
     }
     
-    .pf-filter-btn {
+    .poster-brand-section {
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 10px;
+        padding-right: 0;
         width: 100%;
+    }
+
+    .poster-controls-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .poster-filter-container {
+        gap: 6px;
+        width: 100%;
+    }
+
+    .poster-select-wrapper {
+        width: 100%;
+    }
+
+    .poster-search-box {
+        min-width: 100%;
+    }
+}
+
+/* Tablet Small (Max 768px) */
+@media (max-width: 768px) {
+    .poster-filter-card {
+        padding: 10px 12px;
+        margin-bottom: 18px;
+    }
+
+    .poster-filter-wrapper {
+        gap: 10px;
+    }
+
+    .poster-brand-section {
+        padding-bottom: 8px;
+        gap: 8px;
+    }
+
+    .poster-brand-icon svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .poster-brand-label {
+        font-size: 12px;
+        letter-spacing: 0.4px;
+    }
+
+    .poster-controls-group {
+        gap: 10px;
+        flex-direction: column;
+    }
+
+    .poster-filter-container {
+        gap: 6px;
+        width: 100%;
+    }
+
+    .poster-filter-container label {
+        font-size: 11px;
+    }
+
+    .poster-select-wrapper {
+        width: 100%;
+    }
+
+    .poster-select-btn {
+        font-size: 11px;
+        padding: 6px 9px;
+    }
+
+    .poster-select-icon {
+        width: 13px;
+        height: 13px;
+    }
+
+    .poster-dropdown-item {
+        font-size: 11px;
+        padding: 9px 10px;
+    }
+
+    .poster-dropdown-check {
+        font-size: 13px;
+    }
+
+    .poster-search-box {
+        min-width: 100%;
+    }
+
+    .poster-search-input {
+        height: 30px;
+        font-size: 11px;
+        padding-left: 30px;
+    }
+
+    .poster-search-icon {
+        width: 14px;
+        height: 14px;
+        left: 9px;
+    }
+}
+
+/* Mobile Large (Max 640px) */
+@media (max-width: 640px) {
+    .poster-filter-card {
+        padding: 12px;
+        margin-bottom: 18px;
+        border-radius: 10px;
+    }
+
+    .poster-filter-wrapper {
+        gap: 12px;
+    }
+
+    .poster-brand-section {
+        padding-bottom: 10px;
+        gap: 8px;
+    }
+
+    .poster-brand-icon svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .poster-brand-label {
+        font-size: 11px;
+        letter-spacing: 0.3px;
+    }
+
+    .poster-controls-group {
+        gap: 10px;
+    }
+
+    .poster-filter-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .poster-filter-container label {
+        font-size: 10px;
+    }
+
+    .poster-select-btn {
+        font-size: 11px;
+        padding: 6px 9px;
+        border-radius: 5px;
+    }
+
+    .poster-select-icon {
+        width: 12px;
+        height: 12px;
+    }
+
+    .poster-dropdown-menu {
+        border-radius: 10px;
+    }
+
+    .poster-dropdown-item {
+        font-size: 11px;
+        padding: 9px 10px;
+    }
+
+    .poster-dropdown-check {
+        font-size: 13px;
+    }
+
+    .poster-search-input {
+        height: 30px;
+        font-size: 11px;
+        padding-left: 30px;
+        border-radius: 5px;
+    }
+
+    .poster-search-icon {
+        width: 13px;
+        height: 13px;
+        left: 8px;
+    }
+}
+
+/* Mobile Medium (Max 480px) */
+@media (max-width: 480px) {
+    .poster-filter-card {
+        padding: 10px;
+        margin-bottom: 16px;
+        border-radius: 8px;
+    }
+
+    .poster-filter-wrapper {
+        gap: 10px;
+    }
+
+    .poster-brand-section {
+        padding-bottom: 8px;
+        gap: 7px;
+    }
+
+    .poster-brand-icon svg {
+        width: 13px;
+        height: 13px;
+    }
+
+    .poster-brand-label {
+        font-size: 10px;
+        letter-spacing: 0.2px;
+    }
+
+    .poster-controls-group {
+        gap: 8px;
+    }
+
+    .poster-filter-container {
+        gap: 5px;
+    }
+
+    .poster-filter-container label {
+        font-size: 9px;
+        font-weight: 700;
+    }
+
+    .poster-select-btn {
+        font-size: 10px;
+        padding: 5px 8px;
+        border-radius: 4px;
+    }
+
+    .poster-select-icon {
+        width: 11px;
+        height: 11px;
+    }
+
+    .poster-dropdown-menu {
+        border-radius: 8px;
+        padding: 6px;
+    }
+
+    .poster-dropdown-item {
+        font-size: 10px;
+        padding: 8px;
+        border-radius: 6px;
+    }
+
+    .poster-dropdown-check {
+        font-size: 12px;
+    }
+
+    .poster-search-input {
+        height: 28px;
+        font-size: 10px;
+        padding-left: 28px;
+        padding-right: 8px;
+        border-radius: 4px;
+    }
+
+    .poster-search-icon {
+        width: 12px;
+        height: 12px;
+        left: 7px;
+    }
+}
+
+/* Mobile Small (Max 360px) */
+@media (max-width: 360px) {
+    .poster-filter-card {
+        padding: 8px;
+        margin-bottom: 14px;
+        border-radius: 6px;
+    }
+
+    .poster-filter-wrapper {
+        gap: 8px;
+    }
+
+    .poster-brand-section {
+        padding-bottom: 6px;
+        gap: 6px;
+    }
+
+    .poster-brand-icon svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .poster-brand-label {
+        font-size: 9px;
+        letter-spacing: 0.1px;
+    }
+
+    .poster-controls-group {
+        gap: 6px;
+    }
+
+    .poster-filter-container {
+        gap: 4px;
+    }
+
+    .poster-filter-container label {
+        font-size: 8px;
+        font-weight: 700;
+    }
+
+    .poster-select-btn {
+        font-size: 9px;
+        padding: 4px 7px;
+        border-radius: 4px;
+    }
+
+    .poster-select-icon {
+        width: 10px;
+        height: 10px;
+    }
+
+    .poster-dropdown-menu {
+        border-radius: 6px;
+        padding: 5px;
+    }
+
+    .poster-dropdown-item {
+        font-size: 9px;
+        padding: 7px;
+        border-radius: 5px;
+    }
+
+    .poster-dropdown-check {
+        font-size: 11px;
+    }
+
+    .poster-search-input {
+        height: 26px;
+        font-size: 9px;
+        padding-left: 26px;
+        padding-right: 7px;
+        border-radius: 4px;
+    }
+
+    .poster-search-icon {
+        width: 11px;
+        height: 11px;
+        left: 6px;
+    }
+
+    .poster-search-input::placeholder {
+        font-size: 8px;
     }
 }

@@ -14,7 +14,7 @@ import './addhotel.css';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
  
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
  
 // ✅ Custom Confirmation Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -118,57 +118,59 @@ const AddHotel = () => {
     return allowedExtensions.includes(file.type);
   };
  
-  // Custom setFile handler with validation
-  const handleSetFile = (selectedFile) => {
+const handleSetFile = (selectedFile) => {
     if (selectedFile) {
-      if (!isValidImage(selectedFile)) {
-        toast.error('Invalid image format. Please use JPG, JPEG, PNG, or WebP.', 'File Error');
-        return;
-      }
-      setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
+        if (!isValidImage(selectedFile)) {
+            toast.error('Invalid image format. Please use JPG, JPEG, PNG, or WebP.', '❌ File Error');
+            return;
+        }
+        setFile(selectedFile);
+        setPreviewUrl(URL.createObjectURL(selectedFile));
+        toast.success(`Main image "${selectedFile.name}" uploaded successfully!`, '✅ Image Added');
     }
-  };
+};
  
   // Custom setGalleryFiles handler with validation
-  const handleSetGalleryFiles = (filesOrUpdater) => {
+const handleSetGalleryFiles = (filesOrUpdater) => {
     if (typeof filesOrUpdater === 'function') {
-      setGalleryFiles(prev => {
-        const updated = filesOrUpdater(prev);
-        const lastAdded = updated[updated.length - 1];
-        if (lastAdded && lastAdded.file && !isValidImage(lastAdded.file)) {
-          toast.error('Invalid gallery image format. Only JPG, JPEG, PNG, and WebP are allowed.', 'File Error');
-          return prev;
+        setGalleryFiles(prev => {
+            const updated = filesOrUpdater(prev);
+            const lastAdded = updated[updated.length - 1];
+            if (lastAdded && lastAdded.file && !isValidImage(lastAdded.file)) {
+                toast.error('Invalid gallery image format. Only JPG, JPEG, PNG, and WebP are allowed.', '❌ File Error');
+                return prev;
+            }
+            // ✅ TANGGALIN YUNG TOAST DITO
+            return updated;
+        });
+    } else {
+        const allValid = filesOrUpdater.every(f => isValidImage(f.file));
+        if (!allValid) {
+            toast.error('Some files were rejected. Please use JPG, JPEG, PNG, or WebP.', '❌ File Error');
+            setGalleryFiles(filesOrUpdater.filter(f => isValidImage(f.file)));
+        } else {
+            setGalleryFiles(filesOrUpdater);
+            // ✅ TOAST DITO NA LANG PARA ISANG BESES LANG
+            if (filesOrUpdater.length > 0) {
+                toast.success('Gallery image added successfully!', '✅ Added');
+            }
         }
-        return updated;
-      });
-    } else {
-      const allValid = filesOrUpdater.every(f => isValidImage(f.file));
-      if (!allValid) {
-        toast.error('Some files were rejected. Please use JPG, JPEG, PNG, or WebP.', 'File Error');
-        setGalleryFiles(filesOrUpdater.filter(f => isValidImage(f.file)));
-      } else {
-        setGalleryFiles(filesOrUpdater);
-      }
     }
-  };
+};
  
-  // Handle amount/digits only validation (Price & Max Capacity)
-  const updateField = (field, value) => {
+ const updateField = (field, value) => {
     if (field === 'price' || field === 'maxCapacity') {
-      // ✅ Digits only validation (remove anything not a number)
-      const digitsOnly = value.replace(/\D/g, '');
-     
-      // ✅ Max 6 digits validation
-      if (digitsOnly.length <= 6) {
-        setHotelDetails(prev => ({ ...prev, [field]: digitsOnly }));
-      } else {
-        toast.warning('Maximum of 6 digits only for this field.', 'Limit Reached');
-      }
+        const digitsOnly = value.replace(/\D/g, '');
+       
+        if (digitsOnly.length <= 6) {
+            setHotelDetails(prev => ({ ...prev, [field]: digitsOnly }));
+        } else {
+            toast.warning('Maximum of 6 digits only for this field.', '⚠️ Limit Reached');
+        }
     } else {
-      setHotelDetails(prev => ({ ...prev, [field]: value }));
+        setHotelDetails(prev => ({ ...prev, [field]: value }));
     }
-  };
+};
  
   // =========================================================
   // ✅ AUTO-DRAFT LOGIC START
@@ -266,11 +268,11 @@ const AddHotel = () => {
     if (hasDraft) setShowRestoreModal(true);
   }, [hasDraft]);
  
-  const handleRestoreDraft = () => {
+const handleRestoreDraft = () => {
     restoreDraft();
     setShowRestoreModal(false);
-    toast.success('Draft restored successfully', 'Draft Recovered');
-  };
+    toast.success('Your hotel draft has been restored successfully!', '✅ Draft Restored', 3000);
+};
  
   // =========================================================
   // ✅ DATA FETCHING & EVENT HANDLERS
@@ -282,21 +284,21 @@ const AddHotel = () => {
  
   const fetchDestinations = async () => {
     try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/packages/all`);
-      const data = await response.json();
-      if (data.status === 'ok' && Array.isArray(data.data)) {
-        const uniqueDestinations = [...new Set(
-          data.data.map(pkg => pkg.destination).filter(dest => dest && dest.trim() !== '')
-        )];
-        setDestinations(uniqueDestinations);
-      }
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/api/packages/all`);
+        const data = await response.json();
+        if (data.status === 'ok' && Array.isArray(data.data)) {
+            const uniqueDestinations = [...new Set(
+                data.data.map(pkg => pkg.destination).filter(dest => dest && dest.trim() !== '')
+            )];
+            setDestinations(uniqueDestinations);
+        }
     } catch (error) {
-      toast.error('Failed to load destinations', 'Connection Error');
+        toast.error('Failed to load destinations. Please check your connection.', '❌ Connection Error');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
  
   const handleAmenityChange = (amenityId) => {
     setHotelDetails(prev => ({
@@ -314,91 +316,110 @@ const AddHotel = () => {
     });
   };
  
-  const handleSubmit = (e) => {
+const handleSubmit = (e) => {
     e.preventDefault();
    
-    // ✅ Form Validation before Confirmation
     if (!hotelDetails.name || !hotelDetails.destination || !hotelDetails.price) {
-      toast.error('Please fill in all required fields', 'Validation Error');
-      window.scrollTo(0, 0);
-      return;
-    }
- 
-    // ✅ Minimum Amount Validation (Min 1)
-    if (Number(hotelDetails.price) < 1) {
-      toast.error('Price must be at least 1.', 'Validation Error');
-      return;
-    }
- 
-    askConfirmation(
-      "Publish Hotel",
-      `Are you sure you want to add "${hotelDetails.name}" to the catalog?`,
-      () => performSubmit()
-    );
-  };
- 
-  const performSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      let mainImageBase64 = '';
-      if (file) mainImageBase64 = await convertToBase64(file);
- 
-      const galleryImagesBase64 = [];
-      for (const item of galleryFiles) {
-        const base64 = await convertToBase64(item.file);
-        galleryImagesBase64.push({ url: base64, caption: item.caption || '' });
-      }
- 
-      const cityName = hotelDetails.destination.split(',')[0].trim();
-      const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-      const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-      const activeId = adminData.id || adminData._id || "";
- 
-      const hotelPayload = {
-        name: hotelDetails.name,
-        location: hotelDetails.destination,
-        city: cityName,
-        description: `${type} accommodation in ${hotelDetails.destination}`,
-        price: Number(hotelDetails.price),
-        maxCapacity: Number(hotelDetails.maxCapacity) || 4,
-        amenities: hotelDetails.amenities,
-        mainImage: mainImageBase64,
-        images: galleryImagesBase64,
-        featured: false,
-        isActive: true,
-        roomTypes: [{
-          type: type,
-          capacity: Number(hotelDetails.maxCapacity) || 4,
-          price: Number(hotelDetails.price),
-          available: 5,
-          description: `Standard ${type} room`
-        }],
-        userEmail: activeUser,
-        adminId: activeId
-      };
- 
-      const response = await fetch(`${API_BASE_URL}/api/hotels`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(hotelPayload)
-      });
- 
-      const data = await response.json();
- 
-      if (data.success) {
-        toast.success(`${hotelDetails.name} added successfully!`, 'Success');
+        toast.error('Please fill in all required fields (Name, Destination, Price).', '⚠️ Validation Error');
         window.scrollTo(0, 0);
-        await clearDraft();
-        resetForm();
-      } else {
-        toast.error(data.message || 'Failed to save hotel', 'Save Failed');
-      }
-    } catch (err) {
-      toast.error('Please check if your backend is running', 'Connection Error');
-    } finally {
-      setIsSubmitting(false);
+        return;
     }
-  };
+
+    if (Number(hotelDetails.price) < 1) {
+        toast.error('Price must be at least ₱1.', '⚠️ Validation Error');
+        return;
+    }
+
+    toast.success('All fields validated successfully!', '✅ Ready to Publish', 2000);
+
+    askConfirmation(
+        "Publish Hotel",
+        `Are you sure you want to add "${hotelDetails.name}" to the catalog?`,
+        () => performSubmit()
+    );
+};
+ 
+const performSubmit = async () => {
+    setIsSubmitting(true);
+    
+    toast.info('Publishing hotel to catalog...', '📤 Please Wait', 2000);
+    
+    try {
+        let mainImageBase64 = '';
+        if (file) mainImageBase64 = await convertToBase64(file);
+
+        const galleryImagesBase64 = [];
+        for (const item of galleryFiles) {
+            const base64 = await convertToBase64(item.file);
+            galleryImagesBase64.push({ url: base64, caption: item.caption || '' });
+        }
+
+        const cityName = hotelDetails.destination.split(',')[0].trim();
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        const activeId = adminData.id || adminData._id || "";
+
+        const hotelPayload = {
+            name: hotelDetails.name,
+            location: hotelDetails.destination,
+            city: cityName,
+            description: `${type} accommodation in ${hotelDetails.destination}`,
+            price: Number(hotelDetails.price),
+            maxCapacity: Number(hotelDetails.maxCapacity) || 4,
+            amenities: hotelDetails.amenities,
+            mainImage: mainImageBase64,
+            images: galleryImagesBase64,
+            featured: false,
+            isActive: true,
+            roomTypes: [{
+                type: type,
+                capacity: Number(hotelDetails.maxCapacity) || 4,
+                price: Number(hotelDetails.price),
+                available: 5,
+                description: `Standard ${type} room`
+            }],
+            userEmail: activeUser,
+            adminId: activeId
+        };
+
+        const response = await fetch(`${API_BASE_URL}/api/hotels`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(hotelPayload)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            toast.success(
+                `"${hotelDetails.name}" has been added to your catalog successfully!`,
+                '✅ Hotel Published',
+                5000
+            );
+            window.scrollTo(0, 0);
+            await clearDraft();
+            
+            toast.info('Form cleared and ready for new hotel entry.', '🔄 Ready', 3000);
+            resetForm();
+        } else {
+            const errorMessage = data.message || 'Unknown error occurred';
+            toast.error(
+                `Failed to save hotel: ${errorMessage}`,
+                '❌ Save Failed',
+                5000
+            );
+        }
+    } catch (err) {
+        console.error('❌ Network Error:', err);
+        toast.error(
+            `Unable to connect to server: ${err.message}. Please check if backend is running.`,
+            '❌ Connection Error',
+            6000
+        );
+    } finally {
+        setIsSubmitting(false);
+    }
+};
  
   const resetForm = () => {
     setHotelDetails({
@@ -411,17 +432,18 @@ const AddHotel = () => {
     setFile(null); setPreviewUrl(null); setGalleryFiles([]); setType("Budget");
   };
  
-  const handleCancel = () => {
+const handleCancel = () => {
     askConfirmation(
-      "Discard Changes",
-      "Are you sure you want to cancel? All unsaved changes will be lost.",
-      async () => {
-        await clearDraft();
-        navigate('/view-hotels');
-      },
-      "danger"
+        "Discard Changes",
+        "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+        async () => {
+            await clearDraft();
+            toast.info('Action cancelled. Redirecting to hotel list...', '❌ Cancelled');
+            navigate('/view-hotels');
+        },
+        "danger"
     );
-  };
+};
  
   return (
     <div className="atour-page">

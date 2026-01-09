@@ -119,10 +119,11 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// 5. UPDATE PROMO (WITH CLOUDINARY & LOGGING)
+// 5. UPDATE PROMO (WITH CLOUDINARY & DETAILED LOGGING)
 router.put('/:id', upload.single('image'), async (req, res) => {
     try {
-        const { userEmail, adminId, existingImagePublicId } = req.body;
+        // ✅ EXTRACT EXTRA FIELDS: changes, userEmail, adminId
+        const { userEmail, adminId, existingImagePublicId, changes } = req.body;
         const logUserId = getValidAdminId(adminId);
 
         let updateData = { ...req.body };
@@ -153,15 +154,33 @@ router.put('/:id', upload.single('image'), async (req, res) => {
             return res.status(404).json({ message: "Promo not found" });
         }
 
-        // Activity Logging
+        // ============================================
+        // ✅ ACTIVITY LOGGING (UPDATED LOGIC)
+        // ============================================
         try {
+            let logDescription = `Updated promo code: ${updatedPromo.code}`;
+
+            // Check if 'changes' exists and append to description
+            // Frontend sends 'changes' as a JSON string via FormData
+            if (changes) {
+                try {
+                    const parsedChanges = JSON.parse(changes); 
+                    if (Array.isArray(parsedChanges) && parsedChanges.length > 0) {
+                        logDescription += `. Changes: ${parsedChanges.join(', ')}`;
+                    }
+                } catch (e) {
+                    // Fallback if parsing fails or if it's a simple string
+                    logDescription += ` details updated.`;
+                }
+            }
+
             await ActivityLog.create({
                 action: 'UPDATE',
                 module: 'Promos',
                 user: userEmail || 'System Admin',
                 userId: logUserId,
                 severity: 'SUCCESS',
-                description: `Updated promo code: ${updatedPromo.code}`,
+                description: logDescription, // ✅ Log description now includes specific changes
                 details: {
                     recordTitle: updatedPromo.code,
                     recordId: updatedPromo._id,

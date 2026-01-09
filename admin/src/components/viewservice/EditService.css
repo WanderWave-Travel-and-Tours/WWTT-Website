@@ -1,0 +1,500 @@
+/* ================================================= */
+/* EDIT SERVICE PAGE CONTAINER (Matches EditTestimonial) */
+/* ================================================= */
+
+.editservice-page {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    width: 100%;
+}
+
+.editservice-main {
+    flex: 1;
+    margin-left: 300px; /* Sidebar width */
+    padding: 40px 80px;
+    transition: margin-left 0.3s ease;
+    width: 100%;
+}
+
+.editservice-main--collapsed {
+    margin-left: 90px;
+}
+
+.editservice-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* =========================
+   HEADER DESIGN
+========================= */
+.editservice-header {
+    position: relative;
+    margin-bottom: 40px;
+    padding: 45px 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    /* Corporate/Service background */
+    background: url('https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80') center/cover;
+    box-shadow: 0 10px 30px rgba(0, 31, 63, 0.15);
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.editservice-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 31, 63, 0.95) 0%, rgba(0, 31, 63, 0.8) 100%);
+    z-index: 1;
+}
+
+.editservice-header-content {
+    position: relative;
+    z-index: 2;
+}
+
+.editservice-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+    position: relative;
+    z-index: 2;
+}
+
+.editservice-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-4px);
+}
+
+.editservice-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 0 0 8px 0;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.editservice-subtitle {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.editservice-subtitle::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background: #FF8C42;
+}
+
+/* =========================
+   FORM CONTAINER & SECTIONS
+========================= */
+.editservice-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.editservice-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.editservice-section-title {
+    font-size: 13px;
+    font-weight: 900;
+    color: #001f3f;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.editservice-section-title::before {
+    content: '';
+    width: 4px;
+    height: 22px;
+    background: #FF8C42;
+    border-radius: 2px;
+}
+
+/* =========================
+   FORM GRID & INPUTS
+========================= */
+.editservice-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.editservice-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.editservice-form-group--full {
+    grid-column: 1 / -1;
+}
+
+.editservice-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.editservice-input, 
+.editservice-textarea, 
+.editservice-select {
+    padding: 13px 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.2s;
+    background: #fff;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.editservice-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.editservice-input:focus, 
+.editservice-textarea:focus, 
+.editservice-select:focus {
+    outline: none;
+    border-color: #FF8C42;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.editservice-input::placeholder {
+    color: #94a3b8;
+}
+
+/* =========================
+   IMAGE UPLOAD (Modified for Service Rectangles)
+========================= */
+.editservice-upload-area {
+    width: 100%;
+}
+
+.editservice-file-input {
+    display: none;
+}
+
+.editservice-upload-label {
+    display: block;
+    cursor: pointer;
+    width: 100%;
+}
+
+.editservice-image-preview {
+    position: relative;
+    width: 100%;
+    /* Aspect ratio for service cards is usually wider */
+    height: 250px; 
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px dashed #cbd5e1;
+    background: #f8fafc;
+}
+
+.editservice-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.editservice-image-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 31, 63, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.editservice-image-overlay span {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.editservice-image-preview:hover .editservice-image-overlay {
+    opacity: 1;
+}
+
+/* =========================
+   ICON GRID
+========================= */
+.editservice-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.editservice-icon-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.editservice-icon-option:hover {
+    border-color: #FF8C42;
+    color: #FF8C42;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.editservice-icon-option.selected {
+    background: #FF8C42;
+    color: #fff;
+    border-color: #FF8C42;
+}
+
+/* =========================
+   FORM ACTIONS (STICKY FOOTER)
+========================= */
+.editservice-form-actions {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding: 24px 32px;
+    border-radius: 16px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border: 1px solid #e2e8f0;
+    z-index: 10;
+}
+
+.editservice-btn {
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.editservice-btn--cancel {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.editservice-btn--cancel:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.editservice-btn--submit {
+    background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
+}
+
+.editservice-btn--submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
+}
+
+.editservice-btn--submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* =========================
+   LOADING STATE
+========================= */
+.editservice-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+    background: #fff;
+    border-radius: 16px;
+    margin: 80px;
+}
+
+.editservice-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #FF8C42;
+    border-radius: 50%;
+    animation: editservice-spin 0.8s linear infinite;
+}
+
+@keyframes editservice-spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+}
+
+/* =========================
+   RESPONSIVENESS
+========================= */
+@media (max-width: 1100px) {
+    .editservice-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 40px;
+    }
+
+    .editservice-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .editservice-main, 
+    .editservice-main--collapsed {
+        margin-left: 90px !important;
+        padding: 24px 16px !important;
+        width: calc(100% - 90px) !important;
+    }
+
+    .editservice-header {
+        padding: 35px 30px;
+        margin-bottom: 28px;
+    }
+
+    .editservice-title {
+        font-size: 2rem;
+    }
+
+    .editservice-section {
+        padding: 24px 20px;
+    }
+
+    .editservice-image-preview {
+        height: 200px;
+    }
+}
+
+@media (max-width: 640px) {
+    .editservice-title {
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .editservice-subtitle {
+        font-size: 13px;
+    }
+
+    .editservice-header {
+        padding: 30px 24px;
+    }
+
+    .editservice-section {
+        padding: 20px 16px;
+    }
+
+    .editservice-form-actions {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .editservice-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .editservice-icon-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .editservice-title {
+        font-size: 1.4rem;
+    }
+
+    .editservice-header {
+        padding: 28px 20px;
+    }
+
+    .editservice-btn {
+        padding: 12px 20px;
+        font-size: 12px;
+    }
+
+    .editservice-back-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    .editservice-section {
+        padding: 16px 12px;
+    }
+
+    .editservice-input, 
+    .editservice-textarea, 
+    .editservice-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}

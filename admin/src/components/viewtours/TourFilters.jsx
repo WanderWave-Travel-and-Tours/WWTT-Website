@@ -1,29 +1,92 @@
-import React from 'react';
-import { Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Filter, ChevronDown } from 'lucide-react';
+import './TourFilters.css';
 
 const TourFilters = ({ searchTerm, setSearchTerm, filterCategory, setFilterCategory, categories }) => {
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const handleCategorySelect = (category) => {
+        setFilterCategory(category);
+        setIsDropdownOpen(false);
+    };
+
+    const getSelectedLabel = () => {
+        if (filterCategory === 'ALL') return 'All Tours';
+        return filterCategory;
+    };
+
     return (
-        <div className="tf-filter-card">
-            <div className="tf-filter-wrapper">
-                <div className="tf-brand-label">TOUR <span>FILTERS</span></div>
-                <div className="tf-filter-buttons">
-                    {categories.map(cat => (
-                        <button 
-                            key={cat} 
-                            className={`tf-filter-btn ${filterCategory === cat ? 'tf-active-navy' : ''}`}
-                            onClick={() => setFilterCategory(cat)}
-                        >
-                            {cat === 'ALL' ? 'All Tours' : cat}
-                        </button>
-                    ))}
+        <div className="tour-filter-card">
+            <div className="tour-filter-wrapper">
+                
+                {/* LEFT: Branding */}
+                <div className="tour-brand-section">
+                    <div className="tour-brand-icon">
+                        <Filter size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="tour-brand-label">
+                        TOUR <span>FILTERS</span>
+                    </div>
                 </div>
-                <div className="tf-search-box">
-                    <Search size={18} className="tf-search-icon" />
-                    <input 
-                        type="text" className="tf-search-input" placeholder="Search title or destination..."
-                        value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                
+                <div className="tour-controls-group">
+                    {/* MIDDLE: Category Dropdown */}
+                    <div className="tour-filter-container">
+                        <label>Category:</label>
+                        <div className="tour-select-wrapper">
+                            <button 
+                                className="tour-select-btn"
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            >
+                                <span className="tour-select-label">{getSelectedLabel()}</span>
+                                <ChevronDown 
+                                    size={14} 
+                                    className={`tour-select-icon ${isDropdownOpen ? 'tour-select-icon--open' : ''}`}
+                                />
+                            </button>
+
+                            {isDropdownOpen && (
+                                <>
+                                    <div 
+                                        className="tour-dropdown-overlay" 
+                                        onClick={() => setIsDropdownOpen(false)}
+                                    />
+                                    <div className="tour-dropdown-menu">
+                                        {categories.map((category) => (
+                                            <button
+                                                key={category}
+                                                className={`tour-dropdown-item ${
+                                                    filterCategory === category ? 'tour-dropdown-item--active' : ''
+                                                }`}
+                                                onClick={() => handleCategorySelect(category)}
+                                            >
+                                                <span className="tour-dropdown-label">
+                                                    {category === 'ALL' ? 'All Tours' : category}
+                                                </span>
+                                                {filterCategory === category && (
+                                                    <span className="tour-dropdown-check">✓</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT: Search Box */}
+                    <div className="tour-search-box">
+                        <Search size={16} className="tour-search-icon" /> 
+                        <input
+                            type="text"
+                            className="tour-search-input"
+                            placeholder="Search title or destination..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                 </div>
+
             </div>
         </div>
     );

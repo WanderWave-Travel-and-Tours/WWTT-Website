@@ -103,7 +103,7 @@ const ViewImage = () => {
     const fetchImages = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/images');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/images');
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -131,7 +131,7 @@ const ViewImage = () => {
             `Are you sure you want to archive "${imageName || 'this image'}"?`,
             async () => {
                 try {
-                    const response = await fetch(`http://localhost:5000/api/images/${id}`, {
+                    const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/images/${id}`, {
                         method: 'PATCH',
                         headers: {
                             'Content-Type': 'application/json'

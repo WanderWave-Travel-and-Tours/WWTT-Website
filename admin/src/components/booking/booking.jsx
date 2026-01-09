@@ -10,6 +10,7 @@ import BookingFilters from './BookingFilters';
 import BookingTable from './BookingTable';
 import BookingDetailModal from './BookingDetailModal';
 import PaginationControls from './PaginationControls';
+import { useToast } from '../toast/ToastManager'; // ADD THIS LINE
 
 const DESTINATION_IMAGES = {
     TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600',
@@ -20,6 +21,7 @@ const DESTINATION_IMAGES = {
 };
 
 const Booking = () => {
+  const toast = useToast();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
@@ -41,60 +43,66 @@ const Booking = () => {
   }, []);
 
   const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      let res = await fetch('http://localhost:5000/api/bookings/active');
-      if (!res.ok) {
-        console.warn('Active endpoint failed, falling back to all bookings');
-        res = await fetch('http://localhost:5000/api/bookings');
-      }
-
-      if (!res.ok) throw new Error('Failed to fetch bookings');
-
-      const data = await res.json();
-
-      const bookingsArray = data.bookings || data;
-      const count = data.count || bookingsArray.length;
-
-      const formatted = bookingsArray
-        .filter(b => (b.isArchive || 'No') === 'No')
-        .map((b, index) => ({
-          id: `BK${String(count - index).padStart(4, '0')}`,
-          mongoId: b._id,
-          customerName: b.fullName || 'N/A',
-          email: b.email || 'N/A',
-          packageName: b.packageName || 'Unknown Package',
-          travelDate: b.startDate || 'Not specified',
-          startDate: b.startDate,
-          endDate: b.endDate,
-          duration: b.duration,
-          totalAmount: b.totalAmount || 0,
-          guests: b.pax?.adult || 1,
-          status: b.status || 'pending',
-          bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
-          message: b.message || '',
-          referenceNumber: b.referenceNumber || 'N/A',
-          paymentLinkId: b.paymentLinkId,
-          
-          // ✅ NEW: Payment-related fields - CORRECTED
-          paymentType: b.paymentType || 'full',
-          initialPaymentAmount: b.initialPaymentAmount || 0,
-          remainingBalance: b.remainingBalance || 0,
-          balancePaidAmount: b.balancePaidAmount || 0,
-          balancePaidAt: b.balancePaidAt,
-          
-          rawData: b,
-          isArchive: b.isArchive || 'No'
-        }));
-
-      setBookings(formatted);
-    } catch (err) {
-      console.error('Fetch error:', err);
-      alert('Failed to load bookings. Please check if the server is running.');
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    let res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings/active');
+    if (!res.ok) {
+      console.warn('Active endpoint failed, falling back to all bookings');
+      res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings');
     }
-  };
+
+    if (!res.ok) throw new Error('Failed to fetch bookings');
+
+    const data = await res.json();
+
+    const bookingsArray = data.bookings || data;
+    const count = data.count || bookingsArray.length;
+
+    const formatted = bookingsArray
+      .filter(b => (b.isArchive || 'No') === 'No')
+      .map((b, index) => ({
+        id: `BK${String(count - index).padStart(4, '0')}`,
+        mongoId: b._id,
+        customerName: b.fullName || 'N/A',
+        email: b.email || 'N/A',
+        packageName: b.packageName || 'Unknown Package',
+        travelDate: b.startDate || 'Not specified',
+        startDate: b.startDate,
+        endDate: b.endDate,
+        duration: b.duration,
+        totalAmount: b.totalAmount || 0,
+        guests: b.pax?.adult || 1,
+        status: b.status || 'pending',
+        bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
+        message: b.message || '',
+        referenceNumber: b.referenceNumber || 'N/A',
+        paymentLinkId: b.paymentLinkId,
+        
+        paymentType: b.paymentType || 'full',
+        initialPaymentAmount: b.initialPaymentAmount || 0,
+        remainingBalance: b.remainingBalance || 0,
+        balancePaidAmount: b.balancePaidAmount || 0,
+        balancePaidAt: b.balancePaidAt,
+        
+        rawData: b,
+        isArchive: b.isArchive || 'No'
+      }));
+
+    setBookings(formatted);
+    
+  } catch (err) {
+    console.error('Fetch error:', err);
+    
+    // ✅ ADD TOAST - ERROR
+    toast.error(
+      'Failed to load bookings. Please check if the server is running.',
+      "❌ Load Failed",
+      5000
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ✅ Enhanced filtering with payment status
   useEffect(() => {
@@ -139,75 +147,130 @@ const Booking = () => {
 
     setFilteredBookings(filtered);
     setCurrentPage(1);
+
+    if (searchTerm || filterStatus !== 'ALL' || paymentFilter !== 'ALL') {
+    toast.info(
+      `Found ${filtered.length} matching bookings`,
+      "🔍 Filter Applied",
+      2000
+    );
+  }
+
   }, [searchTerm, filterStatus, paymentFilter, bookings]);
 
-  const handleConfirm = async (booking) => {
-    if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/confirm`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!res.ok) throw new Error();
+const handleConfirm = async (booking) => {
+  if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) return;
+  
+  setActionLoading(true);
+  
+  try {
+    const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/confirm`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!res.ok) throw new Error();
+    
+    await fetchBookings();
+    
+    // ✅ ADD TOAST - SUCCESS
+    toast.success(
+      `Booking ${booking.id} for ${booking.customerName} confirmed!`,
+      "✅ Booking Confirmed",
+      4000
+    );
+    
+  } catch (err) {
+    // ✅ ADD TOAST - ERROR
+    toast.error(
+      'Failed to confirm booking. Please try again.',
+      "❌ Confirmation Failed",
+      4000
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+const handleCancel = async (booking) => {
+  if (!window.confirm(`Cancel booking ${booking.id}? This cannot be undone.`)) return;
+  
+  setActionLoading(true);
+  
+  try {
+    const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/cancel`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!res.ok) throw new Error();
+    
+    await fetchBookings();
+    
+    // ✅ ADD TOAST - SUCCESS
+    toast.warning(
+      `Booking ${booking.id} has been cancelled`,
+      "⚠️ Booking Cancelled",
+      4000
+    );
+    
+  } catch (err) {
+    // ✅ ADD TOAST - ERROR
+    toast.error(
+      'Failed to cancel booking. Please try again.',
+      "❌ Cancellation Failed",
+      4000
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+const handleArchive = async (booking) => {
+  const isCurrentlyArchived = booking.isArchive === 'Yes';
+  const action = isCurrentlyArchived ? 'unarchive' : 'archive';
+  const message = isCurrentlyArchived
+    ? `Unarchive booking ${booking.id}? It will reappear in the active list.`
+    : `Archive booking ${booking.id}? It will be hidden from the active list.`;
+
+  if (!window.confirm(message)) return;
+
+  setActionLoading(true);
+  
+  try {
+    const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/archive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const result = await res.json();
+
+    if (result.status === 'ok') {
       await fetchBookings();
-      alert('Booking confirmed successfully!');
-    } catch (err) {
-      alert('Failed to confirm booking.');
-    } finally {
-      setActionLoading(false);
+      
+      // ✅ ADD TOAST - SUCCESS
+      toast.success(
+        `Booking ${booking.id} ${action}d successfully`,
+        `✅ ${isCurrentlyArchived ? 'Unarchived' : 'Archived'}`,
+        3000
+      );
+      
+    } else {
+      throw new Error('Failed to update archive status');
     }
-  };
-
-  const handleCancel = async (booking) => {
-    if (!window.confirm(`Cancel booking ${booking.id}? This cannot be undone.`)) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/cancel`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!res.ok) throw new Error();
-      await fetchBookings();
-      alert('Booking cancelled successfully!');
-    } catch (err) {
-      alert('Failed to cancel booking.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleArchive = async (booking) => {
-    const isCurrentlyArchived = booking.isArchive === 'Yes';
-    const action = isCurrentlyArchived ? 'unarchive' : 'archive';
-    const message = isCurrentlyArchived
-      ? `Unarchive booking ${booking.id}? It will reappear in the active list.`
-      : `Archive booking ${booking.id}? It will be hidden from the active list.`;
-
-    if (!window.confirm(message)) return;
-
-    setActionLoading(true);
-    try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${booking.mongoId}/archive`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const result = await res.json();
-
-      if (result.status === 'ok') {
-        alert(`Booking ${action}d successfully!`);
-        await fetchBookings();
-      } else {
-        alert('Failed to update archive status.');
-      }
-    } catch (err) {
-      console.error('Archive error:', err);
-      alert('An error occurred while archiving.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  } catch (err) {
+    console.error('Archive error:', err);
+    
+    // ✅ ADD TOAST - ERROR
+    toast.error(
+      `Failed to ${action} booking. Please try again.`,
+      "❌ Archive Failed",
+      4000
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   const handleViewDetails = (booking) => {
     setSelectedBooking(booking);

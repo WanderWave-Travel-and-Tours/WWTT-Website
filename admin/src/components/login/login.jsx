@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { useToast } from '../toast/ToastManager';
 import './login.css';
 
 const Login = () => {
@@ -11,6 +12,7 @@ const Login = () => {
     const recaptchaRef = useRef(null);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
     const navigate = useNavigate();
+    const toast = useToast();
     const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
     
     const destinations = [
@@ -67,14 +69,14 @@ const Login = () => {
         e.preventDefault();
 
         if (!recaptchaToken) {
-            alert("Please complete the reCAPTCHA verification");
+            toast.warning('Please complete the reCAPTCHA verification', 'Verification Required');
             return;
         }
 
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/admin/login', {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, recaptchaToken }),
@@ -92,13 +94,17 @@ const Login = () => {
                     isMainAdmin: data.data.isMainAdmin
                 });
                 
-                alert('✅ Access Granted!');
-                navigate('/dashboard');
+                toast.success('Access Granted! Redirecting to dashboard...', 'Login Successful');
+                
+                // Navigate after a short delay to show toast
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 1500);
             } else {
-                alert('❌ Login Failed: ' + data.message);
+                toast.error(data.message || 'Invalid credentials', 'Login Failed');
             }
         } catch (error) {
-            alert('Error connecting to server.');
+            toast.error('Unable to connect to server. Please try again.', 'Connection Error');
             console.error('Login error:', error);
         } finally {
             setIsLoading(false);

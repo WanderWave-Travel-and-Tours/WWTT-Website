@@ -14,6 +14,28 @@ const PackageSchema = new mongoose.Schema({
     price: { type: Number, required: true },
     duration: { type: String, required: true },
     category: { type: String, enum: ['Local', 'International', 'Internation Tour'], default: 'Local' },
+    
+    // ✅ NEW: Tour Type Fields
+    tourType: { 
+        type: String, 
+        enum: ['private', 'joiners'], 
+        default: 'private' 
+    },
+    minPax: { 
+        type: Number, 
+        default: null,
+        validate: {
+            validator: function(value) {
+                // Only validate if tourType is joiners
+                if (this.tourType === 'joiners') {
+                    return value != null && value >= 1;
+                }
+                return true; // No validation for private tours
+            },
+            message: 'Minimum pax is required for joiner tours and must be at least 1'
+        }
+    },
+    
     image: { type: String },
     imagePublicId: {
         type: String,
@@ -26,6 +48,12 @@ const PackageSchema = new mongoose.Schema({
 
 PackageSchema.pre('save', function(next) {
     this.price = this.sellerPrice + this.markup;
+    
+    // Clear minPax if tour type is private
+    if (this.tourType === 'private') {
+        this.minPax = null;
+    }
+    
     next();
 });
 

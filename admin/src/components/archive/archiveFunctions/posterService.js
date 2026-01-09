@@ -1,5 +1,4 @@
-
-const API_URL = 'http://localhost:5000/api/posters';
+const API_URL = 'https://wanderwaveph-backend.onrender.com/api/posters';
 
 export const fetchArchivedPosters = async () => {
   try {

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../sidebar/sidebar';
-import UserFilters from './UserFilters';
+import UserFilters from './Userfilters';
 import UserPagination from './Userpagination';
 import { UserCog } from 'lucide-react';
 import './users.css';
-import './UserFilters.css';
-import './UserPagination.css';
+import './Userfilters.css';
+import './Userpagination.css';
 
 // =========================================================================
 // MAIN USERS COMPONENT
@@ -25,7 +25,7 @@ const Users = () => {
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [currentPage, setCurrentPage] = useState(1);
 
-    const API_URL = 'http://localhost:5000/api/users';
+    const API_URL = 'https://wanderwaveph-backend.onrender.com/api/users';
 
     // Get dynamic status options
     const getStatusOptions = () => {
