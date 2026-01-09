@@ -1,48 +1,98 @@
-import React from 'react';
-import { Search } from 'lucide-react';
-import './PromoFilters.css'; 
+import React, { useState } from 'react';
+import { Search, Filter, ChevronDown } from 'lucide-react';
+import './PromoFilters.css';
 
 const PromoFilters = ({ 
     searchTerm, 
     setSearchTerm, 
     filterStatus, 
     setFilterStatus, 
-    statusOptions, 
-    getFilterClassName 
+    statusOptions
 }) => {
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const handleStatusSelect = (status) => {
+        setFilterStatus(status);
+        setIsDropdownOpen(false);
+    };
+
+    const getSelectedLabel = () => {
+        if (filterStatus === 'ALL') return 'All Promos';
+        return filterStatus;
+    };
+
     return (
-        <div className="prf-filter-card">
-            <div className="prf-filter-wrapper">
+        <div className="promo-filter-card">
+            <div className="promo-filter-wrapper">
                 
-                {/* ORDER 1: Branding Label */}
-                <div className="prf-brand-label">
-                    PROMO <span>FILTERS</span>
+                {/* LEFT: Branding */}
+                <div className="promo-brand-section">
+                    <div className="promo-brand-icon">
+                        <Filter size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="promo-brand-label">
+                        PROMO <span>FILTERS</span>
+                    </div>
                 </div>
                 
-                {/* ORDER 2: Filter Buttons */}
-                <div className="prf-filter-buttons">
-                    {statusOptions.map(status => (
-                        <button
-                            key={status}
-                            className={`prf-filter-btn ${getFilterClassName(status)}`} 
-                            onClick={() => setFilterStatus(status)}
-                        >
-                            {status === 'ALL' ? 'All Promos' : status}
-                        </button>
-                    ))}
+                <div className="promo-controls-group">
+                    {/* MIDDLE: Status Dropdown */}
+                    <div className="promo-filter-container">
+                        <label>Status:</label>
+                        <div className="promo-select-wrapper">
+                            <button 
+                                className="promo-select-btn"
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            >
+                                <span className="promo-select-label">{getSelectedLabel()}</span>
+                                <ChevronDown 
+                                    size={14} 
+                                    className={`promo-select-icon ${isDropdownOpen ? 'promo-select-icon--open' : ''}`}
+                                />
+                            </button>
+
+                            {isDropdownOpen && (
+                                <>
+                                    <div 
+                                        className="promo-dropdown-overlay" 
+                                        onClick={() => setIsDropdownOpen(false)}
+                                    />
+                                    <div className="promo-dropdown-menu">
+                                        {statusOptions.map((status) => (
+                                            <button
+                                                key={status}
+                                                className={`promo-dropdown-item ${
+                                                    filterStatus === status ? 'promo-dropdown-item--active' : ''
+                                                }`}
+                                                onClick={() => handleStatusSelect(status)}
+                                            >
+                                                <span className="promo-dropdown-label">
+                                                    {status === 'ALL' ? 'All Promos' : status}
+                                                </span>
+                                                {filterStatus === status && (
+                                                    <span className="promo-dropdown-check">✓</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT: Search Box */}
+                    <div className="promo-search-box">
+                        <Search size={16} className="promo-search-icon" /> 
+                        <input
+                            type="text"
+                            className="promo-search-input"
+                            placeholder="Search by code or description..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                 </div>
-                
-                {/* ORDER 3: Search Box */}
-                <div className="prf-search-box">
-                    <Search size={18} className="prf-search-icon" /> 
-                    <input
-                        type="text"
-                        className="prf-search-input"
-                        placeholder="Search by code or description..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
+
             </div>
         </div>
     );
