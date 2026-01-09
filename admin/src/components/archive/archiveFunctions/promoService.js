@@ -24,11 +24,24 @@ export const fetchArchivedPromos = async () => {
     }
 };
 
+// archiveFunctions/promoService.js
+
 export const restorePromo = async (id) => {
-    const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isArchive: 'No' })
-    });
-    return response.ok;
+    try {
+        const response = await fetch(`http://localhost:5000/api/promos/${id}/archive`, {
+            method: 'POST', // Dapat POST dahil ito ang nasa route mo
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                isArchive: 'No', // Pinapadala natin ito pero ang backend ay may toggle logic
+                userEmail: localStorage.getItem('userEmail'), // Para sa Activity Log
+                adminId: localStorage.getItem('adminId')      // Para sa Activity Log
+            })
+        });
+        
+        const result = await response.json();
+        return response.ok;
+    } catch (error) {
+        console.error("Error restoring promo:", error);
+        return false;
+    }
 };

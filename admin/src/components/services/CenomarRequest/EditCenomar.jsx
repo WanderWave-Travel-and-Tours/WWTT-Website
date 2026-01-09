@@ -347,24 +347,36 @@ const EditCenomar = () => {
     );
   };
 
-  const performSubmit = async () => {
+const performSubmit = async () => {
     setSubmitting(true);
     const { userEmail, adminId } = getAdminData(); // Get current admin info
     const data = new FormData();
     const fullName = `${formData.givenName} ${formData.lastName}`.trim();
     
+    // I-append ang lahat ng nasa formData
     Object.keys(formData).forEach(key => {
         data.append(key, formData[key]);
     });
+
     data.append("fullName", fullName);
     data.append("userEmail", userEmail); // For Activity Log
     data.append("adminId", adminId);     // For Activity Log
+
+    // 🔥 FIX: Idagdag ang inquiryType para sa tamang module mapping sa backend
+    data.append("inquiryType", "CENOMAR");
 
     // Backend usually expects 'evidence' for the requirement file
     if (files.requirement) {
       data.append("evidence", files.requirement); 
     }
     
+    // 🔥 FIX: I-append ang listahan ng existing files na HINDI binura
+    const remainingFiles = [];
+    if (existingFiles.requirement) {
+        remainingFiles.push("requirement");
+    }
+    data.append("existingFiles", JSON.stringify(remainingFiles));
+
     data.append("hasExistingEvidence", existingFiles.requirement ? "true" : "false");
 
     let changes = [];
@@ -388,6 +400,10 @@ const EditCenomar = () => {
         changes.push(`Removed existing attachment.`);
       }
     }
+
+    // Isama ang activity log changes sa request body
+    // Note: Sa backend updateInquiry controller, gagamitin ang field na ito sa details
+    data.append("changes", JSON.stringify(changes));
 
     try {
       // Changed to axios for consistency with logs implementation

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
   ArrowLeft, Upload, X, FileText, User, 
-  MessageSquare, DollarSign, MapPin, HelpCircle, Briefcase, Eye, Trash2
+  MessageSquare, DollarSign, HelpCircle, Briefcase, Eye, Trash2
 } from "lucide-react";
 import axios from "axios"; 
 import Sidebar from "../../sidebar/sidebar"; 
@@ -121,8 +121,8 @@ const EditPSA = () => {
     address: "",
     estimatedPrice: "",
     message: "",
-    serviceName: "PSA Request",
-    psaDocument: "PSA Document",
+    serviceName: "PSA Documents",
+    psaDocument: "",
   });
 
   const [files, setFiles] = useState({});
@@ -166,19 +166,26 @@ const EditPSA = () => {
             address: data.address || "",
             estimatedPrice: data.estimatedPrice || "",
             message: data.adminRemarks || data.message || "",
-            serviceName: data.serviceName || "PSA Request",
-            psaDocument: data.psaDocument || "PSA Document",
+            serviceName: data.serviceName || "PSA Documents",
+            psaDocument: data.serviceName || "PSA Document",
           });
 
-          if (data.evidenceUrl) {
+          // 🔥 FIXED: Standardizing the key to "requirement" for PSA sync
+          const docs = {};
+          if (data.deliveredDocuments && data.deliveredDocuments.length > 0) {
+            data.deliveredDocuments.forEach(doc => {
+              // Extract field key if format is "key - filename"
+              const fieldKey = doc.fileName.includes(' - ') 
+                ? doc.fileName.split(' - ')[0].trim() 
+                : (doc.fileName.toLowerCase().includes("requirement") ? "requirement" : null);
+
+              if (fieldKey) {
+                docs[fieldKey] = doc.fileUrl;
+              }
+            });
+            setExistingFiles(docs);
+          } else if (data.evidenceUrl) {
             setExistingFiles({ requirement: data.evidenceUrl });
-          } else if (data.deliveredDocuments && data.deliveredDocuments.length > 0) {
-            const foundDoc = data.deliveredDocuments.find(doc => 
-              doc.fileName.toLowerCase().includes("requirement") || 
-              doc.fileName.toLowerCase().includes("evidence")
-            ) || data.deliveredDocuments[0];
-            
-            setExistingFiles({ requirement: foundDoc.fileUrl });
           }
         } else {
             toast.error("Requested record not found.", "Data Error");
@@ -258,23 +265,20 @@ const EditPSA = () => {
   const handleDeleteFile = (fieldKey) => {
     askConfirmation(
       "Remove File",
-      "Are you sure you want to remove this file?",
+      "Are you sure you want to remove this document? This will take effect once you save the changes.",
       () => {
-        if (files[fieldKey]) {
-          setFiles((prev) => {
-            const newFiles = { ...prev };
-            delete newFiles[fieldKey];
-            return newFiles;
-          });
-        } else {
-          setExistingFiles((prev) => {
-            const newExisting = { ...prev };
-            delete newExisting[fieldKey];
-            return newExisting;
-          });
-        }
+        setFiles(prev => {
+          const newFiles = { ...prev };
+          delete newFiles[fieldKey];
+          return newFiles;
+        });
+        setExistingFiles(prev => {
+          const newExisting = { ...prev };
+          delete newExisting[fieldKey];
+          return newExisting;
+        });
         setPreviewFile(null);
-        toast.success("Document removed from selection.", "File Removed");
+        toast.success("File marked for removal.");
       },
       "danger"
     );
@@ -310,37 +314,57 @@ const EditPSA = () => {
     );
   };
 
-const performSubmit = async () => {
-    setSubmitting(true);
-    const { userEmail, adminId } = getAdminData(); 
-    const data = new FormData();
-    
-    const fullName = `${formData.givenName} ${formData.lastName}`.trim();
-    
-    Object.keys(formData).forEach(key => {
-        data.append(key, formData[key]);
-    });
-    data.append("fullName", fullName);
-    data.append("userEmail", userEmail); 
-    data.append("adminId", adminId);
-
-    // 1. Kunin ang Admin Info mula sa localStorage para sa logs
-    const adminData = JSON.parse(localStorage.getItem('adminUser')) || {};
-    const adminEmail = adminData.email || "Unknown Admin";
-    const adminName = adminData.username || "Admin";
-
+  const performSubmit = async () => {
     try {
-      const res = await axios.put(`${API_BASE_URL}/update/${psaId}`, data);
+      setSubmitting(true);
+      const { userEmail, adminId } = getAdminData();
       
-      if (res.data.success) {
-        toast.success("PSA Request updated successfully!", "Success");
-        navigate("/services/psa");
+      const data = new FormData();
+      
+      const fullName = `${formData.givenName} ${formData.lastName}`.trim();
+      data.append('fullName', fullName);
+      data.append('email', formData.email);
+      data.append('contactNumber', formData.contactNumber);
+      data.append('serviceName', formData.psaDocument);
+      data.append('estimatedPrice', formData.estimatedPrice);
+      data.append('message', formData.message);
+      data.append('userEmail', userEmail);
+      data.append('adminId', adminId);
+
+      // 🔥 FIXED: Required flag for backend to know if evidenceUrl should be cleared
+      data.append('hasExistingEvidence', existingFiles['requirement'] ? 'true' : 'false');
+
+      // 🔥 FIXED: Send Whitelist of keys to keep
+      data.append('existingFiles', JSON.stringify(Object.keys(existingFiles)));
+
+      // Add new files
+      Object.keys(files).forEach(key => {
+        if (files[key]) {
+          data.append(key, files[key]);
+        }
+      });
+
+      const res = await fetch(`${API_BASE_URL}/update/${psaId}`, {
+        method: "PUT",
+        body: data, 
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Server Error 500");
+      }
+
+      const result = await res.json();
+
+      if (result.success) {
+        toast.success("PSA request updated successfully!");
+        setTimeout(() => navigate("/services/psa"), 1500);
       } else {
-        toast.error(res.data.message || "Failed to update record.", "Error");
+        toast.error(result.message || "Update failed");
       }
     } catch (err) {
       console.error("Submit Error:", err);
-      toast.error("Server connection failed. Please try again.", "Connection Error");
+      toast.error(`Error: ${err.message}`);
     } finally {
       setSubmitting(false);
     }

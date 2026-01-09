@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
   ArrowLeft, Upload, X, FileText, User, MessageSquare, 
-  Calendar, DollarSign, Briefcase, Eye, Globe, Building2, 
+  Calendar, Briefcase, Eye, Globe, Building2, 
   GraduationCap, Users, ClipboardList, Trash2, HelpCircle,
   ChevronDown, ChevronUp
 } from "lucide-react";
@@ -10,7 +10,6 @@ import Sidebar from "../../sidebar/sidebar";
 import { useToast } from "../../toast/ToastManager"; 
 import "./EditVisa.css"; 
 
-// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA 🔥🔥🔥
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -19,7 +18,7 @@ const getAdminData = () => {
             adminId: adminData._id || adminData.id || null
         };
     } catch (error) {
-        console.error('❌ Error getting admin data:', error);
+        console.error('Error getting admin data:', error);
         return { userEmail: 'Unknown Admin', adminId: null };
     }
 };
@@ -43,6 +42,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
         <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
           <button 
+            type="button" 
             onClick={onCancel}
             style={{
               padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
@@ -52,6 +52,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
             Cancel
           </button>
           <button 
+            type="button" 
             onClick={onConfirm}
             style={{
               padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
@@ -67,7 +68,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
   );
 };
 
-const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) => (
+const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile, onDelete }) => (
   <div className="ev-file-row">
     <div className="ev-file-info">
       <span className="ev-file-label">{label}</span>
@@ -77,10 +78,19 @@ const FileRow = ({ label, field, onChange, onView, hasExisting, currentFile }) =
     </div>
     <div className="ev-file-actions">
       {(hasExisting || currentFile) && (
-        <button type="button" className="ev-view-btn" onClick={onView} title="View file">
+        <button 
+          type="button" 
+          className="ev-view-btn" 
+          onClick={(e) => {
+            e.preventDefault();
+            onView();
+          }} 
+          title="View file"
+        >
           <Eye size={14} /> View
         </button>
       )}
+
       <label className="ev-file-upload-btn">
         <Upload size={14} /> Upload
         <input 
@@ -106,11 +116,7 @@ const EditVisa = () => {
   const [showMore, setShowMore] = useState(false);
 
   const [confirmConfig, setConfirmConfig] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: () => {},
-    type: "primary"
+    isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
   });
 
   const [formData, setFormData] = useState({
@@ -128,6 +134,7 @@ const EditVisa = () => {
 
   const [files, setFiles] = useState({});
   const [existingFiles, setExistingFiles] = useState({});
+  const [deletedFiles, setDeletedFiles] = useState(new Set());
 
   const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
   const FILE_BASE_URL = "http://localhost:5000";
@@ -172,9 +179,10 @@ const EditVisa = () => {
             return isNaN(date.getTime()) ? "" : date.toISOString().split('T')[0];
           };
 
+          let rawTravelDate = d.travelDate || d.flightDetails?.departureDate || "";
+          let rawStay = d.lengthOfStay || d.flightDetails?.duration || "";
+          let existingTravelDate = formatForInput(rawTravelDate);
           let cleanMessage = d.adminRemarks || d.message || "";
-          let existingTravelDate = formatForInput(d.travelDate);
-          let existingStay = d.lengthOfStay || "";
 
           setFormData({
             givenName: d.givenName || d.fullName?.split(' ')[0] || "",
@@ -183,17 +191,22 @@ const EditVisa = () => {
             contactNumber: d.contactNumber || "",
             otherNames: d.otherNames || "",
             travelDate: existingTravelDate, 
-            lengthOfStay: existingStay, 
+            lengthOfStay: rawStay, 
             visaType: d.serviceName || "",
             message: cleanMessage, 
             estimatedPrice: d.estimatedPrice || ""
           });
 
-          if (d.deliveredDocuments) {
+          if (d.deliveredDocuments && Array.isArray(d.deliveredDocuments)) {
             const fileMap = {};
             d.deliveredDocuments.forEach(doc => {
-              const fieldKey = doc.fileName.split(' - ')[0].trim(); 
-              fileMap[fieldKey] = doc.fileUrl;
+              const separatorIndex = doc.fileName.indexOf(' - ');
+              if (separatorIndex !== -1) {
+                const fieldKey = doc.fileName.substring(0, separatorIndex).trim();
+                fileMap[fieldKey] = doc.fileUrl;
+              } else {
+                fileMap[doc.fileName] = doc.fileUrl;
+              }
             });
             setExistingFiles(fileMap);
           }
@@ -217,6 +230,11 @@ const EditVisa = () => {
     const file = e.target.files[0];
     if (file) {
       setFiles(prevFiles => ({ ...prevFiles, [fieldName]: file }));
+      setDeletedFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fieldName);
+        return newSet;
+      });
       toast.info(`Selected: ${file.name}`);
     }
   };
@@ -236,21 +254,30 @@ const EditVisa = () => {
   };
 
   const handleDeleteFile = (fieldKey) => {
-    setFiles(prevFiles => {
-      const newFiles = { ...prevFiles };
-      delete newFiles[fieldKey];
-      return newFiles;
-    });
-    setExistingFiles(prevExisting => {
-      const newExisting = { ...prevExisting };
-      delete newExisting[fieldKey];
-      return newExisting;
-    });
+    if (files[fieldKey]) {
+      setFiles(prevFiles => {
+        const newFiles = { ...prevFiles };
+        delete newFiles[fieldKey];
+        return newFiles;
+      });
+      toast.success("Uploaded file removed.");
+    }
+
+    if (existingFiles[fieldKey]) {
+      setDeletedFiles(prev => new Set(prev).add(fieldKey));
+      setExistingFiles(prevExisting => {
+        const newExisting = { ...prevExisting };
+        delete newExisting[fieldKey];
+        return newExisting;
+      });
+      toast.success("File marked for deletion. Click Save to apply.");
+    }
+
     setPreviewFile(null);
-    toast.success("File removed.");
   };
 
-  const handleDiscard = () => {
+  const handleDiscard = (e) => {
+    if (e) e.preventDefault();
     askConfirmation(
       "Discard Changes",
       "Are you sure you want to discard your changes?",
@@ -259,7 +286,7 @@ const EditVisa = () => {
   };
 
   const handleSaveConfirmation = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault(); 
     askConfirmation(
       "Save Changes",
       "Are you sure you want to save all updates?",
@@ -271,9 +298,10 @@ const EditVisa = () => {
     try {
       setSubmitting(true);
       const { userEmail, adminId } = getAdminData();
-      
       const data = new FormData();
       
+      data.append('givenName', formData.givenName);
+      data.append('lastName', formData.lastName);
       data.append('fullName', `${formData.givenName} ${formData.lastName}`.trim());
       data.append('email', formData.email);
       data.append('contactNumber', formData.contactNumber);
@@ -285,13 +313,24 @@ const EditVisa = () => {
       data.append('userEmail', userEmail);
       data.append('adminId', adminId);
 
-      data.append('existingFiles', JSON.stringify(Object.keys(existingFiles)));
+      // Send remaining files keys (files NOT deleted)
+      const remainingKeys = Object.keys(existingFiles).filter(
+        key => !deletedFiles.has(key)
+      );
+      data.append('existingFiles', JSON.stringify(remainingKeys));
+      data.append('deletedFiles', JSON.stringify(Array.from(deletedFiles)));
 
+      // Send new uploaded files
       Object.keys(files).forEach(key => {
         if (files[key]) {
           data.append(key, files[key]);
         }
       });
+
+      console.log('📤 Submitting with:');
+      console.log('  Remaining files:', remainingKeys);
+      console.log('  Deleted files:', Array.from(deletedFiles));
+      console.log('  New files:', Object.keys(files));
 
       const res = await fetch(`${API_BASE_URL}/update/${visaId}`, {
         method: "PUT",
@@ -302,7 +341,7 @@ const EditVisa = () => {
 
       if (result.success) {
         toast.success("Visa application updated successfully!");
-        navigate("/services/visa");
+        setTimeout(() => navigate("/services/visa"), 500);
       } else {
         toast.error(result.message || "Update failed");
       }
@@ -427,13 +466,13 @@ const EditVisa = () => {
                     <h3>Primary Requirements</h3>
                   </div>
                   <div className="ev-file-grid-internal">
-                    <FileRow label="Passport" field="passport" onChange={handleFileChange} onView={() => handleViewFile('passport')} hasExisting={!!existingFiles['passport']} currentFile={files['passport']} />
-                    <FileRow label="Photo" field="photo" onChange={handleFileChange} onView={() => handleViewFile('photo')} hasExisting={!!existingFiles['photo']} currentFile={files['photo']} />
-                    <FileRow label="Accomplished Application Form" field="appForm" onChange={handleFileChange} onView={() => handleViewFile('appForm')} hasExisting={!!existingFiles['appForm']} currentFile={files['appForm']} />
-                    <FileRow label="PSA Marriage Certificate" field="psaMarriage" onChange={handleFileChange} onView={() => handleViewFile('psaMarriage')} hasExisting={!!existingFiles['psaMarriage']} currentFile={files['psaMarriage']} />
-                    <FileRow label="PSA Birth Certificate" field="psaBirth" onChange={handleFileChange} onView={() => handleViewFile('psaBirth')} hasExisting={!!existingFiles['psaBirth']} currentFile={files['psaBirth']} />
-                    <FileRow label="Baptismal / Form 137" field="baptismal" onChange={handleFileChange} onView={() => handleViewFile('baptismal')} hasExisting={!!existingFiles['baptismal']} currentFile={files['baptismal']} />
-                    <FileRow label="Daily Schedule" field="schedule" onChange={handleFileChange} onView={() => handleViewFile('schedule')} hasExisting={!!existingFiles['schedule']} currentFile={files['schedule']} />
+                    <FileRow label="Passport" field="passport" onChange={handleFileChange} onView={() => handleViewFile('passport')} hasExisting={!!existingFiles['passport']} currentFile={files['passport']} onDelete={handleDeleteFile} />
+                    <FileRow label="Photo" field="photo" onChange={handleFileChange} onView={() => handleViewFile('photo')} hasExisting={!!existingFiles['photo']} currentFile={files['photo']} onDelete={handleDeleteFile} />
+                    <FileRow label="Accomplished Application Form" field="appForm" onChange={handleFileChange} onView={() => handleViewFile('appForm')} hasExisting={!!existingFiles['appForm']} currentFile={files['appForm']} onDelete={handleDeleteFile} />
+                    <FileRow label="PSA Marriage Certificate" field="psaMarriage" onChange={handleFileChange} onView={() => handleViewFile('psaMarriage')} hasExisting={!!existingFiles['psaMarriage']} currentFile={files['psaMarriage']} onDelete={handleDeleteFile} />
+                    <FileRow label="PSA Birth Certificate" field="psaBirth" onChange={handleFileChange} onView={() => handleViewFile('psaBirth')} hasExisting={!!existingFiles['psaBirth']} currentFile={files['psaBirth']} onDelete={handleDeleteFile} />
+                    <FileRow label="Baptismal / Form 137" field="baptismal" onChange={handleFileChange} onView={() => handleViewFile('baptismal')} hasExisting={!!existingFiles['baptismal']} currentFile={files['baptismal']} onDelete={handleDeleteFile} />
+                    <FileRow label="Daily Schedule" field="schedule" onChange={handleFileChange} onView={() => handleViewFile('schedule')} hasExisting={!!existingFiles['schedule']} currentFile={files['schedule']} onDelete={handleDeleteFile} />
                   </div>
                 </section>
 
@@ -455,9 +494,9 @@ const EditVisa = () => {
                         <h3>If Employed</h3>
                       </div>
                       <div className="ev-file-grid-internal">
-                        <FileRow label="Original Signed COE" field="coe" onChange={handleFileChange} onView={() => handleViewFile('coe')} hasExisting={!!existingFiles['coe']} currentFile={files['coe']} />
-                        <FileRow label="Company ID" field="companyId" onChange={handleFileChange} onView={() => handleViewFile('companyId')} hasExisting={!!existingFiles['companyId']} currentFile={files['companyId']} />
-                        <FileRow label="PRC/IBP Card" field="prcId" onChange={handleFileChange} onView={() => handleViewFile('prcId')} hasExisting={!!existingFiles['prcId']} currentFile={files['prcId']} />
+                        <FileRow label="Original Signed COE" field="coe" onChange={handleFileChange} onView={() => handleViewFile('coe')} hasExisting={!!existingFiles['coe']} currentFile={files['coe']} onDelete={handleDeleteFile} />
+                        <FileRow label="Company ID" field="companyId" onChange={handleFileChange} onView={() => handleViewFile('companyId')} hasExisting={!!existingFiles['companyId']} currentFile={files['companyId']} onDelete={handleDeleteFile} />
+                        <FileRow label="PRC/IBP Card" field="prcId" onChange={handleFileChange} onView={() => handleViewFile('prcId')} hasExisting={!!existingFiles['prcId']} currentFile={files['prcId']} onDelete={handleDeleteFile} />
                       </div>
                     </section>
 
@@ -467,9 +506,9 @@ const EditVisa = () => {
                         <h3>If Business Owner</h3>
                       </div>
                       <div className="ev-file-grid-internal">
-                        <FileRow label="DTI or SEC Permit" field="dtiSec" onChange={handleFileChange} onView={() => handleViewFile('dtiSec')} hasExisting={!!existingFiles['dtiSec']} currentFile={files['dtiSec']} />
-                        <FileRow label="BIR company registration" field="birReg" onChange={handleFileChange} onView={() => handleViewFile('birReg')} hasExisting={!!existingFiles['birReg']} currentFile={files['birReg']} />
-                        <FileRow label="Business Permit" field="businessPermit" onChange={handleFileChange} onView={() => handleViewFile('businessPermit')} hasExisting={!!existingFiles['businessPermit']} currentFile={files['businessPermit']} />
+                        <FileRow label="DTI or SEC Permit" field="dtiSec" onChange={handleFileChange} onView={() => handleViewFile('dtiSec')} hasExisting={!!existingFiles['dtiSec']} currentFile={files['dtiSec']} onDelete={handleDeleteFile} />
+                        <FileRow label="BIR company registration" field="birReg" onChange={handleFileChange} onView={() => handleViewFile('birReg')} hasExisting={!!existingFiles['birReg']} currentFile={files['birReg']} onDelete={handleDeleteFile} />
+                        <FileRow label="Business Permit" field="businessPermit" onChange={handleFileChange} onView={() => handleViewFile('businessPermit')} hasExisting={!!existingFiles['businessPermit']} currentFile={files['businessPermit']} onDelete={handleDeleteFile} />
                       </div>
                     </section>
 
@@ -479,8 +518,49 @@ const EditVisa = () => {
                         <h3>If Student</h3>
                       </div>
                       <div className="ev-file-grid-internal">
-                        <FileRow label="School Certificate" field="schoolCert" onChange={handleFileChange} onView={() => handleViewFile('schoolCert')} hasExisting={!!existingFiles['schoolCert']} currentFile={files['schoolCert']} />
-                        <FileRow label="School ID" field="schoolId" onChange={handleFileChange} onView={() => handleViewFile('schoolId')} hasExisting={!!existingFiles['schoolId']} currentFile={files['schoolId']} />
+                        <FileRow label="School Certificate" field="schoolCert" onChange={handleFileChange} onView={() => handleViewFile('schoolCert')} hasExisting={!!existingFiles['schoolCert']} currentFile={files['schoolCert']} onDelete={handleDeleteFile} />
+                        <FileRow label="School ID" field="schoolId" onChange={handleFileChange} onView={() => handleViewFile('schoolId')} hasExisting={!!existingFiles['schoolId']} currentFile={files['schoolId']} onDelete={handleDeleteFile} />
+                      </div>
+                    </section>
+
+                    <section className="ev-section ev-animate-fade-in">
+                      <div className="ev-section-header">
+                        <User size={22} className="ev-section-icon" />
+                        <h3>If Senior Citizen</h3>
+                      </div>
+                      <div className="ev-file-grid-internal">
+                        <FileRow label="Senior Citizen ID" field="seniorId" onChange={handleFileChange} onView={() => handleViewFile('seniorId')} hasExisting={!!existingFiles['seniorId']} currentFile={files['seniorId']} onDelete={handleDeleteFile} />
+                      </div>
+                    </section>
+
+                    <section className="ev-section ev-animate-fade-in">
+                      <div className="ev-section-header">
+                        <Users size={22} className="ev-section-icon" />
+                        <h3>If Sponsored</h3>
+                      </div>
+                      <div className="ev-file-grid-internal">
+                        <FileRow label="Proof of Relationship" field="proofOfRelationship" onChange={handleFileChange} onView={() => handleViewFile('proofOfRelationship')} hasExisting={!!existingFiles['proofOfRelationship']} currentFile={files['proofOfRelationship']} onDelete={handleDeleteFile} />
+                        <FileRow label="Guarantee Letter" field="guaranteeLetter" onChange={handleFileChange} onView={() => handleViewFile('guaranteeLetter')} hasExisting={!!existingFiles['guaranteeLetter']} currentFile={files['guaranteeLetter']} onDelete={handleDeleteFile} />
+                      </div>
+                    </section>
+
+                    <section className="ev-section ev-animate-fade-in">
+                      <div className="ev-section-header">
+                        <ClipboardList size={22} className="ev-section-icon" />
+                        <h3>If Requesting for Multiple Entry</h3>
+                      </div>
+                      <div className="ev-file-grid-internal">
+                        <FileRow label="Multiple Entry Request Form" field="multipleEntryRequest" onChange={handleFileChange} onView={() => handleViewFile('multipleEntryRequest')} hasExisting={!!existingFiles['multipleEntryRequest']} currentFile={files['multipleEntryRequest']} onDelete={handleDeleteFile} />
+                      </div>
+                    </section>
+
+                    <section className="ev-section ev-animate-fade-in">
+                      <div className="ev-section-header">
+                        <FileText size={22} className="ev-section-icon" />
+                        <h3>Additional Documents</h3>
+                      </div>
+                      <div className="ev-file-grid-internal">
+                        <FileRow label="Additional Supporting Documents" field="additionalDocs" onChange={handleFileChange} onView={() => handleViewFile('additionalDocs')} hasExisting={!!existingFiles['additionalDocs']} currentFile={files['additionalDocs']} onDelete={handleDeleteFile} />
                       </div>
                     </section>
                   </div>
@@ -516,12 +596,20 @@ const EditVisa = () => {
           <div className="ev-modal-preview-wrapper" onClick={e => e.stopPropagation()}>
             <div className="ev-modal-preview-header">
               <span className="ev-preview-filename">{previewFile.name.split('/').pop()}</span>
-              <button className="ev-preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
+              <button type="button" className="ev-preview-close-btn" onClick={() => setPreviewFile(null)}><X size={24} /></button>
             </div>
             <div className="ev-modal-preview-body">{renderPreviewContent()}</div>
             <div className="ev-modal-preview-footer">
               <div className="ev-footer-actions-right">
-                <button className="ev-preview-delete-btn" onClick={() => handleDeleteFile(previewFile.fieldKey)}>
+                <button 
+                  type="button" 
+                  className="ev-preview-delete-btn" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDeleteFile(previewFile.fieldKey);
+                  }}
+                >
                   <Trash2 size={18} /> Delete File
                 </button>
               </div>

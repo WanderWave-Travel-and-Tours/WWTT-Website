@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import Sidebar from "../../sidebar/sidebar";
+import CustomConfirmModal from "../../../components/confirmationModal/CustomConfirmModal"; // 🔥 NEW IMPORT
 import {
   FileText,
   AlertTriangle,
@@ -317,6 +318,30 @@ const PSASerbilis = () => {
   const [showDeliverDocs, setShowDeliverDocs] = useState(false);
   const [deliveryFiles, setDeliveryFiles] = useState([]);
 
+  // 🔥🔥🔥 CUSTOM CONFIRM MODAL STATE 🔥🔥🔥
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+    type: "primary" // or "danger"
+  });
+
+  const openConfirm = ({ title, message, onConfirm, type = "primary" }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+      type
+    });
+  };
+
   useEffect(() => {
     fetchPSADocs();
     fetchInquiries();
@@ -350,11 +375,9 @@ const PSASerbilis = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/inquiries');
       if (response.data.success) {
-        // Filter: inquiryType ay PSA at isArchive ay No
         const psaRequests = response.data.data.filter(inq => 
             inq.inquiryType === 'PSA' && inq.isArchive === 'No'
         );
-        // Sort newest first
         psaRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setInquiries(psaRequests);
       }
@@ -434,28 +457,30 @@ const PSASerbilis = () => {
 
   // --- ACTIONS ---
 
-  // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
   const handleArchiveInquiry = async (id) => {
-    if (window.confirm("Are you sure you want to archive this request?")) {
-      
-      // 🔥 GET ADMIN DATA
-      const { userEmail, adminId } = getAdminData();
+    openConfirm({
+      title: "Archive Request",
+      message: "Are you sure you want to archive this request?",
+      type: "danger",
+      onConfirm: async () => {
+        const { userEmail, adminId } = getAdminData();
 
-      try {
-        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
-          isArchive: "Yes",
-          userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
-          adminId    // 🔥 ADD ADMIN INFO FOR LOGS
-        });
-        if (response.data.success) {
-          alert("Inquiry archived successfully.");
-          fetchInquiries(); 
+        try {
+          const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+            isArchive: "Yes",
+            userEmail,
+            adminId
+          });
+          if (response.data.success) {
+            alert("Inquiry archived successfully.");
+            fetchInquiries(); 
+          }
+        } catch (error) {
+          console.error("Error archiving inquiry:", error);
+          alert("Failed to archive inquiry.");
         }
-      } catch (error) {
-        console.error("Error archiving inquiry:", error);
-        alert("Failed to archive inquiry.");
       }
-    }
+    });
   };
 
   const fetchDocuments = async (inquiryId) => {
@@ -487,11 +512,23 @@ const PSASerbilis = () => {
     }, 200);
   };
 
-  // 🔥🔥🔥 UPDATED: UPDATE STATUS WITH ADMIN DATA 🔥🔥🔥
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
-    if(newStatus === 'CANCELLED' && !window.confirm("Are you sure you want to cancel this request?")) return;
+    if(newStatus === 'CANCELLED') {
+      openConfirm({
+        title: "Cancel Request",
+        message: "Are you sure you want to cancel this request?",
+        type: "danger",
+        onConfirm: async () => {
+          await performStatusUpdate(inquiryId, newStatus);
+        }
+      });
+      return;
+    }
     
-    // 🔥 GET ADMIN DATA
+    await performStatusUpdate(inquiryId, newStatus);
+  };
+
+  const performStatusUpdate = async (inquiryId, newStatus) => {
     const { userEmail, adminId } = getAdminData();
 
     try {
@@ -499,8 +536,8 @@ const PSASerbilis = () => {
         `http://localhost:5000/api/inquiries/${inquiryId}/status`,
         { 
           status: newStatus,
-          userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
-          adminId    // 🔥 ADD ADMIN INFO FOR LOGS
+          userEmail,
+          adminId
         }
       );
 
@@ -517,25 +554,28 @@ const PSASerbilis = () => {
     }
   };
 
-  // Calls handleUpdateInquiryStatus which now includes logs
   const handleRequestPayment = async () => {
-    if (!window.confirm("Are documents correct? This will notify the user to pay.")) return;
-    await handleUpdateInquiryStatus(selectedInquiry._id, 'PAYMENT_PENDING');
+    openConfirm({
+      title: "Request Payment",
+      message: "Are documents correct? This will notify the user to pay.",
+      type: "primary",
+      onConfirm: async () => {
+        await handleUpdateInquiryStatus(selectedInquiry._id, 'PAYMENT_PENDING');
+      }
+    });
   };
 
-  // 🔥🔥🔥 UPDATED: CONTACT WITH ADMIN DATA 🔥🔥🔥
   const submitContactWithRemarks = async () => {
     if (!selectedInquiry) return;
     
-    // 🔥 GET ADMIN DATA
     const { userEmail, adminId } = getAdminData();
 
     try {
       const formData = new FormData();
       formData.append('status', 'CONTACTED');
       formData.append('remarks', contactRemarks);
-      formData.append('userEmail', userEmail);   // 🔥 ADD ADMIN INFO FOR LOGS
-      formData.append('adminId', adminId);       // 🔥 ADD ADMIN INFO FOR LOGS
+      formData.append('userEmail', userEmail);
+      formData.append('adminId', adminId);
 
       if (contactEvidence) {
         formData.append('evidence', contactEvidence);
@@ -566,7 +606,6 @@ const PSASerbilis = () => {
     }
   };
 
-  // 🔥🔥🔥 UPDATED: DELIVER DOCS WITH ADMIN DATA 🔥🔥🔥
   const handleDeliverDocuments = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (deliveryFiles.length === 0) {
@@ -574,13 +613,11 @@ const PSASerbilis = () => {
       return;
     }
     
-    // 🔥 GET ADMIN DATA
     const { userEmail, adminId } = getAdminData();
 
     const formData = new FormData();
     deliveryFiles.forEach(file => formData.append('documents', file));
     
-    // 🔥 ADD ADMIN INFO FOR LOGS
     formData.append('userEmail', userEmail);
     formData.append('adminId', adminId);
 
@@ -693,10 +730,16 @@ const PSASerbilis = () => {
   };
 
   const handleDeletePSA = async (id) => {
-    if (window.confirm("Delete this service?")) {
+    openConfirm({
+      title: "Delete Service",
+      message: "Are you sure you want to delete this service? This action cannot be undone.",
+      type: "danger",
+      onConfirm: async () => {
         await axios.delete(`http://localhost:5000/api/psa/${id}`);
         fetchPSADocs();
-    }
+        alert("Service deleted successfully.");
+      }
+    });
   };
 
   const addCategory = () => setRequirements([...requirements, { id: Date.now(), title: "", items: [] }]);
@@ -753,7 +796,6 @@ const PSASerbilis = () => {
               <h1>PSA Services</h1>
               <p>Birth, Marriage, Death Certificate Processing</p>
             </div>
-            {/* UPDATED BUTTON CONTAINER */}
             <div className="psa-header-actions">
               <button 
                 className="psa-btn-add psa-btn-dark" 
@@ -818,7 +860,6 @@ const PSASerbilis = () => {
             refreshData={fetchInquiries}
           />
 
-          {/* MODALS */}
           {isInquiryModalOpen && selectedInquiry && (
             <PSAInquiryModal
                 inquiry={selectedInquiry}
@@ -826,7 +867,6 @@ const PSASerbilis = () => {
                 onClose={handleCloseInquiryModal}
                 onUpdateStatus={handleUpdateInquiryStatus}
                 onRequestPayment={handleRequestPayment}
-                // Updated to use the handler that has logs
                 onConfirmPayment={() => handleUpdateInquiryStatus(selectedInquiry._id, "CONFIRMED")}
                 showDeliverDocs={showDeliverDocs}
                 setShowDeliverDocs={setShowDeliverDocs}
@@ -885,6 +925,16 @@ const PSASerbilis = () => {
                 }}
             />
           )}
+
+          {/* 🔥 CUSTOM CONFIRM MODAL - Render sa pinakababa para laging nasa ibabaw */}
+          <CustomConfirmModal
+            isOpen={confirmModal.isOpen}
+            title={confirmModal.title}
+            message={confirmModal.message}
+            onConfirm={confirmModal.onConfirm}
+            onCancel={confirmModal.onCancel}
+            type={confirmModal.type}
+          />
         </div>
       </main>
     </div>

@@ -1,3 +1,4 @@
+// AirlineBooking.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Sidebar from '../../sidebar/sidebar';
@@ -11,7 +12,13 @@ import './AirlineBooking.css';
 import AirlineApplicationModal from './AirlineApplicationModal'; 
 import { AirlineInquiryModal, AirlineContactRemarksModal } from './AirlineModals'; 
 
+// ── Toast & Confirmation Imports ────────────────────────────────────────
+import { useToast } from '../../toast/ToastManager'; // Adjust path if needed
+import CustomConfirmModal from '../../../components/confirmationModal/CustomConfirmModal';
+
 const AirlineBooking = () => {
+    const { success, error, warning, info } = useToast();
+
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth <= 1024);
     const [bookings, setBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -24,13 +31,23 @@ const AirlineBooking = () => {
     const [contactRemarks, setContactRemarks] = useState("");
     const [contactEvidence, setContactEvidence] = useState(null);
 
+    // Confirmation Modal States
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'primary', // 'primary' | 'danger'
+        onConfirm: () => {},
+        onCancel: () => {}
+    });
+
     // Filter States
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    // ✅ GET ADMIN DATA FOR ACTIVITY LOGS
+    // ── Helper: Get Admin Data for Activity Logs ────────────────────────────
     const getAdminData = () => {
         try {
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -69,33 +86,34 @@ const AirlineBooking = () => {
         return map[status] || 'badge-slate';
     };
 
-    // Fetch flight booking inquiries from database
+    // Fetch flight booking inquiries
     const fetchFlightBookings = async () => {
         setIsLoading(true);
         try {
             const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
             if (response.data.success) {
-                // Filter: Flight Booking lang at hindi naka-archive
                 const filtered = response.data.data.filter(inq => 
                     inq.inquiryType === 'FLIGHT_BOOKING' && inq.isArchive === 'No'
                 );
                 setBookings(filtered);
             }
         } catch (error) {
-            console.error('Error fetching:', error);
+            console.error('Error fetching flight bookings:', error);
+            error('Failed to load flight bookings');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Initial Fetch
-    useEffect(() => { fetchFlightBookings(); }, []);
+    useEffect(() => { 
+        fetchFlightBookings(); 
+    }, []);
 
     // Filter Logic
     const filteredData = useMemo(() => {
         let data = bookings;
         
-        // AUTOMATICALLY HIDE ARCHIVED ITEMS
+        // Automatically hide archived items
         data = data.filter(b => b.status !== 'ARCHIVED');
 
         if(statusFilter !== 'ALL') data = data.filter(b => b.status === statusFilter);
@@ -119,126 +137,151 @@ const AirlineBooking = () => {
     const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
-    // Handler for Status Updates
+    // ── Confirmation Modal Helpers ──────────────────────────────────────────
+    const showConfirm = (title, message, type = 'primary', onConfirm) => {
+        setConfirmModal({
+            isOpen: true,
+            title,
+            message,
+            type,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            },
+            onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        });
+    };
+
+    // ── Status Update ───────────────────────────────────────────────────────
     const handleUpdateStatus = async (id, newStatus) => {
-        const action = `Update status to ${newStatus}`;
-        if(!window.confirm(`Are you sure you want to ${action}?`)) return;
-        
-        try {
-            // ✅ GET ADMIN DATA
-            const { userEmail, adminId } = getAdminData();
+        showConfirm(
+            "Update Status",
+            `Are you sure you want to change status to **${newStatus}**?`,
+            newStatus === 'CANCELLED' ? 'danger' : 'primary',
+            async () => {
+                try {
+                    const { userEmail, adminId } = getAdminData();
 
-            const response = await axios.put(
-                `http://localhost:5000/api/inquiries/${id}/status`,
-                { 
-                    status: newStatus,
-                    userEmail,  // ✅ SEND FOR ACTIVITY LOG
-                    adminId     // ✅ SEND FOR ACTIVITY LOG
-                }
-            );
+                    const response = await axios.put(
+                        `http://localhost:5000/api/inquiries/${id}/status`,
+                        { 
+                            status: newStatus,
+                            userEmail,
+                            adminId
+                        }
+                    );
 
-            if (response.data.success) {
-                alert('Status updated successfully!');
-                fetchFlightBookings();
-                if (selectedBooking && selectedBooking._id === id) {
-                    setSelectedBooking({ ...selectedBooking, status: newStatus });
+                    if (response.data.success) {
+                        success(`Status updated to ${newStatus}`);
+                        fetchFlightBookings();
+                        if (selectedBooking && selectedBooking._id === id) {
+                            setSelectedBooking({ ...selectedBooking, status: newStatus });
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                    error("Failed to update status");
                 }
             }
-        } catch(e) { 
-            console.error(e);
-            alert("Error updating status"); 
-        }
+        );
     };
 
-    // Handler for Payment Request
-    const handleRequestPayment = async () => {
+    // ── Request Payment ─────────────────────────────────────────────────────
+    const handleRequestPayment = () => {
         if (!selectedBooking) return;
-        
-        if (window.confirm('Send payment request to client?')) {
-            try {
-                // ✅ GET ADMIN DATA
-                const { userEmail, adminId } = getAdminData();
 
-                const response = await axios.post(
-                    `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`,
-                    {
-                        userEmail,  // ✅ SEND FOR ACTIVITY LOG
-                        adminId     // ✅ SEND FOR ACTIVITY LOG
+        showConfirm(
+            "Request Payment",
+            "Send payment request to client?",
+            'primary',
+            async () => {
+                try {
+                    const { userEmail, adminId } = getAdminData();
+
+                    const response = await axios.post(
+                        `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`,
+                        { userEmail, adminId }
+                    );
+                    
+                    if (response.data.success) {
+                        success('Payment request sent successfully!');
+                        fetchFlightBookings();
+                        setSelectedBooking({ ...selectedBooking, status: 'PAYMENT_PENDING' });
                     }
-                );
-                
-                if (response.data.success) {
-                    alert('Payment request sent successfully!');
-                    fetchFlightBookings();
-                    setSelectedBooking({ ...selectedBooking, status: 'PAYMENT_PENDING' });
+                } catch (error) {
+                    console.error('Error requesting payment:', error);
+                    error('Failed to send payment request');
                 }
-            } catch (error) {
-                console.error('Error requesting payment:', error);
-                alert('Failed to send payment request');
             }
-        }
+        );
     };
 
-    // Handler for Archiving
-    const handleArchiveBooking = async (id) => {
-        if (window.confirm('Are you sure you want to archive this inquiry?')) {
-            try {
-                // ✅ GET ADMIN DATA
-                const { userEmail, adminId } = getAdminData();
+    // ── Archive Booking ─────────────────────────────────────────────────────
+    const handleArchiveBooking = (id) => {
+        showConfirm(
+            "Archive Inquiry",
+            "Are you sure you want to archive this inquiry?",
+            'danger',
+            async () => {
+                try {
+                    const { userEmail, adminId } = getAdminData();
 
-                const response = await axios.put(
-                    `http://localhost:5000/api/inquiries/${id}/archive`, 
-                    {
-                        isArchive: 'Yes',
-                        userEmail,  // ✅ SEND FOR ACTIVITY LOG
-                        adminId     // ✅ SEND FOR ACTIVITY LOG
+                    const response = await axios.put(
+                        `http://localhost:5000/api/inquiries/${id}/archive`, 
+                        { 
+                            isArchive: 'Yes',
+                            userEmail,
+                            adminId
+                        }
+                    );
+
+                    if (response.data.success) {
+                        success('Inquiry archived successfully!');
+                        fetchFlightBookings();
+                        setIsViewModalOpen(false);
                     }
-                );
-
-                if (response.data.success) {
-                    alert('Inquiry archived successfully!');
-                    fetchFlightBookings(); // I-refresh ang listahan
-                    setIsViewModalOpen(false); // Close modal if open
+                } catch (error) {
+                    console.error('Error archiving:', error);
+                    error('Failed to archive inquiry');
                 }
-            } catch (error) {
-                console.error('Error archiving:', error);
-                alert('Failed to archive inquiry.');
             }
-        }
+        );
     };
 
-    // Submit contact with remarks
+    // ── Submit Contact with Remarks ─────────────────────────────────────────
     const submitContactWithRemarks = async () => {
-        if (!selectedBooking || !contactRemarks.trim()) return alert('Please enter remarks');
+        if (!selectedBooking || !contactRemarks.trim()) {
+            warning('Please enter remarks before submitting');
+            return;
+        }
         
         try {
-            // ✅ GET ADMIN DATA
             const { userEmail, adminId } = getAdminData();
 
             const formData = new FormData();
             formData.append('status', 'CONTACTED');
             formData.append('remarks', contactRemarks);
-            formData.append('userEmail', userEmail);   // ✅ SEND FOR ACTIVITY LOG
-            formData.append('adminId', adminId);       // ✅ SEND FOR ACTIVITY LOG
+            formData.append('userEmail', userEmail);
+            formData.append('adminId', adminId);
             if (contactEvidence) formData.append('evidence', contactEvidence);
 
             const response = await axios.put(
                 `http://localhost:5000/api/inquiries/${selectedBooking._id}/status`,
                 formData,
-                {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }
+                { headers: { 'Content-Type': 'multipart/form-data' } }
             );
 
             if (response.data.success) {
-                alert('Issue reported successfully!'); 
+                success('Issue reported successfully!');
                 fetchFlightBookings();
                 setSelectedBooking({ ...selectedBooking, status: 'CONTACTED' });
-                setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
+                setShowContactRemarks(false);
+                setContactRemarks("");
+                setContactEvidence(null);
             }
         } catch (error) { 
             console.error(error); 
-            alert('Failed to report issue'); 
+            error('Failed to report issue');
         }
     };
 
@@ -246,10 +289,13 @@ const AirlineBooking = () => {
         setIsViewModalOpen(false);
         setTimeout(() => {
             setSelectedBooking(null);
-            setShowContactRemarks(false); setContactRemarks(""); setContactEvidence(null);
+            setShowContactRemarks(false);
+            setContactRemarks("");
+            setContactEvidence(null);
         }, 200);
     };
 
+    // Stats Cards
     const stats = [
         { label: 'Total Flights', value: bookings.filter(b => b.status !== 'ARCHIVED').length, icon: <Plane size={24}/>, img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80' },
         { label: 'Pending Review', value: bookings.filter(b => b.status === 'PENDING').length, icon: <Clock size={24}/>, img: 'https://images.unsplash.com/photo-1559297434-fae8a1916a79?auto=format&fit=crop&w=800&q=80' },
@@ -291,14 +337,11 @@ const AirlineBooking = () => {
                     {/* FILTER CARD */}
                     <div className="airline-filter-card">
                         <div className="airline-filter-wrapper">
-                            
-                            {/* Brand Label */}
                             <div className="airline-brand-label">
                                 <Filter size={20} className="air-filter-icon"/>
                                 AIRLINE <span>FILTERS</span>
                             </div>
 
-                            {/* Dropdown Group */}
                             <div className="airline-filter-group">
                                 <span className="airline-filter-label">Status Type:</span>
                                 <div className="airline-dropdown-container">
@@ -320,12 +363,14 @@ const AirlineBooking = () => {
                                 </div>
                             </div>
 
-                            {/* Search Box */}
                             <div className="airline-search-box">
                                 <Search size={18} className="airline-search-icon" />
-                                <input type="text" className="airline-search-input" 
+                                <input 
+                                    type="text" 
+                                    className="airline-search-input" 
                                     placeholder="Search Client, Ref ID, Email..." 
-                                    value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} 
+                                    value={searchTerm} 
+                                    onChange={(e) => setSearchTerm(e.target.value)} 
                                 />
                             </div>
                         </div>
@@ -336,7 +381,12 @@ const AirlineBooking = () => {
                         <table className="airline-table">
                             <thead>
                                 <tr>
-                                    <th>Ref No.</th><th>Client</th><th>Flight Route</th><th>Date</th><th>Status</th><th style={{textAlign:'right'}}>Actions</th>
+                                    <th>Ref No.</th>
+                                    <th>Client</th>
+                                    <th>Flight Route</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th style={{textAlign:'right'}}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -362,7 +412,13 @@ const AirlineBooking = () => {
                                             <td><span className={`airline-badge ${getStatusBadgeClass(b.status)}`}>{b.status}</span></td>
                                             <td style={{textAlign: 'right'}}>
                                                 <div className="airline-action-group">
-                                                    <button className="airline-action-btn airline-view-btn" onClick={() => { setSelectedBooking(b); setIsViewModalOpen(true); }}>
+                                                    <button 
+                                                        className="airline-action-btn airline-view-btn" 
+                                                        onClick={() => { 
+                                                            setSelectedBooking(b); 
+                                                            setIsViewModalOpen(true); 
+                                                        }}
+                                                    >
                                                         <Eye size={14}/> View
                                                     </button>
                                                     <button 
@@ -386,15 +442,27 @@ const AirlineBooking = () => {
                         <div className="airline-pagination">
                             <span className="airline-page-info">Page {currentPage} of {totalPages}</span>
                             <div className="airline-page-controls">
-                                <button className="airline-page-btn" onClick={() => setCurrentPage(c => Math.max(1, c-1))} disabled={currentPage === 1}><ChevronLeft size={16}/></button>
-                                <button className="airline-page-btn" onClick={() => setCurrentPage(c => Math.min(totalPages, c+1))} disabled={currentPage === totalPages}><ChevronRight size={16}/></button>
+                                <button 
+                                    className="airline-page-btn" 
+                                    onClick={() => setCurrentPage(c => Math.max(1, c-1))} 
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft size={16}/>
+                                </button>
+                                <button 
+                                    className="airline-page-btn" 
+                                    onClick={() => setCurrentPage(c => Math.min(totalPages, c+1))} 
+                                    disabled={currentPage === totalPages}
+                                >
+                                    <ChevronRight size={16}/>
+                                </button>
                             </div>
                         </div>
                     )}
                 </div>
             </main>
 
-            {/* MODALS */}
+            {/* ── MODALS ────────────────────────────────────────────────────────── */}
             {isViewModalOpen && selectedBooking && (
                 <AirlineInquiryModal 
                     inquiry={selectedBooking} 
@@ -424,6 +492,16 @@ const AirlineBooking = () => {
                 isOpen={isAddModalOpen} 
                 onClose={() => setIsAddModalOpen(false)} 
                 refreshData={fetchFlightBookings} 
+            />
+
+            {/* Custom Confirmation Modal */}
+            <CustomConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={confirmModal.onCancel}
             />
         </div>
     );

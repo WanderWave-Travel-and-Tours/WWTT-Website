@@ -1,14 +1,65 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../sidebar/sidebar"; 
-import { FolderOpen, Clock, CheckCircle, RefreshCw, FileText, UserPlus, Search, Archive, ChevronLeft, ChevronRight, Mail, Eye } from "lucide-react"; 
+import { 
+  FolderOpen, Clock, CheckCircle, RefreshCw, FileText, 
+  UserPlus, Search, Archive, ChevronLeft, ChevronRight, 
+  Mail, Eye, HelpCircle 
+} from "lucide-react"; 
 import "./VisaProcessing.css"; 
 
 import VisaInquiryModal from "./VisaInquiryModal";
 import VisaSettingsModal from "./VisaSettingsModal";
 import VisaApplicationModal from "./VisaApplicationModal"; 
 
-// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+// 🔥 Import Toast and Context
+import { useToast } from "../../toast/ToastManager"; 
+
+// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="ev-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="ev-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// HELPER FUNCTION - GET ADMIN DATA (Activity Logs)
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -248,6 +299,9 @@ const VisaTable = ({ loading, filteredCount, currentApplications, handleViewInqu
 const VisaProcessing = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+  
+  // 🔥 Toast Hook
+  const toast = useToast();
 
   const [searchTerm, setSearchTerm] = useState(""); 
   const [currentFilter, setCurrentFilter] = useState("ALL"); 
@@ -262,6 +316,15 @@ const VisaProcessing = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [applicationsPerPage] = useState(10);
+
+  // 🔥 Confirmation State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
 
   const countryCodes = [
     { code: "AE", name: "United Arab Emirates" }, { code: "AR", name: "Argentina" }, { code: "AT", name: "Austria" },
@@ -290,6 +353,20 @@ const VisaProcessing = () => {
     { code: "VN", name: "Vietnam" }, { code: "ZA", name: "South Africa" },
   ].sort((a, b) => a.name.localeCompare(b.name));
 
+  // 🔥 Helper for Confirmation Modal
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
+
   const fetchVisas = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/visas");
@@ -298,6 +375,7 @@ const VisaProcessing = () => {
       }
     } catch (error) {
       console.error("Error fetching visas:", error);
+      toast.error("Failed to fetch visa forms.");
     } finally {
       setIsLoading(false);
     }
@@ -314,31 +392,36 @@ const VisaProcessing = () => {
       }
     } catch (error) {
       console.error('Error fetching inquiries:', error);
+      toast.error("Failed to load inquiries.");
     }
   };
 
-  // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
-  const handleArchive = async (id) => {
-    if (window.confirm("Are you sure you want to archive this inquiry?")) {
-      
-      // 🔥 GET ADMIN DATA
-      const { userEmail, adminId } = getAdminData();
-
-      try {
-        const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
-          isArchive: "Yes",
-          userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
-          adminId    // 🔥 ADD ADMIN INFO FOR LOGS
-        });
-        if (response.data.success) {
-          alert("Inquiry archived successfully.");
-          fetchInquiries();
-        }
-      } catch (error) {
-        console.error("Error archiving inquiry:", error);
-        alert("Failed to archive inquiry.");
-      }
-    }
+  // 🔥 UPDATED: ARCHIVE WITH ADMIN DATA, TOAST, AND CUSTOM MODAL
+  const handleArchive = (id) => {
+    askConfirmation(
+        "Archive Inquiry",
+        "Are you sure you want to archive this visa application?",
+        async () => {
+            const { userEmail, adminId } = getAdminData();
+            try {
+                const response = await axios.put(`http://localhost:5000/api/inquiries/${id}/archive`, {
+                    isArchive: "Yes",
+                    userEmail, 
+                    adminId    
+                });
+                if (response.data.success) {
+                    toast.success("Inquiry archived successfully.");
+                    fetchInquiries();
+                } else {
+                    toast.error(response.data.message || "Failed to archive inquiry.");
+                }
+            } catch (error) {
+                console.error("Error archiving inquiry:", error);
+                toast.error("An error occurred while archiving.");
+            }
+        },
+        "danger"
+    );
   };
 
   useEffect(() => {
@@ -348,14 +431,7 @@ const VisaProcessing = () => {
 
   const getFilterClassName = (status) => {
     if (currentFilter === status) {
-      switch(status.toUpperCase()) {
-        case 'ALL': return 'visa-active-navy';
-        case 'PENDING': return 'visa-active-navy';
-        case 'COMPLETED': return 'visa-active-navy';
-        case 'CONTACTED': return 'visa-active-navy';
-        case 'PAYMENT PENDING': return 'visa-active-navy';
-        default: return 'visa-active-navy';
-      }
+        return 'visa-active-navy';
     }
     return '';
   };
@@ -506,6 +582,16 @@ const VisaProcessing = () => {
         isLoading={isLoading}
         countryCodes={countryCodes}
         refreshData={fetchVisas} 
+      />
+
+      {/* 🔥 Global Custom Confirmation Modal */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

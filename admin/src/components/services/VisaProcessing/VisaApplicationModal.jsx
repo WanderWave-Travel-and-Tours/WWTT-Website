@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { X, ChevronLeft, CheckCircle, ClipboardList, FileText, User, DollarSign, Briefcase, Building2, GraduationCap, Users, Calendar, Globe, UserCircle, Baby, ChevronRight } from "lucide-react";
+import { 
+  X, ChevronLeft, CheckCircle, ClipboardList, FileText, User, 
+  DollarSign, Briefcase, Building2, GraduationCap, Users, 
+  Calendar, Globe, UserCircle, Baby, ChevronRight, HelpCircle 
+} from "lucide-react";
+import { useToast } from "../../toast/ToastManager"; // In-import ang useToast
 import "./VisaApplicationModal.css";
 
-// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
+// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA 🔥🔥🔥
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -22,11 +27,65 @@ const getAdminData = () => {
     }
 };
 
+// --- CUSTOM CONFIRMATION MODAL (Reference from EditVisa.jsx) ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="ev-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="ev-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) => {
+  const toast = useToast(); // Initialize toast system
   const [step, setStep] = useState(1); // 1: Type Selection, 2: Form, 3: Confirmation
   const [applicantType, setApplicantType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
+  // State for Confirmation Modal
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
   const [formData, setFormData] = useState({
     travelDate: "",
     lengthOfStay: "",
@@ -41,6 +100,20 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
 
   if (!isOpen) return null;
 
+  // Helper para sa confirmation modal logic
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
+
   const handleNextStep = () => setStep(step + 1);
   const handlePrevStep = () => setStep(step - 1);
 
@@ -48,103 +121,80 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
     setApplicantType(type);
   };
 
-  // --- Retained Input Change Handler with Validations ---
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // --- 1. LENGTH OF STAY VALIDATION LOGIC ---
     if (name === "lengthOfStay") {
         if (value === '') {
              setFormData({ ...formData, [name]: value });
              return;
         }
-        
-        // Strict check for non-negative whole numbers only
         if (!/^\d+$/.test(value)) {
-            alert("Invalid input for Length of Stay. Only non-negative whole numbers (days) are allowed.");
+            toast.warning("Invalid input for Length of Stay. Only non-negative whole numbers (days) are allowed.");
             return;
         }
-
-        // Maximum 2 digits check (99 days max)
         if (value.length > 2) {
-             alert("Length of Stay cannot exceed 2 digits (99 days max).");
+             toast.warning("Length of Stay cannot exceed 2 digits (99 days max).");
              return;
         }
     }
 
-    // --- 2. TRAVEL DATE VALIDATION LOGIC ---
     if (name === "travelDate") {
         const today = new Date();
         today.setHours(0, 0, 0, 0); 
-        
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-
         const selectedDate = new Date(value);
         selectedDate.setHours(0, 0, 0, 0); 
 
         if (selectedDate < tomorrow) {
-            alert("Travel Date must be tomorrow or later. Past dates and today's date are not allowed.");
-            
+            toast.error("Travel Date must be tomorrow or later.");
             setFormData({ ...formData, [name]: "" }); 
             e.target.value = "";
             return;
         }
     }
 
-    // --- 3. NAME INPUTS VALIDATION ---
     if (name === "givenName" || name === "lastName" || name === "otherNames") {
         if (/\d/.test(value)) {
-            alert(`Invalid input for ${name}. Numbers are not allowed in name fields.`);
+            toast.warning(`Numbers are not allowed in ${name}.`);
             return;
         }
     }
 
-    // --- 4. CONTACT NUMBER VALIDATION ---
     if (name === "contactNumber") {
         if (value.length > 15) {
-            alert("Contact Number cannot exceed 15 characters.");
+            toast.warning("Contact Number cannot exceed 15 characters.");
             return; 
         }
-
         const validPattern = /^\+?[0-9]*$/;
         if (!validPattern.test(value)) {
-            alert("Invalid characters in Contact Number. Only numbers and a single '+' sign (at the start) are allowed.");
+            toast.warning("Only numbers and a leading '+' are allowed in Contact Number.");
             return;
         }
     }
     
-    // --- 5. EMAIL VALIDATION LOGIC (Basic Input Check) ---
     if (name === "email") {
-        // Haharangan agad kung may space na i-input
         if (/\s/.test(value)) {
-            alert("Email cannot contain spaces. Invalid input not accepted.");
+            toast.warning("Email cannot contain spaces.");
             return; 
         }
     }
-    // --- END EMAIL VALIDATION LOGIC ---
 
-    // Update state if validation passes or for other fields
     setFormData({ ...formData, [name]: value });
   };
-  // --- End handleInputChange ---
 
-  // --- Retained File Change Handler with Specific Validation for 'photo' ---
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
-    
-    // Default allowed extensions for documents (pdf, docx, png, jpg, jpeg)
     const documentExtensions = ['.pdf', '.docx', '.png', '.jpg', '.jpeg'];
-    // Specific allowed extensions for Photo (jpg, jpeg, webp, png)
     const photoExtensions = ['.jpg', '.jpeg', '.webp', '.png'];
 
     let allowedExtensions = documentExtensions;
-    let extensionMessage = "PDF, DOCX, PNG, JPG, and JPEG files";
+    let extensionMessage = "PDF, DOCX, PNG, JPG, and JPEG";
 
-    // Override allowed list if the field is 'photo'
     if (fieldName === 'photo') {
         allowedExtensions = photoExtensions;
-        extensionMessage = "JPG, JPEG, WEBP, and PNG files";
+        extensionMessage = "JPG, JPEG, WEBP, and PNG";
     }
 
     if (file) {
@@ -152,37 +202,51 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
       const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
 
       if (!allowedExtensions.includes(fileExtension)) {
-        alert(`Invalid file type for ${fieldName}. Only ${extensionMessage} are allowed.`);
-        
+        toast.error(`Invalid file type for ${fieldName}. Only ${extensionMessage} are allowed.`);
         e.target.value = ''; 
-        
         return; 
       }
 
       setFormData(prev => ({
         ...prev,
-        files: {
-          ...prev.files,
-          [fieldName]: file 
-        }
+        files: { ...prev.files, [fieldName]: file }
       }));
+      toast.info(`Selected file: ${file.name}`);
     } else {
         setFormData(prev => {
             const newFiles = { ...prev.files };
             delete newFiles[fieldName];
-            return {
-                ...prev,
-                files: newFiles
-            }
+            return { ...prev, files: newFiles }
         });
     }
   };
-  // --- End handleFileChange ---
 
-  // --- MODIFIED FUNCTION: submitApplication with Financial Requirements as Mandatory ---
-  const submitApplication = async () => {
+  const handleSaveConfirmation = () => {
+    // Kinukuha lahat ng required validation checks bago mag confirm
+    askConfirmation(
+      "Submit Application",
+      "Are you sure you want to add this applicant and upload all documents?",
+      () => submitApplication()
+    );
+  };
+
+  const handleDiscardPrompt = () => {
+    // Check kung may input na bago mag tanong ng discard
+    const hasInput = formData.givenName || formData.lastName || formData.email || Object.keys(formData.files).length > 0;
     
-    // 1. Define all strictly mandatory text fields
+    if (hasInput) {
+        askConfirmation(
+            "Discard Changes",
+            "Are you sure you want to close? All entered information will be lost.",
+            () => resetAndClose(),
+            "danger"
+        );
+    } else {
+        resetAndClose();
+    }
+  };
+
+  const submitApplication = async () => {
     const requiredTextFields = [
         { field: 'visaType', label: 'Visa Type' },
         { field: 'travelDate', label: 'Travel Date' },
@@ -193,9 +257,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
         { field: 'contactNumber', label: 'Contact Number' },
     ];
 
-    // Treating ALL Primary Requirements and FINANCIAL REQUIREMENTS as mandatory
     const requiredFileFields = [
-        // Primary Requirements
         { field: 'passport', label: 'Passport' },
         { field: 'photo', label: 'Photo' },
         { field: 'appForm', label: 'Accomplished Application Form' },
@@ -203,139 +265,107 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
         { field: 'psaMarriage', label: 'Original PSA Marriage Certificate (if Married)' }, 
         { field: 'schedule', label: 'Daily Schedule in Japan' },
         { field: 'baptismal', label: 'Baptismal Certificate/Form 137 (for Late Registration)' },
-        // Financial Requirements (NEW MANDATORY FIELDS)
         { field: 'bankCert', label: 'Original Bank Certificate' },
         { field: 'itr', label: 'ITR (Income Tax Return)' },
         { field: 'noItrLetter', label: 'Letter (if there is no ITR)' },
         { field: 'bankStatement', label: 'Bank Statement (if there is no ITR)' },
     ];
 
-    // 2. Check all mandatory text fields for emptiness
     for (const req of requiredTextFields) {
         if (!formData[req.field]) {
-            alert(`MANDATORY: Please fill out the required field: ${req.label}.`);
+            toast.error(`MANDATORY: ${req.label} is required.`);
             return;
         }
     }
     
-    // 3. Email Format Final Check (Strict Validation)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-        alert("Validation Error: Please enter a valid email address (e.g., example@domain.com).");
+        toast.error("Please enter a valid email address.");
         return;
     }
 
-    // 4. Check all mandatory files
     for (const req of requiredFileFields) {
         if (!formData.files[req.field]) {
-            alert(`MANDATORY: Please upload the required document in the Primary or Financial Requirements section: ${req.label}.`);
+            toast.error(`MANDATORY FILE: ${req.label} is required.`);
             return;
         }
     }
     
-    // 5. Run final data integrity checks (Length, Contact Number Minimum)
-    
-    // Length of Stay Final Check
     const lengthOfStayValue = parseInt(formData.lengthOfStay, 10);
     if (lengthOfStayValue <= 0 || lengthOfStayValue > 99) {
-         alert("Validation Error: Length of Stay must be a positive whole number, 1-99 days.");
+         toast.error("Length of Stay must be between 1-99 days.");
          return;
     }
     
-    // Contact Number Minimum Length Check (7 digits minimum)
     const cleanNumber = formData.contactNumber.replace(/[^0-9]/g, ''); 
     if (cleanNumber.length < 7) {
-        alert("Validation Error: Contact Number must be a minimum of 7 digits long.");
+        toast.error("Contact Number must be at least 7 digits.");
         return;
     }
-    // --- END FINAL VALIDATION CHECKS ---
-
 
     setIsLoading(true);
     try {
-        // 🔥 GET ADMIN DATA
         const { userEmail, adminId } = getAdminData();
-        console.log('🔍 Submitting Visa Application with admin data:', { userEmail, adminId });
-
         const data = new FormData();
-        
-        // Use the specific description directly
         const serviceName = formData.visaType; 
 
-        // 1. Append Text Fields
         data.append('serviceName', serviceName);
         data.append('inquiryType', 'VISA');
         data.append('fullName', `${formData.givenName} ${formData.lastName}`);
         data.append('email', formData.email); 
         data.append('contactNumber', formData.contactNumber);
         
-        // Find selected visa details
         const selectedVisa = visaForms.find(v => v.description === formData.visaType || v.desc === formData.visaType);
         const country = selectedVisa ? selectedVisa.country : 'Japan'; 
         const price = selectedVisa ? selectedVisa.price : 0;
 
-        const message = `Application for ${formData.visaType}. 
-                         Travel Date: ${formData.travelDate || 'N/A'}, 
-                         Length of Stay: ${formData.lengthOfStay || 'N/A'} days.`;
+        const message = `Application for ${formData.visaType}. Travel Date: ${formData.travelDate || 'N/A'}, Length of Stay: ${formData.lengthOfStay || 'N/A'} days.`;
         data.append('message', message);
-        
         data.append('visaCountry', country); 
         data.append('estimatedPrice', price); 
-        
-        // 🔥🔥🔥 ADD ADMIN DATA FOR LOGS 🔥🔥🔥
         data.append('uploader', 'ADMIN_WALKIN');
         data.append('userEmail', userEmail);
         data.append('adminId', adminId);
 
-        // 2. Append ALL Files
         Object.keys(formData.files).forEach(key => {
             data.append(key, formData.files[key]);
         });
 
-        // 3. Send Request
         const response = await axios.post('http://localhost:5000/api/inquiries/upload-application', data, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
 
         if (response.data.success) {
+            toast.success("Applicant successfully added!");
             handleNextStep(); 
             if (refreshData) refreshData(); 
         }
     } catch (error) {
         console.error("Error submitting application:", error);
-        alert(error.response?.data?.message || "Failed to submit application");
+        toast.error(error.response?.data?.message || "Failed to submit application");
     } finally {
         setIsLoading(false);
     }
   };
-  // --- END MODIFIED FUNCTION: submitApplication ---
 
   const resetAndClose = () => {
     setStep(1);
     setApplicantType("");
     setFormData({
-        travelDate: "",
-        lengthOfStay: "",
-        visaType: "",
-        givenName: "",
-        lastName: "",
-        otherNames: "",
-        email: "",
-        contactNumber: "",
-        files: {}
+        travelDate: "", lengthOfStay: "", visaType: "",
+        givenName: "", lastName: "", otherNames: "",
+        email: "", contactNumber: "", files: {}
     });
     onClose();
   };
 
   return (
     <>
-      {/* --- STEP 1: NEW SELECT APPLICANT TYPE DESIGN --- */}
+      {/* --- STEP 1: SELECT APPLICANT TYPE --- */}
       {step === 1 && (
         <div className="select-applicant-overlay" onClick={(e) => e.target.className === "select-applicant-overlay" && onClose()}>
           <div className="select-applicant-modal">
             <div className="select-applicant-header">
-              <div className="select-header-content">
-                </div>
                 <h2>Select Applicant Type</h2>
                 <p>Choose the appropriate category for your visa application</p>
               <button className="select-close-btn" onClick={onClose}>
@@ -349,9 +379,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                   className={`applicant-type-card ${applicantType === "Adult" ? "selected" : ""}`}
                   onClick={() => handleApplicantTypeSelect("Adult")}
                 >
-                  <div className="card-icon-wrapper">
-                    <UserCircle size={40} />
-                  </div>
+                  <div className="card-icon-wrapper"><UserCircle size={40} /></div>
                   <h3 className="card-type-label">Adult</h3>
                   <p className="card-type-desc">For applicants 18 years old and above</p>
                   <span className="selection-indicator">Selected</span>
@@ -361,9 +389,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                   className={`applicant-type-card ${applicantType === "Child" ? "selected" : ""}`}
                   onClick={() => handleApplicantTypeSelect("Child")}
                 >
-                  <div className="card-icon-wrapper">
-                    <Baby size={40} />
-                  </div>
+                  <div className="card-icon-wrapper"><Baby size={40} /></div>
                   <h3 className="card-type-label">Child</h3>
                   <p className="card-type-desc">For applicants below 18 years old</p>
                   <span className="selection-indicator">Selected</span>
@@ -371,9 +397,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
               </div>
 
               <div className="select-applicant-footer">
-                <button className="select-cancel-btn" onClick={onClose}>
-                  Cancel
-                </button>
+                <button className="select-cancel-btn" onClick={onClose}>Cancel</button>
                 <button 
                   className="select-continue-btn" 
                   onClick={handleNextStep}
@@ -390,7 +414,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
 
       {/* --- STEP 2: APPLICATION FORM --- */}
       {step === 2 && (
-        <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && onClose()}>
+        <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && handleDiscardPrompt()}>
           <div className="modal-content modal-content-xl">
             <div className="modal-header">
               <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
@@ -400,12 +424,10 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                     <p className="modal-header-subtitle">Applicant Type: <strong>{applicantType}</strong></p>
                 </div>
               </div>
-              <button className="modal-close-btn" onClick={onClose}><X size={24} /></button>
+              <button className="modal-close-btn" onClick={handleDiscardPrompt}><X size={24} /></button>
             </div>
             
             <div className="form-scroll-body">
-              
-              {/* Application Details */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Calendar size={20} color="#f97316" /></div>
@@ -418,20 +440,11 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                     </div>
                     <div className="form-group">
                         <label>Length of Stay (Days) <span className="req">*</span></label>
-                        <input 
-                            type="number" 
-                            name="lengthOfStay" 
-                            value={formData.lengthOfStay} 
-                            onChange={handleInputChange} 
-                            min="1"
-                            max="99" 
-                            step="1"
-                        />
+                        <input type="number" name="lengthOfStay" value={formData.lengthOfStay} onChange={handleInputChange} min="1" max="99" />
                     </div>
                 </div>
               </div>
 
-              {/* Visa Request */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Globe size={20} color="#f97316" /></div>
@@ -443,9 +456,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                         <option value="">Select Visa Configuration...</option>
                         {visaForms && visaForms.length > 0 ? (
                             visaForms.map((visa) => (
-                                <option key={visa.id} value={visa.desc || visa.description}>
-                                    {visa.desc || visa.description}
-                                </option>
+                                <option key={visa.id} value={visa.desc || visa.description}>{visa.desc || visa.description}</option>
                             ))
                         ) : (
                             <option value="" disabled>No Visa settings found.</option>
@@ -454,7 +465,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-              {/* Basic Information */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><User size={20} color="#f97316" /></div>
@@ -475,13 +485,7 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                     </div>
                     <div className="form-group">
                         <label>Contact Number <span className="req">*</span></label>
-                        <input 
-                            type="text" 
-                            name="contactNumber" 
-                            value={formData.contactNumber} 
-                            onChange={handleInputChange} 
-                            placeholder="e.g., +639xxxxxxxxx"
-                        />
+                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g., +639xxxxxxxxx" />
                     </div>
                     <div className="form-group form-full">
                         <label>Other Names (Optional)</label>
@@ -490,14 +494,12 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-              {/* --- PRIMARY REQUIREMENTS --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><FileText size={20} color="#f97316" /></div>
                   <h4 className="section-title">Primary Requirements</h4>
                 </div>
                 <div className="form-grid">
-                    {/* All files here are now mandatory */}
                     <FileUploadField label="Passport *" fieldName="passport" currentFile={formData.files['passport']} onChange={handleFileChange} />
                     <FileUploadField label="Photo *" fieldName="photo" currentFile={formData.files['photo']} onChange={handleFileChange} /> 
                     <FileUploadField label="Accomplished Application Form *" fieldName="appForm" currentFile={formData.files['appForm']} onChange={handleFileChange} />
@@ -508,7 +510,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-               {/* --- FINANCIAL REQUIREMENTS (ALL FILES ARE NOW MANDATORY) --- */}
                <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><DollarSign size={20} color="#f97316" /></div>
@@ -522,7 +523,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-              {/* --- IF EMPLOYED --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Briefcase size={20} color="#f97316" /></div>
@@ -535,7 +535,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-              {/* --- IF BUSINESS OWNER --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Building2 size={20} color="#f97316" /></div>
@@ -548,7 +547,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-              {/* --- IF STUDENT --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><GraduationCap size={20} color="#f97316" /></div>
@@ -560,7 +558,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-               {/* --- IF SENIOR CITIZEN --- */}
                <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Users size={20} color="#f97316" /></div>
@@ -571,7 +568,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-              {/* --- IF SPONSORED --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><Users size={20} color="#f97316" /></div>
@@ -583,7 +579,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
 
-               {/* --- IF MULTIPLE ENTRY --- */}
                <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><ClipboardList size={20} color="#f97316" /></div>
@@ -594,7 +589,6 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
                 </div>
               </div>
               
-              {/* --- ADDITIONAL DOCUMENTS --- */}
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon"><FileText size={20} color="#f97316" /></div>
@@ -607,8 +601,8 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
             </div>
 
             <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={onClose} disabled={isLoading}>Cancel</button>
-              <button className="modal-save-btn" onClick={submitApplication} disabled={isLoading}>
+              <button className="modal-cancel-btn" onClick={handleDiscardPrompt} disabled={isLoading}>Cancel</button>
+              <button className="modal-save-btn" onClick={handleSaveConfirmation} disabled={isLoading}>
                 {isLoading ? "Saving..." : "Add Applicant"}
               </button>
             </div>
@@ -616,22 +610,18 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
         </div>
       )}
 
-      {/* --- STEP 3: CONFIRMATION --- */}
+      {/* --- STEP 3: SUCCESS CONFIRMATION --- */}
       {step === 3 && (
         <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && resetAndClose()}>
           <div className="modal-content modal-content-md">
             <div className="modal-header">
-              <div>
-                <h3>Applicant Added</h3>
-              </div>
+              <div><h3>Applicant Added</h3></div>
               <button className="modal-close-btn" onClick={resetAndClose}><X size={24} /></button>
             </div>
             <div className="confirmation-step">
-                <div className="success-icon">
-                    <CheckCircle size={64} color="#10b981" strokeWidth={2} />
-                </div>
+                <div className="success-icon"><CheckCircle size={64} color="#10b981" strokeWidth={2} /></div>
                 <h3>Success!</h3>
-                <p>Applicant <strong>{formData.givenName} {formData.lastName}</strong> has been added to the database.</p>
+                <p>Applicant <strong>{formData.givenName} {formData.lastName}</strong> has been added.</p>
                 <div className="confirmation-actions">
                     <button className="submit-inquiry-btn" onClick={resetAndClose}>Close</button>
                 </div>
@@ -639,6 +629,16 @@ const VisaApplicationModal = ({ isOpen, onClose, refreshData, visaForms = [] }) 
           </div>
         </div>
       )}
+
+      {/* Render the Custom Confirmation Modal */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </>
   );
 };
@@ -647,7 +647,7 @@ const FileUploadField = ({ label, fieldName, currentFile, onChange }) => (
     <div className="form-group">
         {label && <label>{label}</label>}
         <div className="file-input-wrapper">
-            <label className="choose-file-btn" style={{color: 'white'}}>
+            <label className="choose-file-btn" style={{color: 'white', cursor: 'pointer'}}>
                 CHOOSE FILE
                 <input type="file" style={{display:'none'}} onChange={(e) => onChange(e, fieldName)} />
             </label>

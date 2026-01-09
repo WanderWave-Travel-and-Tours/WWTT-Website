@@ -14,10 +14,13 @@ import {
     PassportServiceListModal, 
     PassportServiceEditorModal 
 } from './PassportModals'; 
+import CustomConfirmModal from '../../../components/confirmationModal/CustomConfirmModal';
+
+// 🔥 NEW: Import useToast for toast notifications
+import { useToast } from '../../toast/ToastManager';
 
 // --- 1. DEFINE CONSTANTS & HELPERS FIRST ---
 
-// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs) 🔥🔥🔥
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -48,6 +51,7 @@ const PASSPORT_STAT_IMAGES = {
 const PassportPagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
   const [jumpPageInput, setJumpPageInput] = useState("");
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const toast = useToast(); // ← Toast for invalid page jump
 
   if (totalPages <= 1) return null;
 
@@ -58,7 +62,8 @@ const PassportPagination = ({ totalItems, itemsPerPage, currentPage, onPageChang
       onPageChange(page);
       setJumpPageInput("");
     } else {
-      alert(`Please enter a page number between 1 and ${totalPages}.`);
+      toast.error(`Please enter a page number between 1 and ${totalPages}.`);
+      setJumpPageInput("");
     }
   };
 
@@ -247,6 +252,8 @@ const PassportTable = ({ loading, filteredInquiriesCount, currentInquiries, hand
 // --- 3. MAIN COMPONENT ---
 
 const PassportAppt = () => {
+  const toast = useToast(); // ← Main toast hook
+
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [passportServices, setPassportServices] = useState([]);
   const [inquiries, setInquiries] = useState([]);
@@ -283,12 +290,18 @@ const PassportAppt = () => {
   const [stepsProcess, setStepsProcess] = useState([]);
   const [accordionState, setAccordionState] = useState({ requirements: true, downloadForms: false, stepsProcess: false });
 
+  // Custom Confirm Modal States
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(() => () => {});
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmType, setConfirmType] = useState("primary");
+
   useEffect(() => {
     fetchPassportServices();
     fetchInquiries();
   }, []);
 
-  // Reset page on filter change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus]);
@@ -302,6 +315,7 @@ const PassportAppt = () => {
       }
     } catch (error) {
       console.error("Error fetching Passport services:", error);
+      toast.error("Failed to load passport services");
     } finally {
       setIsLoading(false);
     }
@@ -312,7 +326,6 @@ const PassportAppt = () => {
     try {
       const response = await axios.get("http://localhost:5000/api/inquiries");
       if (response.data.success) {
-        // Filter for PASSPORT inquiries & Not Archived
         const pptRequests = response.data.data.filter(
           (inq) => (inq.inquiryType === "PASSPORT" || (inq.serviceName && inq.serviceName.toUpperCase().includes("PASSPORT"))) 
           && inq.isArchive !== 'Yes'
@@ -322,6 +335,7 @@ const PassportAppt = () => {
       }
     } catch (error) {
       console.error("Error fetching inquiries:", error);
+      toast.error("Failed to load requests");
     } finally {
         setIsLoading(false);
     }
@@ -387,30 +401,39 @@ const PassportAppt = () => {
     fetchDocuments(inquiry._id);
   };
 
-  // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
-  const handleArchiveInquiry = async (inquiry) => {
-    if (!window.confirm(`Are you sure you want to archive request #${inquiry._id.slice(-6).toUpperCase()}?`)) return;
-    
-    // 🔥 GET ADMIN DATA
-    const { userEmail, adminId } = getAdminData();
+  const openConfirm = (title, message, action, type = "primary") => {
+    setConfirmTitle(title);
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setConfirmType(type);
+    setConfirmModalOpen(true);
+  };
 
-    try {
-      const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${inquiry._id}/archive`,
-        { 
-          isArchive: 'Yes',
-          userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
-          adminId    // 🔥 ADD ADMIN INFO FOR LOGS
+  const handleArchiveInquiry = (inquiry) => {
+    const ref = inquiry._id.slice(-6).toUpperCase();
+    openConfirm(
+      "Archive Request",
+      `Are you sure you want to archive request #${ref}?`,
+      async () => {
+        setConfirmModalOpen(false);
+        const { userEmail, adminId } = getAdminData();
+
+        try {
+          const response = await axios.put(
+            `http://localhost:5000/api/inquiries/${inquiry._id}/archive`,
+            { isArchive: 'Yes', userEmail, adminId }
+          );
+          if (response.data.success) {
+            toast.success("Request archived successfully.");
+            fetchInquiries();
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to archive request.");
         }
-      );
-      if (response.data.success) {
-        alert("Request archived successfully.");
-        fetchInquiries();
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to archive request.");
-    }
+      },
+      "danger"
+    );
   };
 
   const handleCloseViewModal = () => {
@@ -426,51 +449,58 @@ const PassportAppt = () => {
     }, 200);
   };
 
-  // 🔥🔥🔥 UPDATED: UPDATE STATUS WITH ADMIN DATA 🔥🔥🔥
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
-    if (!window.confirm(`Set status to ${newStatus}?`)) return;
-    
-    // 🔥 GET ADMIN DATA
-    const { userEmail, adminId } = getAdminData();
+    openConfirm(
+      "Update Status",
+      `Set status to ${newStatus.replace("_", " ")}?`,
+      async () => {
+        setConfirmModalOpen(false);
+        const { userEmail, adminId } = getAdminData();
 
-    try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, 
-      { 
-        status: newStatus,
-        userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
-        adminId    // 🔥 ADD ADMIN INFO FOR LOGS
-      });
+        try {
+          const response = await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/status`, 
+          { status: newStatus, userEmail, adminId });
 
-      if (response.data.success) {
-        alert("Status updated successfully!");
-        fetchInquiries();
-        if (selectedInquiry && selectedInquiry._id === inquiryId) setSelectedInquiry({ ...selectedInquiry, status: newStatus });
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to update status");
-    }
+          if (response.data.success) {
+            toast.success("Status updated successfully!");
+            fetchInquiries();
+            if (selectedInquiry && selectedInquiry._id === inquiryId) setSelectedInquiry({ ...selectedInquiry, status: newStatus });
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to update status");
+        }
+      },
+      "primary"
+    );
   };
 
   const handleRequestPayment = async () => {
-    if (!window.confirm("Request payment from user?")) return;
-    // Calls the updated status handler which now has logs
-    await handleUpdateInquiryStatus(selectedInquiry._id, "PAYMENT_PENDING");
+    openConfirm(
+      "Request Payment",
+      "Request payment from user?",
+      async () => {
+        setConfirmModalOpen(false);
+        await handleUpdateInquiryStatus(selectedInquiry._id, "PAYMENT_PENDING");
+      },
+      "primary"
+    );
   };
 
-  // 🔥🔥🔥 UPDATED: CONTACT WITH REMARKS + ADMIN DATA 🔥🔥🔥
   const submitContactWithRemarks = async () => {
-    if (!selectedInquiry || !contactRemarks.trim()) return alert("Please enter remarks");
+    if (!selectedInquiry || !contactRemarks.trim()) {
+      toast.error("Please enter remarks");
+      return;
+    }
     
-    // 🔥 GET ADMIN DATA
     const { userEmail, adminId } = getAdminData();
 
     try {
       const formData = new FormData();
       formData.append("status", "CONTACTED");
       formData.append("remarks", contactRemarks);
-      formData.append("userEmail", userEmail);   // 🔥 ADD ADMIN INFO FOR LOGS
-      formData.append("adminId", adminId);       // 🔥 ADD ADMIN INFO FOR LOGS
+      formData.append("userEmail", userEmail);
+      formData.append("adminId", adminId);
 
       if (contactEvidence) formData.append("evidence", contactEvidence);
       
@@ -480,7 +510,7 @@ const PassportAppt = () => {
         { headers: { "Content-Type": "multipart/form-data" } }
       );
       if (response.data.success) {
-        alert("Status updated to CONTACTED!");
+        toast.success("Status updated to CONTACTED!");
         fetchInquiries();
         setSelectedInquiry({ ...selectedInquiry, status: "CONTACTED" });
         setShowContactRemarks(false);
@@ -489,72 +519,78 @@ const PassportAppt = () => {
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to update status");
+      toast.error("Failed to update status");
     }
   };
 
-  // 🔥🔥🔥 UPDATED: CONFIRM PAYMENT WITH ADMIN DATA 🔥🔥🔥
   const handleConfirmPayment = async () => {
-    if (!window.confirm("Confirm payment received?")) return;
-    
-    // 🔥 GET ADMIN DATA
-    const { userEmail, adminId } = getAdminData();
+    openConfirm(
+      "Confirm Payment",
+      "Confirm payment received?",
+      async () => {
+        setConfirmModalOpen(false);
+        const { userEmail, adminId } = getAdminData();
 
-    try {
-      const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, 
-      { 
-        adminName: "Admin",
-        userEmail, // 🔥 ADD ADMIN INFO FOR LOGS
-        adminId    // 🔥 ADD ADMIN INFO FOR LOGS
-      });
-      
-      if (response.data.success) {
-        alert("Payment confirmed!");
-        fetchInquiries();
-        setSelectedInquiry({ ...selectedInquiry, status: "CONFIRMED" });
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to confirm payment");
-    }
+        try {
+          const response = await axios.put(`http://localhost:5000/api/inquiries/${selectedInquiry._id}/confirm-payment`, 
+          { adminName: "Admin", userEmail, adminId });
+          
+          if (response.data.success) {
+            toast.success("Payment confirmed!");
+            fetchInquiries();
+            setSelectedInquiry({ ...selectedInquiry, status: "CONFIRMED" });
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to confirm payment");
+        }
+      },
+      "primary"
+    );
   };
 
-  // 🔥🔥🔥 UPDATED: DELIVER DOCS WITH ADMIN DATA 🔥🔥🔥
   const handleDeliverDocuments = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (deliveryFiles.length === 0) return alert("Select files first");
-    
-    // 🔥 GET ADMIN DATA
-    const { userEmail, adminId } = getAdminData();
-
-    const formData = new FormData();
-    deliveryFiles.forEach((file) => formData.append("documents", file));
-    
-    // 🔥 ADD ADMIN INFO FOR LOGS
-    formData.append("userEmail", userEmail);
-    formData.append("adminId", adminId);
-
-    try {
-      const response = await axios.put(
-        `http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      if (response.data.success) {
-        alert("Documents sent successfully!");
-        fetchInquiries();
-        setSelectedInquiry({ ...selectedInquiry, status: "COMPLETED" });
-        await fetchDocuments(selectedInquiry._id);
-        setDeliveryFiles([]);
-        setShowDeliverDocs(true);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to send documents");
+    if (deliveryFiles.length === 0) {
+      toast.error("Please select files first");
+      return;
     }
+
+    openConfirm(
+      "Deliver Documents",
+      "Send selected documents to the applicant?",
+      async () => {
+        setConfirmModalOpen(false);
+        const { userEmail, adminId } = getAdminData();
+
+        const formData = new FormData();
+        deliveryFiles.forEach((file) => formData.append("documents", file));
+        formData.append("userEmail", userEmail);
+        formData.append("adminId", adminId);
+
+        try {
+          const response = await axios.put(
+            `http://localhost:5000/api/inquiries/${selectedInquiry._id}/deliver-documents`,
+            formData,
+            { headers: { "Content-Type": "multipart/form-data" } }
+          );
+          if (response.data.success) {
+            toast.success("Documents sent successfully!");
+            fetchInquiries();
+            setSelectedInquiry({ ...selectedInquiry, status: "COMPLETED" });
+            await fetchDocuments(selectedInquiry._id);
+            setDeliveryFiles([]);
+            setShowDeliverDocs(true);
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to send documents");
+        }
+      },
+      "primary"
+    );
   };
 
-  // --- SERVICE CMS HANDLERS ---
   const handleManageService = () => setIsServiceListOpen(true);
 
   const handleAddNewService = () => {
@@ -581,14 +617,22 @@ const PassportAppt = () => {
   };
 
   const handleDeleteService = async (id) => {
-    if (!window.confirm("Delete this service?")) return;
-    try {
-      await axios.delete(`http://localhost:5000/api/passports/${id}`);
-      fetchPassportServices();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete");
-    }
+    openConfirm(
+      "Delete Service",
+      "Delete this service? This action cannot be undone.",
+      async () => {
+        setConfirmModalOpen(false);
+        try {
+          await axios.delete(`http://localhost:5000/api/passports/${id}`);
+          fetchPassportServices();
+          toast.success("Service deleted successfully.");
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to delete service");
+        }
+      },
+      "danger"
+    );
   };
 
   const handleSaveChanges = async () => {
@@ -606,17 +650,16 @@ const PassportAppt = () => {
       } else {
         await axios.post(`http://localhost:5000/api/passports`, payload);
       }
-      alert("Service saved!");
+      toast.success("Service saved successfully!");
       setIsAddFormOpen(false);
       setIsServiceListOpen(true);
       fetchPassportServices();
     } catch (err) {
       console.error(err);
-      alert("Failed to save");
+      toast.error("Failed to save service");
     }
   };
 
-  // Helper functions for Editor
   const toggleAccordion = (section) => setAccordionState((prev) => ({ ...prev, [section]: !prev[section] }));
   const addCategory = () => setRequirements([...requirements, { id: Date.now(), title: "", items: [] }]);
   const removeCategory = (id) => setRequirements(requirements.filter((c) => c.id !== id));
@@ -635,10 +678,13 @@ const PassportAppt = () => {
     formData.append("file", file);
     try {
       const res = await axios.post("http://localhost:5000/api/upload", formData);
-      if (res.data.success) setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
+      if (res.data.success) {
+        setDownloadForms([...downloadForms, { id: Date.now(), name: file.name, url: res.data.fileUrl }]);
+        toast.success("File uploaded successfully!");
+      }
     } catch (err) {
       console.error(err);
-      alert("Upload failed");
+      toast.error("Upload failed");
     }
   };
 
@@ -787,6 +833,15 @@ const PassportAppt = () => {
           }}
         />
       )}
+
+      <CustomConfirmModal
+        isOpen={confirmModalOpen}
+        title={confirmTitle}
+        message={confirmMessage}
+        type={confirmType}
+        onConfirm={confirmAction}
+        onCancel={() => setConfirmModalOpen(false)}
+      />
     </div>
   );
 };

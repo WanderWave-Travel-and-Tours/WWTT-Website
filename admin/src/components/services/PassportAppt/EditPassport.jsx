@@ -83,17 +83,14 @@ const EditPassport = () => {
   const [previewFile, setPreviewFile] = useState(null);
   const [originalData, setOriginalData] = useState(null); // Added for comparison
 
-  // Options from PassportApplicationModal
+  // 🔥 GINAYA ANG OPTIONS MULA SA PassportApplicationModal
   const passportOptions = [
-    "New Application",
-    "Renewal",
-    "Lost Passport Replacement",
+    "Walk-in Application | Type: NEW",
+    "Walk-in Application | Type: RENEWAL",
+    "Walk-in Application | Type: LOST",
   ];
 
-  const processingOptions = [
-    "Regular Processing",
-    "Expedited Processing"
-  ];
+
 
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
@@ -107,7 +104,7 @@ const EditPassport = () => {
     serviceName: "",      // Mapping to Processing Type
     estimatedPrice: "",
     message: "",
-    passportDocument: ""  // UI mapping para sa Application Type dropdown
+    passportDocument: ""  // UI mapping para sa Application Type selection
   });
 
   const [files, setFiles] = useState({});
@@ -142,7 +139,20 @@ const EditPassport = () => {
           const lName = nameParts.length > 1 ? nameParts.pop() : "";
           const gName = nameParts.join(" ");
 
-          const fetchedAppType = data.passportDetails?.applicationType || "";
+          // 🔥 I-FORMAT ANG DISPLAY TYPE KATULAD NG SA MODAL
+          let rawAppType = data.passportDetails?.applicationType || "";
+          
+          // Fallback extraction kung sakaling wala sa passportDetails
+          if (!rawAppType && data.message && data.message.includes("Type:")) {
+             const parts = data.message.split("Type:");
+             if (parts.length > 1) {
+                rawAppType = parts[1].trim(); 
+             }
+          }
+
+          // I-construct ang full string para mag-match sa <option>
+          const displayType = rawAppType ? `Walk-in Application | Type: ${rawAppType.toUpperCase()}` : "";
+
           const fetchedProcType = data.passportDetails?.processingType || data.serviceName || "";
 
           setFormData({
@@ -150,10 +160,10 @@ const EditPassport = () => {
             lastName: data.lastName || lName || "",
             email: data.email || "",
             contactNumber: data.contactNumber || "",
-            passportDocument: fetchedAppType, 
+            passportDocument: displayType, 
             serviceName: fetchedProcType, 
             estimatedPrice: data.estimatedPrice || "",
-            message: data.adminRemarks || "",
+            message: data.adminRemarks || "", 
           });
 
           // Check for existing documents
@@ -268,53 +278,39 @@ const EditPassport = () => {
     const data = new FormData();
     const combinedFullName = `${formData.givenName} ${formData.lastName}`.trim();
     
-    // Standard Inquiry Fields
+    // 🔥 EXTRACTION NG RAW VALUE PARA SA DB (Extract "NEW" from "Walk-in Application | Type: NEW")
+    let finalAppType = "NEW";
+    if (formData.passportDocument.includes("RENEWAL")) finalAppType = "RENEWAL";
+    if (formData.passportDocument.includes("LOST")) finalAppType = "LOST";
+
+    const passportDetails = {
+        applicationType: finalAppType, 
+        dfaLocation: "Updated via Admin",
+        processingType: formData.serviceName
+    };
+
+    // Append standard fields
     data.append("fullName", combinedFullName);
     data.append("email", formData.email);
     data.append("contactNumber", formData.contactNumber);
     data.append("estimatedPrice", formData.estimatedPrice);
-    data.append("message", formData.message); // This will map to adminRemarks or message
-    
-    // Passport Specific Details
-    const passportDetails = {
-        applicationType: formData.applicationType,
-        dfaLocation: "Updated via Admin"
-    };
+    data.append("adminRemarks", formData.message); 
     data.append("passportDetails", JSON.stringify(passportDetails));
+    
+    // 🔥 I-save ang mahabang string sa 'message' para consistent sa inquiry list display
+    data.append("message", formData.passportDocument);
 
-    // 🔥 LOGGING DATA
+    // Logging & Meta Data
     data.append("userEmail", userEmail);
     data.append("adminId", adminId);
 
     // File Handling
     if (files.requirement) {
-        data.append("walkInDoc", files.requirement);
+        data.append("requirement", files.requirement);
     }
 
-      // Existing Submit Logic
-      Object.keys(formData).forEach((key) => {
-        if (formData[key] !== undefined && formData[key] !== null) {
-          data.append(key, formData[key]);
-        }
-      });
-
-      data.append("applicationType", formData.passportDocument);
-      const combinedName = `${formData.givenName || ""} ${formData.lastName || ""}`.trim();
-      data.append("fullName", combinedName);
-
-      if (files.requirement) {
-        data.append("requirement", files.requirement);
-      }
-
-      const remainingUrls = Object.values(existingFiles).filter(url => !!url);
-      data.append("existingFiles", JSON.stringify(remainingUrls));
-
-      const response = await fetch(`${API_BASE_URL}/update/${passportId}`, {
-        method: "PUT",
-        body: data,
-      });
-
-      const result = await response.json();
+    const remainingUrls = Object.values(existingFiles).filter(url => !!url);
+    data.append("existingFiles", JSON.stringify(remainingUrls));
 
     try {
       const res = await axios.put(`${API_BASE_URL}/update/${passportId}`, data, {
@@ -428,6 +424,8 @@ const EditPassport = () => {
                         ))}
                       </select>
                     </div>
+
+
                   </div>
                 </section>
 
