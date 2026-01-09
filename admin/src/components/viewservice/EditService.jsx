@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../sidebar/sidebar";
-import "./editservice.css";
+import "./EditService.css";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Briefcase,
