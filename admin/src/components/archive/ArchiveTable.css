@@ -174,6 +174,14 @@
     flex-shrink: 0;
 }
 
+/* --- NEW STYLE: Reference Column Truncation --- */
+.reference-text-truncate {
+    max-width: 250px; /* Default max width on large screens */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -201,5 +209,10 @@
     
     .arc-view-btn {
         padding: 8px 10px;
+    }
+
+    /* Adjust truncation on smaller screens so table fits better */
+    .reference-text-truncate {
+        max-width: 150px; 
     }
 }

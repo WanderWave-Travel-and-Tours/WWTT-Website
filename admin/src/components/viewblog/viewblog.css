@@ -262,9 +262,24 @@
 .vb-excerpt {
     color: #64748b;
     font-size: 13px;
-    max-width: 300px;
-    display: block;
     line-height: 1.5;
+    
+    /* Ginagawa nitong responsive ang width base sa space ng table */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Hanggang 2 lines lang ang ipapakita */
+    -webkit-box-orient: vertical;  
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    /* Para hindi masyadong malapad sa desktop pero kusa ring liliit sa mobile */
+    max-width: 250px; 
+    min-width: 150px;
+    word-break: break-word;
+}
+
+/* Siguraduhin na ang TD ng excerpt ay hindi fixed width */
+.vb-table td:nth-child(3) {
+    max-width: 300px;
 }
 
 .vb-meta-cell {
@@ -523,5 +538,13 @@
     .vb-action-btn svg {
         width: 16px;
         height: 16px;
+    }
+}
+
+/* Responsiveness for Table */
+@media (max-width: 1200px) {
+    .vb-excerpt {
+        max-width: 180px;
+        -webkit-line-clamp: 1; /* Isang line na lang kapag sumisikip ang screen */
     }
 }

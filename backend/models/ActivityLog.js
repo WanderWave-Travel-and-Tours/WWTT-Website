@@ -14,6 +14,7 @@ const activityLogSchema = new mongoose.Schema({
             // Auth & Users
             'Auth', 
             'Users',
+            'Admin Management',
             
             // Core Booking Systems
             'Bookings',

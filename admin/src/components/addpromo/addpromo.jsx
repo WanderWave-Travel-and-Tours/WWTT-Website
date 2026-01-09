@@ -222,17 +222,21 @@ const AddPromo = () => {
         }
     }, [hasDraft]);
 
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-        toast.success("Draft restored successfully!");
-    };
+const handleRestoreDraft = () => {
+    restoreDraft();
+    setShowRestoreModal(false);
+    
+    // ✅ TOAST
+    toast.success("Your promo draft has been restored!", "✅ Draft Restored", 3000);
+};
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); 
-        setShowRestoreModal(false);
-        toast.info("Draft discarded.");
-    };
+    await discardDraft(); 
+    setShowRestoreModal(false);
+    
+    // ✅ TOAST
+    toast.info("Draft has been discarded.", "🗑️ Discarded");
+};
 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC END
@@ -275,133 +279,190 @@ const AddPromo = () => {
         }));
     };
 
-    const handleCategorySelect = (e) => {
-        const value = e.target.value;
-        if (value === 'Other') {
-            setIsOtherCategory(true);
-            setPromoDetails(prev => ({ ...prev, category: '' }));
-        } else {
-            setIsOtherCategory(false);
-            setPromoDetails(prev => ({ ...prev, category: value }));
-        }
-    };
+const handleCategorySelect = (e) => {
+    const value = e.target.value;
+    if (value === 'Other') {
+        setIsOtherCategory(true);
+        setPromoDetails(prev => ({ ...prev, category: '' }));
+        
+        // ✅ TOAST (Optional)
+        toast.info("Enter your custom category.", "✏️ Custom Category");
+    } else {
+        setIsOtherCategory(false);
+        setPromoDetails(prev => ({ ...prev, category: value }));
+        
+        // ✅ TOAST (Optional)
+        toast.success(`Category set to "${value}"`, "✅ Category Selected", 2000);
+    }
+};
 
     const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
+    const file = e.target.files[0];
+    if (file) {
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+        
+        // ✅ TOAST
+        toast.success(`Image "${file.name}" uploaded successfully!`, "✅ Image Added");
+    }
+};
 
     const removeImage = () => {
-        setImageFile(null);
-        setImagePreview(null);
-    };
+    setImageFile(null);
+    setImagePreview(null);
+    
+    // ✅ TOAST
+    toast.info("Promo image removed.", "🗑️ Image Removed");
+};
 
-    const handleSubmit = async () => {
-        if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
-            !promoDetails.discountValue || !promoDetails.startDate || !promoDetails.usageLimit) {
-            toast.warning('Please fill in all required fields');
-            return;
+const handleSubmit = async () => {
+    // ✅ TOAST: Validation start
+    if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
+        !promoDetails.discountValue || !promoDetails.startDate || !promoDetails.usageLimit) {
+        toast.warning(
+            'Please fill in all required fields to continue.',
+            '⚠️ Incomplete Form'
+        );
+        return;
+    }
+
+    // ✅ TOAST: Validation passed
+    toast.success("All fields validated successfully!", "✅ Ready to Create", 2000);
+
+    askConfirmation(
+        "Create Promo",
+        `Are you sure you want to create the promo code "${promoDetails.code}"?`,
+        () => performSubmit()
+    );
+};
+
+const performSubmit = async () => {
+    setIsSubmitting(true);
+
+    // ✅ TOAST: Upload started
+    toast.info("Creating promo code...", "📤 Please Wait", 2000);
+
+    try {
+        const formData = new FormData();
+        formData.append('code', promoDetails.code);
+        formData.append('description', promoDetails.description);
+        formData.append('category', promoDetails.category);
+        formData.append('discountType', promoDetails.discountType);
+        formData.append('discountValue', promoDetails.discountValue);
+        formData.append('durationType', promoDetails.durationType);
+        formData.append('startDate', promoDetails.startDate);
+        formData.append('validUntil', promoDetails.validUntil);
+        formData.append('usageLimit', promoDetails.usageLimit);
+        
+        if (imageFile) {
+            formData.append('image', imageFile);
         }
 
-        askConfirmation(
-            "Create Promo",
-            `Are you sure you want to create the promo code "${promoDetails.code}"?`,
-            () => performSubmit()
-        );
-    };
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        const activeId = adminData.id || adminData._id || "";
 
-    const performSubmit = async () => {
-        setIsSubmitting(true);
+        formData.append("userEmail", activeUser);
+        formData.append("adminId", activeId);
 
-        try {
-            const formData = new FormData();
-            formData.append('code', promoDetails.code);
-            formData.append('description', promoDetails.description);
-            formData.append('category', promoDetails.category);
-            formData.append('discountType', promoDetails.discountType);
-            formData.append('discountValue', promoDetails.discountValue);
-            formData.append('durationType', promoDetails.durationType);
-            formData.append('startDate', promoDetails.startDate);
-            formData.append('validUntil', promoDetails.validUntil);
-            formData.append('usageLimit', promoDetails.usageLimit);
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // ✅ TOAST: Success
+            toast.success(
+                `Promo code "${promoDetails.code}" has been created successfully!`,
+                "✅ Promo Created",
+                5000
+            );
             
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
+            await clearDraft();
+            
+            // ✅ TOAST: Form reset
+            toast.info(
+                "Form cleared and ready for new promo entry.",
+                "🔄 Ready",
+                3000
+            );
 
-            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-            const activeId = adminData.id || adminData._id || "";
-
-            formData.append("userEmail", activeUser);
-            formData.append("adminId", activeId);
-
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
-                method: 'POST',
-                body: formData,
+            // Reset form
+            setPromoDetails({
+                code: '',
+                discount: '',
+                validUntil: '',
+                description: '',
+                category: '',
+                discountType: 'Fixed Amount (Peso)',
+                discountValue: '',
+                durationType: 'Weekly',
+                startDate: '',
+                usageLimit: '' 
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                toast.success(`Promo Code ${promoDetails.code} added successfully!`);
-                await clearDraft();
-
-                setPromoDetails({
-                    code: '',
-                    discount: '',
-                    validUntil: '',
-                    description: '',
-                    category: '',
-                    discountType: 'Fixed Amount (Peso)',
-                    discountValue: '',
-                    durationType: 'Weekly',
-                    startDate: '',
-                    usageLimit: '' 
-                });
-                setImageFile(null);
-                setImagePreview(null);
-                setIsOtherCategory(false);
-            } else {
-                toast.error(`Error adding promo: ${data.message || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('❌ Network Error:', error);
-            toast.error('Failed to connect to the server.');
-        } finally {
-            setIsSubmitting(false);
+            setImageFile(null);
+            setImagePreview(null);
+            setIsOtherCategory(false);
+            
+        } else {
+            // ✅ TOAST: Server error
+            const errorMessage = data.message || data.error || 'Unknown error occurred';
+            console.error('Server error:', data);
+            
+            toast.error(
+                `Failed to create promo: ${errorMessage}`,
+                "❌ Creation Failed",
+                5000
+            );
         }
-    };
-
-    const handleCancel = async () => {
-        askConfirmation(
-            "Cancel Creation",
-            "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
-            async () => {
-                await clearDraft();
-                setPromoDetails({
-                    code: '',
-                    discount: '',
-                    validUntil: '',
-                    description: '',
-                    category: '',
-                    discountType: 'Fixed Amount (Peso)',
-                    discountValue: '',
-                    durationType: 'Weekly',
-                    startDate: '',
-                    usageLimit: ''
-                });
-                setImageFile(null);
-                setImagePreview(null);
-                setIsOtherCategory(false);
-                toast.info("Action cancelled and form cleared.");
-            },
-            "danger"
+        
+    } catch (error) {
+        console.error('❌ Network Error:', error);
+        
+        // ✅ TOAST: Connection error
+        toast.error(
+            `Unable to connect to server: ${error.message}. Please check your connection.`,
+            "❌ Connection Error",
+            6000
         );
-    };
+        
+    } finally {
+        setIsSubmitting(false);
+    }
+};
+
+const handleCancel = async () => {
+    askConfirmation(
+        "Cancel Creation",
+        "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+        async () => {
+            await clearDraft();
+            
+            // Reset form
+            setPromoDetails({
+                code: '',
+                discount: '',
+                validUntil: '',
+                description: '',
+                category: '',
+                discountType: 'Fixed Amount (Peso)',
+                discountValue: '',
+                durationType: 'Weekly',
+                startDate: '',
+                usageLimit: ''
+            });
+            setImageFile(null);
+            setImagePreview(null);
+            setIsOtherCategory(false);
+            
+            // ✅ TOAST
+            toast.info("Action cancelled and form cleared.", "❌ Cancelled");
+        },
+        "danger"
+    );
+};
 
     return (
         <div className="promo-page">
