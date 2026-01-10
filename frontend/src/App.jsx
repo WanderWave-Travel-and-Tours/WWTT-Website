@@ -280,14 +280,14 @@ function MainLayout() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('wanderwave_user');
-    navigate('/packages');
+    navigate('/login');
   };
 
   const handleLoginSuccess = (userData) => {
     setCurrentUser(userData);
     localStorage.setItem('wanderwave_user', JSON.stringify(userData));
     setAuthPage(null);
-    navigate('/packages');
+    navigate('/dashboard');
   };
 
   // ⭐ CRITICAL FIX: Handle /login route - Return ONLY UserAuth component like the OLD code
