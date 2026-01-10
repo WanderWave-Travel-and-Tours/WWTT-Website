@@ -287,7 +287,7 @@ function MainLayout() {
     setCurrentUser(userData);
     localStorage.setItem('wanderwave_user', JSON.stringify(userData));
     setAuthPage(null);
-    navigate('/dashboard');
+    window.location.href = '/dashboard';
   };
 
   // ⭐ CRITICAL FIX: Handle /login route - Return ONLY UserAuth component like the OLD code
