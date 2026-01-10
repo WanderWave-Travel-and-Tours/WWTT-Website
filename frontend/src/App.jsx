@@ -79,33 +79,6 @@ const PackageBookingWrapper = () => {
   return <PackageBooking pkg={transformedPkg} />;
 };
 
-const LoginPage = () => {
-  const navigate = useNavigate();
-
-  const handleLoginSuccess = (userData) => {
-    localStorage.setItem('wanderwave_user', JSON.stringify(userData));
-    setTimeout(() => {
-      navigate('/packages');
-      window.location.reload(); 
-    }, 1000);
-  };
-
-  return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: '#f5f5f5'
-    }}>
-      <UserAuth 
-        setAuthPage={() => {}} 
-        onLoginSuccess={handleLoginSuccess}
-      />
-    </div>
-  );
-};
-
 const Profile = () => (
   <div className="page-container">
     <div className="page-content">
@@ -228,11 +201,54 @@ function MainLayout() {
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+    script.async = true;
+    script.defer = true;
+    
+    script.onerror = () => {
+      console.error('Failed to load Google Translate');
+    };
+
     document.body.appendChild(script);
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .goog-te-banner-frame.skiptranslate {
+        display: none !important;
+      }
+      body {
+        top: 0 !important;
+        position: static !important;
+      }
+      #google_translate_element {
+        display: none !important;
+      }
+      .goog-te-gadget-icon {
+        display: none !important;
+      }
+      .goog-te-gadget-simple {
+        background-color: transparent !important;
+        border: none !important;
+      }
+      .goog-logo-link {
+        display: none !important;
+      }
+      .goog-te-gadget {
+        color: transparent !important;
+        font-size: 0 !important;
+      }
+      .goog-text-highlight {
+        background-color: transparent !important;
+        box-shadow: none !important;
+      }
+    `;
+    document.head.appendChild(style);
 
     return () => {
       if (script.parentNode) {
         script.parentNode.removeChild(script);
+      }
+      if (style.parentNode) {
+        style.parentNode.removeChild(style);
       }
     };
   }, []);
@@ -271,6 +287,16 @@ function MainLayout() {
     setCurrentUser(userData);
     localStorage.setItem('wanderwave_user', JSON.stringify(userData));
     setAuthPage(null);
+    navigate('/packages');
+  };
+
+  // ⭐ CRITICAL FIX: Handle /login route - Return ONLY UserAuth component like the OLD code
+  const handleAuthPageChange = (page) => {
+    if (page === 'main') {
+      setAuthPage(null);
+    } else {
+      setAuthPage(page);
+    }
   };
 
   useEffect(() => {
@@ -300,7 +326,19 @@ function MainLayout() {
     key => location.pathname === pages[key].path
   ) || 'packages';
 
+  // ⭐ CRITICAL FIX: Check if on /login route - if yes, return ONLY UserAuth
   const isLoginPage = location.pathname === '/login';
+  
+  // Show loading while checking for saved user
+  if (isLoadingUser) {
+    return null;
+  }
+
+  // ⭐ CRITICAL FIX: If authPage is set OR on /login route, return ONLY UserAuth (no navbar, no wrapper)
+  if (authPage === 'login' || authPage === 'signup' || isLoginPage) {
+    return <UserAuth setAuthPage={handleAuthPageChange} onLoginSuccess={handleLoginSuccess} />;
+  }
+
   const isPaymentSuccessPage = location.pathname === '/payment-success';
   const isDashboardPage = location.pathname === '/dashboard';
 
@@ -309,11 +347,11 @@ function MainLayout() {
   };
 
   return (
-    <div className="app-wrapper">
-      {!authPage && !isLoginPage && (
+    <div className="app-container">
+      <div id="google_translate_element"></div>
+      
+      {!isDashboardPage && (
         <>
-          <div id="google_translate_element" style={{ display: 'none' }}></div>
-
           <div className="top-bar">
             <div className="top-bar-content">
               <div className="top-bar-item">
@@ -481,18 +519,11 @@ function MainLayout() {
         </>
       )}
 
-      {authPage === 'login' && (
-        <div className="auth-overlay">
-          <div className="auth-modal">
-            <button className="auth-close" onClick={() => setAuthPage(null)}>×</button>
-            <UserAuth setAuthPage={setAuthPage} onLoginSuccess={handleLoginSuccess} />
-          </div>
-        </div>
-      )}
-
       <main className="main-content">
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          {/* ⭐ Login route - but this will never render because we return early above */}
+          <Route path="/login" element={<div>Login</div>} />
+          
           <Route path="/flights" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
           <Route path="/packages/:code" element={<PackageBookingWrapper />} />
@@ -517,7 +548,7 @@ function MainLayout() {
         </Routes>
       </main>
 
-      {!isPaymentSuccessPage && !isDashboardPage && !isLoginPage && <Footer />}
+      {!isPaymentSuccessPage && !isDashboardPage && <Footer />}
     </div>
   );
 }
