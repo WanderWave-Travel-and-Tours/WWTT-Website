@@ -15,17 +15,13 @@ import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 import UserDashboard from './components/userDashboard/userDashboard.jsx';
 
-// Wrapper component to get package data from location state
 const PackageBookingWrapper = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { code } = useParams();
-  
-  // Get package data from location state
   const pkg = location.state?.packageData;
 
   useEffect(() => {
-    // If no package data in state, redirect to packages page after a short delay
     if (!pkg) {
       console.error('No package data found for code:', code);
       const timer = setTimeout(() => {
@@ -67,7 +63,6 @@ const PackageBookingWrapper = () => {
     );
   }
 
-  // Transform the package data to match the format expected by PackageBooking
   const transformedPkg = {
     ...pkg,
     id: pkg._id || pkg.id,
@@ -82,6 +77,33 @@ const PackageBookingWrapper = () => {
   console.log('Package data:', transformedPkg);
 
   return <PackageBooking pkg={transformedPkg} />;
+};
+
+const LoginPage = () => {
+  const navigate = useNavigate();
+
+  const handleLoginSuccess = (userData) => {
+    localStorage.setItem('wanderwave_user', JSON.stringify(userData));
+    setTimeout(() => {
+      navigate('/packages');
+      window.location.reload(); 
+    }, 1000);
+  };
+
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      background: '#f5f5f5'
+    }}>
+      <UserAuth 
+        setAuthPage={() => {}} 
+        onLoginSuccess={handleLoginSuccess}
+      />
+    </div>
+  );
 };
 
 const Profile = () => (
@@ -167,7 +189,6 @@ function MainLayout() {
     { code: 'bn', name: 'Bengali', flag: '🇧🇩', shortCode: 'BN' },
   ];
 
-  // Check for saved user on initial load
   useEffect(() => {
     const savedUser = localStorage.getItem('wanderwave_user');
     if (savedUser) {
@@ -207,156 +228,92 @@ function MainLayout() {
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-    script.async = true;
-    script.defer = true;
-    
-    script.onerror = () => {
-      console.error('Failed to load Google Translate');
-    };
-
     document.body.appendChild(script);
-
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .goog-te-banner-frame.skiptranslate {
-        display: none !important;
-      }
-      body {
-        top: 0 !important;
-        position: static !important;
-      }
-      #google_translate_element {
-        display: none !important;
-      }
-      .goog-te-gadget-icon {
-        display: none !important;
-      }
-      .goog-te-gadget-simple {
-        background-color: transparent !important;
-        border: none !important;
-      }
-      .goog-logo-link {
-        display: none !important;
-      }
-      .goog-te-gadget {
-        color: transparent !important;
-        font-size: 0 !important;
-      }
-      .goog-text-highlight {
-        background-color: transparent !important;
-        box-shadow: none !important;
-      }
-    `;
-    document.head.appendChild(style);
 
     return () => {
       if (script.parentNode) {
         script.parentNode.removeChild(script);
       }
-      if (style.parentNode) {
-        style.parentNode.removeChild(style);
-      }
     };
   }, []);
-
-  const getCurrentPage = () => {
-    const currentPath = location.pathname;
-    const page = Object.entries(pages).find(([_, page]) => page.path === currentPath);
-    // If exact match found, return key
-    if (page) return page[0];
-    
-    // Fallback logic for dynamic/other pages
-    if (currentPath.includes('package')) return 'packages';
-    if (currentPath.includes('flight')) return 'flights';
-    return 'packages';
-  };
-
-  const handleLoginSuccess = (user) => {
-    localStorage.setItem('wanderwave_user', JSON.stringify(user));
-    setCurrentUser(user);
-    setAuthPage(null);
-    navigate('/dashboard');
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('wanderwave_user');
-    setCurrentUser(null);
-    navigate('/packages');
-  };
-
-  const handleAuthPageChange = (page) => {
-    if (page === 'main') {
-      setAuthPage(null);
-    } else {
-      setAuthPage(page);
-    }
-  };
-
-  const handleLanguageSelect = (lang) => {
-    setCurrentLang(lang.code);
-    setIsTranslateOpen(false);
-    const triggerTranslation = () => {
-      const selectElement = document.querySelector('.goog-te-combo');
-      if (selectElement) {
-        selectElement.value = lang.code;
-        const events = ['change', 'click', 'input'];
-        events.forEach(eventType => {
-          const event = new Event(eventType, { bubbles: true });
-          selectElement.dispatchEvent(event);
-        });
-
-        if (selectElement.onchange) {
-          selectElement.onchange();
-        }
-      } else if (isTranslateReady) {
-        setTimeout(triggerTranslation, 100);
-      }
-    };
-
-    if (isTranslateReady) {
-      triggerTranslation();
-    } else {
-      const checkInterval = setInterval(() => {
-        if (isTranslateReady) {
-          clearInterval(checkInterval);
-          triggerTranslation();
-        }
-      }, 100);
-
-      setTimeout(() => clearInterval(checkInterval), 5000);
-    }
-  };
-
-  // Show loading while checking for saved user
-  if (isLoadingUser) {
-    return null; // or a loading spinner
-  }
-
-  if (authPage === 'login' || authPage === 'signup') {
-    return <UserAuth setAuthPage={handleAuthPageChange} onLoginSuccess={handleLoginSuccess} />;
-  }
-
-  const currentPage = getCurrentPage();
-
-  const handleNavigation = (pageKey) => {
-    const path = pages[pageKey].path;
-    navigate(path);
-    setIsMobileMenuOpen(false);
-  };
-
-  const isPaymentSuccessPage = location.pathname === '/payment/success';
-  const isDashboardPage = location.pathname === '/dashboard';
 
   const getCurrentShortCode = () => {
     const lang = languages.find(l => l.code === currentLang);
     return lang ? lang.shortCode : 'EN';
   };
 
+  const handleLanguageSelect = (language) => {
+    setCurrentLang(language.code);
+    setIsTranslateOpen(false);
+
+    const selectElement = document.querySelector('.goog-te-combo');
+    if (selectElement) {
+      selectElement.value = language.code;
+      selectElement.dispatchEvent(new Event('change'));
+    }
+  };
+
+  const handleNavigation = (pageKey) => {
+    const page = pages[pageKey];
+    if (page && page.path) {
+      navigate(page.path);
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('wanderwave_user');
+    navigate('/packages');
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setCurrentUser(userData);
+    localStorage.setItem('wanderwave_user', JSON.stringify(userData));
+    setAuthPage(null);
+  };
+
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (isTranslateOpen && !e.target.closest('.translate-wrapper')) {
+        setIsTranslateOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isTranslateOpen]);
+
+  const currentPage = Object.keys(pages).find(
+    key => location.pathname === pages[key].path
+  ) || 'packages';
+
+  const isLoginPage = location.pathname === '/login';
+  const isPaymentSuccessPage = location.pathname === '/payment-success';
+  const isDashboardPage = location.pathname === '/dashboard';
+
+  const handleBookNowClick = () => {
+    navigate('/login');
+  };
+
   return (
-    <div className="app-container">
-      <div id="google_translate_element"></div>
-      {!isDashboardPage && (
+    <div className="app-wrapper">
+      {!authPage && !isLoginPage && (
         <>
+          <div id="google_translate_element" style={{ display: 'none' }}></div>
+
           <div className="top-bar">
             <div className="top-bar-content">
               <div className="top-bar-item">
@@ -439,7 +396,7 @@ function MainLayout() {
                   ) : (
                     <button 
                       className="book-now-btn"
-                      onClick={() => setAuthPage('login')}
+                      onClick={handleBookNowClick}
                     >
                       Book Now
                     </button>
@@ -513,7 +470,7 @@ function MainLayout() {
               <button 
                 className="book-now-btn"
                 onClick={() => {
-                  setAuthPage('login');
+                  navigate('/login');
                   setIsMobileMenuOpen(false);
                 }}
               >
@@ -524,15 +481,21 @@ function MainLayout() {
         </>
       )}
 
+      {authPage === 'login' && (
+        <div className="auth-overlay">
+          <div className="auth-modal">
+            <button className="auth-close" onClick={() => setAuthPage(null)}>×</button>
+            <UserAuth setAuthPage={setAuthPage} onLoginSuccess={handleLoginSuccess} />
+          </div>
+        </div>
+      )}
+
       <main className="main-content">
         <Routes>
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/flights" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
-
-          {/* 4. Individual Package Booking Route - uses short code for security */}
           <Route path="/packages/:code" element={<PackageBookingWrapper />} />
-
-          {/* 5. Other Routes */}
           <Route path="/other-services" element={<OtherServices setAuthPage={setAuthPage} />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/help" element={<Help />} />
@@ -546,7 +509,7 @@ function MainLayout() {
               ) : (
                 <div style={{ padding: '2rem', textAlign: 'center' }}>
                   <h2>Please log in to access dashboard</h2>
-                  <button onClick={() => setAuthPage('login')}>Login</button>
+                  <button onClick={() => navigate('/login')}>Login</button>
                 </div>
               )
             } 
@@ -554,7 +517,7 @@ function MainLayout() {
         </Routes>
       </main>
 
-      {!isPaymentSuccessPage && !isDashboardPage && <Footer />}
+      {!isPaymentSuccessPage && !isDashboardPage && !isLoginPage && <Footer />}
     </div>
   );
 }
