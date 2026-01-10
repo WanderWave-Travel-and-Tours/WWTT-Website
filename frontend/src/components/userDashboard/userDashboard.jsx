@@ -17,7 +17,11 @@ const UserDashboard = ({ user, onLogout }) => {
     const [currentView, setCurrentView] = useState('applications'); 
     const [viewedHistory, setViewedHistory] = useState({});
 
-    // File Upload State
+    // ⭐ NEW: State for uploaded documents
+    const [uploadedDocuments, setUploadedDocuments] = useState([]);
+    const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+
+    // File Upload State (for new uploads)
     const [uploadedFiles, setUploadedFiles] = useState({});
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -48,9 +52,9 @@ const UserDashboard = ({ user, onLogout }) => {
         if (!user?.email) return;
 
         try {
-            const inquiriesPromise = fetch(`https://wanderwaveph-backend.onrender.com/api/inquiries/email/${user.email}`).then(res => res.json());
+            const inquiriesPromise = fetch(`http://localhost:5000/api/inquiries/email/${user.email}`).then(res => res.json());
             
-            const bookingsPromise = fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/user/${user.email}`).then(res => res.json());
+            const bookingsPromise = fetch(`http://localhost:5000/api/bookings/user/${user.email}`).then(res => res.json());
 
             const [inquiriesData, bookingsData] = await Promise.all([inquiriesPromise, bookingsPromise]);
             
@@ -88,6 +92,31 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     };
 
+    // ⭐ NEW: Fetch uploaded documents for selected inquiry
+    const fetchUploadedDocuments = async (inquiryId) => {
+        if (!inquiryId) {
+            setUploadedDocuments([]);
+            return;
+        }
+
+        try {
+            setIsLoadingDocuments(true);
+            const response = await fetch(`http://localhost:5000/api/documents/inquiry/${inquiryId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                setUploadedDocuments(data.documents || []);
+            } else {
+                setUploadedDocuments([]);
+            }
+        } catch (error) {
+            console.error('Error fetching uploaded documents:', error);
+            setUploadedDocuments([]);
+        } finally {
+            setIsLoadingDocuments(false);
+        }
+    };
+
     useEffect(() => {
         if (user?.email) {
             setIsLoading(true);
@@ -106,7 +135,7 @@ const UserDashboard = ({ user, onLogout }) => {
             const verifyPayment = async () => {
                 try {
                     setIsLoading(true);
-                    await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/pay`);
+                    await axios.put(`http://localhost:5000/api/inquiries/${inquiryId}/pay`);
                     alert('Payment successful! Status updated.');
                     window.history.replaceState({}, document.title, window.location.pathname);
                     await fetchUserData();
@@ -124,7 +153,7 @@ const UserDashboard = ({ user, onLogout }) => {
         const fetchVisaDetails = async () => {
             if (selectedInquiry?.visaId) {
                 try {
-                    const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/visas/${selectedInquiry.visaId}`);
+                    const response = await axios.get(`http://localhost:5000/api/visas/${selectedInquiry.visaId}`);
                     if (response.data) setVisaDetails(response.data);
                 } catch (error) {
                     console.error('Error fetching visa details:', error);
@@ -135,6 +164,15 @@ const UserDashboard = ({ user, onLogout }) => {
             }
         };
         fetchVisaDetails();
+    }, [selectedInquiry]);
+
+    // ⭐ NEW: Fetch uploaded documents when inquiry changes
+    useEffect(() => {
+        if (selectedInquiry?._id) {
+            fetchUploadedDocuments(selectedInquiry._id);
+        } else {
+            setUploadedDocuments([]);
+        }
     }, [selectedInquiry]);
 
     // --- HANDLERS ---
@@ -160,7 +198,7 @@ const UserDashboard = ({ user, onLogout }) => {
         if (!selectedInquiry) return;
         try {
             setIsLoading(true);
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/payment/create-inquiry-checkout', {
+            const response = await fetch('http://localhost:5000/api/payment/create-inquiry-checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ inquiryId: selectedInquiry._id })
@@ -217,10 +255,13 @@ const UserDashboard = ({ user, onLogout }) => {
         });
 
         try {
-            await fetch('https://wanderwaveph-backend.onrender.com/api/documents/upload', { method: 'POST', body: formData });
+            await fetch('http://localhost:5000/api/documents/upload', { method: 'POST', body: formData });
             alert('Documents submitted successfully!');
             setUploadedFiles({});
-            fetchUserData(); 
+            
+            // ⭐ NEW: Refresh uploaded documents after submission
+            await fetchUploadedDocuments(selectedInquiry._id);
+            await fetchUserData(); 
         } catch (error) {
             console.error('Upload error:', error);
             alert('Failed to submit documents.');
@@ -277,6 +318,9 @@ const UserDashboard = ({ user, onLogout }) => {
                             isUploading={isUploading}
                             uploadProgress={uploadProgress}
                             onDownloadComplete={handleDownloadAction}
+                            // ⭐ NEW: Pass uploaded documents data
+                            uploadedDocuments={uploadedDocuments}
+                            isLoadingDocuments={isLoadingDocuments}
                         />
                     ) : (
                         <div className="ud-welcome-state">

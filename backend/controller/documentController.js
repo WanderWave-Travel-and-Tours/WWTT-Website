@@ -1,14 +1,13 @@
 const Document = require('../models/document');
 const { cloudinary } = require('../config/cloudinary');
 
-// ✅ UPLOAD DOCUMENTS FUNCTION (FIXED)
+// ✅ UPLOAD DOCUMENTS FUNCTION
 const uploadDocuments = async (req, res) => {
   try {
-    console.log('📥 ===== UPLOAD REQUEST START =====');
+    console.log('🔥 ===== UPLOAD REQUEST START =====');
     console.log('📋 Body:', req.body);
     console.log('📁 Files:', req.files ? req.files.length : 0);
     
-    // Log each file detail
     if (req.files && req.files.length > 0) {
       req.files.forEach((file, idx) => {
         console.log(`File ${idx + 1}:`, {
@@ -16,7 +15,9 @@ const uploadDocuments = async (req, res) => {
           filename: file.filename,
           path: file.path,
           size: file.size,
-          mimetype: file.mimetype
+          mimetype: file.mimetype,
+          // ✅ ADD THIS: Check if public_id exists
+          public_id: file.public_id
         });
       });
     }
@@ -51,9 +52,6 @@ const uploadDocuments = async (req, res) => {
       sections = Array.isArray(req.body.sections) ? req.body.sections : [req.body.sections];
     }
 
-    console.log('📋 Processing', req.files.length, 'files');
-    console.log('📋 Sections:', sections);
-
     const documents = [];
     const errors = [];
 
@@ -66,21 +64,20 @@ const uploadDocuments = async (req, res) => {
         console.log('   Original name:', file.originalname);
         console.log('   Cloudinary path:', file.path);
         console.log('   Cloudinary filename:', file.filename);
-        console.log('   Section:', section);
+        console.log('   Cloudinary public_id:', file.public_id); // ✅ Check this
 
-        // ✅ Verify file was uploaded to Cloudinary
         if (!file.path || !file.filename) {
           throw new Error(`File ${file.originalname} was not uploaded to Cloudinary`);
         }
 
-        // ✅ Create document - WITHOUT filePath
+        // ✅ FIX: Use the correct public_id from Cloudinary
         const document = await Document.create({
           inquiryId,
           userId,
-          fileName: file.filename,        // Cloudinary generated name
-          originalName: file.originalname, // User's original filename
-          fileUrl: file.path,              // Full Cloudinary URL
-          filePublicId: file.filename,     // For deletion later
+          fileName: file.filename,
+          originalName: file.originalname,
+          fileUrl: file.path,
+          filePublicId: file.filename, // This might be wrong
           fileSize: file.size,
           fileType: file.mimetype,
           section: section,
@@ -102,10 +99,6 @@ const uploadDocuments = async (req, res) => {
     console.log('\n📊 Upload Summary:');
     console.log(`   Success: ${documents.length}/${req.files.length}`);
     console.log(`   Errors: ${errors.length}`);
-    if (errors.length > 0) {
-      console.log('   Error details:', errors);
-    }
-    console.log('===== UPLOAD REQUEST END =====\n');
 
     if (documents.length === 0) {
       return res.status(500).json({
@@ -124,8 +117,6 @@ const uploadDocuments = async (req, res) => {
 
   } catch (error) {
     console.error('❌ FATAL UPLOAD ERROR:', error);
-    console.error('Stack trace:', error.stack);
-    
     res.status(500).json({ 
       success: false,
       message: error.message || 'Failed to upload documents',
@@ -167,7 +158,6 @@ const deleteDocument = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Document not found' });
     }
 
-    // Delete from Cloudinary
     if (document.filePublicId) {
       try {
         await cloudinary.uploader.destroy(document.filePublicId, { 
@@ -253,7 +243,134 @@ const getAllDocuments = async (req, res) => {
   }
 };
 
-// ✅ CRITICAL - SIGURADUHING NASA MODULE.EXPORTS LAHAT NG FUNCTIONS
+// Helper function to get resource type
+const getResourceType = (fileType) => {
+  if (!fileType) return 'raw';
+  
+  if (fileType.startsWith('image/')) {
+    return 'image';
+  } else if (fileType === 'application/pdf') {
+    return 'raw';
+  } else if (fileType.includes('document') || fileType.includes('word')) {
+    return 'raw';
+  }
+  
+  return 'raw';
+};
+
+const getSignedViewUrl = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    console.log('🔍 Getting view URL for document:', documentId);
+
+    const document = await Document.findById(documentId);
+    
+    if (!document) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Document not found' 
+      });
+    }
+
+    console.log('📄 File type:', document.fileType);
+    console.log('📄 File URL:', document.fileUrl);
+
+    // ✅ For images, return direct URL
+    if (document.fileType && document.fileType.startsWith('image/')) {
+      console.log('✅ Image file - returning direct URL');
+      return res.json({
+        success: true,
+        url: document.fileUrl
+      });
+    }
+
+    // ✅ For PDFs and other files, construct proper URL
+    if (document.fileType === 'application/pdf') {
+      console.log('📄 PDF file - constructing URL');
+      
+      // Extract public_id from the URL or use stored filePublicId
+      let publicId = document.filePublicId;
+      
+      // If fileUrl exists, we can use it directly
+      if (document.fileUrl) {
+        // Replace /upload/ with /upload/fl_attachment/
+        const viewUrl = document.fileUrl.replace('/upload/', '/upload/fl_attachment/');
+        console.log('✅ PDF URL:', viewUrl);
+        
+        return res.json({
+          success: true,
+          url: viewUrl
+        });
+      }
+    }
+
+    // ✅ Fallback: return direct URL
+    console.log('✅ Using direct URL as fallback');
+    res.json({
+      success: true,
+      url: document.fileUrl
+    });
+
+  } catch (error) {
+    console.error('❌ Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get view URL',
+      error: error.message
+    });
+  }
+};
+
+const getSignedDownloadUrl = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    console.log('⬇️ Getting download URL for document:', documentId);
+
+    const document = await Document.findById(documentId);
+    
+    if (!document) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Document not found' 
+      });
+    }
+
+    console.log('📄 File type:', document.fileType);
+
+    // ✅ For all files, add download flag
+    if (document.fileUrl) {
+      // Add fl_attachment flag to force download
+      const downloadUrl = document.fileUrl.replace(
+        '/upload/', 
+        `/upload/fl_attachment:${encodeURIComponent(document.originalName)}/`
+      );
+      
+      console.log('✅ Download URL:', downloadUrl);
+      
+      return res.json({
+        success: true,
+        url: downloadUrl,
+        fileName: document.originalName
+      });
+    }
+
+    // Fallback
+    res.json({
+      success: true,
+      url: document.fileUrl,
+      fileName: document.originalName
+    });
+
+  } catch (error) {
+    console.error('❌ Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get download URL',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   uploadDocuments,
   getDocumentsByInquiry,
@@ -261,5 +378,7 @@ module.exports = {
   getDocumentsByUser,
   deleteDocument,
   updateDocumentStatus,
-  getAllDocuments
+  getAllDocuments,
+  getSignedViewUrl,
+  getSignedDownloadUrl
 };

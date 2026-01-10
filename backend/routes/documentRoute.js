@@ -6,7 +6,10 @@ const {
   getUserDocuments,
   deleteDocument,
   updateDocumentStatus,
-  getAllDocuments
+  getAllDocuments,
+  // ⭐ FIX #3: Import new functions
+  getSignedViewUrl,
+  getSignedDownloadUrl
 } = require('../controller/documentController');
 const { uploadDocument } = require('../config/cloudinary');
 
@@ -14,6 +17,10 @@ const router = express.Router();
 
 // Main upload route - multiple documents
 router.post('/upload', uploadDocument.array('documents', 10), uploadDocuments);
+
+// ⭐⭐⭐ FIX: ADD THESE TWO ROUTES FOR SIGNED URLS ⭐⭐⭐
+router.get('/:documentId/view', getSignedViewUrl);
+router.get('/:documentId/download', getSignedDownloadUrl);
 
 // Get routes
 router.get('/inquiry/:inquiryId', getDocumentsByInquiry);

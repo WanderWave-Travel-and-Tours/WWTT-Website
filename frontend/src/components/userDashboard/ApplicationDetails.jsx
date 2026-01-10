@@ -1,5 +1,6 @@
 import React from 'react';
 import DocumentsSection from './DocumentsSection';
+import UploadedDocumentsView from './UploadedDocumentsView'; // ⭐ NEW IMPORT
 import './ApplicationDetails.css';
 
 const ApplicationDetails = ({ 
@@ -13,7 +14,10 @@ const ApplicationDetails = ({
     submitDocuments, 
     isUploading, 
     uploadProgress,
-    onDownloadComplete // <-- Trigger from Parent
+    onDownloadComplete,
+    // ⭐ NEW PROPS
+    uploadedDocuments,
+    isLoadingDocuments
 }) => {
     
     if (!inquiry) return null;
@@ -51,7 +55,7 @@ const ApplicationDetails = ({
                         </div>
                         <p>{remarks}</p>
                         {evidenceUrl && (
-                            <a href={`https://wanderwaveph-backend.onrender.com${evidenceUrl}`} target="_blank" rel="noreferrer" className="ad-link-btn">
+                            <a href={`http://localhost:5000${evidenceUrl}`} target="_blank" rel="noreferrer" className="ad-link-btn">
                                 View Evidence ↗
                             </a>
                         )}
@@ -103,10 +107,10 @@ const ApplicationDetails = ({
                                     </div>
                                     {/* DOWNLOAD BUTTON */}
                                     <a 
-                                        href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} 
+                                        href={`http://localhost:5000${doc.fileUrl}`} 
                                         download={doc.fileName}
                                         className="ad-btn-download"
-                                        onClick={() => onDownloadComplete(inquiry._id)} // <-- THIS MOVES IT TO HISTORY
+                                        onClick={() => onDownloadComplete(inquiry._id)}
                                     >
                                         Download
                                     </a>
@@ -122,7 +126,7 @@ const ApplicationDetails = ({
 
                 {status === 'PENDING' && !remarks && (
                     <div className="ad-status-box ad-box-pending">
-                        <div className="ad-large-icon">🔍</div>
+                        <div className="ad-large-icon">📝</div>
                         <p>Your application is under review. We will notify you shortly.</p>
                     </div>
                 )}
@@ -157,7 +161,6 @@ const ApplicationDetails = ({
                         <div className="ad-row">
                             <span className="ad-label">Destination / Type</span>
                             <span className="ad-value">
-                                {/* UPDATED LOGIC: Added inquiry.serviceName to the check */}
                                 {inquiry.visaCountry || inquiry.serviceName || inquiry.cenomarDocument || inquiry.psaDocument || 'N/A'}
                             </span>
                         </div>
@@ -186,6 +189,15 @@ const ApplicationDetails = ({
                 </div>
             </div>
 
+            {/* ⭐ NEW: Show uploaded documents first */}
+            <div className="ad-uploaded-docs-wrapper">
+                <UploadedDocumentsView 
+                    documents={uploadedDocuments}
+                    isLoading={isLoadingDocuments}
+                />
+            </div>
+
+            {/* Upload new documents section */}
             <div className="ad-upload-section-wrapper">
                 <DocumentsSection 
                     visaDetails={visaDetails}
@@ -194,7 +206,7 @@ const ApplicationDetails = ({
                     handleDrop={handleDrop}
                     removeFile={removeFile}
                     submitDocuments={submitDocuments}
-                    isUploading={isUploading}
+                    isUploading={isUploading}c
                     uploadProgress={uploadProgress}
                 />
             </div>

@@ -55,7 +55,9 @@ const documentStorage = new CloudinaryStorage({
     params: {
         folder: 'wanderwave/documents',
         allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
-        resource_type: 'auto' // Important for non-image files
+        resource_type: 'auto',
+        type: 'upload',
+        access_mode: 'public' // ✅ Make files public
     }
 });
 

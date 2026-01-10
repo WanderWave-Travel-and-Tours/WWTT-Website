@@ -23,9 +23,11 @@ const documentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // ⭐ FIX #1: Made filePath OPTIONAL
   filePath: {
     type: String,
-    required: true
+    required: false,  // ✅ Changed from true to false
+    default: ''       // ✅ Added default value
   },
   fileSize: {
     type: Number,
