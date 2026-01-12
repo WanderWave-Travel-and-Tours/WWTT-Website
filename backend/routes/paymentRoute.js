@@ -21,7 +21,7 @@ router.post('/webhook', async (req, res) => {
       const metadata = payment.attributes.data.attributes.metadata;
       const bookingId = metadata.booking_id;
 
-      console.log(`🔔 Webhook Received: Payment PAID for Booking ID: ${bookingId}`);
+      console.log(`Webhook Received: Payment PAID for Booking ID: ${bookingId}`);
 
       const updatedBooking = await Booking.findByIdAndUpdate(
         bookingId,
@@ -35,18 +35,18 @@ router.post('/webhook', async (req, res) => {
       );
 
       if (!updatedBooking) {
-        console.error('❌ Booking not found via Webhook');
+        console.error('Booking not found via Webhook');
         return res.status(404).json({ received: true, error: 'Booking not found' });
       }
 
-      console.log('✅ Booking Confirmed via Webhook');
+      console.log('Booking Confirmed via Webhook');
       return res.json({ received: true, bookingConfirmed: true });
     }
 
     res.json({ received: true });
 
   } catch (error) {
-    console.error('❌ Webhook Error:', error);
+    console.error('Webhook Error:', error);
     res.status(500).json({ received: true, error: 'Webhook processing failed' });
   }
 });
