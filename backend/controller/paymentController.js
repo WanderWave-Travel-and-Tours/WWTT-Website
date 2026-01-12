@@ -5,9 +5,10 @@ const Booking = require('../models/booking');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API = 'https://api.paymongo.com/v1';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com'; // ⭐ ADD THIS
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com';
 
-const authHeader = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
+// ⭐ FIX: ADD COLON BEFORE BASE64 ENCODING
+const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
 const createInquiryCheckoutSession = async (req, res) => {
   try {
@@ -63,8 +64,8 @@ const createInquiryCheckoutSession = async (req, res) => {
             send_email_receipt: true,
             show_description: true,
             description: `Inquiry Ref: ${inquiry._id}`,
-            success_url: `${FRONTEND_URL}/dashboard?success=true&inquiryId=${inquiry._id}`, // ⭐ FIXED
-            cancel_url: `${FRONTEND_URL}/dashboard` // ⭐ FIXED
+            success_url: `${FRONTEND_URL}/dashboard?success=true&inquiryId=${inquiry._id}`,
+            cancel_url: `${FRONTEND_URL}/dashboard`
           }
         }
       }
@@ -104,7 +105,7 @@ const createInquiryCheckoutSession = async (req, res) => {
         res.status(500).json({ 
           success: false, 
           message: 'Payment creation failed',
-          error: error.response?.data || error.message // ⭐ ADD DETAILED ERROR
+          error: error.response?.data || error.message
         });
     }
   }

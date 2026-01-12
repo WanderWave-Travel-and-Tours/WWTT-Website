@@ -5,7 +5,8 @@ const Booking = require('../models/booking');
 const paymentController = require('../controller/paymentController');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
-const authHeader = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
+// ⭐ FIX: ADD COLON BEFORE BASE64 ENCODING
+const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
 router.post('/create-inquiry-checkout', paymentController.createInquiryCheckoutSession);
 router.post('/create-intent', paymentController.createBookingPaymentLink);
