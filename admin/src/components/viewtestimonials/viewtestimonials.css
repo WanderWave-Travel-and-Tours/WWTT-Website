@@ -157,7 +157,7 @@
     font-size: 15px;
 }
 
-/* --- TABLE WRAPPER & TABLE - UPDATED: Removed overflow:hidden, added rounded top only --- */
+/* --- TABLE WRAPPER & TABLE --- */
 .vt-table-wrapper {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -283,6 +283,7 @@
     flex-shrink: 0;
 }
 
+/* --- RATING BADGE --- */
 .vt-rating {
     display: inline-flex;
     align-items: center;

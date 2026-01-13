@@ -1,7 +1,9 @@
 import React from 'react';
 import DocumentsSection from './DocumentsSection';
-import UploadedDocumentsView from './UploadedDocumentsView'; // ⭐ NEW IMPORT
+import UploadedDocumentsView from './UploadedDocumentsView';
 import './ApplicationDetails.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const ApplicationDetails = ({ 
     inquiry, 
@@ -15,7 +17,6 @@ const ApplicationDetails = ({
     isUploading, 
     uploadProgress,
     onDownloadComplete,
-    // ⭐ NEW PROPS
     uploadedDocuments,
     isLoadingDocuments
 }) => {
@@ -55,7 +56,7 @@ const ApplicationDetails = ({
                         </div>
                         <p>{remarks}</p>
                         {evidenceUrl && (
-                            <a href={`https://wanderwaveph-backend.onrender.com${evidenceUrl}`} target="_blank" rel="noreferrer" className="ad-link-btn">
+                            <a href={`${API_BASE_URL}${evidenceUrl}`} target="_blank" rel="noreferrer" className="ad-link-btn">
                                 View Evidence ↗
                             </a>
                         )}
@@ -105,9 +106,8 @@ const ApplicationDetails = ({
                                         <span className="ad-filename" title={doc.fileName}>{doc.fileName}</span>
                                         <span className="ad-filedate">{formatDate(doc.uploadedAt)}</span>
                                     </div>
-                                    {/* DOWNLOAD BUTTON */}
                                     <a 
-                                        href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} 
+                                        href={`${API_BASE_URL}${doc.fileUrl}`} 
                                         download={doc.fileName}
                                         className="ad-btn-download"
                                         onClick={() => onDownloadComplete(inquiry._id)}
@@ -189,7 +189,7 @@ const ApplicationDetails = ({
                 </div>
             </div>
 
-            {/* ⭐ NEW: Show uploaded documents first */}
+            {/* Show uploaded documents */}
             <div className="ad-uploaded-docs-wrapper">
                 <UploadedDocumentsView 
                     documents={uploadedDocuments}
@@ -206,7 +206,7 @@ const ApplicationDetails = ({
                     handleDrop={handleDrop}
                     removeFile={removeFile}
                     submitDocuments={submitDocuments}
-                    isUploading={isUploading}c
+                    isUploading={isUploading}
                     uploadProgress={uploadProgress}
                 />
             </div>
