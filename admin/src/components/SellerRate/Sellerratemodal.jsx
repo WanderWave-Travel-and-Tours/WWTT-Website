@@ -1,5 +1,7 @@
 import React from 'react';
 import { X, Save } from 'lucide-react';
+// Import ang Toast system base sa iyong directory
+import { useToast } from '../toast/ToastManager';
 import './Sellerratemodal.css';
 
 const SellerRateModal = ({ 
@@ -11,11 +13,36 @@ const SellerRateModal = ({
   calculateSellingPrice,
   editingRate 
 }) => {
+  // Initialize Toast notification
+  const toast = useToast();
   
   if (!show) return null;
 
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  /**
+   * Wrapper function para sa submission
+   * Sinisiguro nito na lalabas ang Toast pagkatapos ng Save/Update
+   */
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Tinatawag ang original onSubmit function
+      await onSubmit(e);
+      
+      // Pag-display ng tagumpay na notification
+
+      
+    } catch (error) {
+      // Pag-display ng error kung sakaling pumalya
+      toast.error(
+        'There was an error saving the rate. Please try again.',
+        'Operation Failed'
+      );
+      console.error("Submission Error:", error);
+    }
   };
 
   return (
@@ -28,7 +55,7 @@ const SellerRateModal = ({
           </button>
         </div>
 
-        <form onSubmit={onSubmit}>
+        <form onSubmit={handleFormSubmit}>
           <div className="sr-form-grid">
             
             {/* Destination */}

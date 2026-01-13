@@ -1,55 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Calendar, Eye, Image as ImageIcon, HelpCircle, X } from 'lucide-react';
+import { Archive, Calendar, Eye, Image as ImageIcon, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import ImageDetailModal from './ImageDetailModal';
 import ImagePagination from './ImagePagination';
 import ImageFilters from './ImageFilters';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal'; // In-import mula sa tamang directory
 import { useToast } from "../toast/ToastManager"; // In-import ang Toast
 import './viewimage.css';
-
-// --- CUSTOM CONFIRMATION MODAL COMPONENT (Based on EditVisa.jsx) ---
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="arc-confirm-overlay" style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 11000
-    }}>
-      <div className="arc-confirm-modal" style={{
-        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
-        </div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button 
-            onClick={onCancel}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={onConfirm}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-              color: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const ViewImage = () => {
     const toast = useToast(); // Initialize Toast
@@ -82,7 +39,7 @@ const ViewImage = () => {
         return filterFileType === type ? 'if-active-navy' : '';
     };
 
-    // Helper function for confirmation (Based on EditVisa logic)
+    // Helper function for confirmation
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -103,14 +60,13 @@ const ViewImage = () => {
     const fetchImages = async () => {
         setLoading(true);
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/images');
+            const response = await fetch('http://localhost:5000/api/images');
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('🖼️ Fetched images:', data);
             
             const activeImages = data.filter(img => img.isArchive === "No");
             setImages(activeImages);
@@ -118,6 +74,7 @@ const ViewImage = () => {
             setCurrentPage(1);
         } catch (error) {
             console.error('❌ Error fetching images:', error);
+            // Pinalitan ang default alert/console ng Toast
             toast.error("Failed to load images. Make sure the backend is running.");
         } finally {
             setLoading(false);
@@ -131,7 +88,7 @@ const ViewImage = () => {
             `Are you sure you want to archive "${imageName || 'this image'}"?`,
             async () => {
                 try {
-                    const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/images/${id}`, {
+                    const response = await fetch(`http://localhost:5000/api/images/${id}`, {
                         method: 'PATCH',
                         headers: {
                             'Content-Type': 'application/json'
@@ -142,6 +99,8 @@ const ViewImage = () => {
                     if (response.ok) {
                         const updatedImages = images.filter(img => img._id !== id);
                         setImages(updatedImages);
+                        
+                        // Success Toast Notification
                         toast.success('Image archived successfully');
                         
                         const maxPage = Math.ceil(updatedImages.length / itemsPerPage);
@@ -149,10 +108,12 @@ const ViewImage = () => {
                             setCurrentPage(maxPage);
                         }
                     } else {
+                        // Error Toast Notification
                         toast.error('Failed to archive image');
                     }
                 } catch (error) {
                     console.error('Error archiving:', error);
+                    // Server Error Toast Notification
                     toast.error('Server error while archiving');
                 }
             },

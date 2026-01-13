@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Calendar, Eye, EyeOff, Search, HelpCircle } from 'lucide-react';
+import { Archive, Calendar, Eye, EyeOff, Search } from 'lucide-react';
 import axios from 'axios';
 import Sidebar from '../sidebar/sidebar';
 import PosterDetailModal from './PosterDetailModal';
 import PosterPagination from './PosterPagination';
 import PosterFilters from './PosterFilters';
 import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import './viewposter.css';
 
 // 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
@@ -22,53 +23,10 @@ const getAdminData = () => {
     }
 };
 
-// 🔥 Custom Confirm Modal Component (Reference from EditVisa.jsx)
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="arc-confirm-overlay" style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 11000
-    }}>
-      <div className="arc-confirm-modal" style={{
-        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
-        </div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button 
-            onClick={onCancel}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={onConfirm}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-              color: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const ViewPoster = () => {
     const toast = useToast();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
@@ -118,7 +76,7 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/posters');
+            const response = await axios.get('http://localhost:5000/api/posters');
             
             // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
             const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
@@ -127,7 +85,7 @@ const ViewPoster = () => {
             setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching posters:', error);
-            toast.error("Failed to load posters from server.");
+            toast.error("Failed to load posters from server.", "Connection Error");
         } finally {
             setLoading(false);
         }
@@ -142,7 +100,7 @@ const ViewPoster = () => {
                 const { userEmail, adminId } = getAdminData();
 
                 try {
-                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                    const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
                         isArchive: 'Yes',
                         userEmail,
                         adminId
@@ -151,11 +109,11 @@ const ViewPoster = () => {
                     if (response.data) {
                         const updatedPosters = posters.filter(poster => poster._id !== id);
                         setPosters(updatedPosters);
-                        toast.success('Poster archived successfully!');
+                        toast.success(`"${title}" has been moved to archives.`, "Poster Archived");
                     }
                 } catch (error) {
                     console.error('Error archiving poster:', error);
-                    toast.error('Failed to archive poster.');
+                    toast.error('Failed to archive poster. Please try again.', "System Error");
                 }
             },
             "danger"
@@ -173,7 +131,7 @@ const ViewPoster = () => {
                 const { userEmail, adminId } = getAdminData();
 
                 try {
-                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                    const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
                         status: newStatus,
                         userEmail,
                         adminId
@@ -184,11 +142,11 @@ const ViewPoster = () => {
                             poster._id === id ? { ...poster, status: newStatus } : poster
                         );
                         setPosters(updatedPosters);
-                        toast.success(`Status changed to ${newStatus}!`);
+                        toast.success(`Poster is now ${newStatus}!`, "Status Updated");
                     }
                 } catch (error) {
                     console.error('Error updating status:', error);
-                    toast.error('Failed to update status.');
+                    toast.error('Failed to update status.', "Update Failed");
                 }
             },
             "primary"
@@ -287,7 +245,7 @@ const ViewPoster = () => {
                                                 <td>
                                                     <div className="vp-image-preview">
                                                         <img 
-                                                            src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
+                                                            src={`http://localhost:5000/${poster.imageUrl}`} 
                                                             alt={poster.title}
                                                         />
                                                     </div>
@@ -374,7 +332,7 @@ const ViewPoster = () => {
                 />
             )}
 
-            {/* Global Confirmation Modal */}
+            {/* Global Confirmation Modal - Imported from ../confirmationModal/CustomConfirmModal */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}

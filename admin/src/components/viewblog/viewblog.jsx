@@ -1,58 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Eye, Calendar, User, FolderOpen, FileText, HelpCircle } from 'lucide-react'; 
+import { Archive, Eye, Calendar, User, FolderOpen, FileText } from 'lucide-react'; 
 import Sidebar from '../sidebar/sidebar';
 import BlogDetailModal from './BlogDetailModal';
 import BlogPagination from './BlogPagination';
 import BlogFilters from './BlogFilters';
-import { useToast } from '../toast/ToastManager'; // Inimport ang useToast
+import { useToast } from '../toast/ToastManager'; 
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal'; // Updated directory
 import './viewblog.css';
 
-// Custom Confirm Modal Component (Base sa EditVisa.jsx logic)
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="arc-confirm-overlay" style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 11000
-    }}>
-      <div className="arc-confirm-modal" style={{
-        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
-        </div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button 
-            onClick={onCancel}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={onConfirm}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-              color: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const ViewBlog = () => {
-    const toast = useToast(); // Initialize Toast
+    const toast = useToast(); 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -63,7 +20,7 @@ const ViewBlog = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedBlog, setSelectedBlog] = useState(null);
 
-    // State para sa Confirmation Modal
+    // State para sa Confirmation Modal configuration
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
         title: "",
@@ -72,13 +29,13 @@ const ViewBlog = () => {
         type: "primary"
     });
     
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+    const API_BASE_URL = 'http://localhost:5000';
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Helper function para sa confirmation (katulad ng sa EditVisa)
+    // Helper function para sa custom confirmation logic
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -114,9 +71,11 @@ const ViewBlog = () => {
             const data = await response.json();
             setBlogs(data);
             setCurrentPage(1);
+            // Optional: Success toast on initial load if needed
+            // toast.info("Blog list updated", "System");
         } catch (error) {
             console.error('Error fetching blogs:', error);
-            toast.error("Could not load blog posts.", "Connection Error");
+            toast.error("Could not load blog posts from the server.", "Connection Error");
         } finally {
             setLoading(false);
         }
@@ -126,7 +85,7 @@ const ViewBlog = () => {
         fetchBlogs();
     }, []);
 
-    // MODIFIED: Pinalitan ang window.confirm ng askConfirmation
+    // Function handle para sa Archive button
     const handleArchive = (id) => {
         askConfirmation(
             "Archive Blog Post",
@@ -136,7 +95,7 @@ const ViewBlog = () => {
         );
     };
 
-    // Actual Archive Logic
+    // Actual Archive Logic with Toast Notifications
     const performArchive = async (id) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/blogs/${id}`, {
@@ -146,18 +105,20 @@ const ViewBlog = () => {
             if (response.ok) {
                 const updatedBlogs = blogs.filter(blog => blog._id !== id);
                 setBlogs(updatedBlogs);
-                toast.success('Blog archived successfully', 'Success');
+                
+                // Pinalitang Toast notification
+                toast.success('The article has been moved to archives.', 'Success');
                 
                 const maxPage = Math.ceil(updatedBlogs.length / itemsPerPage);
                 if (currentPage > maxPage && maxPage > 0) {
                     setCurrentPage(maxPage);
                 }
             } else {
-                toast.error('Failed to archive blog', 'Error');
+                toast.error('The server refused the archive request.', 'Archive Failed');
             }
         } catch (error) {
             console.error('Error archiving blog:', error);
-            toast.error('An error occurred while archiving.', 'System Error');
+            toast.error('A network error occurred while trying to archive.', 'System Error');
         }
     };
 
@@ -350,7 +311,7 @@ const ViewBlog = () => {
                 />
             )}
 
-            {/* Confirmation Modal Component Implementation */}
+            {/* Global Custom Confirmation Modal Implementation */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}

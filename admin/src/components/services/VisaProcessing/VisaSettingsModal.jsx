@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Plus, X, Save, Trash2, PlusCircle, ChevronDown, Download, ClipboardList, Upload, FileText, ListPlus } from "lucide-react";
 import "./VisaSettingsModal.css"; 
+import { useToast } from "../../toast/ToastManager"; // Path base sa iyong instruction
+import CustomConfirmModal from "../../confirmationModal/CustomConfirmModal"; 
 
 // --- SUB COMPONENT: REQUIREMENTS EDITOR ---
 const RequirementEditor = ({ selectedVisa, onBack, onSave }) => {
+    const toast = useToast();
     const [requirements, setRequirements] = useState([]);
     const [downloadForms, setDownloadForms] = useState([]);
     const [stepsProcess, setStepsProcess] = useState([]);
@@ -54,12 +57,17 @@ const RequirementEditor = ({ selectedVisa, onBack, onSave }) => {
         const formData = new FormData();
         formData.append('file', file);
         try {
-            const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/visas/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
+            const res = await axios.post('http://localhost:5000/api/visas/upload', formData, { 
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             if (res.data.success) {
                 const { fileName, fileUrl } = res.data.data;
                 setDownloadForms(prev => [...prev, { id: `form-${Date.now()}`, label: fileName, fileUrl, fileName }]);
+                toast.success("File uploaded successfully!");
             }
-        } catch (error) { alert("Upload failed"); }
+        } catch (error) { 
+            toast.error("Upload failed. Please try again."); 
+        }
     };
 
     const toggleAccordion = (section) => setAccordionState(prev => ({ ...prev, [section]: !prev[section] }));
@@ -170,10 +178,18 @@ const RequirementEditor = ({ selectedVisa, onBack, onSave }) => {
 
 // --- MAIN MODAL WRAPPER ---
 const VisaSettingsModal = ({ isOpen, onClose, visaForms, isLoading, countryCodes, refreshData }) => {
+    const toast = useToast();
     const [viewMode, setViewMode] = useState("LIST"); // LIST | EDITOR
     const [selectedVisa, setSelectedVisa] = useState(null);
     const [isAddFormOpen, setIsAddFormOpen] = useState(false);
     const [newVisa, setNewVisa] = useState({ country: "", flagCode: "", desc: "", price: "" });
+
+    // State for Custom Confirm Modal
+    const [confirmConfig, setConfirmConfig] = useState({ 
+        isOpen: false, 
+        visaId: null, 
+        visaName: "" 
+    });
 
     // Reset when opening/closing
     useEffect(() => {
@@ -191,122 +207,151 @@ const VisaSettingsModal = ({ isOpen, onClose, visaForms, isLoading, countryCodes
 
     const handleSaveRequirements = async (updatedData) => {
         try {
-            await axios.put(`https://wanderwaveph-backend.onrender.com/api/visas/${selectedVisa.id}`, updatedData);
+            await axios.put(`http://localhost:5000/api/visas/${selectedVisa.id}`, updatedData);
+            toast.success("Requirements updated successfully!");
             refreshData();
             setViewMode("LIST");
         } catch (error) {
-            alert("Error saving requirements");
+            toast.error("Error saving requirements");
         }
     };
 
-    const handleDeleteVisa = async (id) => {
-        if (!window.confirm("Delete this visa?")) return;
+    const openDeleteConfirm = (id, country) => {
+        setConfirmConfig({
+            isOpen: true,
+            visaId: id,
+            visaName: country
+        });
+    };
+
+    const handleDeleteVisa = async () => {
         try {
-            await axios.delete(`https://wanderwaveph-backend.onrender.com/api/visas/${id}`);
+            await axios.delete(`http://localhost:5000/api/visas/${confirmConfig.visaId}`);
+            toast.success(`${confirmConfig.visaName} visa configuration deleted.`);
             refreshData();
-        } catch (error) { alert("Delete failed"); }
+        } catch (error) { 
+            toast.error("Delete failed. Please try again."); 
+        } finally {
+            setConfirmConfig({ ...confirmConfig, isOpen: false });
+        }
     };
 
     const handleAddVisa = async () => {
         if (!newVisa.country || !newVisa.flagCode || !newVisa.desc || !newVisa.price) {
-            alert("Fill all fields"); return;
+            toast.warning("Please fill all required fields."); 
+            return;
         }
         try {
-            await axios.post("https://wanderwaveph-backend.onrender.com/api/visas/add", {
+            await axios.post("http://localhost:5000/api/visas/add", {
                 country: newVisa.country.toUpperCase(),
                 flagCode: newVisa.flagCode.toUpperCase(),
                 description: newVisa.desc.toUpperCase(),
                 price: newVisa.price,
             });
+            toast.success("New visa form added successfully!");
             refreshData();
             setNewVisa({ country: "", flagCode: "", desc: "", price: "" });
             setIsAddFormOpen(false);
-        } catch (error) { alert("Failed to add visa"); }
+        } catch (error) { 
+            toast.error("Failed to add visa. Check your connection."); 
+        }
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && onClose()}>
-            {viewMode === "EDITOR" ? (
-                <RequirementEditor 
-                    selectedVisa={selectedVisa} 
-                    onBack={() => setViewMode("LIST")} 
-                    onSave={handleSaveRequirements}
-                />
-            ) : (
-                <div className="modal-content modal-content-large">
-                    <div className="modal-header">
-                        <div>
-                            <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#0f172a", textTransform: "uppercase" }}>Visa Forms</h2>
-                            <p style={{ margin: "4px 0 0 0", color: "#64748b", fontSize: "13px" }}>Manage visa configurations</p>
-                        </div>
-                        <button className="modal-close-btn" onClick={onClose}><X size={24} /></button>
-                    </div>
-
-                    <div className="modal-body bg-gray">
-                        {!isAddFormOpen ? (
-                            <button className="add-visa-toggle-btn" onClick={() => setIsAddFormOpen(true)}>
-                                <Plus size={20} /> Add New Visa Form
-                            </button>
-                        ) : (
-                            <div className="add-visa-form-container">
-                                <div className="add-visa-form-header">
-                                    <h3>Add New Visa</h3>
-                                    <button className="form-close-btn" onClick={() => setIsAddFormOpen(false)}><X size={20} /></button>
-                                </div>
-                                <div className="add-visa-form-grid">
-                                    <div className="form-group">
-                                        <label>Country *</label>
-                                        <input type="text" placeholder="JAPAN" value={newVisa.country} onChange={e => setNewVisa({...newVisa, country: e.target.value})} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Flag Code *</label>
-                                        <select value={newVisa.flagCode} onChange={e => setNewVisa({...newVisa, flagCode: e.target.value})}>
-                                            <option value="">Select...</option>
-                                            {countryCodes.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="form-group form-group-full">
-                                        <label>Description *</label>
-                                        <input type="text" placeholder="Title..." value={newVisa.desc} onChange={e => setNewVisa({...newVisa, desc: e.target.value})} />
-                                    </div>
-                                    <div className="form-group form-group-full">
-                                        <label>Price *</label>
-                                        <input type="number" placeholder="0.00" value={newVisa.price} onChange={e => setNewVisa({...newVisa, price: e.target.value})} />
-                                    </div>
-                                </div>
-                                <div className="add-visa-form-actions">
-                                    <button className="form-cancel-btn" onClick={() => setIsAddFormOpen(false)}>Cancel</button>
-                                    <button className="form-save-btn" onClick={handleAddVisa}>Add Visa</button>
-                                </div>
+        <>
+            <div className="modal-overlay" onClick={(e) => e.target.className === "modal-overlay" && onClose()}>
+                {viewMode === "EDITOR" ? (
+                    <RequirementEditor 
+                        selectedVisa={selectedVisa} 
+                        onBack={() => setViewMode("LIST")} 
+                        onSave={handleSaveRequirements}
+                    />
+                ) : (
+                    <div className="modal-content modal-content-large">
+                        <div className="modal-header">
+                            <div>
+                                <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#0f172a", textTransform: "uppercase" }}>Visa Forms</h2>
+                                <p style={{ margin: "4px 0 0 0", color: "#64748b", fontSize: "13px" }}>Manage visa configurations</p>
                             </div>
-                        )}
+                            <button className="modal-close-btn" onClick={onClose}><X size={24} /></button>
+                        </div>
 
-                        <div className="visa-forms-list">
-                            {isLoading ? <p style={{textAlign:'center'}}>Loading...</p> : visaForms.map(visa => (
-                                <div key={visa.id} className="visa-form-card">
-                                    <div className="visa-form-left">
-                                        <div className="visa-flag-circle">
-                                            <img src={`https://flagcdn.com/w80/${visa.flagCode.toLowerCase()}.png`} className="visa-flag-img" alt="" onError={e => e.target.style.display='none'} />
+                        <div className="modal-body bg-gray">
+                            {!isAddFormOpen ? (
+                                <button className="add-visa-toggle-btn" onClick={() => setIsAddFormOpen(true)}>
+                                    <Plus size={20} /> Add New Visa Form
+                                </button>
+                            ) : (
+                                <div className="add-visa-form-container">
+                                    <div className="add-visa-form-header">
+                                        <h3>Add New Visa</h3>
+                                        <button className="form-close-btn" onClick={() => setIsAddFormOpen(false)}><X size={20} /></button>
+                                    </div>
+                                    <div className="add-visa-form-grid">
+                                        <div className="form-group">
+                                            <label>Country *</label>
+                                            <input type="text" placeholder="JAPAN" value={newVisa.country} onChange={e => setNewVisa({...newVisa, country: e.target.value})} />
                                         </div>
-                                        <div className="visa-form-info">
-                                            <h3>{visa.country}</h3>
-                                            <p className="visa-desc">{visa.desc}</p>
-                                            <p className="visa-price">₱{visa.price}</p>
+                                        <div className="form-group">
+                                            <label>Flag Code *</label>
+                                            <select value={newVisa.flagCode} onChange={e => setNewVisa({...newVisa, flagCode: e.target.value})}>
+                                                <option value="">Select...</option>
+                                                {countryCodes.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="form-group form-group-full">
+                                            <label>Description *</label>
+                                            <input type="text" placeholder="Title..." value={newVisa.desc} onChange={e => setNewVisa({...newVisa, desc: e.target.value})} />
+                                        </div>
+                                        <div className="form-group form-group-full">
+                                            <label>Price *</label>
+                                            <input type="number" placeholder="0.00" value={newVisa.price} onChange={e => setNewVisa({...newVisa, price: e.target.value})} />
                                         </div>
                                     </div>
-                                    <div className="visa-form-actions">
-                                        <button className="visa-form-edit-btn" onClick={() => handleEditClick(visa)}><FileText size={16} /> Edit Reqs</button>
-                                        <button className="visa-form-delete-btn" onClick={() => handleDeleteVisa(visa.id)}><Trash2 size={16} /></button>
+                                    <div className="add-visa-form-actions">
+                                        <button className="form-cancel-btn" onClick={() => setIsAddFormOpen(false)}>Cancel</button>
+                                        <button className="form-save-btn" onClick={handleAddVisa}>Add Visa</button>
                                     </div>
                                 </div>
-                            ))}
+                            )}
+
+                            <div className="visa-forms-list">
+                                {isLoading ? <p style={{textAlign:'center'}}>Loading...</p> : visaForms.map(visa => (
+                                    <div key={visa.id} className="visa-form-card">
+                                        <div className="visa-form-left">
+                                            <div className="visa-flag-circle">
+                                                <img src={`https://flagcdn.com/w80/${visa.flagCode.toLowerCase()}.png`} className="visa-flag-img" alt="" onError={e => e.target.style.display='none'} />
+                                            </div>
+                                            <div className="visa-form-info">
+                                                <h3>{visa.country}</h3>
+                                                <p className="visa-desc">{visa.desc}</p>
+                                                <p className="visa-price">₱{visa.price}</p>
+                                            </div>
+                                        </div>
+                                        <div className="visa-form-actions">
+                                            <button className="visa-form-edit-btn" onClick={() => handleEditClick(visa)}><FileText size={16} /> Edit Reqs</button>
+                                            <button className="visa-form-delete-btn" onClick={() => openDeleteConfirm(visa.id, visa.country)}><Trash2 size={16} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
+
+            {/* INTEGRATED CUSTOM CONFIRM MODAL */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title="Delete Visa Configuration"
+                message={`Are you sure you want to delete the visa form for ${confirmConfig.visaName}? This action cannot be undone.`}
+                type="danger"
+                onConfirm={handleDeleteVisa}
+                onCancel={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
+            />
+        </>
     );
 };
 

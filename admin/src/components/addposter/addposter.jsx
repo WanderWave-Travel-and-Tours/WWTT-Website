@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Image as ImageIcon, HelpCircle, X } from 'lucide-react';
+import { Upload, Image as ImageIcon, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './addposter.css';
 
@@ -10,49 +10,8 @@ import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftMo
 // ✅ Imports for Toast Notifications
 import { useToast } from '../toast/ToastManager';
 
-// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="arc-confirm-overlay" style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', zIndex: 11000
-        }}>
-            <div className="arc-confirm-modal" style={{
-                backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-                maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-            }}>
-                <div style={{ marginBottom: '1rem' }}>
-                    <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-                <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                    <button 
-                        onClick={onCancel}
-                        style={{
-                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-                            backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
-                        }}
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        onClick={onConfirm}
-                        style={{
-                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-                            backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-                            color: 'white', cursor: 'pointer', fontWeight: '500'
-                        }}
-                    >
-                        Confirm
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
+// ✅ Import for Custom Confirmation Modal
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
 const AddPoster = () => {
     // --- UTILITIES ---
@@ -177,12 +136,12 @@ const AddPoster = () => {
                 const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
                 setImageFile(restoredFile);
                 setImagePreview(URL.createObjectURL(restoredFile));
-                toast.info("Draft image and details restored.");
+                toast.info("Restored image from draft.", "Draft System");
             } catch (err) {
                 console.error("Failed to restore image:", err);
             }
         } else {
-            toast.info("Draft details restored.");
+            toast.info("Draft details restored.", "Draft System");
         }
     };
 
@@ -221,16 +180,16 @@ const AddPoster = () => {
         }
     }, [hasDraft, draftInfo, clearDraft]);
 
-const handleRestoreDraft = () => {
-    restoreDraft();
-    setShowRestoreModal(false);
-    toast.success('Your poster draft has been restored!', '✅ Draft Restored', 3000);
-};
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+        toast.success('Your poster draft has been restored!', '✅ Draft Restored', 3000);
+    };
 
     const handleDiscardDraft = async () => {
         await discardDraft();
         setShowRestoreModal(false);
-        toast.info('Draft has been discarded.', '🗑️ Discarded');
+        toast.neutral('Draft has been discarded.', '🗑️ Discarded');
         setPosterDetails({
             title: '',
             description: '',
@@ -240,7 +199,6 @@ const handleRestoreDraft = () => {
         });
         setImageFile(null);
         setImagePreview(null);
-        toast.info("Draft discarded.");
     };
 
     // =========================================================
@@ -258,136 +216,125 @@ const handleRestoreDraft = () => {
         setPosterDetails(prev => ({ ...prev, [name]: value }));
     };
 
-const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        if (!file.type.startsWith('image/')) {
-            toast.error('Please upload a valid image file (JPG, PNG).', '❌ Invalid File');
-            return;
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                toast.error('Please upload a valid image file (JPG, PNG, WebP).', 'Invalid File');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                toast.warning('File size is too large. Maximum is 5MB.', 'Large File');
+                return;
+            }
+            setImageFile(file);
+            const objectUrl = URL.createObjectURL(file);
+            setImagePreview(objectUrl);
+            toast.success(`Image "${file.name}" ready.`, 'Image Added');
         }
-        setImageFile(file);
-        const objectUrl = URL.createObjectURL(file);
-        setImagePreview(objectUrl);
-        toast.success(`Image "${file.name}" uploaded successfully!`, '✅ Image Added');
-    }
-};
+    };
 
-const removeImage = () => {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImageFile(null);
-    setImagePreview(null);
-    toast.info('Poster image removed.', '🗑️ Image Removed');
-};
+    const removeImage = () => {
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setImageFile(null);
+        setImagePreview(null);
+        toast.info('Poster image removed.', 'Image Removed');
+    };
 
     const handleCancel = () => {
-    askConfirmation(
-        "Discard Changes",
-        "Are you sure you want to cancel? All unsaved changes will be lost and the draft will be cleared.",
-        async () => {
-            await clearDraft();
-            setPosterDetails({
-                title: '',
-                description: '',
-                startDate: '',
-                endDate: '',
-                status: 'Active'
-            });
-            removeImage();
-            toast.info('Action cancelled and form cleared.', '❌ Cancelled');
-        },
-        "danger"
-    );
-};
-
-const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
-    
-    if (!posterDetails.title || !imageFile) {
-        toast.warning('Please provide a title and upload an image.', '⚠️ Incomplete Form');
-        return;
-    }
-
-    toast.success('All fields validated successfully!', '✅ Ready to Upload', 2000);
-
-    askConfirmation(
-        "Confirm Upload",
-        "Are you sure you want to upload this new poster?",
-        () => performSubmit()
-    );
-};
-
-const performSubmit = async () => {
-    setIsSubmitting(true);
-    
-    toast.info('Uploading poster...', '📤 Please Wait', 2000);
-    
-    const formData = new FormData();
-    formData.append('image', imageFile);
-    formData.append('title', posterDetails.title);
-    formData.append('description', posterDetails.description);
-    formData.append('startDate', posterDetails.startDate);
-    formData.append('endDate', posterDetails.endDate);
-    formData.append('status', posterDetails.status);
-
-    try {
-        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-        const activeId = adminData.id || adminData._id || "";
-
-        formData.append("userEmail", activeUser);
-        formData.append("adminId", activeId);
-    } catch (err) {
-        console.error("Error parsing admin data:", err);
-    }
-
-    try {
-        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/posters/add', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (response.ok) {
-            toast.success(
-                `Poster "${posterDetails.title}" has been uploaded successfully!`,
-                '✅ Poster Uploaded',
-                5000
-            );
-            await clearDraft();
-            
-            toast.info(
-                'Form cleared and ready for new poster entry.',
-                '🔄 Ready',
-                3000
-            );
-            
-            setPosterDetails({
-                title: '',
-                description: '',
-                startDate: '',
-                endDate: '',
-                status: 'Active'
-            });
-            removeImage();
-        } else {
-            const data = await response.json();
-            const errorMessage = data.message || 'Unknown error occurred';
-            toast.error(
-                `Failed to upload poster: ${errorMessage}`,
-                '❌ Upload Failed',
-                5000
-            );
-        }
-    } catch (error) {
-        console.error('❌ Network Error:', error);
-        toast.error(
-            `Unable to connect to server: ${error.message}. Please check your connection.`,
-            '❌ Connection Error',
-            6000
+        askConfirmation(
+            "Discard Changes",
+            "Are you sure you want to cancel? All unsaved changes will be lost and the draft will be cleared.",
+            async () => {
+                await clearDraft();
+                setPosterDetails({
+                    title: '',
+                    description: '',
+                    startDate: '',
+                    endDate: '',
+                    status: 'Active'
+                });
+                removeImage();
+                toast.info('Form has been reset.', 'Cancelled');
+            },
+            "danger"
         );
-    } finally {
-        setIsSubmitting(false);
-    }
-};
+    };
+
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+        
+        if (!posterDetails.title || !imageFile) {
+            toast.warning('Title and Image are required before uploading.', 'Incomplete Form');
+            return;
+        }
+
+        askConfirmation(
+            "Confirm Upload",
+            "Are you sure you want to upload this new poster?",
+            () => performSubmit()
+        );
+    };
+
+    const performSubmit = async () => {
+        setIsSubmitting(true);
+        toast.info('Connecting to server...', 'Uploading', 2000);
+        
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        formData.append('title', posterDetails.title);
+        formData.append('description', posterDetails.description);
+        formData.append('startDate', posterDetails.startDate);
+        formData.append('endDate', posterDetails.endDate);
+        formData.append('status', posterDetails.status);
+
+        try {
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+            const activeId = adminData.id || adminData._id || "";
+
+            formData.append("userEmail", activeUser);
+            formData.append("adminId", activeId);
+        } catch (err) {
+            console.error("Error parsing admin data:", err);
+        }
+
+        try {
+            const response = await fetch('http://localhost:5000/api/posters/add', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                toast.success(
+                    `Poster "${posterDetails.title}" uploaded successfully!`,
+                    'Success',
+                    5000
+                );
+                await clearDraft();
+                
+                setPosterDetails({
+                    title: '',
+                    description: '',
+                    startDate: '',
+                    endDate: '',
+                    status: 'Active'
+                });
+                setImageFile(null);
+                setImagePreview(null);
+            } else {
+                const data = await response.json();
+                toast.error(data.message || 'Upload failed.', 'Server Error');
+            }
+        } catch (error) {
+            toast.error(
+                `Network error: ${error.message}`,
+                'Connection Failed'
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div className="apstr-page">
@@ -550,7 +497,7 @@ const performSubmit = async () => {
                                         className="apstr-btn apstr-btn--submit" 
                                         disabled={isSubmitting}
                                     >
-                                        {isSubmitting ? 'Uploading...' : 'Upload'}
+                                        {isSubmitting ? 'Uploading...' : 'Upload Poster'}
                                     </button>
                                 </div>
                             </aside>

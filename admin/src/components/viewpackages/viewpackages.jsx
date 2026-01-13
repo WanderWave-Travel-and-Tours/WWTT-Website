@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Trash2, Eye, Calendar, MapPin, Tag, Clock, Search } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import PackageDetailModal from './PackageDetailModal';
 import PackagePagination from './PackagePagination';
 import PackageFilters from './PackageFilters';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal'; // Siguraduhin ang tamang path nito
+import { useToast } from '../toast/ToastManager'; // Path na binigay mo
 import './viewpackages.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,11 +17,17 @@ const ViewPackages = () => {
     const [filterCategory, setFilterCategory] = useState('ALL');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
+    
+    // Modal States
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedPackage, setSelectedPackage] = useState(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [packageToArchive, setPackageToArchive] = useState(null);
+
     const navigate = useNavigate();
+    const toast = useToast(); // Initialize Toast
     
-    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
+    const API_BASE_URL = 'http://localhost:5000/api/packages';
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -34,6 +41,7 @@ const ViewPackages = () => {
             }
         } catch (err) {
             console.error('Fetch error:', err);
+            toast.error("Failed to load packages. Please check your connection.");
         } finally {
             setLoading(false);
         }
@@ -41,51 +49,61 @@ const ViewPackages = () => {
 
     useEffect(() => {
         const isLoggedIn = localStorage.getItem('adminToken');
-        if (!isLoggedIn) navigate('/');
-        fetchPackages();
+        if (!isLoggedIn) {
+            navigate('/');
+        } else {
+            fetchPackages();
+        }
     }, [navigate]);
 
     // Helper function: PRIORITY - Database first, then Cloudinary
     const getImageUrl = (image) => {
         if (!image) return "https://via.placeholder.com/400x300?text=No+Image";
-        
-        // If already a full URL (Cloudinary), use it
-        if (image.startsWith("http")) {
-            return image;
-        }
-        
-        // DEFAULT: Try database/uploads folder first
-        return `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
+        if (image.startsWith("http")) return image;
+        return `http://localhost:5000/uploads/${image}`;
     };
 
     // Smart error handler: If database fails, try Cloudinary
     const handleImageError = (e, pkg) => {
-        e.target.onerror = null; // Prevent infinite loop
-        
-        // If imagePublicId exists, construct Cloudinary URL
+        e.target.onerror = null;
         if (pkg.imagePublicId && pkg.imagePublicId.trim() !== '') {
             const cloudinaryUrl = `https://res.cloudinary.com/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'dg0cmujxy'}/image/upload/${pkg.imagePublicId}`;
-            console.log(`📸 Fallback to Cloudinary: ${cloudinaryUrl}`);
             e.target.src = cloudinaryUrl;
         } else {
-            // No Cloudinary backup, show placeholder
-            console.log(`⚠️ No image found for: ${pkg.title}`);
             e.target.src = "https://via.placeholder.com/400x300?text=No+Image";
         }
     };
 
-    const handleArchive = async (packageId) => {
-        if (window.confirm("Are you sure you want to archive this package?")) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/${packageId}/archive`, { method: 'POST' });
-                const result = await response.json();
-                if (result.status === 'ok') {
-                    setPackages(prev => prev.filter(pkg => pkg._id !== packageId));
-                    alert("Package archived successfully!");
-                }
-            } catch (err) {
-                console.error("Error archiving:", err);
+    // Step 1: Trigger the Custom Modal instead of window.confirm
+    const openArchiveConfirmation = (pkg) => {
+        setPackageToArchive(pkg);
+        setShowConfirmModal(true);
+    };
+
+    // Step 2: The actual archive logic
+    const handleArchive = async () => {
+        if (!packageToArchive) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/${packageToArchive._id}/archive`, { 
+                method: 'POST' 
+            });
+            const result = await response.json();
+            
+            if (result.status === 'ok') {
+                setPackages(prev => prev.filter(pkg => pkg._id !== packageToArchive._id));
+                toast.success(`Package "${packageToArchive.title}" has been archived.`, "Archived Successfully");
+            } else {
+                toast.error("Something went wrong while archiving.");
             }
+        } catch (err) {
+            console.error("Error archiving:", err);
+            toast.error("Could not connect to the server.");
+        } finally {
+            setShowConfirmModal(false);
+            setPackageToArchive(null);
+            // Close detail modal if it was open
+            setShowDetailModal(false);
         }
     };
 
@@ -192,7 +210,7 @@ const ViewPackages = () => {
                                                         <button className="vt-action-btn vt-action-btn--view" onClick={() => handleViewDetails(pkg)}>
                                                             <Eye size={16} /><span>View</span>
                                                         </button>
-                                                        <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(pkg._id)}>
+                                                        <button className="vt-action-btn vt-action-btn--delete" onClick={() => openArchiveConfirmation(pkg)}>
                                                             <Trash2 size={16} /><span>Archive</span>
                                                         </button>
                                                     </div>
@@ -214,14 +232,25 @@ const ViewPackages = () => {
                 </div>
             </main>
 
+            {/* Modal para sa Detalye */}
             {showDetailModal && (
                 <PackageDetailModal
                     showModal={showDetailModal}
                     selectedPackage={selectedPackage}
                     setShowModal={setShowDetailModal}
-                    handleArchive={handleArchive}
+                    handleArchive={() => openArchiveConfirmation(selectedPackage)}
                 />
             )}
+
+            {/* Custom Confirmation Modal */}
+            <CustomConfirmModal
+                isOpen={showConfirmModal}
+                type="danger"
+                title="Confirm Archive"
+                message={`Are you sure you want to archive "${packageToArchive?.title}"? This will hide the package from public view.`}
+                onConfirm={handleArchive}
+                onCancel={() => setShowConfirmModal(false)}
+            />
         </div>
     );
 };

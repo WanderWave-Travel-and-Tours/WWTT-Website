@@ -348,7 +348,7 @@ export const PSAInquiryModal = ({
                         <span className="psam-doc-name">{doc.originalName}</span>
                         <span className="psam-doc-meta">{formatFileSize(doc.fileSize)} • Uploaded {formatDate(doc.uploadedAt)}</span>
                       </div>
-                      <a href={`https://wanderwaveph-backend.onrender.com${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="psam-btn psam-btn-ghost psam-btn-sm">
+                      <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noopener noreferrer" className="psam-btn psam-btn-ghost psam-btn-sm">
                         <TrendingUp size={14} /> View
                       </a>
                     </div>
