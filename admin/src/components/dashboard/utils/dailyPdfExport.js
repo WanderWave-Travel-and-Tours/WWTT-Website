@@ -2,13 +2,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../../../assets/Logo.png';
 
-export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], selectedDate = "", rawBookings = [], rawInquiries = []) => {
+export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], selectedDate = "") => {
     try {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
         const pageHeight = doc.internal.pageSize.height;
         
-        // --- CORPORATE COLORS ---
         const navyBlue = [0, 31, 63];
         const accentOrange = [255, 140, 66];
         const lightGrayBg = [245, 247, 250];
@@ -32,64 +31,6 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         
         addWatermark();
         
-        // --- CALCULATE DATA FOR SELECTED DATE ---
-        const reportDate = selectedDate || new Date().toISOString().split('T')[0];
-        const targetDate = new Date(reportDate);
-        targetDate.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(targetDate);
-        dayEnd.setHours(23, 59, 59, 999);
-
-        // Filter bookings and inquiries for selected date
-        const selectedDateBookings = rawBookings.filter(b => 
-            b.status === "confirmed" && 
-            new Date(b.createdAt) >= targetDate && 
-            new Date(b.createdAt) <= dayEnd
-        );
-
-        const selectedDateInquiries = rawInquiries.filter(i => 
-            i.status === "COMPLETED" && 
-            new Date(i.updatedAt) >= targetDate && 
-            new Date(i.updatedAt) <= dayEnd
-        );
-
-        // Calculate metrics for selected date
-        const dailyBookingsRevenue = selectedDateBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-        const dailyInquiriesRevenue = selectedDateInquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
-        const dailyTotalRevenue = dailyBookingsRevenue + dailyInquiriesRevenue;
-        const dailyBookingsCount = selectedDateBookings.length;
-        const dailyServicesCount = selectedDateInquiries.length;
-
-        // Financial metrics for selected date
-        const dailyFinancials = selectedDateBookings.reduce((acc, booking) => {
-            const pax = (booking.pax?.adult || 1) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
-            if (booking.sellerPrice && booking.markup) {
-                acc.totalSellerCost += booking.sellerPrice * pax;
-                acc.totalMarkup += booking.markup * pax;
-                acc.totalSales += booking.totalAmount || 0;
-            }
-            return acc;
-        }, { totalSellerCost: 0, totalMarkup: 0, totalSales: 0 });
-
-        // Top packages for selected date
-        const dailyPackageStats = {};
-        selectedDateBookings.forEach((b) => {
-            const pkg = b.packageName || "Unknown";
-            if (!dailyPackageStats[pkg]) dailyPackageStats[pkg] = { bookings: 0, revenue: 0 };
-            dailyPackageStats[pkg].bookings += 1;
-            dailyPackageStats[pkg].revenue += b.totalAmount || 0;
-        });
-
-        const dailyTopPackages = Object.entries(dailyPackageStats)
-            .sort((a, b) => b[1].revenue - a[1].revenue)
-            .slice(0, 5)
-            .map(([name, data]) => ({
-                name,
-                bookings: data.bookings,
-                revenue: `PHP ${data.revenue.toLocaleString()}`,
-                revenueValue: data.revenue
-            }));
-
-        // --- HEADER SECTION ---
         doc.setFillColor(255, 255, 255);
         doc.rect(0, 0, pageWidth, 35, 'F');
         
@@ -105,6 +46,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         
         doc.setFontSize(9);
         doc.setTextColor(80, 80, 80);
+        const reportDate = selectedDate || new Date().toISOString().split('T')[0];
         doc.text('Generated: ' + new Date().toLocaleDateString(), pageWidth - 14, 20, { align: 'right' });
         doc.text('Period: Daily Analytics (' + reportDate + ')', pageWidth - 14, 26, { align: 'right' });
         
@@ -113,6 +55,78 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.line(14, 32, pageWidth - 14, 32);
         
         let yPos = 42;
+        
+        // --- CALCULATE DAILY SPECIFIC DATA FROM RAW DATA ---
+        const targetDate = new Date(selectedDate);
+        targetDate.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(targetDate);
+        dayEnd.setHours(23, 59, 59, 999);
+        
+        const rawBookings = stats.rawBookings || [];
+        const rawInquiries = stats.rawInquiries || [];
+        
+        // Daily Bookings filtered by date
+        const dailyConfirmedBookings = rawBookings.filter(b => 
+            b.status === "confirmed" && 
+            new Date(b.createdAt) >= targetDate && 
+            new Date(b.createdAt) <= dayEnd
+        );
+        const dailyPendingBookings = rawBookings.filter(b => 
+            b.status === "pending" && 
+            new Date(b.createdAt) >= targetDate && 
+            new Date(b.createdAt) <= dayEnd
+        );
+        const dailyCancelledBookings = rawBookings.filter(b => 
+            b.status === "cancelled" && 
+            new Date(b.createdAt) >= targetDate && 
+            new Date(b.createdAt) <= dayEnd
+        );
+        const dailyTotalBookings = dailyConfirmedBookings.length + dailyPendingBookings.length + dailyCancelledBookings.length;
+        
+        // Daily Inquiries filtered by date
+        const dailyCompletedInquiries = rawInquiries.filter(i => 
+            i.status === "COMPLETED" && 
+            new Date(i.updatedAt) >= targetDate && 
+            new Date(i.updatedAt) <= dayEnd
+        );
+        const dailyPendingInquiries = rawInquiries.filter(i => 
+            i.status !== "COMPLETED" && 
+            new Date(i.updatedAt) >= targetDate && 
+            new Date(i.updatedAt) <= dayEnd
+        );
+        
+        // Daily Top Packages (for selected date only)
+        const dailyPackageStats = {};
+        dailyConfirmedBookings.forEach((b) => {
+            const pkg = b.packageName || "Unknown";
+            if (!dailyPackageStats[pkg]) dailyPackageStats[pkg] = { bookings: 0, revenue: 0 };
+            dailyPackageStats[pkg].bookings += 1;
+            dailyPackageStats[pkg].revenue += b.totalAmount || 0;
+        });
+        const dailyTopPackages = Object.entries(dailyPackageStats)
+            .sort((a, b) => b[1].revenue - a[1].revenue)
+            .slice(0, 5)
+            .map(([name, data]) => ({
+                name,
+                bookings: data.bookings,
+                revenue: `PHP ${data.revenue.toLocaleString()}`,
+                revenueValue: data.revenue
+            }));
+        
+        // --- FINANCIAL CALCULATIONS (FIXED FOR CONSISTENCY) ---
+        const currentDaily = dailyData[0] || { totalRevenue: 0, bookingsRevenue: 0, inquiriesRevenue: 0 };
+
+        // Dito natin sinisigurado na ang Gross Sales ay galing sa same source ng Revenue Source table
+        const totalGrossSales = currentDaily.bookingsRevenue || 0;
+
+        const dailyFinancialStats = dailyConfirmedBookings.reduce((acc, booking) => {
+            const pax = (booking.pax?.adult || 1) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
+            if (booking.sellerPrice && booking.markup) {
+                acc.totalSellerCost += booking.sellerPrice * pax;
+                acc.totalMarkup += booking.markup * pax;
+            }
+            return acc;
+        }, { totalSellerCost: 0, totalMarkup: 0 });
         
         // --- 1. EXECUTIVE SUMMARY (5-Card Layout) ---
         doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
@@ -139,7 +153,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(139, 92, 246); 
-        doc.text('P' + (dailyTotalRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text('P' + (currentDaily.totalRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
         
         // Card 2: Bookings Revenue
         xPos += bw + gap;
@@ -151,7 +165,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(59, 130, 246); 
-        doc.text('P' + (dailyBookingsRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text('P' + (currentDaily.bookingsRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
         
         // Card 3: Services Revenue
         xPos += bw + gap;
@@ -163,7 +177,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(16, 185, 129); 
-        doc.text('P' + (dailyInquiriesRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text('P' + (currentDaily.inquiriesRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
         
         // Card 4: Bookings Count
         xPos += bw + gap;
@@ -175,7 +189,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(navyBlue[0], navyBlue[1], navyBlue[2]);
-        doc.text(String(dailyBookingsCount || 0), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text(String(dailyTotalBookings), xPos + bw/2, yPos + 15, { align: 'center' });
         
         // Card 5: Services Done
         xPos += bw + gap;
@@ -187,7 +201,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(navyBlue[0], navyBlue[1], navyBlue[2]);
-        doc.text(String(dailyServicesCount || 0), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text(String(dailyCompletedInquiries.length), xPos + bw/2, yPos + 15, { align: 'center' });
         
         yPos += 28;
         
@@ -202,18 +216,18 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.text('2. REVENUE BREAKDOWN', 20, yPos + 5.5);
         yPos += 12;
         
-        const totalCombined = dailyTotalRevenue || 0;
+        const totalCombined = (currentDaily.totalRevenue || 0);
         const safeTotal = totalCombined === 0 ? 1 : totalCombined;
-        const bookingsShare = ((dailyBookingsRevenue || 0) / safeTotal * 100).toFixed(1);
-        const servicesShare = ((dailyInquiriesRevenue || 0) / safeTotal * 100).toFixed(1);
+        const bookingsShare = totalCombined === 0 ? 0 : ((currentDaily.bookingsRevenue || 0) / safeTotal * 100).toFixed(1);
+        const servicesShare = totalCombined === 0 ? 0 : ((currentDaily.inquiriesRevenue || 0) / safeTotal * 100).toFixed(1);
         
         autoTable(doc, {
             startY: yPos,
             head: [['Revenue Source', 'Amount (PHP)', 'Volume', 'Share']],
             body: [
-                ['Package Bookings', (dailyBookingsRevenue || 0).toLocaleString(), (dailyBookingsCount || 0) + ' bookings', bookingsShare + '%'],
-                ['Travel Services', (dailyInquiriesRevenue || 0).toLocaleString(), (dailyServicesCount || 0) + ' services', servicesShare + '%'],
-                ['TOTAL', totalCombined.toLocaleString(), ((dailyBookingsCount || 0) + (dailyServicesCount || 0)) + ' total', '100%']
+                ['Package Bookings', (currentDaily.bookingsRevenue || 0).toLocaleString(), (dailyConfirmedBookings.length) + ' bookings', bookingsShare + '%'],
+                ['Travel Services', (currentDaily.inquiriesRevenue || 0).toLocaleString(), (dailyCompletedInquiries.length) + ' services', servicesShare + '%'],
+                ['TOTAL', totalCombined.toLocaleString(), (dailyConfirmedBookings.length + dailyCompletedInquiries.length) + ' total', '100%']
             ],
             theme: 'plain',
             margin: { left: 14, right: 14 }, 
@@ -252,9 +266,9 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
             startY: yPos,
             head: [['Metric', 'Amount (PHP)', 'Note']],
             body: [
-                ['Total Gross Sales', (dailyFinancials.totalSales || 0).toLocaleString(), 'Total value of confirmed bookings'],
-                ['Total Seller Cost', (dailyFinancials.totalSellerCost || 0).toLocaleString(), 'Payable to suppliers/partners'],
-                ['Net Profit (Markup)', (dailyFinancials.totalMarkup || 0).toLocaleString(), 'Net Earnings from bookings']
+                ['Total Gross Sales', totalGrossSales.toLocaleString(), 'Matched with Revenue Source (Confirmed)'],
+                ['Total Seller Cost', (dailyFinancialStats.totalSellerCost || 0).toLocaleString(), 'Payable to suppliers/partners'],
+                ['Net Profit (Markup)', (dailyFinancialStats.totalMarkup || 0).toLocaleString(), 'Net Earnings from bookings']
             ],
             theme: 'plain',
             margin: { left: 14, right: 14 }, 
@@ -266,6 +280,9 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
                 2: { cellWidth: 'auto', textColor: [100, 100, 100], fontSize: 8 } 
             },
             didParseCell: function(data) {
+                if (data.row.index === 0 && data.section === 'body') {
+                    data.cell.styles.fillColor = [240, 247, 255]; // Light blue highlight for match
+                }
                 if (data.row.index === 2 && data.section === 'body') {
                     data.cell.styles.fillColor = greenBg; 
                     if (data.column.index === 1) {
@@ -294,30 +311,41 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.text('4. PERFORMANCE ANALYTICS', 20, yPos + 5.5);
         yPos += 12;
         
-        // Left Side: Revenue Trajectory
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
         doc.text('REVENUE TRAJECTORY (Selected Date)', 14, yPos + 5);
         
+        const dailyTrajectory = [{
+            label: reportDate,
+            bookingsRevenue: currentDaily.bookingsRevenue || 0,
+            inquiriesRevenue: currentDaily.inquiriesRevenue || 0,
+            totalRevenue: currentDaily.totalRevenue || 0
+        }];
+
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(60, 60, 60);
-        doc.setFont('helvetica', 'bold');
-        doc.text(reportDate + ':', 18, yPos + 12);
+        dailyTrajectory.forEach((data, i) => {
+            const br = 'P' + (data.bookingsRevenue).toLocaleString();
+            const sr = 'P' + (data.inquiriesRevenue).toLocaleString();
+            const tr = 'P' + (data.totalRevenue).toLocaleString();
+            
+            doc.setTextColor(60, 60, 60);
+            doc.setFont('helvetica', 'bold');
+            doc.text(data.label + ':', 18, yPos + 12 + (i * 5));
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(59, 130, 246);
+            doc.text('B: ' + br, 42, yPos + 12 + (i * 5));
+            
+            doc.setTextColor(16, 185, 129);
+            doc.text('S: ' + sr, 70, yPos + 12 + (i * 5));
+            
+            doc.setTextColor(139, 92, 246);
+            doc.setFont('helvetica', 'bold');
+            doc.text('T: ' + tr, 18, yPos + 17 + (i * 5)); 
+        });
         
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(59, 130, 246);
-        doc.text('B: P' + (dailyBookingsRevenue || 0).toLocaleString(), 42, yPos + 12);
-        
-        doc.setTextColor(16, 185, 129);
-        doc.text('S: P' + (dailyInquiriesRevenue || 0).toLocaleString(), 70, yPos + 12);
-        
-        doc.setTextColor(139, 92, 246);
-        doc.setFont('helvetica', 'bold');
-        doc.text('T: P' + (dailyTotalRevenue || 0).toLocaleString(), 18, yPos + 17);
-        
-        // Right Side: Status Breakdown for Selected Date
         const rcx = (pageWidth / 2) + 20;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -328,17 +356,18 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setTextColor(59, 130, 246);
         doc.text('BOOKINGS:', rcx + 5, yPos + 13);
         
-        const totalDailyB = dailyBookingsCount || 0;
-        const dailyCP = totalDailyB > 0 ? ((dailyBookingsCount / totalDailyB) * 100).toFixed(0) : 0;
+        const totalDailyB = dailyTotalBookings || 1;
+        const dailyCp = totalDailyB === 0 ? 0 : ((dailyConfirmedBookings.length) / totalDailyB * 100).toFixed(0);
+        const dailyPp = totalDailyB === 0 ? 0 : ((dailyPendingBookings.length) / totalDailyB * 100).toFixed(0);
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(72, 187, 120);
-        doc.text('Confirmed: ' + (dailyBookingsCount || 0) + ' (' + dailyCP + '%)', rcx + 7, yPos + 19);
+        doc.text('Confirmed: ' + (dailyConfirmedBookings.length) + ' (' + dailyCp + '%)', rcx + 7, yPos + 19);
         doc.setTextColor(234, 179, 8);
-        doc.text('Pending: 0 (0%)', rcx + 7, yPos + 24);
+        doc.text('Pending: ' + (dailyPendingBookings.length) + ' (' + dailyPp + '%)', rcx + 7, yPos + 24);
         doc.setTextColor(239, 68, 68);
-        doc.text('Cancelled: 0', rcx + 7, yPos + 29);
+        doc.text('Cancelled: ' + (dailyCancelledBookings.length), rcx + 7, yPos + 29);
         
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
@@ -347,9 +376,9 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(72, 187, 120);
-        doc.text('Completed: ' + (dailyServicesCount || 0), rcx + 7, yPos + 43);
+        doc.text('Completed: ' + (dailyCompletedInquiries.length), rcx + 7, yPos + 43);
         doc.setTextColor(234, 179, 8);
-        doc.text('Pending: 0', rcx + 7, yPos + 48);
+        doc.text('Pending: ' + (dailyPendingInquiries.length), rcx + 7, yPos + 48);
         
         yPos += 55;
         if (yPos > pageHeight - 60) {
@@ -372,9 +401,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         autoTable(doc, {
             startY: yPos,
             head: [['Package Name', 'Bookings', 'Revenue Generated']],
-            body: dailyTopPackages.length > 0 
-                ? dailyTopPackages.map(p => [p.name, String(p.bookings), p.revenue])
-                : [['No packages booked on this date', '0', 'PHP 0']],
+            body: dailyTopPackages.map(p => [p.name, String(p.bookings), p.revenue]),
             theme: 'plain',
             margin: { left: 14, right: 14 },
             headStyles: { fillColor: navyBlue, textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },

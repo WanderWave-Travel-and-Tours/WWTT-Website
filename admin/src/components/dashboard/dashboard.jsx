@@ -357,7 +357,8 @@ const Dashboard = () => {
   }, [customRange, rawBookings, rawInquiries]);
 
   // Handle PDF Export with Toast
-  const handleExportPDF = async () => {
+// Update the handleExportPDF function in dashboard.jsx
+const handleExportPDF = async () => {
     try {
         console.log('Starting PDF export...');
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -369,8 +370,15 @@ const Dashboard = () => {
             revenue: typeof pkg.revenue === 'string' ? pkg.revenue.replace('₱', 'PHP ') : pkg.revenue
         }));
         
+        // Add raw data to stats object for daily export
+        const statsWithRawData = {
+            ...stats,
+            rawBookings: rawBookings,
+            rawInquiries: rawInquiries
+        };
+        
         if (revenueViewMode === "daily") {
-            exportDailyToPDF(stats, dailyAnalyticsData, pdfTopPackages, dailyDate);
+            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate);
         } else if (revenueViewMode === "weekly") {
             exportWeeklyToPDF(stats, revenueBreakdown.daily, pdfTopPackages);
         } else if (revenueViewMode === "custom") {
@@ -419,7 +427,7 @@ const Dashboard = () => {
     } finally {
         setIsExportModalOpen(false);
     }
-  };
+};
 
   const handleSectionFilter = (section) => {
     setSelectedSection(section);
