@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Trash2, Eye, Calendar, User, Star, MessageSquare, HelpCircle } from 'lucide-react';
+import { Trash2, Eye, Calendar, User, Star, StarHalf, MessageSquare, HelpCircle } from 'lucide-react'; // ✅ Added StarHalf
 import Sidebar from '../sidebar/sidebar';
 import TestimonialDetailModal from './TestimonialDetailModal';
 import TestimonialPagination from './TestimonialPagination';
 import TestimonialFilters from './TestimonialFilters';
-import { useToast } from '../toast/ToastManager'; // Inimport ang Toast
+import { useToast } from '../toast/ToastManager'; 
 import './viewtestimonials.css';
 
-// Custom Confirm Modal Component (Reference from EditVisa.jsx)
+// Custom Confirm Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -52,7 +52,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewTestimonials = () => {
-    const toast = useToast(); // Initialize Toast
+    const toast = useToast(); 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -172,6 +172,12 @@ const ViewTestimonials = () => {
         });
     };
 
+    // ✅ HELPER: Format Rating (e.g., 4 => "4.0", 4.5 => "4.5")
+    const formatRating = (rating) => {
+        if (rating === undefined || rating === null) return '5.0'; // Default fallback
+        return Number(rating).toFixed(1);
+    };
+
     // FILTERING AND SORTING LOGIC
     const filteredTestimonials = testimonials
         .filter(testimonial => {
@@ -189,7 +195,6 @@ const ViewTestimonials = () => {
             
             return isNotArchived && matchesSearch && matchesSource;
         })
-        // ITO ANG DINAGDAG: Sort by date descending (Newest first)
         .sort((a, b) => {
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
@@ -280,12 +285,16 @@ const ViewTestimonials = () => {
                                                         </div>
                                                     </div>
                                                 </td>
+                                                
+                                                {/* ✅ UPDATED RATING CELL */}
                                                 <td>
                                                     <span className="vt-rating">
+                                                        {/* We use the Star icon as a badge symbol */}
                                                         <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                                                        5.0 Stars
+                                                        {formatRating(testimonial.rating)} Stars
                                                     </span>
                                                 </td>
+
                                                 <td>
                                                     <span className="vt-status vt-status--active">
                                                         <MessageSquare size={12} />

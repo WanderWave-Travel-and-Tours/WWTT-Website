@@ -4,7 +4,7 @@ import {
     X, User, Calendar, MessageSquare, Star, Edit, Trash2, 
     CheckCircle, ImageIcon, HelpCircle 
 } from 'lucide-react';
-import { useToast } from '../toast/ToastManager'; // In-import ang Toast
+import { useToast } from '../toast/ToastManager'; 
 import './TestimonialDetailModal.css';
 
 // --- CUSTOM CONFIRM MODAL COMPONENT (Based on EditVisa.jsx) ---
@@ -51,6 +51,12 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
   );
 };
 
+// ✅ HELPER: Format Rating (e.g., 4 => "4.0", 4.5 => "4.5")
+const formatRating = (rating) => {
+    if (rating === undefined || rating === null) return '5.0'; // Default
+    return Number(rating).toFixed(1);
+};
+
 const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -66,7 +72,7 @@ const TestimonialDetailModal = ({
     getImageUrl
 }) => {
     const navigate = useNavigate();
-    const toast = useToast(); // Hook para sa Toast notifications
+    const toast = useToast(); 
 
     // State para sa Confirmation Modal
     const [confirmConfig, setConfirmConfig] = useState({
@@ -96,7 +102,6 @@ const TestimonialDetailModal = ({
     };
 
     const handleArchiveClick = () => {
-        // Pinalitan ang window.confirm ng askConfirmation
         askConfirmation(
             "Archive Testimonial",
             `Are you sure you want to archive the testimonial of ${selectedTestimonial.customerName}?`,
@@ -196,7 +201,8 @@ const TestimonialDetailModal = ({
                                     <div className="tdm-box-icon yellow"><Star size={18} /></div>
                                     <div className="tdm-box-content">
                                         <label>RATING</label>
-                                        <p>5.0 / 5 Stars</p>
+                                        {/* ✅ DYNAMIC RATING DISPLAY */}
+                                        <p>{formatRating(selectedTestimonial.rating)} / 5 Stars</p>
                                     </div>
                                 </div>
                                 <div className="tdm-info-box">
