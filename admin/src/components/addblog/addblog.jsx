@@ -1,131 +1,21 @@
 import React, { useState, useEffect } from "react";
 import {
   Upload,
-  Trash2,
   FileText,
   User,
   Loader2,
-  X,
-  AlertTriangle,
-  HelpCircle,
 } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
 import { useNavigate } from "react-router-dom";
 import useAutoDraft from "../../hooks/useAutoDraft";
 import RestoreDraftModal from "../../components/RestoreDraftModal/RestoreDraftModal";
-import { useToast } from "../toast/ToastManager"; // Gagamitin ang Toast
+import { useToast } from "../toast/ToastManager"; 
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 import "./addblog.css";
-
-// --- INTEGRATED CUSTOM CONFIRM MODAL DESIGN FROM EDITVISA ---
-const CustomConfirmModal = ({
-  isOpen,
-  title,
-  message,
-  onConfirm,
-  onCancel,
-  type = "primary",
-}) => {
-  if (!isOpen) return null;
-  return (
-    <div
-      className="arc-confirm-overlay"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 11000,
-      }}
-    >
-      <div
-        className="arc-confirm-modal"
-        style={{
-          backgroundColor: "white",
-          padding: "2rem",
-          borderRadius: "12px",
-
-          maxWidth: "400px",
-          width: "90%",
-          textAlign: "center",
-          boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
-        }}
-      >
-        <div
-          style={{
-            marginBottom: "1rem",
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              padding: "1rem",
-              borderRadius: "50%",
-              backgroundColor: type === "danger" ? "#fee2e2" : "#e0f2fe",
-              color: type === "danger" ? "#ef4444" : "#0ea5e9",
-            }}
-          >
-            <AlertTriangle size={32} />
-          </div>
-        </div>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: "600",
-            marginBottom: "0.5rem",
-            color: "#1e293b",
-          }}
-        >
-          {title}
-        </h3>
-        <p
-          style={{ color: "#64748b", marginBottom: "2rem", lineHeight: "1.5" }}
-        >
-          {message}
-        </p>
-        <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
-          <button
-            onClick={onCancel}
-            style={{
-              padding: "0.75rem 1.5rem",
-              borderRadius: "8px",
-              border: "1px solid #e2e8f0",
-              backgroundColor: "white",
-              color: "#64748b",
-              fontWeight: "500",
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              padding: "0.75rem 1.5rem",
-              borderRadius: "8px",
-              border: "none",
-              backgroundColor: type === "danger" ? "#ef4444" : "#0ea5e9",
-              color: "white",
-              fontWeight: "500",
-              cursor: "pointer",
-            }}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const AddBlog = () => {
   const navigate = useNavigate();
-  const toast = useToast(); // Initialize Toast
+  const toast = useToast(); 
 
   // --- SIDEBAR LOGIC ---
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -146,7 +36,7 @@ const AddBlog = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- UPDATED CONFIRMATION MODAL STATE (ALIGNED WITH EDITVISA) ---
+  // --- CONFIRMATION MODAL STATE ---
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: "",
@@ -155,7 +45,7 @@ const AddBlog = () => {
     onConfirm: () => {},
   });
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com";
+  const API_BASE_URL = "http://localhost:5000";
 
   // =========================================================
   // ✅ AUTO-DRAFT LOGIC START
@@ -312,7 +202,7 @@ const AddBlog = () => {
       setImagePreview(objectUrl);
       toast.success(
         `Cover image "${file.name}" uploaded successfully!`,
-        "✅ Image Added"
+        "Image Added"
       );
     }
   };
@@ -320,13 +210,14 @@ const AddBlog = () => {
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    toast.info("Cover image removed.", "🗑️ Image Removed");
+    toast.info("Cover image removed.", "Image Removed");
   };
 
   const executeSubmit = async () => {
     setIsSubmitting(true);
+    setConfirmConfig((prev) => ({ ...prev, isOpen: false })); // Isara agad ang modal sa simula ng process
 
-    toast.info("Publishing blog post...", "📤 Please Wait", 2000);
+    toast.info("Publishing blog post...", "Please Wait", 2000);
 
     try {
       const formData = new FormData();
@@ -361,16 +252,10 @@ const AddBlog = () => {
       if (response.ok) {
         toast.success(
           `Blog post "${blogDetails.title}" has been published successfully!`,
-          "✅ Blog Published",
+          "Blog Published",
           5000
         );
         await clearDraft();
-
-        toast.info(
-          "Form cleared and ready for new blog entry.",
-          "🔄 Ready",
-          3000
-        );
 
         setBlogDetails({
           title: "",
@@ -381,24 +266,25 @@ const AddBlog = () => {
         });
         setImageFile(null);
         setImagePreview(null);
+        
+        toast.info("Form cleared and ready for new blog entry.", "Ready", 3000);
       } else {
         const errorMessage = result.message || "Unknown error occurred";
         toast.error(
           `Failed to publish blog: ${errorMessage}`,
-          "❌ Publish Failed",
+          "Publish Failed",
           5000
         );
       }
     } catch (error) {
-      console.error("❌ Network Error:", error);
+      console.error("Network Error:", error);
       toast.error(
-        `Unable to connect to server: ${error.message}. Please check if backend is running.`,
-        "❌ Connection Error",
+        `Unable to connect to server: ${error.message}.`,
+        "Connection Error",
         6000
       );
     } finally {
       setIsSubmitting(false);
-      setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
     }
   };
 
@@ -407,16 +293,10 @@ const AddBlog = () => {
     if (!blogDetails.title || !blogDetails.content || !imageFile) {
       toast.warning(
         "Please provide a title, content, and cover image.",
-        "⚠️ Incomplete Form"
+        "Incomplete Form"
       );
       return;
     }
-
-    toast.success(
-      "All fields validated successfully!",
-      "✅ Ready to Publish",
-      2000
-    );
 
     setConfirmConfig({
       isOpen: true,
@@ -428,11 +308,18 @@ const AddBlog = () => {
   };
 
   const handleCancel = () => {
+    // Kung walang laman ang form, wag na mag-confirm, clear lang
+    const isFormEmpty = !blogDetails.title && !blogDetails.content && !imageFile;
+    
+    if(isFormEmpty) {
+       toast.neutral("No changes to discard.", "Info");
+       return;
+    }
+
     setConfirmConfig({
       isOpen: true,
       title: "Discard Changes?",
-      message:
-        "Are you sure you want to cancel? All unsaved changes in this blog post will be lost.",
+      message: "Are you sure you want to cancel? All unsaved changes will be lost.",
       type: "danger",
       onConfirm: async () => {
         await clearDraft();
@@ -446,7 +333,7 @@ const AddBlog = () => {
         setImageFile(null);
         setImagePreview(null);
         setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
-        toast.info("Action cancelled and form cleared.", "❌ Cancelled");
+        toast.info("Action cancelled and form cleared.", "Cancelled");
       },
     });
   };
@@ -466,7 +353,6 @@ const AddBlog = () => {
         draftInfo={draftInfo}
       />
 
-      {/* ✅ APPLIED: CUSTOM CONFIRM MODAL DESIGN FROM EDITVISA */}
       <CustomConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
@@ -480,11 +366,7 @@ const AddBlog = () => {
 
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      <main
-        className={`blog-main ${
-          isSidebarCollapsed ? "blog-main--collapsed" : ""
-        }`}
-      >
+      <main className={`blog-main ${isSidebarCollapsed ? "blog-main--collapsed" : ""}`}>
         <div className="blog-container">
           <header className="blog-header">
             <div className="blog-header-content">
@@ -502,10 +384,7 @@ const AddBlog = () => {
                   <h2 className="blog-section-title">BLOG COVER IMAGE</h2>
                   {!imagePreview ? (
                     <div className="b-upload-zone-wrapper">
-                      <label
-                        className="b-upload-label-poster"
-                        style={{ cursor: "pointer" }}
-                      >
+                      <label className="b-upload-label-poster" style={{ cursor: "pointer" }}>
                         <input
                           type="file"
                           id="blog-upload"
@@ -516,13 +395,7 @@ const AddBlog = () => {
                         <div className="b-upload-icon-box">
                           <Upload size={32} />
                         </div>
-                        <p
-                          style={{
-                            fontWeight: "700",
-                            color: "#1e293b",
-                            margin: "0",
-                          }}
-                        >
+                        <p style={{ fontWeight: "700", color: "#1e293b", margin: "0" }}>
                           Click to upload cover image
                         </p>
                         <span style={{ fontSize: "12px", color: "#64748b" }}>
@@ -588,12 +461,8 @@ const AddBlog = () => {
                         value={blogDetails.category}
                         onChange={handleChange}
                       >
-                        <option value="" disabled>
-                          Select Category
-                        </option>
-                        <option value="Trending Stories">
-                          Trending Stories
-                        </option>
+                        <option value="" disabled>Select Category</option>
+                        <option value="Trending Stories">Trending Stories</option>
                         <option value="Travel Guide">Travel Guide</option>
                         <option value="News & Updates">News & Updates</option>
                         <option value="Promos">Latest Promos</option>
@@ -631,7 +500,6 @@ const AddBlog = () => {
               <aside className="blog-right">
                 <div className="blog-preview-card">
                   <span className="blog-preview-label">BLOG PREVIEW</span>
-
                   <div className="bp-card">
                     <div className="bp-image-wrapper">
                       {imagePreview ? (
@@ -642,17 +510,12 @@ const AddBlog = () => {
                         </div>
                       )}
                       {blogDetails.category && (
-                        <span className="bp-category-tag">
-                          {blogDetails.category}
-                        </span>
+                        <span className="bp-category-tag">{blogDetails.category}</span>
                       )}
                     </div>
 
                     <div className="bp-content">
-                      <h3 className="bp-title">
-                        {blogDetails.title || "Your Blog Title Here"}
-                      </h3>
-
+                      <h3 className="bp-title">{blogDetails.title || "Your Blog Title Here"}</h3>
                       <div className="bp-meta">
                         <div className="bp-meta-item">
                           <User size={12} />
@@ -662,13 +525,11 @@ const AddBlog = () => {
                           <span>• {currentDate}</span>
                         </div>
                       </div>
-
                       <p className="bp-excerpt">
                         {blogDetails.content
                           ? blogDetails.content.substring(0, 100) + "..."
                           : "Preview of your blog content will appear here..."}
                       </p>
-
                       <div className="bp-readmore">Read Article →</div>
                     </div>
                   </div>
@@ -690,8 +551,7 @@ const AddBlog = () => {
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="vb-spinner" size={18} />{" "}
-                        Processing...
+                        <Loader2 className="vb-spinner" size={18} /> Processing...
                       </>
                     ) : (
                       "Publish"

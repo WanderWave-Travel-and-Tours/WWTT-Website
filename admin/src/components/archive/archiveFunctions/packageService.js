@@ -1,4 +1,4 @@
-const API_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
+const API_URL = 'http://localhost:5000/api/packages';
 
 export const fetchArchivedPackages = async () => {
   try {

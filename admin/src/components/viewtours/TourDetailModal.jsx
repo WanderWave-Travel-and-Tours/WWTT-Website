@@ -118,7 +118,7 @@ const TourDetailModal = ({ tour, close, onArchive, navigate }) => {
                     <div className="tdm-body">
                         <div className="tdm-section-card dashed-border">
                             <img 
-                                src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} 
+                                src={`http://localhost:5000/uploads/${tour.image}`} 
                                 className="tdm-customer-image" 
                                 alt={tour.destination} 
                                 onError={(e) => { e.target.src = 'https://via.placeholder.com/400x200?text=No+Image+Available'; }}

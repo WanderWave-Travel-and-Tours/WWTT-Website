@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { HelpCircle } from "lucide-react"; 
 import Sidebar from "../sidebar/sidebar";
 import ServiceImageUpload from "./ServiceImageUpload";
 import ServiceDetails from "./ServiceDetails";
@@ -8,56 +7,15 @@ import ServiceRequirements from "./ServiceRequirements";
 import ServicePreview from "./ServicePreview";
 import "./addservice.css";
 
-// ✅ Imports for Draft Functionality
+// Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
-// ✅ Import Toast Manager
+// Import Toast Manager
 import { useToast } from "../toast/ToastManager";
 
-// ✅ Custom Confirm Modal Component
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="arc-confirm-overlay" style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 11000
-    }}>
-      <div className="arc-confirm-modal" style={{
-        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
-        </div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button 
-            onClick={onCancel}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={onConfirm}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-              color: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+// Import Custom Confirm Modal
+import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
 
 const AddService = () => {
   const navigate = useNavigate();
@@ -70,7 +28,7 @@ const AddService = () => {
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ Confirmation Modal State
+  // Confirmation Modal State
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: "",
@@ -111,7 +69,7 @@ const AddService = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
 
   // =========================================================
-  // ✅ AUTO-DRAFT LOGIC START
+  // AUTO-DRAFT LOGIC START
   // =========================================================
 
   const fileToBase64 = (file) => {
@@ -230,17 +188,17 @@ const AddService = () => {
   const handleRestoreDraft = () => {
       restoreDraft();
       setShowRestoreModal(false);
-      toast.success('Your service draft has been restored successfully!', '✅ Draft Restored', 3000);
+      toast.success('Your service draft has been restored successfully!', 'Draft Restored', 3000);
   };
 
   const handleDiscardDraft = async () => {
       await discardDraft();
       setShowRestoreModal(false);
-      toast.info('Draft has been discarded.', '🗑️ Discarded');
+      toast.info('Draft has been discarded.', 'Discarded');
   };
 
   // =========================================================
-  // ✅ AUTO-DRAFT LOGIC END
+  // AUTO-DRAFT LOGIC END
   // =========================================================
 
   const updateField = (field, value) => {
@@ -257,7 +215,7 @@ const AddService = () => {
         "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
         async () => {
             await clearDraft();
-            toast.info('Action cancelled. Redirecting...', '❌ Cancelled');
+            toast.info('Action cancelled. Redirecting...', 'Cancelled');
             navigate(-1);
         },
         "danger"
@@ -268,12 +226,12 @@ const AddService = () => {
     e.preventDefault();
 
     if (!file) {
-        toast.warning('Please upload an image for the service.', '⚠️ Missing Image');
+        toast.warning('Please upload an image for the service.', 'Missing Image');
         return;
     }
 
     if (!formState.title || !formState.description || !formState.price) {
-        toast.warning('Please fill in all required fields (Title, Description, Price).', '⚠️ Incomplete Form');
+        toast.warning('Please fill in all required fields (Title, Description, Price).', 'Incomplete Form');
         return;
     }
 
@@ -286,7 +244,7 @@ const AddService = () => {
 
   const performSubmit = async () => {
     setIsSubmitting(true);
-    const loadingToast = toast.info('Publishing service...', '📤 Please Wait', 0);
+    const loadingToastId = toast.info('Publishing service...', 'Please Wait', 0);
 
     const processedRequirements = formState.requirements.filter(
         (item) => item.trim().length > 0
@@ -317,7 +275,7 @@ const AddService = () => {
     }
 
     try {
-        const response = await fetch("https://wanderwaveph-backend.onrender.com/api/services", {
+        const response = await fetch("http://localhost:5000/api/services", {
             method: "POST",
             body: formData,
         });
@@ -326,11 +284,10 @@ const AddService = () => {
         if (response.ok) {
             toast.success(
                 `Service "${formState.title}" has been published successfully!`,
-                '✅ Service Published',
+                'Service Published',
                 5000
             );
 
-            // ✅ TANGGALIN ANG REDIRECTION: Mananatili sa page pero ire-reset ang form
             await clearDraft();
 
             // Reset Form Fields
@@ -349,16 +306,15 @@ const AddService = () => {
             setFile(null);
             setPreviewUrl(null);
             
-            // Focus back to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
         } else {
             const errorMessage = data.message || 'Unknown error occurred';
-            toast.error(`Failed to save service: ${errorMessage}`, '❌ Save Failed');
+            toast.error(`Failed to save service: ${errorMessage}`, 'Save Failed');
         }
     } catch (error) {
-        console.error('❌ Network Error:', error);
-        toast.error(`Unable to connect to server. Please check your connection.`, '❌ Connection Error');
+        console.error('Network Error:', error);
+        toast.error(`Unable to connect to server. Please check your connection.`, 'Connection Error');
     } finally {
         setIsSubmitting(false);
     }

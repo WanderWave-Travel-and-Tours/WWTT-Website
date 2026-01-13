@@ -801,7 +801,7 @@ router.post('/:id/create-balance-payment', async (req, res) => {
 
     const axios = require('axios');
     
-    const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-balance-intent', {
+    const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-balance-intent', {
       bookingId: booking._id,
       amount: booking.remainingBalance
     });

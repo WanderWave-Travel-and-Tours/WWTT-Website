@@ -17,12 +17,19 @@ import {
   Save,
 } from "lucide-react";
 
-const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/services";
+// Inimport ang Toast Hook at Custom Modal base sa iyong file directory
+import { useToast } from "../toast/ToastManager";
+import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
+
+const API_BASE_URL = "http://localhost:5000/api/services";
 
 const EditService = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast(); // Hook para sa toast notifications
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false); // State para sa modal
 
   // Standard categories list
   const STANDARD_CATEGORIES = ['TRAVEL', 'DOCUMENTATION', 'FINANCIAL'];
@@ -68,8 +75,6 @@ const EditService = () => {
         if (response.ok && result.success) {
           const data = result.data;
 
-          // LOGIC: Check if the category from DB is one of the standard ones
-          // If NOT standard, set dropdown to 'OTHER' and put value in 'otherCategory'
           let categoryState = "";
           let otherCategoryState = "";
 
@@ -93,14 +98,16 @@ const EditService = () => {
 
           const imgUrl = data.image.startsWith("http")
             ? data.image
-            : `https://wanderwaveph-backend.onrender.com/uploads/${data.image}`;
+            : `http://localhost:5000/uploads/${data.image}`;
           setCurrentImage(imgUrl);
         } else {
           setError("Service not found.");
+          toast.error("Hindi nahanap ang service details.", "Fetch Error");
         }
       } catch (err) {
         console.error("Fetch error:", err);
         setError("Network error.");
+        toast.error("Nagkaroon ng problema sa koneksyon sa server.", "Network Error");
       } finally {
         setLoading(false);
       }
@@ -119,19 +126,25 @@ const EditService = () => {
     if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+      toast.info("Na-update ang image preview.", "System");
     }
   };
 
-  const handleSubmit = async (e) => {
+  // Papalitan ang dating handleSubmit. Ito muna ang tatawagin ng form.
+  const handleOpenModal = (e) => {
     e.preventDefault();
+    setShowConfirmModal(true);
+  };
+
+  // Ito ang actual na function na mag-a-update sa database kapag kinonfirm sa Modal
+  const handleConfirmSubmit = async () => {
+    setShowConfirmModal(false); // Isara ang modal
     setSubmitting(true);
 
     try {
       const data = new FormData();
       data.append("title", formData.title);
       
-      // LOGIC: If 'OTHER' is selected, send the text from 'otherCategory' input
-      // Otherwise, send the selected dropdown value
       const finalCategory = formData.category === "OTHER" 
         ? formData.otherCategory 
         : formData.category;
@@ -153,14 +166,15 @@ const EditService = () => {
       });
 
       if (response.ok) {
-        alert("Service updated successfully!");
-        navigate("/view-services");
+        toast.success("Matagumpay na na-update ang service!", "Success");
+        // Bigyan ng kaunting oras ang toast bago mag-navigate
+        setTimeout(() => navigate("/view-services"), 1500);
       } else {
-        alert("Failed to update.");
+        toast.error("Bigo sa pag-update ng service.", "Error");
       }
     } catch (err) {
       console.error(err);
-      alert("Network error.");
+      toast.error("Nagkaroon ng network error.", "Error");
     } finally {
       setSubmitting(false);
     }
@@ -168,15 +182,8 @@ const EditService = () => {
 
   const getIconComponent = (iconName) => {
     const icons = {
-      Briefcase,
-      Plane,
-      BookOpen,
-      Hotel,
-      FileText,
-      Calendar,
-      Ship,
-      HeartHandshake,
-      ShieldCheck,
+      Briefcase, Plane, BookOpen, Hotel, FileText, 
+      Calendar, Ship, HeartHandshake, ShieldCheck,
     };
     const Icon = icons[iconName] || Briefcase;
     return <Icon size={20} />;
@@ -185,15 +192,8 @@ const EditService = () => {
   if (loading) {
     return (
       <div className="editservice-page">
-        <Sidebar
-          isCollapsed={isSidebarCollapsed}
-          toggleSidebar={toggleSidebar}
-        />
-        <main
-          className={`editservice-main ${
-            isSidebarCollapsed ? "editservice-main--collapsed" : ""
-          }`}
-        >
+        <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+        <main className={`editservice-main ${isSidebarCollapsed ? "editservice-main--collapsed" : ""}`}>
           <div className="editservice-loading">
             <div className="editservice-spinner"></div>
             <p>Loading service details...</p>
@@ -207,11 +207,7 @@ const EditService = () => {
     <div className="editservice-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      <main
-        className={`editservice-main ${
-          isSidebarCollapsed ? "editservice-main--collapsed" : ""
-        }`}
-      >
+      <main className={`editservice-main ${isSidebarCollapsed ? "editservice-main--collapsed" : ""}`}>
         <div className="editservice-container">
           <header className="editservice-header">
             <div className="editservice-header-content">
@@ -230,13 +226,11 @@ const EditService = () => {
             </div>
           </header>
 
-          <form onSubmit={handleSubmit} className="editservice-form">
+          <form onSubmit={handleOpenModal} className="editservice-form">
             {/* SECTION 1: VISUALS */}
             <div className="editservice-section">
               <h2 className="editservice-section-title">SERVICE VISUALS</h2>
-
               <div className="editservice-form-grid">
-                {/* Image Upload */}
                 <div className="editservice-form-group editservice-form-group--full">
                   <label className="editservice-label">Service Image</label>
                   <div className="editservice-upload-area">
@@ -247,15 +241,9 @@ const EditService = () => {
                       accept="image/*"
                       onChange={handleImageChange}
                     />
-                    <label
-                      htmlFor="serviceImageUpload"
-                      className="editservice-upload-label"
-                    >
+                    <label htmlFor="serviceImageUpload" className="editservice-upload-label">
                       <div className="editservice-image-preview">
-                        <img
-                          src={imagePreview || currentImage}
-                          alt="Service Preview"
-                        />
+                        <img src={imagePreview || currentImage} alt="Service Preview" />
                         <div className="editservice-image-overlay">
                           <Upload size={32} />
                           <span>Click to change image</span>
@@ -265,19 +253,14 @@ const EditService = () => {
                   </div>
                 </div>
 
-                {/* Icon Selector */}
                 <div className="editservice-form-group editservice-form-group--full">
                   <label className="editservice-label">Display Icon</label>
                   <div className="editservice-icon-grid">
                     {iconOptions.map((iconName) => (
                       <div
                         key={iconName}
-                        className={`editservice-icon-option ${
-                          formData.icon === iconName ? "selected" : ""
-                        }`}
-                        onClick={() =>
-                          setFormData({ ...formData, icon: iconName })
-                        }
+                        className={`editservice-icon-option ${formData.icon === iconName ? "selected" : ""}`}
+                        onClick={() => setFormData({ ...formData, icon: iconName })}
                       >
                         {getIconComponent(iconName)}
                         <span>{iconName}</span>
@@ -291,9 +274,7 @@ const EditService = () => {
             {/* SECTION 2: DETAILS */}
             <div className="editservice-section">
               <h2 className="editservice-section-title">SERVICE INFORMATION</h2>
-
               <div className="editservice-form-grid">
-                {/* Title */}
                 <div className="editservice-form-group">
                   <label className="editservice-label">Service Title *</label>
                   <input
@@ -307,7 +288,6 @@ const EditService = () => {
                   />
                 </div>
 
-                {/* Status */}
                 <div className="editservice-form-group">
                   <label className="editservice-label">Status *</label>
                   <select
@@ -321,7 +301,6 @@ const EditService = () => {
                   </select>
                 </div>
 
-                {/* Category */}
                 <div className="editservice-form-group">
                   <label className="editservice-label">Category</label>
                   <select
@@ -331,32 +310,28 @@ const EditService = () => {
                     required
                     className="editservice-select"
                   >
-                    <option value="" disabled>
-                      Select a category
-                    </option>
+                    <option value="" disabled>Select a category</option>
                     <option value="TRAVEL">TRAVEL</option>
                     <option value="DOCUMENTATION">DOCUMENTATION</option>
                     <option value="FINANCIAL">FINANCIAL</option>
                     <option value="OTHER">OTHER</option>
                   </select>
 
-                  {/* CUSTOM CATEGORY INPUT */}
                   {formData.category === "OTHER" && (
                     <div className="other-input-container" style={{ marginTop: '10px' }}>
                       <input
                         type="text"
                         name="otherCategory"
-                        value={formData.otherCategory} // Added value binding
+                        value={formData.otherCategory}
                         placeholder="Please specify category"
                         onChange={handleChange}
-                        required={formData.category === "OTHER"} // Required only if OTHER is selected
+                        required={formData.category === "OTHER"}
                         className="editservice-input other-input"
                       />
                     </div>
                   )}
                 </div>
 
-                {/* Price */}
                 <div className="editservice-form-group">
                   <label className="editservice-label">Price (₱)</label>
                   <input
@@ -370,7 +345,6 @@ const EditService = () => {
                   />
                 </div>
 
-                {/* Order */}
                 <div className="editservice-form-group">
                   <label className="editservice-label">Display Order</label>
                   <input
@@ -383,7 +357,6 @@ const EditService = () => {
                   />
                 </div>
 
-                {/* Description */}
                 <div className="editservice-form-group editservice-form-group--full">
                   <label className="editservice-label">Description</label>
                   <textarea
@@ -398,7 +371,6 @@ const EditService = () => {
               </div>
             </div>
 
-            {/* STICKY FOOTER ACTIONS */}
             <div className="editservice-form-actions">
               <button
                 type="button"
@@ -412,18 +384,22 @@ const EditService = () => {
                 className="editservice-btn editservice-btn--submit"
                 disabled={submitting}
               >
-                {submitting ? (
-                  "Saving..."
-                ) : (
-                  <>
-                    <Save size={18} /> Update Service
-                  </>
-                )}
+                {submitting ? "Saving..." : <><Save size={18} /> Update Service</>}
               </button>
             </div>
           </form>
         </div>
       </main>
+
+      {/* RENDER NG CUSTOM MODAL */}
+      <CustomConfirmModal
+        isOpen={showConfirmModal}
+        title="Confirm Updates"
+        message={`Sigurado ka bang gusto mong i-save ang mga pagbabago sa "${formData.title}"?`}
+        onConfirm={handleConfirmSubmit}
+        onCancel={() => setShowConfirmModal(false)}
+        type="primary"
+      />
     </div>
   );
 };
