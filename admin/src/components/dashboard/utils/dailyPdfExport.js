@@ -435,7 +435,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         
         doc.save(`WanderWave_Daily_Report_${reportDate}.pdf`);
         
-    } catch (error) {
+    } catch (error) { 
         console.error('PDF Error:', error);
         alert('PDF Export Error: ' + error.message);
     }
