@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -13,18 +13,87 @@ import {
   TrendingUp, 
   Calendar, 
   Activity, 
-  PhilippinePeso // Updated import
+  PhilippinePeso,
+  Filter,
+  ChevronDown,
+  Clock 
 } from "lucide-react";
 import "./RevenueAnalytics.css";
 
-const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
-  const [viewMode, setViewMode] = useState("daily"); // 'daily' or 'monthly'
+const RevenueAnalytics = ({ 
+  stats, 
+  revenueBreakdown, 
+  onCustomRangeChange, 
+  customData, 
+  onViewModeChange,
+  onDailyDateChange, 
+  dailyData 
+}) => {
+  const [viewMode, setViewMode] = useState("weekly"); 
+  const [dateInputs, setDateInputs] = useState({ start: "", end: "" });
+  const [selectedDailyDate, setSelectedDailyDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Separate states para sa dalawang dropdown
+  const [isDailyDropdownOpen, setIsDailyDropdownOpen] = useState(false);
+  const [isCustomDropdownOpen, setIsCustomDropdownOpen] = useState(false);
+  
+  const dailyDropdownRef = useRef(null);
+  const customDropdownRef = useRef(null);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dailyDropdownRef.current && !dailyDropdownRef.current.contains(event.target)) {
+        setIsDailyDropdownOpen(false);
+      }
+      if (customDropdownRef.current && !customDropdownRef.current.contains(event.target)) {
+        setIsCustomDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Sync viewMode with Parent (Dashboard)
+  useEffect(() => {
+    if (onViewModeChange) {
+      onViewModeChange(viewMode);
+    }
+  }, [viewMode, onViewModeChange]);
+
+  // Handle Daily Date Selection inside dropdown
+  const handleDailyDateChange = (e) => {
+    const newDate = e.target.value;
+    setSelectedDailyDate(newDate);
+  };
+
+  const applyDailyFilter = () => {
+    setViewMode("daily");
+    if (onDailyDateChange) {
+      onDailyDateChange(selectedDailyDate);
+    }
+    setIsDailyDropdownOpen(false);
+  };
+
+  const handleApplyCustomRange = () => {
+    if (dateInputs.start && dateInputs.end) {
+      setViewMode("custom");
+      onCustomRangeChange(dateInputs.start, dateInputs.end);
+      setIsCustomDropdownOpen(false); 
+    } else {
+      alert("Please select both start and end dates.");
+    }
+  };
+
+  // Logic for data selection
   const data = viewMode === "daily" 
-    ? revenueBreakdown.daily 
-    : revenueBreakdown.monthly;
+    ? dailyData 
+    : viewMode === "weekly" 
+      ? revenueBreakdown.daily 
+      : viewMode === "monthly" 
+        ? revenueBreakdown.monthly 
+        : customData;
 
-  // Custom Tooltip
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -50,28 +119,102 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
       {/* Header */}
       <div className="rev-header">
         <div className="rev-header-left">
-          <h2 className="rev-title">Revenue Analytics</h2>
+          <h2 className="rev-title">Revenue Analytics</h2> 
           <p className="rev-subtitle">
             Comprehensive revenue tracking from bookings and services
           </p>
         </div>
         
-        {/* Toggle Buttons */}
-        <div className="rev-toggle-group">
-          <button
-            className={`rev-toggle-btn ${viewMode === "daily" ? "active" : ""}`}
-            onClick={() => setViewMode("daily")}
-          >
-            <Calendar size={16} />
-            Daily (7 Days)
-          </button>
-          <button
-            className={`rev-toggle-btn ${viewMode === "monthly" ? "active" : ""}`}
-            onClick={() => setViewMode("monthly")}
-          >
-            <Activity size={16} />
-            Monthly (6 Months)
-          </button>
+        {/* Toggle Buttons & Dropdowns */}
+        <div className="rev-controls-group">
+          <div className="rev-toggle-group">
+            
+            {/* DAILY DROPDOWN (Updated to Dropdown Style) */}
+            <div className="rev-dropdown-container" ref={dailyDropdownRef}>
+              <button
+                className={`rev-toggle-btn ${viewMode === "daily" ? "active" : ""}`}
+                onClick={() => setIsDailyDropdownOpen(!isDailyDropdownOpen)}
+              >
+                <Clock size={16} />
+                Daily
+                <ChevronDown size={14} className={`rev-chevron ${isDailyDropdownOpen ? 'open' : ''}`} />
+              </button>
+
+              {isDailyDropdownOpen && (
+                <div className="rev-dropdown-menu">
+                  <div className="rev-dropdown-header">Select Specific Date</div>
+                  <div className="rev-calendar-inputs">
+                    <div className="calendar-field">
+                      <label>Date</label>
+                      <input 
+                        type="date" 
+                        value={selectedDailyDate}
+                        onChange={handleDailyDateChange}
+                      />
+                    </div>
+                  </div>
+                  <button className="rev-dropdown-apply" onClick={applyDailyFilter}>
+                    View Daily
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              className={`rev-toggle-btn ${viewMode === "weekly" ? "active" : ""}`}
+              onClick={() => setViewMode("weekly")}
+            >
+              <Calendar size={16} />
+              Weekly
+            </button>
+
+            <button
+              className={`rev-toggle-btn ${viewMode === "monthly" ? "active" : ""}`}
+              onClick={() => setViewMode("monthly")}
+            >
+              <Activity size={16} />
+              Monthly
+            </button>
+            
+            {/* Custom Range Dropdown */}
+            <div className="rev-dropdown-container" ref={customDropdownRef}>
+              <button
+                className={`rev-toggle-btn rev-custom-btn ${viewMode === "custom" ? "active" : ""}`}
+                onClick={() => setIsCustomDropdownOpen(!isCustomDropdownOpen)}
+              >
+                <Filter size={16} />
+                Custom Range
+                <ChevronDown size={14} className={`rev-chevron ${isCustomDropdownOpen ? 'open' : ''}`} />
+              </button>
+
+              {isCustomDropdownOpen && (
+                <div className="rev-dropdown-menu">
+                  <div className="rev-dropdown-header">Select Date Range</div>
+                  <div className="rev-calendar-inputs">
+                    <div className="calendar-field">
+                      <label>From</label>
+                      <input 
+                        type="date" 
+                        value={dateInputs.start}
+                        onChange={(e) => setDateInputs({...dateInputs, start: e.target.value})}
+                      />
+                    </div>
+                    <div className="calendar-field">
+                      <label>To</label>
+                      <input 
+                        type="date" 
+                        value={dateInputs.end}
+                        onChange={(e) => setDateInputs({...dateInputs, end: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <button className="rev-dropdown-apply" onClick={handleApplyCustomRange}>
+                    Apply Range
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -164,7 +307,7 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
             <XAxis 
-              dataKey={viewMode === "daily" ? "date" : "month"} 
+              dataKey={viewMode === "monthly" ? "month" : "date"} 
               axisLine={false} 
               tickLine={false} 
               tick={{fill: '#64748b', fontSize: 12}} 
@@ -200,7 +343,7 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
       {/* Revenue Comparison */}
       <div className="rev-comparison">
         <div className="rev-comparison-item">
-          <span className="rev-comparison-label">Average Daily Revenue</span>
+          <span className="rev-comparison-label">Average Revenue</span>
           <span className="rev-comparison-value">
             ₱{(stats.combinedTotalRevenue / 30).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </span>
@@ -209,14 +352,14 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">Bookings Share</span>
           <span className="rev-comparison-value">
-            {((stats.totalRevenue / stats.combinedTotalRevenue) * 100).toFixed(1)}%
+            {stats.combinedTotalRevenue > 0 ? ((stats.totalRevenue / stats.combinedTotalRevenue) * 100).toFixed(1) : 0}%
           </span>
         </div>
         <div className="rev-comparison-divider"></div>
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">Services Share</span>
           <span className="rev-comparison-value">
-            {((stats.totalInquiriesRevenue / stats.combinedTotalRevenue) * 100).toFixed(1)}%
+            {stats.combinedTotalRevenue > 0 ? ((stats.totalInquiriesRevenue / stats.combinedTotalRevenue) * 100).toFixed(1) : 0}%
           </span>
         </div>
       </div>
