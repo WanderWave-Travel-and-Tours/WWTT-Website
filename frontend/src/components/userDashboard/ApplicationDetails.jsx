@@ -3,8 +3,7 @@ import DocumentsSection from './DocumentsSection';
 import UploadedDocumentsView from './UploadedDocumentsView';
 import './ApplicationDetails.css';
 
-// ⭐ USE ENVIRONMENT VARIABLE FOR BACKEND URL
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://wanderwaveph-backend.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const ApplicationDetails = ({ 
     inquiry, 
