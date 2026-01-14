@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Trash2, Eye, Calendar, User, Star, StarHalf, MessageSquare, HelpCircle } from 'lucide-react'; // ✅ Added StarHalf
+import { Trash2, Eye, Calendar, User, Star, StarHalf, MessageSquare, HelpCircle } from 'lucide-react'; 
 import Sidebar from '../sidebar/sidebar';
 import TestimonialDetailModal from './TestimonialDetailModal';
 import TestimonialPagination from './TestimonialPagination';
@@ -60,8 +60,15 @@ const ViewTestimonials = () => {
 
     const [testimonials, setTestimonials] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // --- FILTERS STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterSource, setFilterSource] = useState('ALL');
+    
+    // ✅ ADDED: Date Filter State
+    const [dateStart, setDateStart] = useState('');
+    const [dateEnd, setDateEnd] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -111,7 +118,25 @@ const ViewTestimonials = () => {
                 throw new Error('Failed to fetch testimonials');
             }
             const data = await response.json();
-            setTestimonials(Array.isArray(data) ? data : []);
+            
+            // ✅ Format data with proper date fields
+            const processedData = (Array.isArray(data) ? data : []).map(testimonial => {
+                // Safe Date Parsing
+                const dateObj = testimonial.createdAt ? new Date(testimonial.createdAt) : null;
+                const isValidDate = dateObj && !isNaN(dateObj);
+
+                return {
+                    ...testimonial,
+                    // Format for Filtering (YYYY-MM-DD)
+                    filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
+                    // Format for Display (Jan 25, 2024)
+                    displayDateAdded: isValidDate ? dateObj.toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric'
+                    }) : 'N/A'
+                };
+            });
+            
+            setTestimonials(processedData);
             setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching testimonials:', error);
@@ -165,35 +190,39 @@ const ViewTestimonials = () => {
         return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}/uploads/${imagePath}`;
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric'
-        });
-    };
-
-    // ✅ HELPER: Format Rating (e.g., 4 => "4.0", 4.5 => "4.5")
     const formatRating = (rating) => {
-        if (rating === undefined || rating === null) return '5.0'; // Default fallback
+        if (rating === undefined || rating === null) return '5.0'; 
         return Number(rating).toFixed(1);
     };
 
-    // FILTERING AND SORTING LOGIC
+    // ✅ ENHANCED FILTER LOGIC
     const filteredTestimonials = testimonials
         .filter(testimonial => {
+            // 1. Archive Check
             const isNotArchived = 
                 testimonial.isArchive === "No" || 
                 testimonial.isArchive === "0" || 
                 !testimonial.isArchive || 
                 testimonial.isArchive === false;
 
+            // 2. Search Filter
             const matchesSearch = 
                 (testimonial.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (testimonial.feedback || "").toLowerCase().includes(searchTerm.toLowerCase());
                 
+            // 3. Source Filter
             const matchesSource = filterSource === 'ALL' || testimonial.source === filterSource;
             
-            return isNotArchived && matchesSearch && matchesSource;
+            // 4. ✅ Date Range Filter
+            let matchesDate = true;
+            if (dateStart) {
+                matchesDate = matchesDate && testimonial.filterDate >= dateStart;
+            }
+            if (dateEnd) {
+                matchesDate = matchesDate && testimonial.filterDate <= dateEnd;
+            }
+            
+            return isNotArchived && matchesSearch && matchesSource && matchesDate;
         })
         .sort((a, b) => {
             return new Date(b.createdAt) - new Date(a.createdAt);
@@ -222,10 +251,15 @@ const ViewTestimonials = () => {
                         </button>
                     </header>
 
+                    {/* ✅ PASSED NEW PROPS TO FILTERS */}
                     <TestimonialFilters
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
                         filterSource={filterSource} setFilterSource={setFilterSource}
                         sourceOptions={sourceOptions} getFilterClassName={getFilterClassName}
+                        dateStart={dateStart}
+                        setDateStart={setDateStart}
+                        dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
@@ -247,7 +281,9 @@ const ViewTestimonials = () => {
                                         <tr>
                                             <th>CUSTOMER</th>
                                             <th>FEEDBACK</th>
-                                            <th>SOURCE & DATE</th>
+                                            {/* ✅ NEW COLUMN */}
+                                            <th>DATE ADDED</th>
+                                            <th>SOURCE</th>
                                             <th>RATING</th>
                                             <th>STATUS</th>
                                             <th>ACTIONS</th>
@@ -273,28 +309,25 @@ const ViewTestimonials = () => {
                                                         {testimonial.feedback?.substring(0, 80)}...
                                                     </span>
                                                 </td>
+                                                {/* ✅ DATE ADDED DISPLAY */}
                                                 <td>
-                                                    <div className="vt-meta-cell">
-                                                        <div className="vt-source">
-                                                            <MessageSquare size={14} />
-                                                            <span>{testimonial.source}</span>
-                                                        </div>
-                                                        <div className="vt-date">
-                                                            <Calendar size={14} />
-                                                            <span>{formatDate(testimonial.createdAt)}</span>
-                                                        </div>
+                                                    <div className="vt-date-added">
+                                                        <Calendar size={14} />
+                                                        <span>{testimonial.displayDateAdded}</span>
                                                     </div>
                                                 </td>
-                                                
-                                                {/* ✅ UPDATED RATING CELL */}
+                                                <td>
+                                                    <div className="vt-source">
+                                                        <MessageSquare size={14} />
+                                                        <span>{testimonial.source}</span>
+                                                    </div>
+                                                </td>
                                                 <td>
                                                     <span className="vt-rating">
-                                                        {/* We use the Star icon as a badge symbol */}
                                                         <Star size={12} fill="#f59e0b" color="#f59e0b" />
                                                         {formatRating(testimonial.rating)} Stars
                                                     </span>
                                                 </td>
-
                                                 <td>
                                                     <span className="vt-status vt-status--active">
                                                         <MessageSquare size={12} />

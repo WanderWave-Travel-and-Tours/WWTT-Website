@@ -6,12 +6,11 @@ import TourPagination from './TourPagination';
 import TourFilters from './TourFilters';
 import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
-// Ginamit ang useToast mula sa ToastManager base sa iyong request
 import { useToast } from '../toast/ToastManager';
 
 const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/tours';
 
-// --- CUSTOM CONFIRMATION MODAL COMPONENT (Reference from EditVisa.jsx) ---
+// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -56,20 +55,27 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewTours = () => {
-    const toast = useToast(); // Initialize toast management
+    const toast = useToast();
     const navigate = useNavigate();
     
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // --- FILTERS STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('ALL');
+    
+    // ✅ ADDED: Date Filter State
+    const [dateStart, setDateStart] = useState('');
+    const [dateEnd, setDateEnd] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedTour, setSelectedTour] = useState(null);
 
-    // --- MODAL STATE (New) ---
+    // --- MODAL STATE ---
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
         title: "",
@@ -80,7 +86,6 @@ const ViewTours = () => {
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-    // --- HELPER PARA SA CONFIRMATION (Reference from EditVisa.jsx) ---
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -101,7 +106,24 @@ const ViewTours = () => {
                 const response = await fetch(`${API_BASE_URL}/all`);
                 const result = await response.json();
                 if (result.status === 'ok') {
-                    const activeTours = result.data.filter(tour => tour.isArchive === 'No');
+                    // Filter active tours and format dates
+                    const activeTours = result.data
+                        .filter(tour => tour.isArchive === 'No')
+                        .map(tour => {
+                            // ✅ Handle Date Parsing safely
+                            const dateObj = tour.createdAt ? new Date(tour.createdAt) : null;
+                            const isValidDate = dateObj && !isNaN(dateObj);
+
+                            return {
+                                ...tour,
+                                // Format for Logic (YYYY-MM-DD)
+                                filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
+                                // Format for Display (Jan 25, 2024)
+                                displayDate: isValidDate ? dateObj.toLocaleDateString('en-US', {
+                                    year: 'numeric', month: 'short', day: 'numeric'
+                                }) : 'N/A'
+                            };
+                        });
                     setTours(activeTours);
                 }
             } catch (err) {
@@ -114,7 +136,6 @@ const ViewTours = () => {
         fetchTours();
     }, [toast]);
 
-    // Pinalitan ang window.confirm ng askConfirmation
     const handleArchiveClick = (id) => {
         askConfirmation(
             "Archive Tour",
@@ -146,11 +167,25 @@ const ViewTours = () => {
 
     const categories = ['ALL', ...new Set(tours.map(t => t.category))];
 
+    // ✅ ENHANCED FILTER LOGIC
     const filteredTours = tours.filter(tour => {
+        // 1. Search Filter
         const matchesSearch = tour.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              tour.destination.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // 2. Category Filter
         const matchesCategory = filterCategory === 'ALL' || tour.category === filterCategory;
-        return matchesSearch && matchesCategory;
+        
+        // 3. ✅ Date Range Filter
+        let matchesDate = true;
+        if (dateStart) {
+            matchesDate = matchesDate && tour.filterDate >= dateStart;
+        }
+        if (dateEnd) {
+            matchesDate = matchesDate && tour.filterDate <= dateEnd;
+        }
+
+        return matchesSearch && matchesCategory && matchesDate;
     });
 
     const currentTours = filteredTours.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -168,10 +203,15 @@ const ViewTours = () => {
                         <button className="vt-btn vt-btn--add" onClick={() => navigate('/add-tour')}>+ Add New Tour</button>
                     </header>
 
+                    {/* ✅ FILTERS (Dropdowns & Dates) */}
                     <TourFilters 
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
                         filterCategory={filterCategory} setFilterCategory={setFilterCategory}
                         categories={categories}
+                        dateStart={dateStart}
+                        setDateStart={setDateStart}
+                        dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
@@ -187,6 +227,8 @@ const ViewTours = () => {
                                             <th>TOUR PACKAGE</th>
                                             <th>DESTINATION</th>
                                             <th>DURATION/CAT</th>
+                                            {/* ✅ NEW COLUMN */}
+                                            <th>DATE ADDED</th>
                                             <th>PRICE</th>
                                             <th>ACTIONS</th>
                                         </tr>
@@ -197,7 +239,7 @@ const ViewTours = () => {
                                                 <td>
                                                     <div className="vt-customer-cell">
                                                         <div className="vt-image-preview">
-                                                            <img src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} alt="" />
+                                                            <img src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} alt="" onError={(e) => e.target.src="https://via.placeholder.com/150"} />
                                                         </div>
                                                         <span className="vt-customer-name">{tour.title.toUpperCase()}</span>
                                                     </div>
@@ -207,6 +249,13 @@ const ViewTours = () => {
                                                     <div className="vt-meta-cell">
                                                         <div className="vt-source"><Clock size={14}/> {tour.duration}</div>
                                                         <div className="vt-date"><Tag size={14}/> {tour.category}</div>
+                                                    </div>
+                                                </td>
+                                                {/* ✅ DATE ADDED DATA */}
+                                                <td>
+                                                    <div className="vt-date-added">
+                                                        <Calendar size={14} />
+                                                        <span>{tour.displayDate}</span>
                                                     </div>
                                                 </td>
                                                 <td><span className="vt-rating">₱{tour.price?.toLocaleString()}</span></td>

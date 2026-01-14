@@ -8,7 +8,7 @@ import PosterFilters from './PosterFilters';
 import { useToast } from '../toast/ToastManager';
 import './viewposter.css';
 
-// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
+// 🔥 HELPER FUNCTION - GET ADMIN DATA
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -22,7 +22,7 @@ const getAdminData = () => {
     }
 };
 
-// 🔥 Custom Confirm Modal Component (Reference from EditVisa.jsx)
+// 🔥 Custom Confirm Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -75,8 +75,15 @@ const ViewPoster = () => {
 
     const [posters, setPosters] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // --- FILTERS STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
+    
+    // ✅ ADDED: Date Filter State
+    const [dateStart, setDateStart] = useState('');
+    const [dateEnd, setDateEnd] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -120,10 +127,26 @@ const ViewPoster = () => {
         try {
             const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/posters');
             
-            // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
-            const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
-            setPosters(nonArchivedPosters);
+            // FILTER & FORMAT: Process data
+            const processedPosters = response.data
+                .filter(poster => poster.isArchive === "No")
+                .map(poster => {
+                    // Safe Date Parsing for CreatedAt
+                    const dateObj = poster.createdAt ? new Date(poster.createdAt) : null;
+                    const isValidDate = dateObj && !isNaN(dateObj);
+
+                    return {
+                        ...poster,
+                        // ✅ Format for Filtering (YYYY-MM-DD)
+                        filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
+                        // ✅ Format for Display (Jan 25, 2024)
+                        displayDateAdded: isValidDate ? dateObj.toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'short', day: 'numeric'
+                        }) : 'N/A'
+                    };
+                });
             
+            setPosters(processedPosters);
             setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching posters:', error);
@@ -133,7 +156,7 @@ const ViewPoster = () => {
         }
     };
 
-    // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
+    // ARCHIVE FUNCTION
     const handleArchive = async (id, title) => {
         askConfirmation(
             "Archive Poster?",
@@ -162,7 +185,7 @@ const ViewPoster = () => {
         );
     };
 
-    // 🔥🔥🔥 UPDATED: TOGGLE STATUS WITH ADMIN DATA 🔥🔥🔥
+    // TOGGLE STATUS FUNCTION
     const toggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         
@@ -206,11 +229,25 @@ const ViewPoster = () => {
         return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     };
 
+    // ✅ ENHANCED FILTER LOGIC
     const filteredPosters = posters.filter(poster => {
+        // 1. Search Filter
         const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (poster.description && poster.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        // 2. Status Filter
         const matchesStatus = filterStatus === 'ALL' || poster.status === filterStatus;
-        return matchesSearch && matchesStatus;
+        
+        // 3. ✅ Date Range Filter (Using filterDate)
+        let matchesDate = true;
+        if (dateStart) {
+            matchesDate = matchesDate && poster.filterDate >= dateStart;
+        }
+        if (dateEnd) {
+            matchesDate = matchesDate && poster.filterDate <= dateEnd;
+        }
+
+        return matchesSearch && matchesStatus && matchesDate;
     });
 
     const indexOfLastPoster = currentPage * itemsPerPage;
@@ -240,6 +277,7 @@ const ViewPoster = () => {
                         </button>
                     </header>
 
+                    {/* ✅ PASSED NEW PROPS TO FILTERS */}
                     <PosterFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -247,6 +285,10 @@ const ViewPoster = () => {
                         setFilterStatus={setFilterStatus}
                         statusOptions={statusOptions}
                         getFilterClassName={getFilterClassName}
+                        dateStart={dateStart}
+                        setDateStart={setDateStart}
+                        dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
@@ -275,6 +317,8 @@ const ViewPoster = () => {
                                             <th>PREVIEW</th>
                                             <th>TITLE</th>
                                             <th>DESCRIPTION</th>
+                                            {/* ✅ NEW DATE ADDED COLUMN */}
+                                            <th>DATE ADDED</th>
                                             <th>START DATE</th>
                                             <th>END DATE</th>
                                             <th>STATUS</th>
@@ -289,6 +333,7 @@ const ViewPoster = () => {
                                                         <img 
                                                             src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
                                                             alt={poster.title}
+                                                            onError={(e) => e.target.src="https://via.placeholder.com/150"}
                                                         />
                                                     </div>
                                                 </td>
@@ -299,6 +344,13 @@ const ViewPoster = () => {
                                                     <span className="vp-desc">
                                                         {poster.description || 'No description provided'}
                                                     </span>
+                                                </td>
+                                                {/* ✅ DATE ADDED DISPLAY */}
+                                                <td>
+                                                    <div className="vp-date-added">
+                                                        <Calendar size={14} />
+                                                        <span>{poster.displayDateAdded}</span>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <div className="vp-date">

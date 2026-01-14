@@ -124,6 +124,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
+            tourType, minPax, // ✅ Added for Edit
             userEmail, adminId, changes
         } = req.body;
         
@@ -131,7 +132,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
 
-        // ✅ Validate tourType and minPax
+        // ✅ Validate tourType and minPax for Edit
         if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
             return res.status(400).json({ status: 'error', error: 'Minimum pax is required for joiner tours' });
         }

@@ -5,7 +5,7 @@ const {
     addBlog, 
     getAllBlogs, 
     getBlogById, 
-    getArchivedBlogs, // Idagdag ito
+    getArchivedBlogs, 
     deleteBlog, 
     updateBlog 
 } = require('../controller/blogController');
@@ -20,9 +20,8 @@ const upload = multer({ storage: storage });
 router.post('/add', uploadBlog.single('image'), addBlog);
 router.put('/update/:id', uploadBlog.single('image'), updateBlog);
 
-//router.post('/add', upload.single('image'), addBlog);
 router.get('/', getAllBlogs);
-router.get('/archived', getArchivedBlogs); // Route para sa archived items
+router.get('/archived', getArchivedBlogs);
 router.get('/:id', getBlogById);
 router.delete('/:id', deleteBlog); 
 router.put('/:id', upload.single('image'), updateBlog); 

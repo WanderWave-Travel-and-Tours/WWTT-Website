@@ -44,7 +44,7 @@ const PackageSchema = new mongoose.Schema({
     inclusions: [{ type: String }],
     itinerary: [ItineraryItemSchema],
     isArchive: { type: String, default: 'No' } 
-});
+}, { timestamps: true }); // ✅ ENSURES createdAt & updatedAt are created
 
 PackageSchema.pre('save', function(next) {
     this.price = this.sellerPrice + this.markup;

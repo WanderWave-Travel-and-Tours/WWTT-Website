@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Trash2, Eye, Calendar, MapPin, Tag, Clock, Search } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
@@ -12,8 +11,13 @@ const ViewPackages = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [packages, setPackages] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // --- FILTERS STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('ALL');
+    const [dateStart, setDateStart] = useState('');
+    const [dateEnd, setDateEnd] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -30,7 +34,16 @@ const ViewPackages = () => {
             const response = await fetch(`${API_BASE_URL}/all`);
             const result = await response.json();
             if (result.status === 'ok') {
-                setPackages(result.data);
+                const packagesWithDate = result.data.map(pkg => ({
+                    ...pkg,
+                    // ✅ FOR FILTERING: YYYY-MM-DD format (para sa comparison)
+                    filterDate: pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString('en-CA') : '',
+                    // ✅ FOR DISPLAY: Readable format (e.g., Oct 24, 2023)
+                    displayDate: pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric'
+                    }) : 'N/A'
+                }));
+                setPackages(packagesWithDate);
             }
         } catch (err) {
             console.error('Fetch error:', err);
@@ -45,31 +58,18 @@ const ViewPackages = () => {
         fetchPackages();
     }, [navigate]);
 
-    // Helper function: PRIORITY - Database first, then Cloudinary
     const getImageUrl = (image) => {
         if (!image) return "https://via.placeholder.com/400x300?text=No+Image";
-        
-        // If already a full URL (Cloudinary), use it
-        if (image.startsWith("http")) {
-            return image;
-        }
-        
-        // DEFAULT: Try database/uploads folder first
+        if (image.startsWith("http")) return image;
         return `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
     };
 
-    // Smart error handler: If database fails, try Cloudinary
     const handleImageError = (e, pkg) => {
-        e.target.onerror = null; // Prevent infinite loop
-        
-        // If imagePublicId exists, construct Cloudinary URL
+        e.target.onerror = null;
         if (pkg.imagePublicId && pkg.imagePublicId.trim() !== '') {
             const cloudinaryUrl = `https://res.cloudinary.com/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'dg0cmujxy'}/image/upload/${pkg.imagePublicId}`;
-            console.log(`📸 Fallback to Cloudinary: ${cloudinaryUrl}`);
             e.target.src = cloudinaryUrl;
         } else {
-            // No Cloudinary backup, show placeholder
-            console.log(`⚠️ No image found for: ${pkg.title}`);
             e.target.src = "https://via.placeholder.com/400x300?text=No+Image";
         }
     };
@@ -96,11 +96,25 @@ const ViewPackages = () => {
 
     const categoryOptions = ['ALL', ...new Set(packages.map(p => p.category))];
 
+    // ✅ ENHANCED FILTER LOGIC
     const filteredPackages = packages.filter(pkg => {
+        // 1. Search Filter
         const matchesSearch = pkg.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             pkg.destination.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // 2. Category Filter
         const matchesCategory = filterCategory === 'ALL' || pkg.category === filterCategory;
-        return matchesSearch && matchesCategory;
+        
+        // 3. ✅ Date Range Filter (Using filterDate YYYY-MM-DD)
+        let matchesDate = true;
+        if (dateStart) {
+            matchesDate = matchesDate && pkg.filterDate >= dateStart;
+        }
+        if (dateEnd) {
+            matchesDate = matchesDate && pkg.filterDate <= dateEnd;
+        }
+
+        return matchesSearch && matchesCategory && matchesDate;
     });
 
     const currentPackages = filteredPackages.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -128,6 +142,10 @@ const ViewPackages = () => {
                         filterCategory={filterCategory}
                         setFilterCategory={setFilterCategory}
                         categoryOptions={categoryOptions}
+                        dateStart={dateStart}
+                        setDateStart={setDateStart}
+                        dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
@@ -149,7 +167,8 @@ const ViewPackages = () => {
                                         <tr>
                                             <th>PACKAGE</th>
                                             <th>DESTINATION</th>
-                                            <th>DURATION & CAT</th>
+                                            <th>OVERVIEW</th>
+                                            <th>DATE ADDED</th> 
                                             <th>PRICE</th>
                                             <th>STATUS</th>
                                             <th>ACTIONS</th>
@@ -179,6 +198,13 @@ const ViewPackages = () => {
                                                     <div className="vt-meta-cell">
                                                         <div className="vt-source"><Clock size={14} /><span>{pkg.duration}</span></div>
                                                         <div className="vt-date"><Tag size={14} /><span>{pkg.category}</span></div>
+                                                    </div>
+                                                </td>
+                                                {/* ✅ NEW DATE CELL */}
+                                                <td>
+                                                    <div className="vt-date-added">
+                                                        <Calendar size={14} />
+                                                        <span>{pkg.displayDate}</span>
                                                     </div>
                                                 </td>
                                                 <td>
