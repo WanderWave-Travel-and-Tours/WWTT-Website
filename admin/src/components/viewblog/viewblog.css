@@ -1,13 +1,9 @@
-/* ================================================= */
-/* GLOBAL WRAPPERS & LAYOUT (vb- prefix)            */
-/* ================================================= */
-
+/* VIEW BLOG - BASE UI (vb- prefix used for consistency) */
 .vb-page {
     display: flex;
     min-height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
     width: 100%;
-    position: relative;
 }
 
 .vb-main {
@@ -45,6 +41,7 @@
     justify-content: space-between;
     min-height: 180px;
     gap: 24px;
+    z-index: 1;
 }
 
 .vb-header::before {
@@ -185,13 +182,15 @@
     font-size: 15px;
 }
 
-/* --- TABLE WRAPPER & TABLE - UPDATED: Removed overflow:hidden, added rounded top only --- */
+/* --- TABLE WRAPPER & TABLE --- */
 .vb-table-wrapper {
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 12px 12px 0 0;
-    overflow: visible;
+    overflow: visible; 
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    position: relative;
+    z-index: 1;
 }
 
 .vb-table {
@@ -201,6 +200,8 @@
 
 .vb-table thead {
     background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
+    position: relative;
+    z-index: 2;
 }
 
 .vb-table th {
@@ -264,28 +265,19 @@
     font-size: 13px;
     line-height: 1.5;
     
-    /* Ginagawa nitong responsive ang width base sa space ng table */
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Hanggang 2 lines lang ang ipapakita */
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;  
     overflow: hidden;
     text-overflow: ellipsis;
     
-    /* Para hindi masyadong malapad sa desktop pero kusa ring liliit sa mobile */
     max-width: 250px; 
     min-width: 150px;
     word-break: break-word;
 }
 
-/* Siguraduhin na ang TD ng excerpt ay hindi fixed width */
 .vb-table td:nth-child(3) {
     max-width: 300px;
-}
-
-.vb-meta-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
 }
 
 .vb-author {
@@ -304,19 +296,33 @@
     flex-shrink: 0;
 }
 
-.vb-date {
+/* Date Added Cell Style */
+.vb-date-added {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #64748b;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    background: #f8fafc;
+    padding: 6px 12px;
+    border-radius: 6px;
+    width: fit-content;
+    border: 1px solid #e2e8f0;
 }
 
-.vb-date svg {
-    width: 14px;
-    height: 14px;
+.vb-date-added svg {
     color: #94a3b8;
-    flex-shrink: 0;
+}
+
+/* ✅ NEW: Special style for Scheduled Date */
+.vb-date-scheduled {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #ffedd5;
+}
+.vb-date-scheduled svg {
+    color: #fb923c;
 }
 
 .vb-category {
@@ -339,6 +345,7 @@
     height: 12px;
 }
 
+/* STATUS BADGES */
 .vb-status {
     display: inline-flex;
     align-items: center;
@@ -361,6 +368,13 @@
     background: #f1f5f9;
     color: #64748b;
     border: 1px solid #cbd5e1;
+}
+
+/* ✅ NEW: Scheduled Status Style */
+.vb-status--scheduled {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fcd34d;
 }
 
 .vb-status svg {
@@ -391,7 +405,6 @@
     background: white;
 }
 
-/* VIEW BUTTON - White default, Navy on hover */
 .vb-action-btn--view {
     color: #0f172a;
     border-color: #e2e8f0;
@@ -404,7 +417,6 @@
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
 }
 
-/* DELETE BUTTON - White always, no hover background change */
 .vb-action-btn--delete {
     color: #0f172a;
     border-color: #e2e8f0;
@@ -541,10 +553,9 @@
     }
 }
 
-/* Responsiveness for Table */
 @media (max-width: 1200px) {
     .vb-excerpt {
         max-width: 180px;
-        -webkit-line-clamp: 1; /* Isang line na lang kapag sumisikip ang screen */
+        -webkit-line-clamp: 1;
     }
 }

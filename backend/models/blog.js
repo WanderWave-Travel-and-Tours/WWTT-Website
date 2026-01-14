@@ -23,14 +23,17 @@ const blogSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Published', 'Draft'],
+        enum: ['Published', 'Draft', 'Scheduled'], // ✅ Added 'Scheduled'
         default: 'Published'
+    },
+    scheduledAt: {
+        type: Date, // ✅ New field for schedule date
+        default: null
     },
     imagePublicId: {
         type: String,
         default: ''
     },
-    // New Field Added
     isArchive: {
         type: String,
         enum: ['Yes', 'No'],

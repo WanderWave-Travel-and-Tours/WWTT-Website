@@ -7,7 +7,11 @@ const PosterFilters = ({
     setSearchTerm, 
     filterStatus, 
     setFilterStatus, 
-    statusOptions
+    statusOptions,
+    dateStart,
+    setDateStart,
+    dateEnd,
+    setDateEnd
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -36,48 +40,75 @@ const PosterFilters = ({
                 </div>
                 
                 <div className="poster-controls-group">
-                    {/* MIDDLE: Status Dropdown */}
-                    <div className="poster-filter-container">
-                        <label>Status:</label>
-                        <div className="poster-select-wrapper">
-                            <button 
-                                className="poster-select-btn"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                                <span className="poster-select-label">{getSelectedLabel()}</span>
-                                <ChevronDown 
-                                    size={14} 
-                                    className={`poster-select-icon ${isDropdownOpen ? 'poster-select-icon--open' : ''}`}
-                                />
-                            </button>
-
-                            {isDropdownOpen && (
-                                <>
-                                    <div 
-                                        className="poster-dropdown-overlay" 
-                                        onClick={() => setIsDropdownOpen(false)}
+                    {/* MIDDLE: Filters */}
+                    <div className="poster-filters-row">
+                        
+                        {/* Status Dropdown */}
+                        <div className="poster-filter-item">
+                            <label>Status:</label>
+                            <div className="poster-select-wrapper">
+                                <button 
+                                    className="poster-select-btn"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <span className="poster-select-label">{getSelectedLabel()}</span>
+                                    <ChevronDown 
+                                        size={14} 
+                                        className={`poster-select-icon ${isDropdownOpen ? 'poster-select-icon--open' : ''}`}
                                     />
-                                    <div className="poster-dropdown-menu">
-                                        {statusOptions.map((status) => (
-                                            <button
-                                                key={status}
-                                                className={`poster-dropdown-item ${
-                                                    filterStatus === status ? 'poster-dropdown-item--active' : ''
-                                                }`}
-                                                onClick={() => handleStatusSelect(status)}
-                                            >
-                                                <span className="poster-dropdown-label">
-                                                    {status === 'ALL' ? 'All Posters' : status}
-                                                </span>
-                                                {filterStatus === status && (
-                                                    <span className="poster-dropdown-check">✓</span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <>
+                                        <div 
+                                            className="poster-dropdown-overlay" 
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        />
+                                        <div className="poster-dropdown-menu">
+                                            {statusOptions.map((status) => (
+                                                <button
+                                                    key={status}
+                                                    className={`poster-dropdown-item ${
+                                                        filterStatus === status ? 'poster-dropdown-item--active' : ''
+                                                    }`}
+                                                    onClick={() => handleStatusSelect(status)}
+                                                >
+                                                    <span className="poster-dropdown-label">
+                                                        {status === 'ALL' ? 'All Posters' : status}
+                                                    </span>
+                                                    {filterStatus === status && (
+                                                        <span className="poster-dropdown-check">✓</span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
+
+                        {/* ✅ NEW: Date Range Filter */}
+                        <div className="poster-filter-item">
+                            <label>Date:</label>
+                            <div className="poster-date-group">
+                                <input 
+                                    type="date" 
+                                    className="poster-date-input"
+                                    value={dateStart}
+                                    onChange={(e) => setDateStart(e.target.value)}
+                                    title="Start Date"
+                                />
+                                <span className="poster-date-separator">-</span>
+                                <input 
+                                    type="date" 
+                                    className="poster-date-input"
+                                    value={dateEnd}
+                                    onChange={(e) => setDateEnd(e.target.value)}
+                                    title="End Date"
+                                />
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* RIGHT: Search Box */}

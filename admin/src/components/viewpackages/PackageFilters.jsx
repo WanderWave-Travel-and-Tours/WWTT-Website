@@ -2,7 +2,17 @@ import React, { useState } from 'react';
 import { Search, Filter, ChevronDown } from 'lucide-react';
 import './PackageFilters.css';
 
-const PackageFilters = ({ searchTerm, setSearchTerm, filterCategory, setFilterCategory, categoryOptions }) => {
+const PackageFilters = ({ 
+    searchTerm, 
+    setSearchTerm, 
+    filterCategory, 
+    setFilterCategory, 
+    categoryOptions,
+    dateStart,
+    setDateStart,
+    dateEnd,
+    setDateEnd
+}) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const handleCategorySelect = (category) => {
@@ -30,48 +40,75 @@ const PackageFilters = ({ searchTerm, setSearchTerm, filterCategory, setFilterCa
                 </div>
                 
                 <div className="pkg-controls-group">
-                    {/* MIDDLE: Category Dropdown */}
-                    <div className="pkg-filter-container">
-                        <label>Category:</label>
-                        <div className="pkg-select-wrapper">
-                            <button 
-                                className="pkg-select-btn"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                                <span className="pkg-select-label">{getSelectedLabel()}</span>
-                                <ChevronDown 
-                                    size={14} 
-                                    className={`pkg-select-icon ${isDropdownOpen ? 'pkg-select-icon--open' : ''}`}
-                                />
-                            </button>
-
-                            {isDropdownOpen && (
-                                <>
-                                    <div 
-                                        className="pkg-dropdown-overlay" 
-                                        onClick={() => setIsDropdownOpen(false)}
+                    {/* MIDDLE: Filters */}
+                    <div className="pkg-filters-row">
+                        
+                        {/* Category Filter */}
+                        <div className="pkg-filter-item">
+                            <label>Category:</label>
+                            <div className="pkg-select-wrapper">
+                                <button 
+                                    className="pkg-select-btn"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <span className="pkg-select-label">{getSelectedLabel()}</span>
+                                    <ChevronDown 
+                                        size={14} 
+                                        className={`pkg-select-icon ${isDropdownOpen ? 'pkg-select-icon--open' : ''}`}
                                     />
-                                    <div className="pkg-dropdown-menu">
-                                        {categoryOptions.map((category) => (
-                                            <button
-                                                key={category}
-                                                className={`pkg-dropdown-item ${
-                                                    filterCategory === category ? 'pkg-dropdown-item--active' : ''
-                                                }`}
-                                                onClick={() => handleCategorySelect(category)}
-                                            >
-                                                <span className="pkg-dropdown-label">
-                                                    {category === 'ALL' ? 'All Categories' : category}
-                                                </span>
-                                                {filterCategory === category && (
-                                                    <span className="pkg-dropdown-check">✓</span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <>
+                                        <div 
+                                            className="pkg-dropdown-overlay" 
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        />
+                                        <div className="pkg-dropdown-menu">
+                                            {categoryOptions.map((category) => (
+                                                <button
+                                                    key={category}
+                                                    className={`pkg-dropdown-item ${
+                                                        filterCategory === category ? 'pkg-dropdown-item--active' : ''
+                                                    }`}
+                                                    onClick={() => handleCategorySelect(category)}
+                                                >
+                                                    <span className="pkg-dropdown-label">
+                                                        {category === 'ALL' ? 'All Categories' : category}
+                                                    </span>
+                                                    {filterCategory === category && (
+                                                        <span className="pkg-dropdown-check">✓</span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
+
+                        {/* ✅ NEW: Date Range Filter */}
+                        <div className="pkg-filter-item">
+                            <label>Date:</label>
+                            <div className="pkg-date-group">
+                                <input 
+                                    type="date" 
+                                    className="pkg-date-input"
+                                    value={dateStart}
+                                    onChange={(e) => setDateStart(e.target.value)}
+                                    title="Start Date"
+                                />
+                                <span className="pkg-date-separator">-</span>
+                                <input 
+                                    type="date" 
+                                    className="pkg-date-input"
+                                    value={dateEnd}
+                                    onChange={(e) => setDateEnd(e.target.value)}
+                                    title="End Date"
+                                />
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* RIGHT: Search Box */}

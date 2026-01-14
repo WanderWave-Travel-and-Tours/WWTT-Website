@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Eye, MapPin, Users, Home, CheckCircle, HelpCircle, X } from 'lucide-react';
+import { Archive, Eye, MapPin, Users, Home, CheckCircle, HelpCircle, X, Calendar } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import ViewHotelModal from './ViewHotelModal';
 import HotelPagination from './HotelPagination';
 import HotelFilters from './HotelFilters';
-import { useToast } from '../toast/ToastManager'; // Import Toast Management
+import { useToast } from '../toast/ToastManager';
 import './viewhotel.css';
 
 const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
-// Custom Confirmation Modal Component (Based on EditVisa.jsx reference)
+// Custom Confirmation Modal
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -54,7 +54,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewHotels = () => {
-  const toast = useToast(); // Initialize Toast
+  const toast = useToast();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -62,15 +62,21 @@ const ViewHotels = () => {
 
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // --- FILTERS ---
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCity, setFilterCity] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
+  
+  // ✅ UPDATED: Single Date Filter State
+  const [selectedDate, setSelectedDate] = useState('');
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState(null);
 
-  // Confirmation Modal State
+  // Modal State
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: "",
@@ -92,7 +98,6 @@ const ViewHotels = () => {
     });
   };
 
-  // Get unique cities from hotels (Filtered to only show non-archived cities)
   const getCities = () => {
     const cities = ['ALL'];
     const activeHotels = hotels.filter(h => (h.isArchive || "No") === "No");
@@ -120,10 +125,22 @@ const ViewHotels = () => {
       }
       const data = await response.json();
       if (data.success && Array.isArray(data.data)) {
-        const initializedData = data.data.map(hotel => ({
-          ...hotel,
-          isArchive: hotel.isArchive || "No"
-        }));
+        const initializedData = data.data.map(hotel => {
+            // ✅ Date Processing
+            const dateObj = hotel.createdAt ? new Date(hotel.createdAt) : null;
+            const isValidDate = dateObj && !isNaN(dateObj);
+
+            return {
+                ...hotel,
+                isArchive: hotel.isArchive || "No",
+                // ✅ Format for Filtering (YYYY-MM-DD)
+                filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
+                // ✅ Format for Display (Jan 25, 2024)
+                displayDateAdded: isValidDate ? dateObj.toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                }) : 'N/A'
+            };
+        });
         setHotels(initializedData);
         setCurrentPage(1);
       }
@@ -144,7 +161,6 @@ const ViewHotels = () => {
     fetchHotels();
   }, []);
 
-  // Updated handleArchive using Custom Modal and Toast
   const handleArchive = (hotelId, hotelName) => {
     askConfirmation(
       "Archive Hotel",
@@ -219,6 +235,7 @@ const ViewHotels = () => {
     }).format(price);
   };
 
+  // ✅ ENHANCED FILTER LOGIC (Single Date)
   const filteredHotels = hotels.filter(hotel => {
     const isNotArchived = (hotel.isArchive || "No") === "No";
     const matchesSearch = hotel.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -233,7 +250,14 @@ const ViewHotels = () => {
     } else if (filterStatus === 'Featured') {
       matchesStatus = hotel.featured === true;
     }
-    return isNotArchived && matchesSearch && matchesCity && matchesStatus;
+
+    // ✅ Single Date Filter (Exact Match)
+    let matchesDate = true;
+    if (selectedDate) {
+        matchesDate = hotel.filterDate === selectedDate;
+    }
+
+    return isNotArchived && matchesSearch && matchesCity && matchesStatus && matchesDate;
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -265,6 +289,7 @@ const ViewHotels = () => {
             </button>
           </header>
 
+          {/* ✅ PASSED SINGLE DATE PROP */}
           <HotelFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -274,6 +299,8 @@ const ViewHotels = () => {
             setFilterStatus={setFilterStatus}
             cityOptions={cityOptions}
             statusOptions={statusOptions}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
           />
 
           {loading ? (
@@ -297,6 +324,8 @@ const ViewHotels = () => {
                       <th>HOTEL NAME</th>
                       <th>LOCATION</th>
                       <th>CAPACITY</th>
+                      {/* ✅ NEW DATE ADDED COLUMN */}
+                      <th>DATE ADDED</th>
                       <th>PRICE</th>
                       <th>AMENITIES</th>
                       <th>STATUS</th>
@@ -367,6 +396,13 @@ const ViewHotels = () => {
                               <Users size={12} />
                               {hotel.maxCapacity || 4} Pax
                             </span>
+                          </td>
+                          {/* ✅ DATE ADDED DISPLAY */}
+                          <td>
+                            <div className="vh-date-added">
+                                <Calendar size={14} />
+                                <span>{hotel.displayDateAdded}</span>
+                            </div>
                           </td>
                           <td>
                             <span className="vh-price-value">{formatPrice(hotel.price || 0)}</span>

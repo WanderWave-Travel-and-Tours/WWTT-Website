@@ -8,15 +8,16 @@ import {
   X,
   AlertTriangle,
   HelpCircle,
+  Calendar, // ✅ Added Calendar Icon
 } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
 import { useNavigate } from "react-router-dom";
 import useAutoDraft from "../../hooks/useAutoDraft";
 import RestoreDraftModal from "../../components/RestoreDraftModal/RestoreDraftModal";
-import { useToast } from "../toast/ToastManager"; // Gagamitin ang Toast
+import { useToast } from "../toast/ToastManager"; 
 import "./addblog.css";
 
-// --- INTEGRATED CUSTOM CONFIRM MODAL DESIGN FROM EDITVISA ---
+// --- CUSTOM CONFIRM MODAL ---
 const CustomConfirmModal = ({
   isOpen,
   title,
@@ -48,7 +49,6 @@ const CustomConfirmModal = ({
           backgroundColor: "white",
           padding: "2rem",
           borderRadius: "12px",
-
           maxWidth: "400px",
           width: "90%",
           textAlign: "center",
@@ -125,7 +125,7 @@ const CustomConfirmModal = ({
 
 const AddBlog = () => {
   const navigate = useNavigate();
-  const toast = useToast(); // Initialize Toast
+  const toast = useToast(); 
 
   // --- SIDEBAR LOGIC ---
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -140,13 +140,13 @@ const AddBlog = () => {
     category: "",
     content: "",
     status: "Published",
+    scheduledAt: "", // ✅ New State for scheduling
   });
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- UPDATED CONFIRMATION MODAL STATE (ALIGNED WITH EDITVISA) ---
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: "",
@@ -158,7 +158,7 @@ const AddBlog = () => {
   const API_BASE_URL = "https://wanderwaveph-backend.onrender.com";
 
   // =========================================================
-  // ✅ AUTO-DRAFT LOGIC START
+  // ✅ AUTO-DRAFT LOGIC
   // =========================================================
 
   const fileToBase64 = (file) => {
@@ -229,6 +229,7 @@ const AddBlog = () => {
       category: data.category || "",
       content: data.content || "",
       status: data.status || "Published",
+      scheduledAt: data.scheduledAt || "", // ✅ Restore date
     });
     if (data.image && data.imageMeta) {
       try {
@@ -326,7 +327,8 @@ const AddBlog = () => {
   const executeSubmit = async () => {
     setIsSubmitting(true);
 
-    toast.info("Publishing blog post...", "📤 Please Wait", 2000);
+    const actionText = blogDetails.status === "Scheduled" ? "Scheduling" : "Publishing";
+    toast.info(`${actionText} blog post...`, "📤 Please Wait", 2000);
 
     try {
       const formData = new FormData();
@@ -335,6 +337,12 @@ const AddBlog = () => {
       formData.append("category", blogDetails.category);
       formData.append("content", blogDetails.content);
       formData.append("status", blogDetails.status);
+      
+      // ✅ Append scheduled date if status is scheduled
+      if (blogDetails.status === "Scheduled" && blogDetails.scheduledAt) {
+        formData.append("scheduledAt", blogDetails.scheduledAt);
+      }
+
       formData.append("image", imageFile);
 
       try {
@@ -359,18 +367,12 @@ const AddBlog = () => {
       const result = await response.json();
 
       if (response.ok) {
-        toast.success(
-          `Blog post "${blogDetails.title}" has been published successfully!`,
-          "✅ Blog Published",
-          5000
-        );
-        await clearDraft();
+        const successMsg = blogDetails.status === "Scheduled" 
+            ? "Blog post has been scheduled successfully!" 
+            : `Blog post "${blogDetails.title}" has been published successfully!`;
 
-        toast.info(
-          "Form cleared and ready for new blog entry.",
-          "🔄 Ready",
-          3000
-        );
+        toast.success(successMsg, "✅ Success", 5000);
+        await clearDraft();
 
         setBlogDetails({
           title: "",
@@ -378,21 +380,22 @@ const AddBlog = () => {
           category: "",
           content: "",
           status: "Published",
+          scheduledAt: "", // Reset date
         });
         setImageFile(null);
         setImagePreview(null);
       } else {
         const errorMessage = result.message || "Unknown error occurred";
         toast.error(
-          `Failed to publish blog: ${errorMessage}`,
-          "❌ Publish Failed",
+          `Failed to process: ${errorMessage}`,
+          "❌ Failed",
           5000
         );
       }
     } catch (error) {
       console.error("❌ Network Error:", error);
       toast.error(
-        `Unable to connect to server: ${error.message}. Please check if backend is running.`,
+        `Unable to connect to server: ${error.message}.`,
         "❌ Connection Error",
         6000
       );
@@ -412,16 +415,29 @@ const AddBlog = () => {
       return;
     }
 
-    toast.success(
-      "All fields validated successfully!",
-      "✅ Ready to Publish",
-      2000
-    );
+    // ✅ Validation for Scheduled Posts
+    if (blogDetails.status === "Scheduled") {
+        if (!blogDetails.scheduledAt) {
+            toast.warning("Please select a date and time for the scheduled post.", "⚠️ Missing Date");
+            return;
+        }
+        const scheduleDate = new Date(blogDetails.scheduledAt);
+        const now = new Date();
+        if (scheduleDate <= now) {
+            toast.warning("Scheduled time must be in the future.", "⚠️ Invalid Date");
+            return;
+        }
+    }
+
+    const confirmTitle = blogDetails.status === "Scheduled" ? "Schedule Blog?" : "Publish Blog?";
+    const confirmMsg = blogDetails.status === "Scheduled"
+        ? `Are you sure you want to schedule this blog for ${new Date(blogDetails.scheduledAt).toLocaleString()}?`
+        : "Are you sure you want to publish this blog post now?";
 
     setConfirmConfig({
       isOpen: true,
-      title: "Publish Blog?",
-      message: "Are you sure you want to publish this blog post now?",
+      title: confirmTitle,
+      message: confirmMsg,
       type: "primary",
       onConfirm: executeSubmit,
     });
@@ -432,7 +448,7 @@ const AddBlog = () => {
       isOpen: true,
       title: "Discard Changes?",
       message:
-        "Are you sure you want to cancel? All unsaved changes in this blog post will be lost.",
+        "Are you sure you want to cancel? All unsaved changes will be lost.",
       type: "danger",
       onConfirm: async () => {
         await clearDraft();
@@ -442,6 +458,7 @@ const AddBlog = () => {
           category: "",
           content: "",
           status: "Published",
+          scheduledAt: "",
         });
         setImageFile(null);
         setImagePreview(null);
@@ -466,7 +483,6 @@ const AddBlog = () => {
         draftInfo={draftInfo}
       />
 
-      {/* ✅ APPLIED: CUSTOM CONFIRM MODAL DESIGN FROM EDITVISA */}
       <CustomConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
@@ -622,8 +638,23 @@ const AddBlog = () => {
                       >
                         <option value="Published">Published</option>
                         <option value="Draft">Draft</option>
+                        <option value="Scheduled">Scheduled</option> {/* ✅ Added Option */}
                       </select>
                     </div>
+
+                    {/* ✅ CONDITIONAL DATE FIELD */}
+                    {blogDetails.status === 'Scheduled' && (
+                        <div className="blog-field">
+                            <label>Schedule Date & Time</label>
+                            <input
+                                type="datetime-local"
+                                name="scheduledAt"
+                                value={blogDetails.scheduledAt}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                    )}
                   </div>
                 </section>
               </div>
@@ -659,7 +690,15 @@ const AddBlog = () => {
                           <span>{blogDetails.author || "Author"}</span>
                         </div>
                         <div className="bp-meta-item">
-                          <span>• {currentDate}</span>
+                            {/* ✅ Show Schedule Date in Preview if Scheduled */}
+                          {blogDetails.status === 'Scheduled' && blogDetails.scheduledAt ? (
+                             <>
+                             <Calendar size={12} />
+                             <span>{new Date(blogDetails.scheduledAt).toLocaleDateString()}</span>
+                             </>
+                          ) : (
+                             <span>• {currentDate}</span>
+                          )}
                         </div>
                       </div>
 
@@ -694,7 +733,8 @@ const AddBlog = () => {
                         Processing...
                       </>
                     ) : (
-                      "Publish"
+                      // ✅ Dynamic Button Text
+                      blogDetails.status === 'Scheduled' ? 'Schedule Post' : 'Publish'
                     )}
                   </button>
                 </div>

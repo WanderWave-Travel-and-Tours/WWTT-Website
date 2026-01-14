@@ -7,7 +7,11 @@ const ImageFilters = ({
     setSearchTerm,
     filterFileType,
     setFilterFileType,
-    fileTypeOptions
+    fileTypeOptions,
+    dateStart,
+    setDateStart,
+    dateEnd,
+    setDateEnd
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -36,48 +40,75 @@ const ImageFilters = ({
                 </div>
                 
                 <div className="image-controls-group">
-                    {/* MIDDLE: File Type Dropdown */}
-                    <div className="image-filter-container">
-                        <label>Type:</label>
-                        <div className="image-select-wrapper">
-                            <button 
-                                className="image-select-btn"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                                <span className="image-select-label">{getSelectedLabel()}</span>
-                                <ChevronDown 
-                                    size={14} 
-                                    className={`image-select-icon ${isDropdownOpen ? 'image-select-icon--open' : ''}`}
-                                />
-                            </button>
-
-                            {isDropdownOpen && (
-                                <>
-                                    <div 
-                                        className="image-dropdown-overlay" 
-                                        onClick={() => setIsDropdownOpen(false)}
+                    {/* MIDDLE: Filters */}
+                    <div className="image-filters-row">
+                        
+                        {/* File Type Dropdown */}
+                        <div className="image-filter-item">
+                            <label>Type:</label>
+                            <div className="image-select-wrapper">
+                                <button 
+                                    className="image-select-btn"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <span className="image-select-label">{getSelectedLabel()}</span>
+                                    <ChevronDown 
+                                        size={14} 
+                                        className={`image-select-icon ${isDropdownOpen ? 'image-select-icon--open' : ''}`}
                                     />
-                                    <div className="image-dropdown-menu">
-                                        {fileTypeOptions.map((type) => (
-                                            <button
-                                                key={type}
-                                                className={`image-dropdown-item ${
-                                                    filterFileType === type ? 'image-dropdown-item--active' : ''
-                                                }`}
-                                                onClick={() => handleFileTypeSelect(type)}
-                                            >
-                                                <span className="image-dropdown-label">
-                                                    {type === 'ALL' ? 'All Images' : type}
-                                                </span>
-                                                {filterFileType === type && (
-                                                    <span className="image-dropdown-check">✓</span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <>
+                                        <div 
+                                            className="image-dropdown-overlay" 
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        />
+                                        <div className="image-dropdown-menu">
+                                            {fileTypeOptions.map((type) => (
+                                                <button
+                                                    key={type}
+                                                    className={`image-dropdown-item ${
+                                                        filterFileType === type ? 'image-dropdown-item--active' : ''
+                                                    }`}
+                                                    onClick={() => handleFileTypeSelect(type)}
+                                                >
+                                                    <span className="image-dropdown-label">
+                                                        {type === 'ALL' ? 'All Images' : type}
+                                                    </span>
+                                                    {filterFileType === type && (
+                                                        <span className="image-dropdown-check">✓</span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
+
+                        {/* ✅ NEW: Date Range Filter */}
+                        <div className="image-filter-item">
+                            <label>Date:</label>
+                            <div className="image-date-group">
+                                <input 
+                                    type="date" 
+                                    className="image-date-input"
+                                    value={dateStart}
+                                    onChange={(e) => setDateStart(e.target.value)}
+                                    title="Start Date"
+                                />
+                                <span className="image-date-separator">-</span>
+                                <input 
+                                    type="date" 
+                                    className="image-date-input"
+                                    value={dateEnd}
+                                    onChange={(e) => setDateEnd(e.target.value)}
+                                    title="End Date"
+                                />
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* RIGHT: Search Box */}
