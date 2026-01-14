@@ -1,8 +1,11 @@
+/* VIEW TOURS - BASE UI (vt- prefix used for consistency) */
 .vt-page {
     display: flex;
     min-height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
     width: 100%;
+    /* ✅ FIX: Ensure overflow is visible */
+    overflow: visible; 
 }
 
 .vt-main {
@@ -11,11 +14,19 @@
     padding: 40px 80px;
     font-family: 'Segoe UI', Arial, sans-serif;
     transition: margin-left 0.3s ease;
+    /* ✅ FIX: Ensure overflow is visible so dropdowns aren't clipped */
+    overflow: visible; 
 }
 
 .vt-main--collapsed { margin-left: 90px; }
 
-.vt-container { max-width: 1320px; margin: 0 auto; width: 100%; }
+.vt-container { 
+    max-width: 1320px; 
+    margin: 0 auto; 
+    width: 100%;
+    /* ✅ FIX: Ensure overflow is visible */
+    overflow: visible; 
+}
 
 .vt-header {
     position: relative;
@@ -31,6 +42,8 @@
     align-items: center;
     justify-content: space-between;
     min-height: 180px;
+    /* ✅ FIX: Keep z-index lower than filters */
+    z-index: 1;
 }
 
 .vt-header::before {
@@ -84,12 +97,15 @@
     box-shadow: 0 6px 20px rgba(255, 140, 66, 0.5);
 }
 
-/* Table Styles - UPDATED: Removed overflow:hidden, added rounded top only */
+/* Table Styles - ✅ LOWER Z-INDEX than Filter */
 .vt-table-wrapper {
     background: #fff;
     border-radius: 12px 12px 0 0;
-    overflow: visible;
+    /* ✅ CRITICAL FIX: Ensure overflow is visible so dropdown can float over */
+    overflow: visible; 
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    position: relative;
+    z-index: 5; /* Lower than filter card (50) */
 }
 
 .vt-table {
@@ -100,6 +116,8 @@
 
 .vt-table thead {
     background: #001F3F;
+    position: relative;
+    z-index: 6; 
 }
 
 .vt-table th {
@@ -158,6 +176,25 @@
     font-size: 13px;
     color: #64748b;
     font-weight: 500;
+}
+
+/* ✅ NEW: Date Added Cell Style */
+.vt-date-added {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    background: #f8fafc;
+    padding: 6px 12px;
+    border-radius: 6px;
+    width: fit-content;
+    border: 1px solid #e2e8f0;
+}
+
+.vt-date-added svg {
+    color: #94a3b8;
 }
 
 .vt-rating {

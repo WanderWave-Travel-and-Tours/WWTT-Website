@@ -1,7 +1,8 @@
 /* ========================================
-   BLOG FILTERS - FULLY RESPONSIVE
+   BLOG FILTERS - FULLY RESPONSIVE (FIXED DROPDOWN Z-INDEX & HOVER)
    ======================================== */
 
+/* ✅ FIXED: High z-index on the card itself so children (dropdowns) are above subsequent elements */
 .blog-filter-card {
     background: white;
     border: 1px solid #e2e8f0;
@@ -11,6 +12,11 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); 
     display: flex;
     align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    /* ✅ CRITICAL: Position relative + high z-index to create stacking context above table */
+    position: relative;
+    z-index: 50;
 }
 
 .blog-filter-wrapper {
@@ -19,6 +25,7 @@
     width: 100%;
     gap: 24px;
     flex-wrap: wrap;
+    position: relative;
 }
 
 /* --- LEFT: BRANDING --- */
@@ -60,16 +67,23 @@
     flex: 1;
     gap: 20px;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
-.blog-filter-container {
+.blog-filters-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    position: relative;
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
-.blog-filter-container label {
+.blog-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.blog-filter-item label {
     font-size: 13px;
     font-weight: 600;
     color: #64748b;
@@ -80,6 +94,8 @@
 .blog-select-wrapper {
     position: relative;
     width: 200px;
+    max-width: 100%;
+    z-index: 100;
 }
 
 .blog-select-btn {
@@ -140,19 +156,19 @@
     z-index: 998;
 }
 
-/* Dropdown Menu */
+/* Dropdown Menu - FIXED Z-INDEX */
 .blog-dropdown-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 5px);
     left: 0;
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     min-width: 100%;
     max-height: 300px;
     overflow-y: auto;
-    z-index: 999;
+    z-index: 9999; /* Highest priority */
     padding: 8px;
 }
 
@@ -174,19 +190,23 @@
     font-weight: 600;
 }
 
+/* Hover state for normal items */
 .blog-dropdown-item:hover {
     background: #fff5ed;
     color: #001F3F;
 }
 
+/* ✅ FIXED: Active Item Styles */
 .blog-dropdown-item--active {
     background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
-    color: white;
+    color: white !important;
     font-weight: 600;
 }
 
+/* ✅ FIXED: Hover on Active Item */
 .blog-dropdown-item--active:hover {
     background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
+    color: white !important;
 }
 
 .blog-dropdown-label {
@@ -222,10 +242,46 @@
     background: #94a3b8;
 }
 
+/* --- ✅ NEW: Date Filter Styling --- */
+.blog-date-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap; 
+}
+
+.blog-date-input {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    font-family: inherit;
+    cursor: pointer;
+    width: 130px; 
+    max-width: 100%;
+    transition: all 0.2s;
+}
+
+.blog-date-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+}
+
+.blog-date-separator {
+    color: #94a3b8;
+    font-weight: 700;
+}
+
 /* --- RIGHT: SEARCH BOX --- */
 .blog-search-box {
     position: relative;
     min-width: 240px;
+    flex-grow: 1;
+    max-width: 300px;
 }
 
 .blog-search-input {
@@ -238,6 +294,7 @@
     color: #0f172a;
     padding: 0 12px 0 34px; 
     transition: all 0.2s;
+    box-sizing: border-box;
 }
 
 .blog-search-input:focus {
@@ -261,529 +318,96 @@
 
 /* Large Desktop (Max 1400px) */
 @media (max-width: 1400px) {
-    .blog-filter-card {
-        padding: 14px 18px;
-    }
-
-    .blog-filter-wrapper {
-        gap: 20px;
-    }
-
-    .blog-controls-group {
-        gap: 18px;
-    }
-
-    .blog-select-wrapper {
-        width: 180px;
-    }
-
-    .blog-search-box {
-        min-width: 220px;
-    }
+    .blog-filter-card { padding: 14px 18px; }
+    .blog-filter-wrapper { gap: 20px; }
+    .blog-controls-group { gap: 15px; }
+    .blog-filters-row { gap: 15px; }
+    .blog-select-wrapper { width: 180px; }
+    .blog-date-input { width: 120px; }
+    .blog-search-box { min-width: 200px; }
 }
 
-/* Desktop/Laptop - VERTICAL STACK (Max 1200px to 905px) */
-@media (max-width: 1200px) and (min-width: 905px) {
-    .blog-filter-card {
-        padding: 14px 18px;
-    }
-
+/* Desktop/Laptop (Max 1200px) */
+@media (max-width: 1200px) {
     .blog-filter-wrapper {
-        gap: 12px;
         flex-direction: column;
         align-items: stretch;
+        gap: 15px;
     }
 
     .blog-brand-section {
-        padding-right: 0;
-        padding-bottom: 10px;
         border-right: none;
         border-bottom: 1px solid #e2e8f0;
+        padding-right: 0;
+        padding-bottom: 10px;
         width: 100%;
-    }
-
-    .blog-brand-label {
-        font-size: 14px;
     }
 
     .blog-controls-group {
-        gap: 10px;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .blog-filter-container {
-        gap: 8px;
         width: 100%;
-    }
-
-    .blog-filter-container label {
-        font-size: 12px;
-    }
-
-    .blog-select-wrapper {
-        width: 100%;
-        flex: 1;
-    }
-
-    .blog-select-btn {
-        font-size: 12px;
-        padding: 7px 10px;
-    }
-
-    .blog-search-box {
-        min-width: 100%;
-        width: 100%;
-    }
-
-    .blog-search-input {
-        height: 34px;
-        font-size: 12px;
-    }
-}
-
-/* Desktop/Laptop - HORIZONTAL (Max 904px to 769px) */
-@media (max-width: 904px) and (min-width: 769px) {
-    .blog-filter-card {
-        padding: 14px 18px;
-    }
-
-    .blog-filter-wrapper {
-        gap: 20px;
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .blog-brand-section {
-        padding-right: 18px;
-        padding-bottom: 0;
-        border-right: 1px solid #e2e8f0;
-        border-bottom: none;
-        width: auto;
-    }
-
-    .blog-brand-label {
-        font-size: 13px;
-    }
-
-    .blog-controls-group {
-        gap: 16px;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        flex: 1;
-    }
-
-    .blog-filter-container {
-        gap: 8px;
-        flex: 0;
-        width: auto;
-    }
-
-    .blog-filter-container label {
-        font-size: 12px;
-    }
-
-    .blog-select-wrapper {
-        width: 160px;
-    }
-
-    .blog-select-btn {
-        font-size: 12px;
-        padding: 6px 9px;
-    }
-
-    .blog-search-box {
-        min-width: 200px;
-        width: auto;
-        flex: 1;
-    }
-
-    .blog-search-input {
-        height: 32px;
-        font-size: 12px;
-    }
-}
-
-/* Tablet Landscape (Max 1024px) */
-@media (max-width: 1024px) {
-    .blog-filter-card {
-        padding: 12px 16px;
-    }
-
-    .blog-brand-icon svg {
-        width: 16px;
-        height: 16px;
-    }
-
-    .blog-search-icon {
-        width: 15px;
-        height: 15px;
-    }
-}
-
-/* Tablet Portrait - VERTICAL STACK (Max 900px to 769px) */
-@media (max-width: 900px) and (min-width: 769px) {
-    .blog-filter-card {
-        padding: 12px 14px;
-    }
-
-    .blog-filter-wrapper {
-        gap: 12px;
-        flex-direction: column;
-        align-items: stretch;
+        flex-wrap: wrap; 
+        gap: 15px;
     }
     
-    .blog-brand-section {
-        border-right: none;
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 10px;
-        padding-right: 0;
-        width: 100%;
-    }
-
-    .blog-controls-group {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
     .blog-filter-container {
-        gap: 6px;
-        width: 100%;
+        flex: 1 1 auto; 
     }
 
-    .blog-select-wrapper {
-        width: 100%;
-    }
-
+    .blog-select-wrapper { width: 100%; }
+    .blog-date-group { width: 100%; }
+    .blog-date-input { width: 100%; flex: 1; }
+    
     .blog-search-box {
-        min-width: 100%;
+        width: 100%;
+        max-width: 100%; 
     }
 }
 
-/* Tablet Small (Max 768px) */
-@media (max-width: 768px) {
-    .blog-filter-card {
-        padding: 10px 12px;
-        margin-bottom: 18px;
-    }
-
-    .blog-filter-wrapper {
-        gap: 10px;
-    }
-
-    .blog-brand-section {
-        padding-bottom: 8px;
-        gap: 8px;
-    }
-
-    .blog-brand-icon svg {
-        width: 15px;
-        height: 15px;
-    }
-
-    .blog-brand-label {
-        font-size: 12px;
-        letter-spacing: 0.4px;
-    }
-
-    .blog-controls-group {
-        gap: 10px;
-        flex-direction: column;
-    }
-
-    .blog-filter-container {
-        gap: 6px;
-        width: 100%;
-    }
-
-    .blog-filter-container label {
-        font-size: 11px;
-    }
-
-    .blog-select-wrapper {
-        width: 100%;
-    }
-
-    .blog-select-btn {
-        font-size: 11px;
-        padding: 6px 9px;
-    }
-
-    .blog-select-icon {
-        width: 13px;
-        height: 13px;
-    }
-
-    .blog-dropdown-item {
-        font-size: 11px;
-        padding: 9px 10px;
-    }
-
-    .blog-dropdown-check {
-        font-size: 13px;
-    }
-
-    .blog-search-box {
-        min-width: 100%;
-    }
-
-    .blog-search-input {
-        height: 30px;
-        font-size: 11px;
-        padding-left: 30px;
-    }
-
-    .blog-search-icon {
-        width: 14px;
-        height: 14px;
-        left: 9px;
-    }
-}
-
-/* Mobile Large (Max 640px) */
-@media (max-width: 640px) {
-    .blog-filter-card {
-        padding: 12px;
-        margin-bottom: 18px;
-        border-radius: 10px;
-    }
-
-    .blog-filter-wrapper {
-        gap: 12px;
-    }
-
-    .blog-brand-section {
-        padding-bottom: 10px;
-        gap: 8px;
-    }
-
-    .blog-brand-icon svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    .blog-brand-label {
-        font-size: 11px;
-        letter-spacing: 0.3px;
-    }
-
-    .blog-controls-group {
-        gap: 10px;
-    }
-
-    .blog-filter-container {
-        flex-direction: column;
+/* Tablet (Max 900px) */
+@media (max-width: 900px) {
+    .blog-filter-card { padding: 12px; }
+    
+    .blog-filter-item {
+        flex-direction: column; 
         align-items: flex-start;
-        gap: 6px;
-        width: 100%;
-    }
-
-    .blog-filter-container label {
-        font-size: 10px;
-    }
-
-    .blog-select-btn {
-        font-size: 11px;
-        padding: 6px 9px;
-        border-radius: 5px;
-    }
-
-    .blog-select-icon {
-        width: 12px;
-        height: 12px;
-    }
-
-    .blog-dropdown-menu {
-        border-radius: 10px;
-    }
-
-    .blog-dropdown-item {
-        font-size: 11px;
-        padding: 9px 10px;
-    }
-
-    .blog-dropdown-check {
-        font-size: 13px;
-    }
-
-    .blog-search-input {
-        height: 30px;
-        font-size: 11px;
-        padding-left: 30px;
-        border-radius: 5px;
-    }
-
-    .blog-search-icon {
-        width: 13px;
-        height: 13px;
-        left: 8px;
-    }
-}
-
-/* Mobile Medium (Max 480px) */
-@media (max-width: 480px) {
-    .blog-filter-card {
-        padding: 10px;
-        margin-bottom: 16px;
-        border-radius: 8px;
-    }
-
-    .blog-filter-wrapper {
-        gap: 10px;
-    }
-
-    .blog-brand-section {
-        padding-bottom: 8px;
-        gap: 7px;
-    }
-
-    .blog-brand-icon svg {
-        width: 13px;
-        height: 13px;
-    }
-
-    .blog-brand-label {
-        font-size: 10px;
-        letter-spacing: 0.2px;
-    }
-
-    .blog-controls-group {
-        gap: 8px;
-    }
-
-    .blog-filter-container {
         gap: 5px;
     }
-
-    .blog-filter-container label {
-        font-size: 9px;
-        font-weight: 700;
-    }
-
-    .blog-select-btn {
-        font-size: 10px;
-        padding: 5px 8px;
-        border-radius: 4px;
-    }
-
-    .blog-select-icon {
-        width: 11px;
-        height: 11px;
-    }
-
-    .blog-dropdown-menu {
-        border-radius: 8px;
-        padding: 6px;
-    }
-
-    .blog-dropdown-item {
-        font-size: 10px;
-        padding: 8px;
-        border-radius: 6px;
-    }
-
-    .blog-dropdown-check {
+    
+    .blog-filter-item label {
         font-size: 12px;
     }
-
-    .blog-search-input {
-        height: 28px;
-        font-size: 10px;
-        padding-left: 28px;
-        padding-right: 8px;
-        border-radius: 4px;
+    
+    .blog-date-group {
+        display: flex;
+        gap: 10px;
+        width: 100%;
     }
-
-    .blog-search-icon {
-        width: 12px;
-        height: 12px;
-        left: 7px;
+    
+    .blog-date-separator {
+        display: none; 
     }
 }
 
-/* Mobile Small (Max 360px) */
-@media (max-width: 360px) {
-    .blog-filter-card {
-        padding: 8px;
-        margin-bottom: 14px;
-        border-radius: 6px;
+/* Mobile (Max 600px) */
+@media (max-width: 600px) {
+    .blog-filters-row {
+        flex-direction: column; 
+        align-items: stretch;
+        gap: 12px;
     }
-
-    .blog-filter-wrapper {
-        gap: 8px;
+    
+    .blog-filter-item {
+        width: 100%;
     }
-
-    .blog-brand-section {
-        padding-bottom: 6px;
-        gap: 6px;
+    
+    .blog-date-group {
+        flex-direction: row; 
+        gap: 10px;
     }
-
-    .blog-brand-icon svg {
-        width: 12px;
-        height: 12px;
+    
+    .blog-date-input {
+        width: calc(50% - 5px); 
     }
-
-    .blog-brand-label {
-        font-size: 9px;
-        letter-spacing: 0.1px;
-    }
-
-    .blog-controls-group {
-        gap: 6px;
-    }
-
-    .blog-filter-container {
-        gap: 4px;
-    }
-
-    .blog-filter-container label {
-        font-size: 8px;
-        font-weight: 700;
-    }
-
-    .blog-select-btn {
-        font-size: 9px;
-        padding: 4px 7px;
-        border-radius: 4px;
-    }
-
-    .blog-select-icon {
-        width: 10px;
-        height: 10px;
-    }
-
-    .blog-dropdown-menu {
-        border-radius: 6px;
-        padding: 5px;
-    }
-
-    .blog-dropdown-item {
-        font-size: 9px;
-        padding: 7px;
-        border-radius: 5px;
-    }
-
-    .blog-dropdown-check {
-        font-size: 11px;
-    }
-
-    .blog-search-input {
-        height: 26px;
-        font-size: 9px;
-        padding-left: 26px;
-        padding-right: 7px;
-        border-radius: 4px;
-    }
-
-    .blog-search-icon {
-        width: 11px;
-        height: 11px;
-        left: 6px;
-    }
-
-    .blog-search-input::placeholder {
-        font-size: 8px;
-    }
+    
+    .blog-search-input { height: 36px; }
 }

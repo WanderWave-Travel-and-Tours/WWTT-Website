@@ -1,13 +1,9 @@
-/* ================================================= */
-/* GLOBAL WRAPPERS & LAYOUT (vt- prefix)            */
-/* ================================================= */
-
+/* VIEW TESTIMONIALS - BASE UI (vt- prefix used for consistency) */
 .vt-page {
     display: flex;
     min-height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
     width: 100%;
-    position: relative;
 }
 
 .vt-main {
@@ -45,6 +41,8 @@
     justify-content: space-between;
     min-height: 180px;
     gap: 24px;
+    /* ✅ FIX: Keep z-index lower than filters */
+    z-index: 1;
 }
 
 .vt-header::before {
@@ -158,12 +156,16 @@
 }
 
 /* --- TABLE WRAPPER & TABLE - UPDATED: Removed overflow:hidden, added rounded top only --- */
+/* --- TABLE WRAPPER & TABLE - UPDATED: Removed overflow:hidden, added rounded top only --- */
 .vt-table-wrapper {
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 12px 12px 0 0;
-    overflow: visible;
+    /* ✅ CRITICAL FIX: Ensure overflow is visible so dropdown can float over */
+    overflow: visible; 
     box-shadow: 0 2px 8px rgba(0, 31, 63, 0.04);
+    position: relative;
+    z-index: 1; /* Lower than filter */
 }
 
 .vt-table {
@@ -173,6 +175,8 @@
 
 .vt-table thead {
     background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
+    position: relative;
+    z-index: 2;
 }
 
 .vt-table th {
@@ -283,6 +287,26 @@
     flex-shrink: 0;
 }
 
+/* ✅ NEW: Date Added Cell Style */
+.vt-date-added {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    background: #f8fafc;
+    padding: 6px 12px;
+    border-radius: 6px;
+    width: fit-content;
+    border: 1px solid #e2e8f0;
+}
+
+.vt-date-added svg {
+    color: #94a3b8;
+}
+
+/* --- RATING BADGE --- */
 .vt-rating {
     display: inline-flex;
     align-items: center;

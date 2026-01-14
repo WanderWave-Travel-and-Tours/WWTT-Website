@@ -4,9 +4,17 @@ import Sidebar from '../sidebar/sidebar';
 import PromoDetailModal from './PromoDetailModal';
 import PromoPagination from './PromoPagination';
 import PromoFilters from './PromoFilters';
+
+// Mga bagong imports para sa Toast at Modal
+import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
+
 import './viewpromos.css';
 
 const ViewPromos = () => {
+    // Toast hook initialization
+    const toast = useToast();
+
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -19,6 +27,13 @@ const ViewPromos = () => {
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedPromo, setSelectedPromo] = useState(null);
+
+    // State para sa Custom Confirmation Modal
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        id: null,
+        code: ''
+    });
 
     const statusOptions = ['ALL', 'Active', 'Expired'];
 
@@ -45,6 +60,7 @@ const ViewPromos = () => {
             setCurrentPage(1);
         } catch (error) {
             console.error("Error loading promos:", error);
+            toast.error("Could not load promo codes from server.", "Fetch Error");
         }
     };
 
@@ -62,36 +78,48 @@ const ViewPromos = () => {
         });
     };
 
-    // BAGONG FUNCTION: Archive sa halip na Delete
-    const handleArchive = async (id, code) => {
-        if (window.confirm(`Are you sure you want to archive promo code ${code}?`)) {
-            try {
-                // Gumamit ng PUT o PATCH dahil i-uupdate natin ang isArchive property
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
-                    method: 'PUT', // Maaari ring 'PATCH' depende sa setup ng backend mo
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ isArchive: 'Yes' }),
-                });
+    // Bubuksan ang custom modal sa halip na window.confirm
+    const handleArchiveClick = (id, code) => {
+        setConfirmModal({
+            isOpen: true,
+            id,
+            code
+        });
+    };
 
-                if (response.ok) {
-                    // Alisin sa local state para mawala sa UI agad
-                    const updatedPromos = promos.filter(promo => promo._id !== id);
-                    setPromos(updatedPromos);
-                    alert(`Promo Code ${code} has been archived.`);
-                    
-                    const maxPage = Math.ceil(updatedPromos.length / itemsPerPage);
-                    if (currentPage > maxPage && maxPage > 0) {
-                        setCurrentPage(maxPage);
-                    }
-                } else {
-                    alert("Failed to archive promo.");
+    // Actual Logic para sa Archive (Ito ang tatawagin ng Confirm button sa Modal)
+    const processArchive = async () => {
+        const { id, code } = confirmModal;
+        
+        try {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ isArchive: 'Yes' }),
+            });
+
+            if (response.ok) {
+                const updatedPromos = promos.filter(promo => promo._id !== id);
+                setPromos(updatedPromos);
+                
+                // Toast notification sa halip na alert
+                toast.success(`Promo Code ${code} has been successfully moved to archives.`, "Archived Successfully");
+                
+                const maxPage = Math.ceil(updatedPromos.length / itemsPerPage);
+                if (currentPage > maxPage && maxPage > 0) {
+                    setCurrentPage(maxPage);
                 }
-            } catch (error) {
-                console.error("Error archiving:", error);
-                alert("Server error.");
+            } else {
+                toast.error("There was a problem archiving the promo.", "Action Failed");
             }
+        } catch (error) {
+            console.error("Error archiving:", error);
+            toast.error("Server connection lost. Please try again later.", "Server Error");
+        } finally {
+            // Isara ang modal pagkatapos ng process
+            setConfirmModal({ ...confirmModal, isOpen: false });
         }
     };
 
@@ -202,7 +230,12 @@ const ViewPromos = () => {
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span className="vpromos-desc">{promo.description}</span>
+                                                        <span 
+                                                            className="vpromos-desc" 
+                                                            title={promo.description}
+                                                        >
+                                                            {promo.description}
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <div className="vpromos-actions">
@@ -216,7 +249,7 @@ const ViewPromos = () => {
                                                             </button>
                                                             <button 
                                                                 className="vpromos-action-btn vpromos-action-btn--archive"
-                                                                onClick={() => handleArchive(promo._id, promo.code)}
+                                                                onClick={() => handleArchiveClick(promo._id, promo.code)}
                                                                 title="Archive Promo"
                                                             >
                                                                 <Archive size={16} />
@@ -242,14 +275,28 @@ const ViewPromos = () => {
                 </div>
             </main>
 
+            {/* PROMO DETAIL MODAL */}
             {showDetailModal && selectedPromo && (
                 <PromoDetailModal
                     showModal={showDetailModal}
                     selectedPromo={selectedPromo}
                     setShowModal={setShowDetailModal}
-                    handleArchive={handleArchive}
+                    handleArchive={(id, code) => {
+                        setShowDetailModal(false);
+                        handleArchiveClick(id, code);
+                    }}
                 />
             )}
+
+            {/* CUSTOM CONFIRMATION MODAL */}
+            <CustomConfirmModal
+                isOpen={confirmModal.isOpen}
+                title="Archive Promo Code?"
+                message={`Are you sure you want to archive promo code "${confirmModal.code}"? This will hide it from the active list.`}
+                type="danger"
+                onConfirm={processArchive}
+                onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+            />
         </div>
     );
 };

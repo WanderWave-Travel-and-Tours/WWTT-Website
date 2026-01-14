@@ -4,10 +4,10 @@ import Sidebar from '../sidebar/sidebar';
 import ImageDetailModal from './ImageDetailModal';
 import ImagePagination from './ImagePagination';
 import ImageFilters from './ImageFilters';
-import { useToast } from "../toast/ToastManager"; // In-import ang Toast
+import { useToast } from "../toast/ToastManager"; 
 import './viewimage.css';
 
-// --- CUSTOM CONFIRMATION MODAL COMPONENT (Based on EditVisa.jsx) ---
+// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -52,7 +52,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewImage = () => {
-    const toast = useToast(); // Initialize Toast
+    const toast = useToast(); 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -60,8 +60,15 @@ const ViewImage = () => {
 
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // --- FILTERS STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterFileType, setFilterFileType] = useState('ALL');
+    
+    // ✅ ADDED: Date Filter State
+    const [dateStart, setDateStart] = useState('');
+    const [dateEnd, setDateEnd] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -82,7 +89,7 @@ const ViewImage = () => {
         return filterFileType === type ? 'if-active-navy' : '';
     };
 
-    // Helper function for confirmation (Based on EditVisa logic)
+    // Helper function for confirmation
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -110,11 +117,27 @@ const ViewImage = () => {
             }
             
             const data = await response.json();
-            console.log('🖼️ Fetched images:', data);
             
-            const activeImages = data.filter(img => img.isArchive === "No");
+            // FILTER & FORMAT: Process data
+            const activeImages = data
+                .filter(img => img.isArchive === "No")
+                .map(img => {
+                    // Safe Date Parsing
+                    const dateObj = img.createdAt ? new Date(img.createdAt) : null;
+                    const isValidDate = dateObj && !isNaN(dateObj);
+
+                    return {
+                        ...img,
+                        // ✅ Format for Filtering (YYYY-MM-DD)
+                        filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
+                        // ✅ Format for Display (Jan 25, 2024)
+                        displayDateAdded: isValidDate ? dateObj.toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'short', day: 'numeric'
+                        }) : 'N/A'
+                    };
+                });
+
             setImages(activeImages);
-            
             setCurrentPage(1);
         } catch (error) {
             console.error('❌ Error fetching images:', error);
@@ -124,7 +147,7 @@ const ViewImage = () => {
         }
     };
 
-    // Updated handleArchive with Custom Confirmation and Toast
+    // Updated handleArchive
     const handleArchive = (id, imageName) => {
         askConfirmation(
             "Archive Image",
@@ -165,21 +188,25 @@ const ViewImage = () => {
         setShowDetailModal(true);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
+    // ✅ ENHANCED FILTER LOGIC
     const filteredImages = images.filter(image => {
+        // 1. Search Filter
         const matchesSearch = (image.imageName || '').toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // 2. File Type Filter
         const fileExtension = (image.imageName?.split('.').pop() || '').toUpperCase();
         const matchesFileType = filterFileType === 'ALL' || fileExtension === filterFileType;
         
-        return matchesSearch && matchesFileType;
+        // 3. ✅ Date Range Filter
+        let matchesDate = true;
+        if (dateStart) {
+            matchesDate = matchesDate && image.filterDate >= dateStart;
+        }
+        if (dateEnd) {
+            matchesDate = matchesDate && image.filterDate <= dateEnd;
+        }
+        
+        return matchesSearch && matchesFileType && matchesDate;
     });
 
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -206,6 +233,7 @@ const ViewImage = () => {
                         </button>
                     </header>
 
+                    {/* ✅ PASSED NEW PROPS TO FILTERS */}
                     <ImageFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -213,6 +241,10 @@ const ViewImage = () => {
                         setFilterFileType={setFilterFileType}
                         fileTypeOptions={fileTypeOptions}
                         getFilterClassName={getFilterClassName}
+                        dateStart={dateStart}
+                        setDateStart={setDateStart}
+                        dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
@@ -241,6 +273,7 @@ const ViewImage = () => {
                                             <th>PREVIEW</th>
                                             <th>FILE NAME</th>
                                             <th>FILE TYPE</th>
+                                            {/* ✅ UPDATED COLUMN HEADER */}
                                             <th>UPLOAD DATE</th>
                                             <th>ACTIONS</th>
                                         </tr>
@@ -254,7 +287,6 @@ const ViewImage = () => {
                                                             src={image.imageUrl} 
                                                             alt={image.imageName || 'Gallery image'}
                                                             onError={(e) => {
-                                                                console.error('Image load error:', image.imageUrl);
                                                                 e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage not found%3C/text%3E%3C/svg%3E';
                                                             }}
                                                         />
@@ -269,12 +301,11 @@ const ViewImage = () => {
                                                         {image.imageName?.split('.').pop()?.toUpperCase() || 'IMAGE'}
                                                     </span>
                                                 </td>
+                                                {/* ✅ DATE ADDED DISPLAY */}
                                                 <td>
-                                                    <div className="vi-date">
+                                                    <div className="vi-date-added">
                                                         <Calendar size={14} />
-                                                        <span>
-                                                            {image.createdAt ? formatDate(image.createdAt) : '--'}
-                                                        </span>
+                                                        <span>{image.displayDateAdded}</span>
                                                     </div>
                                                 </td>
                                                 <td>

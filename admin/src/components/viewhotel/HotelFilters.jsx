@@ -10,7 +10,9 @@ const HotelFilters = ({
     filterStatus,
     setFilterStatus,
     cityOptions,
-    statusOptions
+    statusOptions,
+    selectedDate, // ✅ SINGLE DATE
+    setSelectedDate
 }) => {
     const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
     const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
@@ -135,6 +137,20 @@ const HotelFilters = ({
                                     </div>
                                 </>
                             )}
+                        </div>
+                    </div>
+
+                    {/* ✅ NEW: Single Date Filter */}
+                    <div className="hotel-filter-container">
+                        <label>Date:</label>
+                        <div className="hotel-date-group">
+                            <input 
+                                type="date" 
+                                className="hotel-date-input"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                title="Filter by Date Added"
+                            />
                         </div>
                     </div>
 

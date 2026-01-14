@@ -1,5 +1,5 @@
 /* ================================================= */
-/* GLOBAL WRAPPERS & LAYOUT (vpromos- prefix)       */
+/* GLOBAL WRAPPERS & LAYOUT (vpromos- prefix)        */
 /* ================================================= */
 
 .vpromos-page {
@@ -88,7 +88,7 @@
     content: '';
     width: 40px;
     height: 3px;
-    background: linear-gradient(90deg, #FF8C42 0%, transparent 100%);
+    background: linear-gradient(90deg, #FF8C42 0%, transparent 100%); 
     display: inline-block;
 }
 
@@ -151,7 +151,7 @@
     margin-bottom: 20px;
 }
 
-/* --- TABLE WRAPPER & TABLE - UPDATED: Removed overflow:hidden, added rounded top only --- */
+/* --- TABLE WRAPPER & TABLE --- */
 .vpromos-table-wrapper {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -256,12 +256,20 @@
     border: 1px solid #fecaca;
 }
 
+/* --- UPDATED: SUPER SHORT DESCRIPTION --- */
 .vpromos-desc {
     color: #64748b;
     font-size: 13px;
-    max-width: 250px;
     display: block;
     line-height: 1.5;
+    
+    /* Truncation Logic */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    /* CONTROL THE LENGTH HERE */
+    max-width: 150px; /* Bawasan mo itong number na ito (ex: 100px) para mas kumonti ang letters */
 }
 
 /* --- ACTION BUTTONS --- */
@@ -287,7 +295,6 @@
     background: white;
 }
 
-/* VIEW BUTTON - White default, Navy on hover */
 .vpromos-action-btn--view {
     color: #0f172a;
     border-color: #e2e8f0;
@@ -300,7 +307,6 @@
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
 }
 
-/* ARCHIVE BUTTON - White always, no hover background change */
 .vpromos-action-btn--archive {
     color: #0f172a;
     border-color: #e2e8f0;

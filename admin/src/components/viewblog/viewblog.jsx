@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Eye, Calendar, User, FolderOpen, FileText, HelpCircle } from 'lucide-react'; 
+import { Archive, Eye, Calendar, User, FolderOpen, FileText, HelpCircle, Clock } from 'lucide-react'; 
 import Sidebar from '../sidebar/sidebar';
 import BlogDetailModal from './BlogDetailModal';
 import BlogPagination from './BlogPagination';
 import BlogFilters from './BlogFilters';
-import { useToast } from '../toast/ToastManager'; // Inimport ang useToast
+import { useToast } from '../toast/ToastManager';
 import './viewblog.css';
 
-// Custom Confirm Modal Component (Base sa EditVisa.jsx logic)
+// Custom Confirm Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -52,18 +52,25 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewBlog = () => {
-    const toast = useToast(); // Initialize Toast
+    const toast = useToast();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // --- FILTERS STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('ALL');
+    
+    // Date Filter State
+    const [dateStart, setDateStart] = useState('');
+    const [dateEnd, setDateEnd] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedBlog, setSelectedBlog] = useState(null);
 
-    // State para sa Confirmation Modal
+    // Modal State
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
         title: "",
@@ -78,7 +85,6 @@ const ViewBlog = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Helper function para sa confirmation (katulad ng sa EditVisa)
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -112,7 +118,32 @@ const ViewBlog = () => {
                 throw new Error('Failed to fetch blogs');
             }
             const data = await response.json();
-            setBlogs(data);
+            
+            // FILTER & FORMAT: Process data
+            const processedBlogs = data.map(blog => {
+                // Determine which date to use (ScheduledAt if Scheduled, otherwise CreatedAt)
+                const isScheduled = blog.status === 'Scheduled' && blog.scheduledAt;
+                const dateToParse = isScheduled ? blog.scheduledAt : blog.createdAt;
+                
+                // Safe Date Parsing
+                const dateObj = dateToParse ? new Date(dateToParse) : null;
+                const isValidDate = dateObj && !isNaN(dateObj);
+
+                return {
+                    ...blog,
+                    // Format for Filtering (YYYY-MM-DD)
+                    filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
+                    // Format for Display (Jan 25, 2024)
+                    displayDate: isValidDate ? dateObj.toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                        hour: isScheduled ? '2-digit' : undefined,
+                        minute: isScheduled ? '2-digit' : undefined
+                    }) : 'N/A',
+                    isScheduled // Helper flag
+                };
+            });
+            
+            setBlogs(processedBlogs);
             setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching blogs:', error);
@@ -126,7 +157,6 @@ const ViewBlog = () => {
         fetchBlogs();
     }, []);
 
-    // MODIFIED: Pinalitan ang window.confirm ng askConfirmation
     const handleArchive = (id) => {
         askConfirmation(
             "Archive Blog Post",
@@ -136,7 +166,6 @@ const ViewBlog = () => {
         );
     };
 
-    // Actual Archive Logic
     const performArchive = async (id) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/blogs/${id}`, {
@@ -166,6 +195,11 @@ const ViewBlog = () => {
         setShowDetailModal(true);
     };
 
+    // ✅ NAVIGATE TO EDIT PAGE
+    const handleEdit = (id) => {
+        window.location.href = `/edit-blog/${id}`;
+    };
+
     const getImageUrl = (imagePath) => {
         if (!imagePath) return 'https://via.placeholder.com/400x250';
         if (!imagePath.startsWith('http')) {
@@ -174,20 +208,25 @@ const ViewBlog = () => {
         return imagePath;
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
+    // ENHANCED FILTER LOGIC
     const filteredBlogs = blogs.filter(blog => {
+        // 1. Search Filter
         const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             blog.category.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // 2. Category Filter
         const matchesCategory = filterCategory === 'ALL' || blog.category === filterCategory;
-        return matchesSearch && matchesCategory;
+        
+        // 3. Date Range Filter (Using filterDate)
+        let matchesDate = true;
+        if (dateStart) {
+            matchesDate = matchesDate && blog.filterDate >= dateStart;
+        }
+        if (dateEnd) {
+            matchesDate = matchesDate && blog.filterDate <= dateEnd;
+        }
+
+        return matchesSearch && matchesCategory && matchesDate;
     });
 
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -218,6 +257,7 @@ const ViewBlog = () => {
                         </button>
                     </header>
 
+                    {/* FILTERS */}
                     <BlogFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -225,6 +265,10 @@ const ViewBlog = () => {
                         setFilterCategory={setFilterCategory}
                         categoryOptions={categoryOptions}
                         getFilterClassName={getFilterClassName}
+                        dateStart={dateStart}
+                        setDateStart={setDateStart}
+                        dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
@@ -253,7 +297,8 @@ const ViewBlog = () => {
                                             <th>PREVIEW</th>
                                             <th>TITLE</th>
                                             <th>EXCERPT</th>
-                                            <th>AUTHOR & DATE</th>
+                                            <th>DATE</th>
+                                            <th>AUTHOR</th>
                                             <th>CATEGORY</th>
                                             <th>STATUS</th>
                                             <th>ACTIONS</th>
@@ -280,15 +325,16 @@ const ViewBlog = () => {
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div className="vb-meta-cell">
-                                                        <div className="vb-author">
-                                                            <User size={14} />
-                                                            <span>{blog.author}</span>
-                                                        </div>
-                                                        <div className="vb-date">
-                                                            <Calendar size={14} />
-                                                            <span>{formatDate(blog.createdAt)}</span>
-                                                        </div>
+                                                    {/* ✅ CONDITIONAL DATE DISPLAY */}
+                                                    <div className={`vb-date-added ${blog.isScheduled ? 'vb-date-scheduled' : ''}`}>
+                                                        {blog.isScheduled ? <Clock size={14} /> : <Calendar size={14} />}
+                                                        <span>{blog.displayDate}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="vb-author">
+                                                        <User size={14} />
+                                                        <span>{blog.author}</span>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -307,11 +353,11 @@ const ViewBlog = () => {
                                                     <div className="vb-actions">
                                                         <button 
                                                             className="vb-action-btn vb-action-btn--view"
-                                                            onClick={() => handleViewDetails(blog)}
-                                                            title="View Details"
+                                                            onClick={() => handleEdit(blog._id)} // Changed to Edit
+                                                            title="Edit Details"
                                                         >
                                                             <Eye size={16} />
-                                                            <span>View</span>
+                                                            <span>Edit</span>
                                                         </button>
                                                         <button 
                                                             className="vb-action-btn vb-action-btn--delete"
