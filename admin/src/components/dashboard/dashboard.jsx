@@ -76,7 +76,7 @@ const Dashboard = () => {
       const bookingsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/admin/bookings");
       if (bookingsRes.ok) bookings = await bookingsRes.json();
       
-      const packagesRes = await fetch("http://localhost:5000/api/packages/all");
+      const packagesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/all");
       if (packagesRes.ok) {
         const pkgData = await packagesRes.json();
         // Handle different response formats
