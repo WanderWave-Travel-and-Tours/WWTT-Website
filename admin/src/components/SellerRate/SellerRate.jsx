@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../sidebar/sidebar';
 import SellerRateStats from './Sellerratestats';
 import SellerRateFilters from './Sellerratefilters';
@@ -7,22 +7,18 @@ import SellerRateModal from './Sellerratemodal';
 import SellerRateUploadModal from './Sellerrateuploadmodal';
 import SellerRatePreviewModal from './SellerRatePreviewModal';
 import PaginationControls from './SellerPaginationControls';
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal'; // Import ng custom modal
-import { useToast } from '../toast/ToastManager'; // Ginamit ang path na binigay mo
 import { Plus, Upload } from 'lucide-react';
 import { parseFlexibleExcel, previewExcelColumns } from './flexibleExcelParser';
 import './SellerRate.css';
 
-// Image URLs for Stats Cards
+// Image URLs for Stats Cards - Landscape Photos
 const RATE_IMAGES = {
-  TOTAL_RATES: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-  AVG_MARKUP: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80',
-  TOTAL_REVENUE: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80'
+  TOTAL_RATES: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80', // Mountain landscape
+  AVG_MARKUP: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80', // Beach sunset
+  TOTAL_REVENUE: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80' // Rolling hills
 };
 
 const SellerRate = () => {
-  const toast = useToast(); // Hook para sa Toast Notifications
-
   // ============================================
   // STATE MANAGEMENT
   // ============================================
@@ -39,15 +35,6 @@ const SellerRate = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [editingRate, setEditingRate] = useState(null);
-
-  // Custom Confirmation State
-  const [confirmConfig, setConfirmConfig] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    type: 'primary',
-    onConfirm: () => {}
-  });
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,7 +66,7 @@ const SellerRate = () => {
   const fetchRates = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/seller-rates');
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/seller-rates');
       if (!response.ok) {
         console.error('Failed to fetch rates:', response.status);
         setRates([]);
@@ -89,7 +76,6 @@ const SellerRate = () => {
       setRates(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching rates:', error);
-      toast.error('Could not connect to the server.', 'Connection Error');
       setRates([]);
     } finally {
       setLoading(false);
@@ -128,8 +114,8 @@ const SellerRate = () => {
 
     try {
       const url = editingRate 
-        ? `http://localhost:5000/api/seller-rates/${editingRate._id}`
-        : 'http://localhost:5000/api/seller-rates';
+        ? `https://wanderwaveph-backend.onrender.com/api/seller-rates/${editingRate._id}`
+        : 'https://wanderwaveph-backend.onrender.com/api/seller-rates';
       
       const method = editingRate ? 'PUT' : 'POST';
 
@@ -140,20 +126,17 @@ const SellerRate = () => {
       });
 
       if (response.ok) {
-        toast.success(
-          editingRate ? 'Rate updated successfully!' : 'New rate added successfully!',
-          editingRate ? 'Update Success' : 'Entry Added'
-        );
+        alert(editingRate ? 'Rate updated!' : 'Rate added successfully!');
         fetchRates();
         resetForm();
         setShowAddModal(false);
       } else {
         const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to save rate', 'Error');
+        alert(`Error: ${errorData.message || 'Failed to save rate'}`);
       }
     } catch (error) {
       console.error('Error saving rate:', error);
-      toast.error('Server error. Please check your connection.', 'Save Failed');
+      alert('Failed to save rate. Please check console for details.');
     }
   };
 
@@ -189,7 +172,6 @@ const SellerRate = () => {
       setUploadStatus(null);
     } catch (error) {
       console.error('Error previewing file:', error);
-      toast.error(error.message || 'Error reading file', 'File Error');
       setUploadStatus({ 
         type: 'error', 
         message: `Error reading file: ${error.message || 'Please check file format'}` 
@@ -206,23 +188,28 @@ const SellerRate = () => {
     try {
       const { rates: parsedRates, report } = await parseFlexibleExcel(selectedFile);
 
+      console.log('📊 Import Report:', report);
+      console.log('✅ Parsed Rates:', parsedRates);
+
       if (!parsedRates || parsedRates.length === 0) {
-        toast.warning('No valid data found in the Excel file.', 'Import Warning');
         setUploadStatus({
           type: 'error',
-          message: 'No valid data found in Excel file.'
+          message: 'No valid data found in Excel file. Please check your file format.'
         });
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/seller-rates/bulk', {
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/seller-rates/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedRates)
       });
 
       if (response.ok) {
-        toast.success(`Successfully imported ${parsedRates.length} rates!`, 'Bulk Import');
+        setUploadStatus({
+          type: 'success',
+          message: `Successfully imported ${parsedRates.length} rates! (${report.skippedRows} rows skipped)`
+        });
         fetchRates();
         setSelectedFile(null);
         
@@ -232,7 +219,6 @@ const SellerRate = () => {
         }, 3000);
       } else {
         const errorData = await response.json();
-        toast.error(errorData.message || 'Server error during upload', 'Upload Failed');
         setUploadStatus({
           type: 'error',
           message: `Upload failed: ${errorData.message || 'Server error'}`
@@ -240,71 +226,31 @@ const SellerRate = () => {
       }
     } catch (error) {
       console.error('Error uploading rates:', error);
-      toast.error(error.message || 'Failed to import rates', 'Upload Error');
+      setUploadStatus({
+        type: 'error',
+        message: error.message || 'Failed to import rates'
+      });
     }
   };
 
-  // ============================================
-  // ACTION HANDLERS (With Custom Confirmation)
-  // ============================================
-  const closeConfirm = () => {
-    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-  };
-
   const handleDelete = async (id) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: 'Delete Rate',
-      message: 'Are you sure you want to delete this rate? This action cannot be undone.',
-      type: 'danger',
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`http://localhost:5000/api/seller-rates/${id}`, {
-            method: 'DELETE'
-          });
-          if (response.ok) {
-            toast.success('Rate has been permanently deleted.', 'Deleted');
-            fetchRates();
-          } else {
-            toast.error('Failed to delete rate.', 'Error');
-          }
-        } catch (error) {
-          toast.error('Error connecting to server.', 'Server Error');
-        }
-        closeConfirm();
-      }
-    });
-  };
+    if (!window.confirm('Delete this rate?')) return;
 
-  const handleArchive = async (id) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: 'Archive Rate',
-      message: 'Move this rate to archives? It will be hidden from the main list.',
-      type: 'primary',
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`http://localhost:5000/api/seller-rates/${id}/archive`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              isArchive: 'Yes',
-              archivedAt: new Date().toISOString()
-            })
-          });
+    try {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/seller-rates/${id}`, {
+        method: 'DELETE'
+      });
 
-          if (response.ok) {
-            toast.success('Rate moved to archives.', 'Archived');
-            fetchRates();
-          } else {
-            toast.error('Failed to archive rate.', 'Error');
-          }
-        } catch (error) {
-          toast.error('Error connecting to server.', 'Server Error');
-        }
-        closeConfirm();
+      if (response.ok) {
+        alert('Rate deleted!');
+        fetchRates();
+      } else {
+        alert('Failed to delete rate');
       }
-    });
+    } catch (error) {
+      console.error('Error deleting rate:', error);
+      alert('Error deleting rate');
+    }
   };
 
   const handleEdit = (rate) => {
@@ -323,8 +269,33 @@ const SellerRate = () => {
     setShowAddModal(true);
   };
 
+  const handleArchive = async (id) => {
+    if (!window.confirm('Archive this rate? It will be moved to the archive section.')) return;
+
+    try {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/seller-rates/${id}/archive`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          isArchive: 'Yes',
+          archivedAt: new Date().toISOString()
+        })
+      });
+
+      if (response.ok) {
+        alert('Rate archived successfully!');
+        fetchRates();
+      } else {
+        alert('Failed to archive rate');
+      }
+    } catch (error) {
+      console.error('Error archiving rate:', error);
+      alert('Error archiving rate');
+    }
+  };
+
   // ============================================
-  // FILTER & SEARCH LOGIC
+  // FILTER & SEARCH LOGIC WITH PAGINATION
   // ============================================
   const filteredRates = useMemo(() => {
     return rates.filter(rate => {
@@ -339,10 +310,12 @@ const SellerRate = () => {
     });
   }, [rates, searchQuery]);
 
+  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
 
+  // Calculate paginated rates
   const paginatedRates = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredRates.slice(startIndex, startIndex + itemsPerPage);
@@ -376,6 +349,9 @@ const SellerRate = () => {
     }
   ];
 
+  // ============================================
+  // UI HANDLERS
+  // ============================================
   const toggleSidebar = () => setSidebarCollapsed(!isSidebarCollapsed);
 
   // ============================================
@@ -388,6 +364,7 @@ const SellerRate = () => {
       <div className={`sr-main ${isSidebarCollapsed ? 'expanded' : ''}`}>
         <div className="sr-container">
           
+          {/* HEADER */}
           <div className="sr-header">
             <div className="sr-title">
               <h1>SUPPLIER RATES</h1>
@@ -403,22 +380,25 @@ const SellerRate = () => {
             </div>
           </div>
 
+          {/* STATS */}
           <SellerRateStats stats={stats} />
 
+          {/* FILTERS */}
           <SellerRateFilters 
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onRefresh={fetchRates}
           />
 
+          {/* TABLE - Now shows paginated rates */}
           <SellerRateTable 
             loading={loading}
             rates={paginatedRates}
             onEdit={handleEdit}
             onArchive={handleArchive}
-            onDelete={handleDelete} // Ipinasa ang delete handler sa table
           />
 
+          {/* PAGINATION - Only show if there are filtered results and multiple pages */}
           {!loading && filteredRates.length > 0 && totalPages > 1 && (
             <PaginationControls
               totalItems={filteredRates.length}
@@ -428,7 +408,7 @@ const SellerRate = () => {
             />
           )}
 
-          {/* MODALS SECTION */}
+          {/* MODALS */}
           <SellerRateModal 
             show={showAddModal}
             onClose={() => { setShowAddModal(false); resetForm(); }}
@@ -452,16 +432,6 @@ const SellerRate = () => {
             onClose={() => setShowPreviewModal(false)}
             previewData={previewData}
             onConfirm={handleFlexibleUpload}
-          />
-
-          {/* CUSTOM CONFIRMATION MODAL COMPONENT */}
-          <CustomConfirmModal 
-            isOpen={confirmConfig.isOpen}
-            title={confirmConfig.title}
-            message={confirmConfig.message}
-            type={confirmConfig.type}
-            onConfirm={confirmConfig.onConfirm}
-            onCancel={closeConfirm}
           />
 
         </div>

@@ -90,6 +90,8 @@ const EditPassport = () => {
     "Walk-in Application | Type: LOST",
   ];
 
+
+
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
   });
@@ -101,15 +103,15 @@ const EditPassport = () => {
     contactNumber: "",
     serviceName: "",      // Mapping to Processing Type
     estimatedPrice: "",
-    message: "",          // Gagamitin para sa Application Type selection (display/update)
-    adminRemarks: ""      // Hiwalay na field para sa internal notes
+    message: "",
+    passportDocument: ""  // UI mapping para sa Application Type selection
   });
 
   const [files, setFiles] = useState({});
   const [existingFiles, setExistingFiles] = useState({});
 
-  const API_BASE_URL = "http://localhost:5000/api/inquiries"; 
-  const FILE_BASE_URL = "http://localhost:5000";
+  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
+  const FILE_BASE_URL = "https://wanderwaveph-backend.onrender.com";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -137,19 +139,31 @@ const EditPassport = () => {
           const lName = nameParts.length > 1 ? nameParts.pop() : "";
           const gName = nameParts.join(" ");
 
-          // 🔥 UPDATED LOGIC: Kunin ang "message" field para sa Application Type selection
-          const displayMessage = data.message || "";
-          const fetchedProcType = data.passportDetails?.processingType || data.serviceName || "Walk-in";
+          // 🔥 I-FORMAT ANG DISPLAY TYPE KATULAD NG SA MODAL
+          let rawAppType = data.passportDetails?.applicationType || "";
+          
+          // Fallback extraction kung sakaling wala sa passportDetails
+          if (!rawAppType && data.message && data.message.includes("Type:")) {
+             const parts = data.message.split("Type:");
+             if (parts.length > 1) {
+                rawAppType = parts[1].trim(); 
+             }
+          }
+
+          // I-construct ang full string para mag-match sa <option>
+          const displayType = rawAppType ? `Walk-in Application | Type: ${rawAppType.toUpperCase()}` : "";
+
+          const fetchedProcType = data.passportDetails?.processingType || data.serviceName || "";
 
           setFormData({
             givenName: data.givenName || gName || "",
             lastName: data.lastName || lName || "",
             email: data.email || "",
             contactNumber: data.contactNumber || "",
-            message: displayMessage, // Ito ang magiging value ng select dropdown
+            passportDocument: displayType, 
             serviceName: fetchedProcType, 
             estimatedPrice: data.estimatedPrice || "",
-            adminRemarks: data.adminRemarks || "", 
+            message: data.adminRemarks || "", 
           });
 
           // Check for existing documents
@@ -264,10 +278,10 @@ const EditPassport = () => {
     const data = new FormData();
     const combinedFullName = `${formData.givenName} ${formData.lastName}`.trim();
     
-    // 🔥 EXTRACTION NG RAW VALUE PARA SA DB (Extract "NEW", "RENEWAL" o "LOST" mula sa message string)
+    // 🔥 EXTRACTION NG RAW VALUE PARA SA DB (Extract "NEW" from "Walk-in Application | Type: NEW")
     let finalAppType = "NEW";
-    if (formData.message.includes("RENEWAL")) finalAppType = "RENEWAL";
-    else if (formData.message.includes("LOST")) finalAppType = "LOST";
+    if (formData.passportDocument.includes("RENEWAL")) finalAppType = "RENEWAL";
+    if (formData.passportDocument.includes("LOST")) finalAppType = "LOST";
 
     const passportDetails = {
         applicationType: finalAppType, 
@@ -280,11 +294,11 @@ const EditPassport = () => {
     data.append("email", formData.email);
     data.append("contactNumber", formData.contactNumber);
     data.append("estimatedPrice", formData.estimatedPrice);
-    data.append("adminRemarks", formData.adminRemarks); 
+    data.append("adminRemarks", formData.message); 
     data.append("passportDetails", JSON.stringify(passportDetails));
     
-    // 🔥 DITO NAU-UPDATE ANG MESSAGE FIELD: Ipapasa ang piniling option mula sa dropdown
-    data.append("message", formData.message);
+    // 🔥 I-save ang mahabang string sa 'message' para consistent sa inquiry list display
+    data.append("message", formData.passportDocument);
 
     // Logging & Meta Data
     data.append("userEmail", userEmail);
@@ -398,8 +412,8 @@ const EditPassport = () => {
                     <div className="ep-input-group">
                       <label>Application Type</label>
                       <select 
-                        name="message" 
-                        value={formData.message} 
+                        name="passportDocument" 
+                        value={formData.passportDocument} 
                         onChange={handleInputChange} 
                         className="ep-input"
                         required
@@ -410,7 +424,9 @@ const EditPassport = () => {
                         ))}
                       </select>
                     </div>
-                  </div> 
+
+
+                  </div>
                 </section>
 
                 {/* ATTACHMENTS SECTION */}
@@ -443,7 +459,7 @@ const EditPassport = () => {
                     </div>
                     <div className="ep-input-group" style={{marginTop: '20px'}}> 
                         <label>Admin Remarks / Internal Notes</label> 
-                        <textarea name="adminRemarks" value={formData.adminRemarks} onChange={handleInputChange} className="ep-textarea" rows="6" placeholder="Add notes about this request..." /> 
+                        <textarea name="message" value={formData.message} onChange={handleInputChange} className="ep-textarea" rows="6" placeholder="Add notes about this request..." /> 
                     </div>
                   </section>
 

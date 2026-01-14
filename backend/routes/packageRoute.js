@@ -124,6 +124,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
+            tourType, minPax, // ✅ Added for Edit
             userEmail, adminId, changes
         } = req.body;
         
@@ -131,7 +132,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
 
-        // ✅ Validate tourType and minPax
+        // ✅ Validate tourType and minPax for Edit
         if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
             return res.status(400).json({ status: 'error', error: 'Minimum pax is required for joiner tours' });
         }
@@ -144,24 +145,21 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             price: sellerPriceNum + markupNum,
             duration,
             category,
-            tourType: tourType || 'private',  // ✅ ADDED
+            tourType: tourType || 'private',  
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
 
-        // ✅ Handle minPax based on tourType
         if (tourType === 'joiners' && minPax) {
             updateData.minPax = parseInt(minPax);
         } else if (tourType === 'private') {
-            updateData.minPax = null; // Clear minPax for private tours
+            updateData.minPax = null; 
         }
 
-        // If a new image is uploaded
         if (req.file) {
             updateData.image = req.file.path;
             updateData.imagePublicId = req.file.filename;
             
-            // Delete the old image from Cloudinary
             if (existingImagePublicId) {
                 await cloudinary.uploader.destroy(existingImagePublicId).catch(e => console.error('Old image delete failed:', e));
             }
@@ -173,21 +171,15 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const updatedPkg = await Package.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
         if (!updatedPkg) {
-            // Cleanup updated image if save fails
             if (req.file?.filename) {
                 await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
             }
             return res.status(404).json({ status: 'error', error: 'Package not found' });
         }
 
-        // ============================================
-        // ✅ ACTIVITY LOGGING (UPDATED LOGIC)
-        // ============================================
         try {
             let logDescription = `Updated tour package: ${title}`;
 
-            // Check if 'changes' exists and append to description
-            // Frontend sends 'changes' as a JSON string via FormData
             if (changes) {
                 try {
                     const parsedChanges = JSON.parse(changes); 
@@ -195,7 +187,6 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
                         logDescription += `. Changes: ${parsedChanges.join(', ')}`;
                     }
                 } catch (e) {
-                    // Fallback if parsing fails or if it's a simple string
                     logDescription += ` details updated.`;
                 }
             }
@@ -206,7 +197,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
                 user: userEmail || 'System Admin',
                 userId: logUserId,
                 severity: 'SUCCESS',
-                description: logDescription, // ✅ Log description now includes specific changes
+                description: logDescription,
                 details: {
                     recordTitle: title,
                     recordId: updatedPkg._id,

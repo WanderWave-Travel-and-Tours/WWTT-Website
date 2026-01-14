@@ -2,25 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../sidebar/sidebar.jsx';
 import { Activity, AlertCircle, CheckCircle, RefreshCcw, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-
-// Components
 import ActivityLogsStats from './ActivityLogsStats';
 import ActivityLogsFilters from './ActivityLogsFilters';
 import ActivityLogsTable from './ActivityLogsTable';
 import ActivityLogsDetailModal from './ActivityLogsDetailModal';
 import ActivityLogsPagination from './ActivityLogsPagination';
-
-// Utils and Hooks
 import { exportActivityLogsToPDF } from './utils/activityLogsPdfExport';
-import { useToast } from '../toast/ToastManager'; // Import Toast Hook
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal'; // Import Custom Modal
-
 import './ActivityLogs.css';
 
 const ActivityLogs = () => {
     const navigate = useNavigate();
-    const toast = useToast(); // Initialize Toast
-    
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [loading, setLoading] = useState(true);
     
@@ -37,17 +28,9 @@ const ActivityLogs = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
     
-    // Modal States
+    // Modal State
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedLog, setSelectedLog] = useState(null);
-
-    // 🔥 Confirm Modal State
-    const [confirmModal, setConfirmModal] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        onConfirm: () => {}
-    });
 
     // Check authentication
     useEffect(() => {
@@ -63,69 +46,89 @@ const ActivityLogs = () => {
         fetchActivityLogs();
     }, []);
 
+    // ==========================================
+    // IMPROVED FETCH FUNCTION WITH DEBUG LOGS
+    // ==========================================
     const fetchActivityLogs = async () => {
         console.log('🔍 Starting to fetch activity logs...');
         setLoading(true);
         setFetchError(null);
         
         try {
-            const apiUrl = 'http://localhost:5000/api/activity-logs';
+            // API endpoint
+            const apiUrl = 'https://wanderwaveph-backend.onrender.com/api/activity-logs';
             console.log('📡 Fetching from:', apiUrl);
             
             const response = await fetch(apiUrl);
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response OK:', response.ok);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('📊 Raw data received:', data);
+            console.log('📊 Data type:', Array.isArray(data) ? 'Array' : typeof data);
+            console.log('📊 Data length:', Array.isArray(data) ? data.length : 'N/A');
 
+            // Check if data is empty
             if (!data || !Array.isArray(data)) {
                 console.warn('⚠️ Invalid data format received');
                 setActivityLogs([]);
                 setFetchError('Invalid data format received from server');
-                toast.error("Hindi wasto ang format ng data mula sa server.", "Data Error");
                 return;
             }
 
             if (data.length === 0) {
                 console.log('ℹ️ No activity logs found in database');
                 setActivityLogs([]);
-                toast.info("Walang nakitang activity logs sa database.", "System Info");
                 return;
             }
 
-            const formattedLogs = data.map((log, index) => ({
-                id: log._id || `log-${index}`,
-                logNumber: data.length - index,
-                action: log.action || 'UNKNOWN',
-                module: log.module || 'System',
-                user: log.user || 'Unknown',
-                severity: log.severity || 'INFO',
-                description: log.description || 'No description',
-                timestamp: log.createdAt || new Date().toISOString(),
-                ipAddress: log.ipAddress || 'N/A',
-                userAgent: log.userAgent || 'N/A',
-                adminInfo: log.adminInfo || null,
-                details: log.details || {
-                    affectedRecords: 0,
-                    duration: 'N/A',
-                    method: 'N/A',
-                    endpoint: 'N/A',
-                    statusCode: 200
-                }
-            }));
+            // Format data from MongoDB
+            console.log('🔄 Formatting logs...');
+            const formattedLogs = data.map((log, index) => {
+                return {
+                    id: log._id || `log-${index}`,
+                    logNumber: data.length - index,
+                    action: log.action || 'UNKNOWN',
+                    module: log.module || 'System',
+                    user: log.user || 'Unknown',
+                    severity: log.severity || 'INFO',
+                    description: log.description || 'No description',
+                    timestamp: log.createdAt || new Date().toISOString(),
+                    ipAddress: log.ipAddress || 'N/A',
+                    userAgent: log.userAgent || 'N/A',
+                    // 🔥🔥🔥 INCLUDE ADMIN INFO HERE 🔥🔥🔥
+                    adminInfo: log.adminInfo || null,
+                    details: log.details || {
+                        affectedRecords: 0,
+                        duration: 'N/A',
+                        method: 'N/A',
+                        endpoint: 'N/A',
+                        statusCode: 200
+                    }
+                };
+            });
+            
+            console.log('✅ Formatted logs:', formattedLogs.length);
+            console.log('🔍 Sample log:', formattedLogs[0]);
             
             setActivityLogs(formattedLogs);
-            toast.success("Activity logs successfully loaded.", "Success");
+            console.log('✅ Activity logs set to state successfully');
 
         } catch (error) {
             console.error('❌ Error fetching activity logs:', error);
+            console.error('❌ Error details:', {
+                message: error.message,
+                stack: error.stack
+            });
             setFetchError(error.message);
             setActivityLogs([]);
-            toast.error(`Error: ${error.message}`, "Fetch Failed");
         } finally {
             setLoading(false);
+            console.log('🏁 Fetch completed, loading:', false);
         }
     };
 
@@ -137,24 +140,38 @@ const ActivityLogs = () => {
         });
     }, [activityLogs]);
 
+    useEffect(() => {
+        console.log('⏳ loading state changed:', loading);
+    }, [loading]);
+
+    // 🔥🔥🔥 FIXED FILTER AND SORT LOGIC 🔥🔥🔥
     const getFilteredAndSortedLogs = () => {
+        console.log('🔍 Filtering logs...');
         let filtered = [...activityLogs];
 
+        // Filter by action type
         if (selectedActionType !== 'ALL') {
             filtered = filtered.filter(log => log.action === selectedActionType);
+            console.log(`🔍 After action filter (${selectedActionType}):`, filtered.length);
         }
 
+        // Filter by module
         if (selectedModule !== 'ALL Modules') {
             filtered = filtered.filter(log => log.module === selectedModule);
+            console.log(`🔍 After module filter (${selectedModule}):`, filtered.length);
         }
 
+        // Filter by severity
         if (selectedSeverity !== 'ALL Severity') {
             filtered = filtered.filter(log => log.severity === selectedSeverity);
+            console.log(`🔍 After severity filter (${selectedSeverity}):`, filtered.length);
         }
 
+        // Search filter - Enhanced to include adminInfo
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(log => {
+                // Basic fields
                 const matchesBasic = 
                     (log.id && log.id.toLowerCase().includes(query)) ||
                     (log.action && log.action.toLowerCase().includes(query)) ||
@@ -162,6 +179,7 @@ const ActivityLogs = () => {
                     (log.user && log.user.toLowerCase().includes(query)) ||
                     (log.description && log.description.toLowerCase().includes(query));
                 
+                // Admin info fields
                 const matchesAdminInfo = log.adminInfo && (
                     (log.adminInfo.fullName && log.adminInfo.fullName.toLowerCase().includes(query)) ||
                     (log.adminInfo.username && log.adminInfo.username.toLowerCase().includes(query)) ||
@@ -170,8 +188,10 @@ const ActivityLogs = () => {
                 
                 return matchesBasic || matchesAdminInfo;
             });
+            console.log(`🔍 After search filter ("${searchQuery}"):`, filtered.length);
         }
 
+        // Sort by timestamp
         filtered.sort((a, b) => {
             if (sortOrder === 'asc') {
                 return new Date(a.timestamp) - new Date(b.timestamp);
@@ -180,18 +200,22 @@ const ActivityLogs = () => {
             }
         });
 
+        console.log('📊 Final filtered logs count:', filtered.length);
         return filtered;
     };
 
     const filteredLogs = getFilteredAndSortedLogs();
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage);
+    const endIndex = startIndex + itemsPerPage;
+    const currentLogs = filteredLogs.slice(startIndex, endIndex);
     
+    // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery, selectedActionType, selectedModule, selectedSeverity]);
 
+    // Calculate statistics
     const calculateStats = () => {
         const total = activityLogs.length;
         const createActions = activityLogs.filter(log => log.action === 'CREATE').length;
@@ -199,35 +223,77 @@ const ActivityLogs = () => {
         const errorLogs = activityLogs.filter(log => log.severity === 'ERROR').length;
 
         return [
-            { label: 'Total Activities', value: total, icon: <Activity size={28} />, image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800' },
-            { label: 'Create Actions', value: createActions, icon: <CheckCircle size={28} />, image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800' },
-            { label: 'Update Actions', value: updateActions, icon: <RefreshCcw size={28} />, image: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800' },
-            { label: 'Error Logs', value: errorLogs, icon: <AlertCircle size={28} />, image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800' }
+            {
+                label: 'Total Activities',
+                value: total,
+                icon: <Activity size={28} />,
+                image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800'
+            },
+            {
+                label: 'Create Actions',
+                value: createActions,
+                icon: <CheckCircle size={28} />,
+                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800'
+            },
+            {
+                label: 'Update Actions',
+                value: updateActions,
+                icon: <RefreshCcw size={28} />,
+                image: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800'
+            },
+            {
+                label: 'Error Logs',
+                value: errorLogs,
+                icon: <AlertCircle size={28} />,
+                image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800'
+            }
         ];
     };
 
     const stats = calculateStats();
+    
+    // Filter options
     const actionTypeOptions = ['ALL', 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'VIEW', 'EXPORT', 'IMPORT', 'ARCHIVE'];
-    const moduleOptions = ['ALL Modules', 'Auth', 'Users', 'Bookings', 'Packages', 'Services', 'Hotels', 'Tours', 'Promos', 'Blogs', 'Testimonials', 'Visas', 'Passports', 'System'];
+    
+    const moduleOptions = [
+        'ALL Modules',
+        'Auth',
+        'Users',
+        'Bookings',
+        'Packages', 
+        'Services',
+        'Hotels',
+        'Tours',
+        'Promos',
+        'Blogs',
+        'Testimonials',
+        'Visas',
+        'Passports',
+        'System'
+    ];
+
     const severityOptions = ['ALL Severity', 'INFO', 'SUCCESS', 'WARNING', 'ERROR'];
 
     // Event handlers
     const handleViewDetails = (log) => {
+        console.log('👁️ Viewing details for log:', log.id);
         setSelectedLog(log);
         setShowDetailModal(true);
     };
 
     const handleSortToggle = () => {
+        console.log('🔄 Toggling sort order');
         setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
     };
 
     const handleRefresh = () => {
+        console.log('🔄 Refreshing activity logs...');
         fetchActivityLogs();
-        toast.info("Nagre-refresh ang mga logs...", "System");
     };
     
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
+            console.log('📄 Changing to page:', page);
             setCurrentPage(page);
         }
     };
@@ -236,32 +302,31 @@ const ActivityLogs = () => {
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
-    // 🔥 Updated: Export with Custom Confirmation Modal
+    // 🔥 NEW: Export to PDF Handler
     const handleExportPDF = () => {
-        setConfirmModal({
-            isOpen: true,
-            title: "Export Activity Logs",
-            message: `Sigurado ka ba na gusto mong i-export ang ${filteredLogs.length} record(s) sa PDF?`,
-            onConfirm: () => {
-                try {
-                    exportActivityLogsToPDF(filteredLogs, stats);
-                    toast.success("Matagumpay na na-export ang PDF.", "Export Success");
-                } catch (error) {
-                    console.error('❌ Error exporting PDF:', error);
-                    toast.error("Hindi ma-export ang PDF. Pakisubukang muli.", "Export Error");
-                }
-                setConfirmModal(prev => ({ ...prev, isOpen: false }));
-            }
-        });
+        console.log('📄 Exporting Activity Logs to PDF...');
+        try {
+            exportActivityLogsToPDF(filteredLogs, stats);
+            console.log('✅ PDF Export successful');
+        } catch (error) {
+            console.error('❌ Error exporting PDF:', error);
+            alert('Failed to export PDF. Please try again.');
+        }
     };
 
+    // Format date helper
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         try {
             return new Date(dateString).toLocaleDateString("en-US", {
-                year: "numeric", month: "short", day: "numeric", hour: '2-digit', minute: '2-digit'
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: '2-digit',
+                minute: '2-digit'
             });
         } catch (error) {
+            console.error('Error formatting date:', error);
             return "Invalid Date";
         }
     };
@@ -272,6 +337,7 @@ const ActivityLogs = () => {
             
             <main className={`act-main ${sidebarCollapsed ? 'expanded' : ''}`}>
                 <div className="act-container">
+                    {/* Header */}
                     <div className="act-header">
                         <div className="act-title">
                             <h1>ACTIVITY LOGS</h1>
@@ -284,7 +350,8 @@ const ActivityLogs = () => {
                                 disabled={loading || filteredLogs.length === 0}
                                 style={{ background: '#10b981' }}
                             >
-                                <Download size={18} /> Export PDF
+                                <Download size={18} /> 
+                                Export PDF
                             </button>
                             <button 
                                 className="act-btn-refresh"
@@ -297,6 +364,7 @@ const ActivityLogs = () => {
                         </div>
                     </div>
 
+                    {/* Error Message */}
                     {fetchError && (
                         <div className="act-error-message">
                             <AlertCircle size={18} />
@@ -304,8 +372,10 @@ const ActivityLogs = () => {
                         </div>
                     )}
 
+                    {/* Statistics Cards */}
                     <ActivityLogsStats stats={stats} />
 
+                    {/* Filters */}
                     <ActivityLogsFilters
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
@@ -320,6 +390,7 @@ const ActivityLogs = () => {
                         severityOptions={severityOptions}
                     />
 
+                    {/* Table */}
                     <div className="act-table-container">
                         <ActivityLogsTable
                             loading={loading}
@@ -333,6 +404,7 @@ const ActivityLogs = () => {
                         />
                     </div>
                     
+                    {/* Pagination */}
                     {filteredLogs.length > 0 && totalPages > 1 && (
                         <ActivityLogsPagination
                             totalItems={filteredLogs.length}
@@ -355,16 +427,6 @@ const ActivityLogs = () => {
                     formatDate={formatDate}
                 />
             )}
-
-            {/* 🔥 Custom Confirmation Modal Component */}
-            <CustomConfirmModal 
-                isOpen={confirmModal.isOpen}
-                title={confirmModal.title}
-                message={confirmModal.message}
-                onConfirm={confirmModal.onConfirm}
-                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-                type="primary"
-            />
         </div>
     );
 };

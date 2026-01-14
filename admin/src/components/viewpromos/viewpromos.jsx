@@ -47,7 +47,7 @@ const ViewPromos = () => {
 
     const fetchPromos = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/promos');
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
             if (!response.ok) {
                 throw new Error('Failed to fetch promos');
             }
@@ -92,7 +92,7 @@ const ViewPromos = () => {
         const { id, code } = confirmModal;
         
         try {
-            const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -230,7 +230,12 @@ const ViewPromos = () => {
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span className="vpromos-desc">{promo.description}</span>
+                                                        <span 
+                                                            className="vpromos-desc" 
+                                                            title={promo.description}
+                                                        >
+                                                            {promo.description}
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <div className="vpromos-actions">
@@ -276,7 +281,6 @@ const ViewPromos = () => {
                     showModal={showDetailModal}
                     selectedPromo={selectedPromo}
                     setShowModal={setShowDetailModal}
-                    // Dito ginagamit natin ang custom archive click trigger
                     handleArchive={(id, code) => {
                         setShowDetailModal(false);
                         handleArchiveClick(id, code);

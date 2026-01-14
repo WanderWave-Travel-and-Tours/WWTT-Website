@@ -14,10 +14,56 @@ import PackagePreview from "./PackagePreview";
 // ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
-
-// ✅ UPDATED IMPORTS FOR TOAST AND CUSTOM MODAL
+// ✅ CORRECT IMPORT PATH
 import { useToast } from "../toast/ToastManager";
-import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
+import { HelpCircle } from "lucide-react";
+
+// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+    if (!isOpen) return null;
+    return (
+      <div className="arc-confirm-overlay" style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', zIndex: 11000
+      }}>
+        <div className="arc-confirm-modal" style={{
+
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+
+      }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+          </div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+          <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <button 
+              onClick={onCancel}
+              style={{
+                padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+                backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+              }}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={onConfirm}
+              style={{
+                padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+                backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+                color: 'white', cursor: 'pointer', fontWeight: '500'
+              }}
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+};
 
 const AddPackage = () => {
     // --- SIDEBAR TOGGLE ---
@@ -39,7 +85,7 @@ const AddPackage = () => {
     const [duration, setDuration] = useState("");
     const [category, setCategory] = useState("Local Tour");
     
-    // ✅ Tour Type State
+    // ✅ NEW: Tour Type State
     const [tourType, setTourType] = useState("private"); // "private" or "joiners"
     const [minPax, setMinPax] = useState(""); // Only for joiners
     
@@ -50,7 +96,7 @@ const AddPackage = () => {
         { day: 1, title: "Day 1: Arrival", activities: [""] },
     ]);
     const [isPasteActive, setIsPasteActive] = useState(false);
-    const [submitting, setSubmitting] = useState(false); 
+    const [submitting, setSubmitting] = useState(false); // To handle loading state
 
     const pasteAreaRef = useRef(null);
 
@@ -77,7 +123,7 @@ const AddPackage = () => {
     };
 
     // =========================================================
-    // ✅ AUTO-DRAFT LOGIC
+    // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
 
     const fileToBase64 = (file) => {
@@ -203,13 +249,13 @@ const AddPackage = () => {
     const handleRestoreDraft = () => {
         restoreDraft();
         setShowRestoreModal(false);
-        toast.info("Draft restored successfully.", "Draft System");
+        toast.info("Draft restored successfully.", "Draft");
     };
 
     const handleDiscardDraft = async () => {
         await discardDraft(); 
         setShowRestoreModal(false);
-        toast.neutral("Draft has been discarded.");
+        toast.info("Draft discarded.");
     };
 
     // --- CALCULATIONS ---
@@ -257,7 +303,7 @@ const AddPackage = () => {
             setFile(selected);
             setPreviewUrl(URL.createObjectURL(selected));
             setIsPasteActive(false);
-            toast.success("Package image uploaded.", "Media Upload");
+            toast.success("Image uploaded successfully.");
         }
     };
 
@@ -279,7 +325,7 @@ const AddPackage = () => {
                         setFile(blob);
                         setPreviewUrl(URL.createObjectURL(blob));
                         setIsPasteActive(false);
-                        toast.success("Image pasted from clipboard.", "Media Upload");
+                        toast.success("Image pasted successfully.");
                     }
                     break;
                 }
@@ -315,7 +361,6 @@ const AddPackage = () => {
                 index++;
             });
             setInclusions(newInclusions);
-            toast.info("Multiple inclusions detected and listed.");
         }
     };
 
@@ -337,137 +382,197 @@ const AddPackage = () => {
     const removeAct = (di, ai) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.filter((_, x) => x !== ai) } : d));
     const handleAct = (di, ai, val) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.map((a, x) => (x === ai ? val : a)) } : d));
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        // VALIDATIONS WITH TOASTS
-        if (!file) {
-            toast.warning("Please upload an image for the package.", "Missing Image");
-            return;
-        }
+    // ✅ Toast for validation start
+    toast.info("Validating package details...", "Checking", 1500);
 
-        if (!title || !destination || !price) {
-            toast.warning("Please fill in the basic package information.", "Incomplete Form");
-            return;
-        }
+    // Validations
+    if (!file) {
+        toast.warning("Please upload an image for the package.", "⚠️ Missing Image");
+        return;
+    }
 
-        if (!duration) {
-            toast.warning("Please specify the package duration.", "Missing Duration");
-            return;
-        }
+    if (!title || !destination || !price) {
+        toast.warning("Please fill in the basic package information.", "⚠️ Missing Fields");
+        return;
+    }
 
-        if (tourType === "joiners" && (!minPax || parseInt(minPax) < 1)) {
-            toast.warning("Please specify minimum pax for joiners tour.", "Validation Error");
-            return;
-        }
+    if (!duration) {
+        toast.warning("Please specify the package duration.", "⚠️ Missing Duration");
+        return;
+    }
 
-        const hasValidInclusions = inclusions.some(item => item.trim().length > 0);
-        if (!hasValidInclusions) {
-            toast.warning("Please add at least one inclusion.", "Validation Error");
-            return;
-        }
+    if (tourType === "joiners" && (!minPax || parseInt(minPax) < 1)) {
+        toast.warning("Please specify minimum pax for joiners tour.", "⚠️ Missing Min Pax");
+        return;
+    }
 
-        const hasValidItinerary = itinerary.some(day => 
-            day.activities.some(act => act.trim().length > 0)
-        );
-        if (!hasValidItinerary) {
-            toast.warning("Please add at least one activity in the itinerary.", "Validation Error");
-            return;
-        }
+    const hasValidInclusions = inclusions.some(item => item.trim().length > 0);
+    if (!hasValidInclusions) {
+        toast.warning("Please add at least one inclusion.", "⚠️ Missing Inclusions");
+        return;
+    }
 
-        // CONFIRMATION USING CUSTOM MODAL
-        askConfirmation(
-            "Publish Package",
-            "Are you sure you want to publish this new tour package?",
-            () => performPublish()
-        );
-    };
+    const hasValidItinerary = itinerary.some(day => 
+        day.activities.some(act => act.trim().length > 0)
+    );
+    if (!hasValidItinerary) {
+        toast.warning("Please add at least one activity in the itinerary.", "⚠️ Missing Itinerary");
+        return;
+    }
+
+    // ✅ All validations passed
+    toast.success("All fields validated!", "✅ Ready to Publish", 2000);
+
+    // Ask for confirmation before publishing
+    askConfirmation(
+        "Publish Package",
+        "Are you sure you want to publish this new tour package?",
+        () => performPublish()
+    );
+};
 
     const performPublish = async () => {
-        setSubmitting(true);
-        toast.info("Uploading package data...", "Processing");
-        
-        const processedInclusions = inclusions.filter(item => item.trim().length > 0);
-        
-        const cleanedItinerary = itinerary.map((day, index) => {
-            const titleWithoutPrefix = day.title.replace(/^Day \d+:\s*/, "").trim();
-            return {
-                day: index + 1, 
-                title: titleWithoutPrefix || `Day ${index + 1}`,
-                activities: day.activities.filter((act) => act.trim() !== "")
-            };
-        });
+    setSubmitting(true);
+    
+    // ✅ TOAST: Publishing Started
+    toast.info(
+        "Uploading package data to server...",
+        "📤 Publishing",
+        2000
+    );
+    
+    // Process inclusions
+    const processedInclusions = inclusions.filter(item => item.trim().length > 0);
+    
+    // Clean itinerary
+    const cleanedItinerary = itinerary.map((day, index) => {
+        const titleWithoutPrefix = day.title.replace(/^Day \d+:\s*/, "").trim();
+        return {
+            day: index + 1, 
+            title: titleWithoutPrefix || `Day ${index + 1}`,
+            activities: day.activities.filter((act) => act.trim() !== "")
+        };
+    });
 
-        const supplierRateNum = parseFloat(supplierRate) || 0;
-        const markupValueNum = parseFloat(markupValue) || 0;
-        let markupInPeso = markupType === "percentage" 
-            ? (supplierRateNum * markupValueNum) / 100 
-            : markupValueNum;
-        markupInPeso = Math.round(markupInPeso * 100) / 100;
+    // Calculate pricing
+    const supplierRateNum = parseFloat(supplierRate) || 0;
+    const markupValueNum = parseFloat(markupValue) || 0;
+    let markupInPeso = markupType === "percentage" 
+        ? (supplierRateNum * markupValueNum) / 100 
+        : markupValueNum;
+    markupInPeso = Math.round(markupInPeso * 100) / 100;
 
-        const formData = new FormData();
-        formData.append("title", title);
-        formData.append("destination", destination);
-        formData.append("sellerPrice", supplierRateNum.toString());
-        formData.append("markup", markupInPeso.toString());
-        formData.append("duration", duration);
-        formData.append("category", category === "Local Tour" ? "Local" : "International");
-        formData.append("tourType", tourType);
-        if (tourType === "joiners") {
-            formData.append("minPax", parseInt(minPax));
-        }
-        
-        formData.append("inclusions", JSON.stringify(processedInclusions));
-        formData.append("itinerary", JSON.stringify(cleanedItinerary));
-        formData.append("image", file);
+    // Build FormData
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("destination", destination);
+    formData.append("sellerPrice", supplierRateNum.toString());
+    formData.append("markup", markupInPeso.toString());
+    formData.append("duration", duration);
+    formData.append("category", category === "Local Tour" ? "Local" : "International");
+    
+    // ✅ Append tour type and minPax
+    formData.append("tourType", tourType);
+    if (tourType === "joiners") {
+        formData.append("minPax", parseInt(minPax));
+    }
+    
+    formData.append("inclusions", JSON.stringify(processedInclusions));
+    formData.append("itinerary", JSON.stringify(cleanedItinerary));
+    formData.append("image", file);
 
-        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-        const activeId = adminData.id || adminData._id || "";
+    // Get admin data
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+    const activeId = adminData.id || adminData._id || "";
 
-        formData.append("userEmail", activeUser);
-        formData.append("adminId", activeId); 
+    formData.append("userEmail", activeUser);
+    formData.append("adminId", activeId); 
 
-        try {
-            const response = await fetch("http://localhost:5000/api/packages/add", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    ...(localStorage.getItem('adminToken') && { 
-                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}` 
-                    })
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                toast.success(`"${title}" has been published successfully!`, "Success");
-                await clearDraft();
-
-                // Reset Form
-                setTitle(""); setDestination(""); setSupplierRate(""); setMarkupValue("");
-                setPrice(""); setDuration(""); setCategory("Local Tour"); setTourType("private");
-                setMinPax(""); setFile(null); setPreviewUrl(null); setInclusions([""]);
-                setItinerary([{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
-                setMarkupType("peso");
-            } else {
-                toast.error(data.error || "Failed to publish package.", "Submission Failed");
+    try {
+        const response = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/add", {
+            method: "POST",
+            body: formData,
+            headers: {
+                ...(localStorage.getItem('adminToken') && { 
+                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}` 
+                })
             }
-        } catch (error) {
-            toast.error("Cannot connect to server. Please check your connection.", "Network Error");
-        } finally {
-            setSubmitting(false);
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // ✅ TOAST: Success
+            toast.success(
+                `"${title}" has been published successfully!`,
+                "✅ Package Published",
+                4000
+            );
+            
+            // Clear draft
+            await clearDraft();
+            
+            // ✅ TOAST: Form Reset
+            toast.info(
+                "Form cleared and ready for next entry.",
+                "🔄 Ready",
+                2000
+            );
+
+            // Reset Form
+            setTitle("");
+            setDestination("");
+            setSupplierRate("");
+            setMarkupValue("");
+            setPrice("");
+            setDuration("");
+            setCategory("Local Tour");
+            setTourType("private");
+            setMinPax("");
+            setFile(null);
+            setPreviewUrl(null);
+            setInclusions([""]);
+            setItinerary([{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
+            setMarkupType("peso");
+            
+        } else {
+            // ✅ TOAST: Server Error with Details
+            const errorMessage = data.error || data.message || "Failed to publish package";
+            console.error('Server error:', data);
+            
+            toast.error(
+                errorMessage,
+                "❌ Server Error",
+                5000
+            );
         }
-    };
+        
+    } catch (error) {
+        console.error("Fetch error:", error);
+        
+        // ✅ TOAST: Connection Error with Details
+        toast.error(
+            `Cannot connect to server: ${error.message}. Please check if the backend is running.`,
+            "❌ Connection Error",
+            6000
+        );
+        
+    } finally {
+        setSubmitting(false);
+    }
+};
 
     const handleCancel = async () => {
         askConfirmation(
             "Cancel Entry",
-            "Are you sure you want to cancel? All unsaved changes will be lost.",
+            "Are you sure you want to cancel? All unsaved changes and drafts for this session will be lost.",
             async () => {
                 await clearDraft();
-                toast.neutral("Process cancelled by user.");
+                toast.info("Process cancelled.");
                 navigate(-1);
             },
             "danger"
@@ -485,7 +590,7 @@ const AddPackage = () => {
                 draftInfo={draftInfo}
             />
 
-            {/* ✅ UPDATED CUSTOM CONFIRMATION MODAL FROM EXTERNAL FILE */}
+            {/* ✅ CUSTOM CONFIRMATION MODAL */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}

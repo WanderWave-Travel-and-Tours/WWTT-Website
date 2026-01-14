@@ -1,15 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import './addpromo.css';
 import Sidebar from '../sidebar/sidebar';
-import { Upload, X } from 'lucide-react'; 
+import { Upload, X, HelpCircle } from 'lucide-react'; 
 
 // ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
-// ✅ Imports for Toast and Custom Confirmation Modal
+// ✅ Imports for Toast and Reference logic
 import { useToast } from "../toast/ToastManager";
-import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
+
+// ✅ Reusable Confirmation Modal (Based on EditVisa.jsx reference)
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="arc-confirm-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 11000
+        }}>
+            <div className="arc-confirm-modal" style={{
+                backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+                maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+            }}>
+                <div style={{ marginBottom: '1rem' }}>
+                    <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button 
+                        onClick={onCancel}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+                            backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={onConfirm}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+                            backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+                            color: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const AddPromo = () => {
     const toast = useToast();
@@ -24,9 +67,6 @@ const AddPromo = () => {
         type: "primary"
     });
 
-    /**
-     * Helper function to trigger the custom confirmation modal
-     */
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -182,17 +222,21 @@ const AddPromo = () => {
         }
     }, [hasDraft]);
 
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-        toast.success("Your promo draft has been restored!", "✅ Draft Restored", 3000);
-    };
+const handleRestoreDraft = () => {
+    restoreDraft();
+    setShowRestoreModal(false);
+    
+    // ✅ TOAST
+    toast.success("Your promo draft has been restored!", "✅ Draft Restored", 3000);
+};
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); 
-        setShowRestoreModal(false);
-        toast.info("Draft has been discarded.", "🗑️ Discarded");
-    };
+    await discardDraft(); 
+    setShowRestoreModal(false);
+    
+    // ✅ TOAST
+    toast.info("Draft has been discarded.", "🗑️ Discarded");
+};
 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC END
@@ -235,169 +279,194 @@ const AddPromo = () => {
         }));
     };
 
-    const handleCategorySelect = (e) => {
-        const value = e.target.value;
-        if (value === 'Other') {
-            setIsOtherCategory(true);
-            setPromoDetails(prev => ({ ...prev, category: '' }));
-            toast.info("Enter your custom category.", "✏️ Custom Category");
-        } else {
-            setIsOtherCategory(false);
-            setPromoDetails(prev => ({ ...prev, category: value }));
-            toast.success(`Category set to "${value}"`, "✅ Category Selected", 2000);
-        }
-    };
+const handleCategorySelect = (e) => {
+    const value = e.target.value;
+    if (value === 'Other') {
+        setIsOtherCategory(true);
+        setPromoDetails(prev => ({ ...prev, category: '' }));
+        
+        // ✅ TOAST (Optional)
+        toast.info("Enter your custom category.", "✏️ Custom Category");
+    } else {
+        setIsOtherCategory(false);
+        setPromoDetails(prev => ({ ...prev, category: value }));
+        
+        // ✅ TOAST (Optional)
+        toast.success(`Category set to "${value}"`, "✅ Category Selected", 2000);
+    }
+};
 
     const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
-            toast.success(`Image "${file.name}" uploaded successfully!`, "Image Added");
-        }
-    };
+    const file = e.target.files[0];
+    if (file) {
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+        
+        // ✅ TOAST
+        toast.success(`Image "${file.name}" uploaded successfully!`, "✅ Image Added");
+    }
+};
 
     const removeImage = () => {
-        setImageFile(null);
-        setImagePreview(null);
-        toast.info("Promo image removed.", "Image Removed");
-    };
+    setImageFile(null);
+    setImagePreview(null);
+    
+    // ✅ TOAST
+    toast.info("Promo image removed.", "🗑️ Image Removed");
+};
 
-    const handleSubmit = async () => {
-        if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
-            !promoDetails.discountValue || !promoDetails.startDate || !promoDetails.usageLimit) {
-            toast.warning(
-                'Please fill in all required fields to continue.',
-                '⚠️ Incomplete Form'
-            );
-            return;
+const handleSubmit = async () => {
+    // ✅ TOAST: Validation start
+    if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
+        !promoDetails.discountValue || !promoDetails.startDate || !promoDetails.usageLimit) {
+        toast.warning(
+            'Please fill in all required fields to continue.',
+            '⚠️ Incomplete Form'
+        );
+        return;
+    }
+
+    // ✅ TOAST: Validation passed
+    toast.success("All fields validated successfully!", "✅ Ready to Create", 2000);
+
+    askConfirmation(
+        "Create Promo",
+        `Are you sure you want to create the promo code "${promoDetails.code}"?`,
+        () => performSubmit()
+    );
+};
+
+const performSubmit = async () => {
+    setIsSubmitting(true);
+
+    // ✅ TOAST: Upload started
+    toast.info("Creating promo code...", "📤 Please Wait", 2000);
+
+    try {
+        const formData = new FormData();
+        formData.append('code', promoDetails.code);
+        formData.append('description', promoDetails.description);
+        formData.append('category', promoDetails.category);
+        formData.append('discountType', promoDetails.discountType);
+        formData.append('discountValue', promoDetails.discountValue);
+        formData.append('durationType', promoDetails.durationType);
+        formData.append('startDate', promoDetails.startDate);
+        formData.append('validUntil', promoDetails.validUntil);
+        formData.append('usageLimit', promoDetails.usageLimit);
+        
+        if (imageFile) {
+            formData.append('image', imageFile);
         }
 
-        askConfirmation(
-            "Create Promo",
-            `Are you sure you want to create the promo code "${promoDetails.code}"?`,
-            () => performSubmit()
-        );
-    };
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        const activeId = adminData.id || adminData._id || "";
 
-    const performSubmit = async () => {
-        setIsSubmitting(true);
-        toast.info("Creating promo code...", "Please Wait", 2000);
+        formData.append("userEmail", activeUser);
+        formData.append("adminId", activeId);
 
-        try {
-            const formData = new FormData();
-            formData.append('code', promoDetails.code);
-            formData.append('description', promoDetails.description);
-            formData.append('category', promoDetails.category);
-            formData.append('discountType', promoDetails.discountType);
-            formData.append('discountValue', promoDetails.discountValue);
-            formData.append('durationType', promoDetails.durationType);
-            formData.append('startDate', promoDetails.startDate);
-            formData.append('validUntil', promoDetails.validUntil);
-            formData.append('usageLimit', promoDetails.usageLimit);
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // ✅ TOAST: Success
+            toast.success(
+                `Promo code "${promoDetails.code}" has been created successfully!`,
+                "✅ Promo Created",
+                5000
+            );
             
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
+            await clearDraft();
+            
+            // ✅ TOAST: Form reset
+            toast.info(
+                "Form cleared and ready for new promo entry.",
+                "🔄 Ready",
+                3000
+            );
 
-            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-            const activeId = adminData.id || adminData._id || "";
-
-            formData.append("userEmail", activeUser);
-            formData.append("adminId", activeId);
-
-            const response = await fetch('http://localhost:5000/api/promos/add', {
-                method: 'POST',
-                body: formData,
+            // Reset form
+            setPromoDetails({
+                code: '',
+                discount: '',
+                validUntil: '',
+                description: '',
+                category: '',
+                discountType: 'Fixed Amount (Peso)',
+                discountValue: '',
+                durationType: 'Weekly',
+                startDate: '',
+                usageLimit: '' 
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                toast.success(
-                    `Promo code "${promoDetails.code}" has been created successfully!`,
-                    "Promo Created",
-                    5000
-                );
-                
-                await clearDraft();
-                
-                toast.info(
-                    "Form cleared and ready for new promo entry.",
-                    "Ready",
-                    3000
-                );
-
-                // Reset form
-                setPromoDetails({
-                    code: '',
-                    discount: '',
-                    validUntil: '',
-                    description: '',
-                    category: '',
-                    discountType: 'Fixed Amount (Peso)',
-                    discountValue: '',
-                    durationType: 'Weekly',
-                    startDate: '',
-                    usageLimit: '' 
-                });
-                setImageFile(null);
-                setImagePreview(null);
-                setIsOtherCategory(false);
-                
-            } else {
-                const errorMessage = data.message || data.error || 'Unknown error occurred';
-                toast.error(
-                    `Failed to create promo: ${errorMessage}`,
-                    "❌ Creation Failed",
-                    5000
-                );
-            }
+            setImageFile(null);
+            setImagePreview(null);
+            setIsOtherCategory(false);
             
-        } catch (error) {
+        } else {
+            // ✅ TOAST: Server error
+            const errorMessage = data.message || data.error || 'Unknown error occurred';
+            console.error('Server error:', data);
+            
             toast.error(
-                `Unable to connect to server: ${error.message}. Please check your connection.`,
-                "❌ Connection Error",
-                6000
+                `Failed to create promo: ${errorMessage}`,
+                "❌ Creation Failed",
+                5000
             );
-        } finally {
-            setIsSubmitting(false);
         }
-    };
-
-    const handleCancel = async () => {
-        askConfirmation(
-            "Cancel Creation",
-            "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
-            async () => {
-                await clearDraft();
-                
-                // Reset form
-                setPromoDetails({
-                    code: '',
-                    discount: '',
-                    validUntil: '',
-                    description: '',
-                    category: '',
-                    discountType: 'Fixed Amount (Peso)',
-                    discountValue: '',
-                    durationType: 'Weekly',
-                    startDate: '',
-                    usageLimit: ''
-                });
-                setImageFile(null);
-                setImagePreview(null);
-                setIsOtherCategory(false);
-                
-                toast.info("Action cancelled and form cleared.", "❌ Cancelled");
-            },
-            "danger"
+        
+    } catch (error) {
+        console.error('❌ Network Error:', error);
+        
+        // ✅ TOAST: Connection error
+        toast.error(
+            `Unable to connect to server: ${error.message}. Please check your connection.`,
+            "❌ Connection Error",
+            6000
         );
-    };
+        
+    } finally {
+        setIsSubmitting(false);
+    }
+};
+
+const handleCancel = async () => {
+    askConfirmation(
+        "Cancel Creation",
+        "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+        async () => {
+            await clearDraft();
+            
+            // Reset form
+            setPromoDetails({
+                code: '',
+                discount: '',
+                validUntil: '',
+                description: '',
+                category: '',
+                discountType: 'Fixed Amount (Peso)',
+                discountValue: '',
+                durationType: 'Weekly',
+                startDate: '',
+                usageLimit: ''
+            });
+            setImageFile(null);
+            setImagePreview(null);
+            setIsOtherCategory(false);
+            
+            // ✅ TOAST
+            toast.info("Action cancelled and form cleared.", "❌ Cancelled");
+        },
+        "danger"
+    );
+};
 
     return (
         <div className="promo-page">
+            
             <RestoreDraftModal
                 isOpen={showRestoreModal}
                 onRestore={handleRestoreDraft}
@@ -418,7 +487,6 @@ const AddPromo = () => {
                 isCollapsed={isSidebarCollapsed} 
                 toggleSidebar={toggleSidebar} 
             />
-            
             <main className={`promo-main ${isSidebarCollapsed ? "promo-main--collapsed" : ""}`}>
                 <div className="promo-container">
                     <header className="promo-header">

@@ -7,7 +7,11 @@ const BlogFilters = ({
     setSearchTerm, 
     filterCategory, 
     setFilterCategory, 
-    categoryOptions
+    categoryOptions,
+    dateStart,
+    setDateStart,
+    dateEnd,
+    setDateEnd
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -36,48 +40,75 @@ const BlogFilters = ({
                 </div>
                 
                 <div className="blog-controls-group">
-                    {/* MIDDLE: Category Dropdown */}
-                    <div className="blog-filter-container">
-                        <label>Category:</label>
-                        <div className="blog-select-wrapper">
-                            <button 
-                                className="blog-select-btn"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                                <span className="blog-select-label">{getSelectedLabel()}</span>
-                                <ChevronDown 
-                                    size={14} 
-                                    className={`blog-select-icon ${isDropdownOpen ? 'blog-select-icon--open' : ''}`}
-                                />
-                            </button>
-
-                            {isDropdownOpen && (
-                                <>
-                                    <div 
-                                        className="blog-dropdown-overlay" 
-                                        onClick={() => setIsDropdownOpen(false)}
+                    {/* MIDDLE: Filters */}
+                    <div className="blog-filters-row">
+                        
+                        {/* Category Dropdown */}
+                        <div className="blog-filter-item">
+                            <label>Category:</label>
+                            <div className="blog-select-wrapper">
+                                <button 
+                                    className="blog-select-btn"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <span className="blog-select-label">{getSelectedLabel()}</span>
+                                    <ChevronDown 
+                                        size={14} 
+                                        className={`blog-select-icon ${isDropdownOpen ? 'blog-select-icon--open' : ''}`}
                                     />
-                                    <div className="blog-dropdown-menu">
-                                        {categoryOptions.map((category) => (
-                                            <button
-                                                key={category}
-                                                className={`blog-dropdown-item ${
-                                                    filterCategory === category ? 'blog-dropdown-item--active' : ''
-                                                }`}
-                                                onClick={() => handleCategorySelect(category)}
-                                            >
-                                                <span className="blog-dropdown-label">
-                                                    {category === 'ALL' ? 'All Blogs' : category}
-                                                </span>
-                                                {filterCategory === category && (
-                                                    <span className="blog-dropdown-check">✓</span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <>
+                                        <div 
+                                            className="blog-dropdown-overlay" 
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        />
+                                        <div className="blog-dropdown-menu">
+                                            {categoryOptions.map((category) => (
+                                                <button
+                                                    key={category}
+                                                    className={`blog-dropdown-item ${
+                                                        filterCategory === category ? 'blog-dropdown-item--active' : ''
+                                                    }`}
+                                                    onClick={() => handleCategorySelect(category)}
+                                                >
+                                                    <span className="blog-dropdown-label">
+                                                        {category === 'ALL' ? 'All Blogs' : category}
+                                                    </span>
+                                                    {filterCategory === category && (
+                                                        <span className="blog-dropdown-check">✓</span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
+
+                        {/* ✅ NEW: Date Range Filter */}
+                        <div className="blog-filter-item">
+                            <label>Date:</label>
+                            <div className="blog-date-group">
+                                <input 
+                                    type="date" 
+                                    className="blog-date-input"
+                                    value={dateStart}
+                                    onChange={(e) => setDateStart(e.target.value)}
+                                    title="Start Date"
+                                />
+                                <span className="blog-date-separator">-</span>
+                                <input 
+                                    type="date" 
+                                    className="blog-date-input"
+                                    value={dateEnd}
+                                    onChange={(e) => setDateEnd(e.target.value)}
+                                    title="End Date"
+                                />
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* RIGHT: Search Box */}

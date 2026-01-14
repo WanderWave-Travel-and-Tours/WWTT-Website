@@ -1,26 +1,76 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Eye, Calendar, User, FolderOpen, FileText } from 'lucide-react'; 
+import { Archive, Eye, Calendar, User, FolderOpen, FileText, HelpCircle, Clock } from 'lucide-react'; 
 import Sidebar from '../sidebar/sidebar';
 import BlogDetailModal from './BlogDetailModal';
 import BlogPagination from './BlogPagination';
 import BlogFilters from './BlogFilters';
-import { useToast } from '../toast/ToastManager'; 
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal'; // Updated directory
+import { useToast } from '../toast/ToastManager';
 import './viewblog.css';
 
+// Custom Confirm Modal Component
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ViewBlog = () => {
-    const toast = useToast(); 
+    const toast = useToast();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // --- FILTERS STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('ALL');
+    
+    // Date Filter State
+    const [dateStart, setDateStart] = useState('');
+    const [dateEnd, setDateEnd] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedBlog, setSelectedBlog] = useState(null);
 
-    // State para sa Confirmation Modal configuration
+    // Modal State
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
         title: "",
@@ -29,13 +79,12 @@ const ViewBlog = () => {
         type: "primary"
     });
     
-    const API_BASE_URL = 'http://localhost:5000';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Helper function para sa custom confirmation logic
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -69,13 +118,36 @@ const ViewBlog = () => {
                 throw new Error('Failed to fetch blogs');
             }
             const data = await response.json();
-            setBlogs(data);
+            
+            // FILTER & FORMAT: Process data
+            const processedBlogs = data.map(blog => {
+                // Determine which date to use (ScheduledAt if Scheduled, otherwise CreatedAt)
+                const isScheduled = blog.status === 'Scheduled' && blog.scheduledAt;
+                const dateToParse = isScheduled ? blog.scheduledAt : blog.createdAt;
+                
+                // Safe Date Parsing
+                const dateObj = dateToParse ? new Date(dateToParse) : null;
+                const isValidDate = dateObj && !isNaN(dateObj);
+
+                return {
+                    ...blog,
+                    // Format for Filtering (YYYY-MM-DD)
+                    filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
+                    // Format for Display (Jan 25, 2024)
+                    displayDate: isValidDate ? dateObj.toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                        hour: isScheduled ? '2-digit' : undefined,
+                        minute: isScheduled ? '2-digit' : undefined
+                    }) : 'N/A',
+                    isScheduled // Helper flag
+                };
+            });
+            
+            setBlogs(processedBlogs);
             setCurrentPage(1);
-            // Optional: Success toast on initial load if needed
-            // toast.info("Blog list updated", "System");
         } catch (error) {
             console.error('Error fetching blogs:', error);
-            toast.error("Could not load blog posts from the server.", "Connection Error");
+            toast.error("Could not load blog posts.", "Connection Error");
         } finally {
             setLoading(false);
         }
@@ -85,7 +157,6 @@ const ViewBlog = () => {
         fetchBlogs();
     }, []);
 
-    // Function handle para sa Archive button
     const handleArchive = (id) => {
         askConfirmation(
             "Archive Blog Post",
@@ -95,7 +166,6 @@ const ViewBlog = () => {
         );
     };
 
-    // Actual Archive Logic with Toast Notifications
     const performArchive = async (id) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/blogs/${id}`, {
@@ -105,26 +175,29 @@ const ViewBlog = () => {
             if (response.ok) {
                 const updatedBlogs = blogs.filter(blog => blog._id !== id);
                 setBlogs(updatedBlogs);
-                
-                // Pinalitang Toast notification
-                toast.success('The article has been moved to archives.', 'Success');
+                toast.success('Blog archived successfully', 'Success');
                 
                 const maxPage = Math.ceil(updatedBlogs.length / itemsPerPage);
                 if (currentPage > maxPage && maxPage > 0) {
                     setCurrentPage(maxPage);
                 }
             } else {
-                toast.error('The server refused the archive request.', 'Archive Failed');
+                toast.error('Failed to archive blog', 'Error');
             }
         } catch (error) {
             console.error('Error archiving blog:', error);
-            toast.error('A network error occurred while trying to archive.', 'System Error');
+            toast.error('An error occurred while archiving.', 'System Error');
         }
     };
 
     const handleViewDetails = (blog) => {
         setSelectedBlog(blog);
         setShowDetailModal(true);
+    };
+
+    // ✅ NAVIGATE TO EDIT PAGE
+    const handleEdit = (id) => {
+        window.location.href = `/edit-blog/${id}`;
     };
 
     const getImageUrl = (imagePath) => {
@@ -135,20 +208,25 @@ const ViewBlog = () => {
         return imagePath;
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
+    // ENHANCED FILTER LOGIC
     const filteredBlogs = blogs.filter(blog => {
+        // 1. Search Filter
         const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             blog.category.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // 2. Category Filter
         const matchesCategory = filterCategory === 'ALL' || blog.category === filterCategory;
-        return matchesSearch && matchesCategory;
+        
+        // 3. Date Range Filter (Using filterDate)
+        let matchesDate = true;
+        if (dateStart) {
+            matchesDate = matchesDate && blog.filterDate >= dateStart;
+        }
+        if (dateEnd) {
+            matchesDate = matchesDate && blog.filterDate <= dateEnd;
+        }
+
+        return matchesSearch && matchesCategory && matchesDate;
     });
 
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -179,6 +257,7 @@ const ViewBlog = () => {
                         </button>
                     </header>
 
+                    {/* FILTERS */}
                     <BlogFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -186,6 +265,10 @@ const ViewBlog = () => {
                         setFilterCategory={setFilterCategory}
                         categoryOptions={categoryOptions}
                         getFilterClassName={getFilterClassName}
+                        dateStart={dateStart}
+                        setDateStart={setDateStart}
+                        dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
@@ -214,7 +297,8 @@ const ViewBlog = () => {
                                             <th>PREVIEW</th>
                                             <th>TITLE</th>
                                             <th>EXCERPT</th>
-                                            <th>AUTHOR & DATE</th>
+                                            <th>DATE</th>
+                                            <th>AUTHOR</th>
                                             <th>CATEGORY</th>
                                             <th>STATUS</th>
                                             <th>ACTIONS</th>
@@ -241,15 +325,16 @@ const ViewBlog = () => {
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div className="vb-meta-cell">
-                                                        <div className="vb-author">
-                                                            <User size={14} />
-                                                            <span>{blog.author}</span>
-                                                        </div>
-                                                        <div className="vb-date">
-                                                            <Calendar size={14} />
-                                                            <span>{formatDate(blog.createdAt)}</span>
-                                                        </div>
+                                                    {/* ✅ CONDITIONAL DATE DISPLAY */}
+                                                    <div className={`vb-date-added ${blog.isScheduled ? 'vb-date-scheduled' : ''}`}>
+                                                        {blog.isScheduled ? <Clock size={14} /> : <Calendar size={14} />}
+                                                        <span>{blog.displayDate}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="vb-author">
+                                                        <User size={14} />
+                                                        <span>{blog.author}</span>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -268,11 +353,11 @@ const ViewBlog = () => {
                                                     <div className="vb-actions">
                                                         <button 
                                                             className="vb-action-btn vb-action-btn--view"
-                                                            onClick={() => handleViewDetails(blog)}
-                                                            title="View Details"
+                                                            onClick={() => handleEdit(blog._id)} // Changed to Edit
+                                                            title="Edit Details"
                                                         >
                                                             <Eye size={16} />
-                                                            <span>View</span>
+                                                            <span>Edit</span>
                                                         </button>
                                                         <button 
                                                             className="vb-action-btn vb-action-btn--delete"
@@ -311,7 +396,7 @@ const ViewBlog = () => {
                 />
             )}
 
-            {/* Global Custom Confirmation Modal Implementation */}
+            {/* Confirmation Modal Component Implementation */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}

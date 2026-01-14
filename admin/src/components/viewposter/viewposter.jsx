@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Calendar, Eye, EyeOff, Search } from 'lucide-react';
+import { Archive, Calendar, Eye, EyeOff, Search, HelpCircle } from 'lucide-react';
 import axios from 'axios';
 import Sidebar from '../sidebar/sidebar';
 import PosterDetailModal from './PosterDetailModal';
 import PosterPagination from './PosterPagination';
 import PosterFilters from './PosterFilters';
 import { useToast } from '../toast/ToastManager';
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import './viewposter.css';
 
-// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
+// 🔥 HELPER FUNCTION - GET ADMIN DATA
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -23,18 +22,68 @@ const getAdminData = () => {
     }
 };
 
+// 🔥 Custom Confirm Modal Component
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ViewPoster = () => {
     const toast = useToast();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
     const [posters, setPosters] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // --- FILTERS STATE ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
+    
+    // ✅ ADDED: Date Filter State
+    const [dateStart, setDateStart] = useState('');
+    const [dateEnd, setDateEnd] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -76,22 +125,38 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('http://localhost:5000/api/posters');
+            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/posters');
             
-            // FILTER: I-set lamang ang mga posters na ang isArchive ay "No"
-            const nonArchivedPosters = response.data.filter(poster => poster.isArchive === "No");
-            setPosters(nonArchivedPosters);
+            // FILTER & FORMAT: Process data
+            const processedPosters = response.data
+                .filter(poster => poster.isArchive === "No")
+                .map(poster => {
+                    // Safe Date Parsing for CreatedAt
+                    const dateObj = poster.createdAt ? new Date(poster.createdAt) : null;
+                    const isValidDate = dateObj && !isNaN(dateObj);
+
+                    return {
+                        ...poster,
+                        // ✅ Format for Filtering (YYYY-MM-DD)
+                        filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
+                        // ✅ Format for Display (Jan 25, 2024)
+                        displayDateAdded: isValidDate ? dateObj.toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'short', day: 'numeric'
+                        }) : 'N/A'
+                    };
+                });
             
+            setPosters(processedPosters);
             setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching posters:', error);
-            toast.error("Failed to load posters from server.", "Connection Error");
+            toast.error("Failed to load posters from server.");
         } finally {
             setLoading(false);
         }
     };
 
-    // 🔥🔥🔥 UPDATED: ARCHIVE WITH ADMIN DATA 🔥🔥🔥
+    // ARCHIVE FUNCTION
     const handleArchive = async (id, title) => {
         askConfirmation(
             "Archive Poster?",
@@ -100,7 +165,7 @@ const ViewPoster = () => {
                 const { userEmail, adminId } = getAdminData();
 
                 try {
-                    const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
+                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
                         isArchive: 'Yes',
                         userEmail,
                         adminId
@@ -109,18 +174,18 @@ const ViewPoster = () => {
                     if (response.data) {
                         const updatedPosters = posters.filter(poster => poster._id !== id);
                         setPosters(updatedPosters);
-                        toast.success(`"${title}" has been moved to archives.`, "Poster Archived");
+                        toast.success('Poster archived successfully!');
                     }
                 } catch (error) {
                     console.error('Error archiving poster:', error);
-                    toast.error('Failed to archive poster. Please try again.', "System Error");
+                    toast.error('Failed to archive poster.');
                 }
             },
             "danger"
         );
     };
 
-    // 🔥🔥🔥 UPDATED: TOGGLE STATUS WITH ADMIN DATA 🔥🔥🔥
+    // TOGGLE STATUS FUNCTION
     const toggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         
@@ -131,7 +196,7 @@ const ViewPoster = () => {
                 const { userEmail, adminId } = getAdminData();
 
                 try {
-                    const response = await axios.put(`http://localhost:5000/api/posters/${id}/status`, { 
+                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
                         status: newStatus,
                         userEmail,
                         adminId
@@ -142,11 +207,11 @@ const ViewPoster = () => {
                             poster._id === id ? { ...poster, status: newStatus } : poster
                         );
                         setPosters(updatedPosters);
-                        toast.success(`Poster is now ${newStatus}!`, "Status Updated");
+                        toast.success(`Status changed to ${newStatus}!`);
                     }
                 } catch (error) {
                     console.error('Error updating status:', error);
-                    toast.error('Failed to update status.', "Update Failed");
+                    toast.error('Failed to update status.');
                 }
             },
             "primary"
@@ -164,11 +229,25 @@ const ViewPoster = () => {
         return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     };
 
+    // ✅ ENHANCED FILTER LOGIC
     const filteredPosters = posters.filter(poster => {
+        // 1. Search Filter
         const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (poster.description && poster.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        // 2. Status Filter
         const matchesStatus = filterStatus === 'ALL' || poster.status === filterStatus;
-        return matchesSearch && matchesStatus;
+        
+        // 3. ✅ Date Range Filter (Using filterDate)
+        let matchesDate = true;
+        if (dateStart) {
+            matchesDate = matchesDate && poster.filterDate >= dateStart;
+        }
+        if (dateEnd) {
+            matchesDate = matchesDate && poster.filterDate <= dateEnd;
+        }
+
+        return matchesSearch && matchesStatus && matchesDate;
     });
 
     const indexOfLastPoster = currentPage * itemsPerPage;
@@ -198,6 +277,7 @@ const ViewPoster = () => {
                         </button>
                     </header>
 
+                    {/* ✅ PASSED NEW PROPS TO FILTERS */}
                     <PosterFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -205,6 +285,10 @@ const ViewPoster = () => {
                         setFilterStatus={setFilterStatus}
                         statusOptions={statusOptions}
                         getFilterClassName={getFilterClassName}
+                        dateStart={dateStart}
+                        setDateStart={setDateStart}
+                        dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
@@ -233,6 +317,8 @@ const ViewPoster = () => {
                                             <th>PREVIEW</th>
                                             <th>TITLE</th>
                                             <th>DESCRIPTION</th>
+                                            {/* ✅ NEW DATE ADDED COLUMN */}
+                                            <th>DATE ADDED</th>
                                             <th>START DATE</th>
                                             <th>END DATE</th>
                                             <th>STATUS</th>
@@ -245,8 +331,9 @@ const ViewPoster = () => {
                                                 <td>
                                                     <div className="vp-image-preview">
                                                         <img 
-                                                            src={`http://localhost:5000/${poster.imageUrl}`} 
+                                                            src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
                                                             alt={poster.title}
+                                                            onError={(e) => e.target.src="https://via.placeholder.com/150"}
                                                         />
                                                     </div>
                                                 </td>
@@ -257,6 +344,13 @@ const ViewPoster = () => {
                                                     <span className="vp-desc">
                                                         {poster.description || 'No description provided'}
                                                     </span>
+                                                </td>
+                                                {/* ✅ DATE ADDED DISPLAY */}
+                                                <td>
+                                                    <div className="vp-date-added">
+                                                        <Calendar size={14} />
+                                                        <span>{poster.displayDateAdded}</span>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <div className="vp-date">
@@ -332,7 +426,7 @@ const ViewPoster = () => {
                 />
             )}
 
-            {/* Global Confirmation Modal - Imported from ../confirmationModal/CustomConfirmModal */}
+            {/* Global Confirmation Modal */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}

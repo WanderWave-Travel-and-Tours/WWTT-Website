@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, HelpCircle } from 'lucide-react';
+import { Save, ArrowLeft, Upload, HelpCircle, Calendar } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditBlog.css';
 
@@ -25,7 +25,7 @@ const getAdminData = () => {
     }
 };
 
-// ✅ Custom Confirm Modal Component (Base sa EditVisa.jsx reference)
+// ✅ Custom Confirm Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -74,7 +74,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 const EditBlog = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const toast = useToast(); // Initialize Toast
+    const toast = useToast(); 
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -89,13 +89,14 @@ const EditBlog = () => {
         type: "primary"
     });
 
-    // Form State
+    // Form State (Now includes scheduledAt)
     const [formData, setFormData] = useState({
         title: '',
         author: '',
         category: '',
         status: 'Published',
-        content: ''
+        content: '',
+        scheduledAt: '' // ✅ Added
     });
 
     // Store original data to track changes for Activity Logs
@@ -108,7 +109,6 @@ const EditBlog = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Helper function para sa confirmation modal
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -122,11 +122,20 @@ const EditBlog = () => {
         });
     };
 
-    // Helper to construct image URL
     const getImageUrl = (imagePath) => {
         if (!imagePath) return '';
         if (imagePath.startsWith('http')) return imagePath;
-        return `http://localhost:5000/${imagePath.replace(/\\/g, '/')}`;
+        return `https://wanderwaveph-backend.onrender.com/${imagePath.replace(/\\/g, '/')}`;
+    };
+
+    // Helper: Convert ISO Date to Input compatible string (YYYY-MM-DDTHH:MM)
+    const formatDateForInput = (isoString) => {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        // Adjust for local timezone offset manually to fit input type="datetime-local"
+        const offset = date.getTimezoneOffset() * 60000;
+        const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
+        return localISOTime;
     };
 
     // =========================================================
@@ -201,11 +210,15 @@ const EditBlog = () => {
     const restoreDraftData = async (data) => {
         if (!data) return;
 
-        if (data.title) setFormData(prev => ({ ...prev, title: data.title }));
-        if (data.author) setFormData(prev => ({ ...prev, author: data.author }));
-        if (data.category) setFormData(prev => ({ ...prev, category: data.category }));
-        if (data.status) setFormData(prev => ({ ...prev, status: data.status }));
-        if (data.content) setFormData(prev => ({ ...prev, content: data.content }));
+        setFormData(prev => ({
+            ...prev,
+            title: data.title || prev.title,
+            author: data.author || prev.author,
+            category: data.category || prev.category,
+            status: data.status || prev.status,
+            content: data.content || prev.content,
+            scheduledAt: data.scheduledAt || prev.scheduledAt // ✅ Restore scheduled date
+        }));
 
         if (data.image && data.imageMeta) {
             try {
@@ -241,25 +254,25 @@ const EditBlog = () => {
     useEffect(() => {
         const fetchBlog = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/blogs/${id}`);
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/${id}`);
                 if (!response.ok) throw new Error('Blog not found');
                 
                 const blog = await response.json();
-                setFormData({
-                    title: blog.title || '',
-                    author: blog.author || '',
-                    category: blog.category || '',
-                    status: blog.status || 'Published',
-                    content: blog.content || ''
-                });
+                
+                // Format date for input if it exists
+                const formattedDate = blog.scheduledAt ? formatDateForInput(blog.scheduledAt) : '';
 
-                setOriginalData({
+                const data = {
                     title: blog.title || '',
                     author: blog.author || '',
                     category: blog.category || '',
                     status: blog.status || 'Published',
-                    content: blog.content || ''
-                });
+                    content: blog.content || '',
+                    scheduledAt: formattedDate // ✅ Populate
+                };
+
+                setFormData(data);
+                setOriginalData(data); // Important for tracking changes
 
                 if (blog.imageUrl) {
                     setImagePreview(getImageUrl(blog.imageUrl));
@@ -297,20 +310,14 @@ const EditBlog = () => {
         if (!originalData) return {};
 
         const changes = {};
-        if (formData.title !== originalData.title) {
-            changes.title = { old: originalData.title, new: formData.title };
-        }
-        if (formData.author !== originalData.author) {
-            changes.author = { old: originalData.author, new: formData.author };
-        }
-        if (formData.category !== originalData.category) {
-            changes.category = { old: originalData.category, new: formData.category };
-        }
-        if (formData.status !== originalData.status) {
-            changes.status = { old: originalData.status, new: formData.status };
-        }
-        if (formData.content !== originalData.content) {
-            changes.content = { old: originalData.content, new: formData.content };
+        if (formData.title !== originalData.title) changes.title = { old: originalData.title, new: formData.title };
+        if (formData.author !== originalData.author) changes.author = { old: originalData.author, new: formData.author };
+        if (formData.category !== originalData.category) changes.category = { old: originalData.category, new: formData.category };
+        if (formData.status !== originalData.status) changes.status = { old: originalData.status, new: formData.status };
+        if (formData.content !== originalData.content) changes.content = { old: originalData.content, new: formData.content };
+        // ✅ Track Schedule Change
+        if (formData.status === 'Scheduled' && formData.scheduledAt !== originalData.scheduledAt) {
+            changes.scheduledAt = { old: originalData.scheduledAt, new: formData.scheduledAt };
         }
         if (imageFile) {
             changes.imageUrl = { old: 'Existing Image', new: imageFile.name };
@@ -320,6 +327,22 @@ const EditBlog = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // ✅ Validation for Scheduled Posts
+        if (formData.status === "Scheduled") {
+            if (!formData.scheduledAt) {
+                toast.warning("Please select a date and time for the scheduled post.", "⚠️ Missing Date");
+                return;
+            }
+            const scheduleDate = new Date(formData.scheduledAt);
+            const now = new Date();
+            // Optional: allow editing to a close future time, strict check might block quick edits
+            if (scheduleDate <= now) {
+                toast.warning("Scheduled time must be in the future.", "⚠️ Invalid Date");
+                return;
+            }
+        }
+
         setSubmitting(true);
 
         try {
@@ -329,6 +352,11 @@ const EditBlog = () => {
             formDataToSend.append('category', formData.category);
             formDataToSend.append('status', formData.status);
             formDataToSend.append('content', formData.content);
+
+            // ✅ Append scheduled date if status is scheduled
+            if (formData.status === "Scheduled" && formData.scheduledAt) {
+                formDataToSend.append("scheduledAt", formData.scheduledAt);
+            }
 
             const { userEmail, adminId } = getAdminData();
             formDataToSend.append("userEmail", userEmail);
@@ -341,14 +369,18 @@ const EditBlog = () => {
                 formDataToSend.append('imageUrl', imageFile);
             }
 
-            const response = await fetch(`http://localhost:5000/api/blogs/${id}`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/update/${id}`, {
                 method: 'PUT',
                 body: formDataToSend,
             });
 
             if (!response.ok) throw new Error('Failed to update blog');
 
-            toast.success('Blog updated successfully!');
+            const successMsg = formData.status === 'Scheduled' 
+                ? 'Blog post rescheduled successfully!' 
+                : 'Blog updated successfully!';
+
+            toast.success(successMsg);
             await clearDraft();
             navigate('/view-blogs');
         } catch (err) {
@@ -494,8 +526,26 @@ const EditBlog = () => {
                                     >
                                         <option value="Published">Published</option>
                                         <option value="Draft">Draft</option>
+                                        <option value="Scheduled">Scheduled</option> {/* ✅ Added Option */}
                                     </select>
                                 </div>
+
+                                {/* ✅ CONDITIONAL DATE FIELD */}
+                                {formData.status === 'Scheduled' && (
+                                    <div className="ebl-form-group ebl-form-group--full">
+                                        <label className="ebl-label" style={{display:'flex', gap:'5px', alignItems:'center'}}>
+                                            <Calendar size={14}/> Schedule Date & Time *
+                                        </label>
+                                        <input
+                                            type="datetime-local"
+                                            name="scheduledAt"
+                                            value={formData.scheduledAt}
+                                            onChange={handleInputChange}
+                                            required={formData.status === 'Scheduled'}
+                                            className="ebl-input"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -543,7 +593,8 @@ const EditBlog = () => {
                                     'Updating...' 
                                 ) : (
                                     <>
-                                        <Save size={18} /> Update Blog
+                                        <Save size={18} /> 
+                                        {formData.status === 'Scheduled' ? 'Schedule Update' : 'Update Blog'} 
                                     </>
                                 )}
                             </button>

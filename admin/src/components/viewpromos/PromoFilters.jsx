@@ -7,7 +7,11 @@ const PromoFilters = ({
     setSearchTerm, 
     filterStatus, 
     setFilterStatus, 
-    statusOptions
+    statusOptions,
+    dateStart,
+    setDateStart,
+    dateEnd,
+    setDateEnd
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -36,48 +40,75 @@ const PromoFilters = ({
                 </div>
                 
                 <div className="promo-controls-group">
-                    {/* MIDDLE: Status Dropdown */}
-                    <div className="promo-filter-container">
-                        <label>Status:</label>
-                        <div className="promo-select-wrapper">
-                            <button 
-                                className="promo-select-btn"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                                <span className="promo-select-label">{getSelectedLabel()}</span>
-                                <ChevronDown 
-                                    size={14} 
-                                    className={`promo-select-icon ${isDropdownOpen ? 'promo-select-icon--open' : ''}`}
-                                />
-                            </button>
-
-                            {isDropdownOpen && (
-                                <>
-                                    <div 
-                                        className="promo-dropdown-overlay" 
-                                        onClick={() => setIsDropdownOpen(false)}
+                    {/* MIDDLE: Filters */}
+                    <div className="promo-filters-row">
+                        
+                        {/* Status Dropdown */}
+                        <div className="promo-filter-item">
+                            <label>Status:</label>
+                            <div className="promo-select-wrapper">
+                                <button 
+                                    className="promo-select-btn"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <span className="promo-select-label">{getSelectedLabel()}</span>
+                                    <ChevronDown 
+                                        size={14} 
+                                        className={`promo-select-icon ${isDropdownOpen ? 'promo-select-icon--open' : ''}`}
                                     />
-                                    <div className="promo-dropdown-menu">
-                                        {statusOptions.map((status) => (
-                                            <button
-                                                key={status}
-                                                className={`promo-dropdown-item ${
-                                                    filterStatus === status ? 'promo-dropdown-item--active' : ''
-                                                }`}
-                                                onClick={() => handleStatusSelect(status)}
-                                            >
-                                                <span className="promo-dropdown-label">
-                                                    {status === 'ALL' ? 'All Promos' : status}
-                                                </span>
-                                                {filterStatus === status && (
-                                                    <span className="promo-dropdown-check">✓</span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <>
+                                        <div 
+                                            className="promo-dropdown-overlay" 
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        />
+                                        <div className="promo-dropdown-menu">
+                                            {statusOptions.map((status) => (
+                                                <button
+                                                    key={status}
+                                                    className={`promo-dropdown-item ${
+                                                        filterStatus === status ? 'promo-dropdown-item--active' : ''
+                                                    }`}
+                                                    onClick={() => handleStatusSelect(status)}
+                                                >
+                                                    <span className="promo-dropdown-label">
+                                                        {status === 'ALL' ? 'All Promos' : status}
+                                                    </span>
+                                                    {filterStatus === status && (
+                                                        <span className="promo-dropdown-check">✓</span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
+
+                        {/* ✅ NEW: Date Range Filter */}
+                        <div className="promo-filter-item">
+                            <label>Date:</label>
+                            <div className="promo-date-group">
+                                <input 
+                                    type="date" 
+                                    className="promo-date-input"
+                                    value={dateStart}
+                                    onChange={(e) => setDateStart(e.target.value)}
+                                    title="Start Date"
+                                />
+                                <span className="promo-date-separator">-</span>
+                                <input 
+                                    type="date" 
+                                    className="promo-date-input"
+                                    value={dateEnd}
+                                    onChange={(e) => setDateEnd(e.target.value)}
+                                    title="End Date"
+                                />
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* RIGHT: Search Box */}

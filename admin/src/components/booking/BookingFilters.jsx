@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, ChevronDown, Calendar } from 'lucide-react';
+import { Search, Filter, ChevronDown } from 'lucide-react';
 import './BookingFilters.css';
 
 const BookingFilters = ({ 
@@ -10,11 +10,7 @@ const BookingFilters = ({
   statusOptions, 
   paymentFilter,
   setPaymentFilter,
-  paymentOptions,
-  dateStart,
-  setDateStart,
-  dateEnd,
-  setDateEnd
+  paymentOptions
 }) => {
   return (
     <div className="bkm-filter-card">
@@ -31,9 +27,8 @@ const BookingFilters = ({
         </div>
         
         <div className="bkm-controls-group">
-            {/* MIDDLE: Filter Dropdowns & Date */}
+            {/* MIDDLE: Filter Dropdowns */}
             <div className="bkm-filters-row">
-                
                 {/* Status Filter */}
                 <div className="bkm-filter-item">
                     <label>Status:</label>
@@ -71,29 +66,6 @@ const BookingFilters = ({
                         <ChevronDown className="bkm-select-icon" size={14} />
                     </div>
                 </div>
-
-                {/* ✅ NEW: Date Range Filter Inputs */}
-                <div className="bkm-filter-item">
-                    <label>Date:</label>
-                    <div className="bkm-date-group">
-                        <input 
-                            type="date" 
-                            className="bkm-date-input"
-                            value={dateStart}
-                            onChange={(e) => setDateStart(e.target.value)}
-                            title="Start Date"
-                        />
-                        <span className="bkm-date-separator">-</span>
-                        <input 
-                            type="date" 
-                            className="bkm-date-input"
-                            value={dateEnd}
-                            onChange={(e) => setDateEnd(e.target.value)}
-                            title="End Date"
-                        />
-                    </div>
-                </div>
-
             </div>
 
             {/* RIGHT: Search Box */}

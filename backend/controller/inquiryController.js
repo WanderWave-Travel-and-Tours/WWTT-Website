@@ -431,165 +431,140 @@ const getAllInquiries = async (req, res) => {
   }
 };
  
-// inquiryController.js
-
 const getInquiry = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // .lean() ay ginagamit para makuha ang plain JavaScript object 
-    // .select('+passengers') ay sinisiguro na isasama ang field kahit may default filter
-    const inquiry = await Inquiry.findById(id)
-      .populate('serviceId visaId cenomarId')
-      .select('+passengers') 
-      .lean(); 
-
-    if (!inquiry) {
-      return res.status(404).json({ success: false, message: 'Inquiry not found' });
-    }
-
-    // DEBUG: Lalabas ito sa terminal ng VS Code (HINDI sa browser console)
-    console.log("--- DEBUG BACKEND ---");
-    console.log("Full Inquiry Object Keys:", Object.keys(inquiry));
-    console.log("Passengers Data:", inquiry.passengers);
-
-    res.json({ 
-      success: true, 
-      data: inquiry 
-    });
+    const inquiry = await Inquiry.findById(req.params.id).populate('serviceId visaId cenomarId');
+    if (!inquiry) return res.status(404).json({ success: false });
+    res.json({ success: true, data: inquiry });
   } catch (error) {
-    console.error('❌ Server Error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ success: false });
   }
 };
  
-// 🔥 COMPLETELY REWRITTEN updateInquiry - BYPASSES MONGOOSE CASTING ISSUE
-
 const updateInquiry = async (req, res) => {
   try {
     const { id } = req.params; 
    
-    // Gamit ang lean() para makuha ang plain object at maiwasan ang initial validation errors
-    const existingInquiry = await Inquiry.findById(id).lean(); 
+    const existingInquiry = await Inquiry.findById(id);
    
     if (!existingInquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
-
-    // --- 1. 🚀 PASSENGERS (REMOVED FROM UPDATE LOGIC) ---
-    // Note: Tinanggal natin ang parsing at updating ng passengers dito para hindi mag-error.
-    // Ang existing passengers sa database ay mananatiling safe at hindi mabubura.
-
-    // --- 2. 🚀 SAFELY PARSE FLIGHT DETAILS ---
-    let parsedFlightDetails = existingInquiry.flightDetails || {};
-    try {
-      if (req.body.flightDetails) {
-        let flightData = req.body.flightDetails;
-        if (typeof flightData === 'string') {
-          flightData = JSON.parse(flightData);
-        }
-        parsedFlightDetails = {
-          origin: flightData.origin || "",
-          destination: flightData.destination || "",
-          departureDate: flightData.departureDate || null,
-          airline: flightData.airline || "",
-          flightNumber: flightData.flightNumber || ""
-        };
-      } else {
-        // Fallback sa individual fields kung hindi naka-object ang dating ng req.body
-        parsedFlightDetails = {
-          origin: req.body.origin || (existingInquiry.flightDetails?.origin || ""),
-          destination: req.body.destination || (existingInquiry.flightDetails?.destination || ""),
-          departureDate: req.body.departureDate || (existingInquiry.flightDetails?.departureDate || null),
-          airline: req.body.airline || (existingInquiry.flightDetails?.airline || ""),
-          flightNumber: req.body.flightNumber || (existingInquiry.flightDetails?.flightNumber || "")
-        };
-      }
-    } catch (e) {
-      console.error("❌ Error parsing flightDetails:", e);
-    }
-
-    // --- 3. 🔥 HANDLE DOCUMENTS (EXISTING LOGIC) ---
+ 
+    const changes = [];
+ 
+    // 🔥 FIX: Mas ligtas na pag-parse ng existingFiles
     let remainingFilesList = [];
     if (req.body.existingFiles) {
       try {
-        remainingFilesList = typeof req.body.existingFiles === 'string' 
-          ? JSON.parse(req.body.existingFiles) 
-          : req.body.existingFiles;
-      } catch (e) { remainingFilesList = []; }
-    }
-
-    const documentMap = new Map();
-    if (existingInquiry.deliveredDocuments && Array.isArray(existingInquiry.deliveredDocuments)) {
-      existingInquiry.deliveredDocuments.forEach(doc => {
-        const separatorIndex = doc.fileName.indexOf(' - ');
-        if (separatorIndex !== -1) {
-            const fieldKey = doc.fileName.substring(0, separatorIndex).trim();
-            if (remainingFilesList.includes(fieldKey)) {
-                documentMap.set(fieldKey, doc);
-            }
-        }
-      });
-    }
-
-    if (req.body.hasExistingEvidence === 'false') {
-        // Logic to remove evidence
-    } else if (existingInquiry.evidenceUrl) {
-        documentMap.set('evidence', {
-          fileName: `evidence - ${existingInquiry.evidenceName}`,
-          fileUrl: existingInquiry.evidenceUrl,
-          uploadedAt: existingInquiry.updatedAt || new Date()
-        });
-    }
-
-    if (req.files) {
-      const filesToProcess = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-      filesToProcess.forEach(file => {
-        const fieldKey = file.fieldname;
-        if (fieldKey !== 'evidence' && fieldKey !== 'requirement' && fieldKey !== 'walkInDoc') {
-            documentMap.set(fieldKey, {
-              fileName: `${fieldKey} - ${file.originalname}`,
-              fileUrl: `/uploads/documents/${file.filename}`,
-              uploadedAt: new Date()
-            });
-        }
-      });
-    }
-
-    // --- 4. 🔥 BUILD UPDATE OBJECT (PASSENGERS EXCLUDED) ---
+        // Ito ang listahan ng Keys (e.g., "passport", "photo") na GUSTONG ITIRA ng user
+        remainingFilesList = JSON.parse(req.body.existingFiles);
+      } catch (e) {
+        console.error("Error parsing existingFiles:", e);
+        remainingFilesList = [];
+      }
+    };
+ 
+    // Build update object
     const updateData = {
       fullName: req.body.fullName || existingInquiry.fullName,
       email: req.body.email || existingInquiry.email,
       contactNumber: req.body.contactNumber || existingInquiry.contactNumber,
       serviceName: req.body.serviceName || existingInquiry.serviceName,
       inquiryType: req.body.inquiryType || existingInquiry.inquiryType,
+      cenomarDocument: req.body.cenomarDocument || existingInquiry.cenomarDocument,
+      psaDocument: req.body.psaDocument || existingInquiry.psaDocument,
       
-      // I-update ang flight details pero HUWAG isama ang 'passengers' field dito
-      flightDetails: parsedFlightDetails,
+      message: req.body.message, // Laging i-update ang message kung may bago
+      adminRemarks: req.body.message || existingInquiry.adminRemarks, // Sync adminRemarks
+      estimatedPrice: parseFloat(req.body.estimatedPrice) || existingInquiry.estimatedPrice,
       
-      message: req.body.message || existingInquiry.message,
-      adminRemarks: req.body.adminRemarks || req.body.message || existingInquiry.adminRemarks,
-      estimatedPrice: req.body.estimatedPrice ? parseFloat(req.body.estimatedPrice) : existingInquiry.estimatedPrice,
+      // 🔥 FIX: Siguraduhin na ma-uupdate ang Travel Date at Stay
       travelDate: req.body.travelDate || existingInquiry.travelDate,
       lengthOfStay: req.body.lengthOfStay || existingInquiry.lengthOfStay,
+      
       status: req.body.status || existingInquiry.status,
-      deliveredDocuments: Array.from(documentMap.values()),
-      evidenceUrl: req.body.hasExistingEvidence === 'false' ? '' : (existingInquiry.evidenceUrl || ''),
-      evidenceName: req.body.hasExistingEvidence === 'false' ? '' : (existingInquiry.evidenceName || ''),
-      updatedAt: new Date()
+      updatedAt: Date.now()
     };
-
-    // --- 5. 🔥 UPDATE USING UPDATEONE ---
-    // Dahil wala ang 'passengers' sa updateData, hindi ito papakialaman ng MongoDB
-    await Inquiry.updateOne({ _id: id }, { $set: updateData });
-
-    const updatedInquiry = await Inquiry.findById(id);
-
-    // --- 6. 🔥 ACTIVITY LOG (EXISTING LOGIC) ---
+   
+    // Check for name change logic (Optional logging)
+    const newFullName = `${req.body.givenName || ''} ${req.body.lastName || ''}`.trim();
+    if (newFullName && newFullName !== "" && newFullName !== existingInquiry.fullName) {
+      changes.push(`Name changed from "${existingInquiry.fullName}" to "${newFullName}"`);
+      updateData.fullName = newFullName;
+    }
+ 
+    // 🔥 DOCUMENT HANDLING (FIXED DELETION LOGIC)
+    const documentMap = new Map();
+   
+    // 1. Process Existing Files (FILTERING)
+    // Kung wala sa remainingFilesList, ibig sabihin binura na ng user sa Frontend -> 'wag isama sa Map.
+    if (existingInquiry.deliveredDocuments && Array.isArray(existingInquiry.deliveredDocuments)) {
+      existingInquiry.deliveredDocuments.forEach(doc => {
+        // Kunin ang key bago ang " - "
+        const separatorIndex = doc.fileName.indexOf(' - ');
+        if (separatorIndex !== -1) {
+            const fieldKey = doc.fileName.substring(0, separatorIndex).trim();
+            
+            // Check kung nasa whitelist (remainingFilesList)
+            if (remainingFilesList.includes(fieldKey)) {
+                documentMap.set(fieldKey, doc);
+            }
+        }
+      });
+    }
+ 
+    // 2. Handle Evidence/Receipt URL
+    if (req.body.hasExistingEvidence === 'false') {
+        updateData.evidenceUrl = '';
+        updateData.evidenceName = '';
+    } else {
+        updateData.evidenceUrl = existingInquiry.evidenceUrl;
+        updateData.evidenceName = existingInquiry.evidenceName;
+    }
+ 
+    // 3. Process NEW Uploads (Overwrite existing keys if needed)
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        const fieldKey = file.fieldname;
+        const fileUrl = `/uploads/documents/${file.filename}`;
+ 
+        // Special handling para sa evidence
+        if (fieldKey === 'evidence' || fieldKey === 'requirement' || fieldKey === 'walkInDoc') {
+            updateData.evidenceUrl = fileUrl;
+            updateData.evidenceName = file.originalname;
+        }
+       
+        // Add to Map (Overwrites existing entry with same key)
+        documentMap.set(fieldKey, {
+          fileName: `${fieldKey} - ${file.originalname}`,
+          fileUrl: fileUrl,
+          uploadedAt: Date.now()
+        });
+      });
+    }
+ 
+    // Convert Map back to Array
+    updateData.deliveredDocuments = Array.from(documentMap.values());
+ 
+    delete updateData.message; // Clean up temp field if not in schema (optional)
+    updateData.updatedAt = Date.now();
+ 
+    // UPDATE DATABASE
+    const updatedInquiry = await Inquiry.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: false }
+    );
+ 
+    // 👇 ACTIVITY LOG (Keep existing logic)
     try {
         const { userEmail, adminId } = req.body;
         if (userEmail) {
-            const specificModule = getModuleFromInquiryType(updatedInquiry.inquiryType || 'GENERAL', updatedInquiry.serviceName);
+            const specificModule = getModuleFromInquiryType(
+                updatedInquiry.inquiryType || 'GENERAL',
+                updatedInquiry.serviceName
+            );
             await ActivityLog.create({
                 action: 'UPDATE',
                 module: specificModule,
@@ -601,17 +576,19 @@ const updateInquiry = async (req, res) => {
                     recordTitle: `${specificModule} - ${updatedInquiry.fullName}`,
                     recordId: id,
                     method: 'PUT',
+                    changes: changes,
                     inquiryType: updatedInquiry.inquiryType,
-                    // Babasahin pa rin ang length ng passengers mula sa database para sa log
-                    passengersCount: updatedInquiry.passengers ? updatedInquiry.passengers.length : 0
+                    docCount: updatedInquiry.deliveredDocuments.length
                 }
             });
         }
-    } catch (logError) { console.error('⚠️ Activity Log Error:', logError.message); }
-
-    res.json({ success: true, message: 'Inquiry updated successfully', data: updatedInquiry });
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+ 
+    res.json({ success: true, data: updatedInquiry });
   } catch (error) {
-    console.error('❌ Update Error:', error);
+    console.error('Update Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

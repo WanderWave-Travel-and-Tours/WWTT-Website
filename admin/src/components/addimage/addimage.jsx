@@ -5,20 +5,118 @@ import {
   ImageIcon,
   Info,
   Loader2,
+  HelpCircle,
 } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
-import { useToast } from "../toast/ToastManager"; 
-import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
+import { useToast } from "../toast/ToastManager"; // Ginamit ang useToast
 import "./addimage.css";
 
+// Reusable Confirmation Modal base sa EditVisa.jsx pattern
+const CustomConfirmModal = ({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  type = "primary",
+}) => {
+  if (!isOpen) return null;
+  return (
+    <div
+      className="arc-confirm-overlay"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 11000,
+      }}
+    >
+      <div
+        className="arc-confirm-modal"
+        style={{
+          backgroundColor: "white",
+          padding: "2rem",
+          borderRadius: "12px",
+          maxWidth: "400px",
+          width: "90%",
+          textAlign: "center",
+          boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
+        }}
+      >
+        <div style={{ marginBottom: "1rem" }}>
+          <HelpCircle
+            size={48}
+            color={type === "danger" ? "#ef4444" : "#3b82f6"}
+            style={{ margin: "0 auto" }}
+          />
+        </div>
+        <h3
+          style={{
+            fontSize: "1.25rem",
+            fontWeight: "700",
+            marginBottom: "0.5rem",
+            color: "#1e293b",
+          }}
+        >
+          {title}
+        </h3>
+        <p
+          style={{
+            color: "#64748b",
+            marginBottom: "1.5rem",
+            lineHeight: "1.5",
+          }}
+        >
+          {message}
+        </p>
+        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: "0.5rem 1.25rem",
+              borderRadius: "6px",
+              border: "1px solid #e2e8f0",
+              backgroundColor: "white",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              padding: "0.5rem 1.25rem",
+              borderRadius: "6px",
+              border: "none",
+              backgroundColor: type === "danger" ? "#ef4444" : "#3b82f6",
+              color: "white",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AddImage = () => {
-  const toast = useToast(); 
+  const toast = useToast(); // Initialize Toast context
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Confirmation Modal State
+  // Confirmation Modal State base sa EditVisa
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: "",
@@ -65,7 +163,7 @@ const AddImage = () => {
       setImagePreview(URL.createObjectURL(file));
       toast.success(
         `Image "${file.name}" selected successfully!`,
-        "Image Selected"
+        "✅ Image Selected"
       );
     }
   };
@@ -76,105 +174,102 @@ const AddImage = () => {
     }
     setImageFile(null);
     setImagePreview(null);
-    toast.info('Image selection cleared.', 'Removed');
+    toast.info('Image selection cleared.', '🗑️ Removed');
   };
 
-  const handleCancelClick = () => {
+const handleCancelClick = () => {
     if (!imageFile) return;
     askConfirmation(
-      "Discard Selection",
-      "Are you sure you want to remove the selected image?",
-      () => {
-        removeImage();
-      },
-      "danger"
+        "Discard Selection",
+        "Are you sure you want to remove the selected image?",
+        () => {
+            removeImage();
+        },
+        "danger"
     );
-  };
+};
 
-  const handleSubmitClick = () => {
+const handleSubmitClick = () => {
     if (!imageFile) {
-      toast.warning('Please select an image to upload.', 'Missing File');
-      return;
+        toast.warning('Please select an image to upload.', '⚠️ Missing File');
+        return;
     }
 
-    toast.info('Validating image...', 'Processing', 1500);
+    toast.success('Image ready for upload!', '✅ Validated', 2000);
 
     askConfirmation(
-      "Upload Confirmation",
-      `Are you sure you want to upload "${imageFile.name}" to the gallery?`,
-      () => performSubmit()
+        "Upload Confirmation",
+        `Are you sure you want to upload "${imageFile.name}" to the gallery?`,
+        () => performSubmit()
     );
-  };
+};
 
   const performSubmit = async () => {
     setIsSubmitting(true);
     
-    toast.info('Uploading image to gallery...', 'Please Wait', 2000);
+    toast.info('Uploading image to gallery...', '📤 Please Wait', 2000);
 
     const formData = new FormData();
     formData.append('image', imageFile);
     formData.append('title', imageFile.name);
 
     try {
-      const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-      const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-      const activeId = adminData.id || adminData._id || "";
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        const activeId = adminData.id || adminData._id || "";
 
-      formData.append("userEmail", activeUser);
-      formData.append("adminId", activeId);
-      
-      console.log("Uploading Image as:", activeUser); 
+        formData.append("userEmail", activeUser);
+        formData.append("adminId", activeId);
+        
+        console.log("Uploading Image as:", activeUser); 
     } catch (err) {
-      console.error("Error parsing admin data:", err);
+        console.error("Error parsing admin data:", err);
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/images/add', {
-        method: 'POST',
-        body: formData,
-      });
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/images/add', {
+            method: 'POST',
+            body: formData,
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (response.ok) {
-        toast.success(
-          `Image "${imageFile.name}" uploaded successfully to gallery!`,
-          'Upload Success',
-          5000
-        );
-        
-        // Gamit ang neutral toast para sa transition
-        toast.neutral('Ready for next upload.', 'Ready', 3000);
-        
-        // Reset state after success
-        if (imagePreview) URL.revokeObjectURL(imagePreview);
-        setImageFile(null);
-        setImagePreview(null);
-      } else {
-        const errorMessage = data.message || 'Unknown error occurred';
-        toast.error(
-          `Failed to upload: ${errorMessage}`,
-          'Upload Error',
-          5000
-        );
-      }
+        if (response.ok) {
+            toast.success(
+                `Image "${imageFile.name}" uploaded successfully to gallery!`,
+                '✅ Upload Success',
+                5000
+            );
+            
+            toast.info('Ready for next upload.', '🔄 Ready', 3000);
+            removeImage(); 
+        } else {
+            const errorMessage = data.message || 'Unknown error occurred';
+            toast.error(
+                `Failed to upload: ${errorMessage}`,
+                '❌ Upload Error',
+                5000
+            );
+        }
     } catch (error) {
-      console.error('Upload Error:', error);
-      toast.error(
-        `Unable to connect to server: ${error.message}. Make sure the backend is running.`,
-        'Connection Error',
-        6000
-      );
+        console.error('❌ Upload Error:', error);
+        toast.error(
+            `Unable to connect to server: ${error.message}. Make sure the backend is running.`,
+            '❌ Connection Error',
+            6000
+        );
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
-  };
+};
 
   return (
     <div className="ai-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      <main className={`ai-main ${isSidebarCollapsed ? "ai-main--collapsed" : ""}`}>
+      <main
+        className={`ai-main ${isSidebarCollapsed ? "ai-main--collapsed" : ""}`}
+      >
         <div className="ai-container">
           <header className="ai-header">
             <div className="ai-header-content">
@@ -199,11 +294,20 @@ const AddImage = () => {
                       onChange={handleImageChange}
                       hidden
                     />
-                    <label htmlFor="gallery-upload" className="ai-upload-label-poster">
+                    <label
+                      htmlFor="gallery-upload"
+                      className="ai-upload-label-poster"
+                    >
                       <div className="ai-upload-icon-box">
                         <Upload size={32} />
                       </div>
-                      <p style={{ fontWeight: "700", color: "#1e293b", margin: "0" }}>
+                      <p
+                        style={{
+                          fontWeight: "700",
+                          color: "#1e293b",
+                          margin: "0",
+                        }}
+                      >
                         Click to select image
                       </p>
                       <span style={{ fontSize: "12px", color: "#64748b" }}>
@@ -241,11 +345,16 @@ const AddImage = () => {
                 <div className="ai-info-box">
                   <div className="ai-info-item">
                     <Info size={16} />
-                    <span>Images uploaded here will be visible in the public gallery.</span>
+                    <span>
+                      Images uploaded here will be visible in the public
+                      gallery.
+                    </span>
                   </div>
                   <div className="ai-info-item">
                     <Info size={16} />
-                    <span>Recommended resolution: 1920x1080 for best quality.</span>
+                    <span>
+                      Recommended resolution: 1920x1080 for best quality.
+                    </span>
                   </div>
                 </div>
               </section>
@@ -277,13 +386,17 @@ const AddImage = () => {
                   <div className="ai-stat">
                     <strong>Type</strong>
                     <span>
-                      {imageFile ? imageFile.type.split("/")[1].toUpperCase() : "--"}
+                      {imageFile
+                        ? imageFile.type.split("/")[1].toUpperCase()
+                        : "--"}
                     </span>
                   </div>
                   <div className="ai-stat">
                     <strong>Size</strong>
                     <span>
-                      {imageFile ? (imageFile.size / 1024 / 1024).toFixed(2) + " MB" : "--"}
+                      {imageFile
+                        ? (imageFile.size / 1024 / 1024).toFixed(2) + " MB"
+                        : "--"}
                     </span>
                   </div>
                 </div>
@@ -316,13 +429,16 @@ const AddImage = () => {
         </div>
       </main>
 
+      {/* In-add ang CustomConfirmModal sa dulo ng JSX */}
       <CustomConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
         message={confirmConfig.message}
         type={confirmConfig.type}
         onConfirm={confirmConfig.onConfirm}
-        onCancel={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+        onCancel={() =>
+          setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        }
       />
     </div>
   );

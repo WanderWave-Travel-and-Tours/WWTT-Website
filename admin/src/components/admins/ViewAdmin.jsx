@@ -4,8 +4,6 @@ import Sidebar from '../sidebar/sidebar';
 import AdminFilters from './AdminFilters';
 import AdminPagination from './AdminPagination';
 import AddAdminModal from './Addadminmodal';
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal'; // Path as requested
-import { useToast } from '../toast/ToastManager'; // Path as requested
 import { 
   UserCog, 
   Plus
@@ -22,8 +20,6 @@ const ADMINS_PER_PAGE = 10;
 
 const ViewAdmin = () => {
   const navigate = useNavigate();
-  const toast = useToast(); // Initialize toast
-  
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [admins, setAdmins] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,13 +28,6 @@ const ViewAdmin = () => {
   const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // State para sa Custom Confirmation Modal
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    adminId: null,
-    adminEmail: ''
-  });
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -57,13 +46,13 @@ const ViewAdmin = () => {
     const mainAdmin = adminData.email?.toLowerCase() === 'info@wanderwavetravelandtours.com';
     
     if (!mainAdmin) {
-      toast.error('Access Denied: Only Main Admin can access this page', 'Security Error');
+      alert('⛔ Access Denied: Only Main Admin can access this page');
       navigate('/dashboard');
       return;
     }
     
     setIsMainAdmin(true);
-  }, [navigate, toast]);
+  }, [navigate]);
 
   useEffect(() => {
     if (!isMainAdmin) return;
@@ -74,7 +63,7 @@ const ViewAdmin = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/list', {
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/admin/list', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -88,39 +77,31 @@ const ViewAdmin = () => {
         console.log('✅ Admins loaded:', data.admins.length);
       } else {
         console.error('❌ Failed to fetch admins:', data.message);
-        toast.error('Failed to load admins: ' + data.message, 'Fetch Error');
+        alert('Failed to load admins: ' + data.message);
       }
     } catch (error) {
       console.error('❌ Error fetching admins:', error);
-      toast.error('Error loading admins. Please try again.', 'Connection Error');
+      alert('Error loading admins. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Function para buksan ang Confirmation Modal
-  const openDeleteConfirm = (adminId, adminEmail) => {
+  const handleDeleteAdmin = async (adminId, adminEmail) => {
     if (adminEmail.toLowerCase() === 'info@wanderwavetravelandtours.com') {
-      toast.warning('Cannot delete Main Admin account!', 'Action Restricted');
+      alert('⛔ Cannot delete Main Admin account!');
       return;
     }
-    setConfirmModal({
-      isOpen: true,
-      adminId,
-      adminEmail
-    });
-  };
 
-  // Ang actual na delete function na tinatawag ng Modal
-  const handleDeleteAdmin = async () => {
-    const { adminId, adminEmail } = confirmModal;
-    
-    // Isara muna ang modal
-    setConfirmModal({ ...confirmModal, isOpen: false });
+    const confirmed = window.confirm(
+      `Are you sure you want to archive admin: ${adminEmail}?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) return;
 
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/admin/delete/${adminId}`, {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/admin/delete/${adminId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -131,7 +112,7 @@ const ViewAdmin = () => {
       const data = await response.json();
 
       if (data.status === 'ok') {
-        toast.success(`Admin ${adminEmail} archived successfully!`, 'Success');
+        alert('✅ Admin archived successfully!');
         fetchAdmins();
         
         const updatedAdmins = admins.filter(admin => admin.id !== adminId);
@@ -139,11 +120,11 @@ const ViewAdmin = () => {
           setCurrentPage(Math.max(1, currentPage - 1));
         }
       } else {
-        toast.error('Failed to archive admin: ' + data.message, 'Error');
+        alert('❌ Failed to archive admin: ' + data.message);
       }
     } catch (error) {
       console.error('❌ Error archiving admin:', error);
-      toast.error('Error archiving admin. Please try again.', 'System Error');
+      alert('Error archiving admin. Please try again.');
     }
   };
 
@@ -297,7 +278,7 @@ const ViewAdmin = () => {
                               ) : (
                                 <button
                                   className="admin-action-btn archive"
-                                  onClick={() => openDeleteConfirm(admin.id, admin.email)}
+                                  onClick={() => handleDeleteAdmin(admin.id, admin.email)}
                                 >
                                   Archive
                                 </button>
@@ -311,6 +292,7 @@ const ViewAdmin = () => {
                 </table>
               </div>
               
+              {/* 🔥 PAGINATION IS NOW OUTSIDE THE TABLE WRAPPER - SAME AS TESTIMONIALS! */}
               <AdminPagination
                 totalItems={totalAdmins}
                 itemsPerPage={ADMINS_PER_PAGE}
@@ -322,20 +304,10 @@ const ViewAdmin = () => {
         </div>
       </main>
 
-      {/* MODAL COMPONENTS */}
       <AddAdminModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAdminAdded={fetchAdmins}
-      />
-
-      <CustomConfirmModal
-        isOpen={confirmModal.isOpen}
-        title="Confirm Archive"
-        message={`Are you sure you want to archive admin: ${confirmModal.adminEmail}? This action cannot be undone.`}
-        type="danger"
-        onConfirm={handleDeleteAdmin}
-        onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
       />
     </div>
   );

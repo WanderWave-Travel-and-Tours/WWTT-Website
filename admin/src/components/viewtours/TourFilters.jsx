@@ -2,7 +2,17 @@ import React, { useState } from 'react';
 import { Search, Filter, ChevronDown } from 'lucide-react';
 import './TourFilters.css';
 
-const TourFilters = ({ searchTerm, setSearchTerm, filterCategory, setFilterCategory, categories }) => {
+const TourFilters = ({ 
+    searchTerm, 
+    setSearchTerm, 
+    filterCategory, 
+    setFilterCategory, 
+    categories,
+    dateStart,
+    setDateStart,
+    dateEnd,
+    setDateEnd
+}) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const handleCategorySelect = (category) => {
@@ -30,48 +40,75 @@ const TourFilters = ({ searchTerm, setSearchTerm, filterCategory, setFilterCateg
                 </div>
                 
                 <div className="tour-controls-group">
-                    {/* MIDDLE: Category Dropdown */}
-                    <div className="tour-filter-container">
-                        <label>Category:</label>
-                        <div className="tour-select-wrapper">
-                            <button 
-                                className="tour-select-btn"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                                <span className="tour-select-label">{getSelectedLabel()}</span>
-                                <ChevronDown 
-                                    size={14} 
-                                    className={`tour-select-icon ${isDropdownOpen ? 'tour-select-icon--open' : ''}`}
-                                />
-                            </button>
-
-                            {isDropdownOpen && (
-                                <>
-                                    <div 
-                                        className="tour-dropdown-overlay" 
-                                        onClick={() => setIsDropdownOpen(false)}
+                    {/* MIDDLE: Filters */}
+                    <div className="tour-filters-row">
+                        
+                        {/* Category Dropdown */}
+                        <div className="tour-filter-item">
+                            <label>Category:</label>
+                            <div className="tour-select-wrapper">
+                                <button 
+                                    className="tour-select-btn"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <span className="tour-select-label">{getSelectedLabel()}</span>
+                                    <ChevronDown 
+                                        size={14} 
+                                        className={`tour-select-icon ${isDropdownOpen ? 'tour-select-icon--open' : ''}`}
                                     />
-                                    <div className="tour-dropdown-menu">
-                                        {categories.map((category) => (
-                                            <button
-                                                key={category}
-                                                className={`tour-dropdown-item ${
-                                                    filterCategory === category ? 'tour-dropdown-item--active' : ''
-                                                }`}
-                                                onClick={() => handleCategorySelect(category)}
-                                            >
-                                                <span className="tour-dropdown-label">
-                                                    {category === 'ALL' ? 'All Tours' : category}
-                                                </span>
-                                                {filterCategory === category && (
-                                                    <span className="tour-dropdown-check">✓</span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <>
+                                        <div 
+                                            className="tour-dropdown-overlay" 
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        />
+                                        <div className="tour-dropdown-menu">
+                                            {categories.map((category) => (
+                                                <button
+                                                    key={category}
+                                                    className={`tour-dropdown-item ${
+                                                        filterCategory === category ? 'tour-dropdown-item--active' : ''
+                                                    }`}
+                                                    onClick={() => handleCategorySelect(category)}
+                                                >
+                                                    <span className="tour-dropdown-label">
+                                                        {category === 'ALL' ? 'All Tours' : category}
+                                                    </span>
+                                                    {filterCategory === category && (
+                                                        <span className="tour-dropdown-check">✓</span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
+
+                        {/* ✅ NEW: Date Range Filter Inputs */}
+                        <div className="tour-filter-item">
+                            <label>Date:</label>
+                            <div className="tour-date-group">
+                                <input 
+                                    type="date" 
+                                    className="tour-date-input"
+                                    value={dateStart}
+                                    onChange={(e) => setDateStart(e.target.value)}
+                                    title="Start Date"
+                                />
+                                <span className="tour-date-separator">-</span>
+                                <input 
+                                    type="date" 
+                                    className="tour-date-input"
+                                    value={dateEnd}
+                                    onChange={(e) => setDateEnd(e.target.value)}
+                                    title="End Date"
+                                />
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* RIGHT: Search Box */}

@@ -6,15 +6,13 @@ const path = require('path');
 // 1. CREATE TESTIMONIAL
 const addTestimonial = async (req, res) => {
     try {
-        // ✅ Destructure rating
-        const { customerName, source, feedback, rating, userEmail, adminId } = req.body;
+        const { customerName, source, feedback, userEmail, adminId } = req.body;
 
         const newTestimonial = new Testimonial({
             customerName,
             source,
             customerImage: req.file ? req.file.filename : "", 
             feedback,
-            rating: parseFloat(rating) || 5, // ✅ Ensure Float for 4.5 etc
             isArchive: "No"
         });
 
@@ -33,7 +31,7 @@ const addTestimonial = async (req, res) => {
                 module: 'Testimonials',
                 user: userEmail || 'Unknown User',
                 userId: logUserId,
-                description: `Added new testimonial from: ${customerName} (${savedTestimonial.rating} Stars)`, 
+                description: `Added new testimonial from: ${customerName}`,
                 severity: 'SUCCESS',
                 details: {
                     recordTitle: customerName,
@@ -77,15 +75,9 @@ const getTestimonialById = async (req, res) => {
 // 4. UPDATE
 const updateTestimonial = async (req, res) => {
     try {
-        // ✅ Destructure rating
-        const { customerName, source, feedback, rating, userEmail, adminId, changes } = req.body;
+        const { customerName, source, feedback, userEmail, adminId, changes } = req.body;
         
-        let updateData = { 
-            customerName, 
-            source, 
-            feedback, 
-            rating: parseFloat(rating) // ✅ Ensure Float on Update
-        };
+        let updateData = { customerName, source, feedback };
 
         if (req.file) {
             updateData.customerImage = req.file.filename;
@@ -129,7 +121,7 @@ const updateTestimonial = async (req, res) => {
                 user: userEmail || 'Unknown User',
                 userId: logUserId,
                 description: logDescription,
-                severity: 'SUCCESS', 
+                severity: 'SUCCESS', // Changed to SUCCESS (Green) for standard updates
                 details: {
                     recordTitle: updatedTestimonial.customerName,
                     recordId: updatedTestimonial._id.toString(),

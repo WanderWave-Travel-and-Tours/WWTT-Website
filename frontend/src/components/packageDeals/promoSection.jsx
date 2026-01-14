@@ -36,10 +36,20 @@ function PromoSection({ onBookNow }) {
           });
 
           const formattedPromos = activePromos.map(p => {
-            // Check if backend provided an image, otherwise use fallback
-            const imageUrl = p.image 
-                ? `http://localhost:5000/uploads/${p.image}` 
-                : getPromoFallbackImage(p.durationType);
+            // ✅ CHECK IF ALREADY A FULL URL (Cloudinary)
+            let imageUrl;
+            if (p.image) {
+              // If image starts with http/https, use it directly (Cloudinary URL)
+              if (p.image.startsWith('http://') || p.image.startsWith('https://')) {
+                imageUrl = p.image;
+              } else {
+                // Otherwise, it's a local filename
+                imageUrl = `http://localhost:5000/uploads/${p.image}`;
+              }
+            } else {
+              // No image, use fallback
+              imageUrl = getPromoFallbackImage(p.durationType);
+            }
 
             return {
               id: p._id,

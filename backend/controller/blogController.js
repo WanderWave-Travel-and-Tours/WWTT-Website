@@ -1,5 +1,5 @@
 const Blog = require('../models/blog');
-const ActivityLog = require('../models/ActivityLog'); // ✅ IMPORT ADDED
+const ActivityLog = require('../models/ActivityLog');
 const fs = require('fs');
 const path = require('path');
 const { cloudinary } = require('../config/cloudinary');
@@ -7,7 +7,8 @@ const { cloudinary } = require('../config/cloudinary');
 // 1. ADD BLOG
 const addBlog = async (req, res) => {
     try {
-        const { title, author, category, content, status, isArchive, userEmail, adminId } = req.body;
+        // ✅ Extract scheduledAt from body
+        const { title, author, category, content, status, isArchive, userEmail, adminId, scheduledAt } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'Please upload a cover image.' });
@@ -21,6 +22,8 @@ const addBlog = async (req, res) => {
             imageUrl: req.file.path, // Cloudinary URL
             imagePublicId: req.file.filename, // Cloudinary public_id
             status,
+            // ✅ If status is Scheduled, save the date, otherwise null
+            scheduledAt: status === 'Scheduled' && scheduledAt ? new Date(scheduledAt) : null,
             isArchive: isArchive || 'No' 
         });
 
@@ -33,7 +36,7 @@ const addBlog = async (req, res) => {
                 module: 'Blogs',
                 user: userEmail || 'Unknown User',
                 userId: adminId || null,
-                description: `Created new blog post: ${title}`,
+                description: `Created new blog post: ${title} (${status})`,
                 severity: 'SUCCESS',
                 details: {
                     recordTitle: title,
@@ -55,12 +58,30 @@ const addBlog = async (req, res) => {
     }
 };
 
-// 2. GET ALL ACTIVE BLOGS
+// 2. GET ALL ACTIVE BLOGS (With Auto-Publish Logic)
 const getAllBlogs = async (req, res) => {
     try {
+        // ✅ LAZY CRON: Check for scheduled posts that are due and publish them
+        const now = new Date();
+        const dueBlogs = await Blog.find({ 
+            status: 'Scheduled', 
+            scheduledAt: { $lte: now },
+            isArchive: 'No'
+        });
+
+        if (dueBlogs.length > 0) {
+            await Blog.updateMany(
+                { _id: { $in: dueBlogs.map(b => b._id) } },
+                { $set: { status: 'Published', scheduledAt: null } }
+            );
+            console.log(`🔄 Automatically published ${dueBlogs.length} scheduled blogs.`);
+        }
+
+        // Fetch all blogs (Published, Drafts, and future Scheduled)
         const blogs = await Blog.find({ isArchive: 'No' }).sort({ createdAt: -1 });
         res.status(200).json(blogs);
     } catch (error) {
+        console.error("Error fetching blogs:", error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -87,7 +108,7 @@ const deleteBlog = async (req, res) => {
 
         // 👇👇👇 ACTIVITY LOG START (ARCHIVE) 👇👇👇
         try {
-            const { userEmail, adminId } = req.body; // Frontend needs to send this!
+            const { userEmail, adminId } = req.body; 
             if (userEmail) {
                 await ActivityLog.create({
                     action: 'ARCHIVE',
@@ -99,7 +120,7 @@ const deleteBlog = async (req, res) => {
                     details: {
                         recordTitle: blog.title,
                         recordId: blog._id.toString(),
-                        method: 'DELETE' // or PUT depending on implementation
+                        method: 'DELETE'
                     }
                 });
                 console.log('✅ Activity Log saved for Archive Blog');
@@ -129,8 +150,17 @@ const getArchivedBlogs = async (req, res) => {
 // 6. UPDATE BLOG
 const updateBlog = async (req, res) => {
     try {
-        const { title, author, category, content, status, isArchive, userEmail, adminId, imagePublicId  } = req.body;
+        // ✅ Extract scheduledAt
+        const { title, author, category, content, status, isArchive, userEmail, adminId, imagePublicId, scheduledAt } = req.body;
+        
         let updateData = { title, author, category, content, status, isArchive };
+
+        // ✅ Handle Scheduled Date Logic
+        if (status === 'Scheduled' && scheduledAt) {
+            updateData.scheduledAt = new Date(scheduledAt);
+        } else if (status === 'Published' || status === 'Draft') {
+            updateData.scheduledAt = null; // Clear date if status changes
+        }
 
         if (req.file) {
             // Delete old image from Cloudinary

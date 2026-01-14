@@ -2,14 +2,54 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   X, Eye, EyeOff, Calendar, Image as ImageIcon, FileText, 
-  Archive, CheckCircle, Edit 
+  Archive, CheckCircle, ExternalLink, Edit, HelpCircle 
 } from 'lucide-react';
-
-// Import mula sa tamang file directories
-import { useToast } from '../toast/ToastManager';
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
-
+import { useToast } from '../toast/ToastManager'; // Inimport ang Toast Manager
 import './PosterDetailModal.css';
+
+// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="arc-confirm-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 11000
+    }}>
+      <div className="arc-confirm-modal" style={{
+        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            style={{
+              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+              color: 'white', cursor: 'pointer', fontWeight: '500'
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const formatDate = (dateString) => {
     if (!dateString) return "Not set";
@@ -28,7 +68,7 @@ const PosterDetailModal = ({
     const navigate = useNavigate();
     const toast = useToast(); // Hook para sa notifications
 
-    // State para sa Confirmation Modal configuration
+    // State para sa Confirmation Modal
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
         title: "",
@@ -41,7 +81,7 @@ const PosterDetailModal = ({
 
     const closeModal = () => setShowModal(false);
 
-    // Helper function para sa pag-trigger ng confirmation modal
+    // Helper function para buksan ang confirmation
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -66,38 +106,29 @@ const PosterDetailModal = ({
     const status = (selectedPoster.status || 'INACTIVE').toUpperCase();
     const statusConfig = getStatusConfig(status);
 
-    // LOGIC: Toggle Status gamit ang Toast at Custom Modal
+    // Pinalitan ang Logic para gumamit ng Custom Modal
     const handleToggleStatus = () => {
-        const isCurrentlyActive = status === 'ACTIVE';
-        const newStatusAction = isCurrentlyActive ? 'Deactivate' : 'Activate';
+        const newStatusAction = status === 'ACTIVE' ? 'Deactivate' : 'Activate';
         
         askConfirmation(
             `${newStatusAction} Poster`,
             `Are you sure you want to ${newStatusAction.toLowerCase()} "${selectedPoster.title}"?`,
             () => {
                 toggleStatus(selectedPoster._id, selectedPoster.status);
-                
-                // Toast notification base sa action
-                if (isCurrentlyActive) {
-                    toast.warning(`"${selectedPoster.title}" has been deactivated.`, "Status Updated");
-                } else {
-                    toast.success(`"${selectedPoster.title}" is now active!`, "Status Updated");
-                }
-                
+                toast.info(`Poster status is being updated...`);
                 closeModal();
             },
             "primary"
         );
     };
 
-    // LOGIC: Archive gamit ang Toast at Custom Modal
     const handleArchiveClick = () => {
         askConfirmation(
             "Archive Poster",
             `Are you sure you want to archive "${selectedPoster.title}"? This action cannot be undone easily.`,
             () => {
                 handleArchive(selectedPoster._id, selectedPoster.title);
-                toast.error(`"${selectedPoster.title}" has been moved to archives.`, "Poster Archived");
+                toast.warning("Poster sent to archives.");
                 closeModal();
             },
             "danger"
@@ -145,7 +176,7 @@ const PosterDetailModal = ({
                             
                             <div className="pdm-image-box">
                                 <img 
-                                    src={`http://localhost:5000/${selectedPoster.imageUrl}`} 
+                                    src={`https://wanderwaveph-backend.onrender.com/${selectedPoster.imageUrl}`} 
                                     alt={selectedPoster.title}
                                     className="pdm-poster-image"
                                     onError={(e) => { e.target.src = 'https://via.placeholder.com/800x400'; }}
@@ -155,13 +186,7 @@ const PosterDetailModal = ({
                                         <ImageIcon size={14} className="pdm-icon-green" />
                                         <span>{selectedPoster.imageUrl?.split('/').pop() || 'poster_image.jpg'}</span>
                                     </div>
-                                    <button 
-                                        className="pdm-view-link" 
-                                        onClick={() => {
-                                            window.open(`http://localhost:5000/${selectedPoster.imageUrl}`, '_blank');
-                                            toast.info("Opening full image in new tab...");
-                                        }}
-                                    >
+                                    <button className="pdm-view-link" onClick={() => window.open(`https://wanderwaveph-backend.onrender.com/${selectedPoster.imageUrl}`, '_blank')}>
                                         View Full Image
                                     </button>
                                 </div>
@@ -236,7 +261,7 @@ const PosterDetailModal = ({
                 </div>
             </div>
 
-            {/* EXTERNAL CUSTOM CONFIRM MODAL COMPONENT */}
+            {/* RENDER THE CUSTOM MODAL */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}

@@ -511,7 +511,7 @@ const performSubmit = async () => {
   toast.info("Uploading tour package to server...", "📤 Please Wait", 2000);
 
   try {
-    const res = await fetch("http://localhost:5000/api/tours/add", {
+    const res = await fetch("https://wanderwaveph-backend.onrender.com/api/tours/add", {
       method: "POST",
       body: formData,
     });

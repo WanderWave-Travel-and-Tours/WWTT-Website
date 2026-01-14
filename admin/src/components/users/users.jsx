@@ -3,12 +3,6 @@ import Sidebar from '../sidebar/sidebar';
 import UserFilters from './Userfilters';
 import UserPagination from './Userpagination';
 import { UserCog } from 'lucide-react';
-
-// Import Custom Components
-import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
-import { useToast } from '../toast/ToastManager';
-
-// Import CSS
 import './users.css';
 import './Userfilters.css';
 import './Userpagination.css';
@@ -19,23 +13,11 @@ import './Userpagination.css';
 const USERS_PER_PAGE = 10;
 
 const Users = () => {
-    // Toast Hook
-    const toast = useToast();
-
-    // Sidebar State
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Modal State
-    const [confirmModal, setConfirmModal] = useState({
-        isOpen: false,
-        id: null,
-        username: ''
-    });
-
-    // Data States
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -43,7 +25,7 @@ const Users = () => {
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [currentPage, setCurrentPage] = useState(1);
 
-    const API_URL = 'http://localhost:5000/api/users';
+    const API_URL = 'https://wanderwaveph-backend.onrender.com/api/users';
 
     // Get dynamic status options
     const getStatusOptions = () => {
@@ -71,9 +53,7 @@ const Users = () => {
             setError(null);
         } catch (error) {
             console.error("Error loading users:", error);
-            const errorMessage = "Could not fetch data. Ensure the backend server is running.";
-            setError(errorMessage);
-            toast.error(errorMessage, "Connection Error");
+            setError(`Could not fetch data. Ensure the backend server is running on port 5000 and connected to MongoDB.`);
         } finally {
             setLoading(false);
         }
@@ -96,43 +76,29 @@ const Users = () => {
         });
     };
 
-    // Trigger confirmation modal
-    const handleArchiveClick = (id, username) => {
-        setConfirmModal({
-            isOpen: true,
-            id,
-            username
-        });
-    };
+    const handleArchive = async (id, username) => {
+        if (window.confirm(`Are you sure you want to ARCHIVE user: ${username}?`)) {
+            try {
+                const response = await fetch(`${API_URL}/archive/${id}`, {
+                    method: 'PUT',
+                });
 
-    // Actual Archive Logic
-    const processArchive = async () => {
-        const { id, username } = confirmModal;
-        
-        // Close modal first
-        setConfirmModal({ ...confirmModal, isOpen: false });
-
-        try {
-            const response = await fetch(`${API_URL}/archive/${id}`, {
-                method: 'PUT',
-            });
-
-            if (response.ok) {
-                const updatedUsers = users.filter(user => user._id !== id);
-                setUsers(updatedUsers);
-                
-                if (currentPage > Math.ceil(updatedUsers.length / USERS_PER_PAGE)) {
-                    setCurrentPage(Math.max(1, currentPage - 1));
+                if (response.ok) {
+                    const updatedUsers = users.filter(user => user._id !== id);
+                    setUsers(updatedUsers);
+                    
+                    if (currentPage > Math.ceil(updatedUsers.length / USERS_PER_PAGE)) {
+                        setCurrentPage(Math.max(1, currentPage - 1));
+                    }
+                    alert(`User ${username} has been archived.`);
+                } else {
+                    const errorData = await response.json();
+                    alert(`Failed to archive user: ${errorData.message || response.statusText}`);
                 }
-                
-                toast.success(`User ${username} has been archived successfully.`, "Success");
-            } else {
-                const errorData = await response.json();
-                toast.error(errorData.message || "Failed to archive user.", "Action Failed");
+            } catch (error) {
+                console.error("Error archiving:", error);
+                alert("Server error during archiving.");
             }
-        } catch (error) {
-            console.error("Error archiving:", error);
-            toast.error("Server error during archiving. Please try again later.", "Server Error");
         }
     };
 
@@ -191,7 +157,6 @@ const Users = () => {
     return (
         <div className="vusers-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            
             <main className={mainClasses}>
                 <div className="vusers-container">
                     <header className="vusers-header">
@@ -263,7 +228,7 @@ const Users = () => {
                                                         <div className="vusers-actions">
                                                             <button 
                                                                 className="vusers-action-btn vusers-action-btn--archive"
-                                                                onClick={() => handleArchiveClick(user._id, user.fullName)}
+                                                                onClick={() => handleArchive(user._id, user.fullName)}
                                                             >
                                                                 Archive
                                                             </button>
@@ -276,6 +241,7 @@ const Users = () => {
                                 </table>
                             </div>
                             
+                            {/* 🔥 PAGINATION IS NOW OUTSIDE THE TABLE WRAPPER! */}
                             <UserPagination
                                 totalItems={totalUsers}
                                 itemsPerPage={USERS_PER_PAGE}
@@ -286,16 +252,6 @@ const Users = () => {
                     )}
                 </div>
             </main>
-
-            {/* Custom Confirmation Modal */}
-            <CustomConfirmModal 
-                isOpen={confirmModal.isOpen}
-                title="Archive User"
-                message={`Are you sure you want to ARCHIVE user: ${confirmModal.username}? This action will move the user to the archive list.`}
-                type="danger"
-                onConfirm={processArchive}
-                onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-            />
         </div>
     );
 };
