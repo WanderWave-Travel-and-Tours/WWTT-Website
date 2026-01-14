@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -94,6 +94,20 @@ const RevenueAnalytics = ({
         ? revenueBreakdown.monthly 
         : customData;
 
+  // --- NEW: DYNAMIC AVERAGE COMPUTATION ---
+  const dynamicAverage = useMemo(() => {
+    if (!data || data.length === 0) return 0;
+    
+    // Kunin ang total revenue sa kasalukuyang "data" na nakikita sa chart
+    const totalInView = data.reduce((sum, item) => {
+      // Isama pareho ang bookings at inquiries revenue
+      return sum + (item.bookingsRevenue || 0) + (item.inquiriesRevenue || 0);
+    }, 0);
+
+    // I-divide ang total sa length ng array (bilang ng bars sa chart)
+    return totalInView / data.length;
+  }, [data]);
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -129,7 +143,7 @@ const RevenueAnalytics = ({
         <div className="rev-controls-group">
           <div className="rev-toggle-group">
             
-            {/* DAILY DROPDOWN (Updated to Dropdown Style) */}
+            {/* DAILY DROPDOWN */}
             <div className="rev-dropdown-container" ref={dailyDropdownRef}>
               <button
                 className={`rev-toggle-btn ${viewMode === "daily" ? "active" : ""}`}
@@ -343,11 +357,13 @@ const RevenueAnalytics = ({
       {/* Revenue Comparison */}
       <div className="rev-comparison">
         <div className="rev-comparison-item">
-          <span className="rev-comparison-label">Average Revenue</span>
-          <span className="rev-comparison-value">
-            ₱{(stats.combinedTotalRevenue / 30).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          <span className="rev-comparison-label">
+            Total Sales ({viewMode.charAt(0).toUpperCase() + viewMode.slice(1)})
           </span>
-        </div>
+          <span className="rev-comparison-value">
+            ₱{dynamicAverage.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          </span>
+        </div> 
         <div className="rev-comparison-divider"></div>
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">Bookings Share</span>

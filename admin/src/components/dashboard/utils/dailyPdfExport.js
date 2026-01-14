@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../../../assets/Logo.png';
 
-export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], selectedDate = "") => {
+export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], selectedDate = "", allPackages = []) => {
     try {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
@@ -109,25 +109,122 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
             .map(([name, data]) => ({
                 name,
                 bookings: data.bookings,
-                revenue: `PHP ${data.revenue.toLocaleString()}`,
+                revenue: `P${data.revenue.toLocaleString()}`,
                 revenueValue: data.revenue
             }));
         
-        // --- FINANCIAL CALCULATIONS (FIXED FOR CONSISTENCY) ---
+        // === FINANCIAL CALCULATIONS ===
         const currentDaily = dailyData[0] || { totalRevenue: 0, bookingsRevenue: 0, inquiriesRevenue: 0 };
-
-        // Dito natin sinisigurado na ang Gross Sales ay galing sa same source ng Revenue Source table
-        const totalGrossSales = currentDaily.bookingsRevenue || 0;
-
-        const dailyFinancialStats = dailyConfirmedBookings.reduce((acc, booking) => {
-            const pax = (booking.pax?.adult || 1) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
-            if (booking.sellerPrice && booking.markup) {
-                acc.totalSellerCost += booking.sellerPrice * pax;
-                acc.totalMarkup += booking.markup * pax;
-            }
-            return acc;
-        }, { totalSellerCost: 0, totalMarkup: 0 });
         
+        // Total Gross Sales = BOOKINGS REVENUE ONLY
+        const totalGrossSales = currentDaily.bookingsRevenue || 0;
+        const servicesRevenue = currentDaily.inquiriesRevenue || 0;
+
+        let totalSellerCost = 0;
+        let totalMarkupProfit = 0;
+
+        console.log('=== DAILY PDF FINANCIAL CALCULATION ===');
+        console.log('allPackages received:', allPackages);
+        console.log('allPackages count:', allPackages ? allPackages.length : 0);
+        console.log('Available Packages:', allPackages && allPackages.length > 0 ? allPackages.map(p => ({ id: p._id, title: p.title, destination: p.destination, sellerPrice: p.sellerPrice, markup: p.markup })) : 'NO PACKAGES PROVIDED');
+        console.log('Total Confirmed Bookings:', dailyConfirmedBookings.length);
+
+        // === PROCESS EACH CONFIRMED BOOKING ===
+        // STEP: Use packageName + hotelName to find the EXACT package from packages collection
+        // Then get sellerPrice and markup using that package's ID
+        dailyConfirmedBookings.forEach((booking, idx) => {
+            const bookingPackageName = booking.packageName;
+            const bookingHotelName = booking.hotelName;
+            const paxCount = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0) || 1;
+            
+            console.log(`\n[Booking ${idx + 1}]`);
+            console.log(`  Package Name (from booking): "${bookingPackageName}"`);
+            console.log(`  Hotel Name (from booking): "${bookingHotelName}"`);
+            console.log(`  Pax: ${paxCount}`);
+            
+            // SEARCH: Use packageName AND hotelName together to find the exact package
+            let matchedPackage = null;
+            
+            if (bookingPackageName && bookingHotelName && allPackages.length > 0) {
+                const packageNameKey = bookingPackageName.trim().toLowerCase();
+                const hotelNameKey = bookingHotelName.trim().toLowerCase();
+                
+                console.log(`  Searching for package with:`);
+                console.log(`    - Title matching: "${packageNameKey}"`);
+                console.log(`    - Destination matching: "${hotelNameKey}"`);
+                
+                // Find the exact package that matches BOTH packageName AND hotelName
+                matchedPackage = allPackages.find(pkg => {
+                    const pkgTitleMatch = pkg.title && pkg.title.trim().toLowerCase() === packageNameKey;
+                    const pkgDestMatch = pkg.destination && pkg.destination.trim().toLowerCase() === hotelNameKey;
+                    return pkgTitleMatch && pkgDestMatch;
+                });
+                
+                if (matchedPackage) {
+                    console.log(`  ✓ EXACT MATCH FOUND using packageName + hotelName`);
+                    console.log(`    Matched Package ID: ${matchedPackage._id}`);
+                }
+            }
+            
+            // FALLBACK: If no exact match found, try packageName alone
+            if (!matchedPackage && bookingPackageName && allPackages.length > 0) {
+                const packageNameKey = bookingPackageName.trim().toLowerCase();
+                console.log(`  ✗ No exact match. Trying packageName alone: "${packageNameKey}"`);
+                
+                matchedPackage = allPackages.find(pkg => 
+                    pkg.title && pkg.title.trim().toLowerCase() === packageNameKey
+                );
+                
+                if (matchedPackage) {
+                    console.log(`  ✓ MATCH FOUND using packageName only`);
+                    console.log(`    Matched Package ID: ${matchedPackage._id}`);
+                }
+            }
+
+            if (matchedPackage) {
+                console.log(`\n  ✓✓✓ USING THIS PACKAGE FOR CALCULATION ✓✓✓`);
+                console.log(`    Package Title: ${matchedPackage.title}`);
+                console.log(`    Package Destination: ${matchedPackage.destination}`);
+                console.log(`    Package ID: ${matchedPackage._id}`);
+                
+                // GET sellerPrice and markup from the MATCHED PACKAGE using its ID
+                const sellerPrice = matchedPackage.sellerPrice || 0;
+                const markup = matchedPackage.markup || 0;
+                
+                console.log(`    sellerPrice (from package collection): ${sellerPrice}`);
+                console.log(`    markup (from package collection): ${markup}`);
+                
+                // Calculate totals
+                const costForThisBooking = sellerPrice * paxCount;
+                const markupForThisBooking = markup * paxCount;
+                
+                totalSellerCost += costForThisBooking;
+                totalMarkupProfit += markupForThisBooking;
+                
+                console.log(`    Calculation: ${sellerPrice} × ${paxCount} pax = ${costForThisBooking} (seller cost)`);
+                console.log(`    Calculation: ${markup} × ${paxCount} pax = ${markupForThisBooking} (markup profit)`);
+            } else {
+                console.error(`  ✗✗✗ NO MATCHING PACKAGE FOUND ✗✗✗`);
+                console.error(`    Cannot find package matching:`);
+                console.error(`      - packageName: "${bookingPackageName}"`);
+                console.error(`      - hotelName: "${bookingHotelName}"`);
+                console.error(`    Available packages in collection:`);
+                allPackages.forEach(pkg => {
+                    console.error(`      - ${pkg.title} (${pkg.destination})`);
+                });
+            }
+        });
+
+        // IMPORTANT: Do NOT add services revenue to markup profit
+        // Services revenue is SEPARATE
+        const totalNetProfit = totalMarkupProfit + servicesRevenue;
+
+        console.log(`\n=== FINAL CALCULATION ===`);
+        console.log(`Total Seller Cost (sellerPrice × pax): ${totalSellerCost}`);
+        console.log(`Total Markup Profit (markup × pax): ${totalMarkupProfit}`);
+        console.log(`Services Revenue: ${servicesRevenue}`);
+        console.log(`Total Net Profit (markups + services): ${totalNetProfit}`);
+
         // --- 1. EXECUTIVE SUMMARY (5-Card Layout) ---
         doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
         doc.rect(14, yPos, pageWidth - 28, 8, 'F');
@@ -142,7 +239,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         const bw = 34.5, gap = 2.375;
         let xPos = 14;
 
-        // Card 1: Combined Revenue
+        // Card 1: Combined Revenue (Bookings + Services)
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
         doc.rect(xPos, yPos, bw, 20);
@@ -165,7 +262,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(59, 130, 246); 
-        doc.text('P' + (currentDaily.bookingsRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text('P' + (totalGrossSales || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
         
         // Card 3: Services Revenue
         xPos += bw + gap;
@@ -177,7 +274,7 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(16, 185, 129); 
-        doc.text('P' + (currentDaily.inquiriesRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text('P' + (servicesRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
         
         // Card 4: Bookings Count
         xPos += bw + gap;
@@ -218,15 +315,15 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         
         const totalCombined = (currentDaily.totalRevenue || 0);
         const safeTotal = totalCombined === 0 ? 1 : totalCombined;
-        const bookingsShare = totalCombined === 0 ? 0 : ((currentDaily.bookingsRevenue || 0) / safeTotal * 100).toFixed(1);
-        const servicesShare = totalCombined === 0 ? 0 : ((currentDaily.inquiriesRevenue || 0) / safeTotal * 100).toFixed(1);
+        const bookingsShare = totalCombined === 0 ? 0 : (totalGrossSales / safeTotal * 100).toFixed(1);
+        const servicesShare = totalCombined === 0 ? 0 : (servicesRevenue / safeTotal * 100).toFixed(1);
         
         autoTable(doc, {
             startY: yPos,
             head: [['Revenue Source', 'Amount (PHP)', 'Volume', 'Share']],
             body: [
-                ['Package Bookings', (currentDaily.bookingsRevenue || 0).toLocaleString(), (dailyConfirmedBookings.length) + ' bookings', bookingsShare + '%'],
-                ['Travel Services', (currentDaily.inquiriesRevenue || 0).toLocaleString(), (dailyCompletedInquiries.length) + ' services', servicesShare + '%'],
+                ['Package Bookings', totalGrossSales.toLocaleString(), (dailyConfirmedBookings.length) + ' bookings', bookingsShare + '%'],
+                ['Travel Services', servicesRevenue.toLocaleString(), (dailyCompletedInquiries.length) + ' services', servicesShare + '%'],
                 ['TOTAL', totalCombined.toLocaleString(), (dailyConfirmedBookings.length + dailyCompletedInquiries.length) + ' total', '100%']
             ],
             theme: 'plain',
@@ -259,46 +356,118 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         doc.setTextColor(navyBlue[0], navyBlue[1], navyBlue[2]);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('3. FINANCIAL OVERVIEW (Bookings)', 20, yPos + 5.5);
+        doc.text('3. FINANCIAL OVERVIEW', 20, yPos + 5.5);
         yPos += 12;
         
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Metric', 'Amount (PHP)', 'Note']],
-            body: [
-                ['Total Gross Sales', totalGrossSales.toLocaleString(), 'Matched with Revenue Source (Confirmed)'],
-                ['Total Seller Cost', (dailyFinancialStats.totalSellerCost || 0).toLocaleString(), 'Payable to suppliers/partners'],
-                ['Net Profit (Markup)', (dailyFinancialStats.totalMarkup || 0).toLocaleString(), 'Net Earnings from bookings']
-            ],
-            theme: 'plain',
-            margin: { left: 14, right: 14 }, 
-            headStyles: { fillColor: navyBlue, textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
-            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
-            columnStyles: {
-                0: { cellWidth: 50, fontStyle: 'bold' },
-                1: { halign: 'right', cellWidth: 40 },
-                2: { cellWidth: 'auto', textColor: [100, 100, 100], fontSize: 8 } 
-            },
-            didParseCell: function(data) {
-                if (data.row.index === 0 && data.section === 'body') {
-                    data.cell.styles.fillColor = [240, 247, 255]; // Light blue highlight for match
-                }
-                if (data.row.index === 2 && data.section === 'body') {
-                    data.cell.styles.fillColor = greenBg; 
-                    if (data.column.index === 1) {
-                        data.cell.styles.textColor = greenText;
-                        data.cell.styles.fontStyle = 'bold';
-                    }
-                }
-            }
-        });
+        // 3.1 Overall Financial Overview
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('3.1 Overall (Combined Bookings & Services)', 18, yPos + 5);
+        yPos += 10;
         
-        yPos = doc.lastAutoTable.finalY + 15;
-        if (yPos > pageHeight - 80) {
-            doc.addPage();
-            addWatermark(); 
-            yPos = 20;
-        }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text('Total Gross Sales:', 22, yPos);
+        doc.setTextColor(72, 187, 120);
+        doc.setFont('helvetica', 'bold');
+        doc.text('P' + (totalGrossSales + servicesRevenue).toLocaleString(), 60, yPos);
+        
+        yPos += 7;
+        doc.setTextColor(60, 60, 60);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Total Seller Cost:', 22, yPos);
+        doc.setTextColor(239, 68, 68);
+        doc.setFont('helvetica', 'bold');
+        doc.text('P' + totalSellerCost.toLocaleString(), 60, yPos);
+        
+        yPos += 7;
+        doc.setTextColor(60, 60, 60);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Total Net Profit:', 22, yPos);
+        doc.setTextColor(16, 185, 129);
+        doc.setFont('helvetica', 'bold');
+        doc.text('P' + totalNetProfit.toLocaleString(), 60, yPos);
+        
+        const combinedGross = totalGrossSales + servicesRevenue;
+        const combinedMargin = combinedGross > 0 ? ((totalNetProfit / combinedGross) * 100).toFixed(1) : 0;
+        
+        yPos += 7;
+        doc.setTextColor(60, 60, 60);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Profit Margin:', 22, yPos);
+        doc.setTextColor(139, 92, 246);
+        doc.setFont('helvetica', 'bold');
+        doc.text(combinedMargin + '%', 60, yPos);
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(100, 100, 100);
+        doc.text('(Bookings: P' + totalGrossSales.toLocaleString() + ' + Services: P' + servicesRevenue.toLocaleString() + ')', 22, yPos + 5);
+        yPos += 15;
+        
+        // 3.2 Financial Overview (Bookings)
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('3.2 Bookings', 18, yPos + 5);
+        yPos += 10;
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text('Total Gross Sales:', 22, yPos);
+        doc.setTextColor(72, 187, 120);
+        doc.setFont('helvetica', 'bold');
+        doc.text('P' + totalGrossSales.toLocaleString(), 60, yPos);
+        yPos += 7;
+        
+        doc.setTextColor(60, 60, 60);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Total Seller Cost:', 22, yPos);
+        doc.setTextColor(239, 68, 68);
+        doc.setFont('helvetica', 'bold');
+        doc.text('P' + totalSellerCost.toLocaleString(), 60, yPos);
+        yPos += 7;
+        
+        doc.setTextColor(60, 60, 60);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Total Markup Profit:', 22, yPos);
+        doc.setTextColor(16, 185, 129);
+        doc.setFont('helvetica', 'bold');
+        doc.text('P' + totalMarkupProfit.toLocaleString(), 60, yPos);
+        yPos += 7;
+        
+        const profitMargin = totalGrossSales > 0 ? ((totalMarkupProfit / totalGrossSales) * 100).toFixed(1) : 0;
+        doc.setTextColor(60, 60, 60);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Profit Margin:', 22, yPos);
+        doc.setTextColor(139, 92, 246);
+        doc.setFont('helvetica', 'bold');
+        doc.text(profitMargin + '%', 60, yPos);
+        yPos += 15;
+        
+        // 3.3 Financial Overview (Services)
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('3.3 Services', 18, yPos + 5);
+        yPos += 10;
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text('Total Gross Sales:', 22, yPos);
+        doc.setTextColor(72, 187, 120);
+        doc.setFont('helvetica', 'bold');
+        doc.text('P' + servicesRevenue.toLocaleString(), 60, yPos);
+        yPos += 15;
+        
+        // Force new page for section 4
+        doc.addPage();
+        addWatermark(); 
+        yPos = 20;
         
         // --- 4. PERFORMANCE ANALYTICS ---
         doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
@@ -318,8 +487,8 @@ export const exportDailyToPDF = (stats, dailyData = [], topPackages = [], select
         
         const dailyTrajectory = [{
             label: reportDate,
-            bookingsRevenue: currentDaily.bookingsRevenue || 0,
-            inquiriesRevenue: currentDaily.inquiriesRevenue || 0,
+            bookingsRevenue: totalGrossSales,
+            inquiriesRevenue: servicesRevenue,
             totalRevenue: currentDaily.totalRevenue || 0
         }];
 

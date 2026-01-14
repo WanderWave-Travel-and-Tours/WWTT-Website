@@ -41,6 +41,8 @@ const Dashboard = () => {
 
   const [recentBookings, setRecentBookings] = useState([]);
   const [topPackages, setTopPackages] = useState([]);
+  // ✅ NEW: State to store all packages for reference and PDF calculation
+  const [allPackages, setAllPackages] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [trendData, setTrendData] = useState([]);
   const [revenueBreakdown, setRevenueBreakdown] = useState({ daily: [], monthly: [] });
@@ -97,8 +99,24 @@ const Dashboard = () => {
       const bookingsRes = await fetch("http://localhost:5000/api/admin/bookings");
       if (bookingsRes.ok) bookings = await bookingsRes.json();
       
-      const packagesRes = await fetch("http://localhost:5000/api/packages");
-      if (packagesRes.ok) packages = await packagesRes.json();
+      const packagesRes = await fetch("http://localhost:5000/api/packages/all");
+      if (packagesRes.ok) {
+        const pkgData = await packagesRes.json();
+        // Handle different response formats
+        let packagesArray = [];
+        if (Array.isArray(pkgData)) {
+          packagesArray = pkgData;
+        } else if (pkgData.data && Array.isArray(pkgData.data)) {
+          packagesArray = pkgData.data;
+        } else if (pkgData.status === 'ok' && Array.isArray(pkgData.data)) {
+          packagesArray = pkgData.data;
+        }
+        packages = packagesArray;
+        setAllPackages(packagesArray);
+        console.log('✅ Packages loaded successfully:', packagesArray.length);
+      } else {
+        console.error('❌ Packages fetch failed:', packagesRes.status);
+      }
 
       const blogsRes = await fetch("http://localhost:5000/api/blogs");
       if (blogsRes.ok) blogs = await blogsRes.json();
@@ -134,11 +152,32 @@ const Dashboard = () => {
       const confirmedBookings = bookings.filter((b) => b.status === "confirmed");
       const bookingsRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
+      // ✅ FIX: Create a map of packages for faster lookup by title to get sellerPrice and markup
+      const packageLookup = packages.reduce((acc, pkg) => {
+        acc[pkg.title] = pkg;
+        return acc;
+      }, {});
+
+      // ✅ RE-CALCULATED FINANCIAL STATS: Cross-referencing Booking with Package Collection
       const financialStats = confirmedBookings.reduce((acc, booking) => {
-          const pax = (booking.pax?.adult || 1) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
-          if (booking.sellerPrice && booking.markup) {
-            acc.totalSellerCost += booking.sellerPrice * pax;
-            acc.totalMarkup += booking.markup * pax;
+          // Calculate total passengers as multiplier
+          const paxCount = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0) || 1;
+          
+          // Search for the package data from the collection
+          const refPackage = packageLookup[booking.packageName];
+
+          if (refPackage) {
+            // Priority 1: Use actual data from Packages Collection
+            acc.totalSellerCost += (refPackage.sellerPrice || 0) * paxCount;
+            acc.totalMarkup += (refPackage.markup || 0) * paxCount;
+            acc.totalSales += booking.totalAmount || 0;
+          } else if (booking.sellerPrice !== undefined && booking.markup !== undefined) {
+            // Priority 2: Fallback to stored price in booking if package was deleted from collection
+            acc.totalSellerCost += (booking.sellerPrice || 0) * paxCount;
+            acc.totalMarkup += (booking.markup || 0) * paxCount;
+            acc.totalSales += booking.totalAmount || 0;
+          } else {
+            // Fallback for old data: Treat totalAmount as the only known value
             acc.totalSales += booking.totalAmount || 0;
           }
           return acc;
@@ -193,7 +232,7 @@ const Dashboard = () => {
         totalPromos: Array.isArray(promos) ? promos.length : 0,
         totalTestimonials: Array.isArray(testimonials) ? testimonials.length : 0,
         totalSellerCost: financialStats.totalSellerCost,
-        totalMarkup: financialStats.totalMarkup,
+        totalMarkup: financialStats.totalMarkup, // This correctly maps to Net Profit
         totalSales: financialStats.totalSales,
         profitMargin: profitMargin,
         totalInquiriesRevenue: inquiriesRevenue,
@@ -356,34 +395,39 @@ const Dashboard = () => {
     return results;
   }, [customRange, rawBookings, rawInquiries]);
 
-  // Handle PDF Export with Toast
-// Update the handleExportPDF function in dashboard.jsx
-const handleExportPDF = async () => {
+  const handleExportPDF = async () => {
     try {
         console.log('Starting PDF export...');
+        console.log('allPackages data:', allPackages);  // Debug: check if packages are loaded
+        console.log('allPackages length:', allPackages.length);  // Debug: check count
+        
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
         const adminName = adminData.username || adminData.email || 'Admin';
         const adminId = adminData._id || null;
         
         const pdfTopPackages = topPackages.map((pkg) => ({
             ...pkg, 
-            revenue: typeof pkg.revenue === 'string' ? pkg.revenue.replace('₱', 'PHP ') : pkg.revenue
+            revenue: typeof pkg.revenue === 'string' ? pkg.revenue.replace('₱', 'P') : pkg.revenue
         }));
         
-        // Add raw data to stats object for daily export
         const statsWithRawData = {
             ...stats,
             rawBookings: rawBookings,
             rawInquiries: rawInquiries
         };
         
+        // ✅ IMPORTANT: Pass allPackages to all export functions
         if (revenueViewMode === "daily") {
-            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate);
+            console.log('Exporting DAILY with allPackages:', allPackages);
+            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages);
         } else if (revenueViewMode === "weekly") {
+            console.log('Exporting WEEKLY with allPackages:', allPackages);
             exportWeeklyToPDF(stats, revenueBreakdown.daily, pdfTopPackages);
         } else if (revenueViewMode === "custom") {
+            console.log('Exporting CUSTOM with allPackages:', allPackages);
             exportCustomToPDF(stats, customAnalyticsData, pdfTopPackages, customRange);
         } else {
+            console.log('Exporting MONTHLY with allPackages:', allPackages);
             exportToPDF(stats, trendData, pdfTopPackages);
         }
         
@@ -427,7 +471,7 @@ const handleExportPDF = async () => {
     } finally {
         setIsExportModalOpen(false);
     }
-};
+  };
 
   const handleSectionFilter = (section) => {
     setSelectedSection(section);
@@ -455,7 +499,7 @@ const handleExportPDF = async () => {
   return (
     <div className="dash-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar}  />
- 
+
       <main className={`dash-main ${isSidebarCollapsed ? "dash-main--collapsed" : ""}`}>
         <div className="dash-container">
           <DashboardHeader 
