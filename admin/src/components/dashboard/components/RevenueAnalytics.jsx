@@ -13,16 +13,86 @@ import {
   TrendingUp, 
   Calendar, 
   Activity, 
-  PhilippinePeso // Updated import
+  PhilippinePeso,
+  Filter,
+  ChevronDown,
+  Clock 
 } from "lucide-react";
 import "./RevenueAnalytics.css";
 
-const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
-  const [viewMode, setViewMode] = useState("daily"); // 'daily' or 'monthly'
+const RevenueAnalytics = ({ 
+  stats, 
+  revenueBreakdown, 
+  onCustomRangeChange, 
+  customData, 
+  onViewModeChange,
+  onDailyDateChange, 
+  dailyData 
+}) => {
+  const [viewMode, setViewMode] = useState("weekly"); 
+  const [dateInputs, setDateInputs] = useState({ start: "", end: "" });
+  const [selectedDailyDate, setSelectedDailyDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Separate states para sa dalawang dropdown
+  const [isDailyDropdownOpen, setIsDailyDropdownOpen] = useState(false);
+  const [isCustomDropdownOpen, setIsCustomDropdownOpen] = useState(false);
+  
+  const dailyDropdownRef = useRef(null);
+  const customDropdownRef = useRef(null);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dailyDropdownRef.current && !dailyDropdownRef.current.contains(event.target)) {
+        setIsDailyDropdownOpen(false);
+      }
+      if (customDropdownRef.current && !customDropdownRef.current.contains(event.target)) {
+        setIsCustomDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Sync viewMode with Parent (Dashboard)
+  useEffect(() => {
+    if (onViewModeChange) {
+      onViewModeChange(viewMode);
+    }
+  }, [viewMode, onViewModeChange]);
+
+  // Handle Daily Date Selection inside dropdown
+  const handleDailyDateChange = (e) => {
+    const newDate = e.target.value;
+    setSelectedDailyDate(newDate);
+  };
+
+  const applyDailyFilter = () => {
+    setViewMode("daily");
+    if (onDailyDateChange) {
+      onDailyDateChange(selectedDailyDate);
+    }
+    setIsDailyDropdownOpen(false);
+  };
+
+  const handleApplyCustomRange = () => {
+    if (dateInputs.start && dateInputs.end) {
+      setViewMode("custom");
+      onCustomRangeChange(dateInputs.start, dateInputs.end);
+      setIsCustomDropdownOpen(false); 
+    } else {
+      alert("Please select both start and end dates.");
+    }
+  };
+
+  // Logic for data selection
   const data = viewMode === "daily" 
-    ? revenueBreakdown.daily 
-    : revenueBreakdown.monthly;
+    ? dailyData 
+    : viewMode === "weekly" 
+      ? revenueBreakdown.daily 
+      : viewMode === "monthly" 
+        ? revenueBreakdown.monthly 
+        : customData;
 
   // --- NEW: DYNAMIC AVERAGE COMPUTATION ---
   const dynamicAverage = useMemo(() => {
@@ -63,7 +133,7 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
       {/* Header */}
       <div className="rev-header">
         <div className="rev-header-left">
-          <h2 className="rev-title">Revenue Analytics</h2>
+          <h2 className="rev-title">Revenue Analytics</h2> 
           <p className="rev-subtitle">
             Comprehensive revenue tracking from bookings and services
           </p>
@@ -251,7 +321,7 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
             <XAxis 
-              dataKey={viewMode === "daily" ? "date" : "month"} 
+              dataKey={viewMode === "monthly" ? "month" : "date"} 
               axisLine={false} 
               tickLine={false} 
               tick={{fill: '#64748b', fontSize: 12}} 
@@ -298,14 +368,14 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">Bookings Share</span>
           <span className="rev-comparison-value">
-            {((stats.totalRevenue / stats.combinedTotalRevenue) * 100).toFixed(1)}%
+            {stats.combinedTotalRevenue > 0 ? ((stats.totalRevenue / stats.combinedTotalRevenue) * 100).toFixed(1) : 0}%
           </span>
         </div>
         <div className="rev-comparison-divider"></div>
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">Services Share</span>
           <span className="rev-comparison-value">
-            {((stats.totalInquiriesRevenue / stats.combinedTotalRevenue) * 100).toFixed(1)}%
+            {stats.combinedTotalRevenue > 0 ? ((stats.totalInquiriesRevenue / stats.combinedTotalRevenue) * 100).toFixed(1) : 0}%
           </span>
         </div>
       </div>

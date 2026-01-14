@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 import DashboardHeader from "./components/DashboardHeader";
@@ -8,16 +8,29 @@ import ChartsSection from "./components/ChartsSection";
 import RecentBookings from "./components/RecentBookings";
 import TopPackages from "./components/TopPackages";
 import RevenueAnalytics from "./components/RevenueAnalytics";
+
+// Import Toast and Modal
+import { useToast } from "../toast/ToastManager";
+import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
+
+// MGA PDF EXPORT UTILS
 import { exportToPDF } from "./utils/pdfExport";
+import { exportWeeklyToPDF } from "./utils/weeklyPdfExport";
+import { exportCustomToPDF } from "./utils/customPdfExport";
+import { exportDailyToPDF } from "./utils/dailyPdfExport";
 import "./dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const toast = useToast(); // Initialize toast
   const TIMEOUT_IN_MS = 15 * 60 * 1000;
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedSection, setSelectedSection] = useState('all');
   
+  // Modal State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
   const [stats, setStats] = useState({
     totalBookings: 0, confirmedBookings: 0, pendingBookings: 0, cancelledBookings: 0,
     totalRevenue: 0, totalPackages: 0, totalBlogs: 0, totalPromos: 0,
@@ -33,6 +46,13 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [trendData, setTrendData] = useState([]);
   const [revenueBreakdown, setRevenueBreakdown] = useState({ daily: [], monthly: [] });
+  
+  const [rawBookings, setRawBookings] = useState([]);
+  const [rawInquiries, setRawInquiries] = useState([]);
+  const [customRange, setCustomRange] = useState({ start: "", end: "" });
+  const [revenueViewMode, setRevenueViewMode] = useState("weekly"); 
+  
+  const [dailyDate, setDailyDate] = useState(new Date().toISOString().split('T')[0]);
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -40,9 +60,12 @@ const Dashboard = () => {
     console.warn("Admin session expired due to inactivity.");
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminData");
-    alert("⚠️ Security Alert: Your session has expired due to inactivity. Please log in again.");
+    
+    // Replaced default alert with Toast
+    toast.error("Security Alert: Your session has expired due to inactivity. Please log in again.", "Session Expired");
+    
     navigate("/admin"); 
-  }, [navigate]);
+  }, [navigate, toast]);
 
   useEffect(() => {
     let timeoutId;
@@ -73,7 +96,7 @@ const Dashboard = () => {
     let bookings = [], packages = [], blogs = [], promos = [], testimonials = [], inquiries = [];
 
     try {
-      const bookingsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/admin/bookings");
+      const bookingsRes = await fetch("http://localhost:5000/api/admin/bookings");
       if (bookingsRes.ok) bookings = await bookingsRes.json();
       
       const packagesRes = await fetch("http://localhost:5000/api/packages/all");
@@ -95,22 +118,27 @@ const Dashboard = () => {
         console.error('❌ Packages fetch failed:', packagesRes.status);
       }
 
-      const blogsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/blogs");
+      const blogsRes = await fetch("http://localhost:5000/api/blogs");
       if (blogsRes.ok) blogs = await blogsRes.json();
 
-      const promosRes = await fetch("https://wanderwaveph-backend.onrender.com/api/promos");
+      const promosRes = await fetch("http://localhost:5000/api/promos");
       if (promosRes.ok) promos = await promosRes.json();
 
-      const testimonialsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/testimonials");
+      const testimonialsRes = await fetch("http://localhost:5000/api/testimonials");
       if (testimonialsRes.ok) testimonials = await testimonialsRes.json();
 
-      const inquiriesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/inquiries");
+      const inquiriesRes = await fetch("http://localhost:5000/api/inquiries");
       if (inquiriesRes.ok) {
         const inquiriesData = await inquiriesRes.json();
         inquiries = inquiriesData.data || inquiriesData || [];
       }
+      
+      setRawBookings(bookings);
+      setRawInquiries(inquiries);
+
     } catch (err) {
       console.error("Error fetching data:", err);
+      toast.error("Failed to load dashboard data. Please check your connection.", "Fetch Error");
     }
 
     try {
@@ -215,7 +243,7 @@ const Dashboard = () => {
         thisMonthRevenue: monthTotalRevenue,
       });
 
-      const trendData = [];
+      const trendDataTemp = [];
       for (let i = 5; i >= 0; i--) {
         const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const monthName = date.toLocaleString("default", { month: "short" });
@@ -236,13 +264,13 @@ const Dashboard = () => {
         const bRev = confirmedThisMonth.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
         const iRev = completedInquiriesThisMonth.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
 
-        trendData.push({
+        trendDataTemp.push({
           month: monthName, bookings: confirmedThisMonth.length, bookingsRevenue: bRev,
           inquiries: completedInquiriesThisMonth.length, inquiriesRevenue: iRev,
           totalRevenue: bRev + iRev,
         });
       }
-      setTrendData(trendData);
+      setTrendData(trendDataTemp);
 
       const dailyBreakdown = [];
       for (let i = 6; i >= 0; i--) {
@@ -255,12 +283,12 @@ const Dashboard = () => {
         const dBookings = confirmedBookings.filter((b) => {
             const created = new Date(b.createdAt);
             return created >= date && created < nextDay;
-          }).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+          }).reduce((s, b) => s + (b.totalAmount || 0), 0);
 
         const dInquiries = completedInquiries.filter((i) => {
             const updated = new Date(i.updatedAt);
             return updated >= date && updated < nextDay;
-          }).reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+          }).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
 
         dailyBreakdown.push({
           date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -271,7 +299,7 @@ const Dashboard = () => {
 
       setRevenueBreakdown({
         daily: dailyBreakdown,
-        monthly: trendData.map(m => ({
+        monthly: trendDataTemp.map(m => ({
           month: m.month, bookingsRevenue: m.bookingsRevenue,
           inquiriesRevenue: m.inquiriesRevenue, totalRevenue: m.totalRevenue,
         })),
@@ -370,14 +398,18 @@ const Dashboard = () => {
   const handleExportPDF = async () => {
     try {
         console.log('Starting PDF export...');
-        console.log('allPackages data:', allPackages);  // Debug: check if packages are loaded
-        console.log('allPackages length:', allPackages.length);  // Debug: check count
+        console.log('allPackages data:', allPackages);
+        console.log('allPackages length:', allPackages?.length || 0);
         
+        // Safety check before export
+        if (revenueViewMode === "weekly" && (!allPackages || allPackages.length === 0)) {
+            toast.warning("No packages loaded yet. Seller cost & markup will be 0 in the report.", "Package Data Missing");
+        }
+
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
         const adminName = adminData.username || adminData.email || 'Admin';
         const adminId = adminData._id || null;
         
-        // Generate PDF (this will download it for the user)
         const pdfTopPackages = topPackages.map((pkg) => ({
             ...pkg, 
             revenue: typeof pkg.revenue === 'string' ? pkg.revenue.replace('₱', 'P') : pkg.revenue
@@ -389,28 +421,26 @@ const Dashboard = () => {
             rawInquiries: rawInquiries
         };
         
-        // ✅ IMPORTANT: Pass allPackages to all export functions
+        // ✅ FIXED: Now passing allPackages correctly to ALL export functions
         if (revenueViewMode === "daily") {
-            console.log('Exporting DAILY with allPackages:', allPackages);
+            console.log('Exporting DAILY with allPackages length:', allPackages?.length);
             exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages);
         } else if (revenueViewMode === "weekly") {
-            console.log('Exporting WEEKLY with allPackages:', allPackages);
-            exportWeeklyToPDF(stats, revenueBreakdown.daily, pdfTopPackages);
+            console.log('Exporting WEEKLY with allPackages length:', allPackages?.length);
+            exportWeeklyToPDF(stats, revenueBreakdown.daily, pdfTopPackages, allPackages); // <-- FIXED HERE
         } else if (revenueViewMode === "custom") {
-            console.log('Exporting CUSTOM with allPackages:', allPackages);
-            exportCustomToPDF(stats, customAnalyticsData, pdfTopPackages, customRange);
+            console.log('Exporting CUSTOM with allPackages length:', allPackages?.length);
+            exportCustomToPDF(stats, customAnalyticsData, pdfTopPackages, customRange, allPackages);
         } else {
-            console.log('Exporting MONTHLY with allPackages:', allPackages);
-            exportToPDF(stats, trendData, pdfTopPackages);
+            console.log('Exporting MONTHLY with allPackages length:', allPackages?.length);
+            exportToPDF(stats, trendData, pdfTopPackages, allPackages);
         }
         
-        console.log('✅ PDF downloaded successfully');
+        toast.success("Dashboard report has been exported successfully.", "Export Success");
         
-        // Generate timestamp and filename for logging purposes
         const timestamp = new Date().toISOString().split('T')[0];
         const pdfFileName = `Dashboard_Report_${timestamp}_${Date.now()}.pdf`;
         
-        // Create activity log WITHOUT file upload (simpler approach)
         const activityLogData = {
             action: 'EXPORT',
             module: 'System',
@@ -419,10 +449,11 @@ const Dashboard = () => {
             userId: adminId,
             adminId: adminId,
             severity: 'SUCCESS',
-            description: `Admin "${adminName}" exported dashboard report as PDF`,
+            description: `Admin "${adminName}" exported dashboard report as PDF (${revenueViewMode})`,
             details: {
                 recordTitle: 'Dashboard Analytics Report',
                 exportFormat: 'PDF',
+                reportType: revenueViewMode,
                 sections: selectedSection === 'all' ? 'All Sections' : selectedSection,
                 fileName: pdfFileName,
                 exportedAt: new Date().toISOString(),
@@ -433,57 +464,17 @@ const Dashboard = () => {
             }
         };
 
-        console.log('📝 Logging export activity...');
-
-        const logResponse = await fetch('https://wanderwaveph-backend.onrender.com/api/activity-logs', {
+        await fetch('http://localhost:5000/api/activity-logs', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(activityLogData)
         });
 
-        if (logResponse.ok) {
-            const logResult = await logResponse.json();
-            console.log('✅ Activity logged successfully:', logResult);
-        } else {
-            console.error('❌ Failed to log activity:', await logResponse.text());
-        }
-
     } catch (error) {
-        console.error('❌ Error in PDF export process:', error);
-        alert('Failed to export PDF. Please try again.');
-        
-        // Log error activity
-        try {
-            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-            const adminName = adminData.username || adminData.email || 'Admin';
-            
-            await fetch('https://wanderwaveph-backend.onrender.com/api/activity-logs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'EXPORT',
-                    module: 'System',
-                    entity: 'Dashboard Report',
-                    user: adminName,
-                    severity: 'ERROR',
-                    description: `Failed to export dashboard report: ${error.message}`,
-                    details: {
-                        recordTitle: 'Dashboard Analytics Report',
-                        exportFormat: 'PDF',
-                        errorMessage: error.message,
-                        affectedRecords: 0,
-                        method: 'EXPORT',
-                        endpoint: '/dashboard/export-pdf'
-                    }
-                })
-            });
-        } catch (logError) {
-            console.error('Failed to log error activity:', logError);
-        }
+        console.error('Error in PDF export process:', error);
+        toast.error("Failed to export PDF. Please try again.", "Export Failed");
+    } finally {
+        setIsExportModalOpen(false);
     }
   };
 
@@ -518,7 +509,7 @@ const Dashboard = () => {
         <div className="dash-container">
           <DashboardHeader 
             stats={stats} 
-            onDownloadPDF={handleExportPDF}
+            onDownloadPDF={() => setIsExportModalOpen(true)}
             selectedSection={selectedSection}
             onSectionFilter={handleSectionFilter}
           />
@@ -526,7 +517,15 @@ const Dashboard = () => {
           <StatsCards stats={stats} />
 
           {shouldShowSection('revenue-analytics') && (
-            <RevenueAnalytics stats={stats} revenueBreakdown={revenueBreakdown} />
+            <RevenueAnalytics 
+              stats={stats} 
+              revenueBreakdown={revenueBreakdown} 
+              onCustomRangeChange={(start, end) => setCustomRange({ start, end })}
+              onViewModeChange={setRevenueViewMode} 
+              onDailyDateChange={setDailyDate} 
+              customData={customAnalyticsData}
+              dailyData={dailyAnalyticsData} 
+            />
           )}
 
           {shouldShowSection('financial-performance') && (
@@ -555,6 +554,16 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Confirmation Modal for Export */}
+      <CustomConfirmModal 
+        isOpen={isExportModalOpen}
+        title="Export Dashboard Report"
+        message={`Are you sure you want to download the ${revenueViewMode} analytics report as PDF?`}
+        onConfirm={handleExportPDF}
+        onCancel={() => setIsExportModalOpen(false)}
+        type="primary"
+      />
     </div>
   );
 };
