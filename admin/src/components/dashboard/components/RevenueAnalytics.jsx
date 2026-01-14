@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -24,7 +24,20 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
     ? revenueBreakdown.daily 
     : revenueBreakdown.monthly;
 
-  // Custom Tooltip
+  // --- NEW: DYNAMIC AVERAGE COMPUTATION ---
+  const dynamicAverage = useMemo(() => {
+    if (!data || data.length === 0) return 0;
+    
+    // Kunin ang total revenue sa kasalukuyang "data" na nakikita sa chart
+    const totalInView = data.reduce((sum, item) => {
+      // Isama pareho ang bookings at inquiries revenue
+      return sum + (item.bookingsRevenue || 0) + (item.inquiriesRevenue || 0);
+    }, 0);
+
+    // I-divide ang total sa length ng array (bilang ng bars sa chart)
+    return totalInView / data.length;
+  }, [data]);
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -56,22 +69,96 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
           </p>
         </div>
         
-        {/* Toggle Buttons */}
-        <div className="rev-toggle-group">
-          <button
-            className={`rev-toggle-btn ${viewMode === "daily" ? "active" : ""}`}
-            onClick={() => setViewMode("daily")}
-          >
-            <Calendar size={16} />
-            Daily (7 Days)
-          </button>
-          <button
-            className={`rev-toggle-btn ${viewMode === "monthly" ? "active" : ""}`}
-            onClick={() => setViewMode("monthly")}
-          >
-            <Activity size={16} />
-            Monthly (6 Months)
-          </button>
+        {/* Toggle Buttons & Dropdowns */}
+        <div className="rev-controls-group">
+          <div className="rev-toggle-group">
+            
+            {/* DAILY DROPDOWN */}
+            <div className="rev-dropdown-container" ref={dailyDropdownRef}>
+              <button
+                className={`rev-toggle-btn ${viewMode === "daily" ? "active" : ""}`}
+                onClick={() => setIsDailyDropdownOpen(!isDailyDropdownOpen)}
+              >
+                <Clock size={16} />
+                Daily
+                <ChevronDown size={14} className={`rev-chevron ${isDailyDropdownOpen ? 'open' : ''}`} />
+              </button>
+
+              {isDailyDropdownOpen && (
+                <div className="rev-dropdown-menu">
+                  <div className="rev-dropdown-header">Select Specific Date</div>
+                  <div className="rev-calendar-inputs">
+                    <div className="calendar-field">
+                      <label>Date</label>
+                      <input 
+                        type="date" 
+                        value={selectedDailyDate}
+                        onChange={handleDailyDateChange}
+                      />
+                    </div>
+                  </div>
+                  <button className="rev-dropdown-apply" onClick={applyDailyFilter}>
+                    View Daily
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              className={`rev-toggle-btn ${viewMode === "weekly" ? "active" : ""}`}
+              onClick={() => setViewMode("weekly")}
+            >
+              <Calendar size={16} />
+              Weekly
+            </button>
+
+            <button
+              className={`rev-toggle-btn ${viewMode === "monthly" ? "active" : ""}`}
+              onClick={() => setViewMode("monthly")}
+            >
+              <Activity size={16} />
+              Monthly
+            </button>
+            
+            {/* Custom Range Dropdown */}
+            <div className="rev-dropdown-container" ref={customDropdownRef}>
+              <button
+                className={`rev-toggle-btn rev-custom-btn ${viewMode === "custom" ? "active" : ""}`}
+                onClick={() => setIsCustomDropdownOpen(!isCustomDropdownOpen)}
+              >
+                <Filter size={16} />
+                Custom Range
+                <ChevronDown size={14} className={`rev-chevron ${isCustomDropdownOpen ? 'open' : ''}`} />
+              </button>
+
+              {isCustomDropdownOpen && (
+                <div className="rev-dropdown-menu">
+                  <div className="rev-dropdown-header">Select Date Range</div>
+                  <div className="rev-calendar-inputs">
+                    <div className="calendar-field">
+                      <label>From</label>
+                      <input 
+                        type="date" 
+                        value={dateInputs.start}
+                        onChange={(e) => setDateInputs({...dateInputs, start: e.target.value})}
+                      />
+                    </div>
+                    <div className="calendar-field">
+                      <label>To</label>
+                      <input 
+                        type="date" 
+                        value={dateInputs.end}
+                        onChange={(e) => setDateInputs({...dateInputs, end: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <button className="rev-dropdown-apply" onClick={handleApplyCustomRange}>
+                    Apply Range
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -200,11 +287,13 @@ const RevenueAnalytics = ({ stats, revenueBreakdown }) => {
       {/* Revenue Comparison */}
       <div className="rev-comparison">
         <div className="rev-comparison-item">
-          <span className="rev-comparison-label">Average Daily Revenue</span>
-          <span className="rev-comparison-value">
-            ₱{(stats.combinedTotalRevenue / 30).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          <span className="rev-comparison-label">
+            Total Sales ({viewMode.charAt(0).toUpperCase() + viewMode.slice(1)})
           </span>
-        </div>
+          <span className="rev-comparison-value">
+            ₱{dynamicAverage.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          </span>
+        </div> 
         <div className="rev-comparison-divider"></div>
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">Bookings Share</span>

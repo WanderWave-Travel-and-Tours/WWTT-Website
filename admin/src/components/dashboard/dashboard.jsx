@@ -28,6 +28,8 @@ const Dashboard = () => {
 
   const [recentBookings, setRecentBookings] = useState([]);
   const [topPackages, setTopPackages] = useState([]);
+  // ✅ NEW: State to store all packages for reference and PDF calculation
+  const [allPackages, setAllPackages] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [trendData, setTrendData] = useState([]);
   const [revenueBreakdown, setRevenueBreakdown] = useState({ daily: [], monthly: [] });
@@ -74,8 +76,24 @@ const Dashboard = () => {
       const bookingsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/admin/bookings");
       if (bookingsRes.ok) bookings = await bookingsRes.json();
       
-      const packagesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/packages");
-      if (packagesRes.ok) packages = await packagesRes.json();
+      const packagesRes = await fetch("http://localhost:5000/api/packages/all");
+      if (packagesRes.ok) {
+        const pkgData = await packagesRes.json();
+        // Handle different response formats
+        let packagesArray = [];
+        if (Array.isArray(pkgData)) {
+          packagesArray = pkgData;
+        } else if (pkgData.data && Array.isArray(pkgData.data)) {
+          packagesArray = pkgData.data;
+        } else if (pkgData.status === 'ok' && Array.isArray(pkgData.data)) {
+          packagesArray = pkgData.data;
+        }
+        packages = packagesArray;
+        setAllPackages(packagesArray);
+        console.log('✅ Packages loaded successfully:', packagesArray.length);
+      } else {
+        console.error('❌ Packages fetch failed:', packagesRes.status);
+      }
 
       const blogsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/blogs");
       if (blogsRes.ok) blogs = await blogsRes.json();
@@ -106,11 +124,32 @@ const Dashboard = () => {
       const confirmedBookings = bookings.filter((b) => b.status === "confirmed");
       const bookingsRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
+      // ✅ FIX: Create a map of packages for faster lookup by title to get sellerPrice and markup
+      const packageLookup = packages.reduce((acc, pkg) => {
+        acc[pkg.title] = pkg;
+        return acc;
+      }, {});
+
+      // ✅ RE-CALCULATED FINANCIAL STATS: Cross-referencing Booking with Package Collection
       const financialStats = confirmedBookings.reduce((acc, booking) => {
-          const pax = (booking.pax?.adult || 1) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
-          if (booking.sellerPrice && booking.markup) {
-            acc.totalSellerCost += booking.sellerPrice * pax;
-            acc.totalMarkup += booking.markup * pax;
+          // Calculate total passengers as multiplier
+          const paxCount = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0) || 1;
+          
+          // Search for the package data from the collection
+          const refPackage = packageLookup[booking.packageName];
+
+          if (refPackage) {
+            // Priority 1: Use actual data from Packages Collection
+            acc.totalSellerCost += (refPackage.sellerPrice || 0) * paxCount;
+            acc.totalMarkup += (refPackage.markup || 0) * paxCount;
+            acc.totalSales += booking.totalAmount || 0;
+          } else if (booking.sellerPrice !== undefined && booking.markup !== undefined) {
+            // Priority 2: Fallback to stored price in booking if package was deleted from collection
+            acc.totalSellerCost += (booking.sellerPrice || 0) * paxCount;
+            acc.totalMarkup += (booking.markup || 0) * paxCount;
+            acc.totalSales += booking.totalAmount || 0;
+          } else {
+            // Fallback for old data: Treat totalAmount as the only known value
             acc.totalSales += booking.totalAmount || 0;
           }
           return acc;
@@ -165,7 +204,7 @@ const Dashboard = () => {
         totalPromos: Array.isArray(promos) ? promos.length : 0,
         totalTestimonials: Array.isArray(testimonials) ? testimonials.length : 0,
         totalSellerCost: financialStats.totalSellerCost,
-        totalMarkup: financialStats.totalMarkup,
+        totalMarkup: financialStats.totalMarkup, // This correctly maps to Net Profit
         totalSales: financialStats.totalSales,
         profitMargin: profitMargin,
         totalInquiriesRevenue: inquiriesRevenue,
@@ -263,14 +302,77 @@ const Dashboard = () => {
     }
   };
 
-// dashboard.jsx - FIXED handleExportPDF function ONLY
-// Replace only this function in your existing dashboard.jsx
+  const dailyAnalyticsData = useMemo(() => {
+    if (!dailyDate) return [];
+    const targetDate = new Date(dailyDate);
+    targetDate.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(targetDate);
+    dayEnd.setHours(23, 59, 59, 999);
 
-const handleExportPDF = async () => {
+    const bRev = rawBookings.filter(b => 
+      b.status === "confirmed" && 
+      new Date(b.createdAt) >= targetDate && 
+      new Date(b.createdAt) <= dayEnd
+    ).reduce((s, b) => s + (b.totalAmount || 0), 0);
+
+    const iRev = rawInquiries.filter(i => 
+      i.status === "COMPLETED" && 
+      new Date(i.updatedAt) >= targetDate && 
+      new Date(i.updatedAt) <= dayEnd
+    ).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+
+    return [{
+      date: targetDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+      bookingsRevenue: bRev,
+      inquiriesRevenue: iRev,
+      totalRevenue: bRev + iRev
+    }];
+  }, [dailyDate, rawBookings, rawInquiries]);
+
+  const customAnalyticsData = useMemo(() => {
+    if (!customRange.start || !customRange.end) return [];
+    const start = new Date(customRange.start);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(customRange.end);
+    end.setHours(23, 59, 59, 999);
+
+    const diffInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    const isWeekly = diffInDays > 30;
+
+    const results = [];
+    let current = new Date(start);
+
+    if (isWeekly) {
+      while (current <= end) {
+        const weekEnd = new Date(current);
+        weekEnd.setDate(current.getDate() + 6);
+        const actualEnd = weekEnd > end ? new Date(end) : weekEnd;
+        const label = `${current.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${actualEnd.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+        const bRev = rawBookings.filter(b => b.status === "confirmed" && new Date(b.createdAt) >= current && new Date(b.createdAt) <= actualEnd).reduce((s, b) => s + (b.totalAmount || 0), 0);
+        const iRev = rawInquiries.filter(i => i.status === "COMPLETED" && new Date(i.updatedAt) >= current && new Date(i.updatedAt) <= actualEnd).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+        results.push({ date: label, bookingsRevenue: bRev, inquiriesRevenue: iRev, totalRevenue: bRev + iRev });
+        current.setDate(current.getDate() + 7);
+      }
+    } else {
+      while (current <= end) {
+        const dStr = current.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        const dayEnd = new Date(current);
+        dayEnd.setHours(23, 59, 59, 999);
+        const bRev = rawBookings.filter(b => b.status === "confirmed" && new Date(b.createdAt) >= current && new Date(b.createdAt) <= dayEnd).reduce((s, b) => s + (b.totalAmount || 0), 0);
+        const iRev = rawInquiries.filter(i => i.status === "COMPLETED" && new Date(i.updatedAt) >= current && new Date(i.updatedAt) <= dayEnd).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+        results.push({ date: dStr, bookingsRevenue: bRev, inquiriesRevenue: iRev, totalRevenue: bRev + iRev });
+        current.setDate(current.getDate() + 1);
+      }
+    }
+    return results;
+  }, [customRange, rawBookings, rawInquiries]);
+
+  const handleExportPDF = async () => {
     try {
-        console.log('📄 Starting PDF export...');
+        console.log('Starting PDF export...');
+        console.log('allPackages data:', allPackages);  // Debug: check if packages are loaded
+        console.log('allPackages length:', allPackages.length);  // Debug: check count
         
-        // Get admin info first
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
         const adminName = adminData.username || adminData.email || 'Admin';
         const adminId = adminData._id || null;
@@ -278,11 +380,29 @@ const handleExportPDF = async () => {
         // Generate PDF (this will download it for the user)
         const pdfTopPackages = topPackages.map((pkg) => ({
             ...pkg, 
-            revenue: typeof pkg.revenue === 'string' ? pkg.revenue.replace('₱', 'PHP ') : pkg.revenue
+            revenue: typeof pkg.revenue === 'string' ? pkg.revenue.replace('₱', 'P') : pkg.revenue
         }));
         
-        // Just call the export function (it will handle download)
-        exportToPDF(stats, trendData, pdfTopPackages);
+        const statsWithRawData = {
+            ...stats,
+            rawBookings: rawBookings,
+            rawInquiries: rawInquiries
+        };
+        
+        // ✅ IMPORTANT: Pass allPackages to all export functions
+        if (revenueViewMode === "daily") {
+            console.log('Exporting DAILY with allPackages:', allPackages);
+            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages);
+        } else if (revenueViewMode === "weekly") {
+            console.log('Exporting WEEKLY with allPackages:', allPackages);
+            exportWeeklyToPDF(stats, revenueBreakdown.daily, pdfTopPackages);
+        } else if (revenueViewMode === "custom") {
+            console.log('Exporting CUSTOM with allPackages:', allPackages);
+            exportCustomToPDF(stats, customAnalyticsData, pdfTopPackages, customRange);
+        } else {
+            console.log('Exporting MONTHLY with allPackages:', allPackages);
+            exportToPDF(stats, trendData, pdfTopPackages);
+        }
         
         console.log('✅ PDF downloaded successfully');
         
@@ -365,7 +485,7 @@ const handleExportPDF = async () => {
             console.error('Failed to log error activity:', logError);
         }
     }
-};
+  };
 
   const handleSectionFilter = (section) => {
     setSelectedSection(section);
@@ -392,8 +512,8 @@ const handleExportPDF = async () => {
 
   return (
     <div className="dash-page">
-      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
- 
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar}  />
+
       <main className={`dash-main ${isSidebarCollapsed ? "dash-main--collapsed" : ""}`}>
         <div className="dash-container">
           <DashboardHeader 
