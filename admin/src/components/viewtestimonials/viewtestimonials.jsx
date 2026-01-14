@@ -4,10 +4,10 @@ import Sidebar from '../sidebar/sidebar';
 import TestimonialDetailModal from './TestimonialDetailModal';
 import TestimonialPagination from './TestimonialPagination';
 import TestimonialFilters from './TestimonialFilters';
-import { useToast } from '../toast/ToastManager'; 
+import { useToast } from '../toast/ToastManager'; // Inimport ang Toast
 import './viewtestimonials.css';
 
-// Custom Confirm Modal Component
+// Custom Confirm Modal Component (Reference from EditVisa.jsx)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -52,7 +52,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewTestimonials = () => {
-    const toast = useToast(); 
+    const toast = useToast(); // Initialize Toast
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -195,6 +195,13 @@ const ViewTestimonials = () => {
         return Number(rating).toFixed(1);
     };
 
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric'
+        });
+    };
+
     // ✅ ENHANCED FILTER LOGIC
     const filteredTestimonials = testimonials
         .filter(testimonial => {
@@ -224,6 +231,7 @@ const ViewTestimonials = () => {
             
             return isNotArchived && matchesSearch && matchesSource && matchesDate;
         })
+        // ITO ANG DINAGDAG: Sort by date descending (Newest first)
         .sort((a, b) => {
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
@@ -325,7 +333,7 @@ const ViewTestimonials = () => {
                                                 <td>
                                                     <span className="vt-rating">
                                                         <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                                                        {formatRating(testimonial.rating)} Stars
+                                                        5.0 Stars
                                                     </span>
                                                 </td>
                                                 <td>

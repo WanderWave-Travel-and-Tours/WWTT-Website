@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Quote, Camera, Loader2, HelpCircle, Star, StarHalf } from 'lucide-react'; // ✅ Added StarHalf
+import { User, Quote, Camera, Loader2, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './addtestimonial.css';
 
@@ -10,7 +10,7 @@ import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftMo
 // ✅ Import Toast and ToastManager
 import { useToast } from '../toast/ToastManager';
 
-// ✅ Custom Confirm Modal Component
+// ✅ Custom Confirm Modal Component (Reference from EditVisa.jsx)
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
     if (!isOpen) return null;
     return (
@@ -55,7 +55,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const AddTestimonial = () => {
-    const toast = useToast(); 
+    const toast = useToast(); // ✅ Initialize Toast
 
     // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -68,7 +68,6 @@ const AddTestimonial = () => {
         name: '',
         feedback: '',
         source: '',
-        rating: 5 // Default rating
     });
     const [pictureFile, setPictureFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -165,7 +164,6 @@ const AddTestimonial = () => {
             name: data.name || '',
             feedback: data.feedback || '',
             source: data.source || '',
-            rating: data.rating || 5,
         });
 
         if (data.image && data.imageMeta) {
@@ -201,11 +199,11 @@ const AddTestimonial = () => {
         }
     }, [hasDraft]);
 
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-        toast.success('Your testimonial draft has been restored successfully!', '✅ Draft Restored', 3000);
-    };
+const handleRestoreDraft = () => {
+    restoreDraft();
+    setShowRestoreModal(false);
+    toast.success('Your testimonial draft has been restored successfully!', '✅ Draft Restored', 3000);
+};
 
     const handleDiscardDraft = async () => {
         await discardDraft();
@@ -228,160 +226,125 @@ const AddTestimonial = () => {
         setTestimonialDetails(prev => ({ ...prev, [name]: value }));
     };
 
-    // ✅ UPDATED: Handle Half-Star Logic
-    // If user clicks the star that matches current rating, toggle to half.
-    // Example: Rating is 5. User clicks 5. Rating becomes 4.5.
-    // Example: Rating is 4.5. User clicks 5. Rating becomes 5.
-    const handleRatingChange = (starIndex) => {
-        let newRating = starIndex;
-
-        if (testimonialDetails.rating === starIndex) {
-            // Toggle to half if same star clicked
-            newRating = starIndex - 0.5;
-        } else if (testimonialDetails.rating === starIndex - 0.5) {
-            // Toggle back to full if half star clicked
-            newRating = starIndex;
-        }
-
-        setTestimonialDetails(prev => ({ ...prev, rating: newRating }));
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                toast.warning('File is too large. Maximum size is 2MB.', '⚠️ File Too Large');
-                return;
-            }
-            setPictureFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-            toast.success(`Customer photo "${file.name}" selected successfully!`, '✅ Photo Selected');
-        }
-    };
-
-    const handleCancel = () => {
-        askConfirmation(
-            "Cancel Entry",
-            "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
-            async () => {
-                await clearDraft();
-                setTestimonialDetails({
-                    name: '',
-                    feedback: '',
-                    source: '',
-                    rating: 5,
-                });
-                setPictureFile(null);
-                setPreviewUrl(null);
-                toast.info('Action cancelled and form cleared.', '❌ Cancelled');
-            },
-            "danger"
-        );
-    };
-
-    const handleSubmit = (e) => { 
-        e.preventDefault();
-        
-        if (!testimonialDetails.name || !testimonialDetails.feedback || !testimonialDetails.source) {
-            toast.warning('Please fill in all required fields.', '⚠️ Incomplete Form');
+const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        if (file.size > 2 * 1024 * 1024) {
+            toast.warning('File is too large. Maximum size is 2MB.', '⚠️ File Too Large');
             return;
         }
-        
-        toast.success('All fields validated successfully!', '✅ Ready to Submit', 2000);
-        
-        askConfirmation(
-            "Submit Testimonial",
-            `Do you want to add this testimonial from "${testimonialDetails.name}" with a ${testimonialDetails.rating}-star rating?`,
-            () => performSubmit()
-        );
-    };
+        setPictureFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+        toast.success(`Customer photo "${file.name}" selected successfully!`, '✅ Photo Selected');
+    }
+};
+
+    const handleCancel = () => {
+    askConfirmation(
+        "Cancel Entry",
+        "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+        async () => {
+            await clearDraft();
+            setTestimonialDetails({
+                name: '',
+                feedback: '',
+                source: '',
+            });
+            setPictureFile(null);
+            setPreviewUrl(null);
+            toast.info('Action cancelled and form cleared.', '❌ Cancelled');
+        },
+        "danger"
+    );
+};
+
+const handleSubmit = (e) => { 
+    e.preventDefault();
+    
+    if (!testimonialDetails.name || !testimonialDetails.feedback || !testimonialDetails.source) {
+        toast.warning('Please fill in all required fields.', '⚠️ Incomplete Form');
+        return;
+    }
+    
+    toast.success('All fields validated successfully!', '✅ Ready to Submit', 2000);
+    
+    askConfirmation(
+        "Submit Testimonial",
+        `Do you want to add this testimonial from "${testimonialDetails.name}"?`,
+        () => performSubmit()
+    );
+};
 
     const performSubmit = async () => {
-        setIsSubmitting(true);
-        
-        toast.info('Submitting testimonial...', '📤 Please Wait', 2000);
-        
-        const formData = new FormData();
+    setIsSubmitting(true);
+    
+    toast.info('Submitting testimonial...', '📤 Please Wait', 2000);
+    
+    const formData = new FormData();
 
-        formData.append('customerName', testimonialDetails.name); 
-        formData.append('source', testimonialDetails.source);
-        formData.append('feedback', testimonialDetails.feedback);
-        formData.append('rating', testimonialDetails.rating); // ✅ Send Rating
+    formData.append('customerName', testimonialDetails.name); 
+    formData.append('source', testimonialDetails.source);
+    formData.append('feedback', testimonialDetails.feedback);
 
-        if (pictureFile) {
-            formData.append('customerImage', pictureFile); 
-        }
+    if (pictureFile) {
+        formData.append('customerImage', pictureFile); 
+    }
 
-        try {
-            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-            const activeId = adminData.id || adminData._id || "";
+    try {
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        const activeId = adminData.id || adminData._id || "";
 
-            formData.append("userEmail", activeUser);
-            formData.append("adminId", activeId);
-        } catch (err) {
-            console.error("Error parsing admin data:", err);
-        }
+        formData.append("userEmail", activeUser);
+        formData.append("adminId", activeId);
+    } catch (err) {
+        console.error("Error parsing admin data:", err);
+    }
 
-        try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials', {
-                method: 'POST',
-                body: formData, 
-            });
+    try {
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials', {
+            method: 'POST',
+            body: formData, 
+        });
 
-            if (response.ok) {
-                toast.success(
-                    `Testimonial from "${testimonialDetails.name}" has been added successfully!`,
-                    '✅ Testimonial Added',
-                    5000
-                );
-                
-                await clearDraft();
-                
-                toast.info('Form cleared and ready for new testimonial entry.', '🔄 Ready', 3000);
-
-                setTestimonialDetails({
-                    name: '',
-                    feedback: '',
-                    source: '',
-                    rating: 5,
-                });
-                setPictureFile(null);
-                setPreviewUrl(null);
-            } else {
-                const data = await response.json();
-                const errorMessage = data.message || 'Unknown error occurred';
-                toast.error(
-                    `Failed to submit testimonial: ${errorMessage}`,
-                    '❌ Submission Failed',
-                    5000
-                );
-            }
-        } catch (error) {
-            console.error('❌ Network Error:', error);
-            toast.error(
-                `Unable to connect to server: ${error.message}. Please check if backend is running.`,
-                '❌ Connection Error',
-                6000
+        if (response.ok) {
+            toast.success(
+                `Testimonial from "${testimonialDetails.name}" has been added successfully!`,
+                '✅ Testimonial Added',
+                5000
             );
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+            
+            await clearDraft();
+            
+            toast.info('Form cleared and ready for new testimonial entry.', '🔄 Ready', 3000);
 
-    // ✅ Helper to render stars dynamically (Input & Preview)
-    const renderStarIcon = (starIndex, currentRating, size = 24) => {
-        const isFull = currentRating >= starIndex;
-        const isHalf = currentRating === starIndex - 0.5;
-
-        if (isHalf) {
-            return <StarHalf size={size} fill="#FF8C42" color="#FF8C42" />;
+            setTestimonialDetails({
+                name: '',
+                feedback: '',
+                source: '',
+            });
+            setPictureFile(null);
+            setPreviewUrl(null);
+        } else {
+            const data = await response.json();
+            const errorMessage = data.message || 'Unknown error occurred';
+            toast.error(
+                `Failed to submit testimonial: ${errorMessage}`,
+                '❌ Submission Failed',
+                5000
+            );
         }
-        if (isFull) {
-            return <Star size={size} fill="#FF8C42" color="#FF8C42" />;
-        }
-        return <Star size={size} fill="none" color="#cbd5e1" />;
-    };
+    } catch (error) {
+        console.error('❌ Network Error:', error);
+        toast.error(
+            `Unable to connect to server: ${error.message}. Please check if backend is running.`,
+            '❌ Connection Error',
+            6000
+        );
+    } finally {
+        setIsSubmitting(false);
+    }
+};
 
     return (
         <div className="testi-page">
@@ -473,27 +436,6 @@ const AddTestimonial = () => {
                                                 <option value="Other">Other</option>
                                             </select>
                                         </div>
-                                        
-                                        {/* ✅ UPDATED RATING FIELD WITH HALF STAR SUPPORT */}
-                                        <div className="testi-field testi-field--full">
-                                            <label>Star Rating (Click twice to toggle half star)</label>
-                                            <div className="testi-rating-input">
-                                                {[1, 2, 3, 4, 5].map((starIndex) => (
-                                                    <button
-                                                        key={starIndex}
-                                                        type="button"
-                                                        onClick={() => handleRatingChange(starIndex)}
-                                                        className={`testi-star-btn ${starIndex <= Math.ceil(testimonialDetails.rating) ? 'active' : ''}`}
-                                                    >
-                                                        {renderStarIcon(starIndex, testimonialDetails.rating, 24)}
-                                                    </button>
-                                                ))}
-                                                <span className="testi-rating-text">
-                                                    {testimonialDetails.rating} / 5 Stars
-                                                </span>
-                                            </div>
-                                        </div>
-
                                         <div className="testi-field testi-field--full">
                                             <label>Feedback / Testimonial</label>
                                             <textarea
@@ -516,16 +458,6 @@ const AddTestimonial = () => {
                                         <div className="testi-card-quote">
                                             <Quote size={32} />
                                         </div>
-                                        
-                                        {/* ✅ PREVIEW RATING */}
-                                        <div className="testi-card-rating">
-                                            {[1, 2, 3, 4, 5].map((starIndex) => (
-                                                <span key={starIndex}>
-                                                    {renderStarIcon(starIndex, testimonialDetails.rating, 14)}
-                                                </span>
-                                            ))}
-                                        </div>
-
                                         <p className="testi-card-feedback">
                                             {testimonialDetails.feedback || 'Customer feedback will appear here...'}
                                         </p>
@@ -550,8 +482,8 @@ const AddTestimonial = () => {
                                             <span>Name</span>
                                         </div>
                                         <div className="testi-stat">
-                                            <strong>{testimonialDetails.rating} ★</strong>
-                                            <span>Rating</span>
+                                            <strong>{testimonialDetails.source ? '✓' : '--'}</strong>
+                                            <span>Source</span>
                                         </div>
                                         <div className="testi-stat">
                                             <strong>{previewUrl ? '✓' : '--'}</strong>

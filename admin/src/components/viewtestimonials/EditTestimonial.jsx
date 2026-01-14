@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, User, MessageSquare, HelpCircle, Star, StarHalf } from 'lucide-react'; // ✅ Added Star Icons
+import { Save, ArrowLeft, Upload, User, MessageSquare, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditTestimonial.css';
 
@@ -72,7 +72,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 const EditTestimonial = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const toast = useToast(); 
+    const toast = useToast(); // ✅ Initialize Toast
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -90,8 +90,7 @@ const EditTestimonial = () => {
     const [formData, setFormData] = useState({
         customerName: '',
         source: 'Facebook', // Default
-        feedback: '',
-        rating: 5 // ✅ Added Rating (Default 5)
+        feedback: ''
     });
 
     // Store original data to track changes for Activity Logs
@@ -197,7 +196,6 @@ const EditTestimonial = () => {
         if (data.customerName) setFormData(prev => ({ ...prev, customerName: data.customerName }));
         if (data.source) setFormData(prev => ({ ...prev, source: data.source }));
         if (data.feedback) setFormData(prev => ({ ...prev, feedback: data.feedback }));
-        if (data.rating) setFormData(prev => ({ ...prev, rating: data.rating })); // ✅ Restore Rating
 
         if (data.image && data.imageMeta) {
             try {
@@ -241,20 +239,17 @@ const EditTestimonial = () => {
                 }
                 const data = await response.json();
                 
-                // ✅ Load Rating
                 setFormData({
                     customerName: data.customerName || '',
                     source: data.source || 'Facebook',
-                    feedback: data.feedback || '',
-                    rating: data.rating || 5 
+                    feedback: data.feedback || ''
                 });
 
-                // Store original data
+                // Store original data for Activity Log comparison
                 setOriginalData({
                     customerName: data.customerName || '',
                     source: data.source || 'Facebook',
-                    feedback: data.feedback || '',
-                    rating: data.rating || 5
+                    feedback: data.feedback || ''
                 });
 
                 if (data.customerImage) {
@@ -276,35 +271,6 @@ const EditTestimonial = () => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    // ✅ New Function: Handle Star Rating with Toggle Logic (Half-Stars)
-    const handleRatingChange = (starIndex) => {
-        let newRating = starIndex;
-
-        if (formData.rating === starIndex) {
-            // Toggle to half if same star clicked
-            newRating = starIndex - 0.5;
-        } else if (formData.rating === starIndex - 0.5) {
-            // Toggle back to full if half star clicked
-            newRating = starIndex;
-        }
-
-        setFormData(prev => ({ ...prev, rating: newRating }));
-    };
-
-    // ✅ Helper to render stars
-    const renderStarIcon = (starIndex, currentRating, size = 24) => {
-        const isFull = currentRating >= starIndex;
-        const isHalf = currentRating === starIndex - 0.5;
-
-        if (isHalf) {
-            return <StarHalf size={size} fill="#FF8C42" color="#FF8C42" />;
-        }
-        if (isFull) {
-            return <Star size={size} fill="#FF8C42" color="#FF8C42" />;
-        }
-        return <Star size={size} fill="none" color="#cbd5e1" />;
     };
 
     const handleImageChange = (e) => {
@@ -333,9 +299,6 @@ const EditTestimonial = () => {
         if (formData.feedback !== originalData.feedback) {
             changes.feedback = { old: originalData.feedback, new: formData.feedback };
         }
-        if (formData.rating !== originalData.rating) {
-            changes.rating = { old: originalData.rating, new: formData.rating };
-        }
         if (imageFile) {
             changes.customerImage = { old: 'Existing Image', new: imageFile.name };
         }
@@ -359,7 +322,6 @@ const EditTestimonial = () => {
             formDataToSend.append("customerName", formData.customerName);
             formDataToSend.append("source", formData.source);
             formDataToSend.append("feedback", formData.feedback);
-            formDataToSend.append("rating", formData.rating); // ✅ Send Rating
 
             // 🔥 INCLUDE ADMIN DATA FOR ACTIVITY LOGS
             const { userEmail, adminId } = getAdminData();
@@ -526,26 +488,6 @@ const EditTestimonial = () => {
                                         <option value="Direct Message">Direct Message</option>
                                         <option value="Website">Website</option>
                                     </select>
-                                </div>
-
-                                {/* ✅ STAR RATING INPUT */}
-                                <div className="eto-form-group eto-form-group--full">
-                                    <label className="eto-label">Star Rating (Click twice to toggle half star)</label>
-                                    <div className="eto-rating-input">
-                                        {[1, 2, 3, 4, 5].map((starIndex) => (
-                                            <button
-                                                key={starIndex}
-                                                type="button"
-                                                onClick={() => handleRatingChange(starIndex)}
-                                                className={`eto-star-btn ${starIndex <= Math.ceil(formData.rating) ? 'active' : ''}`}
-                                            >
-                                                {renderStarIcon(starIndex, formData.rating, 24)}
-                                            </button>
-                                        ))}
-                                        <span className="eto-rating-text">
-                                            {formData.rating} / 5 Stars
-                                        </span>
-                                    </div>
                                 </div>
 
                                 <div className="eto-form-group eto-form-group--full">

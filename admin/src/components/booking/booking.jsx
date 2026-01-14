@@ -28,11 +28,6 @@ const Booking = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [paymentFilter, setPaymentFilter] = useState('ALL'); // NEW: Payment filter
-  
-  // ✅ NEW: Date Filter State
-  const [dateStart, setDateStart] = useState('');
-  const [dateEnd, setDateEnd] = useState('');
-
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -78,7 +73,6 @@ const Booking = () => {
         totalAmount: b.totalAmount || 0,
         guests: b.pax?.adult || 1,
         status: b.status || 'pending',
-        // ✅ Ensure consistent date format for filtering (YYYY-MM-DD)
         bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
         message: b.message || '',
         referenceNumber: b.referenceNumber || 'N/A',
@@ -110,7 +104,7 @@ const Booking = () => {
   }
 };
 
-  // ✅ Enhanced filtering with payment status AND Date Range
+  // ✅ Enhanced filtering with payment status
   useEffect(() => {
     let filtered = bookings;
 
@@ -139,14 +133,6 @@ const Booking = () => {
       }
     }
 
-    // ✅ NEW: Date Range Filter Logic
-    if (dateStart) {
-        filtered = filtered.filter(b => b.bookingDate >= dateStart);
-    }
-    if (dateEnd) {
-        filtered = filtered.filter(b => b.bookingDate <= dateEnd);
-    }
-
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -162,12 +148,15 @@ const Booking = () => {
     setFilteredBookings(filtered);
     setCurrentPage(1);
 
-    if (searchTerm || filterStatus !== 'ALL' || paymentFilter !== 'ALL' || (dateStart || dateEnd)) {
-    // Optional: Add toast for filtering feedback if needed
-    // toast.info(`Found ${filtered.length} matching bookings`, "🔍 Filter Applied", 2000);
+    if (searchTerm || filterStatus !== 'ALL' || paymentFilter !== 'ALL') {
+    toast.info(
+      `Found ${filtered.length} matching bookings`,
+      "🔍 Filter Applied",
+      2000
+    );
   }
 
-  }, [searchTerm, filterStatus, paymentFilter, dateStart, dateEnd, bookings]);
+  }, [searchTerm, filterStatus, paymentFilter, bookings]);
 
 const handleConfirm = async (booking) => {
   if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) return;
@@ -354,7 +343,7 @@ const handleArchive = async (booking) => {
     { value: 'PARTIAL_ONLY', label: 'Partial Payment' }
   ];
 
-  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage); 
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   const currentBookings = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredBookings.slice(start, start + itemsPerPage);
@@ -392,11 +381,6 @@ const handleArchive = async (booking) => {
             setPaymentFilter={setPaymentFilter}
             paymentOptions={paymentOptions}
             getPaymentFilterClassName={getPaymentFilterClassName}
-            // ✅ PASSED NEW PROPS
-            dateStart={dateStart}
-            setDateStart={setDateStart}
-            dateEnd={dateEnd}
-            setDateEnd={setDateEnd}
           />
           
           <div className="bkm-table-container">
@@ -475,4 +459,4 @@ const handleArchive = async (booking) => {
   );
 };
 
-export default Booking; 
+export default Booking;
