@@ -18,17 +18,17 @@ import { exportToPDF } from "./utils/pdfExport";
 import { exportWeeklyToPDF } from "./utils/weeklyPdfExport";
 import { exportCustomToPDF } from "./utils/customPdfExport";
 import { exportDailyToPDF } from "./utils/dailyPdfExport";
+import { exportMonthlyToPDF } from "./utils/monthlyPdfExport";
+
 import "./dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const toast = useToast(); // Initialize toast
+  const toast = useToast();
   const TIMEOUT_IN_MS = 15 * 60 * 1000;
   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedSection, setSelectedSection] = useState('all');
-  
-  // Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [stats, setStats] = useState({
@@ -41,8 +41,7 @@ const Dashboard = () => {
 
   const [recentBookings, setRecentBookings] = useState([]);
   const [topPackages, setTopPackages] = useState([]);
-  // ✅ NEW: State to store all packages for reference and PDF calculation
-  const [allPackages, setAllPackages] = useState([]); 
+  const [allPackages, setAllPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trendData, setTrendData] = useState([]);
   const [revenueBreakdown, setRevenueBreakdown] = useState({ daily: [], monthly: [] });
@@ -50,9 +49,13 @@ const Dashboard = () => {
   const [rawBookings, setRawBookings] = useState([]);
   const [rawInquiries, setRawInquiries] = useState([]);
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
-  const [revenueViewMode, setRevenueViewMode] = useState("weekly"); 
+  const [revenueViewMode, setRevenueViewMode] = useState("weekly");
   
   const [dailyDate, setDailyDate] = useState(new Date().toISOString().split('T')[0]);
+  const [weeklyDate, setWeeklyDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // State for Specific Month Selection (Defaults to current YYYY-MM)
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -60,11 +63,8 @@ const Dashboard = () => {
     console.warn("Admin session expired due to inactivity.");
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminData");
-    
-    // Replaced default alert with Toast
     toast.error("Security Alert: Your session has expired due to inactivity. Please log in again.", "Session Expired");
-    
-    navigate("/admin"); 
+    navigate("/admin");
   }, [navigate, toast]);
 
   useEffect(() => {
@@ -96,13 +96,12 @@ const Dashboard = () => {
     let bookings = [], packages = [], blogs = [], promos = [], testimonials = [], inquiries = [];
 
     try {
-      const bookingsRes = await fetch("http://localhost:5000/api/admin/bookings");
+      const bookingsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/admin/bookings");
       if (bookingsRes.ok) bookings = await bookingsRes.json();
       
-      const packagesRes = await fetch("http://localhost:5000/api/packages/all");
+      const packagesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/all");
       if (packagesRes.ok) {
         const pkgData = await packagesRes.json();
-        // Handle different response formats
         let packagesArray = [];
         if (Array.isArray(pkgData)) {
           packagesArray = pkgData;
@@ -118,16 +117,16 @@ const Dashboard = () => {
         console.error('❌ Packages fetch failed:', packagesRes.status);
       }
 
-      const blogsRes = await fetch("http://localhost:5000/api/blogs");
+      const blogsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/blogs");
       if (blogsRes.ok) blogs = await blogsRes.json();
 
-      const promosRes = await fetch("http://localhost:5000/api/promos");
+      const promosRes = await fetch("https://wanderwaveph-backend.onrender.com/api/promos");
       if (promosRes.ok) promos = await promosRes.json();
 
-      const testimonialsRes = await fetch("http://localhost:5000/api/testimonials");
+      const testimonialsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/testimonials");
       if (testimonialsRes.ok) testimonials = await testimonialsRes.json();
 
-      const inquiriesRes = await fetch("http://localhost:5000/api/inquiries");
+      const inquiriesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/inquiries");
       if (inquiriesRes.ok) {
         const inquiriesData = await inquiriesRes.json();
         inquiries = inquiriesData.data || inquiriesData || [];
@@ -152,32 +151,24 @@ const Dashboard = () => {
       const confirmedBookings = bookings.filter((b) => b.status === "confirmed");
       const bookingsRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
-      // ✅ FIX: Create a map of packages for faster lookup by title to get sellerPrice and markup
       const packageLookup = packages.reduce((acc, pkg) => {
         acc[pkg.title] = pkg;
         return acc;
       }, {});
 
-      // ✅ RE-CALCULATED FINANCIAL STATS: Cross-referencing Booking with Package Collection
       const financialStats = confirmedBookings.reduce((acc, booking) => {
-          // Calculate total passengers as multiplier
           const paxCount = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0) || 1;
-          
-          // Search for the package data from the collection
           const refPackage = packageLookup[booking.packageName];
 
           if (refPackage) {
-            // Priority 1: Use actual data from Packages Collection
             acc.totalSellerCost += (refPackage.sellerPrice || 0) * paxCount;
             acc.totalMarkup += (refPackage.markup || 0) * paxCount;
             acc.totalSales += booking.totalAmount || 0;
           } else if (booking.sellerPrice !== undefined && booking.markup !== undefined) {
-            // Priority 2: Fallback to stored price in booking if package was deleted from collection
             acc.totalSellerCost += (booking.sellerPrice || 0) * paxCount;
             acc.totalMarkup += (booking.markup || 0) * paxCount;
             acc.totalSales += booking.totalAmount || 0;
           } else {
-            // Fallback for old data: Treat totalAmount as the only known value
             acc.totalSales += booking.totalAmount || 0;
           }
           return acc;
@@ -225,14 +216,17 @@ const Dashboard = () => {
           ? ((financialStats.totalMarkup / financialStats.totalSales) * 100).toFixed(1) : 0;
 
       setStats({
-        totalBookings: bookings.length, confirmedBookings: confirmed, pendingBookings: pending,
-        cancelledBookings: cancelled, totalRevenue: bookingsRevenue,
+        totalBookings: bookings.length,
+        confirmedBookings: confirmed,
+        pendingBookings: pending,
+        cancelledBookings: cancelled,
+        totalRevenue: bookingsRevenue,
         totalPackages: Array.isArray(packages) ? packages.length : 0,
         totalBlogs: Array.isArray(blogs) ? blogs.length : 0,
         totalPromos: Array.isArray(promos) ? promos.length : 0,
         totalTestimonials: Array.isArray(testimonials) ? testimonials.length : 0,
         totalSellerCost: financialStats.totalSellerCost,
-        totalMarkup: financialStats.totalMarkup, // This correctly maps to Net Profit
+        totalMarkup: financialStats.totalMarkup,
         totalSales: financialStats.totalSales,
         profitMargin: profitMargin,
         totalInquiriesRevenue: inquiriesRevenue,
@@ -265,8 +259,11 @@ const Dashboard = () => {
         const iRev = completedInquiriesThisMonth.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
 
         trendDataTemp.push({
-          month: monthName, bookings: confirmedThisMonth.length, bookingsRevenue: bRev,
-          inquiries: completedInquiriesThisMonth.length, inquiriesRevenue: iRev,
+          month: monthName,
+          bookings: confirmedThisMonth.length,
+          bookingsRevenue: bRev,
+          inquiries: completedInquiriesThisMonth.length,
+          inquiriesRevenue: iRev,
           totalRevenue: bRev + iRev,
         });
       }
@@ -292,7 +289,8 @@ const Dashboard = () => {
 
         dailyBreakdown.push({
           date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          bookingsRevenue: dBookings, inquiriesRevenue: dInquiries,
+          bookingsRevenue: dBookings,
+          inquiriesRevenue: dInquiries,
           totalRevenue: dBookings + dInquiries,
         });
       }
@@ -300,15 +298,20 @@ const Dashboard = () => {
       setRevenueBreakdown({
         daily: dailyBreakdown,
         monthly: trendDataTemp.map(m => ({
-          month: m.month, bookingsRevenue: m.bookingsRevenue,
-          inquiriesRevenue: m.inquiriesRevenue, totalRevenue: m.totalRevenue,
+          month: m.month,
+          bookingsRevenue: m.bookingsRevenue,
+          inquiriesRevenue: m.inquiriesRevenue,
+          totalRevenue: m.totalRevenue,
         })),
       });
 
       setRecentBookings(bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5).map((b) => ({
-          id: b._id, client: b.fullName, package: b.packageName,
+          id: b._id,
+          client: b.fullName,
+          package: b.packageName,
           date: new Date(b.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-          status: b.status, amount: `₱${(b.totalAmount || 0).toLocaleString()}`,
+          status: b.status,
+          amount: `₱${(b.totalAmount || 0).toLocaleString()}`,
         })));
 
       const packageStats = {};
@@ -320,7 +323,10 @@ const Dashboard = () => {
       });
 
       setTopPackages(Object.entries(packageStats).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5).map(([name, data]) => ({
-          name, bookings: data.bookings, revenue: `₱${data.revenue.toLocaleString()}`, revenueValue: data.revenue,
+          name,
+          bookings: data.bookings,
+          revenue: `₱${data.revenue.toLocaleString()}`,
+          revenueValue: data.revenue,
         })));
 
     } catch (calcErr) {
@@ -356,6 +362,115 @@ const Dashboard = () => {
       totalRevenue: bRev + iRev
     }];
   }, [dailyDate, rawBookings, rawInquiries]);
+
+  // Specific Month Analytics Data Calculation
+  const specificMonthAnalyticsData = useMemo(() => {
+    if (!selectedMonth) return [];
+    
+    const [year, month] = selectedMonth.split('-');
+    const startDate = new Date(year, month - 1, 1);
+    
+    const now = new Date();
+    const isCurrentMonth = parseInt(year) === now.getFullYear() && (parseInt(month) - 1) === now.getMonth();
+    
+    const endDate = isCurrentMonth ? now : new Date(year, month, 0);
+    
+    const results = [];
+    let current = new Date(startDate);
+    
+    while (current <= endDate) {
+        const weekStart = new Date(current);
+        const weekEnd = new Date(current);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        
+        const actualEndLimit = isCurrentMonth ? now : new Date(year, month, 0);
+        const absoluteMonthEnd = new Date(year, month, 0);
+        
+        const actualWeekEnd = weekEnd > actualEndLimit ? new Date(actualEndLimit) : weekEnd;
+        if (actualWeekEnd > absoluteMonthEnd) actualWeekEnd.setTime(absoluteMonthEnd.getTime());
+        
+        weekStart.setHours(0,0,0,0);
+        const compareEnd = new Date(actualWeekEnd);
+        compareEnd.setHours(23,59,59,999);
+
+        const bRev = rawBookings.filter(b => 
+            b.status === "confirmed" && 
+            new Date(b.createdAt) >= weekStart && 
+            new Date(b.createdAt) <= compareEnd
+        ).reduce((s, b) => s + (b.totalAmount || 0), 0);
+
+        const iRev = rawInquiries.filter(i => 
+            i.status === "COMPLETED" && 
+            new Date(i.updatedAt) >= weekStart && 
+            new Date(i.updatedAt) <= compareEnd
+        ).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+
+        const label = `${weekStart.getDate()}-${compareEnd.getDate()} ${weekStart.toLocaleString('default', { month: 'short' })}`;
+
+        results.push({
+            date: label,
+            bookingsRevenue: bRev,
+            inquiriesRevenue: iRev,
+            totalRevenue: bRev + iRev
+        });
+
+        current.setDate(current.getDate() + 7);
+        
+        if (current > actualEndLimit) break;
+    }
+
+    return results;
+  }, [selectedMonth, rawBookings, rawInquiries]);
+
+  const weeklyAnalyticsData = useMemo(() => {
+    if (!weeklyDate) return [];
+    
+    const getWeekRange = (date) => {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const weekStart = new Date(d.setDate(diff));
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      
+      weekStart.setHours(0, 0, 0, 0);
+      weekEnd.setHours(23, 59, 59, 999);
+      
+      return { weekStart, weekEnd };
+    };
+
+    const { weekStart, weekEnd } = getWeekRange(weeklyDate);
+    const results = [];
+    let current = new Date(weekStart);
+
+    while (current <= weekEnd) {
+      const dayEnd = new Date(current);
+      dayEnd.setHours(23, 59, 59, 999);
+      
+      const dBookings = rawBookings.filter((b) => 
+        b.status === "confirmed" && 
+        new Date(b.createdAt) >= current && 
+        new Date(b.createdAt) <= dayEnd
+      ).reduce((s, b) => s + (b.totalAmount || 0), 0);
+
+      const dInquiries = rawInquiries.filter((i) => 
+        i.status === "COMPLETED" && 
+        new Date(i.updatedAt) >= current && 
+        new Date(i.updatedAt) <= dayEnd
+      ).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
+
+      results.push({
+        date: current.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        bookingsRevenue: dBookings,
+        inquiriesRevenue: dInquiries,
+        totalRevenue: dBookings + dInquiries
+      });
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    return results;
+  }, [weeklyDate, rawBookings, rawInquiries]);
 
   const customAnalyticsData = useMemo(() => {
     if (!customRange.start || !customRange.end) return [];
@@ -401,8 +516,7 @@ const Dashboard = () => {
         console.log('allPackages data:', allPackages);
         console.log('allPackages length:', allPackages?.length || 0);
         
-        // Safety check before export
-        if (revenueViewMode === "weekly" && (!allPackages || allPackages.length === 0)) {
+        if ((revenueViewMode === "weekly" || revenueViewMode === "daily" || revenueViewMode === "specificMonth") && (!allPackages || allPackages.length === 0)) {
             toast.warning("No packages loaded yet. Seller cost & markup will be 0 in the report.", "Package Data Missing");
         }
 
@@ -421,19 +535,23 @@ const Dashboard = () => {
             rawInquiries: rawInquiries
         };
         
-        // ✅ FIXED: Now passing allPackages correctly to ALL export functions
         if (revenueViewMode === "daily") {
             console.log('Exporting DAILY with allPackages length:', allPackages?.length);
             exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages);
         } else if (revenueViewMode === "weekly") {
             console.log('Exporting WEEKLY with allPackages length:', allPackages?.length);
-            exportWeeklyToPDF(stats, revenueBreakdown.daily, pdfTopPackages, allPackages); // <-- FIXED HERE
+            exportWeeklyToPDF(statsWithRawData, weeklyAnalyticsData, pdfTopPackages, weeklyDate, allPackages);
+        } else if (revenueViewMode === "specificMonth") {
+            console.log('Exporting SPECIFIC MONTH with allPackages length:', allPackages?.length);
+            console.log('Selected Month:', selectedMonth);
+            console.log('Monthly Data:', specificMonthAnalyticsData);
+            exportMonthlyToPDF(statsWithRawData, specificMonthAnalyticsData, pdfTopPackages, selectedMonth, allPackages);
         } else if (revenueViewMode === "custom") {
             console.log('Exporting CUSTOM with allPackages length:', allPackages?.length);
-            exportCustomToPDF(stats, customAnalyticsData, pdfTopPackages, customRange, allPackages);
+            exportCustomToPDF(statsWithRawData, customAnalyticsData, pdfTopPackages, customRange, allPackages);
         } else {
-            console.log('Exporting MONTHLY with allPackages length:', allPackages?.length);
-            exportToPDF(stats, trendData, pdfTopPackages, allPackages);
+            console.log('Exporting MONTHLY TREND with allPackages length:', allPackages?.length);
+            exportToPDF(statsWithRawData, trendData, pdfTopPackages, allPackages);
         }
         
         toast.success("Dashboard report has been exported successfully.", "Export Success");
@@ -464,7 +582,7 @@ const Dashboard = () => {
             }
         };
 
-        await fetch('http://localhost:5000/api/activity-logs', {
+        await fetch('https://wanderwaveph-backend.onrender.com/api/activity-logs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(activityLogData)
@@ -503,7 +621,7 @@ const Dashboard = () => {
 
   return (
     <div className="dash-page">
-      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar}  />
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
       <main className={`dash-main ${isSidebarCollapsed ? "dash-main--collapsed" : ""}`}>
         <div className="dash-container">
@@ -522,9 +640,13 @@ const Dashboard = () => {
               revenueBreakdown={revenueBreakdown} 
               onCustomRangeChange={(start, end) => setCustomRange({ start, end })}
               onViewModeChange={setRevenueViewMode} 
-              onDailyDateChange={setDailyDate} 
+              onDailyDateChange={setDailyDate}
+              onWeeklyDateChange={setWeeklyDate}
+              onMonthChange={setSelectedMonth}
+              monthlyData={specificMonthAnalyticsData}
               customData={customAnalyticsData}
-              dailyData={dailyAnalyticsData} 
+              dailyData={dailyAnalyticsData}
+              weeklyData={weeklyAnalyticsData}
             />
           )}
 
@@ -555,7 +677,6 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* Confirmation Modal for Export */}
       <CustomConfirmModal 
         isOpen={isExportModalOpen}
         title="Export Dashboard Report"

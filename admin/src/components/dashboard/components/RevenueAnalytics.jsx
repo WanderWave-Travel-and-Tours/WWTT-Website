@@ -16,7 +16,8 @@ import {
   PhilippinePeso,
   Filter,
   ChevronDown,
-  Clock 
+  Clock,
+  CalendarDays
 } from "lucide-react";
 import "./RevenueAnalytics.css";
 
@@ -27,20 +28,23 @@ const RevenueAnalytics = ({
   customData, 
   onViewModeChange,
   onDailyDateChange, 
-  dailyData 
+  dailyData,
+  onMonthChange, 
+  monthlyData    
 }) => {
   const [viewMode, setViewMode] = useState("weekly"); 
   const [dateInputs, setDateInputs] = useState({ start: "", end: "" });
   const [selectedDailyDate, setSelectedDailyDate] = useState(new Date().toISOString().split('T')[0]);
-  
-  // Separate states para sa dalawang dropdown
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+
   const [isDailyDropdownOpen, setIsDailyDropdownOpen] = useState(false);
   const [isCustomDropdownOpen, setIsCustomDropdownOpen] = useState(false);
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
   
   const dailyDropdownRef = useRef(null);
   const customDropdownRef = useRef(null);
+  const monthDropdownRef = useRef(null);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dailyDropdownRef.current && !dailyDropdownRef.current.contains(event.target)) {
@@ -49,19 +53,20 @@ const RevenueAnalytics = ({
       if (customDropdownRef.current && !customDropdownRef.current.contains(event.target)) {
         setIsCustomDropdownOpen(false);
       }
+      if (monthDropdownRef.current && !monthDropdownRef.current.contains(event.target)) {
+        setIsMonthDropdownOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Sync viewMode with Parent (Dashboard)
   useEffect(() => {
     if (onViewModeChange) {
       onViewModeChange(viewMode);
     }
   }, [viewMode, onViewModeChange]);
 
-  // Handle Daily Date Selection inside dropdown
   const handleDailyDateChange = (e) => {
     const newDate = e.target.value;
     setSelectedDailyDate(newDate);
@@ -75,6 +80,18 @@ const RevenueAnalytics = ({
     setIsDailyDropdownOpen(false);
   };
 
+  const handleMonthChange = (e) => {
+    setSelectedMonth(e.target.value);
+  };
+
+  const applyMonthFilter = () => {
+    setViewMode("specificMonth");
+    if (onMonthChange) {
+      onMonthChange(selectedMonth);
+    }
+    setIsMonthDropdownOpen(false);
+  };
+
   const handleApplyCustomRange = () => {
     if (dateInputs.start && dateInputs.end) {
       setViewMode("custom");
@@ -85,28 +102,60 @@ const RevenueAnalytics = ({
     }
   };
 
-  // Logic for data selection
   const data = viewMode === "daily" 
     ? dailyData 
     : viewMode === "weekly" 
       ? revenueBreakdown.daily 
-      : viewMode === "monthly" 
-        ? revenueBreakdown.monthly 
-        : customData;
+      : viewMode === "specificMonth"
+        ? monthlyData
+        : viewMode === "monthly" 
+          ? revenueBreakdown.monthly 
+          : customData;
 
-  // --- NEW: DYNAMIC AVERAGE COMPUTATION ---
-  const dynamicAverage = useMemo(() => {
+  // FIXED: Total Sales computation - now uses the current filtered data
+  const totalSalesInView = useMemo(() => {
     if (!data || data.length === 0) return 0;
     
-    // Kunin ang total revenue sa kasalukuyang "data" na nakikita sa chart
-    const totalInView = data.reduce((sum, item) => {
-      // Isama pareho ang bookings at inquiries revenue
-      return sum + (item.bookingsRevenue || 0) + (item.inquiriesRevenue || 0);
+    const total = data.reduce((sum, item) => {
+      return sum + (item.totalRevenue || 0);
     }, 0);
 
-    // I-divide ang total sa length ng array (bilang ng bars sa chart)
-    return totalInView / data.length;
+    return total;
   }, [data]);
+
+  // FIXED: Filtered Revenue Sources based on current view
+  const filteredRevenueData = useMemo(() => {
+    if (!data || data.length === 0) {
+      return {
+        bookingsRevenue: 0,
+        bookingsCount: 0,
+        inquiriesRevenue: 0,
+        inquiriesCount: 0
+      };
+    }
+
+    const bookingsRev = data.reduce((sum, item) => sum + (item.bookingsRevenue || 0), 0);
+    const inquiriesRev = data.reduce((sum, item) => sum + (item.inquiriesRevenue || 0), 0);
+
+    // Count bookings and inquiries from the data if available
+    const bookingsCount = data.reduce((sum, item) => sum + (item.bookings || 0), 0);
+    const inquiriesCount = data.reduce((sum, item) => sum + (item.inquiries || 0), 0);
+
+    return {
+      bookingsRevenue: bookingsRev,
+      bookingsCount: bookingsCount || stats.confirmedBookings,
+      inquiriesRevenue: inquiriesRev,
+      inquiriesCount: inquiriesCount || stats.completedInquiries
+    };
+  }, [data, stats]);
+
+  // FIXED: This Month Revenue - should show selected month's total when specificMonth is active
+  const displayedMonthRevenue = useMemo(() => {
+    if (viewMode === "specificMonth" && monthlyData && monthlyData.length > 0) {
+      return monthlyData.reduce((sum, item) => sum + (item.totalRevenue || 0), 0);
+    }
+    return stats.thisMonthRevenue;
+  }, [viewMode, monthlyData, stats.thisMonthRevenue]);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -128,12 +177,33 @@ const RevenueAnalytics = ({
     return null;
   };
 
+  const getChartTitle = () => {
+    if (viewMode === 'specificMonth') {
+      const [year, month] = selectedMonth.split('-');
+      const date = new Date(year, month - 1);
+      return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
+    return "Revenue Analytics";
+  };
+
+  // FIXED: Display label based on current view mode
+  const getViewModeLabel = () => {
+    switch(viewMode) {
+      case 'daily': return 'Daily';
+      case 'weekly': return 'Weekly';
+      case 'specificMonth': return 'Monthly';
+      case 'monthly': return '6 Months';
+      case 'custom': return 'Custom Range';
+      default: return 'Weekly';
+    }
+  };
+
   return (
     <div className="rev-widget">
       {/* Header */}
       <div className="rev-header">
         <div className="rev-header-left">
-          <h2 className="rev-title">Revenue Analytics</h2> 
+          <h2 className="rev-title">{viewMode === 'specificMonth' ? getChartTitle() : "Revenue Analytics"}</h2> 
           <p className="rev-subtitle">
             Comprehensive revenue tracking from bookings and services
           </p>
@@ -182,12 +252,44 @@ const RevenueAnalytics = ({
               Weekly
             </button>
 
+            {/* MONTHLY DROPDOWN */}
+            <div className="rev-dropdown-container" ref={monthDropdownRef}>
+              <button
+                className={`rev-toggle-btn ${viewMode === "specificMonth" ? "active" : ""}`}
+                onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
+              >
+                <CalendarDays size={16} />
+                Monthly
+                <ChevronDown size={14} className={`rev-chevron ${isMonthDropdownOpen ? 'open' : ''}`} />
+              </button>
+
+              {isMonthDropdownOpen && (
+                <div className="rev-dropdown-menu">
+                  <div className="rev-dropdown-header">Select Month</div>
+                  <div className="rev-calendar-inputs">
+                    <div className="calendar-field">
+                      <label>Month</label>
+                      <input 
+                        type="month" 
+                        value={selectedMonth} 
+                        onChange={handleMonthChange}
+                        max={new Date().toISOString().slice(0, 7)}
+                      />
+                    </div>
+                  </div>
+                  <button className="rev-dropdown-apply" onClick={applyMonthFilter}>
+                    View Month
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button
               className={`rev-toggle-btn ${viewMode === "monthly" ? "active" : ""}`}
               onClick={() => setViewMode("monthly")}
             >
               <Activity size={16} />
-              Monthly
+              Trend (6 Mo)
             </button>
             
             {/* Custom Range Dropdown */}
@@ -232,7 +334,7 @@ const RevenueAnalytics = ({
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - FIXED DATA SOURCES */}
       <div className="rev-summary-grid">
         <div className="rev-summary-card card-blue">
           <div className="rev-card-icon">
@@ -252,11 +354,15 @@ const RevenueAnalytics = ({
             <TrendingUp size={24} />
           </div>
           <div className="rev-card-content">
-            <span className="rev-card-label">This Month</span>
+            <span className="rev-card-label">
+              {viewMode === 'specificMonth' ? 'Selected Month' : 'This Month'}
+            </span>
             <h3 className="rev-card-value">
-              ₱{stats.thisMonthRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              ₱{displayedMonthRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </h3>
-            <span className="rev-card-sublabel">Current month total</span>
+            <span className="rev-card-sublabel">
+              {viewMode === 'specificMonth' ? 'Month total' : 'Current month total'}
+            </span>
           </div>
         </div>
 
@@ -274,9 +380,9 @@ const RevenueAnalytics = ({
         </div>
       </div>
 
-      {/* Revenue Sources Breakdown */}
+      {/* Revenue Sources Breakdown - FIXED: Now shows filtered data */}
       <div className="rev-sources-section">
-        <h3 className="rev-sources-title">Revenue Sources</h3>
+        <h3 className="rev-sources-title">Revenue Sources ({getViewModeLabel()})</h3>
         <div className="rev-sources-grid">
           <div className="rev-source-item">
             <div className="rev-source-header">
@@ -284,9 +390,9 @@ const RevenueAnalytics = ({
               <span className="rev-source-label">Bookings Revenue</span>
             </div>
             <div className="rev-source-value">
-              ₱{stats.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              ₱{filteredRevenueData.bookingsRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </div>
-            <div className="rev-source-count">{stats.confirmedBookings} confirmed bookings</div>
+            <div className="rev-source-count">From selected period</div>
           </div>
 
           <div className="rev-source-item">
@@ -295,9 +401,9 @@ const RevenueAnalytics = ({
               <span className="rev-source-label">Services Revenue</span>
             </div>
             <div className="rev-source-value">
-              ₱{stats.totalInquiriesRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              ₱{filteredRevenueData.inquiriesRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </div>
-            <div className="rev-source-count">{stats.completedInquiries} completed services</div>
+            <div className="rev-source-count">From selected period</div>
           </div>
         </div>
       </div>
@@ -354,28 +460,28 @@ const RevenueAnalytics = ({
         </ResponsiveContainer>
       </div>
 
-      {/* Revenue Comparison */}
+      {/* Revenue Comparison - FIXED: Now shows filtered data */}
       <div className="rev-comparison">
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">
-            Total Sales ({viewMode.charAt(0).toUpperCase() + viewMode.slice(1)})
+            Total Sales ({getViewModeLabel()})
           </span>
           <span className="rev-comparison-value">
-            ₱{dynamicAverage.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            ₱{totalSalesInView.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </span>
         </div> 
         <div className="rev-comparison-divider"></div>
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">Bookings Share</span>
           <span className="rev-comparison-value">
-            {stats.combinedTotalRevenue > 0 ? ((stats.totalRevenue / stats.combinedTotalRevenue) * 100).toFixed(1) : 0}%
+            {totalSalesInView > 0 ? ((filteredRevenueData.bookingsRevenue / totalSalesInView) * 100).toFixed(1) : 0}%
           </span>
         </div>
         <div className="rev-comparison-divider"></div>
         <div className="rev-comparison-item">
           <span className="rev-comparison-label">Services Share</span>
           <span className="rev-comparison-value">
-            {stats.combinedTotalRevenue > 0 ? ((stats.totalInquiriesRevenue / stats.combinedTotalRevenue) * 100).toFixed(1) : 0}%
+            {totalSalesInView > 0 ? ((filteredRevenueData.inquiriesRevenue / totalSalesInView) * 100).toFixed(1) : 0}%
           </span>
         </div>
       </div>
