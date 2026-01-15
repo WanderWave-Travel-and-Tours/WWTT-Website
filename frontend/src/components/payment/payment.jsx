@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Lock, ArrowLeft, Calendar, Users, MapPin, Clock } from 'lucide-react';
+import { Shield, Lock, ArrowLeft, Calendar, Users, MapPin, Clock, QrCode } from 'lucide-react'; // Added QrCode Icon
 import toast, { Toaster } from 'react-hot-toast';
 import './payment.css';
 
@@ -9,6 +9,7 @@ const Payment = () => {
   const navigate = useNavigate();
   const bookingData = location.state?.bookingData;
 
+  // Added 'qrph' to potential state
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -21,7 +22,6 @@ const Payment = () => {
 
   if (!bookingData) return null;
 
-  // ✅ Use the correct payment amount
   const paymentAmount = bookingData.initialPaymentAmount || bookingData.totalAmount;
   const isPartialPayment = bookingData.paymentType === 'partial';
 
@@ -31,13 +31,14 @@ const Payment = () => {
     try {
       console.log('💳 Creating payment for booking:', bookingData._id);
       
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
+      const response = await fetch('http://localhost:5000/api/payment/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bookingId: bookingData._id, 
           paymentType: bookingData.paymentType || 'full',              
-          paymentAmount: paymentAmount  // ✅ Use the calculated amount
+          paymentAmount: paymentAmount,
+          method: paymentMethod // ✅ Passed the selected method (card, gcash, maya, qrph)
         })
       });
 
@@ -117,7 +118,6 @@ const Payment = () => {
             </div>
 
             <div className="summary-footer">
-               {/* ✅ Show payment breakdown for partial payments */}
                {isPartialPayment ? (
                  <>
                    <div className="total-row" style={{fontSize: '0.9rem', color: '#6b7280', marginBottom: '8px'}}>
@@ -151,6 +151,7 @@ const Payment = () => {
 
           <div className="payment-methods-modern">
             
+            {/* CARD */}
             <div 
               className={`method-card ${paymentMethod === 'card' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('card')}
@@ -169,6 +170,7 @@ const Payment = () => {
               </div>
             </div>
 
+            {/* GCASH */}
             <div 
               className={`method-card ${paymentMethod === 'gcash' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('gcash')}
@@ -187,6 +189,7 @@ const Payment = () => {
               </div>
             </div>
 
+            {/* MAYA */}
             <div 
               className={`method-card ${paymentMethod === 'paymaya' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('paymaya')}
@@ -201,6 +204,25 @@ const Payment = () => {
                  </div>
                  <div className="method-logo-badge">
                     <MayaBadge />
+                 </div>
+              </div>
+            </div>
+
+            {/* ✅ NEW: QRPH OPTION */}
+            <div 
+              className={`method-card ${paymentMethod === 'qrph' ? 'active' : ''}`}
+              onClick={() => setPaymentMethod('qrph')}
+            >
+              <div className="method-main-row">
+                 <div className="radio-container">
+                    <div className={`custom-radio ${paymentMethod === 'qrph' ? 'checked' : ''}`}></div>
+                 </div>
+                 <div className="method-info">
+                    <span className="m-name">QRPH</span>
+                    <span className="m-desc">Scan to Pay (Any Bank)</span>
+                 </div>
+                 <div className="method-logo-badge">
+                    <QRPHBadge />
                  </div>
               </div>
             </div>
@@ -227,7 +249,6 @@ const Payment = () => {
             )}
           </button>
           
-          {/* ✅ Show payment info */}
           {isPartialPayment && (
             <p style={{textAlign: 'center', fontSize: '0.85rem', color: '#6b7280', marginTop: '12px'}}>
               Remaining balance of ₱{bookingData.remainingBalance.toLocaleString()} due before departure
@@ -238,6 +259,8 @@ const Payment = () => {
     </div>
   );
 };
+
+// --- SVG COMPONENTS ---
 
 const CardIconsBadge = () => (
   <svg width="36" height="24" viewBox="0 0 36 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -257,6 +280,20 @@ const MayaBadge = () => (
   <svg width="60" height="24" viewBox="0 0 60 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="0.5" y="0.5" width="59" height="23" rx="3.5" fill="white" stroke="#666" strokeOpacity="0.3"/>
     <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="#58B947" fontSize="13" fontWeight="800" fontFamily="'Arial', sans-serif">Maya</text>
+  </svg>
+);
+
+// ✅ NEW: QRPH BADGE
+const QRPHBadge = () => (
+  <svg width="60" height="24" viewBox="0 0 60 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0.5" y="0.5" width="59" height="23" rx="3.5" fill="white" stroke="#666" strokeOpacity="0.3"/>
+    {/* Simple Icon Representation */}
+    <rect x="8" y="6" width="5" height="5" stroke="#1F2937" strokeWidth="1.5"/>
+    <rect x="8" y="13" width="5" height="5" stroke="#1F2937" strokeWidth="1.5"/>
+    <rect x="15" y="6" width="5" height="5" stroke="#1F2937" strokeWidth="1.5"/>
+    <path d="M15 15H17M17 15V17M15 17H17" stroke="#DB2777" strokeWidth="2" strokeLinecap="round"/>
+    
+    <text x="65%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="#1F2937" fontSize="11" fontWeight="800" fontFamily="Arial">QRPH</text>
   </svg>
 );
 

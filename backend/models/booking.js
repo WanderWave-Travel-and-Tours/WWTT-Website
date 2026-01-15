@@ -36,6 +36,24 @@ const flightPriceSchema = new mongoose.Schema({
   totalPassengers: { type: Number }
 }, { _id: false });
 
+// NEW: Schema for customized inclusions
+const customInclusionSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  price: { type: Number, default: 0 },
+  supplierRate: { type: Number },
+  markup: { type: Number },
+  markupType: { type: String, enum: ['percentage', 'fixed'] },
+  supplier: { type: String },
+  destination: { type: String },
+  pax: { type: String },
+  notes: { type: String },
+  isOriginal: { type: Boolean, default: false },
+  isChecked: { type: Boolean, default: true },
+  source: { type: String, enum: ['package', 'seller-rate'], required: true },
+  sellerRateId: { type: mongoose.Schema.Types.ObjectId, ref: 'SellerRate' }
+}, { _id: false });
+
 const bookingSchema = new mongoose.Schema({
   packageName: { type: String, required: true },
 
@@ -59,6 +77,12 @@ const bookingSchema = new mongoose.Schema({
   numberOfRooms: { type: Number },
 
   packageTotal: { type: Number },
+
+  // NEW: Package Customization Fields
+  isCustomized: { type: Boolean, default: false },
+  customizedInclusions: [customInclusionSchema],
+  customizationAdditionalPrice: { type: Number, default: 0 },
+  originalInclusions: [String], // Store original inclusions for reference
 
   includesAirfare: { type: Boolean, default: false },
   flightDetails: {
@@ -160,6 +184,34 @@ bookingSchema.methods.getPaymentStatusDescription = function() {
   }
   
   return 'Pending Payment';
+};
+
+// NEW: Method to get customized inclusions summary
+bookingSchema.methods.getCustomizationSummary = function() {
+  if (!this.isCustomized) {
+    return null;
+  }
+
+  const checkedInclusions = this.customizedInclusions.filter(inc => inc.isChecked);
+  const addedInclusions = checkedInclusions.filter(inc => !inc.isOriginal);
+  const removedOriginal = this.originalInclusions?.length 
+    ? this.originalInclusions.filter(orig => 
+        !checkedInclusions.some(checked => checked.name === orig)
+      )
+    : [];
+
+  return {
+    totalInclusions: checkedInclusions.length,
+    addedCount: addedInclusions.length,
+    removedCount: removedOriginal.length,
+    additionalCost: this.customizationAdditionalPrice,
+    addedItems: addedInclusions.map(inc => ({
+      name: inc.name,
+      price: inc.price,
+      supplier: inc.supplier
+    })),
+    removedItems: removedOriginal
+  };
 };
 
 const Booking = mongoose.model('Booking', bookingSchema, 'bookings');

@@ -9,7 +9,12 @@ import HotelRoomSelector from './hotelRoomSelector';
 import BookingFormModal from './BookingFormModal';
 import './BookingRightForm.css';
 
-const BookingRightForm = ({ pkg }) => {
+const BookingRightForm = ({ 
+  pkg,
+  customizationData: initialCustomizationData = null,
+  effectivePackagePrice = null,
+  effectivePackageTotal = null 
+}) => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(null);
   const [quantities, setQuantities] = useState({ adult: 1 });
@@ -35,6 +40,7 @@ const BookingRightForm = ({ pkg }) => {
   const [promoError, setPromoError] = useState('');
   const [isCheckingPromo, setIsCheckingPromo] = useState(false);
   const [paymentType, setPaymentType] = useState('full');
+  const [customizationData, setCustomizationData] = useState(initialCustomizationData); // ✅ FIXED
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
       setPromoError('Please enter a promo code');
@@ -45,7 +51,7 @@ const BookingRightForm = ({ pkg }) => {
     setPromoError('');
 
     try {
-      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}`);
+      const response = await fetch(`http://localhost:5000/api/promos/validate/${promoCode.toUpperCase()}`);
       const data = await response.json();
 
       if (response.ok && data.valid) {
@@ -144,7 +150,7 @@ const BookingRightForm = ({ pkg }) => {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -170,6 +176,12 @@ const BookingRightForm = ({ pkg }) => {
 
     fetchHotelData();
   }, [pkg.destination, pkg.location]);
+
+  useEffect(() => {
+    if (initialCustomizationData) {
+      setCustomizationData(initialCustomizationData);
+    }
+  }, [initialCustomizationData]);
 
   const [passengers, setPassengers] = useState(
     Array.from({ length: totalPassengers }, (_, idx) => ({
@@ -202,24 +214,19 @@ const BookingRightForm = ({ pkg }) => {
 
   const packageTotal = (() => {
     const basePax = quantities.adult || 1;
-    const basePackagePrice = pkg.price * basePax;
+    
+    // ✅ Use effective price if package is customized
+    const effectivePrice = effectivePackageTotal || pkg.price;
+    const basePackagePrice = effectivePrice * basePax;
+    
     if (!selectedRoomType) return basePackagePrice;
-    
-    const roomUpgradePricing = {
-      'BUDGET': 0, 'STANDARD': 750, '4 STAR': 1200, '5 STAR': 2040
-    };
-    
-    const roomTypeKey = selectedRoomType.type?.toUpperCase() || '';
-    let upgradePerDayPerPax = 0;
-    for (const [key, price] of Object.entries(roomUpgradePricing)) {
-      if (roomTypeKey.includes(key)) {
-        upgradePerDayPerPax = price;
-        break;
-      }
-    }
-    
-    const totalUpgradeCost = upgradePerDayPerPax * durationNights * basePax;
-    return basePackagePrice + totalUpgradeCost;
+
+    const upgradePrice = selectedRoomType.price || 0;
+    const baseRoomCapacity = 4;
+    const pricePerPerson = upgradePrice / baseRoomCapacity;
+    const upgradeTotal = pricePerPerson * basePax;
+
+    return basePackagePrice + upgradeTotal;
   })();
 
   const discountAmount = calculateDiscount();
@@ -339,6 +346,9 @@ const BookingRightForm = ({ pkg }) => {
       packageId: pkg._id || pkg.id,
       packageName: pkg.name,
       packageData: pkg, 
+      sellerPrice: pkg.sellerPrice || 0,
+      markup: pkg.markup || 0,
+      price: pkg.price,
       selectedDate: selectedDate,
       quantities: quantities,
       currentMonth: currentMonth.toISOString(),
@@ -459,6 +469,7 @@ const BookingRightForm = ({ pkg }) => {
       const startDateFormatted = formatDate(start);
       const endDateFormatted = formatDate(end);
 
+      // ✅ FIXED: Add fullName and email at root level
       const baseBookingData = {
         packageId: pkg._id,
         packageName: pkg.name,
@@ -493,6 +504,12 @@ const BookingRightForm = ({ pkg }) => {
         paymentType: paymentType || 'full',
         initialPaymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount,
         remainingBalance: paymentType === 'partial' ? (finalTotalAmount - partialAmount) : 0,
+        
+        // ✅ ADD THESE ROOT LEVEL FIELDS (REQUIRED BY SCHEMA)
+        fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
+        email: passengers[0].email,
+        message: '', // Optional message field
+        
         primaryContact: {
           fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
           email: passengers[0].email,
@@ -504,17 +521,39 @@ const BookingRightForm = ({ pkg }) => {
         sellerPrice: pkg.price || 0, 
         markup: 0, 
         price: pkg.price || 0,
+        
+        // ✅ FIXED: Include customization data if available
+        isCustomized: customizationData ? true : false,
+        customizedInclusions: customizationData ? customizationData.inclusions.map(inc => ({
+          id: inc.id,
+          name: inc.name,
+          price: inc.price || 0,
+          supplierRate: inc.supplierRate,
+          markup: inc.markup,
+          markupType: inc.markupType,
+          supplier: inc.supplier,
+          destination: inc.destination,
+          pax: inc.pax,
+          notes: inc.notes,
+          isOriginal: inc.isOriginal,
+          isChecked: inc.isChecked,
+          source: inc.source,
+          sellerRateId: inc.sellerRateId
+        })) : [],
+        customizationAdditionalPrice: customizationData ? customizationData.additionalPrice : 0,
+        originalInclusions: customizationData ? (pkg.inclusions || []) : [],
+        
         passengers: passengers.map(p => ({
-            passengerNumber: p.passengerNumber || 1,
-            firstName: p.firstName || '',
-            lastName: p.lastName || '',
-            email: p.email || '',
-            phone: p.phone || '',
-            dateOfBirth: p.dateOfBirth || '',
-            age: p.age || 0,
-            gender: p.gender || '',
-            address: p.address || '',
-            nationality: p.nationality || 'Filipino',
+          passengerNumber: p.passengerNumber || 1,
+          firstName: p.firstName || '',
+          lastName: p.lastName || '',
+          email: p.email || '',
+          phone: p.phone || '',
+          dateOfBirth: p.dateOfBirth || '',
+          age: p.age || 0,
+          gender: p.gender || '',
+          address: p.address || '',
+          nationality: p.nationality || 'Filipino',
         }))
       };
       
@@ -531,7 +570,7 @@ const BookingRightForm = ({ pkg }) => {
 
       console.log('Submitting Booking Data to backend...');
       
-      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
+      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -541,36 +580,36 @@ const BookingRightForm = ({ pkg }) => {
         console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
-        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
-            bookingId: bookingId,
-            paymentType: paymentType || 'full',
-            paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
+        const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
+          bookingId: bookingId,
+          paymentType: paymentType || 'full',
+          paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
         });
         
         if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
-            const checkoutUrl = paymentResponse.data.checkoutUrl;
-            toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
-            setShowModal(false);
-            
-            window.location.href = checkoutUrl; 
-            return;
-            
+          const checkoutUrl = paymentResponse.data.checkoutUrl;
+          toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
+          setShowModal(false);
+          
+          window.location.href = checkoutUrl; 
+          return;
+          
         } else {
-             const redirectId = bookingResponse.data.bookingId || bookingResponse.data.data._id; 
-             toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
-             setTimeout(() => {
-                 navigate('/dashboard');
-             }, 1500);
+          const redirectId = bookingResponse.data.bookingId || bookingResponse.data.data._id; 
+          toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1500);
         }
       } else {
-         throw new Error(bookingResponse.data.message || 'Booking submission failed on server.');
+        throw new Error(bookingResponse.data.message || 'Booking submission failed on server.');
       }
     } catch (error) {
       console.error('Booking/Payment Error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking. Please try again.';
       
       if (error.response?.data?.error) {
-          console.error("Payment API Error Details:", error.response.data.error);
+        console.error("Payment API Error Details:", error.response.data.error);
       }
       
       toast.error(errorMessage);
@@ -584,6 +623,169 @@ const BookingRightForm = ({ pkg }) => {
       setPassengerStep(prev => prev - 1);
     }
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validation checks...
+    
+    try {
+      setLoading(true);
+      
+      // Prepare customization data if package is customized
+      const bookingCustomization = customizationData ? {
+        isCustomized: true,
+        customizedInclusions: customizationData.inclusions.map(inc => ({
+          id: inc.id,
+          name: inc.name,
+          price: inc.price || 0,
+          supplierRate: inc.supplierRate,
+          markup: inc.markup,
+          markupType: inc.markupType,
+          supplier: inc.supplier,
+          destination: inc.destination,
+          pax: inc.pax,
+          notes: inc.notes,
+          isOriginal: inc.isOriginal,
+          isChecked: inc.isChecked,
+          source: inc.source,
+          sellerRateId: inc.sellerRateId
+        })),
+        customizationAdditionalPrice: customizationData.additionalPrice || 0,
+        originalInclusions: pkg.inclusions || []
+      } : {
+        isCustomized: false,
+        customizedInclusions: [],
+        customizationAdditionalPrice: 0,
+        originalInclusions: []
+      };
+
+      const bookingData = {
+        packageName: pkg.name,
+        packageId: pkg._id,
+        sellerPrice: pkg.sellerPrice || 0,
+        markup: pkg.markup || 0,
+        price: pkg.price,
+        
+        startDate,
+        endDate,
+        duration: pkg.duration,
+
+        pax: {
+          adult: Number(adult),
+          children: Number(children),
+          infants: Number(infants)
+        },
+
+        selectedRoomType,
+        hotelName: pkg.hotelName || '',
+        numberOfRooms,
+
+        packageTotal,
+        
+        // Include customization data
+        ...bookingCustomization,
+
+        includesAirfare: includesFlight,
+        flightDetails: includesFlight ? {
+          airline: flightDetails?.airline || '',
+          flightNumber: flightDetails?.flightNumber || '',
+          route: flightDetails?.route || '',
+          departureTime: flightDetails?.departureTime || '',
+          arrivalTime: flightDetails?.arrivalTime || '',
+          price: flightDetails?.price || null,
+          formatted: flightDetails?.formatted || '',
+          isInternational: flightDetails?.isInternational || false
+        } : null,
+        airfareTotal,
+
+        totalAmount,
+        paymentType,
+        initialPaymentAmount,
+        remainingBalance,
+
+        fullName,
+        email,
+        message,
+
+        passengers: passengersData,
+
+        promoCode: appliedPromo?.code || null,
+        promoId: appliedPromo?._id || null,
+        discountAmount: discountAmount || 0,
+        finalPackageTotal
+      };
+
+      console.log('📤 Submitting booking with customization:', bookingData);
+
+      // Continue with your existing booking submission logic...
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
+      });
+
+      // Rest of your submission logic...
+
+    } catch (error) {
+      console.error('❌ Booking submission error:', error);
+      // Error handling...
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderPriceBreakdown = () => {
+  const isCustomized = customizationData && customizationData.additionalPrice > 0;
+
+  return (
+    <div className="price-breakdown">
+      <div className="price-row">
+        <span>Base Package Price:</span>
+        <span>₱{pkg.price.toLocaleString()}</span>
+      </div>
+
+      {isCustomized && (
+        <div className="price-row highlight">
+          <span>Customization Add-ons:</span>
+          <span className="price-added">+ ₱{customizationData.additionalPrice.toLocaleString()}</span>
+        </div>
+      )}
+
+      <div className="price-row">
+        <span>PAX ({adult + children + infants} persons):</span>
+        <span>₱{packageTotal.toLocaleString()}</span>
+      </div>
+
+      {airfareTotal > 0 && (
+        <div className="price-row">
+          <span>Airfare:</span>
+          <span>₱{airfareTotal.toLocaleString()}</span>
+        </div>
+      )}
+
+      {discountAmount > 0 && (
+        <div className="price-row discount">
+          <span>Discount ({appliedPromo?.code}):</span>
+          <span>- ₱{discountAmount.toLocaleString()}</span>
+        </div>
+      )}
+
+      <div className="price-row total">
+        <span>Total Amount:</span>
+        <span className="total-price">₱{totalAmount.toLocaleString()}</span>
+      </div>
+
+      {isCustomized && (
+        <div className="customization-note">
+          <small>
+            ✨ Package customized with {customizationData.inclusions.filter(inc => !inc.isOriginal && inc.isChecked).length} additional inclusions
+          </small>
+        </div>
+      )}
+    </div>
+  );
+};
 
   return (
     <div className="brf-container">

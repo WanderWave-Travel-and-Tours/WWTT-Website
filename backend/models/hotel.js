@@ -91,7 +91,8 @@ const hotelSchema = new mongoose.Schema({
     airConditioning: { type: Boolean, default: false },
     roomService: { type: Boolean, default: false },
     laundry: { type: Boolean, default: false },
-    bar: { type: Boolean, default: false }
+    bar: { type: Boolean, default: false },
+    breakfast: { type: Boolean, default: false }
   },
   roomTypes: [{
     type: {

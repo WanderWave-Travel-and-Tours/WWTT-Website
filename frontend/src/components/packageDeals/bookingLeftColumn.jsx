@@ -3,16 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Check, X, MapPin, Calendar, Plane, Hotel, 
   Utensils, Bus, Camera, Briefcase, ChevronDown, ChevronUp, 
-  CheckSquare, XCircle, CalendarDays, ChevronLeft 
+  CheckSquare, XCircle, CalendarDays, ChevronLeft, Settings 
 } from 'lucide-react';
+import PackageCustomizer from './PackageCustomizer';
 import './BookingLeftColumn.css';
 
-const BookingLeftColumn = ({ pkg, currency = 'PHP', exchangeRate = 58 }) => {
+const BookingLeftColumn = ({ 
+  pkg, 
+  currency = 'PHP', 
+  exchangeRate = 58,
+  onCustomizationChange 
+}) => {
   const navigate = useNavigate(); 
   const [isItineraryExpanded, setIsItineraryExpanded] = useState(false);
   const [expandedDayIndices, setExpandedDayIndices] = useState({});
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
   const [isExcludedExpanded, setIsExcludedExpanded] = useState(false);
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const [isCustomized, setIsCustomized] = useState(false);
 
   const hasExclusions = pkg.excludes && pkg.excludes.length > 0;
   const itinerary = pkg.itinerary || [];
@@ -25,6 +33,13 @@ const BookingLeftColumn = ({ pkg, currency = 'PHP', exchangeRate = 58 }) => {
       ...prev,
       [index]: !prev[index]
     }));
+  };
+
+  const handleCustomizationChange = (customizationData) => {
+    setIsCustomized(customizationData.additionalPrice > 0);
+    if (onCustomizationChange) {
+      onCustomizationChange(customizationData);
+    }
   };
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
@@ -63,6 +78,11 @@ const BookingLeftColumn = ({ pkg, currency = 'PHP', exchangeRate = 58 }) => {
               maximumFractionDigits: currency === 'USD' ? 2 : 0 
             })}
           </span>
+          {isCustomized && (
+            <span className="blc-customized-badge">
+              <Settings size={14} /> Customized
+            </span>
+          )}
         </div>
         
         <div className="blc-meta-row">
@@ -81,52 +101,74 @@ const BookingLeftColumn = ({ pkg, currency = 'PHP', exchangeRate = 58 }) => {
         </div>
       </div>
 
-      {/* INCLUSIONS SECTION */}
-      <div className="blc-card">
-        <div className="blc-card-header" onClick={() => setIsIncludedExpanded(!isIncludedExpanded)}>
-          <h3 className="blc-section-title">
-            <CheckSquare size={24} color="#10b981" /> What's Included
-          </h3>
-          <div className={`blc-chevron ${isIncludedExpanded ? 'rotated' : ''}`}>
-            <ChevronDown size={20} />
-          </div>
-        </div>
-
-        <div className={`blc-collapsible ${isIncludedExpanded ? 'open' : ''}`}>
-          <ul className="blc-list">
-            {pkg.inclusions?.map((item, idx) => (
-              <li key={idx} className="blc-list-item">
-                <div style={{minWidth:'20px', marginTop:'2px'}}><CheckSquare size={16} color="#10b981" /></div>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {hasExclusions && (
-          <div className="blc-divider">
-            <div className="blc-card-header" onClick={() => setIsExcludedExpanded(!isExcludedExpanded)}>
-              <h3 className="blc-section-title">
-                <XCircle size={20} color="#ef4444" /> What's Excluded
-              </h3>
-              <div className={`blc-chevron ${isExcludedExpanded ? 'rotated' : ''}`}>
-                <ChevronDown size={20} />
-              </div>
-            </div>
-
-            <div className={`blc-collapsible ${isExcludedExpanded ? 'open' : ''}`}>
-              <ul className="blc-list">
-                {pkg.excludes.map((item, idx) => (
-                  <li key={idx} className="blc-list-item">
-                    <div style={{minWidth:'20px', marginTop:'2px'}}><XCircle size={16} color="#ef4444" /></div>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+      {/* PACKAGE CUSTOMIZER */}
+      <div className="blc-customizer-section">
+        <button 
+          className={`blc-customizer-toggle ${showCustomizer ? 'active' : ''}`}
+          onClick={() => setShowCustomizer(!showCustomizer)}
+        >
+          <Settings size={20} />
+          <span>{showCustomizer ? 'Hide Customization' : 'Customize This Package'}</span>
+        </button>
+        
+        {showCustomizer && (
+          <PackageCustomizer 
+            pkg={pkg}
+            currency={currency}
+            exchangeRate={exchangeRate}
+            onCustomizationChange={handleCustomizationChange}
+          />
         )}
       </div>
+
+      {/* INCLUSIONS SECTION - Only show if not customizing */}
+      {!showCustomizer && (
+        <div className="blc-card">
+          <div className="blc-card-header" onClick={() => setIsIncludedExpanded(!isIncludedExpanded)}>
+            <h3 className="blc-section-title">
+              <CheckSquare size={24} color="#10b981" /> What's Included
+            </h3>
+            <div className={`blc-chevron ${isIncludedExpanded ? 'rotated' : ''}`}>
+              <ChevronDown size={20} />
+            </div>
+          </div>
+
+          <div className={`blc-collapsible ${isIncludedExpanded ? 'open' : ''}`}>
+            <ul className="blc-list">
+              {pkg.inclusions?.map((item, idx) => (
+                <li key={idx} className="blc-list-item">
+                  <div style={{minWidth:'20px', marginTop:'2px'}}><CheckSquare size={16} color="#10b981" /></div>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {hasExclusions && (
+            <div className="blc-divider">
+              <div className="blc-card-header" onClick={() => setIsExcludedExpanded(!isExcludedExpanded)}>
+                <h3 className="blc-section-title">
+                  <XCircle size={20} color="#ef4444" /> What's Excluded
+                </h3>
+                <div className={`blc-chevron ${isExcludedExpanded ? 'rotated' : ''}`}>
+                  <ChevronDown size={20} />
+                </div>
+              </div>
+
+              <div className={`blc-collapsible ${isExcludedExpanded ? 'open' : ''}`}>
+                <ul className="blc-list">
+                  {pkg.excludes.map((item, idx) => (
+                    <li key={idx} className="blc-list-item">
+                      <div style={{minWidth:'20px', marginTop:'2px'}}><XCircle size={16} color="#ef4444" /></div>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ITINERARY TIMELINE */}
       <div>
