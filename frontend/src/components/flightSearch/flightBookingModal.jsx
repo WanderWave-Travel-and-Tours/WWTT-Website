@@ -122,7 +122,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     console.log("📤 Submitting Booking Data:", JSON.stringify(bookingData, null, 2));
 
     try {
-      const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries', bookingData, {
+      const res = await axios.post('http://localhost:5000/api/inquiries', bookingData, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -192,7 +192,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
               </div>
 
               <button type="submit" className="next-btn" disabled={loading}>
-                {loading ? 'Processing...' : (hasAdditionalPassengers ? 'Next: Add Companions' : `Submit Booking (₱${flight.price.formatted || flight.price.amount})`)}
+                {loading ? 'Processing...' : (hasAdditionalPassengers ? 'Next: Add Companions' : `Submit Booking (${flight.price.formatted || flight.price.amount})`)}
               </button>
             </div>
           )}
