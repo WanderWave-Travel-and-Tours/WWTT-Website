@@ -101,6 +101,16 @@ const hotelGalleryStorage = new CloudinaryStorage({
     }
 });
 
+
+// Tour Images Storage
+const tourStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'wanderwave/tours',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, height: 800, crop: 'limit', quality: 'auto' }]
+    }
+});
 // Export multer instances
 module.exports = {
     cloudinary,
@@ -112,5 +122,6 @@ module.exports = {
     uploadEvidence: multer({ storage: evidenceStorage }),
     uploadGeneric: multer({ storage: genericStorage }),
     uploadHotel: multer({ storage: hotelStorage }), // ✅ Hotel main image uploader
-    uploadHotelGallery: multer({ storage: hotelGalleryStorage }) // ✅ Hotel gallery uploader
+    uploadHotelGallery: multer({ storage: hotelGalleryStorage }), // ✅ Hotel gallery uploader
+    uploadTour: multer({ storage: tourStorage }) // ✅ Tour image uploader
 };

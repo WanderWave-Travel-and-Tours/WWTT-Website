@@ -1,7 +1,5 @@
 const Tour = require('../models/tour');
 const ActivityLog = require('../models/ActivityLog'); // IMPORT ACTIVITY LOG MODEL
-const fs = require('fs');
-const path = require('path');
 
 // Create a new tour
 exports.createTour = async (req, res) => {
@@ -106,7 +104,7 @@ exports.createTour = async (req, res) => {
       price: totalPrice,
       inclusions: parsedInclusions,
       itinerary: parsedItinerary,
-      image: req.file.filename,
+      image: req.file.path, // ✅ Cloudinary returns full URL in path
       tourType: tourType || 'private', 
       isArchive: isArchive || 'No'
     };
@@ -154,12 +152,7 @@ exports.createTour = async (req, res) => {
   } catch (error) {
     console.error('Error creating tour:', error);
     
-    if (req.file) {
-      const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    // ✅ No need to delete files - Cloudinary handles storage
 
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
@@ -295,18 +288,10 @@ exports.updateTour = async (req, res) => {
     };
 
     // Handle image update
+    // Handle image update
     if (req.file) {
-      // Delete old image if it exists
-      const oldImagePath = path.join(__dirname, '..', 'uploads', existingTour.image);
-      if (fs.existsSync(oldImagePath)) {
-        try {
-          fs.unlinkSync(oldImagePath);
-          console.log('Old image deleted:', existingTour.image);
-        } catch (err) {
-          console.error('Error deleting old image:', err);
-        }
-      }
-      updateData.image = req.file.filename;
+      // ✅ Cloudinary handles old image cleanup automatically
+      updateData.image = req.file.path; // Cloudinary returns full URL in path
     } else {
       // Keep existing image
       updateData.image = existingImage || existingTour.image;
@@ -378,17 +363,7 @@ exports.updateTour = async (req, res) => {
   } catch (error) {
     console.error('Error updating tour:', error);
     
-    // Clean up uploaded file if update fails
-    if (req.file) {
-      const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (err) {
-          console.error('Error cleaning up file:', err);
-        }
-      }
-    }
+    // ✅ No need to clean up files - Cloudinary handles storage
     
     res.status(500).json({ 
       status: 'error',
