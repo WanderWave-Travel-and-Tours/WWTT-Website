@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../../../assets/Logo.png';
 
-export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], selectedDate = "", allPackages = []) => {
+export const exportMonthlyToPDF = (stats, monthlyData = [], topPackages = [], selectedMonth = "", allPackages = []) => {
     try {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
@@ -13,28 +13,6 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         const lightGrayBg = [245, 247, 250];
         const greenText = [72, 187, 120];
         const greenBg = [236, 253, 245];
-
-        // === CALCULATE WEEK RANGE (SUNDAY TO SATURDAY) ===
-        const getWeekRange = (date) => {
-            const d = new Date(date);
-            const day = d.getDay();
-            // Calculate days to subtract to get to Sunday (0)
-            const diffToSunday = day;
-            
-            const weekStart = new Date(d);
-            weekStart.setDate(weekStart.getDate() - diffToSunday);
-            weekStart.setHours(0, 0, 0, 0);
-            
-            const weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekEnd.getDate() + 6);
-            weekEnd.setHours(23, 59, 59, 999);
-            
-            return { weekStart, weekEnd };
-        };
-
-        const { weekStart, weekEnd } = getWeekRange(selectedDate);
-        const weekStartStr = weekStart.toISOString().split('T')[0];
-        const weekEndStr = weekEnd.toISOString().split('T')[0];
 
         const addWatermark = () => {
             try {
@@ -64,12 +42,18 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text('Weekly Performance & Revenue Report', 14, 28);
+        doc.text('Monthly Performance & Revenue Report', 14, 28);
         
         doc.setFontSize(9);
         doc.setTextColor(80, 80, 80);
+        
+        // Format selected month for display
+        const [year, month] = selectedMonth.split('-');
+        const monthDate = new Date(year, month - 1);
+        const monthName = monthDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        
         doc.text('Generated: ' + new Date().toLocaleDateString(), pageWidth - 14, 20, { align: 'right' });
-        doc.text('Period: Weekly Analytics (' + weekStartStr + ' to ' + weekEndStr + ')', pageWidth - 14, 26, { align: 'right' });
+        doc.text('Period: ' + monthName, pageWidth - 14, 26, { align: 'right' });
         
         doc.setDrawColor(200, 200, 200);
         doc.setLineWidth(0.5);
@@ -77,46 +61,61 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         
         let yPos = 42;
         
-        // === CALCULATE WEEKLY DATA FROM RAW DATA ===
+        // --- CALCULATE MONTHLY SPECIFIC DATA FROM RAW DATA ---
+        const monthStart = new Date(year, month - 1, 1);
+        monthStart.setHours(0, 0, 0, 0);
+        
+        // Check if selected month is current month
+        const now = new Date();
+        const isCurrentMonth = parseInt(year) === now.getFullYear() && (parseInt(month) - 1) === now.getMonth();
+        
+        // If current month, end at today; otherwise end at last day of month
+        const monthEnd = isCurrentMonth 
+            ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+            : new Date(year, month, 0, 23, 59, 59, 999);
+        
         const rawBookings = stats.rawBookings || [];
         const rawInquiries = stats.rawInquiries || [];
         
-        const weeklyConfirmedBookings = rawBookings.filter(b => 
+        // Monthly Bookings filtered by date range
+        const monthlyConfirmedBookings = rawBookings.filter(b => 
             b.status === "confirmed" && 
-            new Date(b.createdAt) >= weekStart && 
-            new Date(b.createdAt) <= weekEnd
+            new Date(b.createdAt) >= monthStart && 
+            new Date(b.createdAt) <= monthEnd
         );
-        const weeklyPendingBookings = rawBookings.filter(b => 
+        const monthlyPendingBookings = rawBookings.filter(b => 
             b.status === "pending" && 
-            new Date(b.createdAt) >= weekStart && 
-            new Date(b.createdAt) <= weekEnd
+            new Date(b.createdAt) >= monthStart && 
+            new Date(b.createdAt) <= monthEnd
         );
-        const weeklyCancelledBookings = rawBookings.filter(b => 
+        const monthlyCancelledBookings = rawBookings.filter(b => 
             b.status === "cancelled" && 
-            new Date(b.createdAt) >= weekStart && 
-            new Date(b.createdAt) <= weekEnd
+            new Date(b.createdAt) >= monthStart && 
+            new Date(b.createdAt) <= monthEnd
         );
-        const weeklyTotalBookings = weeklyConfirmedBookings.length + weeklyPendingBookings.length + weeklyCancelledBookings.length;
+        const monthlyTotalBookings = monthlyConfirmedBookings.length + monthlyPendingBookings.length + monthlyCancelledBookings.length;
         
-        const weeklyCompletedInquiries = rawInquiries.filter(i => 
+        // Monthly Inquiries filtered by date range
+        const monthlyCompletedInquiries = rawInquiries.filter(i => 
             i.status === "COMPLETED" && 
-            new Date(i.updatedAt) >= weekStart && 
-            new Date(i.updatedAt) <= weekEnd
+            new Date(i.updatedAt) >= monthStart && 
+            new Date(i.updatedAt) <= monthEnd
         );
-        const weeklyPendingInquiries = rawInquiries.filter(i => 
+        const monthlyPendingInquiries = rawInquiries.filter(i => 
             i.status !== "COMPLETED" && 
-            new Date(i.updatedAt) >= weekStart && 
-            new Date(i.updatedAt) <= weekEnd
+            new Date(i.updatedAt) >= monthStart && 
+            new Date(i.updatedAt) <= monthEnd
         );
         
-        const weeklyPackageStats = {};
-        weeklyConfirmedBookings.forEach((b) => {
+        // Monthly Top Packages (for selected month only)
+        const monthlyPackageStats = {};
+        monthlyConfirmedBookings.forEach((b) => {
             const pkg = b.packageName || "Unknown";
-            if (!weeklyPackageStats[pkg]) weeklyPackageStats[pkg] = { bookings: 0, revenue: 0 };
-            weeklyPackageStats[pkg].bookings += 1;
-            weeklyPackageStats[pkg].revenue += b.totalAmount || 0;
+            if (!monthlyPackageStats[pkg]) monthlyPackageStats[pkg] = { bookings: 0, revenue: 0 };
+            monthlyPackageStats[pkg].bookings += 1;
+            monthlyPackageStats[pkg].revenue += b.totalAmount || 0;
         });
-        const weeklyTopPackages = Object.entries(weeklyPackageStats)
+        const monthlyTopPackages = Object.entries(monthlyPackageStats)
             .sort((a, b) => b[1].revenue - a[1].revenue)
             .slice(0, 5)
             .map(([name, data]) => ({
@@ -126,24 +125,34 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
                 revenueValue: data.revenue
             }));
         
-        const weeklyTotalRevenue = (weeklyData || []).reduce((sum, day) => sum + (day.totalRevenue || 0), 0);
-        const weeklyBookingsRevenue = (weeklyData || []).reduce((sum, day) => sum + (day.bookingsRevenue || 0), 0);
-        const weeklyInquiriesRevenue = (weeklyData || []).reduce((sum, day) => sum + (day.inquiriesRevenue || 0), 0);
+        // === FINANCIAL CALCULATIONS ===
+        const totalBookingsRevenue = monthlyConfirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const totalServicesRevenue = monthlyCompletedInquiries.reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
         
-        const totalGrossSales = weeklyBookingsRevenue || 0;
-        const servicesRevenue = weeklyInquiriesRevenue || 0;
+        const totalGrossSales = totalBookingsRevenue;
+        const servicesRevenue = totalServicesRevenue;
 
         let totalSellerCost = 0;
         let totalMarkupProfit = 0;
 
-        console.log('=== WEEKLY PDF FINANCIAL CALCULATION ===');
-        console.log('Week Range: ' + weekStartStr + ' (Sunday) to ' + weekEndStr + ' (Saturday)');
+        console.log('=== MONTHLY PDF FINANCIAL CALCULATION ===');
+        console.log('Selected Month:', selectedMonth);
+        console.log('Month Range:', monthStart, 'to', monthEnd);
+        console.log('allPackages received:', allPackages);
         console.log('allPackages count:', allPackages ? allPackages.length : 0);
+        console.log('Available Packages:', allPackages && allPackages.length > 0 ? allPackages.map(p => ({ id: p._id, title: p.title, destination: p.destination, sellerPrice: p.sellerPrice, markup: p.markup })) : 'NO PACKAGES PROVIDED');
+        console.log('Total Confirmed Bookings in Month:', monthlyConfirmedBookings.length);
 
-        weeklyConfirmedBookings.forEach((booking, idx) => {
+        // === PROCESS EACH CONFIRMED BOOKING ===
+        monthlyConfirmedBookings.forEach((booking, idx) => {
             const bookingPackageName = booking.packageName;
             const bookingHotelName = booking.hotelName;
             const paxCount = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0) || 1;
+            
+            console.log(`\n[Booking ${idx + 1}]`);
+            console.log(`  Package Name (from booking): "${bookingPackageName}"`);
+            console.log(`  Hotel Name (from booking): "${bookingHotelName}"`);
+            console.log(`  Pax: ${paxCount}`);
             
             let matchedPackage = null;
             
@@ -151,37 +160,75 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
                 const packageNameKey = bookingPackageName.trim().toLowerCase();
                 const hotelNameKey = bookingHotelName.trim().toLowerCase();
                 
+                console.log(`  Searching for package with:`);
+                console.log(`    - Title matching: "${packageNameKey}"`);
+                console.log(`    - Destination matching: "${hotelNameKey}"`);
+                
                 matchedPackage = allPackages.find(pkg => {
                     const pkgTitleMatch = pkg.title && pkg.title.trim().toLowerCase() === packageNameKey;
                     const pkgDestMatch = pkg.destination && pkg.destination.trim().toLowerCase() === hotelNameKey;
                     return pkgTitleMatch && pkgDestMatch;
                 });
+                
+                if (matchedPackage) {
+                    console.log(`  ✓ EXACT MATCH FOUND using packageName + hotelName`);
+                    console.log(`    Matched Package ID: ${matchedPackage._id}`);
+                }
             }
             
             if (!matchedPackage && bookingPackageName && allPackages.length > 0) {
                 const packageNameKey = bookingPackageName.trim().toLowerCase();
+                console.log(`  ✗ No exact match. Trying packageName alone: "${packageNameKey}"`);
+                
                 matchedPackage = allPackages.find(pkg => 
                     pkg.title && pkg.title.trim().toLowerCase() === packageNameKey
                 );
+                
+                if (matchedPackage) {
+                    console.log(`  ✓ MATCH FOUND using packageName only`);
+                    console.log(`    Matched Package ID: ${matchedPackage._id}`);
+                }
             }
 
             if (matchedPackage) {
+                console.log(`\n  ✓✓✓ USING THIS PACKAGE FOR CALCULATION ✓✓✓`);
+                console.log(`    Package Title: ${matchedPackage.title}`);
+                console.log(`    Package Destination: ${matchedPackage.destination}`);
+                console.log(`    Package ID: ${matchedPackage._id}`);
+                
                 const sellerPrice = matchedPackage.sellerPrice || 0;
                 const markup = matchedPackage.markup || 0;
+                
+                console.log(`    sellerPrice (from package collection): ${sellerPrice}`);
+                console.log(`    markup (from package collection): ${markup}`);
+                
                 const costForThisBooking = sellerPrice * paxCount;
                 const markupForThisBooking = markup * paxCount;
                 
                 totalSellerCost += costForThisBooking;
                 totalMarkupProfit += markupForThisBooking;
+                
+                console.log(`    Calculation: ${sellerPrice} × ${paxCount} pax = ${costForThisBooking} (seller cost)`);
+                console.log(`    Calculation: ${markup} × ${paxCount} pax = ${markupForThisBooking} (markup profit)`);
+            } else {
+                console.error(`  ✗✗✗ NO MATCHING PACKAGE FOUND ✗✗✗`);
+                console.error(`    Cannot find package matching:`);
+                console.error(`      - packageName: "${bookingPackageName}"`);
+                console.error(`      - hotelName: "${bookingHotelName}"`);
+                console.error(`    Available packages in collection:`);
+                allPackages.forEach(pkg => {
+                    console.error(`      - ${pkg.title} (${pkg.destination})`);
+                });
             }
         });
 
         const totalNetProfit = totalMarkupProfit + servicesRevenue;
 
-        console.log(`Total Seller Cost: ${totalSellerCost}`);
-        console.log(`Total Markup Profit: ${totalMarkupProfit}`);
+        console.log(`\n=== FINAL CALCULATION ===`);
+        console.log(`Total Seller Cost (sellerPrice × pax): ${totalSellerCost}`);
+        console.log(`Total Markup Profit (markup × pax): ${totalMarkupProfit}`);
         console.log(`Services Revenue: ${servicesRevenue}`);
-        console.log(`Total Net Profit: ${totalNetProfit}`);
+        console.log(`Total Net Profit (markups + services): ${totalNetProfit}`);
 
         // --- 1. EXECUTIVE SUMMARY (5-Card Layout) ---
         doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
@@ -197,18 +244,21 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         const bw = 34.5, gap = 2.375;
         let xPos = 14;
 
+        // Card 1: Combined Revenue (Bookings + Services)
+        const totalMonthRevenue = totalBookingsRevenue + totalServicesRevenue;
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
         doc.rect(xPos, yPos, bw, 20);
         doc.setFontSize(6.5);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text('WEEKLY REVENUE', xPos + bw/2, yPos + 7, { align: 'center' });
+        doc.text('MONTHLY REVENUE', xPos + bw/2, yPos + 7, { align: 'center' });
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(139, 92, 246); 
-        doc.text('P' + (weeklyTotalRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text('P' + totalMonthRevenue.toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
         
+        // Card 2: Bookings Revenue
         xPos += bw + gap;
         doc.rect(xPos, yPos, bw, 20);
         doc.setFontSize(7);
@@ -218,8 +268,9 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(59, 130, 246); 
-        doc.text('P' + (totalGrossSales || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text('P' + totalGrossSales.toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
         
+        // Card 3: Services Revenue
         xPos += bw + gap;
         doc.rect(xPos, yPos, bw, 20);
         doc.setFontSize(7);
@@ -229,8 +280,9 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(16, 185, 129); 
-        doc.text('P' + (servicesRevenue || 0).toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text('P' + servicesRevenue.toLocaleString(), xPos + bw/2, yPos + 15, { align: 'center' });
         
+        // Card 4: Bookings Count
         xPos += bw + gap;
         doc.rect(xPos, yPos, bw, 20);
         doc.setFontSize(7);
@@ -240,8 +292,9 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(navyBlue[0], navyBlue[1], navyBlue[2]);
-        doc.text(String(weeklyTotalBookings), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text(String(monthlyTotalBookings), xPos + bw/2, yPos + 15, { align: 'center' });
         
+        // Card 5: Services Done
         xPos += bw + gap;
         doc.rect(xPos, yPos, bw, 20);
         doc.setFontSize(7);
@@ -251,7 +304,7 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(navyBlue[0], navyBlue[1], navyBlue[2]);
-        doc.text(String(weeklyCompletedInquiries.length), xPos + bw/2, yPos + 15, { align: 'center' });
+        doc.text(String(monthlyCompletedInquiries.length), xPos + bw/2, yPos + 15, { align: 'center' });
         
         yPos += 28;
         
@@ -266,7 +319,7 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         doc.text('2. REVENUE BREAKDOWN', 20, yPos + 5.5);
         yPos += 12;
         
-        const totalCombined = weeklyTotalRevenue;
+        const totalCombined = totalMonthRevenue;
         const safeTotal = totalCombined === 0 ? 1 : totalCombined;
         const bookingsShare = totalCombined === 0 ? 0 : (totalGrossSales / safeTotal * 100).toFixed(1);
         const servicesShare = totalCombined === 0 ? 0 : (servicesRevenue / safeTotal * 100).toFixed(1);
@@ -275,9 +328,9 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
             startY: yPos,
             head: [['Revenue Source', 'Amount (PHP)', 'Volume', 'Share']],
             body: [
-                ['Package Bookings', totalGrossSales.toLocaleString(), (weeklyConfirmedBookings.length) + ' bookings', bookingsShare + '%'],
-                ['Travel Services', servicesRevenue.toLocaleString(), (weeklyCompletedInquiries.length) + ' services', servicesShare + '%'],
-                ['TOTAL', totalCombined.toLocaleString(), (weeklyConfirmedBookings.length + weeklyCompletedInquiries.length) + ' total', '100%']
+                ['Package Bookings', totalGrossSales.toLocaleString(), (monthlyConfirmedBookings.length) + ' bookings', bookingsShare + '%'],
+                ['Travel Services', servicesRevenue.toLocaleString(), (monthlyCompletedInquiries.length) + ' services', servicesShare + '%'],
+                ['TOTAL', totalCombined.toLocaleString(), (monthlyConfirmedBookings.length + monthlyCompletedInquiries.length) + ' total', '100%']
             ],
             theme: 'plain',
             margin: { left: 14, right: 14 }, 
@@ -312,6 +365,7 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         doc.text('3. FINANCIAL OVERVIEW', 20, yPos + 5.5);
         yPos += 12;
         
+        // 3.1 Overall Financial Overview
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
@@ -432,114 +486,101 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         doc.text('4. PERFORMANCE ANALYTICS', 20, yPos + 5.5);
         yPos += 12;
         
+        // === LEFT SIDE: REVENUE TRAJECTORY ===
+        const leftColumnX = 14;
+        const leftColumnWidth = 90;
+        
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
-        doc.text('REVENUE TRAJECTORY (Weekly Breakdown - Sunday to Selected Date)', 14, yPos + 5);
+        doc.text('REVENUE TRAJECTORY (' + monthName + ')', leftColumnX, yPos + 5);
         
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const selectedDateObj = new Date(selectedDate);
+        let trajectoryYPos = yPos + 12;
+
+        // Display weekly breakdown from monthlyData
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        
+        if (monthlyData && monthlyData.length > 0) {
+            monthlyData.forEach((data, i) => {
+                const br = 'P' + (data.bookingsRevenue || 0).toLocaleString();
+                const sr = 'P' + (data.inquiriesRevenue || 0).toLocaleString();
+                const tr = 'P' + (data.totalRevenue || 0).toLocaleString();
+                
+                doc.setTextColor(60, 60, 60);
+                doc.setFont('helvetica', 'bold');
+                doc.text(data.date + ':', leftColumnX + 4, trajectoryYPos);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(59, 130, 246);
+                doc.text('B: ' + br, leftColumnX + 8, trajectoryYPos + 5);
+                
+                doc.setTextColor(16, 185, 129);
+                doc.text('S: ' + sr, leftColumnX + 40, trajectoryYPos + 5);
+                
+                doc.setTextColor(139, 92, 246);
+                doc.setFont('helvetica', 'bold');
+                doc.text('T: ' + tr, leftColumnX + 65, trajectoryYPos + 5);
+                
+                trajectoryYPos += 10;
+            });
+        }
+        
+        // === RIGHT SIDE: STATUS BREAKDOWN ===
+        const rightColumnX = leftColumnX + leftColumnWidth + 10;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('STATUS BREAKDOWN', rightColumnX, yPos + 5);
+        
+        let statusYPos = yPos + 12;
+        
+        // BOOKINGS Section
+        doc.setFontSize(9);
+        doc.setTextColor(59, 130, 246);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BOOKINGS:', rightColumnX + 5, statusYPos);
+        statusYPos += 6;
+        
+        const totalMonthlyB = monthlyTotalBookings || 1;
+        const monthlyCp = totalMonthlyB === 0 ? 0 : ((monthlyConfirmedBookings.length) / totalMonthlyB * 100).toFixed(0);
+        const monthlyPp = totalMonthlyB === 0 ? 0 : ((monthlyPendingBookings.length) / totalMonthlyB * 100).toFixed(0);
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        let dayCounter = 0;
-        
-        for (let i = 0; i < 7; i++) {
-            const dayDate = new Date(weekStart);
-            dayDate.setDate(dayDate.getDate() + i);
-            
-            if (dayDate > selectedDateObj) break;
-            
-            const dayEnd = new Date(dayDate);
-            dayEnd.setHours(23, 59, 59, 999);
-            
-            const bRev = rawBookings.filter(b =>
-                b.status === "confirmed" &&
-                new Date(b.createdAt) >= dayDate &&
-                new Date(b.createdAt) <= dayEnd
-            ).reduce((s, b) => s + (b.totalAmount || 0), 0);
-
-            const iRev = rawInquiries.filter(i =>
-                i.status === "COMPLETED" &&
-                new Date(i.updatedAt) >= dayDate &&
-                new Date(i.updatedAt) <= dayEnd
-            ).reduce((s, i) => s + (i.estimatedPrice || 0), 0);
-            
-            const dateStr = dayDate.toISOString().split('T')[0];
-            const dayLabel = dayNames[dayDate.getDay()];
-            
-            const br = 'P' + bRev.toLocaleString();
-            const sr = 'P' + iRev.toLocaleString();
-            const tr = 'P' + (bRev + iRev).toLocaleString();
-            
-            doc.setTextColor(60, 60, 60);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${dayLabel} (${dateStr}):`, 18, yPos + 12 + (dayCounter * 5));
-            
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(59, 130, 246);
-            doc.text('B: ' + br, 42, yPos + 12 + (dayCounter * 5));
-            
-            doc.setTextColor(16, 185, 129);
-            doc.text('S: ' + sr, 70, yPos + 12 + (dayCounter * 5));
-            
-            dayCounter++;
-        }
-        
-        yPos += 50;
-        
-        // --- STATUS BREAKDOWN ---
-        doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
-        doc.rect(14, yPos, pageWidth - 28, 8, 'F');
-        doc.setFillColor(accentOrange[0], accentOrange[1], accentOrange[2]);
-        doc.rect(14, yPos, 3, 8, 'F');
-        doc.setTextColor(navyBlue[0], navyBlue[1], navyBlue[2]);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('STATUS BREAKDOWN', 20, yPos + 5.5);
-        yPos += 12;
-        
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(59, 130, 246);
-        doc.text('BOOKINGS:', 18, yPos);
-        
-        const totalWeeklyB = weeklyTotalBookings || 1;
-        const weeklyCp = totalWeeklyB === 0 ? 0 : ((weeklyConfirmedBookings.length) / totalWeeklyB * 100).toFixed(0);
-        const weeklyPp = totalWeeklyB === 0 ? 0 : ((weeklyPendingBookings.length) / totalWeeklyB * 100).toFixed(0);
-        
-        yPos += 7;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
         doc.setTextColor(72, 187, 120);
-        doc.text('Confirmed: ' + (weeklyConfirmedBookings.length) + ' (' + weeklyCp + '%)', 22, yPos);
+        doc.text('Confirmed: ' + (monthlyConfirmedBookings.length) + ' (' + monthlyCp + '%)', rightColumnX + 7, statusYPos);
+        statusYPos += 5;
         
-        yPos += 6;
         doc.setTextColor(234, 179, 8);
-        doc.text('Pending: ' + (weeklyPendingBookings.length) + ' (' + weeklyPp + '%)', 22, yPos);
+        doc.text('Pending: ' + (monthlyPendingBookings.length) + ' (' + monthlyPp + '%)', rightColumnX + 7, statusYPos);
+        statusYPos += 5;
         
-        yPos += 6;
         doc.setTextColor(239, 68, 68);
-        doc.text('Cancelled: ' + (weeklyCancelledBookings.length), 22, yPos);
+        doc.text('Cancelled: ' + (monthlyCancelledBookings.length), rightColumnX + 7, statusYPos);
+        statusYPos += 10;
         
-        yPos += 10;
-        doc.setFontSize(10);
+        // SERVICES Section
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(16, 185, 129);
-        doc.text('SERVICES:', 18, yPos);
+        doc.text('SERVICES:', rightColumnX + 5, statusYPos);
+        statusYPos += 6;
         
-        yPos += 7;
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(72, 187, 120);
-        doc.text('Completed: ' + (weeklyCompletedInquiries.length), 22, yPos);
+        doc.text('Completed: ' + (monthlyCompletedInquiries.length), rightColumnX + 7, statusYPos);
+        statusYPos += 5;
         
-        yPos += 6;
         doc.setTextColor(234, 179, 8);
-        doc.text('Pending: ' + (weeklyPendingInquiries.length), 22, yPos);
+        doc.text('Pending: ' + (monthlyPendingInquiries.length), rightColumnX + 7, statusYPos);
         
-        yPos += 15;
-        if (yPos > pageHeight - 80) {
+        // Update yPos to continue after both columns
+        yPos = Math.max(trajectoryYPos, statusYPos) + 10;
+        
+        if (yPos > pageHeight - 60) {
             doc.addPage();
             addWatermark(); 
             yPos = 20;
@@ -559,7 +600,7 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
         autoTable(doc, {
             startY: yPos,
             head: [['Package Name', 'Bookings', 'Revenue Generated']],
-            body: weeklyTopPackages.map(p => [p.name, String(p.bookings), p.revenue]),
+            body: monthlyTopPackages.map(p => [p.name, String(p.bookings), p.revenue]),
             theme: 'plain',
             margin: { left: 14, right: 14 },
             headStyles: { fillColor: navyBlue, textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
@@ -591,7 +632,7 @@ export const exportWeeklyToPDF = (stats, weeklyData = [], topPackages = [], sele
             doc.text('Page ' + i + ' of ' + pc, pageWidth - 14, fy, { align: 'right' });
         }
         
-        doc.save(`WanderWave_Weekly_Report_${weekStartStr}_to_${weekEndStr}.pdf`);
+        doc.save(`WanderWave_Monthly_Report_${selectedMonth}.pdf`);
         
     } catch (error) { 
         console.error('PDF Error:', error);

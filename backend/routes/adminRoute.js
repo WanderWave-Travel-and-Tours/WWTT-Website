@@ -4,7 +4,8 @@ const multer = require('multer');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const sanitize = require('mongo-sanitize');
-const jwt = require('jsonwebtoken'); 
+const jwt = require('jsonwebtoken');
+const authMiddleware = require('../middleware/auth'); // ✅ IMPORT AUTH MIDDLEWARE
 
 // 🎯 IMPORT ACTIVITY LOGGER
 const { 
@@ -13,6 +14,8 @@ const {
     getIpAddress, 
     getUserAgent 
 } = require('../utils/activityLogger');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'wanderwaveph_admin25';
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -23,6 +26,10 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+
+// ============================================================
+// PUBLIC ROUTES (NO AUTH REQUIRED)
+// ============================================================
 
 router.post('/login', async (req, res) => {
     const startTime = Date.now();
@@ -50,7 +57,6 @@ router.post('/login', async (req, res) => {
         if (!admin) {
             console.log(`❌ No admin found with email: ${email}`);
 
-            // 🎯 LOG FAILED ADMIN LOGIN - USER NOT FOUND
             await logActivity({
                 action: 'LOGIN',
                 module: 'Auth',
@@ -78,7 +84,6 @@ router.post('/login', async (req, res) => {
         if (!isMatch) {
             console.log(`❌ Password mismatch for email: ${email}`);
 
-            // 🎯 LOG FAILED ADMIN LOGIN - WRONG PASSWORD
             await logActivity({
                 action: 'LOGIN',
                 module: 'Auth',
@@ -112,13 +117,16 @@ router.post('/login', async (req, res) => {
                 id: admin._id, 
                 email: admin.email, 
                 role: 'admin',
-                isMainAdmin: isMainAdmin // ✅ ADD THIS
+                isMainAdmin: isMainAdmin
             },
-            'wanderwaveph_admin25', 
-            { expiresIn: '1h' }
+            JWT_SECRET, 
+            { expiresIn: '8h' } // ✅ Extended session time
         );
 
-        // 🎯 LOG SUCCESSFUL ADMIN LOGIN
+        // ✅ UPDATE LAST LOGIN
+        admin.lastLogin = new Date();
+        await admin.save();
+
         await logActivity({
             action: 'LOGIN',
             module: 'Auth',
@@ -135,7 +143,7 @@ router.post('/login', async (req, res) => {
                 duration: `${Date.now() - startTime}ms`,
                 recordId: admin._id.toString(),
                 recordTitle: admin.username,
-                isMainAdmin: isMainAdmin // ✅ ADD THIS TO LOGS
+                isMainAdmin: isMainAdmin
             }
         });
 
@@ -146,20 +154,19 @@ router.post('/login', async (req, res) => {
             message: "Login Success!",
             token: token, 
             data: {
-                id: admin._id, // ✅ ADD THIS
+                id: admin._id,
                 username: admin.username,
                 email: admin.email,
                 businessName: admin.businessName,
                 businessAddress: admin.businessAddress,
                 businessLogo: admin.businessLogo,
-                isMainAdmin: isMainAdmin // ✅ ADD THIS
+                isMainAdmin: isMainAdmin
             }
         });
 
     } catch (err) {
         console.error("❌ Login Error:", err);
 
-        // 🎯 LOG SYSTEM ERROR
         await logActivity({
             action: 'LOGIN',
             module: 'Auth',
@@ -183,14 +190,13 @@ router.post('/login', async (req, res) => {
     }
 });
 
-router.post('/logout', async (req, res) => {
+router.post('/logout', authMiddleware, async (req, res) => {
     const startTime = Date.now();
     
     try {
-        const adminEmail = req.body.email || 'Admin';
-        const adminId = req.body.adminId || null;
+        const adminEmail = req.user.email;
+        const adminId = req.user._id;
 
-        // 🎯 LOG ADMIN LOGOUT
         await logActivity({
             action: 'LOGOUT',
             module: 'Auth',
@@ -218,7 +224,6 @@ router.post('/logout', async (req, res) => {
     } catch (error) {
         console.error('❌ Admin logout error:', error);
 
-        // 🎯 LOG LOGOUT ERROR
         await logActivity({
             action: 'LOGOUT',
             module: 'Auth',
@@ -242,16 +247,34 @@ router.post('/logout', async (req, res) => {
     }
 });
 
-// ============================================================
-// GET ADMIN SETTINGS
-// ============================================================
-router.get('/settings', async (req, res) => {
+// ✅ VERIFY TOKEN ENDPOINT (for React to check auth status)
+router.get('/verify', authMiddleware, async (req, res) => {
     try {
-        const admin = await AdminModel.findOne(); 
+        res.json({
+            status: 'ok',
+            message: 'Token is valid',
+            data: {
+                id: req.user._id,
+                username: req.user.username,
+                email: req.user.email,
+                isMainAdmin: req.isMainAdmin
+            }
+        });
+    } catch (error) {
+        res.status(401).json({
+            status: 'error',
+            message: 'Token verification failed'
+        });
+    }
+});
 
-        if (!admin) {
-            return res.status(404).json({ status: "error", message: "Admin not found" });
-        }
+// ============================================================
+// PROTECTED ROUTES (AUTH REQUIRED)
+// ============================================================
+
+router.get('/settings', authMiddleware, async (req, res) => {
+    try {
+        const admin = req.user;
 
         res.json({
             status: "ok",
@@ -268,22 +291,13 @@ router.get('/settings', async (req, res) => {
     }
 });
 
-// ============================================================
-// UPDATE ADMIN SETTINGS WITH ACTIVITY LOGGING
-// ============================================================
-router.put('/update-settings', upload.single('businessLogo'), async (req, res) => {
+router.put('/update-settings', authMiddleware, upload.single('businessLogo'), async (req, res) => {
     const startTime = Date.now();
     
     try {
         const { businessName, businessAddress } = req.body;
-        
-        const admin = await AdminModel.findOne();
+        const admin = req.user;
 
-        if (!admin) {
-            return res.status(404).json({ status: "error", message: "Admin not found" });
-        }
-
-        // Track changes
         const changes = {};
         if (businessName && businessName !== admin.businessName) {
             changes.businessName = { from: admin.businessName, to: businessName };
@@ -300,7 +314,6 @@ router.put('/update-settings', upload.single('businessLogo'), async (req, res) =
 
         await admin.save();
 
-        // 🎯 LOG SETTINGS UPDATE
         if (Object.keys(changes).length > 0) {
             await logUpdate(
                 req, 
@@ -327,11 +340,10 @@ router.put('/update-settings', upload.single('businessLogo'), async (req, res) =
     } catch (err) {
         console.error("Update Error:", err);
 
-        // 🎯 LOG UPDATE ERROR
         await logActivity({
             action: 'UPDATE',
             module: 'System',
-            user: 'Admin',
+            user: req.user.email,
             severity: 'ERROR',
             description: `Failed to update admin settings: ${err.message}`,
             ipAddress: getIpAddress(req),
@@ -349,37 +361,10 @@ router.put('/update-settings', upload.single('businessLogo'), async (req, res) =
 });
 
 // ============================================================
-// MIDDLEWARE: Verify JWT Token
-// ============================================================
-const verifyToken = (req, res, next) => {
-    const token = req.headers['authorization']?.split(' ')[1];
-    
-    if (!token) {
-        return res.status(403).json({ 
-            status: 'error', 
-            message: 'No token provided' 
-        });
-    }
-
-    try {
-        const decoded = jwt.verify(token, 'wanderwaveph_admin25');
-        req.adminId = decoded.id;
-        req.adminEmail = decoded.email;
-        req.isMainAdmin = decoded.isMainAdmin;
-        next();
-    } catch (error) {
-        return res.status(401).json({ 
-            status: 'error', 
-            message: 'Invalid token' 
-        });
-    }
-};
-
-// ============================================================
 // MIDDLEWARE: Check if Main Admin
 // ============================================================
 const isMainAdmin = (req, res, next) => {
-    if (req.adminEmail?.toLowerCase() !== 'info@wanderwavetravelandtours.com') {
+    if (!req.isMainAdmin) {
         return res.status(403).json({
             status: 'error',
             message: 'Access denied: Only main admin can perform this action'
@@ -389,9 +374,10 @@ const isMainAdmin = (req, res, next) => {
 };
 
 // ============================================================
-// LIST ALL ADMINS (Main Admin Only)
+// MAIN ADMIN ONLY ROUTES
 // ============================================================
-router.get('/list', verifyToken, isMainAdmin, async (req, res) => {
+
+router.get('/list', authMiddleware, isMainAdmin, async (req, res) => {
     const startTime = Date.now();
     
     try {
@@ -402,7 +388,6 @@ router.get('/list', verifyToken, isMainAdmin, async (req, res) => {
 
         console.log('📋 Fetched admins:', admins.length);
 
-        // 🎯 LOG ADMIN LIST VIEW
         await logActivity({
             action: 'VIEW',
             module: 'Admin Management',
@@ -435,7 +420,6 @@ router.get('/list', verifyToken, isMainAdmin, async (req, res) => {
     } catch (error) {
         console.error('❌ Error fetching admins:', error);
 
-        // 🎯 LOG ERROR
         await logActivity({
             action: 'VIEW',
             module: 'Admin Management',
@@ -460,16 +444,12 @@ router.get('/list', verifyToken, isMainAdmin, async (req, res) => {
     }
 });
 
-// ============================================================
-// CREATE NEW ADMIN (Main Admin Only)
-// ============================================================
-router.post('/create', verifyToken, isMainAdmin, async (req, res) => {
+router.post('/create', authMiddleware, isMainAdmin, async (req, res) => {
     const startTime = Date.now();
     
     try {
         const { email, username, password } = req.body;
 
-        // Validation
         if (!email || !username || !password) {
             return res.status(400).json({
                 status: 'error',
@@ -484,7 +464,6 @@ router.post('/create', verifyToken, isMainAdmin, async (req, res) => {
             });
         }
 
-        // Check if email already exists
         const existingAdmin = await AdminModel.findOne({ 
             email: email.toLowerCase() 
         });
@@ -496,7 +475,6 @@ router.post('/create', verifyToken, isMainAdmin, async (req, res) => {
             });
         }
 
-        // Check if username already exists
         const existingUsername = await AdminModel.findOne({ username });
 
         if (existingUsername) {
@@ -506,11 +484,10 @@ router.post('/create', verifyToken, isMainAdmin, async (req, res) => {
             });
         }
 
-        // Create new admin
         const newAdmin = new AdminModel({
             email: email.toLowerCase(),
             username: username,
-            password: password, // Will be hashed by pre-save hook
+            password: password,
             isActive: true
         });
 
@@ -522,7 +499,6 @@ router.post('/create', verifyToken, isMainAdmin, async (req, res) => {
             username: newAdmin.username
         });
 
-        // 🎯 LOG ADMIN CREATION
         await logActivity({
             action: 'CREATE',
             module: 'Admin Management',
@@ -551,7 +527,6 @@ router.post('/create', verifyToken, isMainAdmin, async (req, res) => {
     } catch (error) {
         console.error('❌ Error creating admin:', error);
 
-        // 🎯 LOG ERROR
         await logActivity({
             action: 'CREATE',
             module: 'Admin Management',
@@ -576,16 +551,12 @@ router.post('/create', verifyToken, isMainAdmin, async (req, res) => {
     }
 });
 
-// ============================================================
-// DELETE ADMIN (Main Admin Only)
-// ============================================================
-router.delete('/delete/:id', verifyToken, isMainAdmin, async (req, res) => {
+router.delete('/delete/:id', authMiddleware, isMainAdmin, async (req, res) => {
     const startTime = Date.now();
     
     try {
         const adminId = req.params.id;
 
-        // Get admin details before deletion
         const admin = await AdminModel.findById(adminId);
 
         if (!admin) {
@@ -595,7 +566,6 @@ router.delete('/delete/:id', verifyToken, isMainAdmin, async (req, res) => {
             });
         }
 
-        // ✅ Prevent deleting main admin
         if (admin.email.toLowerCase() === 'info@wanderwavetravelandtours.com') {
             return res.status(403).json({
                 status: 'error',
@@ -603,12 +573,10 @@ router.delete('/delete/:id', verifyToken, isMainAdmin, async (req, res) => {
             });
         }
 
-        // Delete admin
         await AdminModel.findByIdAndDelete(adminId);
 
         console.log('🗑️ Admin deleted:', admin.email);
 
-        // 🎯 LOG ADMIN DELETION
         await logActivity({
             action: 'DELETE',
             module: 'Admin Management',
@@ -636,7 +604,6 @@ router.delete('/delete/:id', verifyToken, isMainAdmin, async (req, res) => {
     } catch (error) {
         console.error('❌ Error deleting admin:', error);
 
-        // 🎯 LOG ERROR
         await logActivity({
             action: 'DELETE',
             module: 'Admin Management',
