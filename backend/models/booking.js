@@ -36,7 +36,6 @@ const flightPriceSchema = new mongoose.Schema({
   totalPassengers: { type: Number }
 }, { _id: false });
 
-// NEW: Schema for customized inclusions
 const customInclusionSchema = new mongoose.Schema({
   id: { type: String, required: true },
   name: { type: String, required: true },
@@ -78,11 +77,10 @@ const bookingSchema = new mongoose.Schema({
 
   packageTotal: { type: Number },
 
-  // NEW: Package Customization Fields
   isCustomized: { type: Boolean, default: false },
   customizedInclusions: [customInclusionSchema],
   customizationAdditionalPrice: { type: Number, default: 0 },
-  originalInclusions: [String], // Store original inclusions for reference
+  originalInclusions: [String],
 
   includesAirfare: { type: Boolean, default: false },
   flightDetails: {
@@ -104,15 +102,15 @@ const bookingSchema = new mongoose.Schema({
     enum: ['full', 'partial'], 
     default: 'full' 
   },
-  initialPaymentAmount: { type: Number, required: true },  // Amount paid initially (50% or 85% or 100%)
-  remainingBalance: { type: Number, default: 0 },           // Balance to be paid later
-  balancePaidAmount: { type: Number, default: 0 },          // Amount paid for remaining balance
-  balancePaidAt: { type: Date },                            // When remaining balance was paid
+  initialPaymentAmount: { type: Number, required: true },
+  remainingBalance: { type: Number, default: 0 },
+  balancePaidAmount: { type: Number, default: 0 },
+  balancePaidAt: { type: Date },
   
-  initialPaymentId: { type: String },                       // First payment transaction ID
-  balancePaymentId: { type: String },                       // Second payment transaction ID
-  initialPaymentLinkId: { type: String },                   // First payment link ID
-  balancePaymentLinkId: { type: String },                   // Second payment link ID (for remaining balance)
+  initialPaymentId: { type: String },
+  balancePaymentId: { type: String },
+  initialPaymentLinkId: { type: String },
+  balancePaymentLinkId: { type: String },
 
   fullName: { type: String, required: true },
   email:    { type: String, required: true },
@@ -129,8 +127,8 @@ const bookingSchema = new mongoose.Schema({
     default: 'pending'
   },
 
-  paymentId:        { type: String },   // Legacy - kept for backwards compatibility
-  paymentLinkId:    { type: String },   // Legacy - kept for backwards compatibility
+  paymentId:        { type: String },
+  paymentLinkId:    { type: String },
   referenceNumber:  { type: String },
 
   createdAt: { type: Date, default: Date.now },
@@ -143,7 +141,12 @@ const bookingSchema = new mongoose.Schema({
   promoCode: { type: String, default: null },
   promoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Promo', default: null },
   discountAmount: { type: Number, default: 0 },
-  finalPackageTotal: { type: Number, required: true }
+  finalPackageTotal: { type: Number, required: true },
+
+  // ✅ NEW: Walk-in appointment fields
+  isWalkin: { type: Boolean, default: false },
+  appointmentDate: { type: String },
+  appointmentTime: { type: String }
 });
 
 bookingSchema.pre('save', function(next) {
@@ -186,7 +189,6 @@ bookingSchema.methods.getPaymentStatusDescription = function() {
   return 'Pending Payment';
 };
 
-// NEW: Method to get customized inclusions summary
 bookingSchema.methods.getCustomizationSummary = function() {
   if (!this.isCustomized) {
     return null;

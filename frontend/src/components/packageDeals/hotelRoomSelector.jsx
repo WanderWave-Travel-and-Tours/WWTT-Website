@@ -177,6 +177,7 @@ const HotelRoomSelector = ({
   const [hoveredHotel, setHoveredHotel] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const hoverTimeoutRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
   
   const [lightboxState, setLightboxState] = useState({
     isOpen: false,
@@ -186,6 +187,18 @@ const HotelRoomSelector = ({
     roomType: null,
     initialIndex: 0
   });
+
+  // Detect if mobile/tablet
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const sortedRoomTypes = [...roomTypes].sort((a, b) => a.price - b.price);
 
@@ -208,8 +221,10 @@ const HotelRoomSelector = ({
     return ['https://placehold.co/600x400?text=No+Image+Available'];
   };
 
-  // --- HOVER LOGIC (Desktop) ---
+  // --- HOVER LOGIC (Desktop Only) ---
   const handleMouseEnter = (index, images) => {
+    if (isMobile) return; // Disable hover on mobile
+    
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
@@ -219,14 +234,17 @@ const HotelRoomSelector = ({
   };
 
   const handleMouseLeave = () => {
+    if (isMobile) return; // Disable hover on mobile
+    
     hoverTimeoutRef.current = setTimeout(() => {
       setHoveredHotel(null);
     }, 300);
   };
 
-  // --- CLICK/TOUCH LOGIC (Mobile/Tablet) ---
+  // --- CLICK/TOUCH LOGIC (Works on all devices) ---
   const handleHotelClick = (e, index, images) => {
     e.stopPropagation(); // Prevent selecting the card
+    
     // Toggle: if open, close. If closed, open.
     if (hoveredHotel === index) {
       setHoveredHotel(null);
@@ -321,7 +339,19 @@ const HotelRoomSelector = ({
                                 e.stopPropagation(); 
                                 handleOpenLightbox(room);
                               }}
-                              // Remove mouseLeave from popup to allow interaction on mobile without closing
+                              onMouseEnter={() => {
+                                // Keep popup open on hover (desktop only)
+                                if (!isMobile && hoverTimeoutRef.current) {
+                                  clearTimeout(hoverTimeoutRef.current);
+                                  hoverTimeoutRef.current = null;
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                // Close popup when mouse leaves (desktop only)
+                                if (!isMobile) {
+                                  handleMouseLeave();
+                                }
+                              }}
                             >
                                 <div className="hrs-popup-arrow"></div>
                                 
@@ -348,7 +378,7 @@ const HotelRoomSelector = ({
                                           src={img} 
                                           alt="thumb" 
                                           className={`hrs-popup-thumb ${isPreviewing ? 'hrs-active' : ''}`}
-                                          onMouseEnter={() => setPreviewImage(img)}
+                                          onMouseEnter={() => !isMobile && setPreviewImage(img)}
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             setPreviewImage(img);
@@ -364,9 +394,11 @@ const HotelRoomSelector = ({
                                 )}
                                 
                                 {/* Mobile Close Instruction */}
-                                <div className="hrs-mobile-close-hint">
-                                  Tap again to close
-                                </div>
+                                {isMobile && (
+                                  <div className="hrs-mobile-close-hint">
+                                    Tap outside or name again to close
+                                  </div>
+                                )}
                             </div>
                         )}
                     </div>
