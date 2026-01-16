@@ -1,5 +1,7 @@
-/* EDIT PACKAGE - TRAVEL & TOURS PREMIUM UI - CLEAN SINGLE COLUMN */
-.ep-page {
+/* EDIT PACKAGE ADMIN - TRAVEL & TOURS PREMIUM UI */
+/* PREFIX: epa- */
+
+.epa-page {
     display: flex;
     min-height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #e8f0f7 100%);
@@ -7,26 +9,26 @@
     width: 100%;
 }
 
-.ep-main {
+.epa-main {
     flex: 1;
-    margin-left: 300px;
-    transition: margin-left 0.3s ease;
+    margin-left: 300px; /* Sidebar width */
     padding: 40px 80px;
+    transition: margin-left 0.3s ease;
     width: 100%;
 }
 
-.ep-main--collapsed {
+.epa-main--collapsed {
     margin-left: 90px;
 }
 
-.ep-container {
+.epa-container {
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
 }
 
-/* HEADER DESIGN - MATCHING VIEWPACKAGES */
-.ep-header {
+/* HEADER DESIGN */
+.epa-header {
     position: relative;
     margin-bottom: 40px;
     padding: 45px 50px;
@@ -40,7 +42,7 @@
     justify-content: space-between;
 }
 
-.ep-header::before {
+.epa-header::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -48,12 +50,12 @@
     z-index: 1;
 }
 
-.ep-header-content {
+.epa-header-content {
     position: relative;
     z-index: 2;
 }
 
-.ep-back-btn {
+.epa-back-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -70,12 +72,12 @@
     z-index: 2;
 }
 
-.ep-back-btn:hover {
+.epa-back-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateX(-4px);
 }
 
-.ep-title {
+.epa-title {
     font-size: 2.5rem;
     font-weight: 900;
     color: #fff;
@@ -84,7 +86,7 @@
     text-transform: uppercase;
 }
 
-.ep-subtitle {
+.epa-subtitle {
     font-size: 15px;
     color: rgba(255, 255, 255, 0.9);
     margin: 0;
@@ -94,22 +96,22 @@
     gap: 10px;
 }
 
-.ep-subtitle::before {
+.epa-subtitle::before {
     content: '';
     width: 40px;
     height: 3px;
     background: #FF8C42;
 }
 
-/* FORM CONTAINER - CLEAN SINGLE COLUMN */
-.ep-form {
+/* FORM CONTAINER */
+.epa-form {
     display: flex;
     flex-direction: column;
     gap: 24px;
 }
 
-/* SECTIONS WITH BETTER ORGANIZATION */
-.ep-section {
+/* SECTIONS */
+.epa-section {
     background: #fff;
     border-radius: 16px;
     padding: 32px;
@@ -117,7 +119,7 @@
     border: 1px solid #e2e8f0;
 }
 
-.ep-section-title {
+.epa-section-title {
     font-size: 13px;
     font-weight: 900;
     color: #001f3f;
@@ -131,7 +133,7 @@
     border-bottom: 2px solid #f0f0f0;
 }
 
-.ep-section-title::before {
+.epa-section-title::before {
     content: '';
     width: 4px;
     height: 22px;
@@ -139,7 +141,7 @@
     border-radius: 2px;
 }
 
-.ep-section-header {
+.epa-section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -148,34 +150,34 @@
     border-bottom: 2px solid #f0f0f0;
 }
 
-.ep-section-header .ep-section-title {
+.epa-section-header .epa-section-title {
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: none;
 }
 
-/* FORM GRID - 2 COLUMNS ON DESKTOP */
-.ep-form-grid {
+/* FORM GRID */
+.epa-form-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
-.ep-form-grid--single {
+.epa-form-grid--single {
     grid-template-columns: 1fr;
 }
 
-.ep-form-group {
+.epa-form-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.ep-form-group--full {
+.epa-form-group--full {
     grid-column: 1 / -1;
 }
 
-.ep-label {
+.epa-label {
     font-size: 11px;
     font-weight: 800;
     color: #334155;
@@ -183,7 +185,7 @@
     letter-spacing: 1px;
 }
 
-.ep-input {
+.epa-input {
     padding: 13px 16px;
     border: 1.5px solid #e2e8f0;
     border-radius: 10px;
@@ -192,19 +194,21 @@
     transition: all 0.2s;
     background: #fff;
     font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.ep-input:focus {
+.epa-input:focus {
     outline: none;
     border-color: #FF8C42;
     box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
 
-.ep-input::placeholder {
+.epa-input::placeholder {
     color: #94a3b8;
 }
 
-.ep-input--readonly {
+.epa-input--readonly {
     background: #f8fafc;
     color: #64748b;
     cursor: not-allowed;
@@ -212,20 +216,20 @@
 }
 
 /* IMAGE UPLOAD SECTION */
-.ep-upload-area {
+.epa-upload-area {
     width: 100%;
 }
 
-.ep-file-input {
+.epa-file-input {
     display: none;
 }
 
-.ep-upload-label {
+.epa-upload-label {
     display: block;
     cursor: pointer;
 }
 
-.ep-image-preview {
+.epa-image-preview {
     position: relative;
     width: 100%;
     height: 400px;
@@ -235,13 +239,13 @@
     background: #f8fafc;
 }
 
-.ep-image-preview img {
+.epa-image-preview img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.ep-image-overlay {
+.epa-image-overlay {
     position: absolute;
     inset: 0;
     background: rgba(0, 31, 63, 0.85);
@@ -255,16 +259,16 @@
     transition: opacity 0.3s;
 }
 
-.ep-image-overlay span {
+.epa-image-overlay span {
     font-weight: 600;
     font-size: 14px;
 }
 
-.ep-image-preview:hover .ep-image-overlay {
+.epa-image-preview:hover .epa-image-overlay {
     opacity: 1;
 }
 
-.ep-upload-placeholder {
+.epa-upload-placeholder {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -278,19 +282,19 @@
     transition: all 0.3s;
 }
 
-.ep-upload-placeholder:hover {
+.epa-upload-placeholder:hover {
     border-color: #FF8C42;
     background: #fff5f0;
     color: #FF8C42;
 }
 
-.ep-upload-placeholder span {
+.epa-upload-placeholder span {
     font-size: 14px;
     font-weight: 600;
 }
 
 /* BUTTONS */
-.ep-add-btn {
+.epa-add-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -306,13 +310,13 @@
     letter-spacing: 0.3px;
 }
 
-.ep-add-btn:hover {
+.epa-add-btn:hover {
     background: #ff7a29;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(255, 140, 66, 0.3);
 }
 
-.ep-remove-btn {
+.epa-remove-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -327,36 +331,36 @@
     flex-shrink: 0;
 }
 
-.ep-remove-btn:hover {
+.epa-remove-btn:hover {
     background: #fca5a5;
     transform: scale(1.05);
 }
 
 /* LIST ITEMS */
-.ep-list-items {
+.epa-list-items {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.ep-list-item {
+.epa-list-item {
     display: flex;
     gap: 12px;
     align-items: center;
 }
 
-.ep-list-item .ep-input {
+.epa-list-item .epa-input {
     flex: 1;
 }
 
 /* ITINERARY SECTION */
-.ep-itinerary-list {
+.epa-itinerary-list {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.ep-itinerary-day {
+.epa-itinerary-day {
     border: 2px solid #e2e8f0;
     border-radius: 12px;
     padding: 24px;
@@ -364,12 +368,12 @@
     transition: all 0.3s;
 }
 
-.ep-itinerary-day:hover {
+.epa-itinerary-day:hover {
     border-color: #cbd5e1;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.ep-itinerary-day-header {
+.epa-itinerary-day-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -378,7 +382,7 @@
     border-bottom: 2px solid #f0f0f0;
 }
 
-.ep-day-title {
+.epa-day-title {
     font-size: 16px;
     font-weight: 800;
     color: #001f3f;
@@ -389,7 +393,7 @@
     gap: 12px;
 }
 
-.ep-day-title::before {
+.epa-day-title::before {
     content: '';
     width: 32px;
     height: 32px;
@@ -400,7 +404,7 @@
     justify-content: center;
 }
 
-.ep-remove-day-btn {
+.epa-remove-day-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -415,23 +419,23 @@
     transition: all 0.2s;
 }
 
-.ep-remove-day-btn:hover {
+.epa-remove-day-btn:hover {
     background: #fca5a5;
     transform: translateY(-1px);
 }
 
-.ep-activities {
+.epa-activities {
     margin-top: 16px;
 }
 
-.ep-activities-header {
+.epa-activities-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
 }
 
-.ep-activities-title {
+.epa-activities-title {
     font-size: 11px;
     font-weight: 800;
     color: #64748b;
@@ -439,7 +443,7 @@
     letter-spacing: 1px;
 }
 
-.ep-add-activity-btn {
+.epa-add-activity-btn {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -454,12 +458,14 @@
     transition: all 0.2s;
 }
 
-.ep-add-activity-btn:hover {
+.epa-add-activity-btn:hover {
     background: #bae6fd;
 }
 
-/* FORM ACTIONS */
-.ep-form-actions {
+/* ================================================= */
+/* FORM ACTIONS (STICKY FOOTER) - EXACT MATCH */
+/* ================================================= */
+.epa-form-actions {
     position: sticky;
     bottom: 0;
     background: #fff;
@@ -473,7 +479,7 @@
     z-index: 10;
 }
 
-.ep-btn {
+.epa-btn {
     padding: 14px 32px;
     border-radius: 10px;
     font-weight: 700;
@@ -488,35 +494,35 @@
     gap: 8px;
 }
 
-.ep-btn--cancel {
+.epa-btn--cancel {
     background: #f1f5f9;
     color: #64748b;
 }
 
-.ep-btn--cancel:hover {
+.epa-btn--cancel:hover {
     background: #e2e8f0;
     color: #475569;
 }
 
-.ep-btn--submit {
+.epa-btn--submit {
     background: linear-gradient(135deg, #FF8C42 0%, #ff6b1a 100%);
     color: #fff;
     box-shadow: 0 4px 14px rgba(255, 140, 66, 0.3);
 }
 
-.ep-btn--submit:hover {
+.epa-btn--submit:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(255, 140, 66, 0.4);
 }
 
-.ep-btn:disabled {
-    opacity: 0.6;
+.epa-btn--submit:disabled {
+    opacity: 0.7;
     cursor: not-allowed;
     transform: none;
 }
 
 /* LOADING STATE */
-.ep-loading {
+.epa-loading {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -527,14 +533,14 @@
     margin: 80px;
 }
 
-.ep-loading p {
+.epa-loading p {
     margin-top: 20px;
     color: #64748b;
     font-size: 15px;
     font-weight: 600;
 }
 
-.ep-spinner {
+.epa-spinner {
     width: 48px;
     height: 48px;
     border: 4px solid #f3f4f6;
@@ -549,88 +555,88 @@
 }
 
 /* ================================================= */
-/* RESPONSIVENESS - EXACT COPY FROM TESTIMONIALS    */
+/* RESPONSIVENESS */
 /* ================================================= */
 
 @media (max-width: 1100px) {
-    .ep-header {
+    .epa-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
         padding: 40px;
     }
 
-    .ep-form-grid {
+    .epa-form-grid {
         grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 768px) {
-    .ep-main, .ep-main--collapsed {
+    .epa-main, .epa-main--collapsed {
         margin-left: 90px !important;
         padding: 24px 16px !important;
         width: calc(100% - 90px) !important;
     }
 
-    .ep-header {
+    .epa-header {
         padding: 35px 30px;
         margin-bottom: 28px;
     }
 
-    .ep-title {
+    .epa-title {
         font-size: 2rem;
     }
 
-    .ep-section {
+    .epa-section {
         padding: 24px 20px;
     }
 
-    .ep-image-preview, .ep-upload-placeholder {
+    .epa-image-preview, .epa-upload-placeholder {
         height: 280px;
     }
 
-    .ep-itinerary-day {
+    .epa-itinerary-day {
         padding: 20px;
     }
 }
 
 @media (max-width: 640px) {
-    .ep-title {
+    .epa-title {
         font-size: 1.6rem;
         letter-spacing: 2px;
     }
 
-    .ep-subtitle {
+    .epa-subtitle {
         font-size: 13px;
     }
 
-    .ep-header {
+    .epa-header {
         padding: 30px 24px;
     }
 
-    .ep-section {
+    .epa-section {
         padding: 20px 16px;
     }
 
-    .ep-image-preview, .ep-upload-placeholder {
+    .epa-image-preview, .epa-upload-placeholder {
         height: 240px;
     }
 
-    .ep-form-actions {
+    .epa-form-actions {
         flex-direction: column;
         padding: 16px;
     }
 
-    .ep-btn {
+    .epa-btn {
         width: 100%;
         justify-content: center;
     }
 
-    .ep-itinerary-day {
+    .epa-itinerary-day {
         padding: 16px;
     }
 
-    .ep-section-header {
+    .epa-section-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
@@ -638,66 +644,66 @@
 }
 
 @media (max-width: 480px) {
-    .ep-title {
+    .epa-title {
         font-size: 1.4rem;
     }
 
-    .ep-header {
+    .epa-header {
         padding: 28px 20px;
     }
 
-    .ep-btn {
+    .epa-btn {
         padding: 12px 20px;
         font-size: 12px;
     }
 
-    .ep-back-btn {
+    .epa-back-btn {
         padding: 8px 14px;
         font-size: 12px;
     }
 
-    .ep-section {
+    .epa-section {
         padding: 16px 12px;
     }
 
-    .ep-image-preview, .ep-upload-placeholder {
+    .epa-image-preview, .epa-upload-placeholder {
         height: 200px;
     }
 
-    .ep-input {
+    .epa-input {
         padding: 10px 12px;
         font-size: 13px;
     }
 
-    .ep-add-btn {
+    .epa-add-btn {
         padding: 8px 14px;
         font-size: 12px;
     }
 
-    .ep-remove-btn {
+    .epa-remove-btn {
         width: 32px;
         height: 32px;
     }
 
-    .ep-itinerary-day {
+    .epa-itinerary-day {
         padding: 14px;
     }
 
-    .ep-day-title {
+    .epa-day-title {
         font-size: 13px;
     }
 
-    .ep-day-title::before {
+    .epa-day-title::before {
         width: 26px;
         height: 26px;
     }
 
-    .ep-remove-day-btn {
+    .epa-remove-day-btn {
         padding: 6px 10px;
         font-size: 11px;
     }
 
-    .ep-add-activity-btn {
+    .epa-add-activity-btn {
         padding: 5px 10px;
         font-size: 10px;
     }

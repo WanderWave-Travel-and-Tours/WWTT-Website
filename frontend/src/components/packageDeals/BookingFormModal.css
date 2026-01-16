@@ -4,7 +4,6 @@
    BASE STYLES (Desktop First)
    ============================================ */
 
-/* --- Modal Overlay --- */
 .bfm-overlay {
   position: fixed;
   inset: 0;
@@ -14,7 +13,9 @@
   align-items: center;
   justify-content: center;
   z-index: 99999;
-  padding: 16px;
+  padding: 20px;
+  padding-top: 100px;
+  overflow-y: auto;
   animation: bfmFadeIn 0.2s ease-out;
 }
 
@@ -23,7 +24,6 @@
   to { opacity: 1; }
 }
 
-/* --- Modal Card --- */
 .bfm-modal-card {
   background: white;
   width: 100%;
@@ -33,10 +33,11 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   height: auto;
-  max-height: 75vh; /* REDUCED FROM 82vh to 75vh */
+  max-height: calc(100vh - 140px);
   display: flex;
   flex-direction: column;
-  overflow: hidden; 
+  overflow: hidden;
+  margin: auto;
 }
 
 @keyframes bfmSlideUp {
@@ -690,9 +691,14 @@
    ============================================ */
 
 @media (min-width: 641px) and (max-width: 1024px) {
+  .bfm-overlay {
+    padding: 16px;
+    padding-top: 90px;
+  }
+
   .bfm-modal-card {
     max-width: 600px;
-    max-height: 73vh; /* REDUCED FROM 80vh to 73vh */
+    max-height: calc(100vh - 130px);
   }
 
   .bfm-modal-header {
@@ -762,16 +768,18 @@
 
 @media (max-width: 640px) {
   .bfm-overlay {
-    padding: 0; 
-    align-items: flex-end;
+    padding: 0;
+    padding-top: 80px;
+    align-items: flex-start;
   }
 
   .bfm-modal-card {
     border-radius: 12px 12px 0 0;
     width: 100%;
-    height: 100dvh;
-    max-height: 100dvh; 
+    height: auto;
+    max-height: calc(100vh - 80px);
     max-width: 100%;
+    margin-top: 0;
   }
 
   .bfm-modal-header {
