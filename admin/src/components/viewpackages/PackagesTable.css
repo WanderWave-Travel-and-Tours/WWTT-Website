@@ -1,0 +1,118 @@
+/* WRAPPER & SCROLL CONTAINER (Matched to Tours) */
+.pkt-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    overflow: hidden; 
+    margin-top: 20px;
+}
+
+.pkt-table-container {
+    width: 100%;
+    overflow-x: auto; /* ✅ SCROLLS HORIZONTALLY ON MOBILE */
+    padding-bottom: 5px; 
+}
+
+/* TABLE BASIC STYLES */
+.pkt-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    /* ✅ FIXED MIN-WIDTH: Critical for preserving button layout */
+    min-width: 1400px; 
+}
+
+/* HEADER STYLES */
+.pkt-table th { 
+    background-color: #0f172a; 
+    color: white; 
+    text-align: left; 
+    padding: 16px 24px; 
+    font-size: 12px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    white-space: nowrap; 
+}
+
+/* SPECIFIC COLUMN WIDTHS */
+.pkt-col-num { width: 60px; text-align: center !important; }
+.pkt-col-package { width: 300px; }
+.pkt-col-dest { width: 180px; }
+.pkt-col-duration { width: 180px; }
+.pkt-col-date { width: 150px; }
+.pkt-col-price { width: 120px; }
+.pkt-col-status { width: 120px; }
+.pkt-col-actions { width: 220px; text-align: right !important; }
+
+/* CELL STYLES */
+.pkt-table td { 
+    padding: 16px 24px; 
+    border-bottom: 1px solid #f1f5f9; 
+    color: #334155; 
+    font-size: 14px; 
+    font-weight: 500; 
+    vertical-align: middle; 
+    white-space: nowrap; 
+}
+
+/* ZEBRA STRIPING */
+.pkt-table tbody tr:nth-child(odd) { background-color: white; }
+.pkt-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+
+/* HOVER EFFECT */
+.pkt-table tr:hover td { background-color: #f1f5f9; }
+.pkt-table tr:last-child td { border-bottom: none; }
+
+/* CONTENT STYLES */
+.pkt-number-cell { font-weight: 700; color: #0f172a; text-align: center; }
+
+.pkt-package-cell { display: flex; align-items: center; gap: 12px; }
+.pkt-image-preview { 
+    width: 40px; height: 40px; border-radius: 6px; 
+    overflow: hidden; flex-shrink: 0; border: 1px solid #e2e8f0;
+}
+.pkt-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+.pkt-package-name { 
+    font-weight: 600; color: #0f172a; max-width: 220px; 
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+}
+
+.pkt-meta-cell, .pkt-date-cell, .pkt-meta-row { display: flex; align-items: center; gap: 8px; }
+.pkt-icon { color: #94a3b8; flex-shrink: 0; }
+.pkt-stacked-info { display: flex; flex-direction: column; gap: 4px; }
+.pkt-meta-row { font-size: 14px; color: #334155; }
+.pkt-meta-row.sub-text { font-size: 12px; color: #64748b; }
+.pkt-price { font-weight: 700; color: #0f172a; }
+
+.pkt-badge { 
+    padding: 4px 12px; border-radius: 20px; font-size: 11px; 
+    font-weight: 700; text-transform: uppercase; display: inline-block; 
+}
+.pkt-badge-active { background: #10b981; color: white; box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4); }
+
+/* ACTIONS */
+.pkt-action-group { display: flex; justify-content: flex-end; gap: 8px; min-width: 200px; }
+
+.pkt-action-btn { 
+    height: 38px; padding: 0 16px; border-radius: 6px; font-size: 13px; 
+    font-weight: 600; cursor: pointer; display: flex; align-items: center; 
+    gap: 8px; transition: all 0.2s ease; white-space: nowrap; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.pkt-view-btn { background: white; border: 1px solid #0f172a; color: #0f172a; }
+.pkt-view-btn:hover { background: #0f172a; color: white; transform: translateY(-1px); }
+
+.pkt-archive-btn { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
+.pkt-archive-btn:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; transform: translateY(-1px); }
+
+.pkt-empty-cell { text-align: center; padding: 60px; color: #64748b; font-size: 15px; }
+
+/* Scrollbar */
+.pkt-table-container::-webkit-scrollbar { height: 8px; }
+.pkt-table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.pkt-table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.pkt-table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

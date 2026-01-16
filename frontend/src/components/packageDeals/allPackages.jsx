@@ -1,7 +1,9 @@
+// src/components/PackageDeals/allPackages.jsx - COMPLETE UPDATED CODE
+
 import { useState, useEffect, useRef } from 'react';
 import PackageCard from './packageCard';
 import CurrencyModal from './CurrencyModal';
-import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, LogIn } from 'lucide-react';
 import './allPackages.css';
 
 function AllPackages({
@@ -31,18 +33,13 @@ function AllPackages({
 }) {
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  //const [currency, setCurrency] = useState('PHP');
-  //const EXCHANGE_RATE = 58;
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const hasTriggeredRef = useRef(false);
 
-  // Bagong state para sa validation error
   const [priceError, setPriceError] = useState('');
-
-  // ... (existing useEffects and helper functions) ...
 
   useEffect(() => {
     if (hasTriggeredRef.current) return;
@@ -69,7 +66,7 @@ function AllPackages({
 
   useEffect(() => {
     setCurrentPage(1);
-    setPriceError(''); // I-reset ang error kapag nagbago ang filters
+    setPriceError('');
   }, [packages, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -108,7 +105,7 @@ function AllPackages({
     setSelectedDuration('');
     setSelectedDestinations([]);
     onSearchChange('');
-    setPriceError(''); // I-reset ang error
+    setPriceError('');
   };
 
   const isFilterActive =
@@ -118,14 +115,9 @@ function AllPackages({
     selectedDuration !== '' ||
     selectedDestinations.length > 0;
 
-  // BAGONG FUNCTION PARA SA PRICE INPUT VALIDATION
   const handlePriceChange = (value, type) => {
-    // RegEx: Hayaan ang empty string. Dapat ay 1-6 digits, at bawal magsimula sa 0 kung 2-6 digits.
-    // ^[1-9]\d{0,5}$ - 1 hanggang 9 na sinusundan ng 0-5 na digit (max 6 digits, bawal mag-umpisa sa 0)
-    // |^[0-9]{1}$    - o isang solong digit (na pwedeng 0-9)
     const validPattern = /^[1-9]\d{0,5}$|^[0-9]{1}$|^$/;
 
-    // Check para sa max length bago ang RegEx para sa mas maayos na user experience
     if (value.length > 6) {
         setPriceError('Maximum 6 digits only.');
         return;
@@ -134,27 +126,27 @@ function AllPackages({
     if (validPattern.test(value)) {
         if (value !== '' && parseInt(value) < 1) {
             setPriceError('Minimum price must be 1 or higher.');
-            // Huwag muna i-update ang state, o i-force ang value sa 1
             setPriceRange(prev => ({ ...prev, [type]: '1' })); 
             return;
         }
 
-        // I-clear ang error at i-update ang state
         setPriceError('');
         setPriceRange(prev => ({ ...prev, [type]: value }));
         
     } else {
-        // Kapag may invalid characters o nag-umpisa sa 0 na may kasunod
         if (value !== '') {
             setPriceError('Invalid input. Only digits (max 6) are allowed. Cannot start with 0 unless it is a single 0.');
         } else {
-            // Hayaan ang empty string na walang error
             setPriceError('');
             setPriceRange(prev => ({ ...prev, [type]: '' }));
         }
     }
   };
-  // END OF PRICE INPUT VALIDATION FUNCTION
+
+  // ============================================================
+  // CHECK IF USER NEEDS TO LOGIN FOR FAVORITES
+  // ============================================================
+  const showLoginPrompt = scopeFilter === 'favorites' && !isLoggedIn;
 
   return (
     <section className="all-packages-section" ref={packagesRef}>
@@ -240,26 +232,23 @@ function AllPackages({
               <label className="filter-label">Price Range ({currency})</label>
               <div className="price-inputs-container">
                 <input
-                  type="text" // Changed to type="text" to better control invalid characters
+                  type="text"
                   inputMode="numeric"
                   className={`price-input ${priceError ? 'input-error' : ''}`}
                   placeholder="Min (e.g., 1000)"
                   value={priceRange.min}
-                  // Ginamit ang bagong handler function
                   onChange={(e) => handlePriceChange(e.target.value, 'min')}
                 />
                 <span className="price-separator">-</span>
                 <input
-                  type="text" // Changed to type="text" to better control invalid characters
+                  type="text"
                   inputMode="numeric"
                   className={`price-input ${priceError ? 'input-error' : ''}`}
                   placeholder="Max (e.g., 50000)"
                   value={priceRange.max}
-                  // Ginamit ang bagong handler function
                   onChange={(e) => handlePriceChange(e.target.value, 'max')}
                 />
               </div>
-              {/* Pop-up/Notification para sa error */}
               {priceError && (
                 <div className="price-error-message">
                   {priceError}
@@ -353,7 +342,79 @@ function AllPackages({
           </div>
 
           <div className="packages-grid">
-            {currentPackages.length > 0 ? (
+            {/* ============================================================ */}
+            {/* SHOW LOGIN PROMPT IF NOT LOGGED IN AND FAVORITES TAB SELECTED */}
+            {/* ============================================================ */}
+            {showLoginPrompt ? (
+              <div className="login-required-message" style={{
+                gridColumn: '1 / -1',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '60px 20px',
+                textAlign: 'center',
+                backgroundColor: '#fff',
+                borderRadius: '12px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ 
+                  fontSize: '80px', 
+                  marginBottom: '24px',
+                  filter: 'drop-shadow(0 4px 8px rgba(255, 140, 0, 0.3))'
+                }}>
+                  ❤️
+                </div>
+                <h3 style={{ 
+                  color: '#1f2937', 
+                  margin: '0 0 12px 0',
+                  fontSize: '28px',
+                  fontWeight: '700'
+                }}>
+                  Login Required
+                </h3>
+                <p style={{ 
+                  color: '#6b7280', 
+                  margin: '0 0 32px 0',
+                  fontSize: '16px',
+                  maxWidth: '500px',
+                  lineHeight: '1.6'
+                }}>
+                  Please log in to view and manage your favorite packages. Create your personalized wishlist and never lose track of your dream destinations!
+                </p>
+                <button
+                  onClick={onLoginRequired}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '14px 32px',
+                    backgroundColor: '#FF8C00',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 12px rgba(255, 140, 0, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#e67e00';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 16px rgba(255, 140, 0, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = '#FF8C00';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(255, 140, 0, 0.3)';
+                  }}
+                >
+                  <LogIn size={20} />
+                  <span>Login to View Favorites</span>
+                </button>
+              </div>
+            ) : currentPackages.length > 0 ? (
               currentPackages.map(pkg => (
                 <PackageCard
                   key={pkg.id}
@@ -368,15 +429,40 @@ function AllPackages({
                 />
               ))
             ) : (
-              <div className="no-results">
-                <XCircle size={48} color="#cbd5e1" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
-                <h3 style={{ color: '#1f2937', margin: '0 0 8px 0' }}>No packages found</h3>
-                <p style={{ color: '#6b7280', margin: 0 }}>
+              <div className="no-results" style={{
+                gridColumn: '1 / -1',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '60px 20px'
+              }}>
+                <XCircle size={64} color="#cbd5e1" strokeWidth={1.5} style={{ marginBottom: '24px' }} />
+                <h3 style={{ color: '#1f2937', margin: '0 0 12px 0', fontSize: '24px' }}>No packages found</h3>
+                <p style={{ color: '#6b7280', margin: '0 0 24px 0', fontSize: '15px' }}>
                   Try adjusting your filters or search for something else.
                 </p>
                 <button
-                  style={{ marginTop: '24px', color: '#FF8C00', background: 'none', border: 'none', fontWeight: '600', cursor: 'pointer' }}
+                  style={{ 
+                    padding: '12px 24px',
+                    color: '#FF8C00', 
+                    background: 'none', 
+                    border: '2px solid #FF8C00', 
+                    borderRadius: '8px',
+                    fontWeight: '600', 
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s'
+                  }}
                   onClick={clearSidebarFilters}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#FF8C00';
+                    e.target.style.color = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = '#FF8C00';
+                  }}
                 >
                   Clear all filters
                 </button>
@@ -384,7 +470,7 @@ function AllPackages({
             )}
           </div>
 
-          {packages.length > itemsPerPage && (
+          {packages.length > itemsPerPage && !showLoginPrompt && (
             <div className="pagination-container">
               <button
                 className="pagination-btn"

@@ -921,25 +921,6 @@ const GeminiInputModal = ({ isOpen, onClose, onGenerate, mode }) => {
                         accept="image/*"
                         onChange={handleFileSelect}
                     />
-                    <button 
-                        type="button"
-                        onClick={() => fileInputRef.current.click()}
-                        title="Attach Reference Image"
-                        style={{
-                            background: "transparent",
-                            border: "none",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "5px",
-                            color: attachedImage ? "#0ea5e9" : "#94a3b8",
-                            fontSize: "12px",
-                            fontWeight: "600"
-                        }}
-                    >
-                        <Paperclip size={18} />
-                        {attachedImage ? "Change Image" : "Attach Image"}
-                    </button>
                 </div>
               </div>
 

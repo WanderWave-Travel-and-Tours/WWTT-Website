@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Eye, Calendar, User, FolderOpen, FileText, HelpCircle, Clock } from 'lucide-react'; 
+import { HelpCircle, Plus } from 'lucide-react'; // ✅ Using Plus Icon
 import Sidebar from '../sidebar/sidebar';
 import BlogDetailModal from './BlogDetailModal';
 import BlogPagination from './BlogPagination';
 import BlogFilters from './BlogFilters';
+import BlogsTable from './BlogsTable';
 import { useToast } from '../toast/ToastManager';
-import './viewblog.css';
+import './viewblog.css'; // ✅ Imported updated CSS
 
 // Custom Confirm Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -53,15 +54,19 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 
 const ViewBlog = () => {
     const toast = useToast();
+    
+    // ✅ STATE: Matches Standard Logic
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    
+    // ✅ Toggle Function
+    const toggleSidebar = () => setIsSidebarCollapsed(prev => !prev);
+
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // --- FILTERS STATE ---
+    // FILTERS
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('ALL');
-    
-    // Date Filter State
     const [dateStart, setDateStart] = useState('');
     const [dateEnd, setDateEnd] = useState('');
 
@@ -72,28 +77,15 @@ const ViewBlog = () => {
 
     // Modal State
     const [confirmConfig, setConfirmConfig] = useState({
-        isOpen: false,
-        title: "",
-        message: "",
-        onConfirm: () => {},
-        type: "primary"
+        isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
     });
     
     const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
-
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
-            isOpen: true,
-            title,
-            message,
-            onConfirm: () => {
-                onConfirm();
-                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-            },
+            isOpen: true, title, message,
+            onConfirm: () => { onConfirm(); setConfirmConfig(prev => ({ ...prev, isOpen: false })); },
             type
         });
     };
@@ -114,32 +106,24 @@ const ViewBlog = () => {
         setLoading(true);
         try {
             const response = await fetch(`${API_BASE_URL}/api/blogs`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch blogs');
-            }
+            if (!response.ok) throw new Error('Failed to fetch blogs');
             const data = await response.json();
             
-            // FILTER & FORMAT: Process data
             const processedBlogs = data.map(blog => {
-                // Determine which date to use (ScheduledAt if Scheduled, otherwise CreatedAt)
                 const isScheduled = blog.status === 'Scheduled' && blog.scheduledAt;
                 const dateToParse = isScheduled ? blog.scheduledAt : blog.createdAt;
-                
-                // Safe Date Parsing
                 const dateObj = dateToParse ? new Date(dateToParse) : null;
                 const isValidDate = dateObj && !isNaN(dateObj);
 
                 return {
                     ...blog,
-                    // Format for Filtering (YYYY-MM-DD)
                     filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
-                    // Format for Display (Jan 25, 2024)
                     displayDate: isValidDate ? dateObj.toLocaleDateString('en-US', {
                         year: 'numeric', month: 'short', day: 'numeric',
                         hour: isScheduled ? '2-digit' : undefined,
                         minute: isScheduled ? '2-digit' : undefined
                     }) : 'N/A',
-                    isScheduled // Helper flag
+                    isScheduled 
                 };
             });
             
@@ -168,19 +152,14 @@ const ViewBlog = () => {
 
     const performArchive = async (id) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/blogs/${id}`, {
-                method: 'DELETE',
-            });
+            const response = await fetch(`${API_BASE_URL}/api/blogs/${id}`, { method: 'DELETE' });
 
             if (response.ok) {
                 const updatedBlogs = blogs.filter(blog => blog._id !== id);
                 setBlogs(updatedBlogs);
                 toast.success('Blog archived successfully', 'Success');
-                
                 const maxPage = Math.ceil(updatedBlogs.length / itemsPerPage);
-                if (currentPage > maxPage && maxPage > 0) {
-                    setCurrentPage(maxPage);
-                }
+                if (currentPage > maxPage && maxPage > 0) setCurrentPage(maxPage);
             } else {
                 toast.error('Failed to archive blog', 'Error');
             }
@@ -190,12 +169,6 @@ const ViewBlog = () => {
         }
     };
 
-    const handleViewDetails = (blog) => {
-        setSelectedBlog(blog);
-        setShowDetailModal(true);
-    };
-
-    // ✅ NAVIGATE TO EDIT PAGE
     const handleEdit = (id) => {
         window.location.href = `/edit-blog/${id}`;
     };
@@ -208,172 +181,66 @@ const ViewBlog = () => {
         return imagePath;
     };
 
-    // ENHANCED FILTER LOGIC
     const filteredBlogs = blogs.filter(blog => {
-        // 1. Search Filter
         const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             blog.category.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        // 2. Category Filter
         const matchesCategory = filterCategory === 'ALL' || blog.category === filterCategory;
-        
-        // 3. Date Range Filter (Using filterDate)
         let matchesDate = true;
-        if (dateStart) {
-            matchesDate = matchesDate && blog.filterDate >= dateStart;
-        }
-        if (dateEnd) {
-            matchesDate = matchesDate && blog.filterDate <= dateEnd;
-        }
-
+        if (dateStart) matchesDate = matchesDate && blog.filterDate >= dateStart;
+        if (dateEnd) matchesDate = matchesDate && blog.filterDate <= dateEnd;
         return matchesSearch && matchesCategory && matchesDate;
     });
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentBlogs = filteredBlogs.slice(indexOfFirstItem, indexOfLastItem);
-
     const publishedBlogs = blogs.filter(b => (b.status || 'Published').toLowerCase() === 'published').length;
-
-    const mainClass = `vb-main ${isSidebarCollapsed ? 'vb-main--collapsed' : ''}`;
 
     return (
         <div className="vb-page">
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
-            <main className={mainClass}>
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            
+            {/* ✅ LAYOUT FIX: Uses 'expanded' class logic */}
+            <main className={`vb-main ${isSidebarCollapsed ? "expanded" : ""}`}>
                 <div className="vb-container">
+                    
+                    {/* ✅ HEADER UI: Matches Standard Design */}
                     <header className="vb-header">
                         <div className="vb-header-content">
                             <h1 className="vb-title">BLOG LIST</h1>
-                            <p className="vb-subtitle">
+                            <div className="vb-subtitle">
                                 Managing {blogs.length} active articles • {publishedBlogs} published
-                            </p>
+                            </div>
                         </div>
-                        <button className="vb-btn vb-btn--add" onClick={() => window.location.href='/add-blog'}>
-                            + Add New Blog
+                        
+                        <button className="vb-btn-add" onClick={() => window.location.href='/add-blog'}>
+                            <Plus size={18} strokeWidth={3} />
+                            ADD NEW BLOG
                         </button>
                     </header>
 
-                    {/* FILTERS */}
                     <BlogFilters
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        filterCategory={filterCategory}
-                        setFilterCategory={setFilterCategory}
-                        categoryOptions={categoryOptions}
-                        getFilterClassName={getFilterClassName}
-                        dateStart={dateStart}
-                        setDateStart={setDateStart}
-                        dateEnd={dateEnd}
-                        setDateEnd={setDateEnd}
+                        searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+                        filterCategory={filterCategory} setFilterCategory={setFilterCategory}
+                        categoryOptions={categoryOptions} getFilterClassName={getFilterClassName}
+                        dateStart={dateStart} setDateStart={setDateStart}
+                        dateEnd={dateEnd} setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
-                        <div className="vb-loading">
-                            <div className="vb-spinner"></div>
-                            <p>Loading articles from database...</p>
-                        </div>
+                        <div className="vb-loading"><div className="vb-spinner"></div><p>Loading articles...</p></div>
                     ) : blogs.length === 0 ? (
-                        <div className="vb-empty">
-                            <span className="vb-empty-icon">📝</span>
-                            <h3>No blogs yet</h3>
-                            <p>Start by adding your first blog article</p>
-                        </div>
+                        <div className="vb-empty"><h3>No blogs yet</h3></div>
                     ) : filteredBlogs.length === 0 ? (
-                        <div className="vb-empty">
-                            <span className="vb-empty-icon">🔍</span>
-                            <h3>No blogs found</h3>
-                            <p>Try adjusting your search or filter criteria</p>
-                        </div>
+                        <div className="vb-empty"><h3>No blogs found</h3></div>
                     ) : (
                         <>
-                            <div className="vb-table-wrapper">
-                                <table className="vb-table">
-                                    <thead>
-                                        <tr>
-                                            <th>PREVIEW</th>
-                                            <th>TITLE</th>
-                                            <th>EXCERPT</th>
-                                            <th>DATE</th>
-                                            <th>AUTHOR</th>
-                                            <th>CATEGORY</th>
-                                            <th>STATUS</th>
-                                            <th>ACTIONS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {currentBlogs.map((blog) => (
-                                            <tr key={blog._id}>
-                                                <td>
-                                                    <div className="vb-image-preview">
-                                                        <img 
-                                                            src={getImageUrl(blog.imageUrl)} 
-                                                            alt={blog.title}
-                                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250'; }}
-                                                        />
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="vb-blog-title">{blog.title}</span>
-                                                </td>
-                                                <td>
-                                                    <span className="vb-excerpt">
-                                                        {blog.content.substring(0, 100)}...
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {/* ✅ CONDITIONAL DATE DISPLAY */}
-                                                    <div className={`vb-date-added ${blog.isScheduled ? 'vb-date-scheduled' : ''}`}>
-                                                        {blog.isScheduled ? <Clock size={14} /> : <Calendar size={14} />}
-                                                        <span>{blog.displayDate}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div className="vb-author">
-                                                        <User size={14} />
-                                                        <span>{blog.author}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="vb-category">
-                                                        <FolderOpen size={12} />
-                                                        {blog.category}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className={`vb-status vb-status--${(blog.status || 'Published').toLowerCase()}`}>
-                                                        <FileText size={12} />
-                                                        {blog.status || 'Published'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="vb-actions">
-                                                        <button 
-                                                            className="vb-action-btn vb-action-btn--view"
-                                                            onClick={() => handleEdit(blog._id)} // Changed to Edit
-                                                            title="Edit Details"
-                                                        >
-                                                            <Eye size={16} />
-                                                            <span>Edit</span>
-                                                        </button>
-                                                        <button 
-                                                            className="vb-action-btn vb-action-btn--delete"
-                                                            onClick={() => handleArchive(blog._id)}
-                                                            title="Archive Blog"
-                                                        >
-                                                            <Archive size={16} />
-                                                            <span>Archive</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <BlogsTable 
+                                blogs={currentBlogs}
+                                handleEdit={handleEdit}
+                                handleArchive={handleArchive}
+                                getImageUrl={getImageUrl}
+                            />
                             
                             <BlogPagination
                                 totalItems={filteredBlogs.length}
@@ -388,21 +255,15 @@ const ViewBlog = () => {
 
             {showDetailModal && selectedBlog && (
                 <BlogDetailModal
-                    showModal={showDetailModal}
-                    selectedBlog={selectedBlog}
-                    setShowModal={setShowDetailModal}
-                    handleDelete={handleArchive} 
+                    showModal={showDetailModal} selectedBlog={selectedBlog}
+                    setShowModal={setShowDetailModal} handleDelete={handleArchive} 
                     getImageUrl={getImageUrl}
                 />
             )}
 
-            {/* Confirmation Modal Component Implementation */}
             <CustomConfirmModal 
-                isOpen={confirmConfig.isOpen}
-                title={confirmConfig.title}
-                message={confirmConfig.message}
-                type={confirmConfig.type}
-                onConfirm={confirmConfig.onConfirm}
+                isOpen={confirmConfig.isOpen} title={confirmConfig.title} message={confirmConfig.message}
+                type={confirmConfig.type} onConfirm={confirmConfig.onConfirm}
                 onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
         </div>

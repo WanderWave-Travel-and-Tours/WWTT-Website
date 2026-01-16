@@ -1,0 +1,144 @@
+/* WRAPPER & SCROLL CONTAINER */
+.ht-table-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    overflow: hidden; 
+    margin-top: 20px;
+}
+
+.ht-table-container {
+    width: 100%;
+    overflow-x: auto; /* ✅ SCROLLS HORIZONTALLY ON MOBILE */
+    padding-bottom: 5px; 
+}
+
+/* TABLE BASIC STYLES */
+.ht-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    /* ✅ FIXED MIN-WIDTH: Critical for preserving button layout */
+    min-width: 1500px; 
+}
+
+/* HEADER STYLES */
+.ht-table th { 
+    background-color: #0f172a; 
+    color: white; 
+    text-align: left; 
+    padding: 16px 24px; 
+    font-size: 12px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    white-space: nowrap; 
+}
+
+/* COLUMN WIDTHS */
+.ht-col-preview { width: 120px; }
+.ht-col-name { width: 250px; }
+.ht-col-location { width: 200px; }
+.ht-col-capacity { width: 120px; }
+.ht-col-date { width: 150px; }
+.ht-col-price { width: 120px; }
+.ht-col-amenities { width: 150px; }
+.ht-col-status { width: 120px; }
+.ht-col-actions { width: 200px; text-align: right !important; }
+
+/* CELL STYLES */
+.ht-table td { 
+    padding: 16px 24px; 
+    border-bottom: 1px solid #f1f5f9; 
+    color: #334155; 
+    font-size: 14px; 
+    font-weight: 500; 
+    vertical-align: middle; 
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ZEBRA STRIPING */
+.ht-table tbody tr:nth-child(odd) { background-color: white; }
+.ht-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+
+.ht-table tr:hover td { background-color: #f1f5f9; }
+.ht-table tr:last-child td { border-bottom: none; }
+
+/* --- CONTENT STYLES --- */
+
+/* Image Preview */
+.ht-image-preview {
+    width: 80px; height: 50px; border-radius: 6px; 
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+}
+.ht-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+.ht-no-image { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #94a3b8; }
+
+/* Name & Featured */
+.ht-name-cell { display: flex; flex-direction: column; gap: 4px; }
+.ht-hotel-name {
+    font-weight: 700; color: #0f172a; font-size: 14px; 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+}
+.ht-featured-badge {
+    font-size: 10px; padding: 2px 8px; background: #fef3c7; color: #d97706; 
+    border-radius: 6px; font-weight: 700; text-transform: uppercase; width: fit-content;
+}
+
+/* Location */
+.ht-location-cell { display: flex; align-items: center; gap: 6px; color: #475569; font-size: 13px; }
+.ht-icon { color: #94a3b8; flex-shrink: 0; }
+
+/* Badges */
+.ht-capacity-badge, .ht-amenities-badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; 
+    border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.ht-capacity-badge { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+.ht-amenities-badge { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+
+/* Date Added */
+.ht-date-added {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; 
+    color: #475569; background: #f8fafc; padding: 6px 12px; border-radius: 6px; 
+    border: 1px solid #e2e8f0; white-space: nowrap;
+}
+.ht-date-added svg { color: #94a3b8; }
+
+/* Price */
+.ht-price-value { font-weight: 700; color: #16a34a; font-size: 14px; }
+
+/* Status */
+.ht-status {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; 
+    border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+}
+.ht-status--active { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.ht-status--inactive { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+
+/* ACTIONS */
+.ht-action-group { display: flex; justify-content: flex-end; gap: 8px; width: 100%; }
+
+.ht-action-btn { 
+    height: 38px; padding: 0 16px; border-radius: 6px; font-size: 13px; 
+    font-weight: 600; cursor: pointer; display: flex; align-items: center; 
+    gap: 8px; transition: all 0.2s ease; white-space: nowrap; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.ht-view-btn { background: white; border: 1px solid #0f172a; color: #0f172a; }
+.ht-view-btn:hover { background: #0f172a; color: white; transform: translateY(-1px); }
+
+.ht-archive-btn { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
+.ht-archive-btn:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; transform: translateY(-1px); }
+
+.ht-empty-cell { text-align: center; padding: 60px; color: #64748b; font-size: 15px; }
+
+/* Scrollbar */
+.ht-table-container::-webkit-scrollbar { height: 8px; }
+.ht-table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.ht-table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.ht-table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

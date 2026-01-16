@@ -1,3 +1,4 @@
+// backend/models/activityLog.js - COMPLETE CODE WITH FAVORITES
 const mongoose = require('mongoose');
 
 const activityLogSchema = new mongoose.Schema({
@@ -22,6 +23,7 @@ const activityLogSchema = new mongoose.Schema({
             'Services', 
             'Hotels',      
             'Tours',
+            'Favorites',        // ✅ FAVORITES MODULE
             
             // Marketing & Content
             'Promos', 
@@ -30,13 +32,13 @@ const activityLogSchema = new mongoose.Schema({
             'Posters', 
             'Gallery',
             
-            // 🔥 SPECIFIC INQUIRY TYPES (INSTEAD OF GENERIC "Inquiries")
-            'Flight Booking',       // For FLIGHT_BOOKING inquiries
-            'Visa Application',     // For VISA inquiries
-            'Passport',            // For PASSPORT inquiries
-            'PSA Documents',       // For PSA inquiries
-            'CENOMAR',            // For CENOMAR inquiries
-            'General Inquiries',   // For other/general inquiries
+            // Specific Inquiry Types
+            'Flight Booking',
+            'Visa Application',
+            'Passport',
+            'PSA Documents',
+            'CENOMAR',
+            'General Inquiries',
             
             // System
             'System'
@@ -92,7 +94,6 @@ const activityLogSchema = new mongoose.Schema({
         default: 'N/A' 
     },
     
-    // 🔥 ENHANCED DETAILS FIELD
     details: {
         recordTitle: { type: String, default: null },
         recordId: { type: String, default: null },
@@ -102,7 +103,7 @@ const activityLogSchema = new mongoose.Schema({
         endpoint: { type: String, default: 'N/A' },
         
         // Inquiry-specific fields
-        inquiryType: { type: String, default: null },      // 🔥 Store original inquiry type
+        inquiryType: { type: String, default: null },
         serviceName: { type: String, default: null },
         clientName: { type: String, default: null },
         clientEmail: { type: String, default: null },
@@ -133,6 +134,6 @@ activityLogSchema.index({ module: 1 });
 activityLogSchema.index({ user: 1 });
 activityLogSchema.index({ severity: 1 });
 activityLogSchema.index({ 'details.fileUrl': 1 });
-activityLogSchema.index({ 'details.inquiryType': 1 }); // 🔥 NEW: Index for inquiry types
+activityLogSchema.index({ 'details.inquiryType': 1 });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

@@ -83,6 +83,7 @@ const sellerRateRoutes = require('./routes/sellerRoute');
 const activityLogRoute = require('./routes/activityLogRoute'); // ✅ SINGLE IMPORT
 const draftsRoutes = require('./routes/drafts');
 const activityLogsRoutes = require('./routes/activityLogRoute');
+const favoriteRoute = require('./routes/favoriteRoute');
 
 // ===================================================================
 // ENSURE UPLOAD DIRECTORY EXISTS
@@ -265,6 +266,7 @@ app.use('/api/seller-rates', sellerRateRoutes);
 app.use('/api/activity-logs', activityLogRoute); // ✅ SINGLE REGISTRATION
 app.use('/api/drafts', require('./routes/drafts'));
 app.use('/api/activity-logs', activityLogRoute); // ✅ Already there!
+app.use('/api/favorites', favoriteRoute);
 
 
 // ===================================================================

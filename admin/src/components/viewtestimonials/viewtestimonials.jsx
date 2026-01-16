@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Trash2, Eye, Calendar, User, Star, StarHalf, MessageSquare, HelpCircle } from 'lucide-react'; 
+import React, { useState, useEffect } from 'react';
+import { HelpCircle, Plus } from 'lucide-react'; // ✅ Using Plus Icon
 import Sidebar from '../sidebar/sidebar';
 import TestimonialDetailModal from './TestimonialDetailModal';
 import TestimonialPagination from './TestimonialPagination';
 import TestimonialFilters from './TestimonialFilters';
-import { useToast } from '../toast/ToastManager'; // Inimport ang Toast
-import './viewtestimonials.css';
+import TestimonialsTable from './TestimonialsTable';
+import { useToast } from '../toast/ToastManager';
+import './viewtestimonials.css'; // ✅ Imported updated CSS
 
-// Custom Confirm Modal Component (Reference from EditVisa.jsx)
+// Custom Confirm Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -52,20 +53,20 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 };
 
 const ViewTestimonials = () => {
-    const toast = useToast(); // Initialize Toast
+    const toast = useToast();
+    
+    // ✅ STATE: Matches Standard Logic
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
+    
+    // ✅ Toggle Function
+    const toggleSidebar = () => setIsSidebarCollapsed(prev => !prev);
 
     const [testimonials, setTestimonials] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // --- FILTERS STATE ---
+    // FILTERS
     const [searchTerm, setSearchTerm] = useState('');
     const [filterSource, setFilterSource] = useState('ALL');
-    
-    // ✅ ADDED: Date Filter State
     const [dateStart, setDateStart] = useState('');
     const [dateEnd, setDateEnd] = useState('');
 
@@ -74,7 +75,7 @@ const ViewTestimonials = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedTestimonial, setSelectedTestimonial] = useState(null);
 
-    // Modal State for Confirmation
+    // Modal State
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
         title: "",
@@ -87,13 +88,8 @@ const ViewTestimonials = () => {
 
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
-            isOpen: true,
-            title,
-            message,
-            onConfirm: () => {
-                onConfirm();
-                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-            },
+            isOpen: true, title, message,
+            onConfirm: () => { onConfirm(); setConfirmConfig(prev => ({ ...prev, isOpen: false })); },
             type
         });
     };
@@ -114,22 +110,16 @@ const ViewTestimonials = () => {
         setLoading(true);
         try {
             const response = await fetch(`${API_BASE_URL}/api/testimonials`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch testimonials');
-            }
+            if (!response.ok) throw new Error('Failed to fetch testimonials');
             const data = await response.json();
             
-            // ✅ Format data with proper date fields
             const processedData = (Array.isArray(data) ? data : []).map(testimonial => {
-                // Safe Date Parsing
                 const dateObj = testimonial.createdAt ? new Date(testimonial.createdAt) : null;
                 const isValidDate = dateObj && !isNaN(dateObj);
 
                 return {
                     ...testimonial,
-                    // Format for Filtering (YYYY-MM-DD)
                     filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
-                    // Format for Display (Jan 25, 2024)
                     displayDateAdded: isValidDate ? dateObj.toLocaleDateString('en-US', {
                         year: 'numeric', month: 'short', day: 'numeric'
                     }) : 'N/A'
@@ -190,173 +180,66 @@ const ViewTestimonials = () => {
         return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}/uploads/${imagePath}`;
     };
 
-    const formatRating = (rating) => {
-        if (rating === undefined || rating === null) return '5.0'; 
-        return Number(rating).toFixed(1);
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric'
-        });
-    };
-
-    // ✅ ENHANCED FILTER LOGIC
-    const filteredTestimonials = testimonials
-        .filter(testimonial => {
-            // 1. Archive Check
-            const isNotArchived = 
-                testimonial.isArchive === "No" || 
-                testimonial.isArchive === "0" || 
-                !testimonial.isArchive || 
-                testimonial.isArchive === false;
-
-            // 2. Search Filter
-            const matchesSearch = 
-                (testimonial.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (testimonial.feedback || "").toLowerCase().includes(searchTerm.toLowerCase());
-                
-            // 3. Source Filter
-            const matchesSource = filterSource === 'ALL' || testimonial.source === filterSource;
-            
-            // 4. ✅ Date Range Filter
-            let matchesDate = true;
-            if (dateStart) {
-                matchesDate = matchesDate && testimonial.filterDate >= dateStart;
-            }
-            if (dateEnd) {
-                matchesDate = matchesDate && testimonial.filterDate <= dateEnd;
-            }
-            
-            return isNotArchived && matchesSearch && matchesSource && matchesDate;
-        })
-        // ITO ANG DINAGDAG: Sort by date descending (Newest first)
-        .sort((a, b) => {
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        });
+    // FILTER LOGIC
+    const filteredTestimonials = testimonials.filter(testimonial => {
+        const isNotArchived = testimonial.isArchive === "No" || testimonial.isArchive === "0" || !testimonial.isArchive || testimonial.isArchive === false;
+        const matchesSearch = (testimonial.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              (testimonial.feedback || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSource = filterSource === 'ALL' || testimonial.source === filterSource;
+        let matchesDate = true;
+        if (dateStart) matchesDate = matchesDate && testimonial.filterDate >= dateStart;
+        if (dateEnd) matchesDate = matchesDate && testimonial.filterDate <= dateEnd;
+        return isNotArchived && matchesSearch && matchesSource && matchesDate;
+    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentTestimonials = filteredTestimonials.slice(indexOfFirstItem, indexOfLastItem);
-
     const activeTestimonialsCount = testimonials.filter(t => t.isArchive === "No" || t.isArchive === "0" || !t.isArchive).length;
 
     return (
         <div className="vt-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            <main className={`vt-main ${isSidebarCollapsed ? 'vt-main--collapsed' : ''}`}>
+            
+            {/* ✅ LAYOUT FIX: Uses 'expanded' class logic */}
+            <main className={`vt-main ${isSidebarCollapsed ? "expanded" : ""}`}>
                 <div className="vt-container">
+                    
+                    {/* ✅ HEADER UI: Matches Standard Design */}
                     <header className="vt-header">
                         <div className="vt-header-content">
                             <h1 className="vt-title">TESTIMONIALS</h1>
-                            <p className="vt-subtitle">
+                            <div className="vt-subtitle">
                                 Managing {testimonials.length} testimonials • {activeTestimonialsCount} active
-                            </p>
+                            </div>
                         </div>
-                        <button className="vt-btn vt-btn--add" onClick={() => window.location.href='/add-testimonial'}>
-                            + Add New Testimonial
+                        
+                        <button className="vt-btn-add" onClick={() => window.location.href='/add-testimonial'}>
+                            <Plus size={18} strokeWidth={3} />
+                            ADD NEW TESTIMONIAL
                         </button>
                     </header>
 
-                    {/* ✅ PASSED NEW PROPS TO FILTERS */}
                     <TestimonialFilters
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
                         filterSource={filterSource} setFilterSource={setFilterSource}
                         sourceOptions={sourceOptions} getFilterClassName={getFilterClassName}
-                        dateStart={dateStart}
-                        setDateStart={setDateStart}
-                        dateEnd={dateEnd}
-                        setDateEnd={setDateEnd}
+                        dateStart={dateStart} setDateStart={setDateStart}
+                        dateEnd={dateEnd} setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
-                        <div className="vt-loading">
-                            <div className="vt-spinner"></div>
-                            <p>Loading testimonials from database...</p>
-                        </div>
+                        <div className="vt-loading"><div className="vt-spinner"></div><p>Loading testimonials...</p></div>
                     ) : filteredTestimonials.length === 0 ? (
-                        <div className="vt-empty">
-                            <span className="vt-empty-icon">{testimonials.length === 0 ? '📪' : '🔍'}</span>
-                            <h3>{testimonials.length === 0 ? 'No testimonials yet' : 'No testimonials found'}</h3>
-                            <p>{testimonials.length === 0 ? 'Start by adding your first customer testimonial' : 'Try adjusting your search or filter criteria'}</p>
-                        </div>
+                        <div className="vt-empty"><h3>No testimonials found</h3></div>
                     ) : (
                         <>
-                            <div className="vt-table-wrapper">
-                                <table className="vt-table">
-                                    <thead>
-                                        <tr>
-                                            <th>CUSTOMER</th>
-                                            <th>FEEDBACK</th>
-                                            {/* ✅ NEW COLUMN */}
-                                            <th>DATE ADDED</th>
-                                            <th>SOURCE</th>
-                                            <th>RATING</th>
-                                            <th>STATUS</th>
-                                            <th>ACTIONS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {currentTestimonials.map((testimonial) => (
-                                            <tr key={testimonial._id}>
-                                                <td>
-                                                    <div className="vt-customer-cell">
-                                                        <div className="vt-image-preview">
-                                                            <img 
-                                                                src={getImageUrl(testimonial.customerImage)} 
-                                                                alt=""
-                                                                onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
-                                                            />
-                                                        </div>
-                                                        <span className="vt-customer-name">{testimonial.customerName}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="vt-excerpt">
-                                                        {testimonial.feedback?.substring(0, 80)}...
-                                                    </span>
-                                                </td>
-                                                {/* ✅ DATE ADDED DISPLAY */}
-                                                <td>
-                                                    <div className="vt-date-added">
-                                                        <Calendar size={14} />
-                                                        <span>{testimonial.displayDateAdded}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div className="vt-source">
-                                                        <MessageSquare size={14} />
-                                                        <span>{testimonial.source}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="vt-rating">
-                                                        <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                                                        5.0 Stars
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className="vt-status vt-status--active">
-                                                        <MessageSquare size={12} />
-                                                        Active
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="vt-actions">
-                                                        <button className="vt-action-btn vt-action-btn--view" onClick={() => handleViewDetails(testimonial)}>
-                                                            <Eye size={16} /> <span>View</span>
-                                                        </button>
-                                                        <button className="vt-action-btn vt-action-btn--delete" onClick={() => handleArchive(testimonial._id, testimonial.customerName)}>
-                                                            <Trash2 size={16} /> <span>Archive</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <TestimonialsTable 
+                                testimonials={currentTestimonials}
+                                handleViewDetails={handleViewDetails}
+                                handleArchive={handleArchive}
+                                getImageUrl={getImageUrl}
+                            />
                             
                             <TestimonialPagination
                                 totalItems={filteredTestimonials.length}
@@ -369,24 +252,17 @@ const ViewTestimonials = () => {
                 </div>
             </main>
 
-            {/* Testimonial Detail Modal */}
             {showDetailModal && selectedTestimonial && (
                 <TestimonialDetailModal
-                    showModal={showDetailModal}
-                    selectedTestimonial={selectedTestimonial}
-                    setShowModal={setShowDetailModal}
-                    handleArchive={handleArchive}
+                    showModal={showDetailModal} selectedTestimonial={selectedTestimonial}
+                    setShowModal={setShowDetailModal} handleArchive={handleArchive}
                     getImageUrl={getImageUrl}
                 />
             )}
 
-            {/* Custom Confirmation Modal */}
             <CustomConfirmModal 
-                isOpen={confirmConfig.isOpen}
-                title={confirmConfig.title}
-                message={confirmConfig.message}
-                type={confirmConfig.type}
-                onConfirm={confirmConfig.onConfirm}
+                isOpen={confirmConfig.isOpen} title={confirmConfig.title} message={confirmConfig.message}
+                type={confirmConfig.type} onConfirm={confirmConfig.onConfirm}
                 onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
         </div>

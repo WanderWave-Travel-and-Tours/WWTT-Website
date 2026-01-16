@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Eye, MapPin, Users, Home, CheckCircle, HelpCircle, X, Calendar } from 'lucide-react';
+import { HelpCircle, Plus } from 'lucide-react'; // ✅ Using Plus Icon
 import Sidebar from '../sidebar/sidebar';
 import ViewHotelModal from './ViewHotelModal';
 import HotelPagination from './HotelPagination';
 import HotelFilters from './HotelFilters';
+import HotelsTable from './HotelsTable';
 import { useToast } from '../toast/ToastManager';
-import './viewhotel.css';
+import './viewhotel.css'; // ✅ Imported updated CSS
 
 const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
@@ -55,10 +56,12 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 
 const ViewHotels = () => {
   const toast = useToast();
+  
+  // ✅ STATE: Matches Standard Logic
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
+  
+  // ✅ Toggle Function
+  const toggleSidebar = () => setIsSidebarCollapsed(prev => !prev);
 
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -67,8 +70,6 @@ const ViewHotels = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCity, setFilterCity] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
-  
-  // ✅ UPDATED: Single Date Filter State
   const [selectedDate, setSelectedDate] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -78,22 +79,13 @@ const ViewHotels = () => {
 
   // Modal State
   const [confirmConfig, setConfirmConfig] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: () => {},
-    type: "primary"
+    isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
   });
 
   const askConfirmation = (title, message, onConfirm, type = "primary") => {
     setConfirmConfig({
-      isOpen: true,
-      title,
-      message,
-      onConfirm: () => {
-        onConfirm();
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-      },
+      isOpen: true, title, message,
+      onConfirm: () => { onConfirm(); setConfirmConfig(prev => ({ ...prev, isOpen: false })); },
       type
     });
   };
@@ -120,22 +112,18 @@ const ViewHotels = () => {
       
       clearTimeout(timeoutId);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
       const data = await response.json();
       if (data.success && Array.isArray(data.data)) {
         const initializedData = data.data.map(hotel => {
-            // ✅ Date Processing
             const dateObj = hotel.createdAt ? new Date(hotel.createdAt) : null;
             const isValidDate = dateObj && !isNaN(dateObj);
 
             return {
                 ...hotel,
                 isArchive: hotel.isArchive || "No",
-                // ✅ Format for Filtering (YYYY-MM-DD)
                 filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
-                // ✅ Format for Display (Jan 25, 2024)
                 displayDateAdded: isValidDate ? dateObj.toLocaleDateString('en-US', {
                     year: 'numeric', month: 'short', day: 'numeric'
                 }) : 'N/A'
@@ -146,10 +134,8 @@ const ViewHotels = () => {
       }
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.error('Request timeout - server too slow');
-        toast.error('Server is taking too long to respond. Please check your connection.', 'Timeout');
+        toast.error('Server is taking too long to respond.', 'Timeout');
       } else {
-        console.error('Error fetching hotels:', error);
         toast.error('Failed to fetch hotels.', 'Error');
       }
     } finally {
@@ -174,9 +160,7 @@ const ViewHotels = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/hotels/archive/${hotelId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
 
       const data = await response.json();
@@ -189,8 +173,7 @@ const ViewHotels = () => {
         toast.error('Error archiving hotel: ' + data.message, 'Failed');
       }
     } catch (error) {
-      console.error('Error archiving hotel:', error);
-      toast.error('Failed to archive hotel: ' + error.message, 'Server Error');
+      toast.error('Failed to archive hotel.', 'Server Error');
     }
   };
 
@@ -207,35 +190,24 @@ const ViewHotels = () => {
     let imagePath = null;
     if (hotel.mainImage) {
       imagePath = hotel.mainImage;
-    } 
-    else if (hotel.images && hotel.images.length > 0) {
+    } else if (hotel.images && hotel.images.length > 0) {
       imagePath = typeof hotel.images[0] === 'string' ? hotel.images[0] : hotel.images[0].url;
     }
 
     if (!imagePath) return null;
-
-    if (imagePath.startsWith('data:') || imagePath.startsWith('blob:') || imagePath.startsWith('http')) {
-      return imagePath;
-    }
+    if (imagePath.startsWith('data:') || imagePath.startsWith('blob:') || imagePath.startsWith('http')) return imagePath;
 
     let cleanPath = imagePath.replace(/\\/g, '/');
     if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
-
-    if (cleanPath.startsWith('uploads/')) {
-        return `${API_BASE_URL}/${cleanPath}`;
-    }
+    if (cleanPath.startsWith('uploads/')) return `${API_BASE_URL}/${cleanPath}`;
     
     return `${API_BASE_URL}/uploads/${cleanPath}`;
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP'
-    }).format(price);
+    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
   };
 
-  // ✅ ENHANCED FILTER LOGIC (Single Date)
   const filteredHotels = hotels.filter(hotel => {
     const isNotArchived = (hotel.isArchive || "No") === "No";
     const matchesSearch = hotel.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -243,19 +215,12 @@ const ViewHotels = () => {
                           hotel.city?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCity = filterCity === 'ALL' || hotel.city === filterCity;
     let matchesStatus = true;
-    if (filterStatus === 'Active') {
-      matchesStatus = hotel.isActive === true;
-    } else if (filterStatus === 'Inactive') {
-      matchesStatus = hotel.isActive === false;
-    } else if (filterStatus === 'Featured') {
-      matchesStatus = hotel.featured === true;
-    }
+    if (filterStatus === 'Active') matchesStatus = hotel.isActive === true;
+    else if (filterStatus === 'Inactive') matchesStatus = hotel.isActive === false;
+    else if (filterStatus === 'Featured') matchesStatus = hotel.featured === true;
 
-    // ✅ Single Date Filter (Exact Match)
     let matchesDate = true;
-    if (selectedDate) {
-        matchesDate = hotel.filterDate === selectedDate;
-    }
+    if (selectedDate) matchesDate = hotel.filterDate === selectedDate;
 
     return isNotArchived && matchesSearch && matchesCity && matchesStatus && matchesDate;
   });
@@ -267,16 +232,15 @@ const ViewHotels = () => {
   const activeHotelsCount = hotels.filter(h => h.isActive && (h.isArchive || "No") === "No").length;
   const featuredHotelsCount = hotels.filter(h => h.featured && (h.isArchive || "No") === "No").length;
 
-  const mainClass = `vh-main ${isSidebarCollapsed ? 'vh-main--collapsed' : ''}`;
-
   return (
     <div className="vh-page">
-      <Sidebar 
-        isCollapsed={isSidebarCollapsed} 
-        toggleSidebar={toggleSidebar} 
-      />
-      <main className={mainClass}>
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+      
+      {/* ✅ LAYOUT FIX: Uses 'expanded' class logic */}
+      <main className={`vh-main ${isSidebarCollapsed ? "expanded" : ""}`}>
         <div className="vh-container">
+          
+          {/* ✅ HEADER UI: Matches Standard Design */}
           <header className="vh-header">
             <div className="vh-header-content">
               <h1 className="vh-title">HOTEL LIST</h1>
@@ -284,167 +248,34 @@ const ViewHotels = () => {
                 Managing {filteredHotels.length} properties • {activeHotelsCount} active • {featuredHotelsCount} featured
               </p>
             </div>
-            <button className="vh-btn vh-btn--add" onClick={() => window.location.href='/add-hotel'}>
-              + Add New Hotel
+            <button className="vh-btn-add" onClick={() => window.location.href='/add-hotel'}>
+              <Plus size={18} strokeWidth={3} />
+              ADD NEW HOTEL
             </button>
           </header>
 
-          {/* ✅ PASSED SINGLE DATE PROP */}
           <HotelFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            filterCity={filterCity}
-            setFilterCity={setFilterCity}
-            filterStatus={filterStatus}
-            setFilterStatus={setFilterStatus}
-            cityOptions={cityOptions}
-            statusOptions={statusOptions}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
+            searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+            filterCity={filterCity} setFilterCity={setFilterCity}
+            filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+            cityOptions={cityOptions} statusOptions={statusOptions}
+            selectedDate={selectedDate} setSelectedDate={setSelectedDate}
           />
 
           {loading ? (
-            <div className="vh-loading">
-              <div className="vh-spinner"></div>
-              <p>Loading hotels from database...</p>
-            </div>
+            <div className="vh-loading"><div className="vh-spinner"></div><p>Loading hotels...</p></div>
           ) : filteredHotels.length === 0 ? (
-            <div className="vh-empty">
-              <span className="vh-empty-icon">{hotels.length === 0 ? "🏨" : "🔍"}</span>
-              <h3>{hotels.length === 0 ? "No hotels yet" : "No hotels found"}</h3>
-              <p>{hotels.length === 0 ? "Start by adding your first hotel" : "Try adjusting your search or filter criteria"}</p>
-            </div>
+            <div className="vh-empty"><h3>No hotels found</h3></div>
           ) : (
             <>
-              <div className="vh-table-wrapper">
-                <table className="vh-table">
-                  <thead>
-                    <tr>
-                      <th>PREVIEW</th>
-                      <th>HOTEL NAME</th>
-                      <th>LOCATION</th>
-                      <th>CAPACITY</th>
-                      {/* ✅ NEW DATE ADDED COLUMN */}
-                      <th>DATE ADDED</th>
-                      <th>PRICE</th>
-                      <th>AMENITIES</th>
-                      <th>STATUS</th>
-                      <th>ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentHotels.map((hotel) => {
-                      const amenitiesCount = hotel.amenities 
-                        ? Object.values(hotel.amenities).filter(Boolean).length 
-                        : 0;
-                      
-                      const imageUrl = getImageUrl(hotel);
-                      
-                      return (
-                        <tr key={hotel._id}>
-                          <td>
-                            <div className="vh-image-preview">
-                              {imageUrl ? (
-                                <img 
-                                  src={imageUrl} 
-                                  alt={hotel.name}
-                                  onError={(e) => { 
-                                      e.target.onerror = null; 
-                                      e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; 
-                                  }}
-                                />
-                              ) : (
-                                <div style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: '#f1f5f9',
-                                  color: '#94a3b8'
-                                }}>
-                                  <Home size={20} />
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <span className="vh-hotel-name">{hotel.name}</span>
-                            {hotel.featured && (
-                              <span style={{
-                                marginLeft: '8px',
-                                fontSize: '10px',
-                                padding: '2px 8px',
-                                background: '#fef3c7',
-                                color: '#d97706',
-                                borderRadius: '6px',
-                                fontWeight: '700',
-                                textTransform: 'uppercase'
-                              }}>
-                                ⭐ Featured
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            <div className="vh-location-cell">
-                              <MapPin size={14} />
-                              <span>{hotel.location || hotel.city || 'N/A'}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="vh-capacity-badge">
-                              <Users size={12} />
-                              {hotel.maxCapacity || 4} Pax
-                            </span>
-                          </td>
-                          {/* ✅ DATE ADDED DISPLAY */}
-                          <td>
-                            <div className="vh-date-added">
-                                <Calendar size={14} />
-                                <span>{hotel.displayDateAdded}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="vh-price-value">{formatPrice(hotel.price || 0)}</span>
-                          </td>
-                          <td>
-                            <span className="vh-amenities-badge">
-                              <CheckCircle size={12} />
-                              {amenitiesCount} Amenities
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`vh-status vh-status--${hotel.isActive ? 'active' : 'inactive'}`}>
-                              <Home size={12} />
-                              {hotel.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="vh-actions">
-                              <button 
-                                className="vh-action-btn vh-action-btn--view"
-                                onClick={() => handleViewDetails(hotel)}
-                                title="View Details"
-                              >
-                                <Eye size={16} />
-                                <span>View</span>
-                              </button>
-                              <button 
-                                className="vh-action-btn vh-action-btn--delete"
-                                onClick={() => handleArchive(hotel._id, hotel.name)}
-                                title="Archive"
-                              >
-                                <Archive size={16} />
-                                <span>Archive</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {/* ✅ NEW ISOLATED TABLE COMPONENT */}
+              <HotelsTable 
+                hotels={currentHotels}
+                handleViewDetails={handleViewDetails}
+                handleArchive={handleArchive}
+                getImageUrl={getImageUrl}
+                formatPrice={formatPrice}
+              />
               
               <HotelPagination
                 totalItems={filteredHotels.length}
@@ -466,13 +297,9 @@ const ViewHotels = () => {
         />
       )}
 
-      {/* Confirmation Modal Component */}
       <CustomConfirmModal 
-        isOpen={confirmConfig.isOpen}
-        title={confirmConfig.title}
-        message={confirmConfig.message}
-        type={confirmConfig.type}
-        onConfirm={confirmConfig.onConfirm}
+        isOpen={confirmConfig.isOpen} title={confirmConfig.title} message={confirmConfig.message}
+        type={confirmConfig.type} onConfirm={confirmConfig.onConfirm}
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
