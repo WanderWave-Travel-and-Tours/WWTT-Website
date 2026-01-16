@@ -4,6 +4,9 @@ import { Menu, X, Globe } from 'lucide-react';
 import axios from 'axios';
 import './App.css'; 
 
+// --- TOAST IMPORTS ---
+import { ToastProvider } from './components/toast/ToastManager'; // Siguraduhin na tama ang path na ito
+
 // --- IMPORTS ---
 import FlightSearch from './components/flightSearch/flightSearch.jsx';
 import PackageDeals from './components/packageDeals/packageDeals.jsx';
@@ -290,7 +293,6 @@ function MainLayout() {
     window.location.href = '/dashboard';
   };
 
-  // ⭐ CRITICAL FIX: Handle /login route - Return ONLY UserAuth component like the OLD code
   const handleAuthPageChange = (page) => {
     if (page === 'main') {
       setAuthPage(null);
@@ -326,15 +328,12 @@ function MainLayout() {
     key => location.pathname === pages[key].path
   ) || 'packages';
 
-  // ⭐ CRITICAL FIX: Check if on /login route - if yes, return ONLY UserAuth
   const isLoginPage = location.pathname === '/login';
   
-  // Show loading while checking for saved user
   if (isLoadingUser) {
     return null;
   }
 
-  // ⭐ CRITICAL FIX: If authPage is set OR on /login route, return ONLY UserAuth (no navbar, no wrapper)
   if (authPage === 'login' || authPage === 'signup' || isLoginPage) {
     return <UserAuth setAuthPage={handleAuthPageChange} onLoginSuccess={handleLoginSuccess} />;
   }
@@ -521,9 +520,7 @@ function MainLayout() {
 
       <main className="main-content">
         <Routes>
-          {/* ⭐ Login route - but this will never render because we return early above */}
           <Route path="/login" element={<div>Login</div>} />
-          
           <Route path="/flights" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
           <Route path="/packages/:code" element={<PackageBookingWrapper />} />
@@ -553,10 +550,13 @@ function MainLayout() {
   );
 }
 
+// ⭐ PINAKAMAHALAGANG UPDATE: Dito binalot ang buong App sa ToastProvider
 function App() {
   return (
     <BrowserRouter>
-      <MainLayout />
+      <ToastProvider> 
+        <MainLayout />
+      </ToastProvider>
     </BrowserRouter>
   );
 }
