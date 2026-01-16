@@ -10,7 +10,11 @@ const BookingFilters = ({
   statusOptions, 
   paymentFilter,
   setPaymentFilter,
-  paymentOptions
+  paymentOptions,
+  typeFilter,
+  setTypeFilter,
+  typeOptions,
+  getTypeFilterClassName
 }) => {
   return (
     <div className="bkm-filter-card">
@@ -58,6 +62,25 @@ const BookingFilters = ({
                             className="bkm-select"
                         >
                             {paymentOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label.toUpperCase()}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="bkm-select-icon" size={14} />
+                    </div>
+                </div>
+
+                {/* Type Filter (NEW) */}
+                <div className="bkm-filter-item">
+                    <label>Type:</label>
+                    <div className="bkm-select-wrapper">
+                        <select 
+                            value={typeFilter} 
+                            onChange={(e) => setTypeFilter(e.target.value)}
+                            className="bkm-select"
+                        >
+                            {typeOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
                                     {option.label.toUpperCase()}
                                 </option>

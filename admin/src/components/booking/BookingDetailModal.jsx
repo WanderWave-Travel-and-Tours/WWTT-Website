@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store } from 'lucide-react';
 import './BookingDetailModal.css'; 
 import VoucherPreviewModal from './VoucherPreviewModal';
 
@@ -149,6 +149,11 @@ export const BookingDetailModal = ({
     const isFullyPaid = balancePaid > 0 && remainingBalance <= 0;
     const isPendingPayment = !isPartialPayment && status === 'PENDING';
 
+    // ✅ NEW: Payment Method Logic
+    const isWalkin = selectedBooking.isWalkin || false;
+    const paymentMethod = isWalkin ? 'Pay Over the Counter' : 'Online Payment';
+    const PaymentMethodIcon = isWalkin ? Store : Smartphone;
+
     return (
         <>
             <div className="modal-overlay" onClick={closeModal}>
@@ -229,8 +234,22 @@ export const BookingDetailModal = ({
                             </div>
                             
                             <div className="cnm-payment-body">
-                                {/* Payment Type and Total */}
+                                {/* Payment Method and Type */}
                                 <div className="cnm-payment-section">
+                                    {/* ✅ NEW: Payment Method Row */}
+                                    <div className="cnm-payment-row">
+                                        <span className="cnm-payment-label">
+                                            
+                                            Payment Method:
+                                        </span>
+                                        <span className="cnm-payment-value" style={{
+                                            color: isWalkin ? '#ea580c' : '#0284c7',
+                                            fontWeight: '800'
+                                        }}>
+                                            {paymentMethod}
+                                        </span>
+                                    </div>
+
                                     <div className="cnm-payment-row">
                                         <span className="cnm-payment-label">Payment Type:</span>
                                         <span className="cnm-payment-value">
