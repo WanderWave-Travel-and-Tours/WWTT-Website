@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import './UserLogin.css';
-// Import icons
-import { Mail, CheckCircle, XCircle } from 'lucide-react'; 
+// Import icons (Added Eye and EyeOff)
+import { Mail, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react'; 
 // Import Toast Hook
 import { useToast } from '../toast/ToastManager';
 
@@ -11,8 +11,6 @@ const API_BASE_URL = 'http://localhost:5000/api/auth';
 // --- OTP Verification Form Component (Modal) ---
 const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading }) => {
     const [otpCode, setOtpCode] = useState('');
-    
-    // Note: 'error' prop was removed from UI rendering as we now use Toasts
     
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -48,8 +46,6 @@ const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading })
                         />
                     </div>
                     
-                    {/* Error message text removed here in favor of Toast notifications */}
-
                     <div className="otp-actions">
                         <button
                             type="submit"
@@ -95,6 +91,11 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    
+    // NEW STATES for Password Visibility
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
@@ -150,6 +151,8 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         setErrorMessage('');
         setOtpError('');
         setRecaptchaToken(null);
+        setShowPassword(false); // Reset visibility
+        setShowConfirmPassword(false); // Reset visibility
         if (recaptchaRef.current) {
             recaptchaRef.current.reset();
         }
@@ -172,17 +175,15 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    email: tempEmailForVerification, // Use the stored email
+                    email: tempEmailForVerification,
                 }),
             });
 
             const data = await res.json();
             
             if (res.ok) {
-                // Success: New OTP sent - REPLACED ALERT WITH TOAST
                 toast.success(data.message || 'New verification code has been sent!', 'OTP Resent');
             } else {
-                // Error during resend request - REPLACED STATE ERROR WITH TOAST
                 const msg = data.message || 'Failed to resend code. Please try again.';
                 setOtpError(msg);
                 toast.error(msg, 'Resend Failed');
@@ -199,13 +200,12 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     }
 
 
-    // 1. Initial Signup Request (Send OTP) - Used when isSignup is true
+    // 1. Initial Signup Request (Send OTP)
     const handleSignup = async (e) => {
         e.preventDefault();
         setErrorMessage('');
 
         if (!recaptchaToken) {
-            // REPLACED INLINE ERROR WITH TOAST
             const msg = 'Please complete the reCAPTCHA verification';
             setErrorMessage(msg);
             toast.warning(msg, 'Verification Required');
@@ -213,7 +213,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         }
         
         if (password !== confirmPassword) {
-            // REPLACED INLINE ERROR WITH TOAST
             const msg = 'Passwords do not match';
             setErrorMessage(msg);
             toast.error(msg, 'Validation Error');
@@ -241,18 +240,13 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             const data = await res.json();
             
             if (res.ok) {
-                // Success: OTP Sent. Show verification form.
-                // REPLACED ALERT WITH TOAST
                 toast.success(data.message, 'Step 1 Complete');
-                
                 setTempEmailForVerification(email);
                 setIsOtpFormVisible(true);
-                // Clear password fields on the main form for security
                 setPassword(''); 
                 setConfirmPassword('');
 
             } else {
-                // Error during initial signup/OTP request
                 const msg = data.message || 'Signup request failed. Please try again.';
                 setErrorMessage(msg);
                 toast.error(msg, 'Signup Failed');
@@ -292,17 +286,13 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             const data = await res.json();
             
             if (res.ok) {
-                // Success: Account registered. Reset and switch to login page.
-                // REPLACED ALERT WITH TOAST
                 toast.success(data.message || 'Account successfully created and verified!', 'Welcome!');
-                
                 setIsSignup(false); 
                 setIsOtpFormVisible(false);
                 setTempEmailForVerification('');
-                resetForm(); // Clear all fields
+                resetForm();
 
             } else {
-                // Error during OTP verification/registration
                 const msg = data.message || 'OTP verification failed. Please try again.';
                 setOtpError(msg);
                 toast.error(msg, 'Verification Failed');
@@ -318,12 +308,10 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         }
     };
 
-    // Resend OTP logic - calls the dedicated resend fetch function
     const handleResendOtp = (e) => {
          handleResendOtpFetch();
     }
     
-    // Existing Login Logic
     const handleLogin = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -349,7 +337,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             const data = await res.json();
 
             if (res.ok) {
-                // REPLACED ALERT WITH TOAST
                 toast.success(data.message || 'Welcome back!', 'Login Successful');
                 
                 if (data.user && onLoginSuccess) {
@@ -374,7 +361,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         }
     };
 
-    // Replaced original handleSubmit with this branching function
     const handleSubmit = (e) => {
         if (isSignup) {
             handleSignup(e);
@@ -404,7 +390,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                     }}
                     onResend={handleResendOtp}
                     isLoading={isLoading}
-                    // error prop removed as we are using toast now
                 />
             )}
             
@@ -459,8 +444,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                             </div>
                         </div>
 
-                        {/* Error Message rendering removed in favor of Toasts */}
-
                         <form className="login-form" onSubmit={handleSubmit}>
                             {/* Full Name */}
                             {isSignup && (
@@ -511,36 +494,55 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                 </div>
                             )}
 
-
-                            {/* Password */}
+                            {/* Password - With Toggle */}
                             <div className="input-group">
                                 <label className="input-label">Password</label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    placeholder="••••••••"
-                                    className="input-field"
-                                    required
-                                    disabled={isLoading}
-                                />
-                            </div>
-
-                            {/* Confirm Password */}
-                            {isSignup && (
-                                <div className="input-group">
-                                    <label className="input-label">Confirm Password</label>
+                                <div className="password-wrapper">
                                     <input
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                         onKeyPress={handleKeyPress}
                                         placeholder="••••••••"
                                         className="input-field"
                                         required
                                         disabled={isLoading}
                                     />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-btn"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        disabled={isLoading}
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Confirm Password - With Toggle */}
+                            {isSignup && (
+                                <div className="input-group">
+                                    <label className="input-label">Confirm Password</label>
+                                    <div className="password-wrapper">
+                                        <input
+                                            type={showConfirmPassword ? 'text' : 'password'}
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            onKeyPress={handleKeyPress}
+                                            placeholder="••••••••"
+                                            className="input-field"
+                                            required
+                                            disabled={isLoading}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="password-toggle-btn"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            disabled={isLoading}
+                                        >
+                                            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
