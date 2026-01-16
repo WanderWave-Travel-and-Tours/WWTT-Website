@@ -141,7 +141,7 @@ const AppointmentModal = ({
 
       console.log('Submitting Walk-in Booking Data:', bookingData);
 
-      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', {
+      const response = await axios.post('http://localhost:5000/api/bookings', {
         bookingData: JSON.stringify(bookingData)
       }, {
         headers: { 'Content-Type': 'application/json' }
@@ -199,7 +199,7 @@ const AppointmentModal = ({
             className="bfm-modal-logo"
           />
           
-          <h2 className="bfm-modal-title">Schedule Walk-in Appointment</h2>
+          <h2 className="bfm-modal-title">Pay Over the Counter</h2>
           <p className="bfm-modal-subtitle">
             Book your appointment to visit our office and finalize your <strong>{pkg.name}</strong> booking.
           </p>
