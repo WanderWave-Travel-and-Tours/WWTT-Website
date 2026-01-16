@@ -1,19 +1,26 @@
-// routes/favoriteRoute.js
+// backend/routes/favoriteRoute.js - COMPLETE CODE
+const router = require('express').Router();
+const { 
+    toggleFavorite, 
+    getUserFavorites, 
+    checkFavorite, 
+    clearAllFavorites,
+    getFavoriteCount
+} = require('../controller/favoritesController');
 
-const express = require('express');
-const router = express.Router();
-const favoritesController = require('../controllers/favoritesController');
-const { protect } = require('../middleware/authMiddleware'); // Import ng middleware
+// Toggle favorite (add or remove)
+router.post('/', toggleFavorite);
 
-// Route 1: POST /api/favorites (Add or Remove Favorite)
-// KAILANGAN NG 'protect' bago tawagin ang controller para ma-secure ang req.user.id
-router.post('/', protect, favoritesController.toggleFavorite);
+// Get all favorites for a user
+router.get('/:userId', getUserFavorites);
 
-// Route 2: GET /api/favorites (Fetch User's Favorites)
-// KAILANGAN DIN NG 'protect'
-router.get('/', protect, favoritesController.getFavoritesByUser);
+// Get favorite count for a user
+router.get('/:userId/count', getFavoriteCount);
 
-// Route 3: DELETE /api/favorites/:id (Remove Specific Favorite Document)
-router.delete('/:id', protect, favoritesController.removeFavoriteById);
+// Check if a specific package is favorited
+router.get('/:userId/:promoId', checkFavorite);
+
+// Clear all favorites for a user
+router.delete('/:userId', clearAllFavorites);
 
 module.exports = router;

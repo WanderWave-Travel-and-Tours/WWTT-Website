@@ -1,0 +1,134 @@
+/* WRAPPER & SCROLL CONTAINER */
+.pst-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    overflow: hidden; 
+    margin-top: 20px;
+}
+
+.pst-table-container {
+    width: 100%;
+    overflow-x: auto; /* ✅ SCROLLS HORIZONTALLY ON MOBILE */
+    padding-bottom: 5px; 
+}
+
+/* TABLE BASIC STYLES */
+.pst-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    /* ✅ FIXED MIN-WIDTH: Critical for preserving button layout */
+    min-width: 1400px; 
+}
+
+/* HEADER STYLES */
+.pst-table th { 
+    background-color: #0f172a; 
+    color: white; 
+    text-align: left; 
+    padding: 16px 24px; 
+    font-size: 12px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    white-space: nowrap; 
+}
+
+/* COLUMN WIDTHS */
+.pst-col-preview { width: 120px; }
+.pst-col-title { width: 200px; }
+.pst-col-desc { width: 250px; }
+.pst-col-date { width: 160px; }
+.pst-col-start { width: 150px; }
+.pst-col-end { width: 150px; }
+.pst-col-status { width: 120px; }
+.pst-col-actions { width: 220px; text-align: right !important; }
+
+/* CELL STYLES */
+.pst-table td { 
+    padding: 16px 24px; 
+    border-bottom: 1px solid #f1f5f9; 
+    color: #334155; 
+    font-size: 14px; 
+    font-weight: 500; 
+    vertical-align: middle; 
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ZEBRA STRIPING */
+.pst-table tbody tr:nth-child(odd) { background-color: white; }
+.pst-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+
+.pst-table tr:hover td { background-color: #f1f5f9; }
+.pst-table tr:last-child td { border-bottom: none; }
+
+/* --- CONTENT STYLES --- */
+
+/* Image Preview */
+.pst-image-preview {
+    width: 80px; height: 50px; border-radius: 6px; 
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+}
+.pst-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Title */
+.pst-poster-title {
+    font-weight: 700; color: #0f172a; font-size: 14px; 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; max-width: 180px;
+}
+
+/* Description */
+.pst-desc-cell { display: flex; align-items: center; gap: 8px; max-width: 220px; }
+.pst-desc-text {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+    color: #64748b; font-size: 13px; display: block;
+}
+.pst-icon { color: #94a3b8; flex-shrink: 0; }
+
+/* Date Added */
+.pst-date-added {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; 
+    font-weight: 600; color: #475569; white-space: nowrap;
+}
+
+/* Regular Date Cells */
+.pst-date-cell { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
+
+/* Status Badges */
+.pst-status {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; 
+    border-radius: 20px; font-size: 11px; font-weight: 700; 
+    text-transform: uppercase; cursor: pointer; transition: all 0.2s ease;
+}
+.pst-status--active { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.pst-status--inactive { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+.pst-status:hover { transform: scale(1.05); }
+
+/* ACTIONS */
+.pst-action-group { display: flex; justify-content: flex-end; gap: 8px; width: 100%; }
+
+.pst-action-btn { 
+    height: 38px; padding: 0 16px; border-radius: 6px; font-size: 13px; 
+    font-weight: 600; cursor: pointer; display: flex; align-items: center; 
+    gap: 8px; transition: all 0.2s ease; white-space: nowrap; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.pst-view-btn { background: white; border: 1px solid #0f172a; color: #0f172a; }
+.pst-view-btn:hover { background: #0f172a; color: white; transform: translateY(-1px); }
+
+.pst-archive-btn { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
+.pst-archive-btn:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; transform: translateY(-1px); }
+
+.pst-empty-cell { text-align: center; padding: 60px; color: #64748b; font-size: 15px; }
+
+/* Scrollbar */
+.pst-table-container::-webkit-scrollbar { height: 8px; }
+.pst-table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.pst-table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.pst-table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

@@ -1,9 +1,19 @@
+// src/components/PackageDeals/packageCard.jsx - COMPLETE CODE
 import React from 'react';
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
-import { getImageUrl } from '../../utils/imageHelper'; // ✅ TAMA - 2x ../ to go up to src/\
+import { getImageUrl } from '../../utils/imageHelper';
 import './packageCard.css';
 
-function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, currency = 'PHP', exchangeRate = 58, isLoggedIn, onLoginRequired }) { 
+function PackageCard({ 
+  package: pkg, 
+  isFavorite, 
+  onToggleFavorite, 
+  onBookNow, 
+  currency = 'PHP', 
+  exchangeRate = 58, 
+  isLoggedIn, 
+  onLoginRequired 
+}) { 
   
   const displayPrice = currency === 'PHP' 
     ? pkg.price 
@@ -19,7 +29,8 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
     e.stopPropagation();
     
     if (isLoggedIn) {
-      onToggleFavorite(pkg.id);
+      // Pass package info to parent
+      onToggleFavorite(pkg.id, pkg.name, pkg.location);
     } else {
       onLoginRequired();
     }
@@ -39,7 +50,12 @@ function PackageCard({ package: pkg, isFavorite, onToggleFavorite, onBookNow, cu
       <button 
         className={`favorite-button ${isFavorite ? 'active' : ''}`}
         onClick={handleFavoriteClick}
-        aria-label="Add to favorites"
+        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        title={isLoggedIn ? (isFavorite ? "Remove from wishlist" : "Add to wishlist") : "Login to add to wishlist"}
+        style={{
+          transition: 'all 0.3s ease',
+          transform: isFavorite ? 'scale(1.1)' : 'scale(1)'
+        }}
       >
         <Heart strokeWidth={2.5} fill={isFavorite ? 'currentColor' : 'none'} />
       </button>

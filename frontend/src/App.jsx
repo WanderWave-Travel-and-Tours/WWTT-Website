@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { Menu, X, Globe } from 'lucide-react';
+import { Menu, X, Globe, Heart } from 'lucide-react';
 import axios from 'axios';
 import './App.css'; 
 
@@ -14,6 +14,7 @@ import UserAuth from './components/userLogin/userLogin.jsx';
 import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 import UserDashboard from './components/userDashboard/userDashboard.jsx';
+import WishlistDropdown from './components/WishlistDropdown/WishlistDropdown.jsx';
 
 const PackageBookingWrapper = () => {
   const location = useLocation();
@@ -127,6 +128,12 @@ function MainLayout() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  
+  // ============================================================
+  // ⭐ WISHLIST STATES
+  // ============================================================
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [isWishlistDropdownOpen, setIsWishlistDropdownOpen] = useState(false);
 
   const logoNav = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69083320f6799f841b19821b.png"; 
   const logoBlueHeader = "https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691413034dedcf3e7fbc3e80.png"; 
@@ -175,6 +182,59 @@ function MainLayout() {
     }
     setIsLoadingUser(false);
   }, []);
+
+  // ============================================================
+  // ⭐ FETCH WISHLIST COUNT
+  // ============================================================
+  useEffect(() => {
+    const fetchWishlistCount = async () => {
+      if (!currentUser) {
+        setWishlistCount(0);
+        return;
+      }
+
+      try {
+        const userId = currentUser._id;
+        console.log('📊 Fetching wishlist count for user:', userId);
+
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch wishlist count');
+        }
+
+        const result = await response.json();
+        console.log('✅ Wishlist data:', result);
+        
+        if (result.status === 'ok' && result.data) {
+          const count = result.data.length;
+          console.log(`❤️ Wishlist count: ${count}`);
+          setWishlistCount(count);
+        }
+      } catch (err) {
+        console.error('❌ Error fetching wishlist count:', err);
+        setWishlistCount(0);
+      }
+    };
+
+    fetchWishlistCount();
+
+    const handleWishlistUpdate = () => {
+      console.log('🔄 Wishlist updated, refreshing count...');
+      fetchWishlistCount();
+    };
+
+    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+
+    return () => {
+      window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     if (window.google?.translate) {
@@ -279,6 +339,7 @@ function MainLayout() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setWishlistCount(0);
     localStorage.removeItem('wanderwave_user');
     navigate('/login');
   };
@@ -290,7 +351,21 @@ function MainLayout() {
     window.location.href = '/dashboard';
   };
 
-  // ⭐ CRITICAL FIX: Handle /login route - Return ONLY UserAuth component like the OLD code
+  // ============================================================
+  // ⭐ HANDLE WISHLIST BUTTON CLICK
+  // ============================================================
+  const handleWishlistClick = (e) => {
+    e.stopPropagation();
+    console.log('❤️ Wishlist button clicked!');
+    setIsWishlistDropdownOpen(!isWishlistDropdownOpen);
+    setIsTranslateOpen(false); // Close translate dropdown if open
+  };
+
+  const handleWishlistUpdate = () => {
+    console.log('🔄 Wishlist updated from dropdown');
+    // Refresh count will be handled by the global event listener
+  };
+
   const handleAuthPageChange = (page) => {
     if (page === 'main') {
       setAuthPage(null);
@@ -326,15 +401,12 @@ function MainLayout() {
     key => location.pathname === pages[key].path
   ) || 'packages';
 
-  // ⭐ CRITICAL FIX: Check if on /login route - if yes, return ONLY UserAuth
   const isLoginPage = location.pathname === '/login';
   
-  // Show loading while checking for saved user
   if (isLoadingUser) {
     return null;
   }
 
-  // ⭐ CRITICAL FIX: If authPage is set OR on /login route, return ONLY UserAuth (no navbar, no wrapper)
   if (authPage === 'login' || authPage === 'signup' || isLoginPage) {
     return <UserAuth setAuthPage={handleAuthPageChange} onLoginSuccess={handleLoginSuccess} />;
   }
@@ -349,6 +421,17 @@ function MainLayout() {
   return (
     <div className="app-container">
       <div id="google_translate_element"></div>
+      
+      {/* ============================================================ */}
+      {/* ⭐ WISHLIST DROPDOWN */}
+      {/* ============================================================ */}
+      <WishlistDropdown
+        isOpen={isWishlistDropdownOpen}
+        onClose={() => setIsWishlistDropdownOpen(false)}
+        currentUser={currentUser}
+        wishlistCount={wishlistCount}
+        onWishlistUpdate={handleWishlistUpdate}
+      />
       
       {!isDashboardPage && (
         <>
@@ -398,6 +481,23 @@ function MainLayout() {
                 </div>
                 
                 <div className="nav-actions">
+                  {/* ============================================================ */}
+                  {/* ⭐ WISHLIST BUTTON - DESKTOP */}
+                  {/* ============================================================ */}
+                  {currentUser && (
+                    <button 
+                      className="wishlist-button"
+                      onClick={handleWishlistClick}
+                      aria-label="View Wishlist"
+                      title="My Wishlist"
+                    >
+                      <Heart size={20} strokeWidth={2} />
+                      {wishlistCount > 0 && (
+                        <span className="wishlist-badge">{wishlistCount}</span>
+                      )}
+                    </button>
+                  )}
+
                   <div className="translate-wrapper">
                     <button 
                       className={`translate-button ${isTranslateOpen ? 'active' : ''}`}
@@ -468,6 +568,29 @@ function MainLayout() {
               ))}
             </div>
             
+            {/* ============================================================ */}
+            {/* ⭐ MOBILE WISHLIST BUTTON */}
+            {/* ============================================================ */}
+            {currentUser && (
+              <div className="mobile-wishlist-wrapper">
+                <button 
+                  className="mobile-wishlist-button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setTimeout(() => {
+                      setIsWishlistDropdownOpen(true);
+                    }, 300);
+                  }}
+                >
+                  <Heart size={20} strokeWidth={2.5} />
+                  <span>My Wishlist</span>
+                  {wishlistCount > 0 && (
+                    <span className="wishlist-count">({wishlistCount})</span>
+                  )}
+                </button>
+              </div>
+            )}
+
             <div className="mobile-translate-wrapper">
               <button 
                 className={`translate-button ${isTranslateOpen ? 'active' : ''}`}
@@ -521,7 +644,6 @@ function MainLayout() {
 
       <main className="main-content">
         <Routes>
-          {/* ⭐ Login route - but this will never render because we return early above */}
           <Route path="/login" element={<div>Login</div>} />
           
           <Route path="/flights" element={<FlightSearch />} />

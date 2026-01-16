@@ -1,0 +1,132 @@
+/* WRAPPER & SCROLL CONTAINER (Matched to Standard) */
+.prt-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    overflow: hidden; 
+    margin-top: 20px;
+}
+
+.prt-table-container {
+    width: 100%;
+    overflow-x: auto; /* ✅ SCROLLS HORIZONTALLY ON MOBILE */
+    padding-bottom: 5px; 
+}
+
+/* TABLE BASIC STYLES */
+.prt-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    /* ✅ FIXED MIN-WIDTH: Critical for preserving button layout */
+    min-width: 1400px; 
+}
+
+/* HEADER STYLES */
+.prt-table th { 
+    background-color: #0f172a; 
+    color: white; 
+    text-align: left; 
+    padding: 16px 24px; 
+    font-size: 12px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    white-space: nowrap; 
+}
+
+/* COLUMN WIDTHS */
+.prt-col-code { width: 180px; }
+.prt-col-category { width: 150px; }
+.prt-col-discount { width: 140px; }
+.prt-col-date { width: 160px; }
+.prt-col-status { width: 120px; }
+.prt-col-desc { width: 250px; }
+.prt-col-actions { width: 200px; text-align: right !important; }
+
+/* CELL STYLES */
+.prt-table td { 
+    padding: 16px 24px; 
+    border-bottom: 1px solid #f1f5f9; 
+    color: #334155; 
+    font-size: 14px; 
+    font-weight: 500; 
+    vertical-align: middle; 
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ZEBRA STRIPING */
+.prt-table tbody tr:nth-child(odd) { background-color: white; }
+.prt-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+
+.prt-table tr:hover td { background-color: #f1f5f9; }
+.prt-table tr:last-child td { border-bottom: none; }
+
+/* --- CONTENT STYLES --- */
+
+/* Code Badge */
+.prt-code-cell { display: flex; align-items: center; }
+.prt-code-badge {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #0f172a;
+    background: #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px dashed #94a3b8;
+    letter-spacing: 1px;
+}
+
+/* Meta Cells */
+.prt-meta-cell, .prt-date-cell, .prt-discount-cell { 
+    display: flex; align-items: center; gap: 8px; 
+}
+.prt-icon { color: #94a3b8; flex-shrink: 0; }
+
+.prt-discount-value { font-weight: 700; color: #FF8C42; }
+
+/* Status Badges */
+.prt-badge { 
+    padding: 4px 12px; border-radius: 20px; font-size: 11px; 
+    font-weight: 700; text-transform: uppercase; display: inline-block; 
+}
+.prt-badge-active { background: #10b981; color: white; box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4); }
+.prt-badge-expired { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+/* Description Cell (Truncated) */
+.prt-desc-cell { display: flex; align-items: center; gap: 8px; max-width: 250px; }
+.prt-desc-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #64748b;
+    font-size: 13px;
+    display: block;
+}
+
+/* ACTIONS */
+.prt-action-group { display: flex; justify-content: flex-end; gap: 8px; min-width: 180px; }
+
+.prt-action-btn { 
+    height: 38px; padding: 0 16px; border-radius: 6px; font-size: 13px; 
+    font-weight: 600; cursor: pointer; display: flex; align-items: center; 
+    gap: 8px; transition: all 0.2s ease; white-space: nowrap; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.prt-view-btn { background: white; border: 1px solid #0f172a; color: #0f172a; }
+.prt-view-btn:hover { background: #0f172a; color: white; transform: translateY(-1px); }
+
+.prt-archive-btn { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
+.prt-archive-btn:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; transform: translateY(-1px); }
+
+.prt-empty-cell { text-align: center; padding: 60px; color: #64748b; font-size: 15px; }
+
+/* Custom Scrollbar */
+.prt-table-container::-webkit-scrollbar { height: 8px; }
+.prt-table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.prt-table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.prt-table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

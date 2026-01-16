@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, Calendar, Eye, EyeOff, Search, HelpCircle } from 'lucide-react';
+import { HelpCircle, Plus } from 'lucide-react'; // ✅ Using Plus Icon
 import axios from 'axios';
 import Sidebar from '../sidebar/sidebar';
 import PosterDetailModal from './PosterDetailModal';
 import PosterPagination from './PosterPagination';
 import PosterFilters from './PosterFilters';
+import PostersTable from './PosterTable'; 
 import { useToast } from '../toast/ToastManager';
-import './viewposter.css';
+import './viewposter.css'; // ✅ Imported updated CSS
 
 // 🔥 HELPER FUNCTION - GET ADMIN DATA
 const getAdminData = () => {
@@ -68,19 +69,19 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 
 const ViewPoster = () => {
     const toast = useToast();
+    
+    // ✅ STATE: Matches Tours Logic
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
+    
+    // ✅ Toggle Function
+    const toggleSidebar = () => setIsSidebarCollapsed(prev => !prev);
 
     const [posters, setPosters] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // --- FILTERS STATE ---
+    // FILTERS
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
-    
-    // ✅ ADDED: Date Filter State
     const [dateStart, setDateStart] = useState('');
     const [dateEnd, setDateEnd] = useState('');
 
@@ -89,13 +90,9 @@ const ViewPoster = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedPoster, setSelectedPoster] = useState(null);
 
-    // State para sa Confirmation Modal
+    // Modal State
     const [confirmConfig, setConfirmConfig] = useState({
-        isOpen: false,
-        title: "",
-        message: "",
-        onConfirm: () => {},
-        type: "primary"
+        isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
     });
 
     const statusOptions = ['ALL', 'Active', 'Inactive'];
@@ -104,18 +101,8 @@ const ViewPoster = () => {
         return filterStatus === status ? 'pf-active-navy' : '';
     };
 
-    // Helper function para sa confirmation modal
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
-        setConfirmConfig({
-            isOpen: true,
-            title,
-            message,
-            onConfirm: () => {
-                onConfirm();
-                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-            },
-            type
-        });
+        setConfirmConfig({ isOpen: true, title, message, onConfirm: () => { onConfirm(); setConfirmConfig(prev => ({ ...prev, isOpen: false })); }, type });
     };
 
     useEffect(() => {
@@ -127,19 +114,14 @@ const ViewPoster = () => {
         try {
             const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/posters');
             
-            // FILTER & FORMAT: Process data
             const processedPosters = response.data
                 .filter(poster => poster.isArchive === "No")
                 .map(poster => {
-                    // Safe Date Parsing for CreatedAt
                     const dateObj = poster.createdAt ? new Date(poster.createdAt) : null;
                     const isValidDate = dateObj && !isNaN(dateObj);
-
                     return {
                         ...poster,
-                        // ✅ Format for Filtering (YYYY-MM-DD)
                         filterDate: isValidDate ? dateObj.toLocaleDateString('en-CA') : '',
-                        // ✅ Format for Display (Jan 25, 2024)
                         displayDateAdded: isValidDate ? dateObj.toLocaleDateString('en-US', {
                             year: 'numeric', month: 'short', day: 'numeric'
                         }) : 'N/A'
@@ -156,66 +138,39 @@ const ViewPoster = () => {
         }
     };
 
-    // ARCHIVE FUNCTION
     const handleArchive = async (id, title) => {
-        askConfirmation(
-            "Archive Poster?",
-            `Are you sure you want to archive "${title}"?`,
-            async () => {
-                const { userEmail, adminId } = getAdminData();
-
-                try {
-                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
-                        isArchive: 'Yes',
-                        userEmail,
-                        adminId
-                    });
-
-                    if (response.data) {
-                        const updatedPosters = posters.filter(poster => poster._id !== id);
-                        setPosters(updatedPosters);
-                        toast.success('Poster archived successfully!');
-                    }
-                } catch (error) {
-                    console.error('Error archiving poster:', error);
-                    toast.error('Failed to archive poster.');
+        askConfirmation("Archive Poster?", `Are you sure you want to archive "${title}"?`, async () => {
+            const { userEmail, adminId } = getAdminData();
+            try {
+                const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                    isArchive: 'Yes', userEmail, adminId
+                });
+                if (response.data) {
+                    setPosters(posters.filter(poster => poster._id !== id));
+                    toast.success('Poster archived successfully!');
                 }
-            },
-            "danger"
-        );
+            } catch (error) {
+                toast.error('Failed to archive poster.');
+            }
+        }, "danger");
     };
 
-    // TOGGLE STATUS FUNCTION
     const toggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
-        
-        askConfirmation(
-            "Change Status?",
-            `Change poster status to ${newStatus}?`,
-            async () => {
-                const { userEmail, adminId } = getAdminData();
-
-                try {
-                    const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
-                        status: newStatus,
-                        userEmail,
-                        adminId
-                    });
-
-                    if (response.data) {
-                        const updatedPosters = posters.map(poster =>
-                            poster._id === id ? { ...poster, status: newStatus } : poster
-                        );
-                        setPosters(updatedPosters);
-                        toast.success(`Status changed to ${newStatus}!`);
-                    }
-                } catch (error) {
-                    console.error('Error updating status:', error);
-                    toast.error('Failed to update status.');
+        askConfirmation("Change Status?", `Change poster status to ${newStatus}?`, async () => {
+            const { userEmail, adminId } = getAdminData();
+            try {
+                const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                    status: newStatus, userEmail, adminId
+                });
+                if (response.data) {
+                    setPosters(posters.map(poster => poster._id === id ? { ...poster, status: newStatus } : poster));
+                    toast.success(`Status changed to ${newStatus}!`);
                 }
-            },
-            "primary"
-        );
+            } catch (error) {
+                toast.error('Failed to update status.');
+            }
+        }, "primary");
     };
 
     const handleViewDetails = (poster) => {
@@ -223,30 +178,13 @@ const ViewPoster = () => {
         setShowDetailModal(true);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '--';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-    };
-
-    // ✅ ENHANCED FILTER LOGIC
     const filteredPosters = posters.filter(poster => {
-        // 1. Search Filter
         const matchesSearch = poster.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (poster.description && poster.description.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-        // 2. Status Filter
         const matchesStatus = filterStatus === 'ALL' || poster.status === filterStatus;
-        
-        // 3. ✅ Date Range Filter (Using filterDate)
         let matchesDate = true;
-        if (dateStart) {
-            matchesDate = matchesDate && poster.filterDate >= dateStart;
-        }
-        if (dateEnd) {
-            matchesDate = matchesDate && poster.filterDate <= dateEnd;
-        }
-
+        if (dateStart) matchesDate = matchesDate && poster.filterDate >= dateStart;
+        if (dateEnd) matchesDate = matchesDate && poster.filterDate <= dateEnd;
         return matchesSearch && matchesStatus && matchesDate;
     });
 
@@ -254,156 +192,51 @@ const ViewPoster = () => {
     const indexOfFirstPoster = indexOfLastPoster - itemsPerPage;
     const currentPosters = filteredPosters.slice(indexOfFirstPoster, indexOfLastPoster);
 
-    const activePosters = posters.filter(p => p.status === 'Active').length;
-
     return (
         <div className="vp-page">
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
-            <main className={`vp-main ${isSidebarCollapsed ? "vp-main--collapsed" : ""}`}>
+            {/* ✅ LAYOUT FIX: Uses 'expanded' class logic */}
+            <main className={`vp-main ${isSidebarCollapsed ? "expanded" : ""}`}>
                 <div className="vp-container">
+                    
+                    {/* ✅ HEADER UI: Matches Tours Design */}
                     <header className="vp-header">
                         <div className="vp-header-content">
                             <h1 className="vp-title">POSTER LIST</h1>
-                            <p className="vp-subtitle">
-                                Managing {posters.length} posters • {activePosters} currently active
-                            </p>
+                            <div className="vp-subtitle">
+                                Managing {posters.length} posters • {filteredPosters.length} active
+                            </div>
                         </div>
-                        <button className="vp-btn vp-btn--add" onClick={() => window.location.href='/add-poster'}>
-                            + Add New Poster
+                        
+                        <button className="vp-btn-add" onClick={() => window.location.href='/add-poster'}>
+                            <Plus size={18} strokeWidth={3} />
+                            ADD NEW POSTER
                         </button>
                     </header>
 
-                    {/* ✅ PASSED NEW PROPS TO FILTERS */}
                     <PosterFilters
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        filterStatus={filterStatus}
-                        setFilterStatus={setFilterStatus}
-                        statusOptions={statusOptions}
-                        getFilterClassName={getFilterClassName}
-                        dateStart={dateStart}
-                        setDateStart={setDateStart}
-                        dateEnd={dateEnd}
-                        setDateEnd={setDateEnd}
+                        searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+                        filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+                        statusOptions={statusOptions} getFilterClassName={getFilterClassName}
+                        dateStart={dateStart} setDateStart={setDateStart}
+                        dateEnd={dateEnd} setDateEnd={setDateEnd}
                     />
 
                     {loading ? (
-                        <div className="vp-loading">
-                            <div className="vp-spinner"></div>
-                            <p>Loading posters from database...</p>
-                        </div>
+                        <div className="vp-loading"><div className="vp-spinner"></div><p>Loading posters...</p></div>
                     ) : posters.length === 0 ? (
-                        <div className="vp-empty">
-                            <span className="vp-empty-icon">🖼️</span>
-                            <h3>No posters yet</h3>
-                            <p>Start by adding your first promotional poster</p>
-                        </div>
+                        <div className="vp-empty"><h3>No posters yet</h3></div>
                     ) : filteredPosters.length === 0 ? (
-                        <div className="vp-empty">
-                            <span className="vp-empty-icon">🔍</span>
-                            <h3>No posters found</h3>
-                            <p>Try adjusting your search or filter criteria</p>
-                        </div>
+                        <div className="vp-empty"><h3>No posters found</h3></div>
                     ) : (
                         <>
-                            <div className="vp-table-wrapper">
-                                <table className="vp-table">
-                                    <thead>
-                                        <tr>
-                                            <th>PREVIEW</th>
-                                            <th>TITLE</th>
-                                            <th>DESCRIPTION</th>
-                                            {/* ✅ NEW DATE ADDED COLUMN */}
-                                            <th>DATE ADDED</th>
-                                            <th>START DATE</th>
-                                            <th>END DATE</th>
-                                            <th>STATUS</th>
-                                            <th>ACTIONS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {currentPosters.map((poster) => (
-                                            <tr key={poster._id}>
-                                                <td>
-                                                    <div className="vp-image-preview">
-                                                        <img 
-                                                            src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
-                                                            alt={poster.title}
-                                                            onError={(e) => e.target.src="https://via.placeholder.com/150"}
-                                                        />
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="vp-poster-title">{poster.title}</span>
-                                                </td>
-                                                <td>
-                                                    <span className="vp-desc">
-                                                        {poster.description || 'No description provided'}
-                                                    </span>
-                                                </td>
-                                                {/* ✅ DATE ADDED DISPLAY */}
-                                                <td>
-                                                    <div className="vp-date-added">
-                                                        <Calendar size={14} />
-                                                        <span>{poster.displayDateAdded}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div className="vp-date">
-                                                        <Calendar size={14} />
-                                                        <span>
-                                                            {poster.startDate ? formatDate(poster.startDate) : '--'}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div className="vp-date">
-                                                        <Calendar size={14} />
-                                                        <span>
-                                                            {poster.endDate ? formatDate(poster.endDate) : '--'}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span 
-                                                        className={`vp-status vp-status--${poster.status.toLowerCase()}`}
-                                                        style={{ cursor: 'pointer' }}
-                                                        onClick={() => toggleStatus(poster._id, poster.status)}
-                                                        title="Click to toggle status"
-                                                    >
-                                                        {poster.status === 'Active' ? <Eye size={12} /> : <EyeOff size={12} />}
-                                                        {poster.status}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="vp-actions">
-                                                        <button 
-                                                            className="vp-action-btn vp-action-btn--view"
-                                                            onClick={() => handleViewDetails(poster)}
-                                                            title="View Details"
-                                                        >
-                                                            <Eye size={16} />
-                                                            <span>View</span>
-                                                        </button>
-                                                        <button 
-                                                            className="vp-action-btn vp-action-btn--archive"
-                                                            onClick={() => handleArchive(poster._id, poster.title)}
-                                                            title="Archive Poster"
-                                                        >
-                                                            <Archive size={16} />
-                                                            <span>Archive</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <PostersTable 
+                                posters={currentPosters}
+                                toggleStatus={toggleStatus}
+                                handleViewDetails={handleViewDetails}
+                                handleArchive={handleArchive}
+                            />
                             
                             <PosterPagination
                                 totalItems={filteredPosters.length}
@@ -418,21 +251,15 @@ const ViewPoster = () => {
 
             {showDetailModal && selectedPoster && (
                 <PosterDetailModal
-                    showModal={showDetailModal}
-                    selectedPoster={selectedPoster}
-                    setShowModal={setShowDetailModal}
-                    toggleStatus={toggleStatus}
+                    showModal={showDetailModal} selectedPoster={selectedPoster}
+                    setShowModal={setShowDetailModal} toggleStatus={toggleStatus}
                     handleArchive={handleArchive}
                 />
             )}
 
-            {/* Global Confirmation Modal */}
             <CustomConfirmModal 
-                isOpen={confirmConfig.isOpen}
-                title={confirmConfig.title}
-                message={confirmConfig.message}
-                type={confirmConfig.type}
-                onConfirm={confirmConfig.onConfirm}
+                isOpen={confirmConfig.isOpen} title={confirmConfig.title} message={confirmConfig.message}
+                type={confirmConfig.type} onConfirm={confirmConfig.onConfirm}
                 onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
         </div>

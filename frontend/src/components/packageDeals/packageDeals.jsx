@@ -1,4 +1,6 @@
+// src/components/PackageDeals/packageDeals.jsx - COMPLETE CODE
 import { useState, useRef, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import BrowseCategory from './browseCategory';
 import AllPackages from './allPackages';
 import PackageBooking from './packageBooking';
@@ -6,9 +8,11 @@ import './packageDeals.css';
 import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
 import toast, { Toaster } from 'react-hot-toast';
-//import { getImageUrl } from './utils/imageHelper';
 
-const LoginNoticeModal = ({ isOpen, onClose }) => {
+// ============================================================
+// LOGIN NOTICE MODAL COMPONENT
+// ============================================================
+const LoginNoticeModal = ({ isOpen, onClose, onLogin }) => {
   if (!isOpen) return null;
 
   return (
@@ -18,44 +22,106 @@ const LoginNoticeModal = ({ isOpen, onClose }) => {
       left: 0, 
       right: 0, 
       bottom: 0, 
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+      backgroundColor: 'rgba(0, 0, 0, 0.6)', 
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center',
-      zIndex: 1000 
+      zIndex: 9999,
+      backdropFilter: 'blur(4px)'
     }}>
       <div className="modal-content" style={{
         backgroundColor: 'white', 
-        padding: '30px', 
-        borderRadius: '8px', 
-        maxWidth: '400px', 
+        padding: '40px 30px', 
+        borderRadius: '12px', 
+        maxWidth: '420px',
+        width: '90%',
         textAlign: 'center',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+        animation: 'slideUp 0.3s ease-out'
       }}>
-        <h3 style={{ marginBottom: '15px' }}>Login Required</h3>
-        <p style={{ marginBottom: '25px' }}>
-          Please log in to add items to your wishlist.
+        <div style={{ 
+          fontSize: '64px', 
+          marginBottom: '20px',
+          filter: 'drop-shadow(0 4px 8px rgba(255, 140, 0, 0.3))'
+        }}>❤️</div>
+        <h3 style={{ 
+          marginBottom: '15px', 
+          color: '#1f2937',
+          fontSize: '24px',
+          fontWeight: '700'
+        }}>Login Required</h3>
+        <p style={{ 
+          marginBottom: '30px', 
+          color: '#6b7280',
+          fontSize: '15px',
+          lineHeight: '1.6'
+        }}>
+          Please log in to add packages to your wishlist and keep track of your favorite destinations.
         </p>
-        <button 
-          onClick={onClose} 
-          style={{
-            padding: '10px 20px', 
-            backgroundColor: '#FF6F61', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px', 
-            cursor: 'pointer'
-          }}
-        >
-          Close
-        </button>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <button 
+            onClick={onLogin} 
+            style={{
+              padding: '12px 28px', 
+              backgroundColor: '#FF8C00', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '8px', 
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '15px',
+              transition: 'all 0.3s',
+              boxShadow: '0 4px 12px rgba(255, 140, 0, 0.3)'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e67e00';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 16px rgba(255, 140, 0, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#FF8C00';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 12px rgba(255, 140, 0, 0.3)';
+            }}
+          >
+            Go to Login
+          </button>
+          <button 
+            onClick={onClose} 
+            style={{
+              padding: '12px 28px', 
+              backgroundColor: '#f3f4f6', 
+              color: '#374151', 
+              border: 'none', 
+              borderRadius: '8px', 
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '15px',
+              transition: 'all 0.3s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e5e7eb';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#f3f4f6';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            Maybe Later
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-
+// ============================================================
+// MAIN PACKAGE DEALS COMPONENT
+// ============================================================
 function PackageDeals() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [favorites, setFavorites] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,24 +140,56 @@ function PackageDeals() {
   const [hasShownModal, setHasShownModal] = useState(false);
   
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [currentUser, setCurrentUser] = useState(null);
   const [showLoginNotice, setShowLoginNotice] = useState(false);
 
   const [currency, setCurrency] = useState('PHP');        
   const exchangeRate = 58; 
   
   const handleLoginRequired = () => {
+    console.log('🚨 Login Required triggered!');
     setShowLoginNotice(true);
   };
+
+  const handleGoToLogin = () => {
+    console.log('🚪 Redirecting to login...');
+    setShowLoginNotice(false);
+    navigate('/login');
+  };
   
+  // ============================================================
+  // CHECK LOGIN STATUS
+  // ============================================================
   useEffect(() => {
     const checkLoginStatus = () => {
-      const user = localStorage.getItem('wanderwave_user');
-      setIsLoggedIn(!!user); 
+      const userJSON = localStorage.getItem('wanderwave_user');
+      const isUserLoggedIn = !!userJSON;
+      
+      console.log('👤 Checking login status:', isUserLoggedIn ? 'LOGGED IN' : 'NOT LOGGED IN');
+      
+      if (userJSON) {
+        try {
+          const user = JSON.parse(userJSON);
+          console.log('✅ User data:', { id: user._id, name: user.fullName, email: user.email });
+          setCurrentUser(user);
+          setIsLoggedIn(true);
+        } catch (err) {
+          console.error('❌ Error parsing user data:', err);
+          localStorage.removeItem('wanderwave_user');
+          setCurrentUser(null);
+          setIsLoggedIn(false);
+        }
+      } else {
+        console.log('❌ No user data in localStorage');
+        setCurrentUser(null);
+        setIsLoggedIn(false);
+      }
     };
     
     checkLoginStatus(); 
 
     const handleStorageChange = () => {
+      console.log('📦 Storage changed - rechecking login status');
       checkLoginStatus();
     };
 
@@ -102,6 +200,54 @@ function PackageDeals() {
     };
   }, []);
 
+  // ============================================================
+  // FETCH USER FAVORITES WHEN LOGGED IN
+  // ============================================================
+  useEffect(() => {
+    const fetchUserFavorites = async () => {
+      if (!isLoggedIn || !currentUser) {
+        console.log('❌ User not logged in, clearing favorites');
+        setFavorites([]);
+        return;
+      }
+
+      try {
+        const userId = currentUser._id;
+        console.log('📥 Fetching favorites for user:', userId);
+
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log('📡 Favorites API response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch favorites');
+        }
+
+        const result = await response.json();
+        console.log('✅ Favorites fetched:', result);
+        
+        if (result.status === 'ok' && result.data) {
+          const favoriteIds = result.data.map(fav => fav.promo_id);
+          console.log('❤️ Favorite IDs:', favoriteIds);
+          setFavorites(favoriteIds);
+        }
+      } catch (err) {
+        console.error('❌ Error fetching favorites:', err);
+        setFavorites([]);
+      }
+    };
+
+    fetchUserFavorites();
+  }, [isLoggedIn, currentUser]);
+
+  // ============================================================
+  // CURRENCY MODAL AUTO-SHOW
+  // ============================================================
   useEffect(() => {
     if (hasShownModal) return;
 
@@ -119,6 +265,75 @@ function PackageDeals() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, [hasShownModal]); 
+
+  // ============================================================
+  // ⭐ NEW: LISTEN FOR FAVORITE REMOVAL FROM DROPDOWN
+  // ============================================================
+  useEffect(() => {
+    const handleFavoriteRemoved = (event) => {
+      const { packageId } = event.detail;
+      console.log('🔄 Package removed from wishlist in AllPackages:', packageId);
+      
+      // Update local favorites state
+      setFavorites(prev => {
+        const newFavorites = prev.filter(id => id !== packageId);
+        console.log('📊 Updated favorites:', newFavorites);
+        return newFavorites;
+      });
+    };
+
+    window.addEventListener('favoriteRemoved', handleFavoriteRemoved);
+
+    return () => {
+      window.removeEventListener('favoriteRemoved', handleFavoriteRemoved);
+    };
+  }, []);
+
+  // ============================================================
+  // ⭐ NEW: HANDLE URL PARAMETERS AND CUSTOM EVENTS
+  // ============================================================
+  useEffect(() => {
+    // Check URL parameters for filter
+    const urlParams = new URLSearchParams(location.search);
+    const filterParam = urlParams.get('filter');
+    
+    if (filterParam === 'favorites') {
+      console.log('🎯 URL parameter detected: showing favorites');
+      setScopeFilter('favorites');
+      
+      // Scroll to packages section after a short delay
+      setTimeout(() => {
+        if (packagesRef.current) {
+          const yOffset = -120;
+          const element = packagesRef.current;
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }, 500);
+    }
+
+    // Listen for custom event to show favorites
+    const handleShowFavorites = () => {
+      console.log('🎯 Custom event detected: showing favorites');
+      setScopeFilter('favorites');
+      
+      // Scroll to packages section
+      setTimeout(() => {
+        if (packagesRef.current) {
+          const yOffset = -120;
+          const element = packagesRef.current;
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }, 300);
+    };
+
+    window.addEventListener('showFavorites', handleShowFavorites);
+
+    return () => {
+      window.removeEventListener('showFavorites', handleShowFavorites);
+    };
+  }, [location.search]);
 
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
@@ -215,9 +430,13 @@ function PackageDeals() {
     },
   ];
 
+  // ============================================================
+  // FETCH PACKAGES
+  // ============================================================
   useEffect(() => {
     const fetchPackages = async () => {
       try {
+        console.log('📦 Fetching packages...');
         const response = await fetch('https://wanderwaveph-backend.onrender.com/api/packages/all'); 
         
         if (!response.ok) {
@@ -250,13 +469,14 @@ function PackageDeals() {
             description: pkg.title,
             includes: pkg.inclusions || [],
           }));
+          console.log(`✅ Fetched ${formattedPackages.length} packages`);
           setPackages(formattedPackages);
         } else {
           setError(result.error || 'Failed to fetch packages.');
         }
 
       } catch (e) {
-        console.error("Fetch Error: ", e);
+        console.error("❌ Fetch Error:", e);
         setError('Error connecting to the API.');
       } finally {
         setLoading(false);
@@ -267,11 +487,33 @@ function PackageDeals() {
   }, []);
 
   if (loading) {
-    return <div className="loading-screen">Loading packages...</div>;
+    return (
+      <div className="loading-screen" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        color: '#FF8C00'
+      }}>
+        Loading packages...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="error-screen">Error: {error}</div>;
+    return (
+      <div className="error-screen" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        color: '#ef4444'
+      }}>
+        Error: {error}
+      </div>
+    );
   }
   
   if (currentView === 'booking' && selectedPackageForBooking) {
@@ -324,73 +566,119 @@ function PackageDeals() {
     filteredPackages = filteredPackages.filter(pkg => selectedDestinations.includes(pkg.location));
   }
 
-  const toggleFavorite = async (packageId) => {
-    if (!isLoggedIn) {
-      handleLoginRequired();
-      return;
-    }
-
-    const userJSON = localStorage.getItem('wanderwave_user');
-    if (!userJSON) {
+  // ============================================================
+  // TOGGLE FAVORITE FUNCTION
+  // ============================================================
+  const toggleFavorite = async (packageId, packageName, packageLocation) => {
+    console.log('❤️ Toggle favorite clicked');
+    console.log('Package ID:', packageId);
+    console.log('Package Name:', packageName);
+    console.log('🔐 Is logged in:', isLoggedIn);
+    
+    if (!isLoggedIn || !currentUser) {
+      console.log('⚠️ User not logged in - showing login modal');
       handleLoginRequired();
       return;
     }
     
     try {
-      const user = JSON.parse(userJSON);
-      const userId = user._id;
+      const userId = currentUser._id;
       const isCurrentlyFavorite = favorites.includes(packageId);
-      const method = 'POST'; 
-      const url = `https://wanderwaveph-backend.onrender.com/api/favorites`;
+      
+      console.log('📤 Sending API request...');
+      console.log('User ID:', userId);
+      console.log('Currently favorite:', isCurrentlyFavorite);
 
-      const previousState = favorites;
+      // Optimistic UI update
+      const previousState = [...favorites];
       setFavorites(prev => 
         isCurrentlyFavorite
           ? prev.filter(fav => fav !== packageId)
           : [...prev, packageId]
       );
       
-      const response = await fetch(url, {
-        method: method,
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           promo_id: packageId,
+          user_id: userId,
+          package_title: packageName,
+          package_location: packageLocation
         }),
       });
 
+      console.log('📡 API Response status:', response.status);
+
       if (!response.ok) {
+        // Revert optimistic update on error
         setFavorites(previousState);
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
         toast.error('Failed to update wishlist. Please try again.', {
-          style: { border: '1px solid #ef4444', color: '#ef4444' },
+          style: { 
+            border: '1px solid #ef4444', 
+            color: '#ef4444',
+            fontSize: '14px'
+          },
           iconTheme: { primary: '#ef4444', secondary: '#fff' },
           position: 'top-center',
+          duration: 3000,
         });
-        
-        throw new Error('Failed to update favorites on server.');
+        return;
       }
       
-      const successMessage = isCurrentlyFavorite 
-          ? 'Package removed from wishlist.' 
-          : 'Package added to wishlist!';
+      const result = await response.json();
+      console.log('✅ API Success:', result);
+      
+      // Update with server response
+      if (result.data && result.data.favorites) {
+        setFavorites(result.data.favorites);
+      }
+      
+      const successMessage = result.action === 'removed'
+        ? '❤️ Removed from wishlist' 
+        : '❤️ Added to wishlist!';
 
       toast.success(successMessage, {
-          style: { border: '1px solid #10b981', color: '#10b981' },
-          iconTheme: { primary: '#10b981', secondary: '#fff' },
-          position: 'top-center',
+        style: { 
+          border: '1px solid #10b981', 
+          color: '#10b981',
+          fontSize: '14px'
+        },
+        iconTheme: { primary: '#10b981', secondary: '#fff' },
+        position: 'top-center',
+        duration: 2000,
       });
 
+      // ============================================================
+      // ⭐ NOTIFY NAVBAR TO UPDATE WISHLIST COUNT
+      // ============================================================
+      window.dispatchEvent(new Event('wishlistUpdated'));
+      console.log('🔔 Wishlist update event dispatched!');
+      
+      // ⭐ If removed, also dispatch favoriteRemoved event
+      if (result.action === 'removed') {
+        window.dispatchEvent(new CustomEvent('favoriteRemoved', { 
+          detail: { packageId } 
+        }));
+        console.log('🔔 Favorite removed event dispatched!');
+      }
 
     } catch (err) {
-      console.error('Error toggling favorite:', err);
-      if (!err.message.includes('Failed to update favorites on server.')) {
-        toast.error('Network error. Could not connect to the server.', {
-          style: { border: '1px solid #ef4444', color: '#ef4444' },
-          iconTheme: { primary: '#ef4444', secondary: '#fff' },
-          position: 'top-center',
-        });
-      }
+      console.error('❌ Error toggling favorite:', err);
+      toast.error('Network error. Please check your connection.', {
+        style: { 
+          border: '1px solid #ef4444', 
+          color: '#ef4444',
+          fontSize: '14px'
+        },
+        iconTheme: { primary: '#ef4444', secondary: '#fff' },
+        position: 'top-center',
+        duration: 3000,
+      });
     }
   };
 
@@ -411,7 +699,7 @@ function PackageDeals() {
     <div className="package-deals-page">
       <Toaster position="top-center" />
       
-       <CurrencyModal 
+      <CurrencyModal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)}
         currency={currency}
@@ -420,7 +708,8 @@ function PackageDeals() {
       
       <LoginNoticeModal 
         isOpen={showLoginNotice} 
-        onClose={() => setShowLoginNotice(false)} 
+        onClose={() => setShowLoginNotice(false)}
+        onLogin={handleGoToLogin}
       />
 
       <section className="top-section-bg">
@@ -429,9 +718,6 @@ function PackageDeals() {
           <BrowseCategory 
             title="Most Visited Destination"
             categories={mostVisitedCategories}
-            selectedFilter={selectedFilter}
-            onFilterChange={setSelectedFilter}
-            onCategoryClick={scrollToPackages}
           />
         </div>
       </section>
