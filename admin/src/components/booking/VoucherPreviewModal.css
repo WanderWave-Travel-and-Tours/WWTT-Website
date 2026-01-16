@@ -21,11 +21,10 @@
     animation: fadeIn 0.3s ease-in-out;
 }
 
-/* On mobile, remove padding to maximize screen space */
 @media (max-width: 600px) {
     .voucher-modal-overlay {
         padding: 10px;
-        align-items: flex-start; /* Allows scrolling from top */
+        align-items: flex-start;
     }
 }
 
@@ -49,7 +48,7 @@
 
 @media (max-width: 600px) {
     .voucher-modal-container {
-        max-height: none; /* Let it grow on mobile */
+        max-height: none;
         height: auto;
         border-radius: 12px;
     }
@@ -63,7 +62,7 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #e2e8f0;
-    flex-wrap: wrap; /* Allow wrapping */
+    flex-wrap: wrap;
     gap: 15px;
 }
 
@@ -136,13 +135,13 @@
 
 @media (max-width: 768px) {
     .voucher-content-wrapper {
-        padding: 20px 10px; /* Reduce padding on mobile */
-        display: block; /* Remove center alignment to allow scrolling */
+        padding: 20px 10px;
+        display: block;
     }
 }
 
 .voucher-document {
-    width: 210mm; /* Default A4 Width */
+    width: 210mm;
     flex-shrink: 0;
     margin: 0 auto;
 }
@@ -153,7 +152,7 @@
 .voucher-page {
     background: white;
     width: 210mm;
-    height: 297mm; /* Strict A4 Height for desktop/print */
+    height: 297mm;
     margin-bottom: 40px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     position: relative; 
@@ -241,6 +240,14 @@
     font-weight: 500;
 }
 
+/* Invoice Number Styling - Simple lang */
+.header-invoice {
+    font-size: 14px;
+    color: #64748b;
+    margin: 2px 0 0 0;
+    font-weight: 500;
+}
+
 .header-right {
     flex: 1;
     display: flex;
@@ -305,7 +312,7 @@
     font-size: inherit;
     font-family: inherit;
     color: #0f172a;
-    box-sizing: border-box; /* Fix for responsive width */
+    box-sizing: border-box;
 }
 .voucher-edit-input:focus {
     outline: 2px solid #3b82f6;
@@ -322,10 +329,10 @@
 
 .voucher-table {
     width: 100%;
-    min-width: 500px; /* Ensure table doesn't get too squashed */
+    min-width: 500px;
     border-collapse: separate;
     border-spacing: 0;
-    margin: 0; /* Margin handled by wrapper */
+    margin: 0;
     font-size: 13px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -527,7 +534,6 @@
    MEDIA QUERIES (RESPONSIVENESS)
    ============================================ */
 
-/* Tablet and smaller (Width < 210mm approx 793px) */
 @media (max-width: 850px) {
     .voucher-document {
         width: 100%;
@@ -536,13 +542,12 @@
 
     .voucher-page {
         width: 100%;
-        /* Let height adapt to content on screen, but keep min height */
         height: auto; 
         min-height: 297mm;
     }
     
     .voucher-section {
-        padding: 10px 25px; /* Reduce padding side */
+        padding: 10px 25px;
     }
 
     .simple-header-container {
@@ -550,21 +555,15 @@
     }
 }
 
-/* ============================================
-   MOBILE RESPONSIVENESS FIXES (UPDATED)
-   ============================================ */
-
 @media (max-width: 600px) {
-    /* 1. Container Fix: Gawing relative para sa absolute positioning ng X button */
     .voucher-action-bar {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
-        padding: 40px 20px 20px 20px; /* Tinaasan ang padding-top para di matakpan ng X button ang title */
+        padding: 40px 20px 20px 20px;
         position: relative; 
     }
 
-    /* 2. Title Fix */
     .voucher-action-left {
         width: 100%;
         padding-right: 0; 
@@ -577,32 +576,28 @@
         text-overflow: ellipsis;
     }
 
-    /* 3. Button Stack: Gawing Flex Column para magpatong-patong */
     .voucher-action-buttons {
         width: 100%;
-        display: flex;       /* Ginawang flex instead of grid */
-        flex-direction: column; /* Stack vertically (pababa) */
-        gap: 10px;           /* Space between buttons */
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
         padding-bottom: 5px;
     }
 
-    /* 4. Full Width Buttons: Lahat ng buttons 100% width na */
     .voucher-btn {
-        width: 100%;         /* Sakop ang buong lapad */
-        justify-content: center; /* Nasa gitna ang text/icon */
-        height: 42px;        /* Fixed height para pantay ang kapal */
+        width: 100%;
+        justify-content: center;
+        height: 42px;
     }
 
-    /* Tanggalin ang special grid positioning kung meron */
     .voucher-btn-download {
         grid-column: auto; 
     }
 
-    /* 5. Close Button (X) Fix: Nakapwesto sa Top-Right */
     .voucher-btn-close {
         position: absolute;
-        top: 15px;          /* Distance mula sa taas */
-        right: 15px;        /* Distance mula sa kanan */
+        top: 15px;
+        right: 15px;
         width: 36px;
         height: 36px;
         background: #f1f5f9; 
@@ -611,11 +606,9 @@
         justify-content: center;
         align-items: center;
         z-index: 10;
-        /* I-override ang width: 100% ng .voucher-btn para manatiling maliit si X */
         width: 36px !important; 
     }
     
-    /* Content Padding adjustments for Mobile */
     .voucher-content-wrapper {
         padding: 10px;
     }
@@ -630,7 +623,6 @@
         padding: 20px;
     }
     
-    /* Header alignments */
     .header-left, .header-right {
         width: 100%;
         text-align: left;
@@ -643,13 +635,11 @@
         margin-top: 5px;
     }
     
-    /* Column stacking */
     .voucher-two-col {
         grid-template-columns: 1fr;
         gap: 20px;
     }
 
-    /* Footer adjustments */
     .voucher-footer-contacts {
         flex-direction: column;
         gap: 8px;
@@ -662,7 +652,6 @@
     }
 }
 
-/* PRINT STYLES - Strict adherence to A4 regardless of screen size */
 @media print {
     .voucher-modal-overlay { position: static; padding: 0; background: white; display: block; }
     .voucher-modal-container { max-height: none; box-shadow: none; border: none; max-width: none; width: 100%; overflow: visible; }
@@ -683,7 +672,6 @@
     .voucher-document { width: 100%; }
     .voucher-page:last-child { page-break-after: auto; }
     
-    /* Reset mobile styles for print */
     .simple-header-container { flex-direction: row !important; }
     .header-right { text-align: right !important; align-items: flex-end !important; border-top: none !important; }
     .voucher-two-col { grid-template-columns: 1fr 1fr !important; }
