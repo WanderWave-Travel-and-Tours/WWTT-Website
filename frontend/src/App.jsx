@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { Menu, X, Globe, Heart } from 'lucide-react';
+import { Menu, X, Globe, AlertCircle } from 'lucide-react'; // Added AlertCircle
 import axios from 'axios';
 import './App.css'; 
+
+// --- TOAST IMPORTS ---
+import { ToastProvider } from './components/toast/ToastManager'; 
 
 // --- IMPORTS ---
 import FlightSearch from './components/flightSearch/flightSearch.jsx';
@@ -15,6 +18,64 @@ import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 import UserDashboard from './components/userDashboard/userDashboard.jsx';
 import WishlistDropdown from './components/WishlistDropdown/WishlistDropdown.jsx';
+
+// --- NEW COMPONENT: 404 Page Not Found (Styled) ---
+const NotFound = () => {
+  const navigate = useNavigate();
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      minHeight: '70vh',
+      textAlign: 'center',
+      padding: '2rem',
+      backgroundColor: '#0a192f', // Dark Blue Background
+      color: '#fff',
+      width: '100%',
+      boxSizing: 'border-box'
+    }}>
+      <AlertCircle size={80} color="#fc9c1b" style={{ marginBottom: '1.5rem' }} />
+      <h1 style={{ 
+        fontSize: '3.5rem', 
+        fontWeight: 'bold', 
+        marginBottom: '0.5rem', 
+        color: '#fc9c1b' // WanderWave Orange
+      }}>
+        404 - Page Not Found
+      </h1>
+      <p style={{ 
+        color: '#e2e8f0', 
+        marginBottom: '2.5rem', 
+        maxWidth: '600px',
+        fontSize: '1.2rem',
+        lineHeight: '1.6'
+      }}>
+        Oops! The page you are looking for does not exist. It might have been moved or deleted.
+      </p>
+      <button 
+        onClick={() => navigate('/')}
+        style={{
+          padding: '1rem 2.5rem',
+          background: '#fc9c1b',
+          color: 'white',
+          border: 'none',
+          borderRadius: '50px', // Rounded pill shape
+          cursor: 'pointer',
+          fontSize: '1.1rem',
+          fontWeight: 'bold',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+          boxShadow: '0 4px 14px 0 rgba(252, 156, 27, 0.39)'
+        }}
+        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        Go Back Home
+      </button>
+    </div>
+  );
+};
 
 const PackageBookingWrapper = () => {
   const location = useLocation();
@@ -645,7 +706,6 @@ function MainLayout() {
       <main className="main-content">
         <Routes>
           <Route path="/login" element={<div>Login</div>} />
-          
           <Route path="/flights" element={<FlightSearch />} />
           <Route path="/packages" element={<PackageDeals />} />
           <Route path="/packages/:code" element={<PackageBookingWrapper />} />
@@ -667,6 +727,8 @@ function MainLayout() {
               )
             } 
           />
+          {/* ✅ CATCH-ALL ROUTE PARA SA 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
@@ -675,10 +737,13 @@ function MainLayout() {
   );
 }
 
+// ⭐ PINAKAMAHALAGANG UPDATE: Dito binalot ang buong App sa ToastProvider
 function App() {
   return (
     <BrowserRouter>
-      <MainLayout />
+      <ToastProvider> 
+        <MainLayout />
+      </ToastProvider>
     </BrowserRouter>
   );
 }

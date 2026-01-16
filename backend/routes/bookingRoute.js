@@ -319,133 +319,157 @@ router.post('/', upload.any(), async (req, res) => {
       }
     }
 
-    // ✅ COMPLETE PASSENGER PROCESSING LOGIC
-    const rawPassengers = bookingData.passengers || []; 
-    const totalExpectedPassengers = bookingData.pax?.adult || 1;
-    const passengers = []; 
+    // ✅ HANDLE WALK-IN BOOKINGS (NO PASSENGER VALIDATION)
+    let passengers = [];
+    
+    if (bookingData.isWalkin) {
+      console.log('🏢 Processing walk-in booking - skipping passenger validation');
+      
+      // Create a placeholder passenger from primary contact
+      passengers = [{
+        passengerNumber: 1,
+        firstName: bookingData.fullName?.split(' ')[0] || 'Walk-in',
+        lastName: bookingData.fullName?.split(' ').slice(1).join(' ') || 'Customer',
+        email: bookingData.email || 'walkin@placeholder.com',
+        phone: bookingData.primaryContact?.phone || '0000000000',
+        dateOfBirth: '2000-01-01',
+        age: 0,
+        gender: 'Not Specified',
+        address: bookingData.primaryContact?.address || 'Walk-in',
+        nationality: 'Filipino'
+      }];
+      
+      console.log(`✅ Walk-in placeholder passenger created`);
+    } else {
+      // ✅ REGULAR BOOKING - COMPLETE PASSENGER PROCESSING LOGIC
+      const rawPassengers = bookingData.passengers || []; 
+      const totalExpectedPassengers = bookingData.pax?.adult || 1;
 
-    if (rawPassengers.length === 0) {
-        console.error(`❌ Embedded passenger array is empty.`);
-        req.files?.forEach(file => {
-          try { fs.unlinkSync(file.path); } catch (e) {}
-        });
-        return res.status(400).json({
-          success: false,
-          message: 'No passenger data provided'
-        });
-    }
+      if (rawPassengers.length === 0) {
+          console.error(`❌ Embedded passenger array is empty for regular booking.`);
+          req.files?.forEach(file => {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'No passenger data provided. Regular bookings require complete passenger information.'
+          });
+      }
 
-    console.log(`📋 Processing ${rawPassengers.length} passengers...`);
+      console.log(`📋 Processing ${rawPassengers.length} passengers for regular booking...`);
 
-    rawPassengers.forEach((passengerData, index) => {
-        // Validate required fields
-        if (!passengerData.firstName || !passengerData.lastName || 
-            !passengerData.email || !passengerData.phone || 
-            !passengerData.dateOfBirth) {
-            console.warn(`⚠️ Warning: Skipping passenger ${index + 1} due to missing required fields`);
-            return; // Skip this passenger
-        }
+      rawPassengers.forEach((passengerData, index) => {
+          // Validate required fields for regular bookings
+          if (!passengerData.firstName || !passengerData.lastName || 
+              !passengerData.email || !passengerData.phone || 
+              !passengerData.dateOfBirth) {
+              console.warn(`⚠️ Warning: Skipping passenger ${index + 1} due to missing required fields`);
+              return; // Skip this passenger
+          }
 
-        // Build passenger object
-        const passenger = {
-            passengerNumber: passengerData.passengerNumber || index + 1,
-            firstName: passengerData.firstName,
-            lastName: passengerData.lastName,
-            email: passengerData.email,
-            phone: passengerData.phone,
-            dateOfBirth: passengerData.dateOfBirth,
-            age: parseInt(passengerData.age) || 0,
-            gender: passengerData.gender || '',
-            address: passengerData.address || '',
-            nationality: passengerData.nationality || 'Filipino'
-        };
-
-        // Handle file uploads
-        const idFile = req.files ? req.files.find(f => f.fieldname === `idFile_${index}`) : null;
-        const passportFile = req.files ? req.files.find(f => f.fieldname === `passportFile_${index}`) : null;
-
-        if (idFile) {
-          passenger.idDocument = {
-            filename: idFile.filename,
-            originalName: idFile.originalname,
-            path: idFile.path,
-            size: idFile.size
+          // Build passenger object
+          const passenger = {
+              passengerNumber: passengerData.passengerNumber || index + 1,
+              firstName: passengerData.firstName,
+              lastName: passengerData.lastName,
+              email: passengerData.email,
+              phone: passengerData.phone,
+              dateOfBirth: passengerData.dateOfBirth,
+              age: parseInt(passengerData.age) || 0,
+              gender: passengerData.gender || '',
+              address: passengerData.address || '',
+              nationality: passengerData.nationality || 'Filipino'
           };
-          console.log(`  📄 ID uploaded for passenger ${index + 1}: ${idFile.originalname}`);
-        }
 
-        if (passportFile) {
-          passenger.passportDocument = {
-            filename: passportFile.filename,
-            originalName: passportFile.originalname,
-            path: passportFile.path,
-            size: passportFile.size
-          };
-          console.log(`  📄 Passport uploaded for passenger ${index + 1}: ${passportFile.originalname}`);
-        }
+          // Handle file uploads
+          const idFile = req.files ? req.files.find(f => f.fieldname === `idFile_${index}`) : null;
+          const passportFile = req.files ? req.files.find(f => f.fieldname === `passportFile_${index}`) : null;
 
-        // ✅ ADD PASSENGER TO ARRAY
-        passengers.push(passenger);
-    });
+          if (idFile) {
+            passenger.idDocument = {
+              filename: idFile.filename,
+              originalName: idFile.originalname,
+              path: idFile.path,
+              size: idFile.size
+            };
+            console.log(`  📄 ID uploaded for passenger ${index + 1}: ${idFile.originalname}`);
+          }
 
-    // Validate passenger count
-    if (passengers.length !== totalExpectedPassengers) {
-        req.files?.forEach(file => {
-          try {
-            fs.unlinkSync(file.path);
-          } catch (e) {}
-        });
-        console.error(`❌ Invalid passenger count: ${passengers.length} found, ${totalExpectedPassengers} expected`);
-        return res.status(400).json({
-          success: false,
-          message: `Invalid number of passengers. Expected ${totalExpectedPassengers}, received ${passengers.length}. Please ensure all passenger fields are complete.`,
-        });
+          if (passportFile) {
+            passenger.passportDocument = {
+              filename: passportFile.filename,
+              originalName: passportFile.originalname,
+              path: passportFile.path,
+              size: passportFile.size
+            };
+            console.log(`  📄 Passport uploaded for passenger ${index + 1}: ${passportFile.originalname}`);
+          }
+
+          // ✅ ADD PASSENGER TO ARRAY
+          passengers.push(passenger);
+      });
+
+      // ✅ STRICT VALIDATION: Only for regular bookings (non-walk-in)
+      if (passengers.length !== totalExpectedPassengers) {
+          req.files?.forEach(file => {
+            try {
+              fs.unlinkSync(file.path);
+            } catch (e) {}
+          });
+          console.error(`❌ Invalid passenger count for regular booking: ${passengers.length} found, ${totalExpectedPassengers} expected`);
+          return res.status(400).json({
+            success: false,
+            message: `Invalid number of passengers. Expected ${totalExpectedPassengers}, received ${passengers.length}. Please ensure all passenger fields are complete.`,
+          });
+      }
+
+      console.log(`✅ Successfully processed ${passengers.length} passengers for regular booking`);
     }
-
-    console.log(`✅ Successfully processed ${passengers.length} passengers`);
 
     // Get primary contact
     const primaryEmail = bookingData.email || bookingData.primaryContact?.email || passengers[0]?.email;
     const primaryName = bookingData.fullName || bookingData.primaryContact?.fullName || 
                        `${passengers[0]?.firstName} ${passengers[0]?.lastName}`;
     
-    // User creation/lookup
+    // User creation/lookup (skip for walk-in)
     let existingUser = await User.findOne({ email: primaryEmail });
     let isNewUser = false;
     let tempPassword = null;
 
-    if (!existingUser) {
-      isNewUser = true;
-      tempPassword = generateTempPassword();
-      const baseUsername = primaryEmail.split('@')[0].toLowerCase();
+    if (!bookingData.isWalkin) {
+      if (!existingUser) {
+        isNewUser = true;
+        tempPassword = generateTempPassword();
+        const baseUsername = primaryEmail.split('@')[0].toLowerCase();
 
-      try {
-        existingUser = await User.create({
-          fullName: primaryName,
-          email: primaryEmail,
-          username: `${baseUsername}${Date.now()}`,
-          password: tempPassword
-        });
-        
-        await sendNewUserToGHL(primaryEmail, primaryName, tempPassword, bookingData.packageName);
-        console.log('✅ Welcome email sent to new user');
-      } catch (e) {
-        console.error('❌ User/GHL Create Error:', e);
-      }
-    } else {
-      try {
-        await sendBookingConfirmationToGHL(
-          primaryEmail,
-          primaryName,
-          bookingData.packageName,
-          bookingData.totalAmount,
-          bookingData.startDate,
-          bookingData.endDate,
-          passengers.length
-        );
-        console.log('✅ Booking confirmation email sent');
-      } catch (e) {
-        console.error('❌ GHL Booking Email Error:', e);
+        try {
+          existingUser = await User.create({
+            fullName: primaryName,
+            email: primaryEmail,
+            username: `${baseUsername}${Date.now()}`,
+            password: tempPassword
+          });
+          
+          await sendNewUserToGHL(primaryEmail, primaryName, tempPassword, bookingData.packageName);
+          console.log('✅ Welcome email sent to new user');
+        } catch (e) {
+          console.error('❌ User/GHL Create Error:', e);
+        }
+      } else {
+        try {
+          await sendBookingConfirmationToGHL(
+            primaryEmail,
+            primaryName,
+            bookingData.packageName,
+            bookingData.totalAmount,
+            bookingData.startDate,
+            bookingData.endDate,
+            passengers.length
+          );
+          console.log('✅ Booking confirmation email sent');
+        } catch (e) {
+          console.error('❌ GHL Booking Email Error:', e);
+        }
       }
     }
 
@@ -463,6 +487,7 @@ router.post('/', upload.any(), async (req, res) => {
     console.log('📊 Creating booking with:');
     console.log('  - Primary Contact:', primaryName, primaryEmail);
     console.log('  - Passengers:', passengers.length);
+    console.log('  - Walk-in:', bookingData.isWalkin || false);
     console.log('  - Promo:', bookingData.promoCode || 'None');
     console.log('  - Total Amount:', bookingData.totalAmount);
 
@@ -501,13 +526,18 @@ router.post('/', upload.any(), async (req, res) => {
       fullName: primaryName,
       email: primaryEmail,
       message: bookingData.message || '',
-      passengers: passengers, // ✅ Now populated correctly
+      passengers: passengers, // ✅ Now populated correctly (or placeholder for walk-in)
       status: 'pending',
       createdAt: new Date(),
       promoCode: bookingData.promoCode || null,
       promoId: bookingData.promoId || null,
       discountAmount: bookingData.discountAmount || 0,
-      finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount
+      finalPackageTotal: bookingData.finalPackageTotal || bookingData.totalAmount,
+      
+      // Walk-in fields
+      isWalkin: bookingData.isWalkin || false,
+      appointmentDate: bookingData.appointmentDate || null,
+      appointmentTime: bookingData.appointmentTime || null
     });
 
     console.log('💾 Saving booking to database...');
@@ -525,7 +555,7 @@ router.post('/', upload.any(), async (req, res) => {
             module: 'Bookings',
             user: userEmail,
             userId: adminId,
-            description: `Created new booking: ${bookingData.packageName} for ${primaryName}`,
+            description: `Created new ${bookingData.isWalkin ? 'walk-in ' : ''}booking: ${bookingData.packageName} for ${primaryName}`,
             severity: 'SUCCESS',
             details: {
                 recordTitle: `${bookingData.packageName} - ${primaryName}`,
@@ -533,7 +563,8 @@ router.post('/', upload.any(), async (req, res) => {
                 method: 'POST',
                 totalAmount: bookingData.totalAmount,
                 passengers: passengers.length,
-                includesAirfare: bookingData.includesAirfare || false
+                includesAirfare: bookingData.includesAirfare || false,
+                isWalkin: bookingData.isWalkin || false
             }
         });
         console.log('✅ Activity Log saved');
@@ -544,7 +575,9 @@ router.post('/', upload.any(), async (req, res) => {
     // ✅ Return booking ID for payment processing
     res.json({
       success: true,
-      message: 'Booking saved successfully. Proceed to payment link generation.',
+      message: bookingData.isWalkin 
+        ? 'Walk-in appointment created successfully.' 
+        : 'Booking saved successfully. Proceed to payment link generation.',
       isNewUser: isNewUser,
       bookingId: newBooking._id,
       data: newBooking,

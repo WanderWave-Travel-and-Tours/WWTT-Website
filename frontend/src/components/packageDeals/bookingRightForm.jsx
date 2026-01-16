@@ -1,13 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Plane, Ticket  
+  ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Plane, Ticket, UserCheck  
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import HotelRoomSelector from './hotelRoomSelector';
 import BookingFormModal from './BookingFormModal';
+import AppointmentModal from './AppointmentModal';
 import './BookingRightForm.css';
+
+// Add this CSS to BookingRightForm.css
+const walkInButtonStyle = `
+.brf-walk-in-btn {
+  width: 100%;
+  background-color: #3b82f6;
+  color: white;
+  padding: 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.brf-walk-in-btn:hover { 
+  background-color: #2563eb; 
+}
+
+.brf-walk-in-btn:disabled { 
+  cursor: not-allowed; 
+  opacity: 0.5; 
+}
+`;
 
 const BookingRightForm = ({ 
   pkg,
@@ -22,6 +54,7 @@ const BookingRightForm = ({
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); 
   const [showModal, setShowModal] = useState(false);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [bookingWithAirfare, setBookingWithAirfare] = useState(false);
   const [selectedRoomType, setSelectedRoomType] = useState(null);
@@ -40,7 +73,8 @@ const BookingRightForm = ({
   const [promoError, setPromoError] = useState('');
   const [isCheckingPromo, setIsCheckingPromo] = useState(false);
   const [paymentType, setPaymentType] = useState('full');
-  const [customizationData, setCustomizationData] = useState(initialCustomizationData); // ✅ FIXED
+  const [customizationData, setCustomizationData] = useState(initialCustomizationData);
+
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
       setPromoError('Please enter a promo code');
@@ -51,13 +85,12 @@ const BookingRightForm = ({
     setPromoError('');
 
     try {
-      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}`);
+      const response = await fetch(`http://localhost:5000/api/promos/validate/${promoCode.toUpperCase()}`);
       const data = await response.json();
 
       if (response.ok && data.valid) {
         const promo = data.promo;
         
-        // Check if promo has reached usage limit
         if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
           setPromoError('This promo code has reached its usage limit');
           setAppliedPromo(null);
@@ -98,7 +131,6 @@ const BookingRightForm = ({
     if (appliedPromo.discountType === 'Percentage') {
       return (packageTotal * appliedPromo.discountValue) / 100;
     } else {
-      // Fixed Amount
       return appliedPromo.discountValue;
     }
   };
@@ -150,7 +182,7 @@ const BookingRightForm = ({
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`http://localhost:5000/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -214,8 +246,6 @@ const BookingRightForm = ({
 
   const packageTotal = (() => {
     const basePax = quantities.adult || 1;
-    
-    // ✅ Use effective price if package is customized
     const effectivePrice = effectivePackageTotal || pkg.price;
     const basePackagePrice = effectivePrice * basePax;
     
@@ -231,7 +261,6 @@ const BookingRightForm = ({
 
   const discountAmount = calculateDiscount();
   const finalPackageTotal = Math.max(0, packageTotal - discountAmount);
-
 
   const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
   
@@ -262,7 +291,7 @@ const BookingRightForm = ({
     return currentCheckDate >= start && currentCheckDate <= end;
   };
 
-  const getCalculatedDates  = () => {
+  const getCalculatedDates = () => {
     if (!selectedDate) return { start: null, end: null };
     const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDate);
     
@@ -322,6 +351,17 @@ const BookingRightForm = ({
     setBookingWithAirfare(false);
     setPassengerStep(1);
     setShowModal(true);
+  };
+
+  const handleWalkInClick = () => {
+    if (!selectedDate) {
+      toast.error("Please select a travel date first!", {
+        style: { border: '1px solid #ef4444', color: '#ef4444' },
+        iconTheme: { primary: '#ef4444', secondary: '#fff' },
+      });
+      return;
+    }
+    setShowAppointmentModal(true);
   };
 
   const handleBookWithAirfare = () => {
@@ -469,7 +509,6 @@ const BookingRightForm = ({
       const startDateFormatted = formatDate(start);
       const endDateFormatted = formatDate(end);
 
-      // ✅ FIXED: Add fullName and email at root level
       const baseBookingData = {
         packageId: pkg._id,
         packageName: pkg.name,
@@ -505,10 +544,9 @@ const BookingRightForm = ({
         initialPaymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount,
         remainingBalance: paymentType === 'partial' ? (finalTotalAmount - partialAmount) : 0,
         
-        // ✅ ADD THESE ROOT LEVEL FIELDS (REQUIRED BY SCHEMA)
         fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
         email: passengers[0].email,
-        message: '', // Optional message field
+        message: '',
         
         primaryContact: {
           fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
@@ -522,7 +560,6 @@ const BookingRightForm = ({
         markup: 0, 
         price: pkg.price || 0,
         
-        // ✅ FIXED: Include customization data if available
         isCustomized: customizationData ? true : false,
         customizedInclusions: customizationData ? customizationData.inclusions.map(inc => ({
           id: inc.id,
@@ -570,7 +607,7 @@ const BookingRightForm = ({
 
       console.log('Submitting Booking Data to backend...');
       
-      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
+      const bookingResponse = await axios.post('http://localhost:5000/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -580,7 +617,7 @@ const BookingRightForm = ({
         console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
-        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
+        const paymentResponse = await axios.post('http://localhost:5000/api/payment/create-intent', {
           bookingId: bookingId,
           paymentType: paymentType || 'full',
           paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
@@ -623,169 +660,6 @@ const BookingRightForm = ({
       setPassengerStep(prev => prev - 1);
     }
   };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validation checks...
-    
-    try {
-      setLoading(true);
-      
-      // Prepare customization data if package is customized
-      const bookingCustomization = customizationData ? {
-        isCustomized: true,
-        customizedInclusions: customizationData.inclusions.map(inc => ({
-          id: inc.id,
-          name: inc.name,
-          price: inc.price || 0,
-          supplierRate: inc.supplierRate,
-          markup: inc.markup,
-          markupType: inc.markupType,
-          supplier: inc.supplier,
-          destination: inc.destination,
-          pax: inc.pax,
-          notes: inc.notes,
-          isOriginal: inc.isOriginal,
-          isChecked: inc.isChecked,
-          source: inc.source,
-          sellerRateId: inc.sellerRateId
-        })),
-        customizationAdditionalPrice: customizationData.additionalPrice || 0,
-        originalInclusions: pkg.inclusions || []
-      } : {
-        isCustomized: false,
-        customizedInclusions: [],
-        customizationAdditionalPrice: 0,
-        originalInclusions: []
-      };
-
-      const bookingData = {
-        packageName: pkg.name,
-        packageId: pkg._id,
-        sellerPrice: pkg.sellerPrice || 0,
-        markup: pkg.markup || 0,
-        price: pkg.price,
-        
-        startDate,
-        endDate,
-        duration: pkg.duration,
-
-        pax: {
-          adult: Number(adult),
-          children: Number(children),
-          infants: Number(infants)
-        },
-
-        selectedRoomType,
-        hotelName: pkg.hotelName || '',
-        numberOfRooms,
-
-        packageTotal,
-        
-        // Include customization data
-        ...bookingCustomization,
-
-        includesAirfare: includesFlight,
-        flightDetails: includesFlight ? {
-          airline: flightDetails?.airline || '',
-          flightNumber: flightDetails?.flightNumber || '',
-          route: flightDetails?.route || '',
-          departureTime: flightDetails?.departureTime || '',
-          arrivalTime: flightDetails?.arrivalTime || '',
-          price: flightDetails?.price || null,
-          formatted: flightDetails?.formatted || '',
-          isInternational: flightDetails?.isInternational || false
-        } : null,
-        airfareTotal,
-
-        totalAmount,
-        paymentType,
-        initialPaymentAmount,
-        remainingBalance,
-
-        fullName,
-        email,
-        message,
-
-        passengers: passengersData,
-
-        promoCode: appliedPromo?.code || null,
-        promoId: appliedPromo?._id || null,
-        discountAmount: discountAmount || 0,
-        finalPackageTotal
-      };
-
-      console.log('📤 Submitting booking with customization:', bookingData);
-
-      // Continue with your existing booking submission logic...
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData)
-      });
-
-      // Rest of your submission logic...
-
-    } catch (error) {
-      console.error('❌ Booking submission error:', error);
-      // Error handling...
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderPriceBreakdown = () => {
-  const isCustomized = customizationData && customizationData.additionalPrice > 0;
-
-  return (
-    <div className="price-breakdown">
-      <div className="price-row">
-        <span>Base Package Price:</span>
-        <span>₱{pkg.price.toLocaleString()}</span>
-      </div>
-
-      {isCustomized && (
-        <div className="price-row highlight">
-          <span>Customization Add-ons:</span>
-          <span className="price-added">+ ₱{customizationData.additionalPrice.toLocaleString()}</span>
-        </div>
-      )}
-
-      <div className="price-row">
-        <span>PAX ({adult + children + infants} persons):</span>
-        <span>₱{packageTotal.toLocaleString()}</span>
-      </div>
-
-      {airfareTotal > 0 && (
-        <div className="price-row">
-          <span>Airfare:</span>
-          <span>₱{airfareTotal.toLocaleString()}</span>
-        </div>
-      )}
-
-      {discountAmount > 0 && (
-        <div className="price-row discount">
-          <span>Discount ({appliedPromo?.code}):</span>
-          <span>- ₱{discountAmount.toLocaleString()}</span>
-        </div>
-      )}
-
-      <div className="price-row total">
-        <span>Total Amount:</span>
-        <span className="total-price">₱{totalAmount.toLocaleString()}</span>
-      </div>
-
-      {isCustomized && (
-        <div className="customization-note">
-          <small>
-            ✨ Package customized with {customizationData.inclusions.filter(inc => !inc.isOriginal && inc.isChecked).length} additional inclusions
-          </small>
-        </div>
-      )}
-    </div>
-  );
-};
 
   return (
     <div className="brf-container">
@@ -840,7 +714,7 @@ const BookingRightForm = ({
 
               const isStartDate = selectedDate === day;
               const isInRange = isInSelectedRange(day);
-              const isEndDate = selectedDate && day === getCalculatedDates ();
+              const isEndDate = selectedDate && day === getCalculatedDates();
               
               return (
                 <button
@@ -1135,6 +1009,15 @@ const BookingRightForm = ({
           {selectedFlight ? '🎫 Book Package + Flight' : 'Book This Trip'}
         </button>
 
+        <button 
+          className="brf-walk-in-btn" 
+          onClick={handleWalkInClick}
+          disabled={!selectedRoomType}
+        >
+          <UserCheck size={20} />
+          Pay Over the Counter
+        </button>
+
         <button className="brf-book-with-airfare-btn" onClick={handleBookWithAirfare}>
           <Plane size={20} />
           {selectedFlight ? 'Change Flight' : 'Add Airfare'}
@@ -1183,6 +1066,32 @@ const BookingRightForm = ({
         handleNextPassenger={handleNextPassenger}
         handleBackPassenger={handleBackPassenger}
         loading={loading}
+      />
+
+      <AppointmentModal
+        isOpen={showAppointmentModal}
+        onClose={() => setShowAppointmentModal(false)}
+        pkg={pkg}
+        currentMonth={currentMonth}
+        selectedDate={selectedDate}
+        getCalculatedDates={getCalculatedDates}
+        monthNames={monthNames}
+        packageTotal={packageTotal}
+        appliedPromo={appliedPromo}
+        discountAmount={discountAmount}
+        finalPackageTotal={finalPackageTotal}
+        selectedFlight={selectedFlight}
+        airfareTotal={airfareTotal}
+        totalAmount={finalTotalAmount}
+        bookingWithAirfare={bookingWithAirfare}
+        isInternationalFlight={isInternationalFlight}
+        requiresID={requiresID}
+        requiresPassport={requiresPassport}
+        totalPassengers={totalPassengers}
+        quantities={quantities}
+        selectedRoomType={selectedRoomType}
+        numberOfRooms={numberOfRooms}
+        customizationData={customizationData}
       />
       
     </div>

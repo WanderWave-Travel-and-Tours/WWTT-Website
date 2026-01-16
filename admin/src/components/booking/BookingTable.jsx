@@ -124,7 +124,7 @@ const BookingTable = ({
                             <div className="booking-date-small">
                                 Booked: {booking.bookingDate}
                             </div>
-                        </td>
+                        </td> 
 
                         {/* Customer Details */}
                         <td>

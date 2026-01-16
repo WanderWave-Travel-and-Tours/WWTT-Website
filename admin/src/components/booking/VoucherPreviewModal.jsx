@@ -49,8 +49,6 @@ const VoucherPreviewModal = ({ voucherData, onClose, onEdit }) => {
         if (!voucherRef.current) return;
         
         setIsGenerating(true);
-        // Tip: For best PDF results on mobile, you might want to temporarily force a fixed width 
-        // to the container before capturing, but html2canvas usually handles what it sees.
         try {
             const pages = voucherRef.current.querySelectorAll('.voucher-page');
             const pdf = new jsPDF({
@@ -63,16 +61,12 @@ const VoucherPreviewModal = ({ voucherData, onClose, onEdit }) => {
             const pdfHeight = 297; 
 
             for (let i = 0; i < pages.length; i++) {
-                // Force white background and high scale for clarity
                 const canvas = await html2canvas(pages[i], {
                     scale: 2, 
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff',
-                    // Note: If you want strict A4 layout in PDF even when generated from mobile, 
-                    // you would need to clone the node and render it in a hidden desktop-width container.
-                    // For now, this captures the current responsive view or the defined width.
-                    windowWidth: 1200 // Trick to force desktop view capture
+                    windowWidth: 1200
                 });
                 
                 const imgData = canvas.toDataURL('image/png');
@@ -81,7 +75,6 @@ const VoucherPreviewModal = ({ voucherData, onClose, onEdit }) => {
                     pdf.addPage();
                 }
                 
-                // Calculate height to fit aspect ratio if needed, or stretch to A4
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             }
             
@@ -176,6 +169,7 @@ const VoucherPreviewModal = ({ voucherData, onClose, onEdit }) => {
                                                 <h2 className="header-client-name">{editedData.clientName}</h2>
                                                 <p className="header-text">{editedData.clientEmail}</p>
                                                 <p className="header-text">{editedData.clientPhone || 'N/A'}</p>
+                                                <p className="header-invoice">Invoice No.: {editedData.referenceNumber || 'Pending'}</p>
                                             </>
                                         )}
                                     </div>
@@ -197,7 +191,6 @@ const VoucherPreviewModal = ({ voucherData, onClose, onEdit }) => {
 
                                 {/* Package Details */}
                                 <div className="voucher-section">
-                                    {/* Added table-responsive wrapper */}
                                     <div className="table-responsive">
                                         <table className="voucher-table">
                                             <thead>
