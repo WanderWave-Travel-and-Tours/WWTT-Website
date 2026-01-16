@@ -19,20 +19,20 @@ const blogSchema = new mongoose.Schema({
     },
     imageUrl: {
         type: String,
-        required: true // Cover image is required
-    },
-    status: {
-        type: String,
-        enum: ['Published', 'Draft', 'Scheduled'], // ✅ Added 'Scheduled'
-        default: 'Published'
-    },
-    scheduledAt: {
-        type: Date, // ✅ New field for schedule date
-        default: null
+        required: true // Cloudinary URL
     },
     imagePublicId: {
         type: String,
-        default: ''
+        required: true // Needed for deletion in Cloudinary
+    },
+    status: {
+        type: String,
+        enum: ['Published', 'Draft', 'Scheduled'],
+        default: 'Published'
+    },
+    scheduledAt: {
+        type: Date,
+        default: null
     },
     isArchive: {
         type: String,
@@ -41,7 +41,7 @@ const blogSchema = new mongoose.Schema({
     }
 }, 
 {
-    timestamps: true // Auto adds createdAt and updatedAt
+    timestamps: true 
 });
 
 module.exports = mongoose.model('Blog', blogSchema);

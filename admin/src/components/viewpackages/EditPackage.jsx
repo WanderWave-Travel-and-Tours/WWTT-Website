@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Upload, X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, Trash2, Save } from "lucide-react"; 
 import Sidebar from "../sidebar/sidebar";
 import "./editpackage.css";
 
@@ -40,7 +40,7 @@ const EditPackage = () => {
     duration: "",
     category: "Local",
     existingImage: "",
-    existingImagePublicId: "" // Added to track existing ID
+    existingImagePublicId: "" 
   });
 
   // ✅ Store original data to track changes for Activity Logs
@@ -61,7 +61,6 @@ const EditPackage = () => {
   // ✅ AUTO-DRAFT LOGIC START
   // =========================================================
 
-  // 1. Helper: File <-> Base64 Converters
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -77,19 +76,15 @@ const EditPackage = () => {
     return new File([blob], fileName, { type: mimeType });
   };
 
-  // 2. Draft Payload State
   const [draftPayload, setDraftPayload] = useState(null);
 
-  // 3. Listen to state changes and update Draft Payload
   useEffect(() => {
     const updateDraft = async () => {
-      // 🛑 FIX: Don't save draft if data is still loading or form is empty
       if (loading) {
         setDraftPayload(null);
         return;
       }
 
-      // Check if form is effectively empty/default
       const isFormEmpty = 
         !formData.title && 
         !formData.destination && 
@@ -106,10 +101,8 @@ const EditPackage = () => {
       let imageBase64 = null;
       let imageMeta = null;
 
-      // Handle Image Conversion
       if (imageFile) {
         try {
-          // Limit draft image size (~3MB limit safety)
           if (imageFile.size < 3 * 1024 * 1024) { 
             imageBase64 = await fileToBase64(imageFile);
             imageMeta = { name: imageFile.name, type: imageFile.type };
@@ -123,24 +116,22 @@ const EditPackage = () => {
         ...formData,
         inclusions,
         itinerary,
-        image: imageBase64, // Saved as Base64 string
+        image: imageBase64, 
         imageMeta: imageMeta,
-        originalId: packageId // Store ID to ensure we only restore draft for THIS package
+        originalId: packageId 
       });
     };
 
     const timeoutId = setTimeout(() => {
       updateDraft();
-    }, 500); // Debounce
+    }, 500); 
 
     return () => clearTimeout(timeoutId);
   }, [formData, inclusions, itinerary, imageFile, loading, packageId]);
 
-  // 4. Restore Function
   const restoreDraftData = async (data) => {
     if (!data) return;
     
-    // Safety check: Ensure the draft belongs to the package we are currently editing
     if (data.originalId && data.originalId !== packageId) {
       console.warn("Draft found but belongs to a different package ID. Ignoring.");
       return;
@@ -171,7 +162,6 @@ const EditPackage = () => {
     }
   };
 
-  // 5. Initialize Hook
   const { 
     clearDraft, 
     hasDraft, 
@@ -179,18 +169,16 @@ const EditPackage = () => {
     discardDraft,
     draftInfo 
   } = useAutoDraft({
-    module: `edit-package-${packageId}`, // Unique ID per package to avoid conflicts
+    module: `edit-package-${packageId}`, 
     formData: draftPayload,
     setFormData: restoreDraftData,
     imagePreview: imagePreview, 
-    autoRestore: false // Manual via modal
+    autoRestore: false 
   });
 
-  // 6. Modal State
   const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   useEffect(() => {
-    // Only show modal if we have a draft AND we are done loading the original data
     if (hasDraft && !loading) {
       setShowRestoreModal(true);
     }
@@ -202,7 +190,7 @@ const EditPackage = () => {
   };
 
   const handleDiscardDraft = async () => {
-    await discardDraft(); // Ensure storage is cleared
+    await discardDraft(); 
     setShowRestoreModal(false);
   };
 
@@ -210,7 +198,6 @@ const EditPackage = () => {
   // ✅ AUTO-DRAFT LOGIC END
   // =========================================================
 
-  // Fetch package data
   useEffect(() => {
     if (!packageId) {
       console.error("No package ID provided");
@@ -220,25 +207,19 @@ const EditPackage = () => {
 
     const fetchPackageData = async () => {
       try {
-        console.log("Fetching package with ID:", packageId);
         const response = await fetch(`${API_BASE_URL}/${packageId}`);
         const result = await response.json();
-
-        console.log("API Response:", result);
 
         if (result.status === "ok") {
           const pkg = result.data;
           
-          // Handle price fields properly - support both old and new formats
           let sellerPriceValue = 0;
           let markupValue = 0;
           
           if (pkg.sellerPrice !== undefined && pkg.sellerPrice !== null) {
-            // New format with sellerPrice and markup
             sellerPriceValue = pkg.sellerPrice;
             markupValue = pkg.markup !== undefined && pkg.markup !== null ? pkg.markup : 0;
           } else if (pkg.price !== undefined && pkg.price !== null) {
-            // Old format with only price - treat entire price as seller price
             sellerPriceValue = pkg.price;
             markupValue = 0;
           }
@@ -246,7 +227,6 @@ const EditPackage = () => {
           const currentInclusions = pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [""];
           const currentItinerary = pkg.itinerary && pkg.itinerary.length > 0 ? pkg.itinerary : [{ day: 1, title: "", activities: [""] }];
           
-          // ✅ Save Original Data for Activity Log comparison
           setOriginalData({
             title: pkg.title || "",
             destination: pkg.destination || "",
@@ -258,7 +238,6 @@ const EditPackage = () => {
             itinerary: currentItinerary
           });
 
-          // Only update state if we haven't restored a draft yet
           setFormData({
             title: pkg.title || "",
             destination: pkg.destination || "",
@@ -274,7 +253,6 @@ const EditPackage = () => {
           setItinerary(currentItinerary);
 
           if (pkg.image) {
-            // Check if it's a full URL or relative path
             const imgUrl = pkg.image.startsWith('http') ? pkg.image : `https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`;
             setImagePreview(imgUrl);
           }
@@ -295,13 +273,11 @@ const EditPackage = () => {
     fetchPackageData();
   }, [packageId, navigate]);
 
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle image upload
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -314,7 +290,6 @@ const EditPackage = () => {
     }
   };
 
-  // Inclusions handlers
   const handleInclusionChange = (index, value) => {
     const newInclusions = [...inclusions];
     newInclusions[index] = value;
@@ -331,7 +306,6 @@ const EditPackage = () => {
     }
   };
 
-  // Itinerary handlers
   const handleItineraryChange = (index, field, value) => {
     const newItinerary = [...itinerary];
     newItinerary[index][field] = value;
@@ -370,7 +344,6 @@ const EditPackage = () => {
   const removeItineraryDay = (index) => {
     if (itinerary.length > 1) {
       const newItinerary = itinerary.filter((_, i) => i !== index);
-      // Renumber days
       newItinerary.forEach((item, i) => {
         item.day = i + 1;
       });
@@ -378,7 +351,6 @@ const EditPackage = () => {
     }
   };
 
-  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -394,7 +366,6 @@ const EditPackage = () => {
 
     setSubmitting(true);
 
-    // 🔥 Get Admin Info for Logs
     const { userEmail, adminId } = getAdminData();
 
     try {
@@ -410,11 +381,9 @@ const EditPackage = () => {
           formDataToSend.append("existingImagePublicId", formData.existingImagePublicId);
       }
 
-      // Filter empty inclusions
       const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
       formDataToSend.append("inclusions", JSON.stringify(filteredInclusions));
 
-      // Filter empty itinerary
       const filteredItinerary = itinerary
         .map((day) => ({
           day: day.day,
@@ -428,15 +397,12 @@ const EditPackage = () => {
         formDataToSend.append("image", imageFile);
       }
 
-      // Append Admin Data
       formDataToSend.append("userEmail", userEmail);
       formDataToSend.append("adminId", adminId);
 
-      // 🔥 Logic: Track Changes for Activity Logs
       let changes = [];
             
       const trackChange = (label, oldVal, newVal) => {
-          // Ensure values are strings for safe comparison
           const cleanOld = String(oldVal || "").trim();
           const cleanNew = String(newVal || "").trim();
           if (cleanOld !== cleanNew) {
@@ -452,13 +418,10 @@ const EditPackage = () => {
           trackChange("Duration", originalData.duration, formData.duration);
           trackChange("Category", originalData.category, formData.category);
 
-          // Deep Compare Inclusions (Simplistic check)
           if (JSON.stringify(originalData.inclusions) !== JSON.stringify(filteredInclusions)) {
              changes.push("Package inclusions were updated.");
           }
 
-          // Deep Compare Itinerary (Simplistic check)
-          // Note: we compare filtered because form might have empty fields user added but didn't fill
           if (JSON.stringify(originalData.itinerary) !== JSON.stringify(filteredItinerary)) {
              changes.push("Package itinerary was updated.");
           }
@@ -468,12 +431,9 @@ const EditPackage = () => {
           }
       }
 
-      // Append Changes Array as JSON string
       if (changes.length > 0) {
           formDataToSend.append('changes', JSON.stringify(changes));
       }
-
-      console.log("Submitting update for package ID:", packageId);
 
       const response = await fetch(`${API_BASE_URL}/edit/${packageId}`, {
         method: "PUT",
@@ -482,14 +442,9 @@ const EditPackage = () => {
 
       const result = await response.json();
 
-      console.log("Update response:", result);
-
       if (result.status === "ok") {
         alert("Package updated successfully!");
-        
-        // ✅ CLEAR DRAFT ON SUCCESS
         await clearDraft();
-        
         navigate("/view-packages");
       } else {
         alert("Failed to update package: " + (result.error || "Unknown error"));
@@ -504,18 +459,18 @@ const EditPackage = () => {
 
   if (loading) {
     return (
-      <div className="ep-page">
+      <div className="epa-page">
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           toggleSidebar={toggleSidebar}
         />
         <main
-          className={`ep-main ${
-            isSidebarCollapsed ? "ep-main--collapsed" : ""
+          className={`epa-main ${
+            isSidebarCollapsed ? "epa-main--collapsed" : ""
           }`}
         >
-          <div className="ep-loading">
-            <div className="ep-spinner"></div>
+          <div className="epa-loading">
+            <div className="epa-spinner"></div>
             <p>Loading package data...</p>
           </div>
         </main>
@@ -528,9 +483,8 @@ const EditPackage = () => {
     (parseFloat(formData.markup) || 0);
 
   return (
-    <div className="ep-page">
+    <div className="epa-page">
       
-      {/* ✅ RESTORE DRAFT MODAL */}
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -540,49 +494,49 @@ const EditPackage = () => {
 
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <main
-        className={`ep-main ${isSidebarCollapsed ? "ep-main--collapsed" : ""}`}
+        className={`epa-main ${isSidebarCollapsed ? "epa-main--collapsed" : ""}`}
       >
-        <div className="ep-container">
-          <div className="ep-header">
-            <div className="ep-header-content">
+        <div className="epa-container">
+          <div className="epa-header">
+            <div className="epa-header-content">
               <button
-                className="ep-back-btn"
+                className="epa-back-btn"
                 onClick={() => navigate("/view-packages")}
               >
                 <ArrowLeft size={20} />
                 Back to Packages
               </button>
-              <h1 className="ep-title">Edit Package</h1>
-              <p className="ep-subtitle">
+              <h1 className="epa-title">Edit Package</h1>
+              <p className="epa-subtitle">
                 Update package information and details
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="ep-form">
+          <form onSubmit={handleSubmit} className="epa-form">
 
             {/* Image Upload */}
-            <div className="ep-section">
-              <h2 className="ep-section-title">Package Image</h2>
-              <div className="ep-upload-area">
+            <div className="epa-section">
+              <h2 className="epa-section-title">Package Image</h2>
+              <div className="epa-upload-area">
                 <input
                   type="file"
                   id="image-upload"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="ep-file-input"
+                  className="epa-file-input"
                 />
-                <label htmlFor="image-upload" className="ep-upload-label">
+                <label htmlFor="image-upload" className="epa-upload-label">
                   {imagePreview ? (
-                    <div className="ep-image-preview">
+                    <div className="epa-image-preview">
                       <img src={imagePreview} alt="Preview" />
-                      <div className="ep-image-overlay">
+                      <div className="epa-image-overlay">
                         <Upload size={24} />
                         <span>Click to change image</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="ep-upload-placeholder">
+                    <div className="epa-upload-placeholder">
                       <Upload size={48} />
                       <span>Click to upload image</span>
                     </div>
@@ -592,55 +546,55 @@ const EditPackage = () => {
             </div>
             
             {/* Basic Information */}
-            <div className="ep-section">
-              <h2 className="ep-section-title">Basic Information</h2>
-              <div className="ep-form-grid">
-                <div className="ep-form-group">
-                  <label className="ep-label">Package Title *</label>
+            <div className="epa-section">
+              <h2 className="epa-section-title">Basic Information</h2>
+              <div className="epa-form-grid">
+                <div className="epa-form-group">
+                  <label className="epa-label">Package Title *</label>
                   <input
                     type="text"
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="ep-input"
+                    className="epa-input"
                     placeholder="Enter package title"
                     required
                   />
                 </div>
 
-                <div className="ep-form-group">
-                  <label className="ep-label">Destination *</label>
+                <div className="epa-form-group">
+                  <label className="epa-label">Destination *</label>
                   <input
                     type="text"
                     name="destination"
                     value={formData.destination}
                     onChange={handleInputChange}
-                    className="ep-input"
+                    className="epa-input"
                     placeholder="Enter destination"
                     required
                   />
                 </div>
 
-                <div className="ep-form-group">
-                  <label className="ep-label">Duration *</label>
+                <div className="epa-form-group">
+                  <label className="epa-label">Duration *</label>
                   <input
                     type="text"
                     name="duration"
                     value={formData.duration}
                     onChange={handleInputChange}
-                    className="ep-input"
+                    className="epa-input"
                     placeholder="e.g., 3 Days 2 Nights"
                     required
                   />
                 </div>
 
-                <div className="ep-form-group">
-                  <label className="ep-label">Category *</label>
+                <div className="epa-form-group">
+                  <label className="epa-label">Category *</label>
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="ep-input"
+                    className="epa-input"
                     required
                   >
                     <option value="Local">Local</option>
@@ -654,42 +608,42 @@ const EditPackage = () => {
             </div>
 
             {/* Pricing */}
-            <div className="ep-section">
-              <h2 className="ep-section-title">Pricing</h2>
-              <div className="ep-form-grid">
-                <div className="ep-form-group">
-                  <label className="ep-label">Seller Price (₱) *</label>
+            <div className="epa-section">
+              <h2 className="epa-section-title">Pricing</h2>
+              <div className="epa-form-grid">
+                <div className="epa-form-group">
+                  <label className="epa-label">Seller Price (₱) *</label>
                   <input
                     type="number"
                     name="sellerPrice"
                     value={formData.sellerPrice}
                     onChange={handleInputChange}
-                    className="ep-input"
+                    className="epa-input"
                     placeholder="0.00"
                     step="0.01"
                     required
                   />
                 </div>
 
-                <div className="ep-form-group">
-                  <label className="ep-label">Markup (₱)</label>
+                <div className="epa-form-group">
+                  <label className="epa-label">Markup (₱)</label>
                   <input
                     type="number"
                     name="markup"
                     value={formData.markup}
                     onChange={handleInputChange}
-                    className="ep-input"
+                    className="epa-input"
                     placeholder="0.00"
                     step="0.01"
                   />
                 </div>
 
-                <div className="ep-form-group">
-                  <label className="ep-label">Final Price (₱)</label>
+                <div className="epa-form-group">
+                  <label className="epa-label">Final Price (₱)</label>
                   <input
                     type="text"
                     value={`₱${calculatedPrice.toLocaleString()}`}
-                    className="ep-input ep-input--readonly"
+                    className="epa-input epa-input--readonly"
                     readOnly
                   />
                 </div>
@@ -697,33 +651,33 @@ const EditPackage = () => {
             </div>
 
             {/* Inclusions */}
-            <div className="ep-section">
-              <div className="ep-section-header">
-                <h2 className="ep-section-title">Package Inclusions</h2>
+            <div className="epa-section">
+              <div className="epa-section-header">
+                <h2 className="epa-section-title">Package Inclusions</h2>
                 <button
                   type="button"
-                  className="ep-add-btn"
+                  className="epa-add-btn"
                   onClick={addInclusion}
                 >
                   <Plus size={16} /> Add Inclusion
                 </button>
               </div>
-              <div className="ep-list-items">
+              <div className="epa-list-items">
                 {inclusions.map((inclusion, index) => (
-                  <div key={index} className="ep-list-item">
+                  <div key={index} className="epa-list-item">
                     <input
                       type="text"
                       value={inclusion}
                       onChange={(e) =>
                         handleInclusionChange(index, e.target.value)
                       }
-                      className="ep-input"
+                      className="epa-input"
                       placeholder="Enter inclusion"
                     />
                     {inclusions.length > 1 && (
                       <button
                         type="button"
-                        className="ep-remove-btn"
+                        className="epa-remove-btn"
                         onClick={() => removeInclusion(index)}
                       >
                         <X size={16} />
@@ -735,34 +689,34 @@ const EditPackage = () => {
             </div>
 
             {/* Itinerary */}
-            <div className="ep-section">
-              <div className="ep-section-header">
-                <h2 className="ep-section-title">Itinerary</h2>
+            <div className="epa-section">
+              <div className="epa-section-header">
+                <h2 className="epa-section-title">Itinerary</h2>
                 <button
                   type="button"
-                  className="ep-add-btn"
+                  className="epa-add-btn"
                   onClick={addItineraryDay}
                 >
                   <Plus size={16} /> Add Day
                 </button>
               </div>
-              <div className="ep-itinerary-list">
+              <div className="epa-itinerary-list">
                 {itinerary.map((day, dayIndex) => (
-                  <div key={dayIndex} className="ep-itinerary-day">
-                    <div className="ep-itinerary-day-header">
-                      <h3 className="ep-day-title">Day {day.day}</h3>
+                  <div key={dayIndex} className="epa-itinerary-day">
+                    <div className="epa-itinerary-day-header">
+                      <h3 className="epa-day-title">Day {day.day}</h3>
                       {itinerary.length > 1 && (
                         <button
                           type="button"
-                          className="ep-remove-day-btn"
+                          className="epa-remove-day-btn"
                           onClick={() => removeItineraryDay(dayIndex)}
                         >
                           <Trash2 size={16} /> Remove Day
                         </button>
                       )}
                     </div>
-                    <div className="ep-form-group">
-                      <label className="ep-label">Day Title</label>
+                    <div className="epa-form-group">
+                      <label className="epa-label">Day Title</label>
                       <input
                         type="text"
                         value={day.title}
@@ -773,23 +727,23 @@ const EditPackage = () => {
                             e.target.value
                           )
                         }
-                        className="ep-input"
+                        className="epa-input"
                         placeholder="Enter day title"
                       />
                     </div>
-                    <div className="ep-activities">
-                      <div className="ep-activities-header">
-                        <label className="ep-label">Activities</label>
+                    <div className="epa-activities">
+                      <div className="epa-activities-header">
+                        <label className="epa-label">Activities</label>
                         <button
                           type="button"
-                          className="ep-add-activity-btn"
+                          className="epa-add-activity-btn"
                           onClick={() => addActivity(dayIndex)}
                         >
                           <Plus size={14} /> Add Activity
                         </button>
                       </div>
                       {day.activities.map((activity, actIndex) => (
-                        <div key={actIndex} className="ep-list-item">
+                        <div key={actIndex} className="epa-list-item">
                           <input
                             type="text"
                             value={activity}
@@ -800,13 +754,13 @@ const EditPackage = () => {
                                 e.target.value
                               )
                             }
-                            className="ep-input"
+                            className="epa-input"
                             placeholder="Enter activity"
                           />
                           {day.activities.length > 1 && (
                             <button
                               type="button"
-                              className="ep-remove-btn"
+                              className="epa-remove-btn"
                               onClick={() => removeActivity(dayIndex, actIndex)}
                             >
                               <X size={16} />
@@ -820,25 +774,31 @@ const EditPackage = () => {
               </div>
             </div>
 
-            {/* Submit Buttons */}
-            <div className="ep-form-actions">
+            {/* Submit Buttons - EXACT MATCH TO IMAGE */}
+            <div className="epa-form-actions">
               <button
                 type="button"
-                className="ep-btn ep-btn--cancel"
+                className="epa-btn epa-btn--cancel"
                 onClick={async () => {
-                    await clearDraft(); // Clear draft on cancel
+                    await clearDraft(); 
                     navigate("/view-packages");
                 }}
                 disabled={submitting}
               >
-                Cancel
+                CANCEL
               </button>
               <button
                 type="submit"
-                className="ep-btn ep-btn--submit"
+                className="epa-btn epa-btn--submit"
                 disabled={submitting}
               >
-                {submitting ? "Updating..." : "Update Package"}
+                {submitting ? (
+                    'UPDATING...' 
+                ) : (
+                    <>
+                        <Save size={18} /> UPDATE PACKAGE
+                    </>
+                )}
               </button>
             </div>
           </form>

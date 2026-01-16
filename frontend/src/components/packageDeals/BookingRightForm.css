@@ -1,65 +1,185 @@
-/* BookingRightForm.css */
-
-/* --- Calendar Section --- */
+/* --- Calendar Section - UPGRADED UI --- */
 
 .brf-disabled-date {
-  color: #e5e7eb !important;      /* Sobrang light na gray para sa text */
-  background-color: transparent !important; /* Walang background */
-  cursor: default !important;     /* Default cursor lang, hindi 'pointer' */
-  pointer-events: none !important; /* ETO ANG KEY: Bawal i-hover o i-click */
-  border: none !important;        /* Tanggalin ang border kung meron */
-  text-decoration: none;          /* Optional: Kung ayaw mo ng strikethrough */
+  color: #d1d5db !important;
+  background-color: transparent !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  border: none !important;
+  opacity: 0.4;
+  position: relative;
 }
 
-/* Dagdag safety para siguradong walang hover effect */
-.brf-disabled-date:hover {
-  background-color: transparent !important;
-  color: #e5e7eb !important;
+.brf-disabled-date::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1px;
+  height: 20px;
+  background: #e5e7eb;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .brf-calendar-wrapper {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
   margin-bottom: 24px;
-  background-color: white;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.brf-calendar-wrapper:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: #fc9c1b;
 }
 
 .brf-calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.brf-calendar-header h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brf-calendar-nav-btn {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.brf-calendar-nav-btn:hover {
+  background: #fc9c1b;
+  border-color: #fc9c1b;
+  color: white;
+  transform: scale(1.05);
 }
 
 .brf-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: 8px;
 }
 
 .brf-calendar-day-label {
   text-align: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 0;
+  margin-bottom: 4px;
 }
 
 .brf-calendar-day {
-  height: 36px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: white;
   cursor: pointer;
-  font-size: 0.9rem;
-  color: #374151;
+  font-size: 0.95rem;
+  color: #1e293b;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
-.brf-calendar-day:hover { background-color: #f3f4f6; }
-.brf-calendar-day.brf-selected { background-color: #001b3e; color: white; font-weight: 700; }
-.brf-calendar-day.brf-in-range { background-color: #fef3c7; color: #92400e; }
-.brf-calendar-day.brf-end-date { background-color: #22c55e; color: white; font-weight: 600; }
+.brf-calendar-day:hover {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border-color: #fc9c1b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.2);
+}
 
+.brf-calendar-day.brf-selected {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8f 100%);
+  color: white;
+  font-weight: 800;
+  border-color: #1e3a5f;
+  box-shadow: 0 6px 16px rgba(30, 58, 95, 0.3);
+  transform: scale(1.05);
+}
+
+.brf-calendar-day.brf-selected::after {
+  content: '✓';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.6rem;
+  opacity: 0.8;
+}
+
+.brf-calendar-day.brf-in-range {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border-color: #fbbf24;
+  font-weight: 600;
+}
+
+.brf-calendar-day.brf-end-date {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-weight: 800;
+  border-color: #10b981;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+  transform: scale(1.05);
+}
+
+.brf-calendar-day.brf-end-date::after {
+  content: '✓';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.6rem;
+  opacity: 0.8;
+}
+
+.brf-calendar-day.brf-today {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+  font-weight: 700;
+}
+
+.brf-calendar-day.brf-today::before {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: #3b82f6;
+  border-radius: 50%;
+}
 /* --- Quantity Section --- */
 .brf-quantity-section { margin-bottom: 1rem; }
 .brf-quantity-item {
