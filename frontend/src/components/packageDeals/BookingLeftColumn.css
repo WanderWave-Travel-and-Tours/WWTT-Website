@@ -302,6 +302,57 @@
   color: #c2410c;
 }
 
+.blc-customized-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 20px;
+  margin-left: 12px;
+}
+
+.blc-customizer-section {
+  margin-bottom: 24px;
+}
+
+.blc-customizer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  background: white;
+  border: 2px solid #f97316;
+  border-radius: 12px;
+  color: #f97316;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.blc-customizer-toggle:hover {
+  background: #f97316;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.blc-customizer-toggle.active {
+  background: #f97316;
+  color: white;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
+}
+
+.blc-customizer-toggle span {
+  font-size: 1rem;
+}
+
 /* =========================================
    RESPONSIVE MEDIA QUERIES
    ========================================= */
@@ -375,5 +426,29 @@
 
   .blc-day-title {
     font-size: 0.95rem;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .blc-customized-badge {
+    margin-left: 0;
+    margin-top: 8px;
+    font-size: 0.8rem;
+  }
+
+  .blc-price-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .blc-customizer-toggle {
+    font-size: 0.9rem;
+    padding: 14px;
+  }
+
+  .blc-customizer-toggle span {
+    font-size: 0.9rem;
   }
 }

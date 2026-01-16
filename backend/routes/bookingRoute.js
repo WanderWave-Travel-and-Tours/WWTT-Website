@@ -6,7 +6,8 @@ const fs = require('fs');
 const Booking = require('../models/booking');
 const User = require('../models/user');
 const Promo = require('../models/promo');
-const ActivityLog = require('../models/ActivityLog'); // ✅ IMPORT ADDED
+const Package = require('../models/package');
+const ActivityLog = require('../models/ActivityLog'); 
 const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
 
 const storage = multer.diskStorage({
@@ -203,29 +204,32 @@ router.post('/:id/archive', async (req, res) => {
     }
 });
 
-
 router.get('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const booking = await Booking.findById(id);
+    const booking = await Booking.findById(req.params.id)
+      .populate('packageId')
+      .populate('promoId')
+      .populate({
+        path: 'customizedInclusions.sellerRateId',
+        model: 'SellerRate'
+      });
 
     if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
+      return res.status(404).json({ message: 'Booking not found' });
     }
 
-    res.json({
-      success: true,
-      booking: booking
-    });
+    // Add customization summary if customized
+    const response = booking.toObject();
+    if (booking.isCustomized) {
+      response.customizationSummary = booking.getCustomizationSummary();
+    }
 
+    res.json(response);
   } catch (error) {
-    console.error('❌ Error fetching booking:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch booking'
+    console.error('Error fetching booking:', error);
+    res.status(500).json({ 
+      message: 'Error fetching booking', 
+      error: error.message 
     });
   }
 });
@@ -254,6 +258,7 @@ router.post('/', upload.any(), async (req, res) => {
         });
     }
 
+    // Promo validation
     if (bookingData.promoId) {
       console.log('🎟️ Validating promo code...');
       try {
@@ -314,20 +319,34 @@ router.post('/', upload.any(), async (req, res) => {
       }
     }
 
+    // ✅ COMPLETE PASSENGER PROCESSING LOGIC
     const rawPassengers = bookingData.passengers || []; 
     const totalExpectedPassengers = bookingData.pax?.adult || 1;
     const passengers = []; 
 
     if (rawPassengers.length === 0) {
         console.error(`❌ Embedded passenger array is empty.`);
+        req.files?.forEach(file => {
+          try { fs.unlinkSync(file.path); } catch (e) {}
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'No passenger data provided'
+        });
     }
 
+    console.log(`📋 Processing ${rawPassengers.length} passengers...`);
+
     rawPassengers.forEach((passengerData, index) => {
-        if (!passengerData.firstName || !passengerData.lastName || !passengerData.email || !passengerData.phone || !passengerData.dateOfBirth) {
-            console.warn(`⚠️ Warning: Skipping passenger ${index + 1} due to missing required fields in embedded data.`);
-            return;
+        // Validate required fields
+        if (!passengerData.firstName || !passengerData.lastName || 
+            !passengerData.email || !passengerData.phone || 
+            !passengerData.dateOfBirth) {
+            console.warn(`⚠️ Warning: Skipping passenger ${index + 1} due to missing required fields`);
+            return; // Skip this passenger
         }
 
+        // Build passenger object
         const passenger = {
             passengerNumber: passengerData.passengerNumber || index + 1,
             firstName: passengerData.firstName,
@@ -341,6 +360,7 @@ router.post('/', upload.any(), async (req, res) => {
             nationality: passengerData.nationality || 'Filipino'
         };
 
+        // Handle file uploads
         const idFile = req.files ? req.files.find(f => f.fieldname === `idFile_${index}`) : null;
         const passportFile = req.files ? req.files.find(f => f.fieldname === `passportFile_${index}`) : null;
 
@@ -364,25 +384,32 @@ router.post('/', upload.any(), async (req, res) => {
           console.log(`  📄 Passport uploaded for passenger ${index + 1}: ${passportFile.originalname}`);
         }
 
+        // ✅ ADD PASSENGER TO ARRAY
         passengers.push(passenger);
     });
 
+    // Validate passenger count
     if (passengers.length !== totalExpectedPassengers) {
         req.files?.forEach(file => {
           try {
             fs.unlinkSync(file.path);
           } catch (e) {}
         });
-        console.error(`❌ CRASH REASON: Invalid number of passengers processed: ${passengers.length} found, ${totalExpectedPassengers} expected. (Mongoose Validation Failure or incomplete form data)`);
+        console.error(`❌ Invalid passenger count: ${passengers.length} found, ${totalExpectedPassengers} expected`);
         return res.status(400).json({
           success: false,
-          message: `Booking failed: Invalid number of passengers processed. Expected ${totalExpectedPassengers}, found ${passengers.length}. Please ensure all passenger fields are complete.`,
+          message: `Invalid number of passengers. Expected ${totalExpectedPassengers}, received ${passengers.length}. Please ensure all passenger fields are complete.`,
         });
     }
 
-    const primaryEmail = bookingData.primaryContact?.email || passengers[0]?.email;
-    const primaryName = bookingData.primaryContact?.fullName || `${passengers[0]?.firstName} ${passengers[0]?.lastName}`;
+    console.log(`✅ Successfully processed ${passengers.length} passengers`);
+
+    // Get primary contact
+    const primaryEmail = bookingData.email || bookingData.primaryContact?.email || passengers[0]?.email;
+    const primaryName = bookingData.fullName || bookingData.primaryContact?.fullName || 
+                       `${passengers[0]?.firstName} ${passengers[0]?.lastName}`;
     
+    // User creation/lookup
     let existingUser = await User.findOne({ email: primaryEmail });
     let isNewUser = false;
     let tempPassword = null;
@@ -422,6 +449,7 @@ router.post('/', upload.any(), async (req, res) => {
       }
     }
 
+    // Parse flight details
     let flightDetailsObject = bookingData.flightDetails;
     if (flightDetailsObject && typeof flightDetailsObject === 'string') {
         try {
@@ -432,13 +460,13 @@ router.post('/', upload.any(), async (req, res) => {
         }
     }
 
-    console.log('📊 Promo Data:', {
-      promoCode: bookingData.promoCode,
-      promoId: bookingData.promoId,
-      discountAmount: bookingData.discountAmount,
-      finalPackageTotal: bookingData.finalPackageTotal
-    });
+    console.log('📊 Creating booking with:');
+    console.log('  - Primary Contact:', primaryName, primaryEmail);
+    console.log('  - Passengers:', passengers.length);
+    console.log('  - Promo:', bookingData.promoCode || 'None');
+    console.log('  - Total Amount:', bookingData.totalAmount);
 
+    // ✅ Create booking with all fields
     const newBooking = new Booking({
       packageName: bookingData.packageName,
       packageId: bookingData.packageId || null,
@@ -453,20 +481,27 @@ router.post('/', upload.any(), async (req, res) => {
       hotelName: bookingData.hotelName,
       numberOfRooms: bookingData.numberOfRooms,
       packageTotal: bookingData.packageTotal || bookingData.totalAmount,
+      
+      // Customization fields
+      isCustomized: bookingData.isCustomized || false,
+      customizedInclusions: bookingData.customizedInclusions || [],
+      customizationAdditionalPrice: bookingData.customizationAdditionalPrice || 0,
+      originalInclusions: bookingData.originalInclusions || [],
+      
       includesAirfare: bookingData.includesAirfare || false,
       flightDetails: flightDetailsObject, 
       airfareTotal: bookingData.airfareTotal || 0,
       totalAmount: bookingData.totalAmount,
 
       paymentType: bookingData.paymentType || 'full',
-      initialPaymentAmount: bookingData.paymentAmount || bookingData.totalAmount,
+      initialPaymentAmount: bookingData.initialPaymentAmount || bookingData.totalAmount,
       remainingBalance: bookingData.remainingBalance || 0,
       balancePaidAmount: 0,
 
       fullName: primaryName,
       email: primaryEmail,
       message: bookingData.message || '',
-      passengers: passengers, 
+      passengers: passengers, // ✅ Now populated correctly
       status: 'pending',
       createdAt: new Date(),
       promoCode: bookingData.promoCode || null,
@@ -478,9 +513,9 @@ router.post('/', upload.any(), async (req, res) => {
     console.log('💾 Saving booking to database...');
     await newBooking.save();
 
-    console.log(`💰 Booking saved. Returning ID for payment link creation: ${newBooking._id}`);
+    console.log(`💰 Booking saved successfully! ID: ${newBooking._id}`);
 
-    // 👇👇👇 ACTIVITY LOG START (CREATE BOOKING) 👇👇👇
+    // Activity Log
     try {
         const userEmail = bookingData.userEmail || bookingData.adminEmail || 'System';
         const adminId = bookingData.adminId || null;
@@ -501,12 +536,12 @@ router.post('/', upload.any(), async (req, res) => {
                 includesAirfare: bookingData.includesAirfare || false
             }
         });
-        console.log('✅ Activity Log saved for Create Booking');
+        console.log('✅ Activity Log saved');
     } catch (logError) {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
-    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
+    // ✅ Return booking ID for payment processing
     res.json({
       success: true,
       message: 'Booking saved successfully. Proceed to payment link generation.',
@@ -540,17 +575,128 @@ router.post('/', upload.any(), async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const bookings = await Booking.find().sort({ createdAt: -1 });
-    res.json({
-      success: true,
-      count: bookings.length,
-      bookings: bookings
+    const { 
+      status, 
+      email, 
+      referenceNumber, 
+      isArchive, 
+      isCustomized,
+      startDate,
+      endDate 
+    } = req.query;
+
+    let filter = {};
+
+    if (status) filter.status = status;
+    if (email) filter.email = { $regex: email, $options: 'i' };
+    if (referenceNumber) filter.referenceNumber = { $regex: referenceNumber, $options: 'i' };
+    if (isArchive) filter.isArchive = isArchive;
+    if (isCustomized !== undefined) filter.isCustomized = isCustomized === 'true';
+    
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    const bookings = await Booking.find(filter)
+      .populate('packageId')
+      .populate('promoId')
+      .sort({ createdAt: -1 });
+
+    // Add customization summaries
+    const bookingsWithSummary = bookings.map(booking => {
+      const bookingObj = booking.toObject();
+      if (booking.isCustomized) {
+        bookingObj.customizationSummary = booking.getCustomizationSummary();
+      }
+      return bookingObj;
     });
+
+    res.json(bookingsWithSummary);
   } catch (error) {
-    console.error('❌ Error fetching bookings:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch bookings'
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ 
+      message: 'Error fetching bookings', 
+      error: error.message 
+    });
+  }
+});
+
+// ============================================
+// GET CUSTOMIZATION STATISTICS
+// ============================================
+router.get('/stats/customization', async (req, res) => {
+  try {
+    const totalBookings = await Booking.countDocuments({ isArchive: 'No' });
+    const customizedBookings = await Booking.countDocuments({ 
+      isCustomized: true, 
+      isArchive: 'No' 
+    });
+
+    const customizationRate = totalBookings > 0 
+      ? ((customizedBookings / totalBookings) * 100).toFixed(2) 
+      : 0;
+
+    // Average additional price from customizations
+    const customizationRevenue = await Booking.aggregate([
+      { 
+        $match: { 
+          isCustomized: true, 
+          isArchive: 'No',
+          status: { $in: ['confirmed', 'fully_paid'] }
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$customizationAdditionalPrice' },
+          avgAdditionalPrice: { $avg: '$customizationAdditionalPrice' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Most popular added inclusions
+    const popularInclusions = await Booking.aggregate([
+      { $match: { isCustomized: true, isArchive: 'No' } },
+      { $unwind: '$customizedInclusions' },
+      { 
+        $match: { 
+          'customizedInclusions.isOriginal': false,
+          'customizedInclusions.isChecked': true
+        } 
+      },
+      {
+        $group: {
+          _id: '$customizedInclusions.name',
+          count: { $sum: 1 },
+          avgPrice: { $avg: '$customizedInclusions.price' },
+          totalRevenue: { $sum: '$customizedInclusions.price' }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
+
+    res.json({
+      totalBookings,
+      customizedBookings,
+      customizationRate: parseFloat(customizationRate),
+      revenue: customizationRevenue[0] || { 
+        totalRevenue: 0, 
+        avgAdditionalPrice: 0, 
+        count: 0 
+      },
+      popularInclusions
+    });
+
+  } catch (error) {
+    console.error('Error fetching customization stats:', error);
+    res.status(500).json({ 
+      message: 'Error fetching statistics', 
+      error: error.message 
     });
   }
 });
@@ -940,6 +1086,41 @@ router.get('/pending-balance/all', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch bookings with pending balance'
+    });
+  }
+});
+
+router.patch('/:id/customization', async (req, res) => {
+  try {
+    const { customizedInclusions, customizationAdditionalPrice } = req.body;
+
+    const booking = await Booking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    // Recalculate total amount with new customization
+    const baseAmount = booking.totalAmount - booking.customizationAdditionalPrice;
+    const newTotalAmount = baseAmount + customizationAdditionalPrice;
+
+    booking.customizedInclusions = customizedInclusions;
+    booking.customizationAdditionalPrice = customizationAdditionalPrice;
+    booking.totalAmount = newTotalAmount;
+    booking.isCustomized = true;
+
+    await booking.save();
+
+    res.json({
+      message: 'Booking customization updated successfully',
+      booking
+    });
+
+  } catch (error) {
+    console.error('Error updating booking customization:', error);
+    res.status(400).json({ 
+      message: 'Error updating customization', 
+      error: error.message 
     });
   }
 });

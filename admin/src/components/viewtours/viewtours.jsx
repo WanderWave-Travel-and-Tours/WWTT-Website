@@ -239,7 +239,7 @@ const ViewTours = () => {
                                                 <td>
                                                     <div className="vt-customer-cell">
                                                         <div className="vt-image-preview">
-                                                            <img src={`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`} alt="" onError={(e) => e.target.src="https://via.placeholder.com/150"} />
+                                                            <img src={tour.image} alt={tour.title} onError={(e) => e.target.src="https://via.placeholder.com/150"} />
                                                         </div>
                                                         <span className="vt-customer-name">{tour.title.toUpperCase()}</span>
                                                     </div>

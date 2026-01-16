@@ -1,6 +1,7 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import ToastProvider from './components/toast/ToastManager';
+import axios from 'axios';
 
 // Main Components 
 import Login from './components/login/login.jsx'; 
@@ -75,93 +76,448 @@ import TravelInsurance from './components/services/TravelInsurance/TravelInsuran
 import BillsPayment from './components/services/BillsPayment/BillsPayment.jsx';
 import MarriageCertificate from './components/services/MarriageCertificate/MarriageCertificate.jsx';
 import Users from './components/users/users.jsx';
-import SellerRate from './components/SellerRate/SellerRate.jsx'
+import SellerRate from './components/SellerRate/SellerRate.jsx';
 import EditService from './components/viewservice/EditService.jsx';
 
+// ============================================================
+// LIST OF ALL VALID PROTECTED ROUTES
+// ============================================================
+const VALID_PROTECTED_ROUTES = [
+  '/dashboard',
+  '/booking',
+  '/archive',
+  '/activity-logs',
+  '/settings',
+  '/users',
+  '/admins',
+  '/add-admin',
+  '/add-package',
+  '/view-packages',
+  '/add-tour',
+  '/view-tours',
+  '/add-promo',
+  '/view-promos',
+  '/add-poster',
+  '/view-posters',
+  '/add-blog',
+  '/view-blogs',
+  '/add-image',
+  '/view-images',
+  '/add-deals',
+  '/view-deals',
+  '/view-testimonials',
+  '/add-testimonial',
+  '/add-hotel',
+  '/view-hotels',
+  '/add-service',
+  '/view-services',
+  '/services/visa',
+  '/services/psa',
+  '/services/cenomar',
+  '/services/passport',
+  '/services/airlinebooking',
+  '/services/hotelbooking',
+  '/services/tourarrangements',
+  '/services/ferrybooking',
+  '/services/marriagecert',
+  '/services/travelinsurance',
+  '/services/billspayment',
+  '/seller-rate'
+];
+
+// ============================================================
+// AXIOS INTERCEPTOR - AUTO LOGOUT ON 401
+// ============================================================
+let isRedirecting = false;
+
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if ((error.response?.status === 401 || error.response?.data?.requiresAuth) && !isRedirecting) {
+      isRedirecting = true;
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminData');
+      window.location.href = '/admin';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ============================================================
+// LOADING SCREEN COMPONENT
+// ============================================================
+const LoadingScreen = () => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100vh',
+    backgroundColor: '#f0f2f5'
+  }}>
+    <div style={{ textAlign: 'center' }}>
+      <div style={{
+        width: '60px',
+        height: '60px',
+        border: '5px solid #f3f3f3',
+        borderTop: '5px solid #007bff',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        margin: '0 auto 20px'
+      }}></div>
+      <p style={{ color: '#666', fontSize: '16px' }}>Verifying authentication...</p>
+    </div>
+    <style>{`
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
+
+// ============================================================
+// 404 UNAUTHORIZED ACCESS PAGE
+// ============================================================
+const UnauthorizedAccess = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isValidRoute = VALID_PROTECTED_ROUTES.some(route => location.pathname.startsWith(route)) || 
+                       location.pathname.match(/\/(edit-|EditAirline|EditCenomar|EditVisa|EditPassport|EditPSA)/);
+
+  useEffect(() => {
+    console.log('🚫 Unauthorized Access Detected:', location.pathname);
+    console.log('📍 Is Valid Protected Route:', isValidRoute);
+  }, [location.pathname, isValidRoute]);
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      backgroundColor: '#0f172a',
+      padding: '40px 20px',
+      textAlign: 'center',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <div style={{
+        maxWidth: '800px',
+        padding: '60px 40px',
+        backgroundColor: '#1e293b',
+        borderRadius: '16px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+      }}>
+        <div style={{
+          fontSize: '150px',
+          margin: '0',
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          fontWeight: 'bold',
+          lineHeight: '1'
+        }}>
+          {isValidRoute ? '🔒' : '404'}
+        </div>
+        
+        <h2 style={{
+          fontSize: '36px',
+          margin: '30px 0 20px 0',
+          color: '#f1f5f9',
+          fontWeight: '600'
+        }}>
+          {isValidRoute ? 'Authentication Required' : 'Page Not Found'}
+        </h2>
+        
+        <div style={{
+          backgroundColor: '#334155',
+          padding: '20px',
+          borderRadius: '10px',
+          marginBottom: '30px',
+          border: '2px solid #475569'
+        }}>
+          <p style={{
+            fontSize: '14px',
+            color: '#94a3b8',
+            margin: '0 0 10px 0',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            fontWeight: '500'
+          }}>Attempted URL:</p>
+          <p style={{
+            fontSize: '18px',
+            color: '#ef4444',
+            margin: '0',
+            fontFamily: 'monospace',
+            wordBreak: 'break-all',
+            fontWeight: 'bold'
+          }}>{location.pathname}</p>
+        </div>
+
+        <p style={{
+          fontSize: '18px',
+          maxWidth: '600px',
+          margin: '0 auto 40px auto',
+          color: '#cbd5e1',
+          lineHeight: '1.8'
+        }}>
+          {isValidRoute ? (
+            <>
+              This page requires authentication. Please log in to access this resource.
+              <br/>
+              <span style={{ color: '#94a3b8', fontSize: '16px' }}>
+                You must be logged in as an admin to view this page.
+              </span>
+            </>
+          ) : (
+            <>
+              This page doesn't exist in our system.
+              <br/>
+              <span style={{ color: '#94a3b8', fontSize: '16px' }}>
+                Please check the URL or navigate using the buttons below.
+              </span>
+            </>
+          )}
+        </p>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          flexWrap: 'wrap', 
+          justifyContent: 'center' 
+        }}>
+          <button
+            onClick={() => navigate('/admin', { replace: true })}
+            style={{
+              padding: '16px 36px',
+              fontSize: '18px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = '#2563eb';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.5)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = '#3b82f6';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.4)';
+            }}
+          >
+            {isValidRoute ? 'Login to Access' : 'Go to Login Page'}
+          </button>
+          
+          {!isValidRoute && (
+            <button
+              onClick={() => window.history.back()}
+              style={{
+                padding: '16px 36px',
+                fontSize: '18px',
+                backgroundColor: '#64748b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#475569';
+                e.target.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = '#64748b';
+                e.target.style.transform = 'translateY(0)';
+              }}
+            >
+              Go Back
+            </button>
+          )}
+        </div>
+
+        <div style={{
+          marginTop: '40px',
+          padding: '20px',
+          backgroundColor: '#0f172a',
+          borderRadius: '10px',
+          border: '1px solid #334155'
+        }}>
+          <p style={{
+            margin: '0',
+            color: '#64748b',
+            fontSize: '14px'
+          }}>
+            🔒 <strong>Security Notice:</strong> {isValidRoute ? 'This page requires valid admin credentials.' : 'Unauthorized access attempts are logged.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// PROTECTED ROUTE WITH TOKEN VERIFICATION
+// ============================================================
+const ProtectedRoute = ({ children }) => {
+  const [authState, setAuthState] = useState('loading');
+  const location = useLocation();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const verifyToken = async () => {
+      const token = localStorage.getItem('adminToken');
+
+      if (!token) {
+        console.log('🔒 No token found - User not logged in');
+        if (isMounted) setAuthState('unauthenticated');
+        return;
+      }
+
+      try {
+        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/admin/verify', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.data.status === 'ok') {
+          console.log('✅ Token verified - User authenticated');
+          if (isMounted) setAuthState('authenticated');
+        } else {
+          console.log('❌ Invalid token');
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminData');
+          if (isMounted) setAuthState('unauthenticated');
+        }
+      } catch (error) {
+        console.error('❌ Token verification failed:', error.message);
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminData');
+        if (isMounted) setAuthState('unauthenticated');
+      }
+    };
+
+    verifyToken();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname]);
+
+  if (authState === 'loading') {
+    return <LoadingScreen />;
+  }
+
+  if (authState === 'unauthenticated') {
+    console.log('⛔ Access denied - Showing unauthorized page');
+    return <UnauthorizedAccess />;
+  }
+
+  return children;
+};
+
+// ============================================================
+// MAIN APP COMPONENT
+// ============================================================
 function App() {
   return (
     <BrowserRouter basename="/">
       <ToastProvider>
-      <Routes>
-        <Route path="/admin" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/booking" element={<Booking />} />
-        <Route path="/archive" element={<Archive />} />
-        <Route path="/activity-logs" element={<ActivityLogs />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/users" element={<Users />} />
+        <Routes>
+          {/* ✅ PUBLIC ROUTE - LOGIN ONLY */}
+          <Route path="/admin" element={<Login />} />
 
-        {/* Admin Management Routes */}
-        <Route path="/admins" element={<ViewAdmins />} />
-        <Route path="/add-admin" element={<AddAdmin />} />
+          {/* ✅ ROOT REDIRECT */}
+          <Route path="/" element={<Navigate to="/admin" replace />} />
 
-        {/* Packages */}
-        <Route path="/add-package" element={<AddPackage />} />
-        <Route path="/view-packages" element={<ViewPackages />} />
-        <Route path="/edit-package/:id" element={<EditPackage />} />
-        
-        {/* Tours */}
-        <Route path="/add-tour" element={<AddTour />} />
-        <Route path="/view-tours" element={<ViewTours />} />
-        <Route path="/edit-tour/:id" element={<EditTour />} />
+          {/* ✅ PROTECTED ROUTES - ALL REQUIRE AUTHENTICATION */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
+          <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
+          <Route path="/activity-logs" element={<ProtectedRoute><ActivityLogs /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
 
-        {/* Promos & Posters */}
-        <Route path="/add-promo" element={<AddPromo />} />
-        <Route path="/view-promos" element={<ViewPromos />} />
-        <Route path="/edit-promo/:id" element={<EditPromo />} />
-        
-        <Route path="/add-poster" element={<AddPoster />} />       
-        <Route path="/view-posters" element={<ViewPoster />} /> 
-        <Route path="/edit-poster/:id" element={<EditPoster />} />
+          {/* Admin Management Routes */}
+          <Route path="/admins" element={<ProtectedRoute><ViewAdmins /></ProtectedRoute>} />
+          <Route path="/add-admin" element={<ProtectedRoute><AddAdmin /></ProtectedRoute>} />
 
-        {/* Blogs */}
-        <Route path="/add-blog" element={<AddBlog />} />
-        <Route path="/view-blogs" element={<ViewBlog />} />
-        <Route path="/edit-blog/:id" element={<EditBlog />} /> 
+          {/* Packages */}
+          <Route path="/add-package" element={<ProtectedRoute><AddPackage /></ProtectedRoute>} />
+          <Route path="/view-packages" element={<ProtectedRoute><ViewPackages /></ProtectedRoute>} />
+          <Route path="/edit-package/:id" element={<ProtectedRoute><EditPackage /></ProtectedRoute>} />
+          
+          {/* Tours */}
+          <Route path="/add-tour" element={<ProtectedRoute><AddTour /></ProtectedRoute>} />
+          <Route path="/view-tours" element={<ProtectedRoute><ViewTours /></ProtectedRoute>} />
+          <Route path="/edit-tour/:id" element={<ProtectedRoute><EditTour /></ProtectedRoute>} />
 
-        {/* Image Gallery */}
-        <Route path="/add-image" element={<AddImage />} />
-        <Route path="/view-images" element={<ViewImage />} />
+          {/* Promos & Posters */}
+          <Route path="/add-promo" element={<ProtectedRoute><AddPromo /></ProtectedRoute>} />
+          <Route path="/view-promos" element={<ProtectedRoute><ViewPromos /></ProtectedRoute>} />
+          <Route path="/edit-promo/:id" element={<ProtectedRoute><EditPromo /></ProtectedRoute>} />
+          
+          <Route path="/add-poster" element={<ProtectedRoute><AddPoster /></ProtectedRoute>} />       
+          <Route path="/view-posters" element={<ProtectedRoute><ViewPoster /></ProtectedRoute>} /> 
+          <Route path="/edit-poster/:id" element={<ProtectedRoute><EditPoster /></ProtectedRoute>} />
 
-        {/* Deals */}
-        <Route path="/add-deals" element={<AddDeal />} />
-        <Route path="/view-deals" element={<ViewDeal />} />
-        
-        {/* Testimonials */}
-        <Route path="/view-testimonials" element={<ViewTestimonials />} />
-        <Route path="/add-testimonial" element={<AddTestimonial />} />
-        <Route path="/edit-testimonial/:id" element={<EditTestimonial />} />
-        
-        {/* Hotel Inventory Management */}
-        <Route path="/add-hotel" element={<AddHotel />} />
-        <Route path="/view-hotels" element={<ViewHotels />} />
-        <Route path="/edit-hotel/:id" element={<EditHotel />} />
+          {/* Blogs */}
+          <Route path="/add-blog" element={<ProtectedRoute><AddBlog /></ProtectedRoute>} />
+          <Route path="/view-blogs" element={<ProtectedRoute><ViewBlog /></ProtectedRoute>} />
+          <Route path="/edit-blog/:id" element={<ProtectedRoute><EditBlog /></ProtectedRoute>} /> 
 
-        {/* --- SERVICE MANAGEMENT ROUTES --- */}
-        <Route path="/add-service" element={<AddService />} />
-        <Route path="/view-services" element={<ViewServices />} />
-        <Route path="/edit-service/:id" element={<EditService />} />
-        <Route path="/services/visa" element={<VisaProcessing />} />
-        <Route path="/services/psa" element={<PSASerbilis />} />
-        <Route path="/services/cenomar" element={<CenomarRequest />} />
-        <Route path="/services/passport" element={<PassportAppt />} />
-        
-        {/* Airline Booking Routes */}
-        <Route path="/services/airlinebooking" element={<AirlineBooking />} />
-        <Route path="/EditAirline/:id" element={<EditAirline />} />
-        <Route path="/EditCenomar/:id" element={<EditCenomar />} />
-        <Route path="/EditVisa/:id" element={<EditVisa />} />
-        <Route path="/EditPassport/:id" element={<EditPassport />} />
-        <Route path="/EditPSA/:id" element={<EditPSA />} />
-        <Route path="/services/hotelbooking" element={<HotelBooking />} />
-        <Route path="/services/tourarrangements" element={<TourArrangements />} />
-        <Route path="/services/ferrybooking" element={<FerryBooking />} />
-        <Route path="/services/marriagecert" element={<MarriageCertificate />} />
-        <Route path="/services/travelinsurance" element={<TravelInsurance />} />
-        <Route path="/services/billspayment" element={<BillsPayment />} />
+          {/* Image Gallery */}
+          <Route path="/add-image" element={<ProtectedRoute><AddImage /></ProtectedRoute>} />
+          <Route path="/view-images" element={<ProtectedRoute><ViewImage /></ProtectedRoute>} />
 
-        <Route path="/seller-rate" element={<SellerRate />} />
-      </Routes>
+          {/* Deals */}
+          <Route path="/add-deals" element={<ProtectedRoute><AddDeal /></ProtectedRoute>} />
+          <Route path="/view-deals" element={<ProtectedRoute><ViewDeal /></ProtectedRoute>} />
+          
+          {/* Testimonials */}
+          <Route path="/view-testimonials" element={<ProtectedRoute><ViewTestimonials /></ProtectedRoute>} />
+          <Route path="/add-testimonial" element={<ProtectedRoute><AddTestimonial /></ProtectedRoute>} />
+          <Route path="/edit-testimonial/:id" element={<ProtectedRoute><EditTestimonial /></ProtectedRoute>} />
+          
+          {/* Hotel Inventory Management */}
+          <Route path="/add-hotel" element={<ProtectedRoute><AddHotel /></ProtectedRoute>} />
+          <Route path="/view-hotels" element={<ProtectedRoute><ViewHotels /></ProtectedRoute>} />
+          <Route path="/edit-hotel/:id" element={<ProtectedRoute><EditHotel /></ProtectedRoute>} />
+
+          {/* SERVICE MANAGEMENT ROUTES */}
+          <Route path="/add-service" element={<ProtectedRoute><AddService /></ProtectedRoute>} />
+          <Route path="/view-services" element={<ProtectedRoute><ViewServices /></ProtectedRoute>} />
+          <Route path="/edit-service/:id" element={<ProtectedRoute><EditService /></ProtectedRoute>} />
+          <Route path="/services/visa" element={<ProtectedRoute><VisaProcessing /></ProtectedRoute>} />
+          <Route path="/services/psa" element={<ProtectedRoute><PSASerbilis /></ProtectedRoute>} />
+          <Route path="/services/cenomar" element={<ProtectedRoute><CenomarRequest /></ProtectedRoute>} />
+          <Route path="/services/passport" element={<ProtectedRoute><PassportAppt /></ProtectedRoute>} />
+          
+          {/* Airline Booking Routes */}
+          <Route path="/services/airlinebooking" element={<ProtectedRoute><AirlineBooking /></ProtectedRoute>} />
+          <Route path="/EditAirline/:id" element={<ProtectedRoute><EditAirline /></ProtectedRoute>} />
+          <Route path="/EditCenomar/:id" element={<ProtectedRoute><EditCenomar /></ProtectedRoute>} />
+          <Route path="/EditVisa/:id" element={<ProtectedRoute><EditVisa /></ProtectedRoute>} />
+          <Route path="/EditPassport/:id" element={<ProtectedRoute><EditPassport /></ProtectedRoute>} />
+          <Route path="/EditPSA/:id" element={<ProtectedRoute><EditPSA /></ProtectedRoute>} />
+          <Route path="/services/hotelbooking" element={<ProtectedRoute><HotelBooking /></ProtectedRoute>} />
+          <Route path="/services/tourarrangements" element={<ProtectedRoute><TourArrangements /></ProtectedRoute>} />
+          <Route path="/services/ferrybooking" element={<ProtectedRoute><FerryBooking /></ProtectedRoute>} />
+          <Route path="/services/marriagecert" element={<ProtectedRoute><MarriageCertificate /></ProtectedRoute>} />
+          <Route path="/services/travelinsurance" element={<ProtectedRoute><TravelInsurance /></ProtectedRoute>} />
+          <Route path="/services/billspayment" element={<ProtectedRoute><BillsPayment /></ProtectedRoute>} />
+
+          <Route path="/seller-rate" element={<ProtectedRoute><SellerRate /></ProtectedRoute>} />
+
+          {/* ✅ CATCH-ALL ROUTE - SHOWS UNAUTHORIZED PAGE */}
+          <Route path="*" element={<UnauthorizedAccess />} />
+        </Routes>
       </ToastProvider>
     </BrowserRouter>
   );

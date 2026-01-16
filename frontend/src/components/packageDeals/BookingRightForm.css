@@ -822,6 +822,31 @@
   padding: 24px;
 }
 
+.price-row.highlight {
+  background: #fef3c7;
+  padding: 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.price-added {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.customization-note {
+  margin-top: 12px;
+  padding: 10px;
+  background: #dbeafe;
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+}
+
+.customization-note small {
+  color: #1e40af;
+  font-size: 0.875rem;
+}
+
 /* ============================================
    RESPONSIVE BREAKPOINTS
    ============================================ */

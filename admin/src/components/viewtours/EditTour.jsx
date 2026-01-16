@@ -301,8 +301,10 @@ const EditTour = () => {
               : [{ day: 1, title: "", activities: [""] }]
           );
 
-          if (tour.image) {
-            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${tour.image}`);
+          // ✅ FIX: Only set imagePreview if user hasn't selected a new file
+          if (tour.image && !imageFile) {
+            setImagePreview(tour.image);
+            console.log('✅ Loaded existing tour image:', tour.image);
           }
         }
       } catch (err) {
@@ -314,7 +316,8 @@ const EditTour = () => {
     };
 
     fetchTourData();
-  }, [tourId, navigate, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourId, navigate]); // ✅ REMOVED toast from dependencies
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -324,10 +327,18 @@ const EditTour = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      console.log('📷 New image selected:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
+      
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
+        console.log('✅ Image preview updated successfully');
+        console.log('   Preview type:', reader.result.substring(0, 30) + '...');
+      };
+      reader.onerror = (error) => {
+        console.error('❌ FileReader error:', error);
+        toast.error('Failed to read image file');
       };
       reader.readAsDataURL(file);
       toast.info(`Selected image: ${file.name}`);

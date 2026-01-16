@@ -548,6 +548,35 @@ app.get('/api/admin/statistics', async (req, res) => {
 });
 
 // ===================================================================
+// SPA SUPPORT: Serve React frontend build (must be placed AFTER all API routes)
+// ===================================================================
+// Adjust this path based on your project structure
+// Common examples:
+// - path.join(__dirname, '../client/build')   → if React app is in ../client folder
+// - path.join(__dirname, './client/build')    → if in ./client
+// - path.join(__dirname, '../build')          → if in ../build
+const frontendBuildPath = path.join(__dirname, '../client/build'); // CHANGE THIS IF YOUR BUILD FOLDER IS DIFFERENT
+
+if (fs.existsSync(frontendBuildPath)) {
+  // Serve static files (JS, CSS, images, etc.)
+  app.use(express.static(frontendBuildPath));
+
+  // Catch-all handler: for any non-API route, serve index.html so React Router can handle it
+  app.get('*', (req, res) => {
+    // Prevent interfering with API routes
+    if (req.originalUrl.startsWith('/api')) {
+      return res.status(404).json({ success: false, message: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
+
+  console.log(`✅ Serving React frontend from: ${frontendBuildPath}`);
+} else {
+  console.warn(`⚠️ Frontend build folder not found at: ${frontendBuildPath}`);
+  console.warn(`   Run 'npm run build' in your React app folder and ensure the path is correct.`);
+}
+
+// ===================================================================
 // START SERVER
 // ===================================================================
 const PORT = process.env.PORT || 5000;

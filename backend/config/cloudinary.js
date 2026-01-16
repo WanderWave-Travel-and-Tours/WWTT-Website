@@ -57,7 +57,7 @@ const documentStorage = new CloudinaryStorage({
         allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
         resource_type: 'auto',
         type: 'upload',
-        access_mode: 'public' // ✅ Make files public
+        access_mode: 'public'
     }
 });
 
@@ -81,6 +81,36 @@ const genericStorage = new CloudinaryStorage({
     }
 });
 
+// ✅ Hotel Main Image Storage
+const hotelStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'wanderwave/hotel',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, height: 800, crop: 'limit', quality: 'auto' }]
+    }
+});
+
+// ✅ Hotel Gallery Images Storage
+const hotelGalleryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'wanderwave/hotel/gallery',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1920, height: 1080, crop: 'limit', quality: 'auto' }]
+    }
+});
+
+
+// Tour Images Storage
+const tourStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'wanderwave/tours',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, height: 800, crop: 'limit', quality: 'auto' }]
+    }
+});
 // Export multer instances
 module.exports = {
     cloudinary,
@@ -90,5 +120,8 @@ module.exports = {
     uploadPoster: multer({ storage: posterStorage }),
     uploadDocument: multer({ storage: documentStorage, limits: { fileSize: 10 * 1024 * 1024 } }),
     uploadEvidence: multer({ storage: evidenceStorage }),
-    uploadGeneric: multer({ storage: genericStorage })
+    uploadGeneric: multer({ storage: genericStorage }),
+    uploadHotel: multer({ storage: hotelStorage }), // ✅ Hotel main image uploader
+    uploadHotelGallery: multer({ storage: hotelGalleryStorage }), // ✅ Hotel gallery uploader
+    uploadTour: multer({ storage: tourStorage }) // ✅ Tour image uploader
 };

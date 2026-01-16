@@ -192,7 +192,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
               </div>
 
               <button type="submit" className="next-btn" disabled={loading}>
-                {loading ? 'Processing...' : (hasAdditionalPassengers ? 'Next: Add Companions' : `Submit Booking (₱${flight.price.formatted || flight.price.amount})`)}
+                {loading ? 'Processing...' : (hasAdditionalPassengers ? 'Next: Add Companions' : `Submit Booking (${flight.price.formatted || flight.price.amount})`)}
               </button>
             </div>
           )}

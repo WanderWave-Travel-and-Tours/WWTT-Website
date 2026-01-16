@@ -345,47 +345,52 @@ const performSubmit = async () => {
     toast.info('Publishing hotel to catalog...', '📤 Please Wait', 2000);
     
     try {
-        let mainImageBase64 = '';
-        if (file) mainImageBase64 = await convertToBase64(file);
-
-        const galleryImagesBase64 = [];
-        for (const item of galleryFiles) {
-            const base64 = await convertToBase64(item.file);
-            galleryImagesBase64.push({ url: base64, caption: item.caption || '' });
-        }
-
+        const formData = new FormData();
+        
+        formData.append('name', hotelDetails.name);
+        formData.append('location', hotelDetails.destination);
+        
         const cityName = hotelDetails.destination.split(',')[0].trim();
+        formData.append('city', cityName);
+        
+        formData.append('description', `${type} accommodation in ${hotelDetails.destination}`);
+        formData.append('price', Number(hotelDetails.price));
+        formData.append('maxCapacity', Number(hotelDetails.maxCapacity) || 4);
+        
+        formData.append('amenities', JSON.stringify(hotelDetails.amenities));
+        
+        if (file) {
+            formData.append('mainImage', file);
+            console.log('✅ Main image added to FormData:', file.name);
+        }
+        
+        for (const item of galleryFiles) {
+            formData.append('galleryImages', item.file);
+            console.log('✅ Gallery image added to FormData:', item.file.name);
+        }
+        
+        formData.append('featured', false);
+        formData.append('isActive', true);
+        
+        const roomTypesData = [{
+            type: type,
+            capacity: Number(hotelDetails.maxCapacity) || 4,
+            price: Number(hotelDetails.price),
+            available: 5,
+            description: `Standard ${type} room`
+        }];
+        formData.append('roomTypes', JSON.stringify(roomTypesData));
+        
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
         const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
         const activeId = adminData.id || adminData._id || "";
-
-        const hotelPayload = {
-            name: hotelDetails.name,
-            location: hotelDetails.destination,
-            city: cityName,
-            description: `${type} accommodation in ${hotelDetails.destination}`,
-            price: Number(hotelDetails.price),
-            maxCapacity: Number(hotelDetails.maxCapacity) || 4,
-            amenities: hotelDetails.amenities,
-            mainImage: mainImageBase64,
-            images: galleryImagesBase64,
-            featured: false,
-            isActive: true,
-            roomTypes: [{
-                type: type,
-                capacity: Number(hotelDetails.maxCapacity) || 4,
-                price: Number(hotelDetails.price),
-                available: 5,
-                description: `Standard ${type} room`
-            }],
-            userEmail: activeUser,
-            adminId: activeId
-        };
+        
+        formData.append('userEmail', activeUser);
+        formData.append('adminId', activeId);
 
         const response = await fetch(`${API_BASE_URL}/api/hotels`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(hotelPayload)
+            body: formData 
         });
 
         const data = await response.json();
