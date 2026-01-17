@@ -8,22 +8,20 @@ const {
     deleteBlog, 
     updateBlog,
     generateGeminiContent,
-    searchUnsplashImages, // ✅ UPDATED: Renamed from Pexels
-    downloadUnsplashImage, // ✅ UPDATED: Renamed from Pexels
-    getCuratedImages  // ✅ This uses Unsplash logic now
+    searchUnsplashImages, 
+    downloadUnsplashImage, 
+    getCuratedImages,
+    generateAIContent
 } = require('../controller/blogController');
 const { uploadBlog } = require('../config/cloudinary');
 
 // AI Generation
 router.post('/generate-ai', generateGeminiContent);
-
-// =============================================================================
-// 🌍 UNSPLASH INTEGRATION ROUTES (Updated)
-// =============================================================================
-// Note: Frontend calls these endpoints specifically
 router.get('/search-unsplash', searchUnsplashImages);
 router.get('/curated-unsplash', getCuratedImages); 
 router.post('/download-unsplash', downloadUnsplashImage);
+router.post("/generate-ai-content", generateAIContent);  // Add this route
+
 
 // =============================================================================
 // 📝 CRUD OPERATIONS

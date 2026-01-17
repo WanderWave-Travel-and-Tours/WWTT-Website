@@ -4,12 +4,15 @@ const { cloudinary } = require('../config/cloudinary');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require('axios');
 
-// ✅ Initialize APIs
+const {
+  generateBlogTitle,
+  generateBlogContent,
+  generateWithImage,
+  generateImagePrompt
+} = require("../config/googleGemini");
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// =============================================================================
-// 🔍 UNSPLASH SEARCH: SMART TOURIST SPOT & SCENERY 🌍
-// =============================================================================
 const searchUnsplashImages = async (req, res) => {
     try {
         const { query, page = 1 } = req.query;
@@ -18,7 +21,6 @@ const searchUnsplashImages = async (req, res) => {
             return res.status(400).json({ message: "Search query is required" });
         }
 
-        // 1. CLEAN THE QUERY (Remove filler words)
         const cleanQuery = query
             .replace(/maganda|best|tourist|spot|place|puntahan|ng|sa|ang|picture|image|photo|view/gi, "")
             .trim();
@@ -29,17 +31,15 @@ const searchUnsplashImages = async (req, res) => {
         let totalResults = 0;
         let totalPages = 0;
 
-        // 2. SEARCH STRATEGY (Prioritize Scenery & Landmarks)
         let searchTerms = [];
         if (page === '1') {
             searchTerms.push(`${cleanQuery} travel landscape`);
             searchTerms.push(`${cleanQuery} tourist spot`);
             searchTerms.push(`${cleanQuery} nature`);
         } else {
-            searchTerms.push(`${cleanQuery}`); // Broad search for next pages
+            searchTerms.push(`${cleanQuery}`);
         }
 
-        // 3. EXECUTE SEARCH LOOPS
         for (const term of searchTerms) {
             if (photos.length >= 30) break; 
 
@@ -56,7 +56,6 @@ const searchUnsplashImages = async (req, res) => {
 
                 const newPhotos = response.data.results;
                 
-                // Remove duplicates
                 const existingIds = new Set(photos.map(p => p.id));
                 const uniquePhotos = newPhotos.filter(p => !existingIds.has(p.id));
 
@@ -70,7 +69,6 @@ const searchUnsplashImages = async (req, res) => {
             }
         }
 
-        // 4. FALLBACK (Kung 0 results talaga)
         if (photos.length === 0 && page === '1') {
              console.log("⚠️ Zero results. Fetching General Philippines Travel photos...");
              const fallbackResponse = await axios.get(`https://api.unsplash.com/search/photos`, {
@@ -85,7 +83,6 @@ const searchUnsplashImages = async (req, res) => {
             photos = fallbackResponse.data.results;
         }
 
-        // 5. FORMAT RESPONSE
         const formattedPhotos = photos.map(photo => ({
             id: photo.id,
             photographer: photo.user.name,
@@ -121,13 +118,9 @@ const searchUnsplashImages = async (req, res) => {
     }
 };
 
-// =============================================================================
-// 🌟 GET CURATED (Travel Destinations)
-// =============================================================================
 const getCuratedImages = async (req, res) => {
     try {
         const { page = 1 } = req.query;
-        // Search "Travel Destinations" instead of generic list
         const response = await axios.get(`https://api.unsplash.com/search/photos`, {
             params: {
                 query: "Travel Destinations",
@@ -172,23 +165,18 @@ const getCuratedImages = async (req, res) => {
     }
 };
 
-// =============================================================================
-// 📥 DOWNLOAD UNSPLASH IMAGE
-// =============================================================================
 const downloadUnsplashImage = async (req, res) => {
     try {
         const { imageUrl, photographer, alt, photoId, downloadLocation } = req.body;
 
         if (!imageUrl) return res.status(400).json({ success: false, message: "Image URL is required" });
 
-        // Trigger Download Tracking (Required by Unsplash)
         if (downloadLocation) {
             try {
                 await axios.get(downloadLocation, { params: { client_id: process.env.UNSPLASH_ACCESS_KEY } });
             } catch (err) { console.warn("⚠️ Tracking failed"); }
         }
 
-        // Download & Upload to Cloudinary
         const response = await axios({
             method: 'GET',
             url: imageUrl,
@@ -222,9 +210,6 @@ const downloadUnsplashImage = async (req, res) => {
     }
 };
 
-// =============================================================================
-// 🎨 AI HELPERS
-// =============================================================================
 const generateAiImage = async (prompt) => {
     try {
         const cleanPrompt = prompt.substring(0, 500).replace(/[^\w\s,]/gi, '');
@@ -249,9 +234,6 @@ const downloadAndUploadImage = async (imageUrl) => {
     } catch (error) { return null; }
 };
 
-// =============================================================================
-// 🤖 GEMINI AI CONTROLLER (RESTORED FULL LOGIC)
-// =============================================================================
 const generateGeminiContent = async (req, res) => {
     try {
         const { prompt, type, images } = req.body;
@@ -267,7 +249,6 @@ const generateGeminiContent = async (req, res) => {
             }
         })) : [];
 
-        // --- FULL BLOG GENERATION ---
         if (type === 'FullBlog') {
             const systemPrompt = `You are a travel blog expert. Create a blog post about: "${prompt}". Return ONLY a JSON object (no markdown) with: { "title": "A catchy title", "category": "One of: Trending Stories, Travel Guide, News & Updates, Promos, Tips", "content": "A 600-word HTML article (<h2>, <p>, <ul> only).", "imagePrompt": "A highly descriptive prompt for an AI image generator to create a photorealistic travel photo of this location. Describe lighting, angle, and scenery." }`;
             const result = await model.generateContent(systemPrompt);
@@ -286,7 +267,6 @@ const generateGeminiContent = async (req, res) => {
             return res.status(200).json({ success: true, data: { title: blogData.title, category: blogData.category, content: blogData.content, generatedImage: finalImage.url, imagePublicId: finalImage.publicId }});
         }
 
-        // --- IMAGE PROMPT GENERATION ---
         if (type === 'Image') {
             let finalPrompt = prompt;
             if (imageParts.length > 0) {
@@ -301,7 +281,6 @@ const generateGeminiContent = async (req, res) => {
             return res.status(200).json({ generatedImage: upload.url, imagePublicId: upload.publicId });
         }
 
-        // --- TITLE GENERATION ---
         if (type === 'Title') {
             let parts = [`Generate ONE catchy travel blog title for "${prompt}". No quotes.`];
             if (imageParts.length > 0) {
@@ -311,7 +290,6 @@ const generateGeminiContent = async (req, res) => {
             return res.status(200).json({ generatedText: result.response.text().replace(/['"]/g, '').trim() });
         } 
 
-        // --- CONTENT GENERATION ---
         if (type === 'Content') {
             let parts = [`Write a 600-word HTML travel blog about "${prompt}". Use <h2>, <p>, <ul>.`];
             if (imageParts.length > 0) {
@@ -327,9 +305,6 @@ const generateGeminiContent = async (req, res) => {
     }
 };
 
-// =============================================================================
-// 📝 CRUD OPERATIONS
-// =============================================================================
 const addBlog = async (req, res) => {
     try {
         const { title, author, category, content, status, isArchive, userEmail, adminId, scheduledAt, existingImageUrl, existingImagePublicId } = req.body;
@@ -383,10 +358,89 @@ const getArchivedBlogs = async (req, res) => {
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
+const generateAIContent = async (req, res) => {
+  try {
+    const { prompt, type, image } = req.body;
+
+    if (!prompt && !image) {
+      return res.status(400).json({ success: false, message: "Please provide a prompt or image" });
+    }
+
+    if (!type || !["Title", "Content", "Image", "FullBlog"].includes(type)) {
+      return res.status(400).json({ success: false, message: "Invalid type." });
+    }
+
+    console.log(`🤖 Generating ${type}... Prompt: ${prompt}`);
+
+    let generatedText;
+    let generatedTitle = "";
+    let generatedContent = "";
+
+    try {
+      switch (type) {
+        case "Title":
+           generatedText = image ? await generateWithImage(prompt, image, "Title") : await generateBlogTitle(prompt);
+           break;
+
+        case "Content":
+           generatedText = image ? await generateWithImage(prompt, image, "Content") : await generateBlogContent(prompt);
+           break;
+
+        case "Image":
+           generatedText = await generateImagePrompt(prompt);
+           break;
+
+        case "FullBlog":
+           console.log("🚀 Starting Full Blog Chain...");
+           
+           console.log("...Generating Title");
+           if (image) {
+             generatedTitle = await generateWithImage(prompt, image, "Title");
+           } else {
+             generatedTitle = await generateBlogTitle(prompt);
+           }
+           
+           generatedTitle = generatedTitle.replace(/^"|"$/g, '').trim();
+           console.log(`✅ Title Generated: ${generatedTitle}`);
+           console.log("⏳ Waiting 2 seconds to respect API rate limits...");
+           await new Promise(resolve => setTimeout(resolve, 2000));
+           console.log("...Generating Content based on Title");
+           generatedContent = await generateBlogContent(generatedTitle);
+           
+           break;
+      }
+
+      if (type === "FullBlog") {
+        return res.status(200).json({
+          success: true,
+          type: "FullBlog",
+          title: generatedTitle,
+          content: generatedContent,
+          usage: { note: "Dual generation complete" }
+        });
+      } else {
+        return res.status(200).json({
+          success: true,
+          generatedText: generatedText,
+          type: type
+        });
+      }
+
+    } catch (generationError) {
+       console.error(generationError);
+       return res.status(500).json({ success: false, message: "AI Failed", error: generationError.message });
+    }
+  } catch (error) {
+     console.error(error);
+     return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 module.exports = {
     addBlog, getAllBlogs, getBlogById, deleteBlog, updateBlog, getArchivedBlogs,
     generateGeminiContent,
     searchUnsplashImages,
     downloadUnsplashImage,
-    getCuratedImages
+    getCuratedImages,
+    generateAIContent  
 };
