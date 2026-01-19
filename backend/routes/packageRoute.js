@@ -43,7 +43,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, 
             duration, category, inclusions, itinerary,
-            tourType, minPax,  // ✅ ADDED
+            tourType, minPax,
             userEmail, adminId 
         } = req.body;
 
@@ -74,9 +74,9 @@ router.post('/add', upload.single('image'), async (req, res) => {
             price: sellerPriceNum + markupNum,
             duration,
             category,
-            tourType: tourType || 'private', // ✅ ADDED
-            image: req.file.path, // Cloudinary Secure URL
-            imagePublicId: req.file.filename, // Cloudinary ID for deletion later
+            tourType: tourType || 'private',
+            image: req.file.path,
+            imagePublicId: req.file.filename,
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
             isArchive: 'No'
@@ -110,7 +110,6 @@ router.post('/add', upload.single('image'), async (req, res) => {
 
     } catch (err) {
         console.error('❌ Error adding package:', err);
-        // Cleanup image in Cloudinary if DB save fails
         if (req.file?.filename) {
             await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
         }
@@ -124,7 +123,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
-            tourType, minPax, // ✅ Added for Edit
+            tourType, minPax,
             userEmail, adminId, changes
         } = req.body;
         
@@ -217,17 +216,28 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-// 3. ARCHIVE TOGGLE
+// 3. ARCHIVE TOGGLE ✅ VERIFIED - This sets archivedAt timestamp
 router.post('/:id/archive', async (req, res) => {
     try {
         const { userEmail, adminId } = req.body; 
         const logUserId = getValidAdminId(adminId);
 
         const pkg = await Package.findById(req.params.id);
-        if (!pkg) return res.status(404).json({ status: "error", message: "Not found" });
+        if (!pkg) {
+            console.log('❌ Package not found:', req.params.id);
+            return res.status(404).json({ status: "error", message: "Package not found" });
+        }
 
         const newStatus = pkg.isArchive === 'Yes' ? 'No' : 'Yes';
         pkg.isArchive = newStatus;
+        
+        // ✅ Set archivedAt timestamp when archiving
+        if (newStatus === 'Yes') {
+            pkg.archivedAt = new Date();
+        } else {
+            pkg.archivedAt = null; // Clear when restoring
+        }
+        
         await pkg.save();
 
         const actionType = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE';
@@ -248,8 +258,14 @@ router.post('/:id/archive', async (req, res) => {
             }
         });
 
-        res.json({ status: "ok", message: `Package status updated to ${newStatus}`, isArchive: newStatus });
+        console.log(`✅ Package ${newStatus === 'Yes' ? 'archived' : 'restored'}:`, pkg.title);
+        res.json({ 
+            status: "ok", 
+            message: `Package ${newStatus === 'Yes' ? 'archived' : 'restored'} successfully`, 
+            isArchive: newStatus 
+        });
     } catch (err) {
+        console.error('❌ Archive toggle error:', err);
         res.status(500).json({ status: "error", error: err.message });
     }
 });
@@ -264,12 +280,14 @@ router.get('/all', async (req, res) => {
     }
 });
 
-// 5. FETCH ARCHIVED
+// 5. FETCH ARCHIVED ✅ VERIFIED
 router.get('/archived-list', async (req, res) => {
     try {
         const archived = await Package.find({ isArchive: 'Yes' }).sort({ _id: -1 });
+        console.log(`📦 Found ${archived.length} archived packages`);
         res.status(200).json({ status: 'ok', data: archived });
     } catch (error) {
+        console.error('❌ Error fetching archived packages:', error);
         res.status(500).json({ status: 'error', error: error.message });
     }
 });

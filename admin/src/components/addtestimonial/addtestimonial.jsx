@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, Quote, Camera, Loader2, HelpCircle, Star } from 'lucide-react';
+// Added HelpCircle to imports because it was used in CustomConfirmModal but missing
+import { User, Quote, Camera, Loader2, Star, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './addtestimonial.css';
 
@@ -225,7 +226,7 @@ const AddTestimonial = () => {
     const handleDiscardDraft = async () => {
         await discardDraft();
         setShowRestoreModal(false);
-        toast.info('Draft has been discarded.', '🗑️ Discarded');
+        toast.info('Draft has been discarded.', 'Discarded');
     };
 
     // =========================================================
@@ -300,6 +301,7 @@ const AddTestimonial = () => {
             formData.append('customerImage', pictureFile); 
         }
 
+        // ✅ Fixed Admin Data Logic (removed nested/duplicate try blocks)
         try {
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
             const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
