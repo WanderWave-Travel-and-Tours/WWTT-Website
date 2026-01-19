@@ -363,13 +363,6 @@ export const PSAInquiryModal = ({
                 <h3 className="psam-card-title">Quick Actions</h3>
               </div>
               <div className="psam-action-grid">
-                <button className="psam-action-btn psam-action-primary" style={{ backgroundColor: '#eff6ff', color: '#3b82f6', border: '1px solid #dbeafe' }} onClick={() => navigate(`/edit-psa/${inquiry._id}`)}>
-                  <div className="psam-action-icon"><Edit size={18} /></div>
-                  <div className="psam-action-content">
-                    <span className="psam-action-label">Edit Info</span>
-                    <span className="psam-action-desc">Update form data</span>
-                  </div>
-                </button>
 
                 <button className="psam-action-btn psam-action-secondary" onClick={() => wrapStatusUpdate(inquiry._id, "PENDING", "Pending")}>
                   <div className="psam-action-icon"><Clock size={18} /></div>

@@ -238,7 +238,7 @@ router.put("/update/:id", uploadFields, async (req, res) => {
         if (finalImagesArray.length > 0) {
             updateData.images = finalImagesArray;
         }
-        D
+        
         if (typeof updateData.amenities === 'string') {
             try {
                 updateData.amenities = JSON.parse(updateData.amenities);
