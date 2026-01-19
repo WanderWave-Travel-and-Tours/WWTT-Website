@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Quote, Camera, Loader2, HelpCircle } from 'lucide-react';
+import { User, Quote, Camera, Loader2 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './addtestimonial.css';
 
@@ -10,49 +10,8 @@ import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftMo
 // ✅ Import Toast and ToastManager
 import { useToast } from '../toast/ToastManager';
 
-// ✅ Custom Confirm Modal Component (Reference from EditVisa.jsx)
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="arc-confirm-overlay" style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', zIndex: 11000
-        }}>
-            <div className="arc-confirm-modal" style={{
-                backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-                maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-            }}>
-                <div style={{ marginBottom: '1rem' }}>
-                    <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-                <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                    <button 
-                        onClick={onCancel}
-                        style={{
-                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-                            backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
-                        }}
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        onClick={onConfirm}
-                        style={{
-                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-                            backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-                            color: 'white', cursor: 'pointer', fontWeight: '500'
-                        }}
-                    >
-                        Confirm
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
+// ✅ Import External Custom Confirm Modal
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 
 const AddTestimonial = () => {
     const toast = useToast(); // ✅ Initialize Toast
@@ -199,16 +158,16 @@ const AddTestimonial = () => {
         }
     }, [hasDraft]);
 
-const handleRestoreDraft = () => {
-    restoreDraft();
-    setShowRestoreModal(false);
-    toast.success('Your testimonial draft has been restored successfully!', '✅ Draft Restored', 3000);
-};
+    const handleRestoreDraft = () => {
+        restoreDraft();
+        setShowRestoreModal(false);
+        toast.success('Your testimonial draft has been restored successfully!', 'Draft Restored');
+    };
 
     const handleDiscardDraft = async () => {
         await discardDraft();
         setShowRestoreModal(false);
-        toast.info('Draft has been discarded.', '🗑️ Discarded');
+        toast.info('Draft has been discarded.', 'Discarded');
     };
 
     // =========================================================
@@ -226,125 +185,117 @@ const handleRestoreDraft = () => {
         setTestimonialDetails(prev => ({ ...prev, [name]: value }));
     };
 
-const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        if (file.size > 2 * 1024 * 1024) {
-            toast.warning('File is too large. Maximum size is 2MB.', '⚠️ File Too Large');
-            return;
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                toast.warning('File is too large. Maximum size is 2MB.', 'File Too Large');
+                return;
+            }
+            setPictureFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+            toast.success(`Customer photo "${file.name}" selected successfully!`, 'Photo Selected');
         }
-        setPictureFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
-        toast.success(`Customer photo "${file.name}" selected successfully!`, '✅ Photo Selected');
-    }
-};
+    };
 
     const handleCancel = () => {
-    askConfirmation(
-        "Cancel Entry",
-        "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
-        async () => {
-            await clearDraft();
-            setTestimonialDetails({
-                name: '',
-                feedback: '',
-                source: '',
-            });
-            setPictureFile(null);
-            setPreviewUrl(null);
-            toast.info('Action cancelled and form cleared.', '❌ Cancelled');
-        },
-        "danger"
-    );
-};
+        askConfirmation(
+            "Cancel Entry",
+            "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
+            async () => {
+                await clearDraft();
+                setTestimonialDetails({
+                    name: '',
+                    feedback: '',
+                    source: '',
+                });
+                setPictureFile(null);
+                setPreviewUrl(null);
+                toast.info('Action cancelled and form cleared.', 'Cancelled');
+            },
+            "danger"
+        );
+    };
 
-const handleSubmit = (e) => { 
-    e.preventDefault();
-    
-    if (!testimonialDetails.name || !testimonialDetails.feedback || !testimonialDetails.source) {
-        toast.warning('Please fill in all required fields.', '⚠️ Incomplete Form');
-        return;
-    }
-    
-    toast.success('All fields validated successfully!', '✅ Ready to Submit', 2000);
-    
-    askConfirmation(
-        "Submit Testimonial",
-        `Do you want to add this testimonial from "${testimonialDetails.name}"?`,
-        () => performSubmit()
-    );
-};
+    const handleSubmit = (e) => { 
+        e.preventDefault();
+        
+        if (!testimonialDetails.name || !testimonialDetails.feedback || !testimonialDetails.source) {
+            toast.warning('Please fill in all required fields.', 'Incomplete Form');
+            return;
+        }
+        
+        askConfirmation(
+            "Submit Testimonial",
+            `Do you want to add this testimonial from "${testimonialDetails.name}"?`,
+            () => performSubmit(),
+            "primary"
+        );
+    };
 
     const performSubmit = async () => {
-    setIsSubmitting(true);
-    
-    toast.info('Submitting testimonial...', '📤 Please Wait', 2000);
-    
-    const formData = new FormData();
+        setIsSubmitting(true);
+        toast.info('Submitting testimonial...', 'Please Wait');
+        
+        const formData = new FormData();
+        formData.append('customerName', testimonialDetails.name); 
+        formData.append('source', testimonialDetails.source);
+        formData.append('feedback', testimonialDetails.feedback);
 
-    formData.append('customerName', testimonialDetails.name); 
-    formData.append('source', testimonialDetails.source);
-    formData.append('feedback', testimonialDetails.feedback);
-
-    if (pictureFile) {
-        formData.append('customerImage', pictureFile); 
-    }
-
-    try {
-        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-        const activeId = adminData.id || adminData._id || "";
-
-        formData.append("userEmail", activeUser);
-        formData.append("adminId", activeId);
-    } catch (err) {
-        console.error("Error parsing admin data:", err);
-    }
-
-    try {
-        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials', {
-            method: 'POST',
-            body: formData, 
-        });
-
-        if (response.ok) {
-            toast.success(
-                `Testimonial from "${testimonialDetails.name}" has been added successfully!`,
-                '✅ Testimonial Added',
-                5000
-            );
-            
-            await clearDraft();
-            
-            toast.info('Form cleared and ready for new testimonial entry.', '🔄 Ready', 3000);
-
-            setTestimonialDetails({
-                name: '',
-                feedback: '',
-                source: '',
-            });
-            setPictureFile(null);
-            setPreviewUrl(null);
-        } else {
-            const data = await response.json();
-            const errorMessage = data.message || 'Unknown error occurred';
-            toast.error(
-                `Failed to submit testimonial: ${errorMessage}`,
-                '❌ Submission Failed',
-                5000
-            );
+        if (pictureFile) {
+            formData.append('customerImage', pictureFile); 
         }
-    } catch (error) {
-        console.error('❌ Network Error:', error);
-        toast.error(
-            `Unable to connect to server: ${error.message}. Please check if backend is running.`,
-            '❌ Connection Error',
-            6000
-        );
-    } finally {
-        setIsSubmitting(false);
-    }
-};
+
+        try {
+            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+            const activeId = adminData.id || adminData._id || "";
+
+            formData.append("userEmail", activeUser);
+            formData.append("adminId", activeId);
+        } catch (err) {
+            console.error("Error parsing admin data:", err);
+        }
+
+        try {
+            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/testimonials', {
+                method: 'POST',
+                body: formData, 
+            });
+
+            if (response.ok) {
+                toast.success(
+                    `Testimonial from "${testimonialDetails.name}" has been added successfully!`,
+                    'Testimonial Added'
+                );
+                
+                await clearDraft();
+                
+                setTestimonialDetails({
+                    name: '',
+                    feedback: '',
+                    source: '',
+                });
+                setPictureFile(null);
+                setPreviewUrl(null);
+            } else {
+                const data = await response.json();
+                const errorMessage = data.message || 'Unknown error occurred';
+                toast.error(
+                    `Failed to submit testimonial: ${errorMessage}`,
+                    'Submission Failed'
+                );
+            }
+        } catch (error) {
+            console.error('❌ Network Error:', error);
+            toast.error(
+                `Unable to connect to server: ${error.message}. Please check if backend is running.`,
+                'Connection Error'
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div className="testi-page">
@@ -357,7 +308,7 @@ const handleSubmit = (e) => {
                 draftInfo={draftInfo}
             />
 
-            {/* ✅ CUSTOM CONFIRMATION MODAL */}
+            {/* ✅ CUSTOM CONFIRMATION MODAL (Imported Component) */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}

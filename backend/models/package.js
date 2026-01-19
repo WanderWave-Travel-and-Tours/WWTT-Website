@@ -15,7 +15,7 @@ const PackageSchema = new mongoose.Schema({
     duration: { type: String, required: true },
     category: { type: String, enum: ['Local', 'International', 'Internation Tour'], default: 'Local' },
     
-    // ✅ NEW: Tour Type Fields
+    // ✅ Tour Type Fields
     tourType: { 
         type: String, 
         enum: ['private', 'joiners'], 
@@ -43,7 +43,18 @@ const PackageSchema = new mongoose.Schema({
     },
     inclusions: [{ type: String }],
     itinerary: [ItineraryItemSchema],
-    isArchive: { type: String, default: 'No' } 
+    
+    // ✅ Archive Fields
+    isArchive: { 
+        type: String, 
+        enum: ['Yes', 'No'],
+        default: 'No' 
+    },
+    archivedAt: { 
+        type: Date, 
+        default: null 
+    } // ✅ NEW: Timestamp when package is archived
+    
 }, { timestamps: true }); // ✅ ENSURES createdAt & updatedAt are created
 
 PackageSchema.pre('save', function(next) {
