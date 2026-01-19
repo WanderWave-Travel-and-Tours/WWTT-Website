@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import './userLogin.css';
-// Import icons (Added Eye and EyeOff)
-import { Mail, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react'; 
+// Import icons (Added ArrowLeft)
+import { Mail, CheckCircle, XCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'; 
 // Import Toast Hook
 import { useToast } from '../toast/ToastManager';
 
-const API_BASE_URL = 'http://localhost:5000/api/auth'; 
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/auth'; 
 
 // --- OTP Verification Form Component (Modal) ---
 const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading }) => {
@@ -92,7 +92,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [fullName, setFullName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     
-    // NEW STATES for Password Visibility
+    // STATES for Password Visibility
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -100,11 +100,9 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
     
-    // We keep these state variables for logic, but we won't render them in UI anymore
     const [errorMessage, setErrorMessage] = useState(''); 
     const [otpError, setOtpError] = useState('');
     
-    // NEW STATES for OTP flow
     const [isOtpFormVisible, setIsOtpFormVisible] = useState(false);
     const [tempEmailForVerification, setTempEmailForVerification] = useState('');
 
@@ -151,8 +149,8 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         setErrorMessage('');
         setOtpError('');
         setRecaptchaToken(null);
-        setShowPassword(false); // Reset visibility
-        setShowConfirmPassword(false); // Reset visibility
+        setShowPassword(false);
+        setShowConfirmPassword(false);
         if (recaptchaRef.current) {
             recaptchaRef.current.reset();
         }
@@ -163,7 +161,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         setRecaptchaToken(token);
     };
     
-    // New function for Resend OTP API call
     const handleResendOtpFetch = async () => {
         setIsLoading(true);
         setOtpError('');
@@ -199,8 +196,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         }
     }
 
-
-    // 1. Initial Signup Request (Send OTP)
     const handleSignup = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -266,7 +261,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         }
     };
     
-    // 2. OTP Verification and Final Registration
     const handleOtpVerification = async (otpCode) => {
         setIsLoading(true);
         setOtpError('');
@@ -326,7 +320,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         setIsLoading(true);
         
         try {
-            const res = await fetch(`http://localhost:5000/api/auth/login`, {
+            const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -374,6 +368,11 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         if (e.key === 'Enter' && !isLoading) handleSubmit(e);
     };
 
+    // --- Back Button Handler ---
+    const handleGoBack = () => {
+        window.history.back();
+    };
+
     return (
         <div className="user-login-wrapper">
             
@@ -395,6 +394,16 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             
             <div className={`user-login-container ${isOtpFormVisible ? 'blur-background' : ''}`}>
                 <div className="slideshow-panel">
+                    
+                    {/* NEW BACK BUTTON */}
+                    <button 
+                        className="back-nav-btn" 
+                        onClick={handleGoBack}
+                        title="Go Back"
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
+
                     <div className="slideshow-container">
                         {destinations.map((dest, index) => {
                             const isActive = index === currentSlide;
@@ -513,6 +522,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                         className="password-toggle-btn"
                                         onClick={() => setShowPassword(!showPassword)}
                                         disabled={isLoading}
+                                        tabIndex="-1" 
                                     >
                                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                     </button>
@@ -539,6 +549,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                             className="password-toggle-btn"
                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                             disabled={isLoading}
+                                            tabIndex="-1"
                                         >
                                             {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                         </button>
