@@ -258,7 +258,7 @@ function MainLayout() {
         const userId = currentUser._id;
         console.log('📊 Fetching wishlist count for user:', userId);
 
-        const response = await fetch(`http://localhost:5000/api/favorites/${userId}`, {
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
