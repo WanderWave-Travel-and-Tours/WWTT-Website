@@ -14,56 +14,10 @@ import PackagePreview from "./PackagePreview";
 // ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
-// ✅ CORRECT IMPORT PATH
+
+// ✅ CORRECT IMPORT PATHS
 import { useToast } from "../toast/ToastManager";
-import { HelpCircle } from "lucide-react";
-
-// --- CUSTOM CONFIRMATION MODAL COMPONENT ---
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
-    if (!isOpen) return null;
-    return (
-      <div className="arc-confirm-overlay" style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', zIndex: 11000
-      }}>
-        <div className="arc-confirm-modal" style={{
-
-        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-
-        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-
-      }}>
-          <div style={{ marginBottom: '1rem' }}>
-            <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
-          </div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-          <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-            <button 
-              onClick={onCancel}
-              style={{
-                padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-                backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
-              }}
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={onConfirm}
-              style={{
-                padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-                backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-                color: 'white', cursor: 'pointer', fontWeight: '500'
-              }}
-            >
-              Confirm
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-};
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 
 const AddPackage = () => {
     // --- SIDEBAR TOGGLE ---
@@ -85,7 +39,7 @@ const AddPackage = () => {
     const [duration, setDuration] = useState("");
     const [category, setCategory] = useState("Local Tour");
     
-    // ✅ NEW: Tour Type State
+    // ✅ Tour Type State
     const [tourType, setTourType] = useState("private"); // "private" or "joiners"
     const [minPax, setMinPax] = useState(""); // Only for joiners
     
@@ -109,6 +63,7 @@ const AddPackage = () => {
         type: "primary"
     });
 
+    // ✅ Reusable Confirmation Function
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
             isOpen: true,
@@ -255,7 +210,7 @@ const AddPackage = () => {
     const handleDiscardDraft = async () => {
         await discardDraft(); 
         setShowRestoreModal(false);
-        toast.info("Draft discarded.");
+        toast.info("Draft has been discarded.", "Draft Removal");
     };
 
     // --- CALCULATIONS ---
@@ -303,7 +258,7 @@ const AddPackage = () => {
             setFile(selected);
             setPreviewUrl(URL.createObjectURL(selected));
             setIsPasteActive(false);
-            toast.success("Image uploaded successfully.");
+            toast.success("Image uploaded successfully.", "Upload");
         }
     };
 
@@ -311,7 +266,7 @@ const AddPackage = () => {
         setFile(null);
         setPreviewUrl(null);
         setIsPasteActive(false);
-        toast.info("Image removed.");
+        toast.info("Image removed from package.", "Image Status");
     };
 
     const handlePaste = (e) => {
@@ -325,7 +280,7 @@ const AddPackage = () => {
                         setFile(blob);
                         setPreviewUrl(URL.createObjectURL(blob));
                         setIsPasteActive(false);
-                        toast.success("Image pasted successfully.");
+                        toast.success("Image pasted successfully.", "Upload");
                     }
                     break;
                 }
@@ -382,189 +337,154 @@ const AddPackage = () => {
     const removeAct = (di, ai) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.filter((_, x) => x !== ai) } : d));
     const handleAct = (di, ai, val) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.map((a, x) => (x === ai ? val : a)) } : d));
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    // ✅ Toast for validation start
-    toast.info("Validating package details...", "Checking", 1500);
+        // Validations
+        if (!file) {
+            toast.warning("Please upload an image for the package.", "Missing Image");
+            return;
+        }
 
-    // Validations
-    if (!file) {
-        toast.warning("Please upload an image for the package.", "⚠️ Missing Image");
-        return;
-    }
+        if (!title || !destination || !price) {
+            toast.warning("Please fill in the basic package information.", "Missing Fields");
+            return;
+        }
 
-    if (!title || !destination || !price) {
-        toast.warning("Please fill in the basic package information.", "⚠️ Missing Fields");
-        return;
-    }
+        if (!duration) {
+            toast.warning("Please specify the package duration.", "Missing Duration");
+            return;
+        }
 
-    if (!duration) {
-        toast.warning("Please specify the package duration.", "⚠️ Missing Duration");
-        return;
-    }
+        if (tourType === "joiners" && (!minPax || parseInt(minPax) < 1)) {
+            toast.warning("Please specify minimum pax for joiners tour.", "Missing Min Pax");
+            return;
+        }
 
-    if (tourType === "joiners" && (!minPax || parseInt(minPax) < 1)) {
-        toast.warning("Please specify minimum pax for joiners tour.", "⚠️ Missing Min Pax");
-        return;
-    }
+        const hasValidInclusions = inclusions.some(item => item.trim().length > 0);
+        if (!hasValidInclusions) {
+            toast.warning("Please add at least one inclusion.", "Missing Inclusions");
+            return;
+        }
 
-    const hasValidInclusions = inclusions.some(item => item.trim().length > 0);
-    if (!hasValidInclusions) {
-        toast.warning("Please add at least one inclusion.", "⚠️ Missing Inclusions");
-        return;
-    }
+        const hasValidItinerary = itinerary.some(day => 
+            day.activities.some(act => act.trim().length > 0)
+        );
+        if (!hasValidItinerary) {
+            toast.warning("Please add at least one activity in the itinerary.", "Missing Itinerary");
+            return;
+        }
 
-    const hasValidItinerary = itinerary.some(day => 
-        day.activities.some(act => act.trim().length > 0)
-    );
-    if (!hasValidItinerary) {
-        toast.warning("Please add at least one activity in the itinerary.", "⚠️ Missing Itinerary");
-        return;
-    }
-
-    // ✅ All validations passed
-    toast.success("All fields validated!", "✅ Ready to Publish", 2000);
-
-    // Ask for confirmation before publishing
-    askConfirmation(
-        "Publish Package",
-        "Are you sure you want to publish this new tour package?",
-        () => performPublish()
-    );
-};
+        // Use Custom Confirmation Modal instead of window.confirm
+        askConfirmation(
+            "Publish Package",
+            "Are you sure you want to publish this new tour package?",
+            () => performPublish(),
+            "primary"
+        );
+    };
 
     const performPublish = async () => {
-    setSubmitting(true);
-    
-    // ✅ TOAST: Publishing Started
-    toast.info(
-        "Uploading package data to server...",
-        "📤 Publishing",
-        2000
-    );
-    
-    // Process inclusions
-    const processedInclusions = inclusions.filter(item => item.trim().length > 0);
-    
-    // Clean itinerary
-    const cleanedItinerary = itinerary.map((day, index) => {
-        const titleWithoutPrefix = day.title.replace(/^Day \d+:\s*/, "").trim();
-        return {
-            day: index + 1, 
-            title: titleWithoutPrefix || `Day ${index + 1}`,
-            activities: day.activities.filter((act) => act.trim() !== "")
-        };
-    });
-
-    // Calculate pricing
-    const supplierRateNum = parseFloat(supplierRate) || 0;
-    const markupValueNum = parseFloat(markupValue) || 0;
-    let markupInPeso = markupType === "percentage" 
-        ? (supplierRateNum * markupValueNum) / 100 
-        : markupValueNum;
-    markupInPeso = Math.round(markupInPeso * 100) / 100;
-
-    // Build FormData
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("destination", destination);
-    formData.append("sellerPrice", supplierRateNum.toString());
-    formData.append("markup", markupInPeso.toString());
-    formData.append("duration", duration);
-    formData.append("category", category === "Local Tour" ? "Local" : "International");
-    
-    // ✅ Append tour type and minPax
-    formData.append("tourType", tourType);
-    if (tourType === "joiners") {
-        formData.append("minPax", parseInt(minPax));
-    }
-    
-    formData.append("inclusions", JSON.stringify(processedInclusions));
-    formData.append("itinerary", JSON.stringify(cleanedItinerary));
-    formData.append("image", file);
-
-    // Get admin data
-    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-    const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-    const activeId = adminData.id || adminData._id || "";
-
-    formData.append("userEmail", activeUser);
-    formData.append("adminId", activeId); 
-
-    try {
-        const response = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/add", {
-            method: "POST",
-            body: formData,
-            headers: {
-                ...(localStorage.getItem('adminToken') && { 
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}` 
-                })
-            }
-        });
+        setSubmitting(true);
         
-        const data = await response.json();
-        
-        if (response.ok) {
-            // ✅ TOAST: Success
-            toast.success(
-                `"${title}" has been published successfully!`,
-                "✅ Package Published",
-                4000
-            );
-            
-            // Clear draft
-            await clearDraft();
-            
-            // ✅ TOAST: Form Reset
-            toast.info(
-                "Form cleared and ready for next entry.",
-                "🔄 Ready",
-                2000
-            );
-
-            // Reset Form
-            setTitle("");
-            setDestination("");
-            setSupplierRate("");
-            setMarkupValue("");
-            setPrice("");
-            setDuration("");
-            setCategory("Local Tour");
-            setTourType("private");
-            setMinPax("");
-            setFile(null);
-            setPreviewUrl(null);
-            setInclusions([""]);
-            setItinerary([{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
-            setMarkupType("peso");
-            
-        } else {
-            // ✅ TOAST: Server Error with Details
-            const errorMessage = data.error || data.message || "Failed to publish package";
-            console.error('Server error:', data);
-            
-            toast.error(
-                errorMessage,
-                "❌ Server Error",
-                5000
-            );
-        }
-        
-    } catch (error) {
-        console.error("Fetch error:", error);
-        
-        // ✅ TOAST: Connection Error with Details
-        toast.error(
-            `Cannot connect to server: ${error.message}. Please check if the backend is running.`,
-            "❌ Connection Error",
-            6000
+        toast.info(
+            "Uploading package data to server...",
+            "Publishing",
+            2000
         );
         
-    } finally {
-        setSubmitting(false);
-    }
-};
+        const processedInclusions = inclusions.filter(item => item.trim().length > 0);
+        const cleanedItinerary = itinerary.map((day, index) => {
+            const titleWithoutPrefix = day.title.replace(/^Day \d+:\s*/, "").trim();
+            return {
+                day: index + 1, 
+                title: titleWithoutPrefix || `Day ${index + 1}`,
+                activities: day.activities.filter((act) => act.trim() !== "")
+            };
+        });
+
+        const supplierRateNum = parseFloat(supplierRate) || 0;
+        const markupValueNum = parseFloat(markupValue) || 0;
+        let markupInPeso = markupType === "percentage" 
+            ? (supplierRateNum * markupValueNum) / 100 
+            : markupValueNum;
+        markupInPeso = Math.round(markupInPeso * 100) / 100;
+
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("destination", destination);
+        formData.append("sellerPrice", supplierRateNum.toString());
+        formData.append("markup", markupInPeso.toString());
+        formData.append("duration", duration);
+        formData.append("category", category === "Local Tour" ? "Local" : "International");
+        formData.append("tourType", tourType);
+        if (tourType === "joiners") {
+            formData.append("minPax", parseInt(minPax));
+        }
+        
+        formData.append("inclusions", JSON.stringify(processedInclusions));
+        formData.append("itinerary", JSON.stringify(cleanedItinerary));
+        formData.append("image", file);
+
+        const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
+        const activeId = adminData.id || adminData._id || "";
+
+        formData.append("userEmail", activeUser);
+        formData.append("adminId", activeId); 
+
+        try {
+            const response = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/add", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    ...(localStorage.getItem('adminToken') && { 
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}` 
+                    })
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                toast.success(
+                    `"${title}" has been published successfully!`,
+                    "Package Published",
+                    4000
+                );
+                
+                await clearDraft();
+                
+                setTitle("");
+                setDestination("");
+                setSupplierRate("");
+                setMarkupValue("");
+                setPrice("");
+                setDuration("");
+                setCategory("Local Tour");
+                setTourType("private");
+                setMinPax("");
+                setFile(null);
+                setPreviewUrl(null);
+                setInclusions([""]);
+                setItinerary([{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
+                setMarkupType("peso");
+                
+            } else {
+                const errorMessage = data.error || data.message || "Failed to publish package";
+                toast.error(errorMessage, "Server Error", 5000);
+            }
+            
+        } catch (error) {
+            toast.error(
+                `Cannot connect to server: ${error.message}.`,
+                "Connection Error",
+                6000
+            );
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     const handleCancel = async () => {
         askConfirmation(
@@ -572,7 +492,7 @@ const handleSubmit = async (e) => {
             "Are you sure you want to cancel? All unsaved changes and drafts for this session will be lost.",
             async () => {
                 await clearDraft();
-                toast.info("Process cancelled.");
+                toast.info("Process cancelled.", "Cancelled");
                 navigate(-1);
             },
             "danger"
@@ -590,7 +510,7 @@ const handleSubmit = async (e) => {
                 draftInfo={draftInfo}
             />
 
-            {/* ✅ CUSTOM CONFIRMATION MODAL */}
+            {/* ✅ CUSTOM CONFIRMATION MODAL - Using imported component */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}
