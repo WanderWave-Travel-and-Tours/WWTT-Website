@@ -53,6 +53,8 @@ router.get("/location/:location/rooms", async (req, res) => {
     try {
         const { location } = req.params;
         
+        console.log('🔍 Fetching hotels for location:', location);
+        
         const hotels = await Hotel.find({ 
             isActive: true,
             isArchive: "No",
@@ -62,6 +64,8 @@ router.get("/location/:location/rooms", async (req, res) => {
             ]
         }).sort({ rating: -1 });
 
+        console.log(`📋 Found ${hotels.length} hotels`);
+
         if (!hotels || hotels.length === 0) {
             return res.status(404).json({ 
                 success: false, 
@@ -69,22 +73,70 @@ router.get("/location/:location/rooms", async (req, res) => {
             });
         }
 
-        const roomsData = hotels.map(hotel => ({
-            hotelId: hotel._id,
-            hotelName: hotel.name,
-            hotelLocation: hotel.location,
-            hotelRating: hotel.rating,
-            hotelImage: hotel.mainImage,
-            roomTypes: hotel.roomTypes || []
-        }));
+        // ✅ FLATTEN: Convert each hotel's roomTypes into separate objects
+        const roomsData = hotels.flatMap(hotel => {
+            // Skip hotels without room types
+            if (!hotel.roomTypes || hotel.roomTypes.length === 0) {
+                console.warn(`⚠️ Hotel "${hotel.name}" has no room types, skipping`);
+                return [];
+            }
+            
+            // Transform each room type into a flat object
+            return hotel.roomTypes.map(roomType => ({
+                // ✅ Required: Extract type from roomTypes array
+                type: roomType.type,
+                
+                // Hotel info
+                hotelId: hotel._id,
+                hotelName: hotel.name,
+                hotelLocation: hotel.location,
+                city: hotel.city,
+                address: hotel.address,
+                
+                // Pricing
+                price: roomType.price || hotel.price || 0,
+                
+                // Capacity
+                capacity: roomType.capacity || hotel.maxCapacity || 4,
+                available: roomType.available || 0,
+                
+                // Images
+                hotelImage: hotel.mainImage || '',
+                images: hotel.images ? hotel.images.map(img => img.url || img) : [],
+                
+                // Amenities
+                amenities: hotel.amenities || {},
+                
+                // Rating
+                hotelRating: hotel.rating || 0,
+                totalReviews: hotel.totalReviews || 0,
+                
+                // Description
+                description: roomType.description || hotel.description || '',
+                
+                // Metadata
+                _roomTypeIndex: hotel.roomTypes.indexOf(roomType)
+            }));
+        });
+
+        console.log(`✅ Transformed ${roomsData.length} room types from ${hotels.length} hotels`);
+
+        // Debug log first room type
+        if (roomsData.length > 0) {
+            console.log('📝 Sample room type:', {
+                type: roomsData[0].type,
+                hotelName: roomsData[0].hotelName,
+                price: roomsData[0].price
+            });
+        }
 
         res.status(200).json({ 
             success: true, 
             data: roomsData,
-            count: hotels.length
+            count: roomsData.length
         });
     } catch (err) {
-        console.error('Error fetching rooms by location:', err);
+        console.error('❌ Error fetching rooms by location:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
@@ -238,7 +290,7 @@ router.put("/update/:id", uploadFields, async (req, res) => {
         if (finalImagesArray.length > 0) {
             updateData.images = finalImagesArray;
         }
-        D
+        
         if (typeof updateData.amenities === 'string') {
             try {
                 updateData.amenities = JSON.parse(updateData.amenities);

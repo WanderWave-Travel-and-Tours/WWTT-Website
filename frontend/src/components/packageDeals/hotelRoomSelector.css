@@ -549,3 +549,83 @@
     height: 28px;
   }
 }
+/* ========================================================================================
+   🔥 NEW STYLES FOR GROUPED ROOM TYPES
+   ======================================================================================== */
+
+.hrs-hotel-count {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  display: block;
+  margin-top: 2px;
+}
+
+.hrs-category-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.hrs-price-display {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.hrs-hotels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.hrs-hotel-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.hrs-hotel-price {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+/* Category Card Specific */
+.hrs-category-card {
+  transition: all 0.3s ease;
+}
+
+.hrs-category-card:hover {
+  transform: translateY(-2px);
+}
+
+.hrs-category-card.hrs-selected {
+  box-shadow: 0 6px 20px rgba(252, 156, 27, 0.15);
+}
+
+@media (max-width: 640px) {
+  .hrs-category-right {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  
+  .hrs-card-header {
+    flex-wrap: wrap;
+  }
+  
+  .hrs-price-display {
+    font-size: 0.9rem;
+  }
+  
+  .hrs-hotel-price {
+    font-size: 0.75rem;
+  }
+}
