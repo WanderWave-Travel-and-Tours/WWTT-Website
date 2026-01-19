@@ -153,7 +153,27 @@ const AddBlog = () => {
 
       // ✅ 4. Handle Image Prompt
       else if (geminiMode === "Image") {
-          toast.info("Image prompt: " + data.generatedText.substring(0, 50) + "...", "ℹ️ Ready");
+          // Check kung may image URL na binato ang backend
+          if (data.imageUrl) {
+              try {
+                  // A. I-set as Preview agad para makita mo
+                  setImagePreview(data.imageUrl);
+
+                  // B. I-convert natin yung URL to File object para pwede i-submit sa form
+                  const res = await fetch(data.imageUrl);
+                  const blob = await res.blob();
+                  const file = new File([blob], "ai-generated-image.jpg", { type: "image/jpeg" });
+                  
+                  setImageFile(file);
+                  
+                  toast.success("AI Image generated successfully!", "🎨 Image Ready");
+              } catch (err) {
+                  console.error("Error converting image:", err);
+                  toast.warning("Image displayed but failed to process for upload.", "⚠️ Check Image");
+              }
+          } else {
+              toast.info("Prompt generated: " + data.generatedText.substring(0, 50) + "...", "ℹ️ Prompt Only");
+          }
       }
 
     } catch (error) {

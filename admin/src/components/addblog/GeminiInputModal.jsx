@@ -48,14 +48,14 @@ const GeminiInputModal = ({ isOpen, onClose, onGenerate, mode }) => {
   const placeholderText = {
     Title: "e.g., Best beaches in Siargao",
     Content: "e.g., Top attractions in Palawan",
-    Image: "e.g., Tropical beach sunset with palm trees",
+    Image: "e.g., 'Woman at Boracay beach, sunset' OR 'holding travel bag' if you uploaded a reference photo",
     FullBlog: "e.g., Hidden Gems of Batanes (Enter a topic/category)"
   };
 
   const helperText = {
     Title: "Enter a topic (or attach an image) to generate a catchy title.",
     Content: "Enter a topic (or attach an image) for Gemini to write a full article.",
-    Image: "Describe the image you want, OR attach a reference photo for Gemini to copy the style/composition.",
+    Image: "🎨 CREATE CONSISTENT CHARACTER IMAGES! Upload a photo of a person/character, then describe the scene (e.g., 'at Boracay beach', 'holding luggage'). AI will generate a NEW image with the SAME person! Perfect for matching promo materials. Or describe without uploading for a brand new image.",
     FullBlog: "Enter a topic or category. Gemini will create a Title AND write the full Content automatically!" 
   };
 

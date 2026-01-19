@@ -13,6 +13,104 @@ const {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// =============================================================================
+// 🎨 AI IMAGE GENERATION USING POLLINATIONS AI (FREE!)
+// =============================================================================
+/**
+ * Generate AI image using Pollinations API
+ * @param {string} prompt - Detailed image description
+ * @returns {Promise<string>} - Direct image URL
+ */
+const generateAiImage = async (prompt) => {
+    try {
+        console.log("🎨 Generating AI Image with Pollinations...");
+        console.log("📝 Prompt:", prompt);
+
+        // Enhanced prompt with consistency keywords
+        const enhancedPrompt = `${prompt}, 
+professional high-quality photography, 
+photorealistic, 
+natural skin texture, 
+sharp facial features, 
+detailed eyes and face, 
+proper human anatomy, 
+no distortion, 
+no deformities,
+4k ultra HD, 
+perfect lighting, 
+trending on instagram,
+professional travel photography style`;
+        
+        const encodedPrompt = encodeURIComponent(enhancedPrompt);
+        
+        // Negative prompt for Pollinations (things to avoid)
+        const negativePrompt = encodeURIComponent(
+            "blurry, distorted face, deformed, ugly, bad anatomy, wrong proportions, " +
+            "extra limbs, mutation, cartoon, anime, artificial, fake, low quality, " +
+            "pixelated, grainy, oversaturated, bad lighting"
+        );
+        
+        // Random seed para unique images every time
+        const randomSeed = Math.floor(Math.random() * 1000000);
+        
+        // Pollinations AI with enhanced parameters
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1920&height=1080&seed=${randomSeed}&nologo=true&model=flux&negative=${negativePrompt}`;
+        
+        console.log("✅ AI Image URL Generated:", imageUrl);
+        
+        return imageUrl;
+
+    } catch (error) {
+        console.error("❌ Pollinations AI Error:", error);
+        throw new Error(`AI Image generation failed: ${error.message}`);
+    }
+};
+
+/**
+ * Download AI-generated image and upload to Cloudinary
+ * @param {string} imageUrl - URL of the AI-generated image
+ * @returns {Promise<{url: string, publicId: string}>} - Cloudinary upload result
+ */
+const downloadAndUploadToCloudinary = async (imageUrl) => {
+    try {
+        console.log("⬇️ Downloading AI image from Pollinations...");
+        
+        // Download the image
+        const response = await axios({
+            method: 'GET',
+            url: imageUrl,
+            responseType: 'arraybuffer',
+            timeout: 30000,
+            headers: { 'User-Agent': 'WanderWave Blog System/1.0' }
+        });
+
+        const base64Image = Buffer.from(response.data).toString('base64');
+        const dataUri = `data:image/jpeg;base64,${base64Image}`;
+
+        console.log("☁️ Uploading to Cloudinary...");
+        
+        // Upload to Cloudinary
+        const uploadResult = await cloudinary.uploader.upload(dataUri, {
+            folder: 'wanderwave/blog-ai-images',
+            resource_type: 'image',
+            transformation: [
+                { width: 1920, height: 1080, crop: 'fill', quality: 'auto:good' }
+            ]
+        });
+
+        console.log("✅ Uploaded to Cloudinary:", uploadResult.secure_url);
+
+        return {
+            url: uploadResult.secure_url,
+            publicId: uploadResult.public_id
+        };
+
+    } catch (error) {
+        console.error("❌ Cloudinary Upload Error:", error);
+        throw new Error(`Failed to upload AI image: ${error.message}`);
+    }
+};
+
 const searchUnsplashImages = async (req, res) => {
     try {
         const { query, page = 1 } = req.query;
@@ -190,79 +288,93 @@ const downloadUnsplashImage = async (req, res) => {
         const dataUri = `data:${contentType};base64,${base64Image}`;
 
         const uploadResult = await cloudinary.uploader.upload(dataUri, {
-            folder: 'wanderwave/unsplash-blog-covers',
-            resource_type: 'auto',
-            transformation: [{ width: 1920, height: 1080, crop: 'fill', quality: 'auto:best', fetch_format: 'auto' }],
-            context: `photographer=${photographer}|alt=${alt}|source=unsplash`
+            folder: 'wanderwave/blog-covers',
+            resource_type: 'image',
+            transformation: [{ width: 1200, height: 630, crop: 'fill', quality: 'auto:good' }]
         });
 
         res.status(200).json({
             success: true,
-            url: uploadResult.secure_url,
-            publicId: uploadResult.public_id,
+            imageUrl: uploadResult.secure_url,
+            imagePublicId: uploadResult.public_id,
             photographer: photographer,
-            alt: alt
+            alt: alt || 'Travel Image'
         });
 
     } catch (error) {
         console.error('❌ Download Error:', error);
-        res.status(500).json({ success: false, message: 'Download failed', error: error.message });
+        res.status(500).json({ success: false, message: 'Download failed' });
     }
-};
-
-const generateAiImage = async (prompt) => {
-    try {
-        const cleanPrompt = prompt.substring(0, 500).replace(/[^\w\s,]/gi, '');
-        const enhancedPrompt = `${cleanPrompt}, highly detailed, 8k, photorealistic, travel photography, cinematic lighting, hd quality`;
-        const encodedPrompt = encodeURIComponent(enhancedPrompt);
-        const randomSeed = Math.floor(Math.random() * 1000000);
-        return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1920&height=1080&seed=${randomSeed}&model=flux&nologo=true&enhance=true`;
-    } catch (error) {
-        return "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1920&q=80";
-    }
-};
-
-const downloadAndUploadImage = async (imageUrl) => {
-    try {
-        const response = await axios({ method: 'GET', url: imageUrl, responseType: 'arraybuffer', headers: { 'User-Agent': 'Mozilla/5.0' } });
-        const dataUri = `data:${response.headers['content-type']};base64,${Buffer.from(response.data).toString('base64')}`;
-        const uploadResult = await cloudinary.uploader.upload(dataUri, {
-            folder: 'wanderwave/ai-generated-blog-covers',
-            transformation: [{ width: 1920, height: 1080, crop: 'fill', quality: 'auto:best' }]
-        });
-        return { url: uploadResult.secure_url, publicId: uploadResult.public_id };
-    } catch (error) { return null; }
 };
 
 const generateGeminiContent = async (req, res) => {
     try {
         const { prompt, type, images } = req.body;
-        if (!prompt || !type) return res.status(400).json({ message: "Prompt and type are required" });
         
-        console.log(`🤖 AI Request: ${type} - "${prompt}"`);
+        console.log(`🤖 Gemini Request: Type=${type}`);
         
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const imageParts = (images && Array.isArray(images)) ? images.map(img => ({
-            inlineData: {
-                data: img.split(',')[1],
-                mimeType: img.match(/:(.*?);/)[1]
+        
+        const imageParts = [];
+        if (images && images.length > 0) {
+            for (const imgBase64 of images) {
+                const cleanBase64 = imgBase64.replace(/^data:image\/\w+;base64,/, '');
+                imageParts.push({ inlineData: { data: cleanBase64, mimeType: "image/jpeg" } });
             }
-        })) : [];
+        }
+        
+        const downloadAndUploadImage = async (imageUrl) => {
+            try {
+                const response = await axios({
+                    method: 'GET',
+                    url: imageUrl,
+                    responseType: 'arraybuffer',
+                    timeout: 30000,
+                    headers: { 'User-Agent': 'WanderWave Blog System/1.0' }
+                });
+
+                const base64Image = Buffer.from(response.data).toString('base64');
+                const dataUri = `data:image/jpeg;base64,${base64Image}`;
+
+                const uploadResult = await cloudinary.uploader.upload(dataUri, {
+                    folder: 'wanderwave/blog-ai-images',
+                    resource_type: 'image',
+                    transformation: [{ width: 1200, height: 630, crop: 'fill', quality: 'auto:good' }]
+                });
+
+                return { url: uploadResult.secure_url, publicId: uploadResult.public_id };
+            } catch (err) {
+                console.error("Upload Error:", err);
+                return null;
+            }
+        };
+
+        const generateAiImage = async (prompt) => {
+            const enhancedPrompt = `${prompt}, professional travel photography, high quality, vibrant colors`;
+            const encodedPrompt = encodeURIComponent(enhancedPrompt);
+            const randomSeed = Math.floor(Math.random() * 1000000);
+            return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1920&height=1080&seed=${randomSeed}&nologo=true&model=flux`;
+        };
 
         if (type === 'FullBlog') {
-            const systemPrompt = `You are a travel blog expert. Create a blog post about: "${prompt}". Return ONLY a JSON object (no markdown) with: { "title": "A catchy title", "category": "One of: Trending Stories, Travel Guide, News & Updates, Promos, Tips", "content": "A 600-word HTML article (<h2>, <p>, <ul> only).", "imagePrompt": "A highly descriptive prompt for an AI image generator to create a photorealistic travel photo of this location. Describe lighting, angle, and scenery." }`;
-            const result = await model.generateContent(systemPrompt);
-            const textResponse = result.response.text().replace(/```json|```/g, '').trim();
-            let blogData;
-            try { blogData = JSON.parse(textResponse); } 
-            catch (e) { return res.status(500).json({ message: "AI JSON parsing failed. Please try again." }); }
-            
-            const imageUrl = await generateAiImage(blogData.imagePrompt); 
-            let finalImage = { url: "", publicId: "" };
-            const upload = await downloadAndUploadImage(imageUrl);
-            
-            if (upload) { finalImage = upload; } 
-            else { finalImage = { url: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1920&q=80", publicId: "fallback-image" }; }
+            console.log("🚀 Full Blog Chain: Title + Content + Image");
+            let titlePrompt = `Generate ONE catchy travel blog title for "${prompt}". No quotes.`;
+            if (imageParts.length > 0) {
+                titlePrompt = [`Look at these ${imageParts.length} images. Generate ONE catchy travel blog title that matches these visuals and the topic: "${prompt}". No quotes.`, ...imageParts];
+            }
+            const titleResult = await model.generateContent(titlePrompt);
+            const blogTitle = titleResult.response.text().replace(/['"]/g, '').trim();
+            console.log(`✅ Title: ${blogTitle}`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const contentResult = await model.generateContent(`Write a 600-word HTML travel blog about "${blogTitle}". Use <h2>, <p>, <ul>.`);
+            const blogContent = contentResult.response.text();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const imagePrompt = await model.generateContent(`Create a detailed AI image prompt for this blog: "${blogTitle}". Describe the visual style, composition, and mood.`);
+            const refinedImagePrompt = imagePrompt.response.text();
+            const imageUrl = await generateAiImage(refinedImagePrompt);
+            const finalImage = await downloadAndUploadImage(imageUrl);
+            if (!finalImage) { return res.status(500).json({ message: "Image generation failed." }); }
+            const blogData = { title: blogTitle, category: "Travel Guide", content: blogContent };
             
             return res.status(200).json({ success: true, data: { title: blogData.title, category: blogData.category, content: blogData.content, generatedImage: finalImage.url, imagePublicId: finalImage.publicId }});
         }
@@ -358,6 +470,9 @@ const getArchivedBlogs = async (req, res) => {
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
+// =============================================================================
+// 🎯 MAIN AI CONTENT GENERATION ENDPOINT
+// =============================================================================
 const generateAIContent = async (req, res) => {
   try {
     const { prompt, type, image } = req.body;
@@ -387,8 +502,75 @@ const generateAIContent = async (req, res) => {
            break;
 
         case "Image":
-           generatedText = await generateImagePrompt(prompt);
-           break;
+           console.log("🎨 Starting AI Image Generation Process...");
+           
+           let refinedPrompt;
+           
+           // 🎯 Step 1: Check if there's a reference image uploaded
+           if (image) {
+               console.log("📸 Reference image detected! Analyzing with Gemini Vision...");
+               
+               try {
+                   // Use Gemini Vision to analyze the uploaded image
+                   const visionAnalysis = await generateWithImage(
+                       prompt || "Describe this person in extreme detail for AI image generation",
+                       image,
+                       "ImageAnalysis"
+                   );
+                   
+                   console.log("✅ Gemini Vision Analysis Complete!");
+                   console.log("📋 Character Description:", visionAnalysis.substring(0, 200) + "...");
+                   
+                   // Create a HIGHLY DETAILED prompt that prioritizes character consistency
+                   refinedPrompt = `IMPORTANT - MAINTAIN EXACT CHARACTER CONSISTENCY:
+
+${visionAnalysis}
+
+NEW SCENE/SETTING REQUEST:
+${prompt}
+
+CRITICAL REQUIREMENTS:
+- Keep the EXACT same person from the description above
+- Maintain all facial features, hair, and physical characteristics PRECISELY
+- Only change the setting/scene/environment/clothing as requested
+- Ensure photorealistic quality with no distortions
+- Professional photography style
+- Natural lighting and realistic proportions
+- Sharp focus on face and features`;
+                   
+                   console.log("✅ Enhanced Prompt with Character Reference Created");
+                   
+               } catch (visionError) {
+                   console.warn("⚠️ Gemini Vision failed, trying fallback approach");
+                   // Fallback: create a more detailed prompt even without analysis
+                   refinedPrompt = `${prompt}, professional portrait photography, photorealistic, natural features, sharp facial details, proper human anatomy, 4k quality, no distortions`;
+               }
+           } else {
+               // No reference image - use standard prompt enhancement
+               try {
+                   refinedPrompt = await generateImagePrompt(prompt);
+                   console.log("✅ Gemini Enhanced Prompt:", refinedPrompt);
+               } catch (geminiError) {
+                   console.warn("⚠️ Gemini prompt enhancement failed, using original prompt");
+                   refinedPrompt = `${prompt}, professional travel photography, high quality, vibrant colors, 4k, sharp focus`;
+               }
+           }
+           
+           // Step 2: Generate image using Pollinations AI
+           const imageUrl = await generateAiImage(refinedPrompt);
+           console.log("✅ AI Image Generated:", imageUrl);
+           
+           // Step 3: Download and upload to Cloudinary
+           const cloudinaryResult = await downloadAndUploadToCloudinary(imageUrl);
+           console.log("✅ Image Uploaded to Cloudinary:", cloudinaryResult.url);
+           
+           return res.status(200).json({
+             success: true,
+             generatedText: refinedPrompt,
+             imageUrl: cloudinaryResult.url,
+             imagePublicId: cloudinaryResult.publicId,
+             type: type
+           });
 
         case "FullBlog":
            console.log("🚀 Starting Full Blog Chain...");
@@ -442,5 +624,7 @@ module.exports = {
     searchUnsplashImages,
     downloadUnsplashImage,
     getCuratedImages,
-    generateAIContent  
+    generateAIContent,
+    generateAiImage,  // Export for potential use in other controllers
+    downloadAndUploadToCloudinary  // Export for potential use in other controllers
 };

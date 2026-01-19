@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { Menu, X, Globe, AlertCircle } from 'lucide-react'; // Added AlertCircle
+import { Menu, X, Globe, AlertCircle, Heart } from 'lucide-react'; // Added AlertCircle
 import axios from 'axios';
 import './App.css'; 
 
@@ -258,7 +258,7 @@ function MainLayout() {
         const userId = currentUser._id;
         console.log('📊 Fetching wishlist count for user:', userId);
 
-        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites/${userId}`, {
+        const response = await fetch(`http://localhost:5000/api/favorites/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

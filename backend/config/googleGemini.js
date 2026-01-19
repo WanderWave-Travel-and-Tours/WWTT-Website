@@ -176,17 +176,15 @@ async function generateBlogContent(title, category = "Travel Guide") {
  * Generate content with image context (multimodal)
  * @param {string} prompt - User's text prompt
  * @param {string} imageBase64 - Base64 encoded image
- * @param {string} type - "Title" or "Content"
+ * @param {string} type - "Title", "Content", or "ImageAnalysis"
  * @returns {Promise<string>} - Generated text
  */
 async function generateWithImage(prompt, imageBase64, type) {
   try {
-    // Use Gemini Pro Vision for image understanding
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    // 1. FIXED: Changed 'gemini-pro-vision' (deprecated) to 'gemini-1.5-flash'
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Convert base64 to proper format
     const imageData = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-
     const imagePart = {
       inlineData: {
         data: imageData,
@@ -195,19 +193,87 @@ async function generateWithImage(prompt, imageBase64, type) {
     };
 
     let enhancedPrompt;
+    
     if (type === "Title") {
       enhancedPrompt = `Based on this image, generate a catchy blog title related to: ${prompt}. 
 Make it engaging and descriptive. Return ONLY the title.`;
-    } else {
+    } 
+    else if (type === "Content") {
       enhancedPrompt = `Based on this image, write a comprehensive blog article about: ${prompt}. 
 Describe what you see and create engaging content around it. Use 800-1000 words.`;
+    }
+    else if (type === "ImageAnalysis") {
+      // 🎯 ENHANCED: Ultra-detailed character analysis for maximum consistency
+      enhancedPrompt = `You are an expert AI image prompt writer analyzing a reference photo for character consistency across multiple AI-generated images.
+
+Analyze this image and create an EXTREMELY DETAILED character description that an AI image generator can use to recreate this EXACT person in different scenes.
+
+CRITICAL INSTRUCTIONS:
+1. Focus on PERMANENT features (not clothing or accessories unless specifically needed)
+2. Be VERY specific about facial features
+3. Use photographic/artistic terminology
+4. Write in a continuous paragraph format (no bullet points)
+
+REQUIRED DETAILS:
+
+FACIAL STRUCTURE & FEATURES:
+- Ethnicity and skin tone (be specific: warm beige, fair, tan, etc.)
+- Face shape (oval, round, heart-shaped, square)
+- Facial proportions and symmetry
+- Bone structure (high cheekbones, defined jawline, etc.)
+
+EYES:
+- Eye color (dark brown, hazel, etc.)
+- Eye shape (almond-shaped, round, hooded, etc.)
+- Eyebrow shape, thickness, and color
+- Eye spacing and size
+- Eyelash appearance
+
+NOSE:
+- Nose shape (button nose, straight, curved)
+- Bridge width and height
+- Nostril shape and size
+
+MOUTH & SMILE:
+- Lip shape and fullness
+- Smile characteristics (wide, gentle, etc.)
+- Teeth visibility
+- Lip color
+
+HAIR:
+- Exact hair color (e.g., "deep chocolate brown with subtle warm undertones")
+- Hair length (e.g., "waist-length, hip-length")
+- Hair texture (straight, wavy, curly - be specific)
+- Hair thickness and volume
+- How hair naturally falls or parts
+
+OVERALL APPEARANCE:
+- Age range (early 20s, mid-20s, late 20s)
+- Body type and build
+- Height impression (petite, average, tall)
+- Overall aesthetic and vibe
+
+PHOTOGRAPHY STYLE:
+- Type of photography (portrait, lifestyle, editorial)
+- Lighting quality (soft natural, studio, golden hour)
+- Expression and mood
+- Pose and body language
+
+FORMAT YOUR RESPONSE AS:
+Write everything as ONE flowing descriptive paragraph that reads like a detailed prompt for an AI image generator. Start with: "A [ethnicity] woman in her [age range]..." and continue with all the detailed features in natural language. Make it read like a professional AI image generation prompt.
+
+EXAMPLE OUTPUT STYLE:
+"A Filipino woman in her mid-twenties with warm beige skin tone and an oval face shape, featuring large almond-shaped dark brown eyes with long natural lashes, well-defined eyebrows, a straight refined nose, and full lips with a warm natural smile. Her most distinctive feature is her long straight dark brown hair with subtle natural highlights that falls past her shoulders in a sleek, healthy-looking style. She has high cheekbones and a gentle jawline, creating a harmonious facial structure. Her expression is warm and approachable with a genuine smile. Photography style is professional lifestyle photography with soft natural lighting that enhances her features without harsh shadows."
+
+Now analyze the provided image and create a similar detailed description:`;
+    }
+    else {
+      enhancedPrompt = `Analyze this image and provide details about: ${prompt}`;
     }
 
     const result = await model.generateContent([enhancedPrompt, imagePart]);
     const response = await result.response;
-    const text = response.text();
-
-    return text.trim();
+    return response.text().trim();
 
   } catch (error) {
     console.error("❌ Gemini Image Analysis Error:", error);
@@ -223,37 +289,23 @@ Describe what you see and create engaging content around it. Use 800-1000 words.
  */
 async function generateImagePrompt(description) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Susubukan natin tawagin si Gemini
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const promptTemplate = `You are an expert at creating detailed prompts for AI image generators like DALL-E or Stable Diffusion.
-
-Based on this description: "${description}"
-
-Create a detailed, specific image generation prompt that includes:
-- Main subject/scene
-- Art style (photorealistic, illustration, etc.)
-- Lighting and atmosphere
-- Color palette
-- Composition details
-- Quality indicators (high resolution, detailed, etc.)
-
-Return ONLY the prompt text, no explanations.
-
-Example:
-Input: "Tropical beach sunset in Philippines"
-Output: "A stunning tropical beach at sunset in the Philippines, crystal clear turquoise water gently lapping at white powdery sand, vibrant orange and pink sky reflecting on calm waters, coconut palm trees silhouetted against the colorful horizon, small traditional Filipino bangka boats in the distance, photorealistic style, warm golden hour lighting, ultra detailed, 8k quality, cinematic composition"
-
-Now create a prompt for: ${description}`;
+    const promptTemplate = `Create a detailed AI image generation prompt for: "${description}".
+    Return ONLY the prompt text.`;
 
     const result = await model.generateContent(promptTemplate);
     const response = await result.response;
-    const text = response.text();
-
-    return text.trim();
+    return response.text().trim();
 
   } catch (error) {
-    console.error("❌ Gemini Image Prompt Error:", error);
-    throw new Error(`Failed to generate image prompt: ${error.message}`);
+    // ⚠️ DITO ANG FIX: Pag nag-error si Gemini (404), hindi tayo titigil.
+    // Gagawa tayo ng manual fallback para tuloy pa rin ang Pollinations.
+    console.warn("⚠️ Gemini Image Prompt failed, using fallback:", error.message);
+    
+    // Ibalik ang original description + magic words
+    return `${description}, photorealistic, 8k, travel photography, highly detailed, cinematic lighting, no blur`;
   }
 }
 
