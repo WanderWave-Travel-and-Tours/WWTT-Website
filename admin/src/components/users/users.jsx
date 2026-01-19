@@ -3,6 +3,8 @@ import Sidebar from '../sidebar/sidebar';
 import UserFilters from './Userfilters';
 import UserPagination from './Userpagination';
 import { UserCog } from 'lucide-react';
+import { useToast } from '../toast/ToastManager'; // Inimport ang Toast
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal"; // Inimport ang Modal
 import './users.css';
 import './Userfilters.css';
 import './Userpagination.css';
@@ -13,7 +15,18 @@ import './Userpagination.css';
 const USERS_PER_PAGE = 10;
 
 const Users = () => {
+    const toast = useToast(); // Hook para sa Toast
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    
+    // State para sa Custom Confirmation Modal
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
@@ -27,7 +40,20 @@ const Users = () => {
 
     const API_URL = 'https://wanderwaveph-backend.onrender.com/api/users';
 
-    // Get dynamic status options
+    // Function para i-trigger ang confirmation modal
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
+
     const getStatusOptions = () => {
         return ['ALL', 'Active', 'Inactive'];
     };
@@ -54,6 +80,7 @@ const Users = () => {
         } catch (error) {
             console.error("Error loading users:", error);
             setError(`Could not fetch data. Ensure the backend server is running on port 5000 and connected to MongoDB.`);
+            toast.error("Failed to load users list.");
         } finally {
             setLoading(false);
         }
@@ -76,33 +103,41 @@ const Users = () => {
         });
     };
 
-    const handleArchive = async (id, username) => {
-        if (window.confirm(`Are you sure you want to ARCHIVE user: ${username}?`)) {
-            try {
-                const response = await fetch(`${API_URL}/archive/${id}`, {
-                    method: 'PUT',
-                });
+    // Actual Logic for Archiving
+    const performArchive = async (id, username) => {
+        try {
+            const response = await fetch(`${API_URL}/archive/${id}`, {
+                method: 'PUT',
+            });
 
-                if (response.ok) {
-                    const updatedUsers = users.filter(user => user._id !== id);
-                    setUsers(updatedUsers);
-                    
-                    if (currentPage > Math.ceil(updatedUsers.length / USERS_PER_PAGE)) {
-                        setCurrentPage(Math.max(1, currentPage - 1));
-                    }
-                    alert(`User ${username} has been archived.`);
-                } else {
-                    const errorData = await response.json();
-                    alert(`Failed to archive user: ${errorData.message || response.statusText}`);
+            if (response.ok) {
+                const updatedUsers = users.filter(user => user._id !== id);
+                setUsers(updatedUsers);
+                
+                if (currentPage > Math.ceil(updatedUsers.length / USERS_PER_PAGE)) {
+                    setCurrentPage(Math.max(1, currentPage - 1));
                 }
-            } catch (error) {
-                console.error("Error archiving:", error);
-                alert("Server error during archiving.");
+                toast.success(`User ${username} has been archived successfully.`);
+            } else {
+                const errorData = await response.json();
+                toast.error(`Failed to archive user: ${errorData.message || response.statusText}`);
             }
+        } catch (error) {
+            console.error("Error archiving:", error);
+            toast.error("A server error occurred during archiving.");
         }
     };
 
-    // Filter users based on search and status
+    // Handler para sa button click (pinalitan ang window.confirm)
+    const handleArchive = (id, username) => {
+        askConfirmation(
+            "Archive User",
+            `Are you sure you want to archive user: ${username}? This action will hide the user from the active list.`,
+            () => performArchive(id, username),
+            "danger"
+        );
+    };
+
     const filteredUsers = users.filter(user => {
         const matchesSearch = 
             user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -241,7 +276,6 @@ const Users = () => {
                                 </table>
                             </div>
                             
-                            {/* 🔥 PAGINATION IS NOW OUTSIDE THE TABLE WRAPPER! */}
                             <UserPagination
                                 totalItems={totalUsers}
                                 itemsPerPage={USERS_PER_PAGE}
@@ -252,6 +286,16 @@ const Users = () => {
                     )}
                 </div>
             </main>
+
+            {/* Render Custom Confirmation Modal */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };

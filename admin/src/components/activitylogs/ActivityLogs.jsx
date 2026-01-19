@@ -8,10 +8,17 @@ import ActivityLogsTable from './ActivityLogsTable';
 import ActivityLogsDetailModal from './ActivityLogsDetailModal';
 import ActivityLogsPagination from './ActivityLogsPagination';
 import { exportActivityLogsToPDF } from './utils/activityLogsPdfExport';
+
+// --- NEW IMPORTS ---
+import { useToast } from "../toast/ToastManager";
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
+// -------------------
+
 import './ActivityLogs.css';
 
 const ActivityLogs = () => {
     const navigate = useNavigate();
+    const toast = useToast(); // Initialize toast
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [loading, setLoading] = useState(true);
     
@@ -32,6 +39,30 @@ const ActivityLogs = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedLog, setSelectedLog] = useState(null);
 
+    // --- NEW: Confirmation Modal State ---
+    const [confirmConfig, setConfirmConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: "primary"
+    });
+
+    // Helper function for confirmation
+    const askConfirmation = (title, message, onConfirm, type = "primary") => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type
+        });
+    };
+    // ------------------------------------
+
     // Check authentication
     useEffect(() => {
         const token = localStorage.getItem('adminToken');
@@ -47,7 +78,7 @@ const ActivityLogs = () => {
     }, []);
 
     // ==========================================
-    // IMPROVED FETCH FUNCTION WITH DEBUG LOGS
+    // IMPROVED FETCH FUNCTION WITH TOAST
     // ==========================================
     const fetchActivityLogs = async () => {
         console.log('🔍 Starting to fetch activity logs...');
@@ -69,14 +100,13 @@ const ActivityLogs = () => {
 
             const data = await response.json();
             console.log('📊 Raw data received:', data);
-            console.log('📊 Data type:', Array.isArray(data) ? 'Array' : typeof data);
-            console.log('📊 Data length:', Array.isArray(data) ? data.length : 'N/A');
-
+            
             // Check if data is empty
             if (!data || !Array.isArray(data)) {
                 console.warn('⚠️ Invalid data format received');
                 setActivityLogs([]);
                 setFetchError('Invalid data format received from server');
+                toast.error("Failed to load logs. Invalid data format."); // Toast Notification
                 return;
             }
 
@@ -100,7 +130,6 @@ const ActivityLogs = () => {
                     timestamp: log.createdAt || new Date().toISOString(),
                     ipAddress: log.ipAddress || 'N/A',
                     userAgent: log.userAgent || 'N/A',
-                    // 🔥🔥🔥 INCLUDE ADMIN INFO HERE 🔥🔥🔥
                     adminInfo: log.adminInfo || null,
                     details: log.details || {
                         affectedRecords: 0,
@@ -113,19 +142,14 @@ const ActivityLogs = () => {
             });
             
             console.log('✅ Formatted logs:', formattedLogs.length);
-            console.log('🔍 Sample log:', formattedLogs[0]);
-            
             setActivityLogs(formattedLogs);
-            console.log('✅ Activity logs set to state successfully');
+            toast.success("Logs synchronized successfully."); // Toast Notification
 
         } catch (error) {
             console.error('❌ Error fetching activity logs:', error);
-            console.error('❌ Error details:', {
-                message: error.message,
-                stack: error.stack
-            });
             setFetchError(error.message);
             setActivityLogs([]);
+            toast.error("Error connecting to the server."); // Toast Notification
         } finally {
             setLoading(false);
             console.log('🏁 Fetch completed, loading:', false);
@@ -152,26 +176,22 @@ const ActivityLogs = () => {
         // Filter by action type
         if (selectedActionType !== 'ALL') {
             filtered = filtered.filter(log => log.action === selectedActionType);
-            console.log(`🔍 After action filter (${selectedActionType}):`, filtered.length);
         }
 
         // Filter by module
         if (selectedModule !== 'ALL Modules') {
             filtered = filtered.filter(log => log.module === selectedModule);
-            console.log(`🔍 After module filter (${selectedModule}):`, filtered.length);
         }
 
         // Filter by severity
         if (selectedSeverity !== 'ALL Severity') {
             filtered = filtered.filter(log => log.severity === selectedSeverity);
-            console.log(`🔍 After severity filter (${selectedSeverity}):`, filtered.length);
         }
 
         // Search filter - Enhanced to include adminInfo
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(log => {
-                // Basic fields
                 const matchesBasic = 
                     (log.id && log.id.toLowerCase().includes(query)) ||
                     (log.action && log.action.toLowerCase().includes(query)) ||
@@ -179,7 +199,6 @@ const ActivityLogs = () => {
                     (log.user && log.user.toLowerCase().includes(query)) ||
                     (log.description && log.description.toLowerCase().includes(query));
                 
-                // Admin info fields
                 const matchesAdminInfo = log.adminInfo && (
                     (log.adminInfo.fullName && log.adminInfo.fullName.toLowerCase().includes(query)) ||
                     (log.adminInfo.username && log.adminInfo.username.toLowerCase().includes(query)) ||
@@ -188,7 +207,6 @@ const ActivityLogs = () => {
                 
                 return matchesBasic || matchesAdminInfo;
             });
-            console.log(`🔍 After search filter ("${searchQuery}"):`, filtered.length);
         }
 
         // Sort by timestamp
@@ -200,7 +218,6 @@ const ActivityLogs = () => {
             }
         });
 
-        console.log('📊 Final filtered logs count:', filtered.length);
         return filtered;
     };
 
@@ -256,20 +273,9 @@ const ActivityLogs = () => {
     const actionTypeOptions = ['ALL', 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'VIEW', 'EXPORT', 'IMPORT', 'ARCHIVE'];
     
     const moduleOptions = [
-        'ALL Modules',
-        'Auth',
-        'Users',
-        'Bookings',
-        'Packages', 
-        'Services',
-        'Hotels',
-        'Tours',
-        'Promos',
-        'Blogs',
-        'Testimonials',
-        'Visas',
-        'Passports',
-        'System'
+        'ALL Modules', 'Auth', 'Users', 'Bookings', 'Packages', 
+        'Services', 'Hotels', 'Tours', 'Promos', 'Blogs', 
+        'Testimonials', 'Visas', 'Passports', 'System'
     ];
 
     const severityOptions = ['ALL Severity', 'INFO', 'SUCCESS', 'WARNING', 'ERROR'];
@@ -282,7 +288,6 @@ const ActivityLogs = () => {
     };
 
     const handleSortToggle = () => {
-        console.log('🔄 Toggling sort order');
         setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
     };
 
@@ -293,7 +298,6 @@ const ActivityLogs = () => {
     
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
-            console.log('📄 Changing to page:', page);
             setCurrentPage(page);
         }
     };
@@ -302,16 +306,24 @@ const ActivityLogs = () => {
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
-    // 🔥 NEW: Export to PDF Handler
+    // 🔥 UPDATED: Export to PDF with Confirmation Modal and Toast
     const handleExportPDF = () => {
-        console.log('📄 Exporting Activity Logs to PDF...');
-        try {
-            exportActivityLogsToPDF(filteredLogs, stats);
-            console.log('✅ PDF Export successful');
-        } catch (error) {
-            console.error('❌ Error exporting PDF:', error);
-            alert('Failed to export PDF. Please try again.');
-        }
+        askConfirmation(
+            "Export Activity Logs",
+            "Are you sure you want to download the current filtered logs as a PDF report?",
+            () => {
+                console.log('📄 Exporting Activity Logs to PDF...');
+                try {
+                    exportActivityLogsToPDF(filteredLogs, stats);
+                    console.log('✅ PDF Export successful');
+                    toast.success("PDF report generated successfully.");
+                } catch (error) {
+                    console.error('❌ Error exporting PDF:', error);
+                    toast.error("Failed to export PDF. Please try again.");
+                }
+            },
+            "primary"
+        );
     };
 
     // Format date helper
@@ -326,7 +338,6 @@ const ActivityLogs = () => {
                 minute: '2-digit'
             });
         } catch (error) {
-            console.error('Error formatting date:', error);
             return "Invalid Date";
         }
     };
@@ -427,6 +438,16 @@ const ActivityLogs = () => {
                     formatDate={formatDate}
                 />
             )}
+
+            {/* --- NEW: Custom Confirmation Modal Component --- */}
+            <CustomConfirmModal 
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                type={confirmConfig.type}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 };
