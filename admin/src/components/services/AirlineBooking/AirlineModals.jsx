@@ -230,9 +230,7 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
             borderBottomLeftRadius: '16px',
             borderBottomRightRadius: '16px'
         }}>
-          <button className="tdm-btn-edit" onClick={() => navigate(`/EditAirline/${inquiry._id}`)}>
-             <Edit size={16}/> Edit Booking
-          </button>
+
           <button className="air-close-btn-secondary" onClick={onClose} style={{
               padding: '10px 20px',
               borderRadius: '8px',
