@@ -1,18 +1,22 @@
-const Testimonial = require('../models/testimonial');
-const ActivityLog = require('../models/ActivityLog'); // ✅ Siguraduhin tama ang path/case
+const Testimonial = require('../models/Testimonial');
+const ActivityLog = require('../models/ActivityLog'); // Ensure path is correct
 const fs = require('fs');
 const path = require('path');
 
 // 1. CREATE TESTIMONIAL
 const addTestimonial = async (req, res) => {
     try {
-        const { customerName, source, feedback, userEmail, adminId } = req.body;
+        const { customerName, source, feedback, rating, userEmail, adminId } = req.body;
+
+        // ✅ FIX: Explicitly convert rating to Number, default to 5 if missing
+        const ratingValue = rating ? Number(rating) : 5;
 
         const newTestimonial = new Testimonial({
             customerName,
             source,
             customerImage: req.file ? req.file.filename : "", 
             feedback,
+            rating: ratingValue, // ✅ Save as Number
             isArchive: "No"
         });
 
@@ -20,7 +24,6 @@ const addTestimonial = async (req, res) => {
 
         // ACTIVITY LOG (CREATE)
         try {
-            // Sanitize ID
             let logUserId = null;
             if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
                 logUserId = adminId;
@@ -31,7 +34,7 @@ const addTestimonial = async (req, res) => {
                 module: 'Testimonials',
                 user: userEmail || 'Unknown User',
                 userId: logUserId,
-                description: `Added new testimonial from: ${customerName}`,
+                description: `Added new testimonial from: ${customerName} (Rating: ${ratingValue})`,
                 severity: 'SUCCESS',
                 details: {
                     recordTitle: customerName,
@@ -75,9 +78,15 @@ const getTestimonialById = async (req, res) => {
 // 4. UPDATE
 const updateTestimonial = async (req, res) => {
     try {
-        const { customerName, source, feedback, userEmail, adminId, changes } = req.body;
+        const { customerName, source, feedback, rating, userEmail, adminId, changes } = req.body;
         
+        // ✅ FIX: Include rating in the updateData object
         let updateData = { customerName, source, feedback };
+        
+        // Check if rating exists and is not undefined
+        if (rating !== undefined && rating !== null && rating !== "") {
+            updateData.rating = Number(rating);
+        }
 
         if (req.file) {
             updateData.customerImage = req.file.filename;
@@ -93,23 +102,23 @@ const updateTestimonial = async (req, res) => {
 
         // ACTIVITY LOG (UPDATE)
         try {
-            // Format the description based on tracked changes
             let logDescription = `Updated testimonial from: ${updatedTestimonial.customerName}`;
             
             if (changes) {
-                // Frontend sends changes as a JSON string via FormData
                 try {
                     const parsedChanges = JSON.parse(changes);
+                    // Handle if it's an array of strings or object keys
                     if (Array.isArray(parsedChanges) && parsedChanges.length > 0) {
                         logDescription += `. Changes: ${parsedChanges.join(', ')}`;
+                    } else if (typeof parsedChanges === 'object') {
+                        const keys = Object.keys(parsedChanges);
+                        if (keys.length > 0) logDescription += `. Fields: ${keys.join(', ')}`;
                     }
                 } catch (e) {
-                    // Fallback if parsing fails
                     logDescription += ` details updated.`;
                 }
             }
 
-            // Sanitize ID
             let logUserId = null;
             if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
                 logUserId = adminId;
@@ -121,7 +130,7 @@ const updateTestimonial = async (req, res) => {
                 user: userEmail || 'Unknown User',
                 userId: logUserId,
                 description: logDescription,
-                severity: 'SUCCESS', // Changed to SUCCESS (Green) for standard updates
+                severity: 'SUCCESS',
                 details: {
                     recordTitle: updatedTestimonial.customerName,
                     recordId: updatedTestimonial._id.toString(),
@@ -156,7 +165,6 @@ const archiveTestimonial = async (req, res) => {
 
         // ACTIVITY LOG (ARCHIVE)
         try {
-            // Sanitize ID
             let logUserId = null;
             if (adminId && adminId !== 'null' && adminId !== 'undefined' && adminId !== '') {
                 logUserId = adminId;
