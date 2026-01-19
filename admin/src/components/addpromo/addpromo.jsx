@@ -286,13 +286,13 @@ const handleCategorySelect = (e) => {
         setPromoDetails(prev => ({ ...prev, category: '' }));
         
         // ✅ TOAST (Optional)
-        toast.info("Enter your custom category.", "✏️ Custom Category");
+        toast.info("Enter your custom category.", "Custom Category");
     } else {
         setIsOtherCategory(false);
         setPromoDetails(prev => ({ ...prev, category: value }));
         
         // ✅ TOAST (Optional)
-        toast.success(`Category set to "${value}"`, "✅ Category Selected", 2000);
+        toast.success(`Category set to "${value}"`, "Category Selected", 2000);
     }
 };
 
@@ -303,7 +303,7 @@ const handleCategorySelect = (e) => {
         setImagePreview(URL.createObjectURL(file));
         
         // ✅ TOAST
-        toast.success(`Image "${file.name}" uploaded successfully!`, "✅ Image Added");
+        toast.success(`Image "${file.name}" uploaded successfully!`, "Image Added");
     }
 };
 
@@ -312,7 +312,7 @@ const handleCategorySelect = (e) => {
     setImagePreview(null);
     
     // ✅ TOAST
-    toast.info("Promo image removed.", "🗑️ Image Removed");
+    toast.info("Promo image removed.", "Image Removed");
 };
 
 const handleSubmit = async () => {
@@ -321,13 +321,13 @@ const handleSubmit = async () => {
         !promoDetails.discountValue || !promoDetails.startDate || !promoDetails.usageLimit) {
         toast.warning(
             'Please fill in all required fields to continue.',
-            '⚠️ Incomplete Form'
+            'Incomplete Form'
         );
         return;
     }
 
     // ✅ TOAST: Validation passed
-    toast.success("All fields validated successfully!", "✅ Ready to Create", 2000);
+    toast.success("All fields validated successfully!", "Ready to Create", 2000);
 
     askConfirmation(
         "Create Promo",
@@ -340,7 +340,7 @@ const performSubmit = async () => {
     setIsSubmitting(true);
 
     // ✅ TOAST: Upload started
-    toast.info("Creating promo code...", "📤 Please Wait", 2000);
+    toast.info("Creating promo code...", "Please Wait", 2000);
 
     try {
         const formData = new FormData();
@@ -376,7 +376,7 @@ const performSubmit = async () => {
             // ✅ TOAST: Success
             toast.success(
                 `Promo code "${promoDetails.code}" has been created successfully!`,
-                "✅ Promo Created",
+                "Promo Created",
                 5000
             );
             
@@ -385,7 +385,7 @@ const performSubmit = async () => {
             // ✅ TOAST: Form reset
             toast.info(
                 "Form cleared and ready for new promo entry.",
-                "🔄 Ready",
+                "Ready",
                 3000
             );
 
@@ -413,18 +413,18 @@ const performSubmit = async () => {
             
             toast.error(
                 `Failed to create promo: ${errorMessage}`,
-                "❌ Creation Failed",
+                "Creation Failed",
                 5000
             );
         }
         
     } catch (error) {
-        console.error('❌ Network Error:', error);
+        console.error('Network Error:', error);
         
         // ✅ TOAST: Connection error
         toast.error(
             `Unable to connect to server: ${error.message}. Please check your connection.`,
-            "❌ Connection Error",
+            "Connection Error",
             6000
         );
         
@@ -458,7 +458,7 @@ const handleCancel = async () => {
             setIsOtherCategory(false);
             
             // ✅ TOAST
-            toast.info("Action cancelled and form cleared.", "❌ Cancelled");
+            toast.info("Action cancelled and form cleared.", "Cancelled");
         },
         "danger"
     );
