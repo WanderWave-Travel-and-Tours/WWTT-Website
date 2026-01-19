@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, User, MessageSquare, HelpCircle } from 'lucide-react';
+import { Save, ArrowLeft, Upload, User, MessageSquare, HelpCircle, Star } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditTestimonial.css';
 
@@ -69,6 +69,48 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
   );
 };
 
+// ✅ STAR RATING DISPLAY COMPONENT (WITH HALF-STAR SUPPORT)
+const StarRating = ({ rating, size = 16, color = '#fbbf24' }) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+    // Full stars
+    for (let i = 0; i < fullStars; i++) {
+        stars.push(
+            <Star key={`full-${i}`} size={size} fill={color} color={color} />
+        );
+    }
+
+    // Half star
+    if (hasHalfStar) {
+        stars.push(
+            <div key="half" style={{ position: 'relative', display: 'inline-block' }}>
+                <Star size={size} color="#e5e7eb" fill="#e5e7eb" />
+                <div style={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: 0, 
+                    width: '50%', 
+                    overflow: 'hidden' 
+                }}>
+                    <Star size={size} fill={color} color={color} />
+                </div>
+            </div>
+        );
+    }
+
+    // Empty stars
+    for (let i = 0; i < emptyStars; i++) {
+        stars.push(
+            <Star key={`empty-${i}`} size={size} color="#e5e7eb" fill="#e5e7eb" />
+        );
+    }
+
+    return <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>{stars}</div>;
+};
+
 const EditTestimonial = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -90,7 +132,8 @@ const EditTestimonial = () => {
     const [formData, setFormData] = useState({
         customerName: '',
         source: 'Facebook', // Default
-        feedback: ''
+        feedback: '',
+        rating: 5 // ✅ Default rating
     });
 
     // Store original data to track changes for Activity Logs
@@ -196,6 +239,7 @@ const EditTestimonial = () => {
         if (data.customerName) setFormData(prev => ({ ...prev, customerName: data.customerName }));
         if (data.source) setFormData(prev => ({ ...prev, source: data.source }));
         if (data.feedback) setFormData(prev => ({ ...prev, feedback: data.feedback }));
+        if (data.rating !== undefined) setFormData(prev => ({ ...prev, rating: data.rating })); // ✅ Restore rating
 
         if (data.image && data.imageMeta) {
             try {
@@ -242,14 +286,16 @@ const EditTestimonial = () => {
                 setFormData({
                     customerName: data.customerName || '',
                     source: data.source || 'Facebook',
-                    feedback: data.feedback || ''
+                    feedback: data.feedback || '',
+                    rating: data.rating || 5 // ✅ Load rating
                 });
 
                 // Store original data for Activity Log comparison
                 setOriginalData({
                     customerName: data.customerName || '',
                     source: data.source || 'Facebook',
-                    feedback: data.feedback || ''
+                    feedback: data.feedback || '',
+                    rating: data.rating || 5 // ✅ Store original rating
                 });
 
                 if (data.customerImage) {
@@ -299,6 +345,9 @@ const EditTestimonial = () => {
         if (formData.feedback !== originalData.feedback) {
             changes.feedback = { old: originalData.feedback, new: formData.feedback };
         }
+        if (formData.rating !== originalData.rating) { // ✅ Track rating changes
+            changes.rating = { old: originalData.rating, new: formData.rating };
+        }
         if (imageFile) {
             changes.customerImage = { old: 'Existing Image', new: imageFile.name };
         }
@@ -322,6 +371,7 @@ const EditTestimonial = () => {
             formDataToSend.append("customerName", formData.customerName);
             formDataToSend.append("source", formData.source);
             formDataToSend.append("feedback", formData.feedback);
+            formDataToSend.append("rating", formData.rating); // ✅ Send rating
 
             // 🔥 INCLUDE ADMIN DATA FOR ACTIVITY LOGS
             const { userEmail, adminId } = getAdminData();
@@ -490,8 +540,36 @@ const EditTestimonial = () => {
                                     </select>
                                 </div>
 
+                                {/* ✅ RATING DROPDOWN WITH HALF-STAR SUPPORT */}
+                                <div className="eto-form-group">
+                                    <label className="eto-label">Rating *</label>
+                                    <select
+                                        name="rating"
+                                        value={formData.rating}
+                                        onChange={handleInputChange}
+                                        className="eto-select"
+                                        required
+                                    >
+                                        <option value={5}>5.0 Stars (Excellent)</option>
+                                        <option value={4.5}>4.5 Stars</option>
+                                        <option value={4}>4.0 Stars (Good)</option>
+                                        <option value={3.5}>3.5 Stars</option>
+                                        <option value={3}>3.0 Stars (Average)</option>
+                                        <option value={2.5}>2.5 Stars</option>
+                                        <option value={2}>2.0 Stars (Poor)</option>
+                                        <option value={1.5}>1.5 Stars</option>
+                                        <option value={1}>1.0 Star (Very Poor)</option>
+                                        <option value={0.5}>0.5 Stars</option>
+                                        <option value={0}>0 Stars</option>
+                                    </select>
+                                    {/* ✅ LIVE PREVIEW OF RATING */}
+                                    <div style={{ marginTop: '8px' }}>
+                                        <StarRating rating={formData.rating} size={18} />
+                                    </div>
+                                </div>
+
                                 <div className="eto-form-group eto-form-group--full">
-                                    <label className="eto-label">Feedback / Message *</label>
+                                    <label className="eto-label">Feedback / Message *</label> 
                                     <textarea 
                                         name="feedback"
                                         value={formData.feedback}

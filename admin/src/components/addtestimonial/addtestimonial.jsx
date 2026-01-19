@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, Quote, Camera, Loader2 } from 'lucide-react';
+// Added HelpCircle to imports because it was used in CustomConfirmModal but missing
+import { User, Quote, Camera, Loader2, Star, HelpCircle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import './addtestimonial.css';
 
@@ -10,11 +11,84 @@ import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftMo
 // ✅ Import Toast and ToastManager
 import { useToast } from '../toast/ToastManager';
 
-// ✅ Import External Custom Confirm Modal
-import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
+// ✅ Custom Confirm Modal Component
+const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="arc-confirm-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 11000
+        }}>
+            <div className="arc-confirm-modal" style={{
+                backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
+                maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+            }}>
+                <div style={{ marginBottom: '1rem' }}>
+                    <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button 
+                        onClick={onCancel}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
+                            backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={onConfirm}
+                        style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
+                            backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
+                            color: 'white', cursor: 'pointer', fontWeight: '500'
+                        }}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ✅ STAR RATING DISPLAY COMPONENT
+const StarRating = ({ rating, size = 16, color = '#fbbf24' }) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+    // Full stars
+    for (let i = 0; i < fullStars; i++) {
+        stars.push(<Star key={`full-${i}`} size={size} fill={color} color={color} />);
+    }
+
+    // Half star
+    if (hasHalfStar) {
+        stars.push(
+            <div key="half" style={{ position: 'relative', display: 'inline-block' }}>
+                <Star size={size} color="#e5e7eb" fill="#e5e7eb" />
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', overflow: 'hidden' }}>
+                    <Star size={size} fill={color} color={color} />
+                </div>
+            </div>
+        );
+    }
+
+    // Empty stars
+    for (let i = 0; i < emptyStars; i++) {
+        stars.push(<Star key={`empty-${i}`} size={size} color="#e5e7eb" fill="#e5e7eb" />);
+    }
+
+    return <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>{stars}</div>;
+};
 
 const AddTestimonial = () => {
-    const toast = useToast(); // ✅ Initialize Toast
+    const toast = useToast(); 
 
     // --- SIDEBAR LOGIC ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -27,6 +101,7 @@ const AddTestimonial = () => {
         name: '',
         feedback: '',
         source: '',
+        rating: 5, // ✅ Default rating
     });
     const [pictureFile, setPictureFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -34,18 +109,12 @@ const AddTestimonial = () => {
 
     // --- CONFIRM MODAL STATE ---
     const [confirmConfig, setConfirmConfig] = useState({
-        isOpen: false,
-        title: "",
-        message: "",
-        onConfirm: () => {},
-        type: "primary"
+        isOpen: false, title: "", message: "", onConfirm: () => {}, type: "primary"
     });
 
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({
-            isOpen: true,
-            title,
-            message,
+            isOpen: true, title, message,
             onConfirm: () => {
                 onConfirm();
                 setConfirmConfig(prev => ({ ...prev, isOpen: false }));
@@ -77,11 +146,7 @@ const AddTestimonial = () => {
 
     useEffect(() => {
         const updateDraft = async () => {
-            const isFormEmpty = 
-                !testimonialDetails.name && 
-                !testimonialDetails.feedback && 
-                !testimonialDetails.source && 
-                !pictureFile;
+            const isFormEmpty = !testimonialDetails.name && !testimonialDetails.feedback && !testimonialDetails.source && !pictureFile;
 
             if (isFormEmpty) {
                 setDraftPayload(null);
@@ -109,10 +174,7 @@ const AddTestimonial = () => {
             });
         };
 
-        const timeoutId = setTimeout(() => {
-            updateDraft();
-        }, 500);
-
+        const timeoutId = setTimeout(() => { updateDraft(); }, 500);
         return () => clearTimeout(timeoutId);
     }, [testimonialDetails, pictureFile]);
 
@@ -123,6 +185,7 @@ const AddTestimonial = () => {
             name: data.name || '',
             feedback: data.feedback || '',
             source: data.source || '',
+            rating: data.rating || 5, // ✅ Restore rating
         });
 
         if (data.image && data.imageMeta) {
@@ -137,11 +200,7 @@ const AddTestimonial = () => {
     };
 
     const { 
-        clearDraft, 
-        hasDraft, 
-        restoreDraft, 
-        discardDraft,
-        draftInfo 
+        clearDraft, hasDraft, restoreDraft, discardDraft, draftInfo 
     } = useAutoDraft({
         module: 'add-testimonial',
         formData: draftPayload,
@@ -161,7 +220,7 @@ const AddTestimonial = () => {
     const handleRestoreDraft = () => {
         restoreDraft();
         setShowRestoreModal(false);
-        toast.success('Your testimonial draft has been restored successfully!', 'Draft Restored');
+        toast.success('Your testimonial draft has been restored successfully!', '✅ Draft Restored', 3000);
     };
 
     const handleDiscardDraft = async () => {
@@ -189,12 +248,12 @@ const AddTestimonial = () => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 2 * 1024 * 1024) {
-                toast.warning('File is too large. Maximum size is 2MB.', 'File Too Large');
+                toast.warning('File is too large. Maximum size is 2MB.', '⚠️ File Too Large');
                 return;
             }
             setPictureFile(file);
             setPreviewUrl(URL.createObjectURL(file));
-            toast.success(`Customer photo "${file.name}" selected successfully!`, 'Photo Selected');
+            toast.success(`Customer photo "${file.name}" selected successfully!`, '✅ Photo Selected');
         }
     };
 
@@ -204,14 +263,10 @@ const AddTestimonial = () => {
             "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
             async () => {
                 await clearDraft();
-                setTestimonialDetails({
-                    name: '',
-                    feedback: '',
-                    source: '',
-                });
+                setTestimonialDetails({ name: '', feedback: '', source: '', rating: 5 });
                 setPictureFile(null);
                 setPreviewUrl(null);
-                toast.info('Action cancelled and form cleared.', 'Cancelled');
+                toast.info('Action cancelled and form cleared.', '❌ Cancelled');
             },
             "danger"
         );
@@ -221,31 +276,32 @@ const AddTestimonial = () => {
         e.preventDefault();
         
         if (!testimonialDetails.name || !testimonialDetails.feedback || !testimonialDetails.source) {
-            toast.warning('Please fill in all required fields.', 'Incomplete Form');
+            toast.warning('Please fill in all required fields.', '⚠️ Incomplete Form');
             return;
         }
         
         askConfirmation(
             "Submit Testimonial",
             `Do you want to add this testimonial from "${testimonialDetails.name}"?`,
-            () => performSubmit(),
-            "primary"
+            () => performSubmit()
         );
     };
 
     const performSubmit = async () => {
         setIsSubmitting(true);
-        toast.info('Submitting testimonial...', 'Please Wait');
+        toast.info('Submitting testimonial...', '📤 Please Wait', 2000);
         
         const formData = new FormData();
         formData.append('customerName', testimonialDetails.name); 
         formData.append('source', testimonialDetails.source);
         formData.append('feedback', testimonialDetails.feedback);
+        formData.append('rating', testimonialDetails.rating); // ✅ Send rating properly
 
         if (pictureFile) {
             formData.append('customerImage', pictureFile); 
         }
 
+        // ✅ Fixed Admin Data Logic (removed nested/duplicate try blocks)
         try {
             const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
             const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
@@ -266,32 +322,24 @@ const AddTestimonial = () => {
             if (response.ok) {
                 toast.success(
                     `Testimonial from "${testimonialDetails.name}" has been added successfully!`,
-                    'Testimonial Added'
+                    '✅ Testimonial Added',
+                    5000
                 );
                 
                 await clearDraft();
-                
-                setTestimonialDetails({
-                    name: '',
-                    feedback: '',
-                    source: '',
-                });
+                toast.info('Form cleared and ready for new testimonial entry.', '🔄 Ready', 3000);
+
+                setTestimonialDetails({ name: '', feedback: '', source: '', rating: 5 });
                 setPictureFile(null);
                 setPreviewUrl(null);
             } else {
                 const data = await response.json();
                 const errorMessage = data.message || 'Unknown error occurred';
-                toast.error(
-                    `Failed to submit testimonial: ${errorMessage}`,
-                    'Submission Failed'
-                );
+                toast.error(`Failed to submit testimonial: ${errorMessage}`, '❌ Submission Failed', 5000);
             }
         } catch (error) {
             console.error('❌ Network Error:', error);
-            toast.error(
-                `Unable to connect to server: ${error.message}. Please check if backend is running.`,
-                'Connection Error'
-            );
+            toast.error(`Unable to connect to server: ${error.message}.`, '❌ Connection Error', 6000);
         } finally {
             setIsSubmitting(false);
         }
@@ -299,8 +347,6 @@ const AddTestimonial = () => {
 
     return (
         <div className="testi-page">
-            
-            {/* ✅ RESTORE DRAFT MODAL */}
             <RestoreDraftModal
                 isOpen={showRestoreModal}
                 onRestore={handleRestoreDraft}
@@ -308,7 +354,6 @@ const AddTestimonial = () => {
                 draftInfo={draftInfo}
             />
 
-            {/* ✅ CUSTOM CONFIRMATION MODAL (Imported Component) */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}
@@ -339,18 +384,14 @@ const AddTestimonial = () => {
                                             <input type="file" accept="image/*" onChange={handleFileChange} hidden />
                                             {!previewUrl ? (
                                                 <div className="testi-upload-placeholder">
-                                                    <div className="testi-upload-icon-box">
-                                                        <Camera size={32} />
-                                                    </div>
+                                                    <div className="testi-upload-icon-box"><Camera size={32} /></div>
                                                     <p style={{ fontWeight: '700', color: '#1e293b', margin: '0' }}>Click to upload photo</p>
                                                     <span style={{ fontSize: '12px', color: '#64748b' }}>JPG, PNG • Max 2MB</span>
                                                 </div>
                                             ) : (
                                                 <div className="testi-upload-preview-box">
                                                     <img src={previewUrl} alt="Preview" />
-                                                    <div className="testi-upload-overlay">
-                                                        <span>Change Photo</span>
-                                                    </div>
+                                                    <div className="testi-upload-overlay"><span>Change Photo</span></div>
                                                 </div>
                                             )}
                                         </label>
@@ -362,23 +403,11 @@ const AddTestimonial = () => {
                                     <div className="testi-fields">
                                         <div className="testi-field">
                                             <label>Customer Name</label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                value={testimonialDetails.name}
-                                                onChange={handleChange}
-                                                placeholder="e.g., Maria T. Reyes"
-                                                required
-                                            />
+                                            <input type="text" name="name" value={testimonialDetails.name} onChange={handleChange} placeholder="e.g., Maria T. Reyes" required />
                                         </div>
                                         <div className="testi-field">
                                             <label>Feedback Source</label>
-                                            <select
-                                                name="source"
-                                                value={testimonialDetails.source}
-                                                onChange={handleChange}
-                                                required
-                                            >
+                                            <select name="source" value={testimonialDetails.source} onChange={handleChange} required>
                                                 <option value="" disabled>Select Source</option>
                                                 <option value="Facebook">Facebook</option>
                                                 <option value="Google Review">Google Review</option>
@@ -387,16 +416,28 @@ const AddTestimonial = () => {
                                                 <option value="Other">Other</option>
                                             </select>
                                         </div>
+                                        
+                                        {/* ✅ RATING DROPDOWN WITH HALF-STAR SUPPORT */}
+                                        <div className="testi-field">
+                                            <label>Rating</label>
+                                            <select name="rating" value={testimonialDetails.rating} onChange={handleChange} required>
+                                                <option value={5}>5.0 Stars (Excellent)</option>
+                                                <option value={4.5}>4.5 Stars</option>
+                                                <option value={4}>4.0 Stars (Good)</option>
+                                                <option value={3.5}>3.5 Stars</option>
+                                                <option value={3}>3.0 Stars (Average)</option>
+                                                <option value={2.5}>2.5 Stars</option>
+                                                <option value={2}>2.0 Stars (Poor)</option>
+                                                <option value={1.5}>1.5 Stars</option>
+                                                <option value={1}>1.0 Star (Very Poor)</option>
+                                                <option value={0.5}>0.5 Stars</option>
+                                                <option value={0}>0 Stars</option>
+                                            </select>
+                                        </div>
+                                        
                                         <div className="testi-field testi-field--full">
                                             <label>Feedback / Testimonial</label>
-                                            <textarea
-                                                name="feedback"
-                                                value={testimonialDetails.feedback}
-                                                onChange={handleChange}
-                                                placeholder="Enter the full quote or review here..."
-                                                rows="6"
-                                                required
-                                            ></textarea>
+                                            <textarea name="feedback" value={testimonialDetails.feedback} onChange={handleChange} placeholder="Enter the full quote or review here..." rows="6" required></textarea>
                                         </div>
                                     </div>
                                 </section>
@@ -406,60 +447,31 @@ const AddTestimonial = () => {
                                 <div className="testi-preview-card">
                                     <span className="testi-preview-label">LIVE PREVIEW</span>
                                     <div className="testi-card">
-                                        <div className="testi-card-quote">
-                                            <Quote size={32} />
-                                        </div>
-                                        <p className="testi-card-feedback">
-                                            {testimonialDetails.feedback || 'Customer feedback will appear here...'}
-                                        </p>
+                                        <div className="testi-card-quote"><Quote size={32} /></div>
+                                        <p className="testi-card-feedback">{testimonialDetails.feedback || 'Customer feedback will appear here...'}</p>
                                         <div className="testi-card-author">
-                                            <div className="testi-card-avatar">
-                                                {previewUrl ? (
-                                                    <img src={previewUrl} alt="Avatar" />
-                                                ) : (
-                                                    <User size={24} />
-                                                )}
-                                            </div>
+                                            <div className="testi-card-avatar">{previewUrl ? <img src={previewUrl} alt="Avatar" /> : <User size={24} />}</div>
                                             <div className="testi-card-info">
                                                 <strong>{testimonialDetails.name || 'Customer Name'}</strong>
                                                 <span>{testimonialDetails.source || 'Source'}</span>
+                                                <div style={{ marginTop: '4px' }}>
+                                                    <StarRating rating={testimonialDetails.rating} size={14} />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="testi-stats">
-                                        <div className="testi-stat">
-                                            <strong>{testimonialDetails.name ? '✓' : '--'}</strong>
-                                            <span>Name</span>
-                                        </div>
-                                        <div className="testi-stat">
-                                            <strong>{testimonialDetails.source ? '✓' : '--'}</strong>
-                                            <span>Source</span>
-                                        </div>
-                                        <div className="testi-stat">
-                                            <strong>{previewUrl ? '✓' : '--'}</strong>
-                                            <span>Photo</span>
-                                        </div>
+                                        <div className="testi-stat"><strong>{testimonialDetails.name ? '✓' : '--'}</strong><span>Name</span></div>
+                                        <div className="testi-stat"><strong>{testimonialDetails.source ? '✓' : '--'}</strong><span>Source</span></div>
+                                        <div className="testi-stat"><strong>{previewUrl ? '✓' : '--'}</strong><span>Photo</span></div>
                                     </div>
                                 </div>
 
                                 <div className="testi-actions">
-                                    <button 
-                                        type="button" 
-                                        className="testi-btn testi-btn--cancel" 
-                                        onClick={handleCancel}
-                                        disabled={isSubmitting}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        type="submit" 
-                                        className="testi-btn testi-btn--submit"
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? (
-                                            <><Loader2 className="vb-spinner" size={18} /> Submit</>
-                                        ) : 'Submit'}
+                                    <button type="button" className="testi-btn testi-btn--cancel" onClick={handleCancel} disabled={isSubmitting}>Cancel</button>
+                                    <button type="submit" className="testi-btn testi-btn--submit" disabled={isSubmitting}>
+                                        {isSubmitting ? <><Loader2 className="vb-spinner" size={18} /> Submit</> : 'Submit'}
                                     </button>
                                 </div>
                             </aside>
