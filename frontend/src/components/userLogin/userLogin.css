@@ -517,3 +517,85 @@
         margin: 10px 0;
     }
 }
+
+/* --- Password Toggle Styling --- */
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Adjust the input padding so text doesn't overlap with the eye icon */
+.password-wrapper .input-field {
+  padding-right: 45px; 
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888; /* Minimal gray color */
+  transition: color 0.2s ease;
+  padding: 0;
+  height: 100%; /* Match height of input to center vertically */
+}
+
+.password-toggle-btn:hover {
+  color: #333; /* Darker on hover */
+}
+
+.password-toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Optional: Removes the default blue outline when clicking the icon */
+.password-toggle-btn:focus {
+  outline: none;
+}
+
+/* --- Back Navigation Button --- */
+
+.slideshow-panel {
+  /* Ensure the panel is relative so the absolute button sits inside it */
+  position: relative; 
+}
+
+.back-nav-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  /* Minimalist Glassmorphism Style */
+  background: rgba(255, 255, 255, 0.2); 
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%; /* Circle shape */
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20; /* Higher than slide overlay */
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 0;
+}
+
+.back-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.back-nav-btn:active {
+  transform: scale(0.95);
+}
