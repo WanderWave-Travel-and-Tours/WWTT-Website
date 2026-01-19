@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import './userLogin.css';
-// Import icons (Added ArrowLeft)
+import './UserLogin.css';
+// Import icons (Added Eye, EyeOff, and ArrowLeft)
 import { Mail, CheckCircle, XCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'; 
 // Import Toast Hook
 import { useToast } from '../toast/ToastManager';
@@ -92,7 +92,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [fullName, setFullName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     
-    // STATES for Password Visibility
+    // NEW STATES for Password Visibility
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -100,9 +100,11 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
     
+    // We keep these state variables for logic, but we won't render them in UI anymore
     const [errorMessage, setErrorMessage] = useState(''); 
     const [otpError, setOtpError] = useState('');
     
+    // NEW STATES for OTP flow
     const [isOtpFormVisible, setIsOtpFormVisible] = useState(false);
     const [tempEmailForVerification, setTempEmailForVerification] = useState('');
 
@@ -156,11 +158,16 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         }
     }
 
+    // Handle back button navigation
+    const handleBackNavigation = () => {
+        window.history.back();
+    };
 
     const handleRecaptchaChange = (token) => {
         setRecaptchaToken(token);
     };
     
+    // New function for Resend OTP API call
     const handleResendOtpFetch = async () => {
         setIsLoading(true);
         setOtpError('');
@@ -196,6 +203,8 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         }
     }
 
+
+    // 1. Initial Signup Request (Send OTP)
     const handleSignup = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -261,6 +270,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         }
     };
     
+    // 2. OTP Verification and Final Registration
     const handleOtpVerification = async (otpCode) => {
         setIsLoading(true);
         setOtpError('');
@@ -368,11 +378,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         if (e.key === 'Enter' && !isLoading) handleSubmit(e);
     };
 
-    // --- Back Button Handler ---
-    const handleGoBack = () => {
-        window.history.back();
-    };
-
     return (
         <div className="user-login-wrapper">
             
@@ -394,14 +399,13 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             
             <div className={`user-login-container ${isOtpFormVisible ? 'blur-background' : ''}`}>
                 <div className="slideshow-panel">
-                    
-                    {/* NEW BACK BUTTON */}
+                    {/* Back Button */}
                     <button 
-                        className="back-nav-btn" 
-                        onClick={handleGoBack}
-                        title="Go Back"
+                        className="back-nav-btn"
+                        onClick={handleBackNavigation}
+                        aria-label="Go back"
                     >
-                        <ArrowLeft size={24} />
+                        <ArrowLeft size={20} />
                     </button>
 
                     <div className="slideshow-container">
@@ -522,7 +526,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                         className="password-toggle-btn"
                                         onClick={() => setShowPassword(!showPassword)}
                                         disabled={isLoading}
-                                        tabIndex="-1" 
                                     >
                                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                     </button>
@@ -549,7 +552,6 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                                             className="password-toggle-btn"
                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                             disabled={isLoading}
-                                            tabIndex="-1"
                                         >
                                             {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                         </button>

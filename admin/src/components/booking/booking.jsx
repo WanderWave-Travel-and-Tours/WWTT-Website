@@ -11,6 +11,7 @@ import BookingTable from './BookingTable';
 import BookingDetailModal from './BookingDetailModal';
 import PaginationControls from './PaginationControls';
 import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
 const DESTINATION_IMAGES = {
     TOTAL_BOOKINGS: 'https://picsum.photos/seed/beach/800/600',
@@ -28,11 +29,20 @@ const Booking = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [paymentFilter, setPaymentFilter] = useState('ALL');
-  const [typeFilter, setTypeFilter] = useState('ALL'); // ✅ NEW: Type filter state
+  const [typeFilter, setTypeFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -48,14 +58,12 @@ const Booking = () => {
       setLoading(true);
       let res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings/active');
       if (!res.ok) {
-        console.warn('Active endpoint failed, falling back to all bookings');
         res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings');
       }
 
       if (!res.ok) throw new Error('Failed to fetch bookings');
 
       const data = await res.json();
-
       const bookingsArray = data.bookings || data;
       const count = data.count || bookingsArray.length;
 
@@ -78,15 +86,12 @@ const Booking = () => {
           message: b.message || '',
           referenceNumber: b.referenceNumber || 'N/A',
           paymentLinkId: b.paymentLinkId,
-          
           paymentType: b.paymentType || 'full',
           initialPaymentAmount: b.initialPaymentAmount || 0,
           remainingBalance: b.remainingBalance || 0,
           balancePaidAmount: b.balancePaidAmount || 0,
           balancePaidAt: b.balancePaidAt,
-          
-          isWalkin: b.isWalkin || false, // ✅ Include isWalkin field
-          
+          isWalkin: b.isWalkin || false,
           rawData: b,
           isArchive: b.isArchive || 'No'
         }));
@@ -95,7 +100,6 @@ const Booking = () => {
       
     } catch (err) {
       console.error('Fetch error:', err);
-      
       toast.error(
         'Failed to load bookings. Please check if the server is running.',
         "❌ Load Failed",
@@ -106,7 +110,6 @@ const Booking = () => {
     }
   };
 
-  // ✅ Enhanced filtering with payment status AND type filter
   useEffect(() => {
     let filtered = bookings;
 
@@ -135,7 +138,7 @@ const Booking = () => {
       }
     }
 
-    // ✅ NEW: Type filter
+    // Type filter
     if (typeFilter !== 'ALL') {
       if (typeFilter === 'ONLINE') {
         filtered = filtered.filter(b => b.isWalkin === false);
@@ -158,22 +161,27 @@ const Booking = () => {
 
     setFilteredBookings(filtered);
     setCurrentPage(1);
-
-    if (searchTerm || filterStatus !== 'ALL' || paymentFilter !== 'ALL' || typeFilter !== 'ALL') {
-      toast.info(
-        `Found ${filtered.length} matching bookings`,
-        "Filter Applied",
-        2000
-      );
-    }
+    
+    // Inalis na dito ang toast.info para sa filtering/search results.
 
   }, [searchTerm, filterStatus, paymentFilter, typeFilter, bookings]);
 
-  const handleConfirm = async (booking) => {
-    if (!window.confirm(`Confirm booking ${booking.id} for ${booking.customerName}?`)) return;
-    
+  // Helper to Trigger Modal
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        await onConfirm();
+      },
+      type
+    });
+  };
+
+  const executeConfirm = async (booking) => {
     setActionLoading(true);
-    
     try {
       const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/confirm`, {
         method: 'PUT',
@@ -183,7 +191,6 @@ const Booking = () => {
       if (!res.ok) throw new Error();
       
       await fetchBookings();
-      
       toast.success(
         `Booking ${booking.id} for ${booking.customerName} confirmed!`,
         "Booking Confirmed",
@@ -201,11 +208,17 @@ const Booking = () => {
     }
   };
 
-  const handleCancel = async (booking) => {
-    if (!window.confirm(`Cancel booking ${booking.id}? This cannot be undone.`)) return;
-    
+  const handleConfirm = (booking) => {
+    askConfirmation(
+      "Confirm Booking",
+      `Are you sure you want to confirm booking ${booking.id} for ${booking.customerName}?`,
+      () => executeConfirm(booking),
+      "primary"
+    );
+  };
+
+  const executeCancel = async (booking) => {
     setActionLoading(true);
-    
     try {
       const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/cancel`, {
         method: 'PUT',
@@ -215,7 +228,6 @@ const Booking = () => {
       if (!res.ok) throw new Error();
       
       await fetchBookings();
-      
       toast.warning(
         `Booking ${booking.id} has been cancelled`,
         "⚠️ Booking Cancelled",
@@ -233,17 +245,17 @@ const Booking = () => {
     }
   };
 
-  const handleArchive = async (booking) => {
-    const isCurrentlyArchived = booking.isArchive === 'Yes';
-    const action = isCurrentlyArchived ? 'unarchive' : 'archive';
-    const message = isCurrentlyArchived
-      ? `Unarchive booking ${booking.id}? It will reappear in the active list.`
-      : `Archive booking ${booking.id}? It will be hidden from the active list.`;
+  const handleCancel = (booking) => {
+    askConfirmation(
+      "Cancel Booking",
+      `Are you sure you want to cancel booking ${booking.id}? This cannot be undone.`,
+      () => executeCancel(booking),
+      "danger"
+    );
+  };
 
-    if (!window.confirm(message)) return;
-
+  const executeArchive = async (booking, action) => {
     setActionLoading(true);
-    
     try {
       const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/archive`, {
         method: 'POST',
@@ -254,19 +266,15 @@ const Booking = () => {
 
       if (result.status === 'ok') {
         await fetchBookings();
-        
         toast.success(
           `Booking ${booking.id} ${action}d successfully`,
-          `✅ ${isCurrentlyArchived ? 'Unarchived' : 'Archived'}`,
+          `✅ ${action === 'archive' ? 'Archived' : 'Unarchived'}`,
           3000
         );
-        
       } else {
         throw new Error('Failed to update archive status');
       }
     } catch (err) {
-      console.error('Archive error:', err);
-      
       toast.error(
         `Failed to ${action} booking. Please try again.`,
         "❌ Archive Failed",
@@ -277,12 +285,27 @@ const Booking = () => {
     }
   };
 
+  const handleArchive = (booking) => {
+    const isCurrentlyArchived = booking.isArchive === 'Yes';
+    const action = isCurrentlyArchived ? 'unarchive' : 'archive';
+    const title = isCurrentlyArchived ? "Unarchive Booking" : "Archive Booking";
+    const message = isCurrentlyArchived
+      ? `Unarchive booking ${booking.id}? It will reappear in the active list.`
+      : `Archive booking ${booking.id}? It will be hidden from the active list.`;
+
+    askConfirmation(
+      title,
+      message,
+      () => executeArchive(booking, action),
+      "primary"
+    );
+  };
+
   const handleViewDetails = (booking) => {
     setSelectedBooking(booking);
     setShowModal(true);
   };
 
-  // ✅ Enhanced stats with pending balance
   const stats = useMemo(() => {
     const confirmedRevenue = bookings
       .filter(b => b.status === 'confirmed')
@@ -343,7 +366,6 @@ const Booking = () => {
     return opts;
   }, [bookings]);
 
-  // Payment filter options
   const paymentOptions = [
     { value: 'ALL', label: 'All Payments' },
     { value: 'PENDING_BALANCE', label: 'Pending Balance' },
@@ -351,7 +373,6 @@ const Booking = () => {
     { value: 'PARTIAL_ONLY', label: 'Partial Payment' }
   ];
 
-  // ✅ NEW: Type filter options
   const typeOptions = [
     { value: 'ALL', label: 'All' },
     { value: 'ONLINE', label: 'Online Payment' },
@@ -458,6 +479,7 @@ const Booking = () => {
         </div>
       </main>
 
+      {/* Detail Modal */}
       <BookingDetailModal
         showModal={showModal}
         selectedBooking={selectedBooking}
@@ -473,6 +495,16 @@ const Booking = () => {
         XIcon={X}
         ArchiveIcon={Archive}
         RotateCcwIcon={RotateCcw}
+      />
+
+      {/* Confirmation Modal Component */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

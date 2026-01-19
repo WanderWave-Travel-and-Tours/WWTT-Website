@@ -20,7 +20,7 @@ import {
   Mail,
   Calendar,
   Briefcase,
-  AlertTriangle, // Added for error icon theme
+  AlertTriangle,
 } from "lucide-react";
 import "./otherservices.css";
 import VisaTable from "./VisaTable";
@@ -28,95 +28,8 @@ import PSATable from "./PsaTable";
 import CenomarTable from "./CenomarTable";
 import PassportTable from "./PassportTable";
 import PassportWizard from "./PassportWizard";
-
-// --- START: Toast Notification Component (Updated for Top Center) ---
-const ToastNotification = ({ message, type, onClose }) => {
-  // Determine class and icon based on type (success or error)
-  let toastClass = "";
-  let IconComponent = Globe;
-  let iconStyle = {};
-
-  if (type === "success") {
-    toastClass = "toast-success";
-    IconComponent = CheckCircle;
-    iconStyle = { color: '#4CAF50', secondary: '#fff' }; // Green theme
-  } else if (type === "error") {
-    toastClass = "toast-error";
-    IconComponent = AlertTriangle;
-    iconStyle = { color: '#ef4444', secondary: '#fff' }; // Red theme, matching your request
-  }
-  
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 4000); // Auto-close after 4 seconds
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className={`toast-notification ${toastClass}`}>
-      <div className="toast-content-wrapper">
-        <IconComponent size={24} style={{ color: iconStyle.color }} />
-        <span className="toast-message">{message}</span>
-      </div>
-    </div>
-  );
-};
-
-// --- START: Recommended CSS for otherservices.css (Updated) ---
-/*
-.toast-notification {
-  position: fixed;
-  top: 20px;
-  left: 50%; 
-  transform: translateX(-50%); // Center horizontally
-  padding: 12px 18px;
-  border-radius: 8px;
-  color: #333; // Default text color
-  z-index: 10000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 300px;
-  max-width: 90%;
-  animation: slideInTop 0.5s forwards;
-  background-color: white; // Default background
-}
-.toast-content-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.toast-message {
-  font-weight: 500;
-}
-.toast-success {
-  border: 1px solid #4CAF50;
-  color: #38763a; // Darker green text for contrast
-}
-.toast-error {
-  border: 1px solid #ef4444; 
-  color: #c53030; // Darker red text for contrast
-}
-.toast-close-btn {
-  background: none;
-  border: none;
-  color: #999;
-  margin-left: 15px;
-  cursor: pointer;
-  padding: 0;
-}
-.toast-close-btn:hover {
-  color: #333;
-}
-@keyframes slideInTop {
-  from { transform: translate(-50%, -100%); opacity: 0; }
-  to { transform: translate(-50%, 0); opacity: 1; }
-}
-*/
-// --- END: Recommended CSS for otherservices.css (Updated) ---
-
+// Import the Toast Manager hook
+import { useToast } from "../toast/ToastManager";
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -183,7 +96,6 @@ const UniversalInquiryForm = ({
   );
 };
 
-
 const OtherServices = ({ setAuthPage }) => {
   const sliderRef = useRef(null);
   const [services, setServices] = useState([]);
@@ -198,8 +110,9 @@ const OtherServices = ({ setAuthPage }) => {
   const [isCENOMARService, setIsCENOMARService] = useState(false);
   const [showPassportService, setShowPassportService] = useState(false);
   const [isPassportService, setIsPassportService] = useState(false);
-  // --- STATE FOR TOAST NOTIFICATION ---
-  const [toast, setToast] = useState(null); 
+  
+  // Initialize the toast hook
+  const toast = useToast(); 
 
   const [selectedPackage, setSelectedPackage] = useState({
     title: "",
@@ -250,13 +163,11 @@ const OtherServices = ({ setAuthPage }) => {
 
   const fetchServices = async () => {
     try {
-      // Fetching ALL services (active and inactive)
       const response = await fetch('https://wanderwaveph-backend.onrender.com/api/services');
       const data = await response.json();
       
       if (data.success) {
         const transformedServices = data.data.map(service => {
-          
           return {
             _id: service._id, 
             icon: iconMap[service.icon] || <Globe size={24} />,
@@ -266,11 +177,10 @@ const OtherServices = ({ setAuthPage }) => {
             price: service.price,
             requirements: service.requirements || [],
             order: service.order || 999,
-            isComingSoon: !service.isActive, // Flag for front-end styling and disabling
+            isComingSoon: !service.isActive,
           };
         });
 
-        // Sort: Active services first (isComingSoon=false), then Coming Soon (isComingSoon=true), then by order
         transformedServices.sort((a, b) => {
           if (a.isComingSoon !== b.isComingSoon) {
             return a.isComingSoon ? 1 : -1;
@@ -301,10 +211,9 @@ const OtherServices = ({ setAuthPage }) => {
   };
 
   const handleInquireClick = (item) => {
-    // Prevent inquiry if coming soon
     if (item.isComingSoon) {
-      // Replaced alert with new toast
-      setToast({ message: `The service "${item.title}" is coming soon! We will announce the launch date shortly.`, type: "error" });
+      // Using global toast.info or error
+      toast.info(`The service "${item.title}" is coming soon! We will announce the launch date shortly.`, "Coming Soon");
       return;
     }
 
@@ -499,16 +408,14 @@ const OtherServices = ({ setAuthPage }) => {
 
   const handlePassportWizardSubmit = async (wizardData) => {
     try {
-      // --- NEW: Check if email exists for the first applicant ---
       const emailToCheck = wizardData.applicants[0].email;
       const emailCheckResponse = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/check-email?email=${emailToCheck}`);
       const emailCheckResult = await emailCheckResponse.json();
 
       if (!emailCheckResult.exists) {
-        setToast({ message: "Inquiry denied: The email provided is not registered.", type: "error" });
+        toast.error("Inquiry denied: The email provided is not registered.", "Submission Error");
         return;
       }
-      // --- END NEW CHECK ---
 
       let appType = 'NEW';
       const selectedType = selectedPackage.serviceType ? selectedPackage.serviceType.toUpperCase() : 'NEW';
@@ -547,7 +454,7 @@ const OtherServices = ({ setAuthPage }) => {
       const result = await response.json();
 
       if (result.success) {
-        setToast({ message: `Passport Applications Received! Ref: ${result.data._id}`, type: "success" });
+        toast.success(`Passport Applications Received! Ref: ${result.data._id}`, "Success");
         setShowModal(false);
         setIsPassportService(false);
       } else {
@@ -555,7 +462,7 @@ const OtherServices = ({ setAuthPage }) => {
       }
     } catch (error) {
       console.error("Booking Error", error);
-      setToast({ message: "Failed to submit booking. Please try again.", type: "error" });
+      toast.error("Failed to submit booking. Please try again.", "Error");
     }
   };
 
@@ -568,15 +475,13 @@ const OtherServices = ({ setAuthPage }) => {
     e.preventDefault();
     
     try {
-      // --- NEW: Email Validation against Users Collection ---
       const emailCheckResponse = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/check-email?email=${formData.email}`);
       const emailCheckResult = await emailCheckResponse.json();
 
       if (!emailCheckResult.exists) {
-        setToast({ message: "Inquiry denied: The email provided is not registered in our database.", type: "error" });
-        return; // Stop submission if email is not registered
+        toast.error("Inquiry denied: The email provided is not registered in our database.", "Registration Required");
+        return;
       }
-      // --- END NEW CHECK ---
 
       const inquiryData = {
         serviceId: selectedPackage.serviceId,
@@ -616,7 +521,7 @@ const OtherServices = ({ setAuthPage }) => {
       const result = await response.json();
 
       if (result.success) {
-        setToast({ message: `Your inquiry for "${selectedPackage.title}" has been submitted successfully!`, type: "success" });
+        toast.success(`Your inquiry for "${selectedPackage.title}" has been submitted successfully!`, "Inquiry Sent");
         
         setShowModal(false);
         setIsVisaService(false);
@@ -643,7 +548,7 @@ const OtherServices = ({ setAuthPage }) => {
       }
     } catch (error) {
       console.error('Error submitting inquiry:', error);
-      setToast({ message: `Error: ${error.message || 'Failed to submit inquiry'}. Please try again.`, type: "error" });
+      toast.error(`Error: ${error.message || 'Failed to submit inquiry'}. Please try again.`, "Error");
     }
   };
 
@@ -963,15 +868,6 @@ const OtherServices = ({ setAuthPage }) => {
             <PassportTable onSelectPassport={handlePassportSelect} />
           </div>
         </div>
-      )}
-      
-      {/* --- RENDER TOAST NOTIFICATION (Updated) --- */}
-      {toast && (
-        <ToastNotification 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
-        />
       )}
     </div>
   );

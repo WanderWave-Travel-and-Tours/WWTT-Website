@@ -74,7 +74,7 @@ const BookingFormModal = ({
           <p className="bfm-modal-subtitle">
             Please complete your details below. We'll secure your spot for <strong>{pkg.name}</strong> instantly.
           </p>
-          
+           
           {/* TRIP SUMMARY CARDS */}
           <div className="bfm-trip-summary">
             <div className="bfm-summary-item">

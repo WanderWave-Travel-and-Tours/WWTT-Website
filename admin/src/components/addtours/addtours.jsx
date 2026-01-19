@@ -17,104 +17,6 @@ import TourPreview from "./TourPreview";
 import useAutoDraft from "../../hooks/useAutoDraft";
 import RestoreDraftModal from "../../components/RestoreDraftModal/RestoreDraftModal";
 
-// --- CUSTOM CONFIRM MODAL COMPONENT (Reference from EditVisa.jsx) ---
-/*const CustomConfirmModal = ({
-  isOpen,
-  title,
-  message,
-  onConfirm,
-  onCancel,
-  type = "primary",
-}) => {
-  if (!isOpen) return null;
-  return (
-    <div
-      className="arc-confirm-overlay"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 11000,
-      }}
-    >
-      <div
-        className="arc-confirm-modal"
-        style={{
-          backgroundColor: "white",
-          padding: "2rem",
-          borderRadius: "12px",
-          maxWidth: "400px",
-          width: "90%",
-          textAlign: "center",
-          boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
-        }}
-      >
-        <div style={{ marginBottom: "1rem" }}>
-          <HelpCircle
-            size={48}
-            color={type === "danger" ? "#ef4444" : "#3b82f6"}
-            style={{ margin: "0 auto" }}
-          />
-        </div>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: "700",
-            marginBottom: "0.5rem",
-            color: "#1e293b",
-          }}
-        >
-          {title}
-        </h3>
-        <p
-          style={{
-            color: "#64748b",
-            marginBottom: "1.5rem",
-            lineHeight: "1.5",
-          }}
-        >
-          {message}
-        </p>
-        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-          <button
-            onClick={onCancel}
-            style={{
-              padding: "0.5rem 1.25rem",
-              borderRadius: "6px",
-              border: "1px solid #e2e8f0",
-              backgroundColor: "white",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              padding: "0.5rem 1.25rem",
-              borderRadius: "6px",
-              border: "none",
-              backgroundColor: type === "danger" ? "#ef4444" : "#3b82f6",
-              color: "white",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};*/
-
 const AddTour = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -295,7 +197,7 @@ const handleRestoreDraft = () => {
   setShowRestoreModal(false);
   
   // ✅ TOAST
-  toast.success("Your draft has been restored successfully!", "✅ Welcome Back", 3000);
+  toast.success("Your draft has been restored successfully!", "Welcome Back", 3000);
 };
 
 const handleDiscardDraft = async () => {
@@ -303,7 +205,7 @@ const handleDiscardDraft = async () => {
   setShowRestoreModal(false);
   
   // ✅ TOAST
-  toast.info("Draft has been discarded.", "🗑️ Discarded");
+  toast.info("Draft has been discarded.", "Discarded");
 };
 
   // =========================================================
@@ -346,10 +248,9 @@ const handleDiscardDraft = async () => {
       setTourPreviewUrl(URL.createObjectURL(sel));
       setIsTourPasteActive(false);
 
-      // ✅ TOAST
       toast.success(
         `Image "${sel.name}" uploaded successfully!`,
-        "✅ Image Ready"
+        "Image Ready"
       );
     }
   };
@@ -366,7 +267,7 @@ useEffect(() => {
           setIsTourPasteActive(false);
           
           // ✅ TOAST
-          toast.success("Image pasted from clipboard!", "✅ Success");
+          toast.success("Image pasted from clipboard!", "Success");
           break;
         }
       }
@@ -421,14 +322,14 @@ const handleCancel = () => {
 
     // ✅ TOAST: Validation start
     if (!tourFile) {
-      toast.warning("Please upload an image for the tour.", "⚠️ Missing Image");
+      toast.warning("Please upload an image for the tour.", "Missing Image");
       return;
     }
 
     if (!tourTitle.trim() || !tourDest.trim() || !tourDuration.trim()) {
       toast.warning(
         "Please fill in all required fields (Title, Destination, Duration).",
-        "⚠️ Incomplete Form"
+        "Incomplete Form"
       );
       return;
     }
@@ -436,7 +337,7 @@ const handleCancel = () => {
     if (!tourSupplier || !tourMarkup) {
       toast.warning(
         "Please enter supplier rate and markup.",
-        "⚠️ Missing Pricing"
+        "Missing Pricing"
       );
       return;
     }
@@ -454,7 +355,7 @@ const handleCancel = () => {
     // ✅ TOAST: Validation passed
     toast.success(
       "All fields validated successfully!",
-      "✅ Ready to Publish",
+      "Ready to Publish",
       2000
     );
 
@@ -508,7 +409,7 @@ const performSubmit = async () => {
   formData.append("adminId", activeId);
 
   // ✅ TOAST: Upload started
-  toast.info("Uploading tour package to server...", "📤 Please Wait", 2000);
+  toast.info("Uploading tour package to server...", "Please Wait", 2000);
 
   try {
     const res = await fetch("https://wanderwaveph-backend.onrender.com/api/tours/add", {
@@ -522,7 +423,7 @@ const performSubmit = async () => {
       // ✅ TOAST: Success
       toast.success(
         `"${tourTitle}" has been added to ${tourCat} tours!`,
-        "✅ Tour Published Successfully",
+        "Tour Published Successfully",
         5000
       );
 
@@ -549,7 +450,7 @@ const performSubmit = async () => {
       
       toast.error(
         errorMessage,
-        "❌ Upload Failed",
+        "Upload Failed",
         5000
       );
     }
@@ -560,7 +461,7 @@ const performSubmit = async () => {
     // ✅ TOAST: Connection error
     toast.error(
       `Unable to connect to server: ${err.message}. Please check your connection.`,
-      "❌ Connection Error",
+      "Connection Error",
       6000
     );
   }

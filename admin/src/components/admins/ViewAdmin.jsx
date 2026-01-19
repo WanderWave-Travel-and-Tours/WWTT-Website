@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../sidebar/sidebar';
 import AdminFilters from './AdminFilters';
 import AdminPagination from './AdminPagination';
 import AddAdminModal from './Addadminmodal';
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
+import { useToast } from "../toast/ToastManager";
 import { 
   UserCog, 
   Plus
@@ -20,6 +22,7 @@ const ADMINS_PER_PAGE = 10;
 
 const ViewAdmin = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [admins, setAdmins] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +31,15 @@ const ViewAdmin = () => {
   const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -41,18 +53,32 @@ const ViewAdmin = () => {
     return filterRole === role ? 'af-active-navy' : '';
   };
 
+  // Function to trigger the custom confirmation modal
+  const askConfirmation = (title, message, onConfirm, type = "primary") => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type
+    });
+  };
+
   useEffect(() => {
     const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
     const mainAdmin = adminData.email?.toLowerCase() === 'info@wanderwavetravelandtours.com';
     
     if (!mainAdmin) {
-      alert('⛔ Access Denied: Only Main Admin can access this page');
+      toast.error('Access Denied: Only Main Admin can access this page');
       navigate('/dashboard');
       return;
     }
     
     setIsMainAdmin(true);
-  }, [navigate]);
+  }, [navigate, toast]);
 
   useEffect(() => {
     if (!isMainAdmin) return;
@@ -74,31 +100,21 @@ const ViewAdmin = () => {
       
       if (data.status === 'ok') {
         setAdmins(data.admins || []);
-        console.log('✅ Admins loaded:', data.admins.length);
+        console.log('Admins loaded:', data.admins.length);
       } else {
-        console.error('❌ Failed to fetch admins:', data.message);
-        alert('Failed to load admins: ' + data.message);
+        console.error('Failed to fetch admins:', data.message);
+        toast.error('Failed to load admins: ' + data.message);
       }
     } catch (error) {
-      console.error('❌ Error fetching admins:', error);
-      alert('Error loading admins. Please try again.');
+      console.error('Error fetching admins:', error);
+      toast.error('Error loading admins. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteAdmin = async (adminId, adminEmail) => {
-    if (adminEmail.toLowerCase() === 'info@wanderwavetravelandtours.com') {
-      alert('⛔ Cannot delete Main Admin account!');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Are you sure you want to archive admin: ${adminEmail}?\n\nThis action cannot be undone.`
-    );
-
-    if (!confirmed) return;
-
+  // Actual logic for deleting/archiving an admin
+  const performDeleteAdmin = async (adminId, adminEmail) => {
     try {
       const token = localStorage.getItem('adminToken');
       const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/admin/delete/${adminId}`, {
@@ -112,7 +128,7 @@ const ViewAdmin = () => {
       const data = await response.json();
 
       if (data.status === 'ok') {
-        alert('✅ Admin archived successfully!');
+        toast.success('Admin archived successfully!');
         fetchAdmins();
         
         const updatedAdmins = admins.filter(admin => admin.id !== adminId);
@@ -120,12 +136,27 @@ const ViewAdmin = () => {
           setCurrentPage(Math.max(1, currentPage - 1));
         }
       } else {
-        alert('❌ Failed to archive admin: ' + data.message);
+        toast.error('Failed to archive admin: ' + data.message);
       }
     } catch (error) {
-      console.error('❌ Error archiving admin:', error);
-      alert('Error archiving admin. Please try again.');
+      console.error('Error archiving admin:', error);
+      toast.error('Error archiving admin. Please try again.');
     }
+  };
+
+  const handleDeleteAdmin = (adminId, adminEmail) => {
+    if (adminEmail.toLowerCase() === 'info@wanderwavetravelandtours.com') {
+      toast.error('Cannot delete Main Admin account!');
+      return;
+    }
+
+    // Using the Custom Confirmation Modal instead of window.confirm
+    askConfirmation(
+      "Archive Admin",
+      `Are you sure you want to archive admin: ${adminEmail}? This action cannot be undone.`,
+      () => performDeleteAdmin(adminId, adminEmail),
+      "danger"
+    );
   };
 
   const formatDate = (dateString) => {
@@ -292,7 +323,6 @@ const ViewAdmin = () => {
                 </table>
               </div>
               
-              {/* 🔥 PAGINATION IS NOW OUTSIDE THE TABLE WRAPPER - SAME AS TESTIMONIALS! */}
               <AdminPagination
                 totalItems={totalAdmins}
                 itemsPerPage={ADMINS_PER_PAGE}
@@ -308,6 +338,16 @@ const ViewAdmin = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAdminAdded={fetchAdmins}
+      />
+
+      {/* Confirmation Modal Component */}
+      <CustomConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );
