@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Users, Search, Eye, RotateCcw, Archive, ChevronLeft, ChevronRight, 
-  Wrench, List, ArrowUpDown, HelpCircle, X
+  Wrench, List, ArrowUpDown, HelpCircle, X, DollarSign
 } from 'lucide-react';
 import './Archive.css';
 import Sidebar from '../sidebar/sidebar';
@@ -26,6 +26,7 @@ import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'
 import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; 
 import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService';
 import { fetchArchivedHotels, restoreHotel } from './archiveFunctions/hotelService';
+import { fetchArchivedSellerRates, restoreSellerRate } from './archiveFunctions/sellerService';
 
 // --- Custom Confirmation Modal ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -76,6 +77,7 @@ const ARCHIVE_IMAGES = {
     ARCHIVED_LIST: 'https://picsum.photos/seed/books/800/600',    
     ARCHIVED_SERVICES: 'https://picsum.photos/seed/wrench/800/600',
     ARCHIVED_USERS: 'https://picsum.photos/seed/people/800/600',
+    ARCHIVED_SELLER: 'https://picsum.photos/seed/money/800/600', // Image for Seller Rates
     ITEMS_RESTORED: 'https://picsum.photos/seed/folder/800/600' 
 };
 
@@ -86,6 +88,7 @@ const ARCHIVE_TYPES = [
     'Archived List', 
     'Archived Services',
     'Archived Users',
+    'Seller Rates', // ✅ Added Seller Rates here
 ];
 
 const SERVICE_SUBTYPES_LIST = [ 
@@ -202,7 +205,8 @@ const ArchiveComponent = () => {
         fetchArchivedBlogs(), 
         fetchArchivedImages(), 
         fetchArchivedUsers(),
-        fetchArchivedHotels()
+        fetchArchivedHotels(),
+        fetchArchivedSellerRates() 
       ]);
       
       console.log('📊 All fetch results:', results);
@@ -239,13 +243,13 @@ const ArchiveComponent = () => {
 
       // Sort chronologically (oldest first)
       const chronologicalData = [...nonExpiredData].sort((a, b) => {
-        return new Date(a.archivedAt || a.updatedAt || 0) - new Date(b.archivedAt || b.updatedAt || 0);
+        return new Date(a.archivedAt || a.updatedAt || a.lastUpdated || 0) - new Date(b.archivedAt || b.updatedAt || b.lastUpdated || 0);
       });
 
       const formatted = chronologicalData.map((item, index) => {
         const archiveNumber = index + 1; 
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
-        const dateRaw = item.archivedAt || item.updatedAt || new Date().toISOString();
+        const dateRaw = item.archivedAt || item.updatedAt || item.lastUpdated || new Date().toISOString();
 
         let displayType = item.type || 'Other';
         
@@ -258,6 +262,11 @@ const ArchiveComponent = () => {
         }
         if (item.discountValue || displayType === 'Promo') displayType = 'Promo';
         if (item.referenceNumber && !item.inquiryType && !item.packageName) displayType = 'Booking';
+
+        // ✅ Identify Seller Rate items specifically
+        if (item.activity && (item.supplierRate !== undefined || item.sellingPrice !== undefined)) {
+            displayType = 'Seller Rates';
+        }
 
         if (item.inquiryType) {
            switch(item.inquiryType) {
@@ -276,12 +285,12 @@ const ArchiveComponent = () => {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber,
-          itemName: item.itemName || item.packageName || item.code || item.name || item.fullName || item.title || item.imageName || 'Unnamed Item', 
+          itemName: item.activity || item.itemName || item.packageName || item.code || item.name || item.fullName || item.title || item.imageName || 'Unnamed Item', 
           type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
-          reference: item.reference || item.referenceNumber || item.code || item.email || item.author || item._id?.substring(0, 8) || 'N/A',
+          reference: item.destination || item.reference || item.referenceNumber || item.code || item.email || item.author || item._id?.substring(0, 8) || 'N/A',
           status: item.isArchive === "Yes" ? 'Archived' : (item.status || 'Archived'), 
           rawData: item.rawData || item
         };
@@ -293,9 +302,6 @@ const ArchiveComponent = () => {
         return formattedItem;
       });
 
-      console.log('✅ Final formatted items:', formatted.length);
-      console.log('📦 Packages in formatted:', formatted.filter(i => i.type === 'Package').length);
-      
       setArchiveItems(formatted);
     } catch (err) {
       console.error('❌ Archive Fetch error:', err);
@@ -337,6 +343,9 @@ const ArchiveComponent = () => {
         const userSubtypeNames = ['User', 'Admin'];
         filtered = filtered.filter(item => userSubtypeNames.includes(item.type));
         if (filterUserSubtype !== 'ALL Users') filtered = filtered.filter(item => item.type === filterUserSubtype);
+    } else if (filterType === 'Seller Rates') {
+        // ✅ Show only Seller Rate items when "Seller Rates" is selected
+        filtered = filtered.filter(item => item.type === 'Seller Rates');
     }
 
     if (lowerSearchTerm) {
@@ -388,6 +397,9 @@ const ArchiveComponent = () => {
         restored = await restoreImage(id);
       } else if (item.type === 'Hotel') {
         restored = await restoreHotel(id);
+      } else if (item.type === 'Seller Rates' || item.type === 'Manage Services') {
+        // ✅ Support both type names for restoration
+        restored = await restoreSellerRate(id);
       } else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
         restored = await restoreInquiry(id);
       }
@@ -399,7 +411,6 @@ const ArchiveComponent = () => {
         setSelectedItem(null);
         toast.success(`Successfully restored: ${item.itemName}`);
         
-        // Refresh the archive items after a short delay to ensure backend is updated
         setTimeout(() => {
           console.log('🔄 Refreshing archive items...');
           fetchArchiveItems();
@@ -437,39 +448,27 @@ const ArchiveComponent = () => {
           let failCount = 0;
           
           for (const item of filteredArchiveItems) {
-            try {
-              const id = item.mongoId;
-              let restored = false;
-              
-              if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(id);
-              else if (item.type === 'Package') restored = await restorePackage(id);
-              else if (item.type === 'Booking') restored = await restoreBooking(id);
-              else if (item.type === 'Tour') restored = await restoreTour(id);
-              else if (item.type === 'Testimonial') restored = await restoreTestimonial(id);
-              else if (item.type === 'Promo') restored = await restorePromo(id);
-              else if (item.type === 'Poster') restored = await restorePoster(id);
-              else if (item.type === 'Blog') restored = await restoreBlog(id);
-              else if (item.type === 'Image Gallery') restored = await restoreImage(id);
-              else if (item.type === 'Hotel') restored = await restoreHotel(id);
-              else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(id);
-              
-              if (restored) successCount++;
-              else failCount++;
-              
-            } catch (err) {
-              console.error('Error restoring item:', item.itemName, err);
-              failCount++;
-            }
+            const id = item.mongoId;
+            let restored = false;
+            
+            if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(id);
+            else if (item.type === 'Package') restored = await restorePackage(id);
+            else if (item.type === 'Booking') restored = await restoreBooking(id);
+            else if (item.type === 'Tour') restored = await restoreTour(id);
+            else if (item.type === 'Testimonial') restored = await restoreTestimonial(id);
+            else if (item.type === 'Promo') restored = await restorePromo(id);
+            else if (item.type === 'Poster') restored = await restorePoster(id);
+            else if (item.type === 'Blog') restored = await restoreBlog(id);
+            else if (item.type === 'Image Gallery') restored = await restoreImage(id);
+            else if (item.type === 'Hotel') restored = await restoreHotel(id);
+            else if (item.type === 'Seller Rates' || item.type === 'Manage Services') restored = await restoreSellerRate(id);
+            else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(id);
+            
+            if (restored) successCount++;
           }
           
           await fetchArchiveItems();
-          
-          if (successCount > 0) {
-            toast.success(`Successfully restored ${successCount} item(s).`);
-          }
-          if (failCount > 0) {
-            toast.error(`Failed to restore ${failCount} item(s).`);
-          }
+          toast.success(`Successfully restored ${successCount} item(s).`);
         } catch (error) {
           console.error('Bulk restore error:', error);
           toast.error('An error occurred during bulk restore.');
@@ -496,13 +495,12 @@ const ArchiveComponent = () => {
     const listCount = archiveItems.filter(i => listSubtypeNames.includes(i.type)).length;
     const serviceCount = archiveItems.filter(i => serviceSubtypeNames.includes(i.type)).length;
     const userCount = archiveItems.filter(i => userTypes.includes(i.type)).length;
-    
-    console.log('📊 Stats - Total:', archiveItems.length, 'List:', listCount, 'Services:', serviceCount, 'Users:', userCount);
+    const sellerCount = archiveItems.filter(i => i.type === 'Seller Rates').length;
     
     return [
       { label: "Total Archived", value: archiveItems.length, icon: <Archive size={24} />, image: ARCHIVE_IMAGES.TOTAL_ITEMS },
-      { label: "Archived List Items", value: listCount, icon: <List size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_LIST },
-      { label: "Archived Services", value: serviceCount, icon: <Wrench size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_SERVICES },
+      { label: "List Items", value: listCount, icon: <List size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_LIST },
+      { label: "Seller Rates", value: sellerCount, icon: <DollarSign size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_SELLER },
       { label: "Archived Users", value: userCount, icon: <Users size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_USERS },
     ];
   }, [archiveItems]);
