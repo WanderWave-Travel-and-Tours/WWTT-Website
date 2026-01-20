@@ -59,7 +59,7 @@ const createInquiryCheckoutSession = async (req, res) => {
                 quantity: 1
               }
             ],
-            payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp'],
+            payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'],
             reference_number: inquiry._id.toString(),
             send_email_receipt: true,
             show_description: true,
@@ -170,7 +170,7 @@ const createBookingPaymentIntent = async (req, res) => {
     });
 
     // ✅ Determine which payment methods to enable based on user selection
-    let paymentMethods = ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp'];
+    let paymentMethods = ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'];
     
     // If user selected specific method, prioritize it (optional - you can keep all methods available)
     if (method) {
