@@ -41,6 +41,7 @@ const AddPackage = () => {
     
     // ✅ Tour Type State
     const [tourType, setTourType] = useState("private"); // "private" or "joiners"
+    const [pax, setPax] = useState(""); // Only for private
     const [minPax, setMinPax] = useState(""); // Only for joiners
     
     const [file, setFile] = useState(null);
@@ -140,6 +141,9 @@ const AddPackage = () => {
                 price,
                 duration,
                 category,
+                tourType,
+                pax,
+                minPax,
                 inclusions,
                 itinerary,
                 image: imageBase64,
@@ -152,7 +156,7 @@ const AddPackage = () => {
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [title, destination, supplierRate, markupValue, markupType, price, duration, category, inclusions, itinerary, file]);
+    }, [title, destination, supplierRate, markupValue, markupType, price, duration, category, tourType, pax, minPax, inclusions, itinerary, file]);
 
     const restoreDraftData = async (data) => {
         if (!data) return;
@@ -165,6 +169,9 @@ const AddPackage = () => {
         setPrice(data.price || "");
         setDuration(data.duration || "");
         setCategory(data.category || "Local Tour");
+        setTourType(data.tourType || "private");
+        setPax(data.pax || "");
+        setMinPax(data.minPax || "");
         setInclusions(data.inclusions || [""]);
         setItinerary(data.itinerary || [{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
 
@@ -201,64 +208,39 @@ const AddPackage = () => {
         }
     }, [hasDraft]);
 
-    const handleRestoreDraft = () => {
-        restoreDraft();
+    const handleRestoreDraft = async () => {
+        await restoreDraft();
         setShowRestoreModal(false);
-        toast.info("Draft restored successfully.", "Draft");
     };
 
     const handleDiscardDraft = async () => {
-        await discardDraft(); 
+        await discardDraft();
         setShowRestoreModal(false);
-        toast.info("Draft has been discarded.", "Draft Removal");
     };
 
-    // --- CALCULATIONS ---
-    const calculateTotalPrice = useCallback((supplier, markup, type) => {
-        const supplierValue = parseFloat(supplier) || 0;
-        const markupVal = parseFloat(markup) || 0;
+    // =========================================================
+    // ✅ AUTO-DRAFT LOGIC END
+    // =========================================================
 
-        if (supplierValue > 0 && markupVal > 0) {
-            let total;
-            if (type === "percentage") {
-                total = supplierValue + supplierValue * (markupVal / 100);
-            } else {
-                total = supplierValue + markupVal;
-            }
-            setPrice(total.toFixed(2));
-        } else if (supplierValue > 0) {
-            setPrice(supplierValue.toFixed(2));
-        } else {
-            setPrice("");
-        }
-    }, []);
-
-    const handleSupplierRateChange = (value) => {
-        setSupplierRate(value);
-        calculateTotalPrice(value, markupValue, markupType);
-    };
-
-    const handleMarkupChange = (value) => {
-        setMarkupValue(value);
-        calculateTotalPrice(supplierRate, value, markupType);
-    };
-
-    const toggleMarkupType = () => {
-        const newType = markupType === "percentage" ? "peso" : "percentage";
-        setMarkupType(newType);
-        setMarkupValue("");
-        if (supplierRate) setPrice(parseFloat(supplierRate).toFixed(2));
-        else setPrice("");
-    };
-
-    // --- IMAGE & PASTE HANDLERS ---
+    // ✅ FILE CHANGE WITH PASTE DETECTION HANDLER
     const handleFileChange = (e) => {
-        const selected = e.target.files[0];
-        if (selected) {
-            setFile(selected);
-            setPreviewUrl(URL.createObjectURL(selected));
-            setIsPasteActive(false);
-            toast.success("Image uploaded successfully.", "Upload");
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            const validTypes = ["image/png", "image/jpeg", "image/jpg"];
+            if (!validTypes.includes(selectedFile.type)) {
+                toast.warning("Invalid file type. Please upload a PNG or JPG image.", "Invalid File");
+                return;
+            }
+            
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                toast.warning("File size exceeds 5MB. Please choose a smaller image.", "File Too Large");
+                return;
+            }
+
+            setFile(selectedFile);
+            setPreviewUrl(URL.createObjectURL(selectedFile));
+            
+            toast.success("Image uploaded successfully!", "Upload Success", 2000);
         }
     };
 
@@ -266,145 +248,185 @@ const AddPackage = () => {
         setFile(null);
         setPreviewUrl(null);
         setIsPasteActive(false);
-        toast.info("Image removed from package.", "Image Status");
     };
 
-    const handlePaste = (e) => {
-        e.preventDefault();
-        const items = e.clipboardData?.items;
-        if (items) {
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf("image") !== -1) {
-                    const blob = items[i].getAsFile();
-                    if (blob) {
-                        setFile(blob);
-                        setPreviewUrl(URL.createObjectURL(blob));
-                        setIsPasteActive(false);
-                        toast.success("Image pasted successfully.", "Upload");
-                    }
-                    break;
-                }
-            }
+    const activatePasteArea = () => {
+        setIsPasteActive(true);
+        setTimeout(() => {
+            pasteAreaRef.current?.focus();
+        }, 100);
+    };
+
+    // --- PRICING ---
+    const handleSupplierRateChange = (e) => {
+        const value = e.target.value;
+        if (value === "" || !isNaN(value)) {
+            setSupplierRate(value);
+
+            const supplierRateNum = Number(value) || 0;
+            const markupValueNum = Number(markupValue) || 0;
+
+            const markupInPeso = markupType === "percentage"
+                ? (supplierRateNum * markupValueNum) / 100
+                : markupValueNum;
+
+            const total = Math.round((supplierRateNum + markupInPeso) * 100) / 100;
+            setPrice(total.toString());
         }
     };
 
-    useEffect(() => {
-        const handleGlobalPaste = (e) => {
-            if (isPasteActive) handlePaste(e);
-        };
-        document.addEventListener("paste", handleGlobalPaste);
-        return () => document.removeEventListener("paste", handleGlobalPaste);
-    }, [isPasteActive]);
-
-    const activatePasteArea = () => setIsPasteActive(true);
-
-    // --- LIST HANDLERS ---
-    const addInclusion = () => setInclusions([...inclusions, ""]);
-    const removeInclusion = (i) => setInclusions(inclusions.filter((_, idx) => idx !== i));
-    const handleIncChange = (i, val) => setInclusions(inclusions.map((item, idx) => (idx === i ? val : item)));
-    
-    const handleInclusionPaste = (index, e) => {
-        const pastedText = e.clipboardData.getData('text');
-        const lines = pastedText.split(/\r?\n/).filter(line => line.trim());
-        if (lines.length > 1) {
-            e.preventDefault();
-            const cleanedLines = lines.map(line => line.replace(/^[✓✔️☑️•\s]+/, '').trim());
-            const newInclusions = [...inclusions];
-            newInclusions[index] = cleanedLines[0];
-            cleanedLines.slice(1).forEach(line => {
-                newInclusions.splice(index + 1, 0, line);
-                index++;
-            });
-            setInclusions(newInclusions);
+    const handleMarkupChange = (e) => {
+        const value = e.target.value;
+        if (value === "" || !isNaN(value)) {
+            setMarkupValue(value);
+            updatePriceFromMarkup(value, markupType);
         }
     };
 
-    const addDay = () => setItinerary([...itinerary, { day: itinerary.length + 1, title: "", activities: [""] }]);
-    const removeDay = (dayIndex) => {
-        setItinerary(itinerary.filter((_, index) => index !== dayIndex).map((day, index) => {
-            const baseTitle = day.title.split(": ").slice(1).join(": ") || "";
-            return { ...day, day: index + 1, title: baseTitle ? `Day ${index + 1}: ${baseTitle}` : "" };
-        }));
+    const toggleMarkupType = () => {
+        const newType = markupType === "peso" ? "percentage" : "peso";
+        setMarkupType(newType);
+        updatePriceFromMarkup(markupValue, newType);
     };
-    
+
+    const updatePriceFromMarkup = (mValue, mType) => {
+        const supplierRateNum = Number(supplierRate) || 0;
+        const markupValueNum = Number(mValue) || 0;
+
+        const markupInPeso = mType === "percentage"
+            ? (supplierRateNum * markupValueNum) / 100
+            : markupValueNum;
+
+        const total = Math.round((supplierRateNum + markupInPeso) * 100) / 100;
+        setPrice(total.toString());
+    };
+
+    // --- INCLUSIONS ---
+    const handleIncChange = (index, value) => {
+        const updated = [...inclusions];
+        updated[index] = value;
+        setInclusions(updated);
+    };
+
+    const addInclusion = () => {
+        setInclusions([...inclusions, ""]);
+    };
+
+    const removeInclusion = (index) => {
+        const updated = inclusions.filter((_, i) => i !== index);
+        setInclusions(updated.length ? updated : [""]);
+    };
+
+    const handleInclusionPaste = useCallback((pastedText) => {
+        const lines = pastedText
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(l => l);
+
+        if (lines.length > 0) {
+            setInclusions(lines);
+            toast.success(
+                `Pasted ${lines.length} inclusion(s) successfully!`,
+                "Paste Successful",
+                2000
+            );
+        } else {
+            toast.warning("No valid text detected. Please try again.", "Paste Failed");
+        }
+    }, [toast]);
+
+    // --- ITINERARY ---
     const handleDayTitle = (dayIndex, value) => {
-        const trimmedValue = value.trim();
-        const newTitle = trimmedValue ? `Day ${dayIndex + 1}: ${trimmedValue}` : "";
-        setItinerary(itinerary.map((day, index) => index === dayIndex ? { ...day, title: newTitle } : day));
+        const updated = [...itinerary];
+        updated[dayIndex].title = value;
+        setItinerary(updated);
     };
 
-    const addAct = (i) => setItinerary(itinerary.map((d, idx) => idx === i ? { ...d, activities: [...d.activities, ""] } : d));
-    const removeAct = (di, ai) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.filter((_, x) => x !== ai) } : d));
-    const handleAct = (di, ai, val) => setItinerary(itinerary.map((d, idx) => idx === di ? { ...d, activities: d.activities.map((a, x) => (x === ai ? val : a)) } : d));
+    const addAct = (dayIndex) => {
+        const updated = [...itinerary];
+        updated[dayIndex].activities.push("");
+        setItinerary(updated);
+    };
 
+    const removeAct = (dayIndex, actIndex) => {
+        const updated = [...itinerary];
+        if (updated[dayIndex].activities.length > 1) {
+            updated[dayIndex].activities = updated[dayIndex].activities.filter((_, i) => i !== actIndex);
+        } else {
+            updated[dayIndex].activities = [""];
+        }
+        setItinerary(updated);
+    };
+
+    const handleAct = (dayIndex, actIndex, value) => {
+        const updated = [...itinerary];
+        updated[dayIndex].activities[actIndex] = value;
+        setItinerary(updated);
+    };
+
+    const addDay = () => {
+        const nextDay = itinerary.length + 1;
+        setItinerary([...itinerary, { day: nextDay, title: `Day ${nextDay}`, activities: [""] }]);
+    };
+
+    const removeDay = (dayIndex) => {
+        const updated = itinerary.filter((_, i) => i !== dayIndex);
+        const renumbered = updated.map((d, i) => ({ ...d, day: i + 1 }));
+        setItinerary(renumbered.length ? renumbered : [{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
+    };
+
+    // --- SUBMIT ---
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
 
-        // Validations
+        // Validation
         if (!file) {
-            toast.warning("Please upload an image for the package.", "Missing Image");
+            toast.warning("Please upload an image.", "Missing Image");
+            setSubmitting(false);
             return;
         }
 
-        if (!title || !destination || !price) {
-            toast.warning("Please fill in the basic package information.", "Missing Fields");
+        if (!title.trim() || !destination.trim() || !supplierRate || !duration || !category) {
+            toast.warning("Please fill in all required fields.", "Missing Fields");
+            setSubmitting(false);
             return;
         }
 
-        if (!duration) {
-            toast.warning("Please specify the package duration.", "Missing Duration");
+        // ✅ Validate pax and minPax based on tourType
+        if (tourType === "private" && (!pax || parseInt(pax) < 1)) {
+            toast.warning("Please enter the number of pax for private tour.", "Missing Pax");
+            setSubmitting(false);
             return;
         }
 
         if (tourType === "joiners" && (!minPax || parseInt(minPax) < 1)) {
-            toast.warning("Please specify minimum pax for joiners tour.", "Missing Min Pax");
+            toast.warning("Please enter the minimum pax for joiners tour.", "Missing Min Pax");
+            setSubmitting(false);
             return;
         }
 
-        const hasValidInclusions = inclusions.some(item => item.trim().length > 0);
-        if (!hasValidInclusions) {
+        const processedInclusions = inclusions.filter((i) => i.trim());
+        if (processedInclusions.length === 0) {
             toast.warning("Please add at least one inclusion.", "Missing Inclusions");
+            setSubmitting(false);
             return;
         }
 
-        const hasValidItinerary = itinerary.some(day => 
-            day.activities.some(act => act.trim().length > 0)
-        );
-        if (!hasValidItinerary) {
-            toast.warning("Please add at least one activity in the itinerary.", "Missing Itinerary");
+        const cleanedItinerary = itinerary.map(d => ({
+            day: d.day,
+            title: d.title,
+            activities: d.activities.filter(a => a.trim())
+        })).filter(d => d.activities.length > 0);
+
+        if (cleanedItinerary.length === 0) {
+            toast.warning("Please add at least one day with activities.", "Missing Itinerary");
+            setSubmitting(false);
             return;
         }
 
-        // Use Custom Confirmation Modal instead of window.confirm
-        askConfirmation(
-            "Publish Package",
-            "Are you sure you want to publish this new tour package?",
-            () => performPublish(),
-            "primary"
-        );
-    };
-
-    const performPublish = async () => {
-        setSubmitting(true);
-        
-        toast.info(
-            "Uploading package data to server...",
-            "Publishing",
-            2000
-        );
-        
-        const processedInclusions = inclusions.filter(item => item.trim().length > 0);
-        const cleanedItinerary = itinerary.map((day, index) => {
-            const titleWithoutPrefix = day.title.replace(/^Day \d+:\s*/, "").trim();
-            return {
-                day: index + 1, 
-                title: titleWithoutPrefix || `Day ${index + 1}`,
-                activities: day.activities.filter((act) => act.trim() !== "")
-            };
-        });
-
-        const supplierRateNum = parseFloat(supplierRate) || 0;
-        const markupValueNum = parseFloat(markupValue) || 0;
+        const supplierRateNum = Number(supplierRate) || 0;
+        const markupValueNum = Number(markupValue) || 0;
         let markupInPeso = markupType === "percentage" 
             ? (supplierRateNum * markupValueNum) / 100 
             : markupValueNum;
@@ -418,7 +440,11 @@ const AddPackage = () => {
         formData.append("duration", duration);
         formData.append("category", category === "Local Tour" ? "Local" : "International");
         formData.append("tourType", tourType);
-        if (tourType === "joiners") {
+        
+        // ✅ Append pax or minPax based on tourType
+        if (tourType === "private") {
+            formData.append("pax", parseInt(pax));
+        } else if (tourType === "joiners") {
             formData.append("minPax", parseInt(minPax));
         }
         
@@ -463,6 +489,7 @@ const AddPackage = () => {
                 setDuration("");
                 setCategory("Local Tour");
                 setTourType("private");
+                setPax("");
                 setMinPax("");
                 setFile(null);
                 setPreviewUrl(null);
@@ -546,6 +573,7 @@ const AddPackage = () => {
                                     duration={duration} setDuration={setDuration}
                                     category={category} setCategory={setCategory}
                                     tourType={tourType} setTourType={setTourType}
+                                    pax={pax} setPax={setPax}
                                     minPax={minPax} setMinPax={setMinPax}
                                 />
                                 <PricingCalculator
@@ -581,6 +609,7 @@ const AddPackage = () => {
                                     price={price} duration={duration}
                                     inclusions={inclusions} itinerary={itinerary}
                                     tourType={tourType}
+                                    pax={pax}
                                     minPax={minPax}
                                 />
                                 <div className="apkg-actions">

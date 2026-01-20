@@ -41,7 +41,7 @@ const PricingCalculator = ({ supplierRate, handleSupplierRateChange, markupValue
                             type="number"
                             placeholder="0.00"
                             value={supplierRate}
-                            onChange={(e) => handleSupplierRateChange(e.target.value)}
+                            onChange={handleSupplierRateChange}
                             required
                             step="0.01"
                             min="0"
@@ -61,7 +61,7 @@ const PricingCalculator = ({ supplierRate, handleSupplierRateChange, markupValue
                                     markupType === "percentage" ? "Enter %" : "Enter peso amount"
                                 }
                                 value={markupValue}
-                                onChange={(e) => handleMarkupChange(e.target.value)}
+                                onChange={handleMarkupChange}
                                 required
                                 step="0.01"
                                 min="0"

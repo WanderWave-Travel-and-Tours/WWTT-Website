@@ -1,4 +1,4 @@
-const Testimonial = require('../models/Testimonial');
+const Testimonial = require('../models/testimonial');
 const ActivityLog = require('../models/ActivityLog'); // Ensure path is correct
 const fs = require('fs');
 const path = require('path');

@@ -10,7 +10,7 @@ const IconLocation = () => (
 
 const PackagePreview = ({ 
     previewUrl, category, title, destination, price, duration, 
-    inclusions, itinerary, tourType, minPax 
+    inclusions, itinerary, tourType, pax, minPax 
 }) => {
     
     const activeInclusionsCount = inclusions.filter((i) => i.trim()).length;
@@ -37,7 +37,7 @@ const PackagePreview = ({
                 <div className="apkg-card-body">
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                         <span className="apkg-card-badge">{category}</span>
-                        {/* ✅ NEW: Tour Type Badge */}
+                        {/* ✅ Tour Type Badge */}
                         {tourType && (
                             <span className="apkg-card-badge" style={{ 
                                 backgroundColor: tourType === 'joiners' ? '#10b981' : '#3b82f6',
@@ -55,7 +55,19 @@ const PackagePreview = ({
                         {destination || "Destination"}
                     </p>
                     
-                    {/* ✅ NEW: Show Min Pax for Joiners */}
+                    {/* ✅ Show Pax for Private Tours */}
+                    {tourType === 'private' && pax && (
+                        <p style={{ 
+                            fontSize: '12px', 
+                            color: '#3b82f6', 
+                            marginTop: '4px',
+                            fontWeight: '500'
+                        }}>
+                            Good for {pax} person{parseInt(pax) > 1 ? 's' : ''}
+                        </p>
+                    )}
+                    
+                    {/* ✅ Show Min Pax for Joiners */}
                     {tourType === 'joiners' && minPax && (
                         <p style={{ 
                             fontSize: '12px', 

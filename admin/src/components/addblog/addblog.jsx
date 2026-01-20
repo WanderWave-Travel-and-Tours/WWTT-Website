@@ -54,7 +54,11 @@ const AddBlog = () => {
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
   const [unsplashModalOpen, setUnsplashModalOpen] = useState(false);
   const [geminiMode, setGeminiMode] = useState("Content");
-  const [aiProgress, setAiProgress] = useState("");
+  
+  // New States for Loading Bar
+  const [aiProgressText, setAiProgressText] = useState("");
+  const [progressValue, setProgressValue] = useState(0);
+
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Confirmation modal state
@@ -65,6 +69,40 @@ const AddBlog = () => {
     type: "primary",
     onConfirm: () => {},
   });
+
+  // =============================================================================
+  // SMART PROGRESS BAR LOGIC (NEW)
+  // =============================================================================
+  useEffect(() => {
+    let interval;
+    if (isAiLoading) {
+      setProgressValue(0); // Start at 0
+      
+      interval = setInterval(() => {
+        setProgressValue((prev) => {
+          // Phase 1: Mabilis hanggang 30%
+          if (prev < 30) return prev + 5;
+          // Phase 2: Katamtaman hanggang 70%
+          if (prev < 70) return prev + 2;
+          // Phase 3: Mabagal hanggang 90%
+          if (prev < 90) return prev + 0.5;
+          // Phase 4: Maghintay sa 95% hanggang matapos ang request
+          if (prev < 95) return prev + 0.1;
+          return prev;
+        });
+      }, 200); // Updates every 200ms
+
+    } else {
+      // Kapag tapos na (isAiLoading = false), gawing 100% agad
+      setProgressValue(100);
+      const resetTimeout = setTimeout(() => {
+        setProgressValue(0);
+      }, 500);
+      return () => clearTimeout(resetTimeout);
+    }
+
+    return () => clearInterval(interval);
+  }, [isAiLoading]);
 
   // =============================================================================
   // MODAL HANDLERS
@@ -99,18 +137,26 @@ const AddBlog = () => {
   };
 
   // =============================================================================
-  // AI GENERATION HANDLER
+  // AI GENERATION HANDLER (UPDATED)
   // =============================================================================
   const handleAiSubmit = async (prompt, attachedImageBase64) => {
     setIsAiLoading(true);
     
-    let progressText = "Connecting to AI server...";
-    if (geminiMode === "FullBlog") progressText = "Generating Title & Content (This may take a moment)...";
-    else if (attachedImageBase64) progressText = "Analyzing image...";
+    // Set initial custom text based on mode
+    let initialText = "Initializing AI...";
+    if (geminiMode === "FullBlog") initialText = "Analyzing prompt & structuring blog...";
+    else if (geminiMode === "Image") initialText = "Generating creative visuals...";
+    else if (attachedImageBase64) initialText = "Analyzing your uploaded image...";
     
-    setAiProgress(progressText);
+    setAiProgressText(initialText);
 
     try {
+      // Simulate text update midway
+      setTimeout(() => {
+        if(geminiMode === "FullBlog") setAiProgressText("Drafting content and polishing details...");
+        if(geminiMode === "Image") setAiProgressText("Rendering high-quality details...");
+      }, 3000);
+
       const response = await fetch(`${API_BASE_URL}/api/blogs/generate-ai-content`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,13 +173,15 @@ const AddBlog = () => {
         throw new Error(data.message || "AI generation failed");
       }
 
+      // Finish Progress
+      setAiProgressText("Finalizing results...");
+
       if (geminiMode === "FullBlog") {
           setBlogDetails(prev => ({ 
             ...prev, 
             title: data.title,
             content: data.content 
           }));
-          
           toast.success("Blog title and content generated successfully!", "Generation Complete");
       }
       else if (geminiMode === "Title") {
@@ -168,8 +216,11 @@ const AddBlog = () => {
       console.error("AI Error:", error);
       toast.error(`Failed: ${error.message}`, "AI Error");
     } finally {
-      setIsAiLoading(false);
-      setAiProgress("");
+      // Small delay to let the user see 100%
+      setTimeout(() => {
+        setIsAiLoading(false);
+        setAiProgressText("");
+      }, 500);
     }
   };
 

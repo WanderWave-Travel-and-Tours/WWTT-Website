@@ -43,7 +43,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, 
             duration, category, inclusions, itinerary,
-            tourType, minPax,
+            tourType, pax, minPax,
             userEmail, adminId 
         } = req.body;
 
@@ -56,7 +56,11 @@ router.post('/add', upload.single('image'), async (req, res) => {
             return res.status(400).json({ status: 'error', error: 'Image is required' });
         }
 
-        // ✅ Validate tourType and minPax
+        // ✅ Validate tourType, pax, and minPax
+        if (tourType === 'private' && (!pax || parseInt(pax) < 1)) {
+            return res.status(400).json({ status: 'error', error: 'Pax is required for private tours' });
+        }
+
         if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
             return res.status(400).json({ status: 'error', error: 'Minimum pax is required for joiner tours' });
         }
@@ -65,7 +69,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const markupNum = Number(markup) || 0;
         const logUserId = getValidAdminId(adminId);
 
-        // ✅ Prepare package data with tourType and minPax
+        // ✅ Prepare package data with tourType, pax, and minPax
         const packageData = {
             title,
             destination,
@@ -82,8 +86,10 @@ router.post('/add', upload.single('image'), async (req, res) => {
             isArchive: 'No'
         };
 
-        // ✅ Only add minPax if tourType is joiners
-        if (tourType === 'joiners' && minPax) {
+        // ✅ Add pax or minPax based on tourType
+        if (tourType === 'private' && pax) {
+            packageData.pax = parseInt(pax);
+        } else if (tourType === 'joiners' && minPax) {
             packageData.minPax = parseInt(minPax);
         }
 
@@ -123,7 +129,7 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const { 
             title, destination, sellerPrice, markup, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
-            tourType, minPax,
+            tourType, pax, minPax,
             userEmail, adminId, changes
         } = req.body;
         
@@ -131,7 +137,11 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
 
-        // ✅ Validate tourType and minPax for Edit
+        // ✅ Validate tourType, pax, and minPax for Edit
+        if (tourType === 'private' && (!pax || parseInt(pax) < 1)) {
+            return res.status(400).json({ status: 'error', error: 'Pax is required for private tours' });
+        }
+
         if (tourType === 'joiners' && (!minPax || parseInt(minPax) < 1)) {
             return res.status(400).json({ status: 'error', error: 'Minimum pax is required for joiner tours' });
         }
@@ -149,10 +159,13 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
 
-        if (tourType === 'joiners' && minPax) {
+        // ✅ Handle pax and minPax based on tourType
+        if (tourType === 'private' && pax) {
+            updateData.pax = parseInt(pax);
+            updateData.minPax = null; // Clear minPax
+        } else if (tourType === 'joiners' && minPax) {
             updateData.minPax = parseInt(minPax);
-        } else if (tourType === 'private') {
-            updateData.minPax = null; 
+            updateData.pax = null; // Clear pax
         }
 
         if (req.file) {
