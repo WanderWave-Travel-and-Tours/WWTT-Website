@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Upload, X, Plane, User, Mail, DollarSign, MessageSquare, Users, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Plane, MessageSquare, Users, Trash2 } from "lucide-react";
 import Sidebar from "../../sidebar/sidebar"; 
+import { useToast } from '../../toast/ToastManager'; // Integrated Toast
+import CustomConfirmModal from "../../confirmationModal/CustomConfirmModal"; // Integrated Modal
 import "./EditAirline.css";
 
-// 🔥 HELPER FUNCTION - GET ADMIN DATA (Added for Activity Logs)
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -13,7 +14,7 @@ const getAdminData = () => {
             adminId: adminData._id || adminData.id || null
         };
     } catch (error) {
-        console.error('❌ Error getting admin data:', error);
+        console.error('Error getting admin data:', error);
         return { userEmail: 'Unknown Admin', adminId: null };
     }
 };
@@ -21,11 +22,33 @@ const getAdminData = () => {
 const EditAirline = () => {
   const navigate = useNavigate();
   const { id: airlineId } = useParams();
+  const toast = useToast(); // Initialize Toast
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // MODAL STATE
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "primary"
+  });
+
+  // STATE FOR PASSENGERS
+  const [passengers, setPassengers] = useState([{
+    firstName: "",
+    lastName: "",
+    type: "Adult",
+    age: 0,
+    nationality: "Filipino",
+    email: "",
+    contactNumber: ""
+  }]);
+
+  // FORM DATA
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -37,201 +60,212 @@ const EditAirline = () => {
     departureDate: "",
     airline: "",
     flightNumber: "",
-    passengers: [{ firstName: "", lastName: "", type: "Adult", age: "" }], 
-    existingFiles: [],
   });
-
-  const [newFiles, setNewFiles] = useState([]);
-  const [filePreviews, setFilePreviews] = useState([]);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
 
   const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  // ✅ ENHANCED PARSING: Handle deeply nested stringified passengers
-  const parsePassengers = (rawPassengers) => {
-    let result = [{ firstName: "", lastName: "", type: "Adult", age: "" }];
-    
-    if (!rawPassengers) return result;
+  const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
 
-    try {
-      if (Array.isArray(rawPassengers)) {
-        return rawPassengers.length > 0 ? rawPassengers : result;
-      }
-
-      if (typeof rawPassengers === 'string') {
-        let parsed = JSON.parse(rawPassengers);
-        
-        if (typeof parsed === 'string') {
-          parsed = JSON.parse(parsed);
-        }
-
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error("❌ Failed to parse passengers:", e);
-    }
-
-    return result;
-  };
-
-  // --- FETCH DATA FOR AUTO-POPULATE ---
+  // FETCH DATA
   useEffect(() => {
     const fetchAirlineDetails = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/${airlineId}`);
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
         const result = await res.json();
         
-        if (result.success && result.data) {
-          const data = result.data;
-          
-          const parsedPassengers = parsePassengers(data.passengers);
+        if (!result.success || !result.data) throw new Error("Invalid response format");
+        
+        const data = result.data;
+        
+        setFormData({
+          fullName: data.fullName || "",
+          email: data.email || "",
+          contactNumber: data.contactNumber || "",
+          estimatedPrice: data.estimatedPrice || "",
+          message: data.message || "",
+          origin: data.flightDetails?.origin || "",
+          destination: data.flightDetails?.destination || "",
+          departureDate: data.flightDetails?.departureDate 
+            ? new Date(data.flightDetails.departureDate).toISOString().split("T")[0] 
+            : "",
+          airline: data.flightDetails?.airline || "",
+          flightNumber: data.flightDetails?.flightNumber || "",
+        });
 
-          console.log("✅ Parsed Passengers:", parsedPassengers);
-
-          setFormData({
-            fullName: data.fullName || "",
-            email: data.email || "",
-            contactNumber: data.contactNumber || "",
-            estimatedPrice: data.estimatedPrice || "",
-            message: data.message || "",
-            origin: data.flightDetails?.origin || "",
-            destination: data.flightDetails?.destination || "",
-            departureDate: data.flightDetails?.departureDate 
-              ? new Date(data.flightDetails.departureDate).toISOString().split("T")[0] 
-              : "",
-            airline: data.flightDetails?.airline || "",
-            flightNumber: data.flightDetails?.flightNumber || "",
-            passengers: parsedPassengers,
-            existingFiles: data.deliveredDocuments || [],
-          });
-
-          if (data.evidenceName) {
-            setImagePreview(`https://wanderwaveph-backend.onrender.com/uploads/${data.evidenceName}`);
-          }
+        let processedPassengers = [];
+        if (Array.isArray(data.passengers) && data.passengers.length > 0) {
+          processedPassengers = data.passengers.map((p) => ({
+            firstName: p.firstName || "",
+            lastName: p.lastName || "",
+            type: p.type || "Adult",
+            age: p.age || 0,
+            nationality: p.nationality || "Filipino",
+            email: p.email || "",
+            contactNumber: p.contactNumber || ""
+          }));
+        } else {
+          processedPassengers = [{
+            firstName: "",
+            lastName: "",
+            type: "Adult",
+            age: 0,
+            nationality: "Filipino",
+            email: "",
+            contactNumber: ""
+          }];
         }
+        setPassengers(processedPassengers);
+        
       } catch (err) {
-        console.error("❌ Error fetching data:", err);
+        console.error("Fetch error:", err);
+        toast.error(`Failed to load booking: ${err.message}`); 
       } finally {
         setLoading(false);
       }
     };
 
     if (airlineId) fetchAirlineDetails();
-  }, [airlineId]);
+    else setLoading(false);
+  }, [airlineId, toast]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ SAFE PASSENGER HANDLERS
   const handlePassengerChange = (index, field, value) => {
-    setFormData((prev) => {
-      let currentArr = Array.isArray(prev.passengers) ? [...prev.passengers] : [];
-      
-      if (currentArr[index]) {
-        currentArr[index] = {
-          ...currentArr[index],
-          [field]: value
-        };
-      }
-
-      return { ...prev, passengers: currentArr };
+    setPassengers((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
     });
   };
 
+  // ADD PASSENGER WITH MODAL
   const addPassenger = () => {
-    setFormData(prev => ({
-      ...prev,
-      passengers: [...prev.passengers, { firstName: "", lastName: "", type: "Adult", age: "" }]
-    }));
+    setModalConfig({
+      isOpen: true,
+      title: "Add New Passenger",
+      message: "Are you sure you want to add a new passenger field?",
+      type: "primary",
+      onConfirm: () => {
+        setPassengers(prev => [...prev, {
+          firstName: "",
+          lastName: "",
+          type: "Adult",
+          age: 0,
+          nationality: "Filipino",
+          email: "",
+          contactNumber: ""
+        }]);
+        closeModal();
+      }
+    });
   };
 
   const removePassenger = (index) => {
-    setFormData(prev => {
-      if (prev.passengers.length > 1) {
-        return { ...prev, passengers: prev.passengers.filter((_, i) => i !== index) };
-      }
-      return prev;
-    });
-  };
-
-  // ✅ FILE HANDLING
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setNewFiles(prev => [...prev, ...files]);
-    
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFilePreviews(prev => [...prev, {
-          url: reader.result,
-          name: file.name,
-          isExisting: false
-        }]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const removeFile = (index) => {
-    setFilePreviews(prev => prev.filter((_, i) => i !== index));
-    
-    const nonExistingCount = filePreviews.slice(0, index + 1).filter(f => !f.isExisting).length;
-    if (!filePreviews[index].isExisting) {
-      setNewFiles(prev => prev.filter((_, i) => i !== (nonExistingCount - 1)));
+    if (passengers.length > 1) {
+      setModalConfig({
+        isOpen: true,
+        title: "Remove Passenger",
+        message: "Are you sure you want to remove this passenger?",
+        type: "danger",
+        onConfirm: () => {
+          setPassengers(prev => prev.filter((_, i) => i !== index));
+          closeModal();
+        }
+      });
+    } else {
+      toast.warning("At least one passenger is required"); 
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
+  // CANCEL WITH MODAL
+  const handleCancel = () => {
+    setModalConfig({
+      isOpen: true,
+      title: "Discard Changes",
+      message: "Are you sure you want to cancel? Any unsaved changes will be lost.",
+      type: "danger",
+      onConfirm: () => {
+        closeModal();
+        navigate(-1);
+      }
+    });
+  };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    setModalConfig({
+      isOpen: true,
+      title: "Save Changes",
+      message: "Do you want to save the changes made to this booking?",
+      type: "primary",
+      onConfirm: () => {
+        closeModal();
+        processSubmit();
+      }
+    });
+  };
+
+  const processSubmit = async () => {
+    setSubmitting(true);
     const { userEmail, adminId } = getAdminData();
 
+    const validPassengers = passengers
+      .filter(p => (p.firstName && p.firstName.trim()) || (p.lastName && p.lastName.trim()))
+      .map(p => ({
+        firstName: String(p.firstName || "").trim(),
+        lastName: String(p.lastName || "").trim(),
+        type: p.type || "Adult",
+        age: p.age ? parseInt(p.age) : 0,
+        nationality: String(p.nationality || "Filipino").trim(),
+        email: String(p.email || "").trim(),
+        contactNumber: String(p.contactNumber || "").trim()
+      }));
+
+    if (validPassengers.length === 0) {
+      toast.error("Please add at least one passenger with a name."); 
+      setSubmitting(false);
+      return;
+    }
+
     const data = new FormData();
-    
     data.append("fullName", formData.fullName);
     data.append("email", formData.email);
     data.append("contactNumber", formData.contactNumber);
     data.append("estimatedPrice", formData.estimatedPrice);
     data.append("message", formData.message);
-    
     data.append("origin", formData.origin);
     data.append("destination", formData.destination);
     data.append("departureDate", formData.departureDate);
     data.append("airline", formData.airline);
     data.append("flightNumber", formData.flightNumber);
-
+    data.append("passengers", JSON.stringify(validPassengers));
     data.append("userEmail", userEmail);
     data.append("adminId", adminId);
-
-    if (imageFile) {
-      data.append("evidence", imageFile); 
-    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/update/${airlineId}`, {
         method: "PUT",
         body: data,
       });
-      
       const result = await res.json();
       
       if (result.success) {
-        alert("✅ Airline Booking Updated Successfully!");
+        toast.success("Booking Updated Successfully!"); 
         navigate("/services/airlinebooking");
       } else {
-        alert("❌ Error: " + result.message);
+        toast.error(`Error: ${result.message}`); 
       }
     } catch (err) {
-      console.error("❌ Submit Error:", err);
-      alert("❌ Server Error: Connection Failed");
+      toast.error("Server Error: Connection Failed"); 
     } finally {
       setSubmitting(false);
     }
@@ -243,7 +277,7 @@ const EditAirline = () => {
       <main className={`ea-main ${isSidebarCollapsed ? "ea-main--collapsed" : ""}`}>
         <div className="ea-loading">
           <div className="spinner"></div>
-          <p>Fetching current booking data...</p>
+          <p>Loading booking data...</p>
         </div>
       </main>
     </div>
@@ -257,11 +291,11 @@ const EditAirline = () => {
           
           <header className="ea-header">
             <div className="ea-header-content">
-              <button className="ea-back-btn" onClick={() => navigate(-1)}>
-                <ArrowLeft size={18} /> Back to Bookings
+              <button className="ea-back-btn" onClick={handleCancel}>
+                <ArrowLeft size={18} /> Back
               </button>
               <h1 className="ea-title">Edit Airline Booking</h1>
-              <p className="ea-subtitle">Review and modify the current passenger or flight details</p>
+              <p className="ea-subtitle">Modify passenger and flight details</p>
             </div>
           </header>
 
@@ -269,13 +303,14 @@ const EditAirline = () => {
             <div className="ea-grid-layout">
               
               <div className="ea-form-left">
+                
                 <section className="ea-section">
                   <div className="ea-section-header">
                     <User size={20} className="ea-section-icon" />
                     <h3>Client Information</h3>
                   </div>
                   <div className="ea-fields-grid">
-                    <div className="ea-input-group full-width">
+                    <div className="ea-input-group">
                       <label>Full Name</label>
                       <input 
                         type="text" 
@@ -283,7 +318,6 @@ const EditAirline = () => {
                         value={formData.fullName} 
                         onChange={handleInputChange} 
                         className="ea-input" 
-                        placeholder="Enter full name" 
                         required 
                       />
                     </div>
@@ -295,7 +329,6 @@ const EditAirline = () => {
                         value={formData.email} 
                         onChange={handleInputChange} 
                         className="ea-input" 
-                        placeholder="example@mail.com" 
                         required 
                       />
                     </div>
@@ -307,7 +340,6 @@ const EditAirline = () => {
                         value={formData.contactNumber} 
                         onChange={handleInputChange} 
                         className="ea-input" 
-                        placeholder="Contact number" 
                       />
                     </div>
                     <div className="ea-input-group">
@@ -318,81 +350,9 @@ const EditAirline = () => {
                         value={formData.estimatedPrice} 
                         onChange={handleInputChange} 
                         className="ea-input" 
-                        placeholder="0.00" 
                         required 
                       />
                     </div>
-                  </div>
-                </section>
-
-                <section className="ea-section">
-                  <div className="ea-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Users size={20} className="ea-section-icon" />
-                      <h3>Passenger Manifest ({formData.passengers.length})</h3>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={addPassenger} 
-                      className="ea-add-pax-btn"
-                    >
-                      + Add Passenger
-                    </button>
-                  </div>
-                  
-                  <div className="ea-passengers-list" style={{ marginTop: '15px' }}>
-                    {formData.passengers.map((pax, index) => (
-                      <div key={index} className="ea-pax-row">
-                        <input 
-                          type="text" 
-                          placeholder="First Name" 
-                          value={pax.firstName || ""} 
-                          onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)} 
-                          className="ea-input" 
-                          required 
-                        />
-                        <input 
-                          type="text" 
-                          placeholder="Last Name" 
-                          value={pax.lastName || ""} 
-                          onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)} 
-                          className="ea-input" 
-                          required 
-                        />
-                        <select 
-                          value={pax.type || "Adult"} 
-                          onChange={(e) => handlePassengerChange(index, 'type', e.target.value)} 
-                          className="ea-input"
-                        >
-                          <option value="Adult">Adult</option>
-                          <option value="Child">Child</option>
-                          <option value="Infant">Infant</option>
-                        </select>
-                        <input 
-                          type="number" 
-                          placeholder="Age" 
-                          value={pax.age || ""} 
-                          onChange={(e) => handlePassengerChange(index, 'age', e.target.value)} 
-                          className="ea-input" 
-                        />
-                        <button 
-                          type="button" 
-                          onClick={() => removePassenger(index)} 
-                          style={{ 
-                            border: 'none', 
-                            background: 'transparent', 
-                            color: '#ef4444', 
-                            cursor: 'pointer', 
-                            display: 'flex', 
-                            justifyContent: 'center',
-                            opacity: formData.passengers.length === 1 ? 0.3 : 1,
-                            pointerEvents: formData.passengers.length === 1 ? 'none' : 'auto'
-                          }}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    ))}
                   </div>
                 </section>
 
@@ -410,7 +370,6 @@ const EditAirline = () => {
                         value={formData.origin} 
                         onChange={handleInputChange} 
                         className="ea-input" 
-                        placeholder="City or Airport" 
                       />
                     </div>
                     <div className="ea-input-group">
@@ -421,7 +380,6 @@ const EditAirline = () => {
                         value={formData.destination} 
                         onChange={handleInputChange} 
                         className="ea-input" 
-                        placeholder="City or Airport" 
                       />
                     </div>
                     <div className="ea-input-group">
@@ -435,112 +393,120 @@ const EditAirline = () => {
                       />
                     </div>
                     <div className="ea-input-group">
-                      <label>Preferred Airline</label>
+                      <label>Airline / Flight No.</label>
                       <input 
                         type="text" 
                         name="airline" 
                         value={formData.airline} 
                         onChange={handleInputChange} 
                         className="ea-input" 
-                        placeholder="e.g. Philippine Airlines" 
-                      />
-                    </div>
-                    <div className="ea-input-group">
-                      <label>Flight Number (Optional)</label>
-                      <input 
-                        type="text" 
-                        name="flightNumber" 
-                        value={formData.flightNumber} 
-                        onChange={handleInputChange} 
-                        className="ea-input" 
-                        placeholder="e.g. PR123" 
+                        placeholder="e.g. Cebu Pacific 5J-123"
                       />
                     </div>
                   </div>
                 </section>
 
                 <section className="ea-section">
+                  <div className="ea-section-header row-between">
+                    <div className="flex-center">
+                      <Users size={20} className="ea-section-icon" />
+                      <h3>Passengers ({passengers.length})</h3>
+                    </div>
+                    <button type="button" onClick={addPassenger} className="ea-add-pax-btn">
+                      + Add Passenger
+                    </button>
+                  </div>
+                  
+                  <div className="ea-passengers-list">
+                    {passengers.map((pax, index) => (
+                      <div key={index} className="ea-pax-row">
+                        <div className="ea-input-group">
+                           <input 
+                            type="text" 
+                            placeholder="First Name" 
+                            value={pax.firstName} 
+                            onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)} 
+                            className="ea-input" 
+                            required 
+                          />
+                        </div>
+                        <div className="ea-input-group">
+                          <input 
+                            type="text" 
+                            placeholder="Last Name" 
+                            value={pax.lastName} 
+                            onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)} 
+                            className="ea-input" 
+                            required 
+                          />
+                        </div>
+                        <div className="ea-input-group">
+                           <select 
+                            value={pax.type} 
+                            onChange={(e) => handlePassengerChange(index, 'type', e.target.value)} 
+                            className="ea-input ea-select"
+                          >
+                            <option value="Adult">Adult</option>
+                            <option value="Child">Child</option>
+                            <option value="Infant">Infant</option>
+                          </select>
+                        </div>
+                        <div className="ea-input-group">
+                          <input 
+                            type="number" 
+                            placeholder="Age" 
+                            value={pax.age || ""} 
+                            onChange={(e) => handlePassengerChange(index, 'age', e.target.value)} 
+                            className="ea-input" 
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          className="ea-delete-btn"
+                          onClick={() => removePassenger(index)} 
+                          disabled={passengers.length === 1}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="ea-section">
                   <div className="ea-section-header">
                     <MessageSquare size={20} className="ea-section-icon" />
-                    <h3>Request Message / Notes</h3>
+                    <h3>Notes / Instructions</h3>
                   </div>
-                  <textarea 
-                    name="message" 
-                    value={formData.message} 
-                    onChange={handleInputChange} 
-                    className="ea-textarea" 
-                    rows="4" 
-                    placeholder="Update special instructions..." 
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    className="ea-input ea-textarea"
+                    placeholder="Add special requests or notes here..."
                   />
                 </section>
+
               </div>
 
               <div className="ea-form-right">
                 <div className="ea-sticky-sidebar">
-                  <section className="ea-section ea-upload-section">
-                    <h3 className="ea-upload-title">Booking Documents</h3>
-                    
-                    <label className="ea-upload-placeholder" style={{ cursor: 'pointer', marginBottom: '16px' }}>
-                      <Upload size={24} />
-                      <span>Upload Tickets / Proof</span>
-                      <input 
-                        type="file" 
-                        onChange={handleFileChange} 
-                        accept="image/*,.pdf" 
-                        multiple
-                        hidden 
-                      />
-                    </label>
-
-                    {filePreviews.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {filePreviews.map((file, idx) => (
-                          <div 
-                            key={idx} 
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'space-between',
-                              padding: '10px',
-                              backgroundColor: '#f1f5f9',
-                              borderRadius: '8px'
-                            }}
-                          >
-                            <span style={{ fontSize: '13px', color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {file.name}
-                            </span>
-                            <button 
-                              type="button" 
-                              onClick={() => removeFile(idx)}
-                              style={{ 
-                                background: 'transparent', 
-                                border: 'none', 
-                                color: '#ef4444', 
-                                cursor: 'pointer' 
-                              }}
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-
-                  <div className="ea-form-actions">
-                    <button 
-                      type="button" 
-                      className="ea-btn ea-btn--cancel" 
-                      onClick={() => navigate(-1)}
-                    >
-                      Cancel
-                    </button>
+                  <div className="ea-card-sidebar ea-actions-card">
                     <button 
                       type="submit" 
                       className="ea-btn ea-btn--submit" 
                       disabled={submitting}
                     >
-                      {submitting ? "Updating..." : "Update Booking"}
+                      {submitting ? "Updating..." : "Save Changes"}
+                    </button>
+
+                    <button 
+                      type="button" 
+                      className="ea-btn ea-btn--cancel" 
+                      onClick={handleCancel}
+                      disabled={submitting}
+                    >
+                      Cancel
                     </button>
                   </div>
                 </div>
@@ -550,6 +516,16 @@ const EditAirline = () => {
           </form>
         </div>
       </main>
+
+      {/* Confirmation Modal Component */}
+      <CustomConfirmModal 
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={closeModal}
+      />
     </div>
   );
 };

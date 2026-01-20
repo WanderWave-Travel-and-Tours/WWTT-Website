@@ -2,9 +2,9 @@ import React from "react";
 import { 
   X, CreditCard, CheckCircle, Clock, User, Mail, DollarSign, 
   Calendar, AlertCircle, Upload, FileText, TrendingUp, Package, Send,
-  Edit // Idinagdag ang Edit icon
+  Edit 
 } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // Idinagdag para sa navigation
+import { useNavigate } from "react-router-dom"; 
 import "./AirlineModals.css"; 
 
 const formatDate = (dateString) => {
@@ -14,7 +14,7 @@ const formatDate = (dateString) => {
 
 // --- MAIN INQUIRY MODAL ---
 export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onRequestPayment, setShowContactRemarks }) => {
-  const navigate = useNavigate(); // Hook para sa paglipat ng page
+  const navigate = useNavigate();
 
   if (!inquiry) return null;
 
@@ -33,6 +33,11 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
   };
 
   const statusConfig = getStatusConfig(inquiry.status);
+
+  // ✅ FIXED NAVIGATION: Itinugma sa Route sa App.jsx (/EditAirline/:id)
+  const handleEditClick = () => {
+    navigate(`/EditAirline/${inquiry._id}`);
+  };
 
   return (
     <div className="air-overlay" onClick={onClose}>
@@ -219,7 +224,7 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
           </div>
         </div>
 
-        {/* FOOTER - Idinagdag ang Edit Button dito para kapareho ng TourDetailModal flow */}
+        {/* FOOTER - Added Edit Button */}
         <div className="air-modal-footer" style={{ 
             padding: '20px 32px', 
             borderTop: '1px solid #e2e8f0', 
@@ -230,6 +235,27 @@ export const AirlineInquiryModal = ({ inquiry, onClose, onUpdateStatus, onReques
             borderBottomLeftRadius: '16px',
             borderBottomRightRadius: '16px'
         }}>
+          {/* ✅ EDIT BUTTON */}
+          <button 
+            className="air-edit-btn" 
+            onClick={handleEditClick}
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                backgroundColor: '#ffffff',
+                cursor: 'pointer',
+                fontWeight: '600',
+                color: '#374151',
+                transition: 'all 0.2s'
+            }}
+          >
+            <Edit size={18} />
+            Edit Details
+          </button>
 
           <button className="air-close-btn-secondary" onClick={onClose} style={{
               padding: '10px 20px',

@@ -25,6 +25,17 @@ const passportApplicantSchema = new mongoose.Schema({
   foreignPassportIssueDate: String
 }, { _id: false });
 
+// 🔥 FIXED PASSENGER SCHEMA - Must be subdocument, not mixed type
+const passengerSchema = new mongoose.Schema({
+  firstName: { type: String, default: '' },
+  lastName: { type: String, default: '' },
+  nationality: { type: String, default: 'Filipino' },
+  age: { type: Number, default: 0 },
+  email: { type: String, default: '' },
+  contactNumber: { type: String, default: '' },
+  type: { type: String, enum: ['Adult', 'Child', 'Infant'], default: 'Adult' }
+}, { _id: false });
+
 const inquirySchema = new mongoose.Schema({
   serviceId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -142,15 +153,11 @@ const inquirySchema = new mongoose.Schema({
     stops: Number
   },
 
-  passengers: [{
-    firstName: String,
-    lastName: String,
-    nationality: String,
-    age: Number,
-    type: String,
-    email: String,     
-    contactNumber: String
-  }],
+  // 🔥 CRITICAL FIX: Use passengerSchema array instead of Mixed type
+  passengers: {
+    type: [passengerSchema],
+    default: []
+  },
 
   status: {
     type: String,
