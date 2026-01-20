@@ -7,6 +7,7 @@ const BasicInfo = ({
   duration, setDuration, 
   category, setCategory,
   tourType, setTourType,
+  pax, setPax,
   minPax, setMinPax
 }) => {
   const [isOtherDestination, setIsOtherDestination] = React.useState(false);
@@ -101,7 +102,7 @@ const BasicInfo = ({
           </select>
         </div>
 
-        {/* ✅ NEW: TOUR TYPE TOGGLE */}
+        {/* ✅ TOUR TYPE TOGGLE */}
         <div className="apkg-field apkg-field--full">
           <label>Tour Type *</label>
           <div className="apkg-tour-type-toggle">
@@ -124,7 +125,26 @@ const BasicInfo = ({
           </div>
         </div>
 
-        {/* ✅ NEW: MIN PAX FOR JOINERS */}
+        {/* ✅ PAX FOR PRIVATE TOURS */}
+        {tourType === 'private' && (
+          <div className="apkg-field apkg-field--full">
+            <label>Number of Pax *</label>
+            <input
+              type="number"
+              placeholder="Enter number of pax (e.g. 2)"
+              value={pax}
+              onChange={(e) => setPax(e.target.value)}
+              required
+              min="1"
+              max="50"
+            />
+            <span className="apkg-field-hint">
+              This package is for {pax || '___'} person(s)
+            </span>
+          </div>
+        )}
+
+        {/* ✅ MIN PAX FOR JOINERS */}
         {tourType === 'joiners' && (
           <div className="apkg-field apkg-field--full">
             <label>Minimum Pax Required *</label>
