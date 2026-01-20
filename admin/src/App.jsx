@@ -10,6 +10,7 @@ import Booking from './components/booking/booking.jsx';
 import Settings from './components/settings/settings.jsx'; 
 import Archive from './components/archive/Archive.jsx';
 import ActivityLogs from './components/activitylogs/ActivityLogs.jsx';
+import FeedbackManagement from './components/FeedbackManagement/FeedbackManagement.jsx';
 
 // Admin Management
 import ViewAdmins from './components/admins/ViewAdmin.jsx';
@@ -443,6 +444,7 @@ function App() {
           <Route path="/activity-logs" element={<ProtectedRoute><ActivityLogs /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+          <Route path="/feedback" element={<FeedbackManagement />} />
 
           {/* Admin Management Routes */}
           <Route path="/admins" element={<ProtectedRoute><ViewAdmins /></ProtectedRoute>} />

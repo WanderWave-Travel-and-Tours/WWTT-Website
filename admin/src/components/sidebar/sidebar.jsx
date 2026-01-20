@@ -38,7 +38,8 @@ import {
   Archive as ArchiveIcon,
   Activity,
   DollarSign,
-  UserCog
+  UserCog,
+  MessageSquare
 } from 'lucide-react';
 import './sidebar.css';
 
@@ -420,6 +421,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 isCollapsed={isCollapsed}
                 isActive={location.pathname === '/activity-logs'}
                 onClick={() => navigate('/activity-logs')}
+            />
+            <MenuItem 
+                path="/feedback" 
+                icon={MessageSquare} 
+                label="User Feedback" 
+                isCollapsed={isCollapsed}
+                isActive={location.pathname === '/feedback'}
+                onClick={() => navigate('/feedback')}
             />
             <MenuItem 
                 path="/settings" 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { Menu, X, Globe, AlertCircle, Heart } from 'lucide-react'; // Added AlertCircle
+import { Menu, X, Globe, AlertCircle, Heart } from 'lucide-react';
 import axios from 'axios';
 import './App.css'; 
 
@@ -18,6 +18,9 @@ import Payment from './components/payment/payment.jsx';
 import PaymentSuccess from './components/payment/paymentSuccess.jsx';
 import UserDashboard from './components/userDashboard/userDashboard.jsx';
 import WishlistDropdown from './components/WishlistDropdown/WishlistDropdown.jsx';
+
+// --- NEW FEEDBACK COMPONENT ---
+import FeedbackWidget from './components/FeedbackWidget/FeedbackWidget.jsx';
 
 // --- NEW COMPONENT: 404 Page Not Found (Styled) ---
 const NotFound = () => {
@@ -731,6 +734,9 @@ function MainLayout() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+
+      {/* ⭐ FLOATING FEEDBACK BUTTON - ADDED HERE */}
+      <FeedbackWidget />
 
       {!isPaymentSuccessPage && !isDashboardPage && <Footer />}
     </div>
