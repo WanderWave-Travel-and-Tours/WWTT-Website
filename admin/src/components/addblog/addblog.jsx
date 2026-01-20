@@ -492,41 +492,16 @@ const AddBlog = () => {
 
   const currentDate = getCurrentFormattedDate();
 
-  // =============================================================================
-  // RENDER HELPERS
-  // =============================================================================
-  const BlogPreviewModal = () => {
-    if (!isPreviewOpen) return null;
+  // Loading Overlay Component (Visible when AI is working)
+  const AiLoadingOverlay = () => {
+    if (!isAiLoading) return null;
 
     return (
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-        background: "rgba(0,0,0,0.8)", zIndex: 13000,
-        display: "flex", justifyContent: "center", alignItems: "center", p: "20px"
-      }}>
-        <div style={{
-          background: "white", width: "90%", maxWidth: "800px", maxHeight: "90vh",
-          borderRadius: "12px", overflowY: "auto", padding: "40px", position: "relative"
-        }}>
-          <button 
-            onClick={() => setIsPreviewOpen(false)}
-            style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "transparent", fontSize: "24px", cursor: "pointer" }}
-          >✖</button>
-
-          {imagePreview && (
-            <img src={imagePreview} alt="Cover" style={{ width: "100%", height: "300px", objectFit: "cover", borderRadius: "8px", marginBottom: "30px" }} />
-          )}
-
-          <h1 style={{ fontSize: "32px", fontWeight: "bold", marginBottom: "10px" }}>{blogDetails.title}</h1>
-          
-          <p style={{ color: "#666", marginBottom: "30px", borderBottom: "1px solid #eee", paddingBottom: "20px" }}>
-            By {blogDetails.author || "Admin"} • {blogDetails.category}
-          </p>
-
-          <div 
-            className="blog-content-renderer"
-            dangerouslySetInnerHTML={{ __html: blogDetails.content }} 
-          />
+      <div className="ai-loading-overlay">
+        <div className="ai-loading-content">
+          <div className="ai-spinner-large"></div>
+          <h3>AI is Working Magic</h3>
+          <p>{aiProgress || "Generating content..."}</p>
         </div>
       </div>
     );
@@ -536,24 +511,8 @@ const AddBlog = () => {
     <div className="blog-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      {/* --- AI LOADING OVERLAY (Added Here) --- */}
-      {isAiLoading && (
-        <div className="ai-loading-overlay">
-            <div className="ai-loading-content">
-                <div className="ai-loading-icon">✨</div>
-                <h3 className="ai-loading-title">Gemini AI is Working</h3>
-                <p className="ai-loading-text">{aiProgressText}</p>
-                
-                <div className="ai-progress-track">
-                    <div 
-                        className="ai-progress-fill" 
-                        style={{ width: `${progressValue}%` }}
-                    ></div>
-                </div>
-                <div className="ai-progress-percentage">{Math.round(progressValue)}%</div>
-            </div>
-        </div>
-      )}
+      {/* NEW: AI Loading Overlay */}
+      <AiLoadingOverlay />
 
       {showRestoreModal && (
         <RestoreDraftModal
@@ -585,8 +544,38 @@ const AddBlog = () => {
         mode={geminiMode}
       />
 
-      {/* Preview Modal Portal */}
-      <BlogPreviewModal />
+      {isPreviewOpen && (
+         <div style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.8)", zIndex: 13000,
+            display: "flex", justifyContent: "center", alignItems: "center", padding: "20px"
+          }}>
+            <div style={{
+              background: "white", width: "90%", maxWidth: "800px", maxHeight: "90vh",
+              borderRadius: "12px", overflowY: "auto", padding: "40px", position: "relative"
+            }}>
+              <button 
+                onClick={() => setIsPreviewOpen(false)}
+                style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "transparent", fontSize: "24px", cursor: "pointer" }}
+              >✖</button>
+    
+              {imagePreview && (
+                <img src={imagePreview} alt="Cover" style={{ width: "100%", height: "300px", objectFit: "cover", borderRadius: "8px", marginBottom: "30px" }} />
+              )}
+    
+              <h1 style={{ fontSize: "32px", fontWeight: "bold", marginBottom: "10px" }}>{blogDetails.title}</h1>
+              
+              <p style={{ color: "#666", marginBottom: "30px", borderBottom: "1px solid #eee", paddingBottom: "20px" }}>
+                By {blogDetails.author || "Admin"} • {blogDetails.category}
+              </p>
+    
+              <div 
+                className="blog-content-renderer"
+                dangerouslySetInnerHTML={{ __html: blogDetails.content }} 
+              />
+            </div>
+          </div>
+      )}
 
       <main className={`blog-main ${isSidebarCollapsed ? "blog-main--collapsed" : ""}`}>
         <div className="blog-container">
@@ -629,6 +618,68 @@ const AddBlog = () => {
           </form>
         </div>
       </main>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        .vb-spinner {
+          animation: spin 1s linear infinite;
+        }
+
+        /* NEW STYLES FOR AI LOADING OVERLAY */
+        .ai-loading-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(4px);
+          z-index: 15000; /* Ensure it is on top of everything including other modals */
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: #333;
+        }
+
+        .ai-loading-content {
+          text-align: center;
+          background: white;
+          padding: 40px;
+          border-radius: 16px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+          border: 1px solid #e5e7eb;
+          max-width: 400px;
+          width: 90%;
+        }
+
+        .ai-loading-content h3 {
+          font-size: 1.25rem;
+          font-weight: 700;
+          margin-bottom: 8px;
+          color: #1f2937;
+        }
+
+        .ai-loading-content p {
+          color: #6b7280;
+          font-size: 0.95rem;
+          margin: 0;
+        }
+
+        .ai-spinner-large {
+          width: 60px;
+          height: 60px;
+          border: 5px solid #f3f3f3;
+          border-top: 5px solid #6366f1;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px auto;
+        }
+      `}</style>
     </div>
   );
 };
