@@ -1,3 +1,4 @@
+// models/sellerRate.js
 const mongoose = require('mongoose');
 
 const sellerRateSchema = new mongoose.Schema({
@@ -53,6 +54,13 @@ const sellerRateSchema = new mongoose.Schema({
     enum: ['active', 'inactive', 'archived'],
     default: 'active'
   },
+  // --- BAGONG FIELD GAYA NG SA BLOG MODEL ---
+  isArchive: {
+    type: String,
+    enum: ['Yes', 'No'],
+    default: 'No'
+  },
+  // ------------------------------------------
   dateAdded: {
     type: Date,
     default: Date.now
@@ -69,8 +77,10 @@ const sellerRateSchema = new mongoose.Schema({
 sellerRateSchema.index({ destination: 1, activity: 1 });
 sellerRateSchema.index({ supplierName: 1 });
 sellerRateSchema.index({ status: 1 });
+// Idinagdag na index para sa isArchive para mabilis ang filtering sa SellerRate.jsx
+sellerRateSchema.index({ isArchive: 1 }); 
 
-// Calculate selling price before saving
+// Calculate selling price before saving (EXISTING LOGIC RETAINED)
 sellerRateSchema.pre('save', function(next) {
   if (this.isModified('supplierRate') || this.isModified('markup') || this.isModified('markupType')) {
     if (this.markupType === 'percentage') {

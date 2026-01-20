@@ -79,7 +79,9 @@ const SellerRate = () => {
   const fetchRates = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/seller-rates');
+      // Backend should ideally filter isArchive="No", 
+      // but we handle it in frontend too for safety
+      const response = await fetch('http://localhost:5000/api/seller-rates');
       if (!response.ok) {
         console.error('Failed to fetch rates:', response.status);
         setRates([]);
@@ -122,13 +124,14 @@ const SellerRate = () => {
       markup: parseFloat(formData.markup),
       sellingPrice,
       status: 'active',
+      isArchive: 'No', // Default for new or updated entries
       dateAdded: new Date()
     };
 
     try {
       const url = editingRate 
-        ? `https://wanderwaveph-backend.onrender.com/api/seller-rates/${editingRate._id}`
-        : 'https://wanderwaveph-backend.onrender.com/api/seller-rates';
+        ? `http://localhost:5000/api/seller-rates/${editingRate._id}`
+        : 'http://localhost:5000/api/seller-rates';
       
       const method = editingRate ? 'PUT' : 'POST';
 
@@ -211,7 +214,7 @@ const SellerRate = () => {
         return;
       }
 
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/seller-rates/bulk', {
+      const response = await fetch('http://localhost:5000/api/seller-rates/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedRates)
@@ -259,7 +262,7 @@ const SellerRate = () => {
       type: 'danger',
       onConfirm: async () => {
         try {
-          const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/seller-rates/${id}`, {
+          const response = await fetch(`http://localhost:5000/api/seller-rates/${id}`, {
             method: 'DELETE'
           });
 
@@ -282,22 +285,24 @@ const SellerRate = () => {
     setConfirmConfig({
       isOpen: true,
       title: 'Archive Rate',
-      message: 'Are you sure you want to archive this rate? It will be moved to the archive section.',
+      message: 'Are you sure you want to archive this rate? This will remove it from the active display list.',
       type: 'primary',
       onConfirm: async () => {
         try {
-          const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/seller-rates/${id}/archive`, {
-            method: 'PUT',
+          // Gamitin ang patch/put base sa iyong API. Gagayahin natin ang logic ng ViewBlog.
+          const response = await fetch(`http://localhost:5000/api/seller-rates/${id}/archive`, {
+            method: 'PATCH', // O 'PUT' depende sa route na ginawa mo sa sellerRoute.js
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               isArchive: 'Yes',
-              archivedAt: new Date().toISOString()
+              status: 'archived'
             })
           });
 
           if (response.ok) {
             toast.success('Rate archived successfully!', 'Archived');
-            fetchRates();
+            // I-update agad ang local state para mawala sa listahan
+            setRates(prevRates => prevRates.filter(rate => rate._id !== id));
           } else {
             toast.error('Failed to archive rate', 'Error');
           }
@@ -331,6 +336,10 @@ const SellerRate = () => {
   // ============================================
   const filteredRates = useMemo(() => {
     return rates.filter(rate => {
+      // 1. FILTER OUT ARCHIVED (Ito ang hiningi mong logic)
+      if (rate.isArchive === "Yes") return false;
+
+      // 2. SEARCH FILTER
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -354,30 +363,32 @@ const SellerRate = () => {
   const totalPages = Math.ceil(filteredRates.length / itemsPerPage);
 
   // ============================================
-  // STATS CALCULATION
+  // STATS CALCULATION (Only for Non-Archived)
   // ============================================
-  const stats = [
-    {
-      label: 'Total Rates',
-      value: rates.length,
-      color: '#3b82f6',
-      image: RATE_IMAGES.TOTAL_RATES
-    },
-    {
-      label: 'Avg. Markup',
-      value: rates.length > 0 
-        ? `${(rates.reduce((sum, r) => sum + (r.markup || 0), 0) / rates.length).toFixed(1)}%`
-        : '0%',
-      color: '#10b981',
-      image: RATE_IMAGES.AVG_MARKUP
-    },
-    {
-      label: 'Total Revenue',
-      value: `₱${rates.reduce((sum, r) => sum + (r.sellingPrice || 0), 0).toLocaleString()}`,
-      color: '#f59e0b',
-      image: RATE_IMAGES.TOTAL_REVENUE
-    }
-  ];
+  const stats = useMemo(() => {
+      return [
+        {
+          label: 'Total Rates',
+          value: filteredRates.length,
+          color: '#3b82f6',
+          image: RATE_IMAGES.TOTAL_RATES
+        },
+        {
+          label: 'Avg. Markup',
+          value: filteredRates.length > 0 
+            ? `${(filteredRates.reduce((sum, r) => sum + (r.markup || 0), 0) / filteredRates.length).toFixed(1)}%`
+            : '0%',
+          color: '#10b981',
+          image: RATE_IMAGES.AVG_MARKUP
+        },
+        {
+          label: 'Total Revenue',
+          value: `₱${filteredRates.reduce((sum, r) => sum + (r.sellingPrice || 0), 0).toLocaleString()}`,
+          color: '#f59e0b',
+          image: RATE_IMAGES.TOTAL_REVENUE
+        }
+      ];
+  }, [filteredRates]);
 
   const toggleSidebar = () => setSidebarCollapsed(!isSidebarCollapsed);
 
@@ -416,7 +427,7 @@ const SellerRate = () => {
             rates={paginatedRates}
             onEdit={handleEdit}
             onArchive={handleArchive}
-            onDelete={handleDelete} // Make sure Table component uses this
+            onDelete={handleDelete}
           />
 
           {!loading && filteredRates.length > 0 && totalPages > 1 && (
