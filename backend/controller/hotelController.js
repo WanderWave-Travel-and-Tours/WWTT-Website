@@ -237,7 +237,7 @@ exports.createHotel = async (req, res) => {
   }
 };
 
-// UPDATE HOTEL
+// UPDATE HOTEL (FIXED LOGIC)
 exports.updateHotel = async (req, res) => {
   try {
     console.log(`📝 Updating hotel ${req.params.id}...`);
@@ -251,9 +251,81 @@ exports.updateHotel = async (req, res) => {
       });
     }
 
+    // 1. Simulan ang update object gamit ang req.body
+    let updateData = { ...req.body };
+
+    // 2. Ayusin ang Amenities (Dahil flat strings ito galing FormData)
+    // Ang FormData ay nagpapadala ng "amenities[wifi]: true". Kailangan natin itong gawing object.
+    if (req.body) {
+        const amenities = {};
+        Object.keys(req.body).forEach(key => {
+            if (key.startsWith('amenities[')) {
+                const amenityKey = key.match(/amenities\[(.*?)\]/)[1];
+                amenities[amenityKey] = req.body[key] === 'true'; // Convert string 'true' to boolean
+            }
+        });
+        // Kung may nahanap na amenities keys, i-assign sa updateData
+        if (Object.keys(amenities).length > 0) {
+            updateData.amenities = amenities;
+        }
+    }
+
+    // 3. Handle MAIN IMAGE Update
+    // Kung may bagong inupload na mainImage (nasa req.files['mainImage'])
+    if (req.files && req.files['mainImage']) {
+        const file = req.files['mainImage'][0];
+        updateData.mainImage = file.path; // O file.filename depende sa multer config mo
+    }
+
+    // 4. Handle GALLERY IMAGES Update (Deletion + Addition)
+    
+    // Kunin ang current images galing sa database
+    let currentImages = hotel.images || [];
+
+    // A. PROSESO SA PAG-DELETE
+    if (req.body.deletedImages) {
+        const deletedImages = JSON.parse(req.body.deletedImages); // Parse JSON string from frontend
+        
+        console.log("🗑️ Deleting images:", deletedImages);
+
+        // Filter out images na nasa deleted list
+        currentImages = currentImages.filter(img => {
+            // Check kung ang image path ay nasa deleted list
+            // Note: Minsan ang img ay object (may _id) o string path. Adjust base sa schema.
+            const imgPath = typeof img === 'string' ? img : img.url;
+            return !deletedImages.includes(imgPath);
+        });
+
+        // (Optional) Kung gusto mong burahin din sa physical folder:
+        /*
+        deletedImages.forEach(imgData => {
+            const filePath = path.join(__dirname, '../uploads', imgData); // Adjust path accordingly
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        });
+        */
+    }
+
+    // B. PROSESO SA PAG-ADD NG BAGONG GALLERY IMAGES
+    if (req.files && req.files['galleryImages']) {
+        const newImages = req.files['galleryImages'].map(file => {
+            // Return path or object depending on your Schema
+            // Kung String lang sa schema: return file.path;
+            // Kung Object sa schema: return { url: file.path };
+            return file.path; 
+        });
+        
+        console.log("📸 Adding new images:", newImages);
+        currentImages = [...currentImages, ...newImages];
+    }
+
+    // I-set ang final images list sa updateData
+    updateData.images = currentImages;
+
+    // 5. Perform Update
+    // Gumamit tayo ng explicit $set para sa ibang fields at images
     hotel = await Hotel.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       {
         new: true,
         runValidators: true
@@ -267,6 +339,7 @@ exports.updateHotel = async (req, res) => {
       message: 'Hotel updated successfully',
       data: hotel
     });
+
   } catch (error) {
     console.error('❌ Error updating hotel:', error);
 
@@ -274,15 +347,6 @@ exports.updateHotel = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Hotel not found'
-      });
-    }
-
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Validation Error',
-        errors: messages
       });
     }
 
