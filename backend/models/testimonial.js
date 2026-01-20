@@ -17,7 +17,13 @@ const TestimonialSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // Default is "No" (Active)
+    // ✅ FIX: Rating Field setup correctly
+    rating: {
+        type: Number,
+        default: 5,
+        min: 0,
+        max: 5
+    },
     isArchive: {
         type: String,
         default: "No"

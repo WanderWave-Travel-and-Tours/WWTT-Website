@@ -6,7 +6,7 @@ import useAutoDraft from "../../hooks/useAutoDraft";
 import RestoreDraftModal from "../../components/RestoreDraftModal/RestoreDraftModal";
 
 // Modals - FLAT IMPORT (same folder)
-import CustomConfirmModal from "./CustomConfirmModal";
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 import UnsplashSearchModal from "./UnsplashSearchModal";
 import GeminiInputModal from "./GeminiInputModal";
 
@@ -54,8 +54,13 @@ const AddBlog = () => {
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
   const [unsplashModalOpen, setUnsplashModalOpen] = useState(false);
   const [geminiMode, setGeminiMode] = useState("Content");
-  const [aiProgress, setAiProgress] = useState("");
+  
+  // New States for Loading Bar
+  const [aiProgressText, setAiProgressText] = useState("");
+  const [progressValue, setProgressValue] = useState(0);
+
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
   // Confirmation modal state
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -64,6 +69,40 @@ const AddBlog = () => {
     type: "primary",
     onConfirm: () => {},
   });
+
+  // =============================================================================
+  // SMART PROGRESS BAR LOGIC (NEW)
+  // =============================================================================
+  useEffect(() => {
+    let interval;
+    if (isAiLoading) {
+      setProgressValue(0); // Start at 0
+      
+      interval = setInterval(() => {
+        setProgressValue((prev) => {
+          // Phase 1: Mabilis hanggang 30%
+          if (prev < 30) return prev + 5;
+          // Phase 2: Katamtaman hanggang 70%
+          if (prev < 70) return prev + 2;
+          // Phase 3: Mabagal hanggang 90%
+          if (prev < 90) return prev + 0.5;
+          // Phase 4: Maghintay sa 95% hanggang matapos ang request
+          if (prev < 95) return prev + 0.1;
+          return prev;
+        });
+      }, 200); // Updates every 200ms
+
+    } else {
+      // Kapag tapos na (isAiLoading = false), gawing 100% agad
+      setProgressValue(100);
+      const resetTimeout = setTimeout(() => {
+        setProgressValue(0);
+      }, 500);
+      return () => clearTimeout(resetTimeout);
+    }
+
+    return () => clearInterval(interval);
+  }, [isAiLoading]);
 
   // =============================================================================
   // MODAL HANDLERS
@@ -88,29 +127,36 @@ const AddBlog = () => {
       
       toast.success(
         `Image by ${imageData.photographer} added successfully!`,
-        "✅ Image Selected",
+        "Image Selected",
         4000
       );
     } catch (error) {
       console.error("Error handling Unsplash image:", error);
-      toast.error("Failed to load image", "❌ Error");
+      toast.error("Failed to load image", "Error");
     }
   };
 
   // =============================================================================
-  // AI GENERATION HANDLER
+  // AI GENERATION HANDLER (UPDATED)
   // =============================================================================
   const handleAiSubmit = async (prompt, attachedImageBase64) => {
     setIsAiLoading(true);
     
-    // Ibahin ang loading text kung FullBlog ang mode
-    let progressText = "Connecting to AI server...";
-    if (geminiMode === "FullBlog") progressText = "Generating Title & Content (This may take a moment)...";
-    else if (attachedImageBase64) progressText = "Analyzing image...";
+    // Set initial custom text based on mode
+    let initialText = "Initializing AI...";
+    if (geminiMode === "FullBlog") initialText = "Analyzing prompt & structuring blog...";
+    else if (geminiMode === "Image") initialText = "Generating creative visuals...";
+    else if (attachedImageBase64) initialText = "Analyzing your uploaded image...";
     
-    setAiProgress(progressText);
+    setAiProgressText(initialText);
 
     try {
+      // Simulate text update midway
+      setTimeout(() => {
+        if(geminiMode === "FullBlog") setAiProgressText("Drafting content and polishing details...");
+        if(geminiMode === "Image") setAiProgressText("Rendering high-quality details...");
+      }, 3000);
+
       const response = await fetch(`${API_BASE_URL}/api/blogs/generate-ai-content`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,61 +173,54 @@ const AddBlog = () => {
         throw new Error(data.message || "AI generation failed");
       }
 
-      // ✅ 1. Handle Full Blog (Title + Content)
+      // Finish Progress
+      setAiProgressText("Finalizing results...");
+
       if (geminiMode === "FullBlog") {
           setBlogDetails(prev => ({ 
             ...prev, 
             title: data.title,
             content: data.content 
           }));
-          
-          toast.success("Blog title and content generated successfully!", "✨ Magic Complete");
+          toast.success("Blog title and content generated successfully!", "Generation Complete");
       }
-      
-      // ✅ 2. Handle Title Only
       else if (geminiMode === "Title") {
           const cleanTitle = data.generatedText.replace(/^"|"$/g, '').trim();
           setBlogDetails(prev => ({ ...prev, title: cleanTitle }));
-          toast.success("Blog title generated!", "✨ Title Created");
+          toast.success("Blog title generated!", "Title Created");
       } 
-      
-      // ✅ 3. Handle Content Only
       else if (geminiMode === "Content") {
           setBlogDetails(prev => ({ ...prev, content: data.generatedText }));
-          toast.success("Content generated!", "✨ Content Ready");
+          toast.success("Content generated!", "Content Ready");
       }
-
-      // ✅ 4. Handle Image Prompt
       else if (geminiMode === "Image") {
-          // Check kung may image URL na binato ang backend
           if (data.imageUrl) {
               try {
-                  // A. I-set as Preview agad para makita mo
                   setImagePreview(data.imageUrl);
-
-                  // B. I-convert natin yung URL to File object para pwede i-submit sa form
                   const res = await fetch(data.imageUrl);
                   const blob = await res.blob();
                   const file = new File([blob], "ai-generated-image.jpg", { type: "image/jpeg" });
                   
                   setImageFile(file);
-                  
-                  toast.success("AI Image generated successfully!", "🎨 Image Ready");
+                  toast.success("AI Image generated successfully!", "Image Ready");
               } catch (err) {
                   console.error("Error converting image:", err);
-                  toast.warning("Image displayed but failed to process for upload.", "⚠️ Check Image");
+                  toast.warning("Image displayed but failed to process for upload.", "Check Image");
               }
           } else {
-              toast.info("Prompt generated: " + data.generatedText.substring(0, 50) + "...", "ℹ️ Prompt Only");
+              toast.info("Prompt generated: " + data.generatedText.substring(0, 50) + "...", "Prompt Only");
           }
       }
 
     } catch (error) {
-      console.error("❌ AI Error:", error);
-      toast.error(`Failed: ${error.message}`, "❌ AI Error");
+      console.error("AI Error:", error);
+      toast.error(`Failed: ${error.message}`, "AI Error");
     } finally {
-      setIsAiLoading(false);
-      setAiProgress("");
+      // Small delay to let the user see 100%
+      setTimeout(() => {
+        setIsAiLoading(false);
+        setAiProgressText("");
+      }, 500);
     }
   };
 
@@ -279,7 +318,7 @@ const AddBlog = () => {
     setShowRestoreModal(false);
     toast.success(
       "Your blog draft has been restored successfully!",
-      "✅ Draft Restored",
+      "Draft Restored",
       3000
     );
   };
@@ -287,10 +326,9 @@ const AddBlog = () => {
   const handleDiscardDraft = async () => {
     await discardDraft();
     setShowRestoreModal(false);
-    toast.info("Draft has been discarded.", "🗑️ Discarded");
+    toast.info("Draft has been discarded.", "Discarded");
   };
 
-  // Cleanup image preview
   useEffect(() => {
     return () => {
       if (imagePreview) {
@@ -316,7 +354,7 @@ const AddBlog = () => {
       if (!file.type.startsWith("image/")) {
         toast.error(
           "Please upload a valid image file (JPG, PNG, WebP).",
-          "❌ Invalid File"
+          "Invalid File"
         );
         return;
       }
@@ -325,7 +363,7 @@ const AddBlog = () => {
       setImagePreview(objectUrl);
       toast.success(
         `Cover image "${file.name}" uploaded successfully!`,
-        "✅ Image Added"
+        "Image Added"
       );
     }
   };
@@ -333,7 +371,7 @@ const AddBlog = () => {
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    toast.info("Cover image removed.", "🗑️ Image Removed");
+    toast.info("Cover image removed.", "Image Removed");
   };
 
   // =============================================================================
@@ -342,7 +380,7 @@ const AddBlog = () => {
   const executeSubmit = async () => {
     setIsSubmitting(true);
     const actionText = blogDetails.status === "Scheduled" ? "Scheduling" : "Publishing";
-    toast.info(`${actionText} blog post...`, "📤 Please Wait", 2000);
+    toast.info(`${actionText} blog post...`, "Please Wait", 2000);
 
     try {
       const formData = new FormData();
@@ -373,7 +411,7 @@ const AddBlog = () => {
         const successMsg = blogDetails.status === "Scheduled" 
           ? "Blog post has been scheduled successfully!" 
           : `Blog post "${blogDetails.title}" has been published successfully!`;
-        toast.success(successMsg, "✅ Success", 5000);
+        toast.success(successMsg, "Success", 5000);
         await clearDraft();
         setBlogDetails({
           title: "",
@@ -387,11 +425,11 @@ const AddBlog = () => {
         setImagePreview(null);
       } else {
         const errorMessage = result.message || "Unknown error occurred";
-        toast.error(`Failed to process: ${errorMessage}`, "❌ Failed", 5000);
+        toast.error(`Failed to process: ${errorMessage}`, "Failed", 5000);
       }
     } catch (error) {
-      console.error("❌ Network Error:", error);
-      toast.error(`Unable to connect to server: ${error.message}.`, "❌ Connection Error", 6000);
+      console.error("Network Error:", error);
+      toast.error(`Unable to connect to server: ${error.message}.`, "Connection Error", 6000);
     } finally {
       setIsSubmitting(false);
       setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
@@ -401,16 +439,15 @@ const AddBlog = () => {
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     
-    // Validation
     if (!blogDetails.title || !blogDetails.content || !imageFile) {
-      toast.warning("Please provide a title, content, and cover image.", "⚠️ Incomplete Form");
+      toast.warning("Please provide a title, content, and cover image.", "Incomplete Form");
       return;
     }
 
     if (blogDetails.status === "Scheduled") {
       const validation = validateScheduledDate(blogDetails.scheduledAt);
       if (!validation.valid) {
-        toast.warning(validation.message, "⚠️ Invalid Date");
+        toast.warning(validation.message, "Invalid Date");
         return;
       }
     }
@@ -448,13 +485,16 @@ const AddBlog = () => {
         setImageFile(null);
         setImagePreview(null);
         setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
-        toast.info("Action cancelled and form cleared.", "❌ Cancelled");
+        toast.info("Action cancelled and form cleared.", "Cancelled");
       },
     });
   };
 
   const currentDate = getCurrentFormattedDate();
 
+  // =============================================================================
+  // RENDER HELPERS
+  // =============================================================================
   const BlogPreviewModal = () => {
     if (!isPreviewOpen) return null;
 
@@ -473,20 +513,16 @@ const AddBlog = () => {
             style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "transparent", fontSize: "24px", cursor: "pointer" }}
           >✖</button>
 
-          {/* HEADER IMAGE */}
           {imagePreview && (
             <img src={imagePreview} alt="Cover" style={{ width: "100%", height: "300px", objectFit: "cover", borderRadius: "8px", marginBottom: "30px" }} />
           )}
 
-          {/* TITLE */}
           <h1 style={{ fontSize: "32px", fontWeight: "bold", marginBottom: "10px" }}>{blogDetails.title}</h1>
           
-          {/* META */}
           <p style={{ color: "#666", marginBottom: "30px", borderBottom: "1px solid #eee", paddingBottom: "20px" }}>
             By {blogDetails.author || "Admin"} • {blogDetails.category}
           </p>
 
-          {/* 👇 THE MAGIC PART: RENDER HTML */}
           <div 
             className="blog-content-renderer"
             dangerouslySetInnerHTML={{ __html: blogDetails.content }} 
@@ -496,14 +532,29 @@ const AddBlog = () => {
     );
   };
 
-  // =============================================================================
-  // RENDER
-  // =============================================================================
   return (
     <div className="blog-page">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
 
-      {/* Restore Draft Modal */}
+      {/* --- AI LOADING OVERLAY (Added Here) --- */}
+      {isAiLoading && (
+        <div className="ai-loading-overlay">
+            <div className="ai-loading-content">
+                <div className="ai-loading-icon">✨</div>
+                <h3 className="ai-loading-title">Gemini AI is Working</h3>
+                <p className="ai-loading-text">{aiProgressText}</p>
+                
+                <div className="ai-progress-track">
+                    <div 
+                        className="ai-progress-fill" 
+                        style={{ width: `${progressValue}%` }}
+                    ></div>
+                </div>
+                <div className="ai-progress-percentage">{Math.round(progressValue)}%</div>
+            </div>
+        </div>
+      )}
+
       {showRestoreModal && (
         <RestoreDraftModal
           onRestore={handleRestoreDraft}
@@ -512,7 +563,6 @@ const AddBlog = () => {
         />
       )}
 
-      {/* Confirmation Modal */}
       <CustomConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
@@ -522,14 +572,12 @@ const AddBlog = () => {
         onCancel={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
       />
 
-      {/* Unsplash Modal */}
       <UnsplashSearchModal
         isOpen={unsplashModalOpen}
         onClose={() => setUnsplashModalOpen(false)}
         onSelectImage={handleUnsplashSelect}
       />
 
-      {/* Gemini Modal */}
       <GeminiInputModal
         isOpen={geminiModalOpen}
         onClose={() => setGeminiModalOpen(false)}
@@ -537,9 +585,11 @@ const AddBlog = () => {
         mode={geminiMode}
       />
 
+      {/* Preview Modal Portal */}
+      <BlogPreviewModal />
+
       <main className={`blog-main ${isSidebarCollapsed ? "blog-main--collapsed" : ""}`}>
         <div className="blog-container">
-          {/* Header */}
           <header className="blog-header">
             <div className="blog-header-content">
               <h1 className="blog-title">Add New Blog</h1>
@@ -550,7 +600,6 @@ const AddBlog = () => {
           <form onSubmit={handleSubmit}>
             <div className="blog-grid">
               <div className="blog-left">
-                {/* Image Upload Section */}
                 <BlogImageUpload
                   imagePreview={imagePreview}
                   onImageChange={handleImageChange}
@@ -559,7 +608,6 @@ const AddBlog = () => {
                   onOpenGemini={openGeminiModal}
                 />
 
-                {/* Form Fields Section */}
                 <BlogFormFields
                   blogDetails={blogDetails}
                   onChange={handleChange}
@@ -568,7 +616,6 @@ const AddBlog = () => {
                 />
               </div>
 
-              {/* Preview Card Section */}
               <BlogPreviewCard
                 blogDetails={blogDetails}
                 imagePreview={imagePreview}
@@ -582,17 +629,6 @@ const AddBlog = () => {
           </form>
         </div>
       </main>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        .vb-spinner {
-          animation: spin 1s linear infinite;
-        }
-      `}</style>
     </div>
   );
 };

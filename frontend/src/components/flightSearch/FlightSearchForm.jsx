@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom"; // Inimport ang useNavigate para sa redirection
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./FlightSearchForm.css";
@@ -57,6 +58,7 @@ const FlightSearchForm = ({
   const [selectedOrigin, setSelectedOrigin] = useState(null);
   const [selectedDestination, setSelectedDestination] = useState(null);
 
+  const navigate = useNavigate(); // Ininitialize ang navigate function
   const formRef = useRef(null);
   const calendarRef = useRef(null);
 
@@ -126,6 +128,12 @@ const FlightSearchForm = ({
   const handleSignInClick = () => {
     setActiveDropdown(null);
     setShowSignInModal(true);
+  };
+
+  // Bagong function para sa redirection
+  const handleRedirectToLogin = () => {
+    setShowSignInModal(false); // Isara ang modal bago mag-redirect
+    navigate("/login"); // I-re-redirect sa /login route
   };
 
   const handleAirportSelect = (airport, type) => {
@@ -596,7 +604,8 @@ const FlightSearchForm = ({
             <button className="modal-close" onClick={() => setShowSignInModal(false)}>×</button>
             <h2 className="modal-title">See your recent searches on any device.</h2>
             <p className="modal-subtitle">Sign in to keep track of your searches and get right back to them in one click.</p>
-            <button className="sign-in-button">
+            {/* Dito inapply ang onClick handler para sa redirection */}
+            <button className="sign-in-button" onClick={handleRedirectToLogin}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
                 <polyline points="10 17 15 12 10 7"></polyline>

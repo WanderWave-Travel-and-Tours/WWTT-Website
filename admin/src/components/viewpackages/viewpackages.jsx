@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react'; // ✅ Using Plus Icon
+import { Plus } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import PackageDetailModal from './PackageDetailModal';
 import PackagePagination from './PackagePagination';
 import PackageFilters from './PackageFilters';
 import PackagesTable from './PackagesTable'; 
-import './viewpackages.css'; // ✅ Imported updated CSS
+import './viewpackages.css';
 import { useNavigate } from 'react-router-dom';
+
+// Added Imports
+import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 
 const ViewPackages = () => {
     // ✅ STATE: Matches Tours Logic
@@ -27,6 +31,15 @@ const ViewPackages = () => {
     const [selectedPackage, setSelectedPackage] = useState(null);
     const navigate = useNavigate();
     
+    // Added Toast and Modal States
+    const toast = useToast();
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        packageId: null,
+        title: '',
+        message: ''
+    });
+
     const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
 
     // ✅ Toggle Function
@@ -49,6 +62,7 @@ const ViewPackages = () => {
             }
         } catch (err) {
             console.error('Fetch error:', err);
+            toast.error("Failed to load packages.", "Connection Error");
         } finally {
             setLoading(false);
         }
@@ -76,18 +90,47 @@ const ViewPackages = () => {
         }
     };
 
-    const handleArchive = async (packageId) => {
-        if (window.confirm("Are you sure you want to archive this package?")) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/${packageId}/archive`, { method: 'POST' });
-                const result = await response.json();
-                if (result.status === 'ok') {
-                    setPackages(prev => prev.filter(pkg => pkg._id !== packageId));
-                    alert("Package archived successfully!");
-                }
-            } catch (err) {
-                console.error("Error archiving:", err);
+    // Triggered when clicking Archive button
+    const handleArchiveClick = (packageId) => {
+        setConfirmModal({
+            isOpen: true,
+            packageId: packageId,
+            title: 'Archive Package',
+            message: 'Are you sure you want to archive this package? This action can be reversed by administrators later.'
+        });
+    };
+
+    // The actual archiving logic triggered by the Modal's Confirm button
+    const handleConfirmArchive = async () => {
+        const packageId = confirmModal.packageId;
+        
+        try {
+            const userEmail = localStorage.getItem('adminEmail') || 'System Admin';
+            const adminId = localStorage.getItem('adminId') || null;
+
+            const response = await fetch(`${API_BASE_URL}/${packageId}/archive`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userEmail: userEmail,
+                    adminId: adminId
+                })
+            });
+
+            const result = await response.json();
+            if (result.status === 'ok') {
+                setPackages(prev => prev.filter(pkg => pkg._id !== packageId));
+                toast.success("Package has been archived successfully.", "Success");
+            } else {
+                toast.error(result.error || result.message, "Archive Failed");
             }
+        } catch (err) {
+            console.error("Error archiving:", err);
+            toast.error("Failed to connect to the server.", "Server Error");
+        } finally {
+            setConfirmModal({ ...confirmModal, isOpen: false, packageId: null });
         }
     };
 
@@ -114,11 +157,9 @@ const ViewPackages = () => {
         <div className="vpl-page">
             <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
-            {/* ✅ LAYOUT FIX: Uses 'expanded' class logic (Matches Tours) */}
             <main className={`vpl-main ${isSidebarCollapsed ? "expanded" : ""}`}>
                 <div className="vpl-container">
                     
-                    {/* ✅ HEADER UI: Matches Tours Design */}
                     <header className="vpl-header">
                         <div className="vpl-header-content">
                             <h1 className="vpl-title">PACKAGE LIST</h1>
@@ -152,7 +193,7 @@ const ViewPackages = () => {
                                 getImageUrl={getImageUrl}
                                 handleImageError={handleImageError}
                                 onView={handleViewDetails}
-                                onArchive={handleArchive}
+                                onArchive={handleArchiveClick} // Updated to use the modal trigger
                             />
                             
                             <PackagePagination
@@ -166,12 +207,22 @@ const ViewPackages = () => {
                 </div>
             </main>
 
+            {/* Custom Confirmation Modal */}
+            <CustomConfirmModal 
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type="danger"
+                onConfirm={handleConfirmArchive}
+                onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+            />
+
             {showDetailModal && (
                 <PackageDetailModal
                     showModal={showDetailModal}
                     selectedPackage={selectedPackage}
                     setShowModal={setShowDetailModal}
-                    handleArchive={handleArchive}
+                    handleArchive={handleArchiveClick} // Updated to use the modal trigger
                 />
             )}
         </div>

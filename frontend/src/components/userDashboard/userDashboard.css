@@ -11,7 +11,7 @@
     --ud-accent-hover: #ea580c;
     
     /* ACTIVE STATE */
-    --ud-active-bg: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    --ud-active-bg: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); 
     --ud-active-text: #0f172a;
     
     /* BACKGROUND COLORS */

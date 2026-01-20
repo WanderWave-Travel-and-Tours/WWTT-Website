@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle } from "lucide-react";
 import Sidebar from '../sidebar/sidebar';
 import HotelImageUpload from './HotelImageUpload';
 import HotelDetails from './HotelDetails';
@@ -8,6 +7,7 @@ import HotelAmenities from './HotelAmenities';
 import HotelGallery from './HotelGallery';
 import HotelPreview from './HotelPreview';
 import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 import './addhotel.css';
  
 // ✅ Imports needed for Draft functionality
@@ -15,50 +15,6 @@ import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
  
 const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
- 
-// ✅ Custom Confirmation Modal Component
-const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="arc-confirm-overlay" style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 11000
-    }}>
-      <div className="arc-confirm-modal" style={{
-        backgroundColor: 'white', padding: '2rem', borderRadius: '12px',
-        maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <HelpCircle size={48} color={type === 'danger' ? '#ef4444' : '#3b82f6'} style={{ margin: '0 auto' }} />
-        </div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1e293b' }}>{title}</h3>
-        <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>{message}</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button
-            onClick={onCancel}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0',
-              backgroundColor: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              padding: '0.5rem 1.25rem', borderRadius: '6px', border: 'none',
-              backgroundColor: type === 'danger' ? '#ef4444' : '#3b82f6',
-              color: 'white', cursor: 'pointer', fontWeight: '500'
-            }}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
  
 const AddHotel = () => {
   const navigate = useNavigate();
@@ -109,71 +65,66 @@ const AddHotel = () => {
   const [loading, setLoading] = useState(true);
  
   // =========================================================
-  // ✅ VALIDATION LOGIC START
+  // ✅ VALIDATION LOGIC
   // =========================================================
  
-  // Helper para sa Image Validation (JPG, JPEG, PNG, WebP)
   const isValidImage = (file) => {
     const allowedExtensions = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     return allowedExtensions.includes(file.type);
   };
  
-const handleSetFile = (selectedFile) => {
+  const handleSetFile = (selectedFile) => {
     if (selectedFile) {
         if (!isValidImage(selectedFile)) {
-            toast.error('Invalid image format. Please use JPG, JPEG, PNG, or WebP.', '❌ File Error');
+            toast.error('Invalid image format. Please use JPG, JPEG, PNG, or WebP.', 'File Error');
             return;
         }
         setFile(selectedFile);
         setPreviewUrl(URL.createObjectURL(selectedFile));
-        toast.success(`Main image "${selectedFile.name}" uploaded successfully!`, '✅ Image Added');
+        toast.success(`Main image "${selectedFile.name}" uploaded successfully!`, 'Image Added');
     }
-};
+  };
  
-  // Custom setGalleryFiles handler with validation
-const handleSetGalleryFiles = (filesOrUpdater) => {
+  const handleSetGalleryFiles = (filesOrUpdater) => {
     if (typeof filesOrUpdater === 'function') {
         setGalleryFiles(prev => {
             const updated = filesOrUpdater(prev);
             const lastAdded = updated[updated.length - 1];
             if (lastAdded && lastAdded.file && !isValidImage(lastAdded.file)) {
-                toast.error('Invalid gallery image format. Only JPG, JPEG, PNG, and WebP are allowed.', '❌ File Error');
+                toast.error('Invalid gallery image format. Only JPG, JPEG, PNG, and WebP are allowed.', 'File Error');
                 return prev;
             }
-            // ✅ TANGGALIN YUNG TOAST DITO
             return updated;
         });
     } else {
         const allValid = filesOrUpdater.every(f => isValidImage(f.file));
         if (!allValid) {
-            toast.error('Some files were rejected. Please use JPG, JPEG, PNG, or WebP.', '❌ File Error');
+            toast.error('Some files were rejected. Please use JPG, JPEG, PNG, or WebP.', 'File Error');
             setGalleryFiles(filesOrUpdater.filter(f => isValidImage(f.file)));
         } else {
             setGalleryFiles(filesOrUpdater);
-            // ✅ TOAST DITO NA LANG PARA ISANG BESES LANG
             if (filesOrUpdater.length > 0) {
-                toast.success('Gallery image added successfully!', '✅ Added');
+                toast.success('Gallery image added successfully!', 'Added');
             }
         }
     }
-};
+  };
  
- const updateField = (field, value) => {
+  const updateField = (field, value) => {
     if (field === 'price' || field === 'maxCapacity') {
         const digitsOnly = value.replace(/\D/g, '');
-       
         if (digitsOnly.length <= 6) {
             setHotelDetails(prev => ({ ...prev, [field]: digitsOnly }));
         } else {
-            toast.warning('Maximum of 6 digits only for this field.', '⚠️ Limit Reached');
+            toast.warning('Maximum of 6 digits only for this field.', 'Limit Reached');
         }
     } else {
         setHotelDetails(prev => ({ ...prev, [field]: value }));
     }
-};
+  };
  
   // =========================================================
-  // ✅ AUTO-DRAFT LOGIC START
+  // ✅ AUTO-DRAFT LOGIC
   // =========================================================
  
   const fileToBase64 = (file) => {
@@ -268,11 +219,11 @@ const handleSetGalleryFiles = (filesOrUpdater) => {
     if (hasDraft) setShowRestoreModal(true);
   }, [hasDraft]);
  
-const handleRestoreDraft = () => {
+  const handleRestoreDraft = () => {
     restoreDraft();
     setShowRestoreModal(false);
-    toast.success('Your hotel draft has been restored successfully!', '✅ Draft Restored', 3000);
-};
+    toast.success('Your hotel draft has been restored successfully!', 'Draft Restored', 3000);
+  };
  
   // =========================================================
   // ✅ DATA FETCHING & EVENT HANDLERS
@@ -294,11 +245,11 @@ const handleRestoreDraft = () => {
             setDestinations(uniqueDestinations);
         }
     } catch (error) {
-        toast.error('Failed to load destinations. Please check your connection.', '❌ Connection Error');
+        toast.error('Failed to load destinations. Please check your connection.', 'Connection Error');
     } finally {
         setLoading(false);
     }
-};
+  };
  
   const handleAmenityChange = (amenityId) => {
     setHotelDetails(prev => ({
@@ -307,66 +258,51 @@ const handleRestoreDraft = () => {
     }));
   };
  
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(file);
-      fileReader.onload = () => resolve(fileReader.result);
-      fileReader.onerror = (error) => reject(error);
-    });
-  };
- 
-const handleSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
    
     if (!hotelDetails.name || !hotelDetails.destination || !hotelDetails.price) {
-        toast.error('Please fill in all required fields (Name, Destination, Price).', '⚠️ Validation Error');
+        toast.error('Please fill in all required fields (Name, Destination, Price).', 'Validation Error');
         window.scrollTo(0, 0);
         return;
     }
 
     if (Number(hotelDetails.price) < 1) {
-        toast.error('Price must be at least ₱1.', '⚠️ Validation Error');
+        toast.error('Price must be at least 1.', 'Validation Error');
         return;
     }
 
-    toast.success('All fields validated successfully!', '✅ Ready to Publish', 2000);
+    // Success validation toast without emoji
+    toast.success('All fields validated successfully!', 'Ready to Publish', 2000);
 
     askConfirmation(
         "Publish Hotel",
         `Are you sure you want to add "${hotelDetails.name}" to the catalog?`,
-        () => performSubmit()
+        () => performSubmit(),
+        "primary"
     );
-};
+  };
  
-const performSubmit = async () => {
+  const performSubmit = async () => {
     setIsSubmitting(true);
-    
-    toast.info('Publishing hotel to catalog...', '📤 Please Wait', 2000);
+    toast.info('Publishing hotel to catalog...', 'Please Wait', 2000);
     
     try {
         const formData = new FormData();
-        
         formData.append('name', hotelDetails.name);
         formData.append('location', hotelDetails.destination);
         
         const cityName = hotelDetails.destination.split(',')[0].trim();
         formData.append('city', cityName);
-        
         formData.append('description', `${type} accommodation in ${hotelDetails.destination}`);
         formData.append('price', Number(hotelDetails.price));
         formData.append('maxCapacity', Number(hotelDetails.maxCapacity) || 4);
-        
         formData.append('amenities', JSON.stringify(hotelDetails.amenities));
         
-        if (file) {
-            formData.append('mainImage', file);
-            console.log('✅ Main image added to FormData:', file.name);
-        }
+        if (file) formData.append('mainImage', file);
         
         for (const item of galleryFiles) {
             formData.append('galleryImages', item.file);
-            console.log('✅ Gallery image added to FormData:', item.file.name);
         }
         
         formData.append('featured', false);
@@ -382,11 +318,8 @@ const performSubmit = async () => {
         formData.append('roomTypes', JSON.stringify(roomTypesData));
         
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-        const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-        const activeId = adminData.id || adminData._id || "";
-        
-        formData.append('userEmail', activeUser);
-        formData.append('adminId', activeId);
+        formData.append('userEmail', adminData.email || adminData.username || 'Unknown User');
+        formData.append('adminId', adminData.id || adminData._id || "");
 
         const response = await fetch(`${API_BASE_URL}/api/hotels`, {
             method: 'POST',
@@ -396,35 +329,19 @@ const performSubmit = async () => {
         const data = await response.json();
 
         if (data.success) {
-            toast.success(
-                `"${hotelDetails.name}" has been added to your catalog successfully!`,
-                '✅ Hotel Published',
-                5000
-            );
+            toast.success(`"${hotelDetails.name}" has been added successfully!`, 'Hotel Published', 5000);
             window.scrollTo(0, 0);
             await clearDraft();
-            
-            toast.info('Form cleared and ready for new hotel entry.', '🔄 Ready', 3000);
             resetForm();
         } else {
-            const errorMessage = data.message || 'Unknown error occurred';
-            toast.error(
-                `Failed to save hotel: ${errorMessage}`,
-                '❌ Save Failed',
-                5000
-            );
+            toast.error(`Failed to save hotel: ${data.message || 'Unknown error'}`, 'Save Failed');
         }
     } catch (err) {
-        console.error('❌ Network Error:', err);
-        toast.error(
-            `Unable to connect to server: ${err.message}. Please check if backend is running.`,
-            '❌ Connection Error',
-            6000
-        );
+        toast.error(`Unable to connect to server: ${err.message}`, 'Connection Error');
     } finally {
         setIsSubmitting(false);
     }
-};
+  };
  
   const resetForm = () => {
     setHotelDetails({
@@ -437,18 +354,18 @@ const performSubmit = async () => {
     setFile(null); setPreviewUrl(null); setGalleryFiles([]); setType("Budget");
   };
  
-const handleCancel = () => {
+  const handleCancel = () => {
     askConfirmation(
         "Discard Changes",
         "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
         async () => {
             await clearDraft();
-            toast.info('Action cancelled. Redirecting to hotel list...', '❌ Cancelled');
+            toast.info('Action cancelled. Redirecting to hotel list...', 'Cancelled');
             navigate('/view-hotels');
         },
         "danger"
     );
-};
+  };
  
   return (
     <div className="atour-page">
