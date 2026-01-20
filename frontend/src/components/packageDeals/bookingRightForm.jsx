@@ -251,7 +251,18 @@ const BookingRightForm = ({
     
     if (!selectedRoomType) return basePackagePrice;
 
-    const upgradePrice = selectedRoomType.price || 0;
+    const roomType = selectedRoomType.type?.toUpperCase() || '';
+    
+    let upgradePrice = 0;
+    
+    if (roomType.includes('STANDARD')) {
+      upgradePrice = 900;
+    } else if (roomType.includes('4 STAR')) {
+      upgradePrice = 1150;
+    } else if (roomType.includes('5 STAR')) {
+      upgradePrice = 1400;
+    }
+    
     const baseRoomCapacity = 4;
     const pricePerPerson = upgradePrice / baseRoomCapacity;
     const upgradeTotal = pricePerPerson * basePax;
