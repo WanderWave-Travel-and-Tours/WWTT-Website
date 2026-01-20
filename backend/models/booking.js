@@ -107,10 +107,20 @@ const bookingSchema = new mongoose.Schema({
   balancePaidAmount: { type: Number, default: 0 },
   balancePaidAt: { type: Date },
   
+  // ✅ EXISTING Payment Link fields (keep for backward compatibility and balance payments)
   initialPaymentId: { type: String },
   balancePaymentId: { type: String },
   initialPaymentLinkId: { type: String },
   balancePaymentLinkId: { type: String },
+  paymentId: { type: String },
+  paymentLinkId: { type: String },
+
+  // ✅ NEW: Checkout Session fields (for initial payments)
+  checkoutSessionId: { type: String },
+  initialPaymentPaid: { type: Boolean, default: false },
+  initialPaymentPaidAt: { type: Date },
+  balancePaymentPaid: { type: Boolean, default: false },
+  balancePaymentPaidAt: { type: Date },
 
   fullName: { type: String, required: true },
   email:    { type: String, required: true },
@@ -127,8 +137,6 @@ const bookingSchema = new mongoose.Schema({
     default: 'pending'
   },
 
-  paymentId:        { type: String },
-  paymentLinkId:    { type: String },
   referenceNumber:  { type: String },
 
   createdAt: { type: Date, default: Date.now },
@@ -143,7 +151,7 @@ const bookingSchema = new mongoose.Schema({
   discountAmount: { type: Number, default: 0 },
   finalPackageTotal: { type: Number, required: true },
 
-  // ✅ NEW: Walk-in appointment fields
+  // Walk-in appointment fields
   isWalkin: { type: Boolean, default: false },
   appointmentDate: { type: String },
   appointmentTime: { type: String }
@@ -161,18 +169,25 @@ bookingSchema.virtual('computedRemainingBalance').get(function() {
   return 0;
 });
 
+// ✅ UPDATED: Enhanced isFullyPaid to check checkout session payments too
 bookingSchema.methods.isFullyPaid = function() {
   if (this.paymentType === 'full') {
-    return this.status === 'confirmed' || this.status === 'fully_paid';
+    // Check both old status and new checkout session payment flag
+    return this.status === 'confirmed' 
+      || this.status === 'fully_paid' 
+      || this.initialPaymentPaid === true;
   }
   
+  // For partial payments, check both old and new tracking
   const totalPaid = this.initialPaymentAmount + this.balancePaidAmount;
-  return totalPaid >= this.totalAmount;
+  const paidViaCheckout = this.initialPaymentPaid && this.balancePaymentPaid;
+  
+  return totalPaid >= this.totalAmount || paidViaCheckout;
 };
 
 bookingSchema.methods.getPaymentStatusDescription = function() {
   if (this.paymentType === 'full') {
-    if (this.status === 'confirmed' || this.status === 'fully_paid') {
+    if (this.status === 'confirmed' || this.status === 'fully_paid' || this.initialPaymentPaid) {
       return 'Paid in Full';
     }
     return 'Pending Payment';
@@ -182,7 +197,7 @@ bookingSchema.methods.getPaymentStatusDescription = function() {
     return 'Fully Paid';
   }
   
-  if (this.initialPaymentAmount > 0 && this.balancePaidAmount === 0) {
+  if ((this.initialPaymentAmount > 0 || this.initialPaymentPaid) && this.balancePaidAmount === 0) {
     return `Partial Paid (₱${this.remainingBalance.toLocaleString()} remaining)`;
   }
   

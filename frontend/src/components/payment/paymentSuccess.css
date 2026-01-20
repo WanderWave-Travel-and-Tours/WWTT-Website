@@ -1,129 +1,164 @@
-/* -------------------------------------------
-   MAIN PAGE BACKGROUND & CONTAINER
-------------------------------------------- */
+/* paymentSuccess.css */
+
 .success-page {
   min-height: 100vh;
-  /* Specific Background Image from your code */
-  background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911b3e0d1ba952ac5f4dc60.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px; /* Reduced outer padding for mobile screens */
-  position: relative;
+  padding: 2rem 1rem;
 }
 
-/* Dark Overlay */
-.success-page::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.5); /* Slightly darker for better contrast */
-  backdrop-filter: blur(4px);
-  z-index: 1;
-}
-
-/* Content Container - sits above overlay */
 .success-container {
-  max-width: 600px;
+  max-width: 650px;
   width: 100%;
-  position: relative;
-  z-index: 2;
-  margin: auto;
 }
 
-/* -------------------------------------------
-   CARD STYLES
-------------------------------------------- */
 .success-card {
-  background: rgba(255, 255, 255, 0.98); /* Slight transparency looks modern */
-  border-radius: 20px;
-  padding: 50px 40px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 3rem 2.5rem;
   text-align: center;
+  animation: slideUp 0.5s ease-out;
 }
 
-/* Icon Animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .success-icon-wrapper {
-  margin-bottom: 24px;
-  animation: scaleIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy effect */
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  animation: bounceIn 0.6s ease-out;
 }
 
-@keyframes scaleIn {
-  from { transform: scale(0); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+@keyframes bounceIn {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
-/* Typography */
 .success-title {
   font-size: 2rem;
-  color: #111827;
-  margin-bottom: 12px;
-  font-weight: 800;
-  line-height: 1.2;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 0.75rem;
 }
 
 .success-subtitle {
   font-size: 1rem;
-  color: #6b7280;
-  margin-bottom: 32px;
-  line-height: 1.5;
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 2rem;
 }
 
-/* -------------------------------------------
-   DETAILS SECTION (Gray Box)
-------------------------------------------- */
+/* Booking Info Card */
 .booking-info-card {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
   border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
   text-align: left;
 }
 
 .info-title {
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #9ca3af;
-  margin-bottom: 20px;
-  text-align: center;
+  font-size: 1.25rem;
   font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Default: 2 columns */
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
 .info-item {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-radius: 10px;
+  transition: transform 0.2s ease;
+}
+
+.info-item:hover {
+  transform: translateX(4px);
+}
+
+/* ✅ NEW: Highlight paid amount */
+.info-item.payment-highlight {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border: 2px solid #28a745;
+  font-weight: 600;
+}
+
+.info-item.payment-highlight .info-label {
+  color: #155724;
+}
+
+.info-item.payment-highlight .info-value {
+  color: #155724;
+}
+
+/* ✅ NEW: Remaining balance styling */
+.info-item.remaining-balance {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 2px solid #ffc107;
+  font-weight: 600;
+}
+
+.info-item.remaining-balance .info-label {
+  color: #856404;
+}
+
+.info-item.remaining-balance .info-value {
+  color: #856404;
 }
 
 .info-label {
-  font-size: 0.8rem;
-  color: #6b7280;
-  text-transform: uppercase;
+  font-size: 0.875rem;
+  color: #718096;
   font-weight: 500;
 }
 
 .info-value {
   font-size: 1rem;
-  color: #1f2937;
+  color: #2d3748;
   font-weight: 600;
-  word-break: break-word; /* Prevents long IDs from breaking layout */
 }
 
 .info-value.amount {
-  color: #16a34a; /* Green */
+  color: #22c55e;
   font-size: 1.25rem;
-  font-weight: 700;
+}
+
+/* ✅ NEW: Payment Notice Box */
+.payment-notice {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-left: 4px solid #ffc107;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  font-size: 0.9rem;
+  color: #856404;
+  line-height: 1.6;
+}
+
+.payment-notice strong {
+  color: #664d03;
 }
 
 /* Email Notice */
@@ -131,188 +166,160 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 16px;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
-  border-radius: 12px;
-  margin-bottom: 32px;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 10px;
+  margin-bottom: 2rem;
   font-size: 0.9rem;
-  color: #1e40af;
-  text-align: left;
+  color: #4a5568;
 }
 
-/* -------------------------------------------
-   BUTTONS
-------------------------------------------- */
+.email-notice strong {
+  color: #2d3748;
+}
+
+.shrink-0 {
+  flex-shrink: 0;
+}
+
+/* Action Buttons */
 .action-buttons {
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px 20px;
-  border: none;
+  gap: 0.5rem;
+  padding: 1rem;
   border-radius: 12px;
-  font-size: 0.95rem;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  border: none;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #fc9c1b 0%, #f97316 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.4);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.5);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
 }
 
 .btn-secondary {
   background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  color: #667eea;
+  border: 2px solid #667eea;
 }
 
 .btn-secondary:hover {
-  border-color: #fc9c1b;
-  color: #ea580c;
-  background: #fff7ed;
+  background: #f7fafc;
+  transform: translateY(-2px);
 }
 
 /* Footer */
 .success-footer {
-  padding-top: 24px;
-  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  color: #718096;
 }
 
 .success-footer p {
-  font-size: 0.85rem;
-  color: #9ca3af;
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 .success-footer a {
-  color: #3b82f6;
+  color: #667eea;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.success-footer a:hover {
+  text-decoration: underline;
 }
 
 .btn-link {
   background: none;
   border: none;
-  color: #6b7280;
-  font-size: 0.9rem;
+  color: #667eea;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: color 0.2s;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s ease;
 }
 
 .btn-link:hover {
-  color: #111827;
-  text-decoration: underline;
+  color: #764ba2;
 }
 
-/* -------------------------------------------
-   LOADING STATE
-------------------------------------------- */
+/* Loading State */
 .loading-container {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  /* Specific Background Image for loading from your code */
-  background-image: url('https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6915bda216a06e81c053d246.jpg');
-  background-size: cover;
-  background-position: center;
-  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  z-index: 0;
-}
-
-.loading-container::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: -1;
+  gap: 1.5rem;
 }
 
 .spinner-large {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255,255,255,0.2);
-  border-top-color: #fff;
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-bottom: 16px;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* -------------------------------------------
-   RESPONSIVE DESIGN (MEDIA QUERIES)
-------------------------------------------- */
-
-/* Tablet & Mobile (Below 768px) */
-@media (max-width: 768px) {
-  .success-card {
-    padding: 40px 30px;
-  }
-}
-
-/* Mobile (Below 640px) */
+/* Responsive */
 @media (max-width: 640px) {
-  .success-page {
-    padding: 16px;
-    align-items: flex-start; /* Prevents cut-off on small screens if content is long */
-    padding-top: 40px;
-    padding-bottom: 40px;
-  }
-
   .success-card {
-    padding: 30px 20px; /* Smaller padding inside card */
-    margin-top: 20px;
+    padding: 2rem 1.5rem;
   }
-  
+
   .success-title {
-    font-size: 1.5rem; /* Smaller title */
+    font-size: 1.5rem;
   }
 
-  .success-subtitle {
-    font-size: 0.95rem;
-  }
-  
-  /* Stack Buttons vertically on mobile */
   .action-buttons {
-    flex-direction: column; 
-    gap: 10px;
-  }
-  
-  /* Stack Details in 1 column */
-  .info-grid {
-    grid-template-columns: 1fr; 
-    gap: 16px;
+    flex-direction: column;
   }
 
-  /* Adjust email notice alignment */
-  .email-notice {
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .info-grid {
+    gap: 0.75rem;
+  }
+
+  .info-item {
     flex-direction: column;
-    text-align: center;
-    gap: 8px;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .info-value {
+    align-self: flex-end;
   }
 }

@@ -39,37 +39,53 @@ const PaymentSuccess = () => {
     frame();
 
     // 2. Identify Transaction Type
-    const bookingId = searchParams.get('booking_id');
+    // ✅ Support both old (booking_id) and new (bookingId) query params
+    const bookingId = searchParams.get('booking_id') || searchParams.get('bookingId');
     const inquiryId = searchParams.get('inquiryId');
+    const paymentType = searchParams.get('paymentType'); // full or partial
 
     if (bookingId) {
       setType('booking');
-      fetchBookingDetails(bookingId);
+      fetchBookingDetails(bookingId, paymentType);
     } else if (inquiryId) {
       setType('inquiry');
       fetchInquiryDetails(inquiryId);
     } else {
-      // Demo Data for testing if no ID is present (Optional: remove this else block in production)
+      // No ID found - show generic success
       setLoading(false); 
     }
   }, [searchParams]);
 
   // Fetch Booking Data
-  const fetchBookingDetails = async (id) => {
+  const fetchBookingDetails = async (id, paymentType) => {
     try {
       const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${id}`);
       const data = await response.json();
-      if (data.success) {
+      
+      if (data && data._id) {
+        // Extract booking data (response might not have .success wrapper)
+        const booking = data.success ? data.booking : data;
+        
+        // Determine if this was initial or balance payment
+        const isPartialPayment = paymentType === 'partial' || booking.paymentType === 'partial';
+        const paidAmount = isPartialPayment ? booking.initialPaymentAmount : booking.totalAmount;
+        
         setDetails({
-          reference: data.booking.referenceNumber,
-          title: data.booking.packageName,
-          subTitle: `${data.booking.duration} • ${data.booking.pax?.adult || 1} Pax`,
-          amount: data.booking.totalAmount,
-          email: data.booking.email,
+          reference: booking.referenceNumber || booking._id.slice(-8).toUpperCase(),
+          title: booking.packageName,
+          subTitle: `${booking.duration} • ${booking.pax?.adult || 1} Pax`,
+          amount: paidAmount,
+          totalAmount: booking.totalAmount,
+          remainingBalance: booking.remainingBalance,
+          email: booking.email,
           dateLabel: "Travel Dates",
-          dateValue: `${data.booking.startDate} - ${data.booking.endDate}`,
-          status: data.booking.status
+          dateValue: `${booking.startDate} - ${booking.endDate}`,
+          status: booking.status,
+          isPartial: isPartialPayment,
+          paymentType: booking.paymentType
         });
+      } else {
+        console.error('Invalid booking data received');
       }
     } catch (error) {
       console.error('Error fetching booking:', error);
@@ -94,7 +110,8 @@ const PaymentSuccess = () => {
                 email: inquiry.email,
                 dateLabel: "Date Submitted",
                 dateValue: new Date(inquiry.createdAt).toLocaleDateString(),
-                status: 'PAID'
+                status: 'PAID',
+                isPartial: false
             });
         }
     } catch (error) {
@@ -128,7 +145,9 @@ const PaymentSuccess = () => {
           <h1 className="success-title">Payment Successful! 🎉</h1>
           <p className="success-subtitle">
             {type === 'booking' 
-              ? 'Your adventure has been secured. Pack your bags!' 
+              ? (details?.isPartial 
+                  ? 'Your initial payment has been confirmed. We\'ll contact you for the remaining balance before departure.' 
+                  : 'Your adventure has been secured. Pack your bags!')
               : 'Your transaction is complete. We will process your documents shortly.'}
           </p>
 
@@ -165,17 +184,44 @@ const PaymentSuccess = () => {
                   <strong className="info-value">{details.subTitle}</strong>
                 </div>
                 
-                {/* Total Amount */}
-                <div className="info-item">
-                  <span className="info-label">Amount Paid</span>
-                  <strong className="info-value amount">₱{details.amount?.toLocaleString()}</strong>
-                </div>
+                {/* Payment Amounts */}
+                {details.isPartial ? (
+                  <>
+                    <div className="info-item">
+                      <span className="info-label">Total Package Price</span>
+                      <strong className="info-value">₱{details.totalAmount?.toLocaleString()}</strong>
+                    </div>
+                    <div className="info-item payment-highlight">
+                      <span className="info-label">✅ Paid Today (Initial)</span>
+                      <strong className="info-value amount">₱{details.amount?.toLocaleString()}</strong>
+                    </div>
+                    {details.remainingBalance > 0 && (
+                      <div className="info-item remaining-balance">
+                        <span className="info-label">⚠️ Remaining Balance</span>
+                        <strong className="info-value amount">₱{details.remainingBalance?.toLocaleString()}</strong>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="info-item payment-highlight">
+                    <span className="info-label">✅ Amount Paid (Full)</span>
+                    <strong className="info-value amount">₱{details.amount?.toLocaleString()}</strong>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
+          {/* Payment Type Notice */}
+          {details?.isPartial && (
+            <div className="payment-notice">
+              <strong>Note:</strong> The remaining balance of ₱{details.remainingBalance?.toLocaleString()} must be paid before your departure date. 
+              Our team will send you a payment link when it's time to settle the balance.
+            </div>
+          )}
+
           <div className="email-notice">
-            <Mail size={20} className="shrink-0" /> {/* shrink-0 prevents icon squishing on mobile */}
+            <Mail size={20} className="shrink-0" />
             <span>
               A confirmation email has been sent to <strong>{details?.email}</strong>
             </span>

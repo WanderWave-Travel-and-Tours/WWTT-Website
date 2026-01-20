@@ -52,12 +52,18 @@ const UserDashboard = ({ user, onLogout }) => {
         if (!user?.email) return;
 
         try {
-            const inquiriesPromise = fetch(`https://wanderwaveph-backend.onrender.com/api/inquiries/email/${user.email}`).then(res => res.json());
+            // Add small delay between requests instead of Promise.all
+            const inquiriesData = await fetch(
+                `https://wanderwaveph-backend.onrender.com/api/inquiries/email/${user.email}`
+            ).then(res => res.json());
             
-            const bookingsPromise = fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/user/${user.email}`).then(res => res.json());
+            // Small delay before next request
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            const bookingsData = await fetch(
+                `https://wanderwaveph-backend.onrender.com/api/bookings/user/${user.email}`
+            ).then(res => res.json());
 
-            const [inquiriesData, bookingsData] = await Promise.all([inquiriesPromise, bookingsPromise]);
-            
             let combinedData = [];
 
             if (inquiriesData.success) {
@@ -77,7 +83,6 @@ const UserDashboard = ({ user, onLogout }) => {
             }
 
             combinedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
             setInquiries(combinedData);
 
             if (selectedInquiry) {
