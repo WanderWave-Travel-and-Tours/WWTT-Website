@@ -6,7 +6,7 @@ const CENOMAR = require('../models/cenomar');
 const ActivityLog = require('../models/ActivityLog'); // ✅ ACTIVITY LOG IMPORT
 const { sendNewUserToGHL, sendInquiryToGHL } = require('../utils/ghlService');
 const mongoose = require('mongoose');
- 
+  
 const generateTempPassword = () => {
   const numbers = Math.floor(100000 + Math.random() * 900000);
   const specialChars = '!@#$%^&*';
@@ -434,37 +434,225 @@ const getAllInquiries = async (req, res) => {
 const getInquiry = async (req, res) => {
   try {
     const inquiry = await Inquiry.findById(req.params.id).populate('serviceId visaId cenomarId');
-    if (!inquiry) return res.status(404).json({ success: false });
-    res.json({ success: true, data: inquiry });
+    
+    if (!inquiry) {
+      return res.status(404).json({ success: false, message: 'Inquiry not found' });
+    }
+    
+    console.log("🔍 RAW INQUIRY FROM DB:", inquiry.passengers);
+    console.log("🔍 Type:", typeof inquiry.passengers);
+    
+    // Convert to plain object
+    const responseData = inquiry.toObject();
+    
+    // 🔥 ENSURE PASSENGERS IS ALWAYS AN ARRAY
+    let cleanedPassengers = [];
+    
+    try {
+      let passengersData = responseData.passengers;
+      
+      // If it's a string, parse it
+      if (typeof passengersData === 'string') {
+        console.log("⚠️ Passengers is stored as string, parsing...");
+        passengersData = JSON.parse(passengersData);
+        
+        // Check if still string (double-stringified)
+        if (typeof passengersData === 'string') {
+          console.log("⚠️ Double-stringified detected, parsing again...");
+          passengersData = JSON.parse(passengersData);
+        }
+      }
+      
+      // Validate and clean
+      if (Array.isArray(passengersData)) {
+        cleanedPassengers = passengersData
+          .map(p => {
+            if (typeof p === 'string') {
+              try {
+                p = JSON.parse(p);
+              } catch (e) {
+                return null;
+              }
+            }
+            
+            if (p && typeof p === 'object') {
+              return {
+                firstName: String(p.firstName || '').trim(),
+                lastName: String(p.lastName || '').trim(),
+                nationality: String(p.nationality || 'Filipino').trim(),
+                age: p.age ? parseInt(p.age) : 0,
+                email: String(p.email || '').trim(),
+                contactNumber: String(p.contactNumber || '').trim(),
+                type: String(p.type || 'Adult').trim()
+              };
+            }
+            return null;
+          })
+          .filter(p => p !== null);
+      }
+    } catch (e) {
+      console.error("❌ Error parsing passengers in getInquiry:", e);
+    }
+    
+    // Ensure at least one default passenger
+    if (cleanedPassengers.length === 0) {
+      cleanedPassengers = [{
+        firstName: "",
+        lastName: "",
+        nationality: "Filipino",
+        age: 0,
+        email: "",
+        contactNumber: "",
+        type: "Adult"
+      }];
+    }
+    
+    responseData.passengers = cleanedPassengers;
+    
+    console.log("✅ CLEANED PASSENGERS BEING SENT:", responseData.passengers);
+    
+    res.json({ success: true, data: responseData });
   } catch (error) {
-    res.status(500).json({ success: false });
+    console.error("❌ GET INQUIRY ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
  
 const updateInquiry = async (req, res) => {
   try {
     const { id } = req.params; 
-   
     const existingInquiry = await Inquiry.findById(id);
-   
+    
     if (!existingInquiry) {
       return res.status(404).json({ success: false, message: 'Inquiry not found' });
     }
- 
+
+    console.log("📋 EXISTING INQUIRY:", {
+      passengers: existingInquiry.passengers,
+      passengersType: typeof existingInquiry.passengers,
+      isArray: Array.isArray(existingInquiry.passengers)
+    });
+    
+    console.log("🔥 INCOMING DATA:", {
+      passengers: req.body.passengers,
+      passengersType: typeof req.body.passengers
+    });
+
     const changes = [];
- 
-    // 🔥 FIX: Mas ligtas na pag-parse ng existingFiles
+
+    // Parse existingFiles safely
     let remainingFilesList = [];
     if (req.body.existingFiles) {
       try {
-        // Ito ang listahan ng Keys (e.g., "passport", "photo") na GUSTONG ITIRA ng user
         remainingFilesList = JSON.parse(req.body.existingFiles);
       } catch (e) {
         console.error("Error parsing existingFiles:", e);
         remainingFilesList = [];
       }
-    };
- 
+    }
+
+    // 🔥🔥🔥 CRITICAL FIX: PARSE PASSENGERS PROPERLY 🔥🔥🔥
+    let updatedPassengers = [];
+    
+    if (req.body.passengers !== undefined && req.body.passengers !== null) {
+      try {
+        let passengersData = req.body.passengers;
+        
+        console.log("📋 Raw passengers received:", passengersData);
+        console.log("📋 Type:", typeof passengersData);
+        
+        // Parse if string
+        if (typeof passengersData === 'string' && passengersData.trim() !== '') {
+          try {
+            // Clean string before parsing
+            const cleanedString = passengersData
+              .replace(/\n/g, '')
+              .replace(/\r/g, '')
+              .replace(/\t/g, '')
+              .trim();
+            
+            console.log("🧹 Cleaned string:", cleanedString);
+            passengersData = JSON.parse(cleanedString);
+            console.log("✅ After parse:", passengersData);
+          } catch (parseError) {
+            console.error("❌ Parse error:", parseError.message);
+            throw new Error(`Failed to parse passengers JSON: ${parseError.message}`);
+          }
+        }
+        
+        // Ensure we have an array
+        if (!Array.isArray(passengersData)) {
+          console.error("❌ Passengers is not an array after parsing");
+          passengersData = [];
+        }
+        
+        // Process and validate each passenger
+        updatedPassengers = passengersData
+          .map((p, idx) => {
+            console.log(`Processing passenger ${idx}:`, p);
+            
+            // Skip if not an object
+            if (!p || typeof p !== 'object') {
+              console.warn(`Skipping passenger ${idx}: not an object`);
+              return null;
+            }
+            
+            // Must have at least firstName or lastName
+            const firstName = String(p.firstName || '').trim();
+            const lastName = String(p.lastName || '').trim();
+            
+            if (!firstName && !lastName) {
+              console.warn(`Skipping passenger ${idx}: no name provided`);
+              return null;
+            }
+            
+            // Build clean passenger object matching schema
+            const cleanPassenger = {
+              firstName: firstName,
+              lastName: lastName,
+              nationality: String(p.nationality || 'Filipino').trim(),
+              age: p.age ? parseInt(p.age) : 0,
+              email: String(p.email || '').trim(),
+              contactNumber: String(p.contactNumber || '').trim(),
+              type: ['Adult', 'Child', 'Infant'].includes(p.type) ? p.type : 'Adult'
+            };
+            
+            console.log(`✅ Cleaned passenger ${idx}:`, cleanPassenger);
+            return cleanPassenger;
+          })
+          .filter(p => p !== null);
+        
+        console.log("✅ Final passengers array:", updatedPassengers);
+        
+        if (updatedPassengers.length > 0) {
+          changes.push(`Updated ${updatedPassengers.length} passenger(s)`);
+        }
+      } catch (e) {
+        console.error("❌ Error processing passengers:", e);
+        return res.status(400).json({ 
+          success: false, 
+          message: `Invalid passengers data: ${e.message}` 
+        });
+      }
+    } else {
+      // Keep existing passengers if none provided
+      console.log("ℹ️ No passengers in request, keeping existing");
+      updatedPassengers = existingInquiry.passengers || [];
+    }
+
+    // Ensure at least one passenger for flight bookings
+    if (req.body.inquiryType === 'FLIGHT_BOOKING' && updatedPassengers.length === 0) {
+      updatedPassengers = [{
+        firstName: "",
+        lastName: "",
+        nationality: "Filipino",
+        age: 0,
+        email: "",
+        contactNumber: "",
+        type: "Adult"
+      }];
+    }
+
     // Build update object
     const updateData = {
       fullName: req.body.fullName || existingInquiry.fullName,
@@ -474,47 +662,50 @@ const updateInquiry = async (req, res) => {
       inquiryType: req.body.inquiryType || existingInquiry.inquiryType,
       cenomarDocument: req.body.cenomarDocument || existingInquiry.cenomarDocument,
       psaDocument: req.body.psaDocument || existingInquiry.psaDocument,
-      
-      message: req.body.message, // Laging i-update ang message kung may bago
-      adminRemarks: req.body.message || existingInquiry.adminRemarks, // Sync adminRemarks
+      message: req.body.message || existingInquiry.message,
+      adminRemarks: req.body.adminRemarks || existingInquiry.adminRemarks,
       estimatedPrice: parseFloat(req.body.estimatedPrice) || existingInquiry.estimatedPrice,
       
-      // 🔥 FIX: Siguraduhin na ma-uupdate ang Travel Date at Stay
-      travelDate: req.body.travelDate || existingInquiry.travelDate,
-      lengthOfStay: req.body.lengthOfStay || existingInquiry.lengthOfStay,
+      // 🔥 CRITICAL: Passengers as proper array
+      passengers: updatedPassengers,
       
+      // Update flight details
+      flightDetails: {
+        origin: req.body.origin || existingInquiry.flightDetails?.origin || '',
+        destination: req.body.destination || existingInquiry.flightDetails?.destination || '',
+        departureDate: req.body.departureDate || existingInquiry.flightDetails?.departureDate || null,
+        airline: req.body.airline || existingInquiry.flightDetails?.airline || '',
+        flightNumber: req.body.flightNumber || existingInquiry.flightDetails?.flightNumber || ''
+      },
+      
+      travelDate: req.body.travelDate || req.body.departureDate || existingInquiry.travelDate,
+      lengthOfStay: req.body.lengthOfStay || existingInquiry.lengthOfStay,
       status: req.body.status || existingInquiry.status,
       updatedAt: Date.now()
     };
    
-    // Check for name change logic (Optional logging)
+    // Check for name change
     const newFullName = `${req.body.givenName || ''} ${req.body.lastName || ''}`.trim();
     if (newFullName && newFullName !== "" && newFullName !== existingInquiry.fullName) {
       changes.push(`Name changed from "${existingInquiry.fullName}" to "${newFullName}"`);
       updateData.fullName = newFullName;
     }
- 
-    // 🔥 DOCUMENT HANDLING (FIXED DELETION LOGIC)
+
+    // 🔥 DOCUMENT HANDLING
     const documentMap = new Map();
-   
-    // 1. Process Existing Files (FILTERING)
-    // Kung wala sa remainingFilesList, ibig sabihin binura na ng user sa Frontend -> 'wag isama sa Map.
+    
     if (existingInquiry.deliveredDocuments && Array.isArray(existingInquiry.deliveredDocuments)) {
       existingInquiry.deliveredDocuments.forEach(doc => {
-        // Kunin ang key bago ang " - "
         const separatorIndex = doc.fileName.indexOf(' - ');
         if (separatorIndex !== -1) {
             const fieldKey = doc.fileName.substring(0, separatorIndex).trim();
-            
-            // Check kung nasa whitelist (remainingFilesList)
             if (remainingFilesList.includes(fieldKey)) {
                 documentMap.set(fieldKey, doc);
             }
         }
       });
     }
- 
-    // 2. Handle Evidence/Receipt URL
+
     if (req.body.hasExistingEvidence === 'false') {
         updateData.evidenceUrl = '';
         updateData.evidenceName = '';
@@ -522,20 +713,17 @@ const updateInquiry = async (req, res) => {
         updateData.evidenceUrl = existingInquiry.evidenceUrl;
         updateData.evidenceName = existingInquiry.evidenceName;
     }
- 
-    // 3. Process NEW Uploads (Overwrite existing keys if needed)
+
     if (req.files && req.files.length > 0) {
       req.files.forEach(file => {
         const fieldKey = file.fieldname;
         const fileUrl = `/uploads/documents/${file.filename}`;
- 
-        // Special handling para sa evidence
+        
         if (fieldKey === 'evidence' || fieldKey === 'requirement' || fieldKey === 'walkInDoc') {
             updateData.evidenceUrl = fileUrl;
             updateData.evidenceName = file.originalname;
         }
        
-        // Add to Map (Overwrites existing entry with same key)
         documentMap.set(fieldKey, {
           fileName: `${fieldKey} - ${file.originalname}`,
           fileUrl: fileUrl,
@@ -543,28 +731,58 @@ const updateInquiry = async (req, res) => {
         });
       });
     }
- 
-    // Convert Map back to Array
+
     updateData.deliveredDocuments = Array.from(documentMap.values());
- 
-    delete updateData.message; // Clean up temp field if not in schema (optional)
-    updateData.updatedAt = Date.now();
- 
-    // UPDATE DATABASE
+
+    console.log("📤 FINAL UPDATE DATA:", {
+      passengersCount: updateData.passengers.length,
+      passengersType: typeof updateData.passengers,
+      isArray: Array.isArray(updateData.passengers),
+      sample: updateData.passengers[0]
+    });
+
+    // 🔥 UPDATE DATABASE - Let Mongoose handle the schema validation
     const updatedInquiry = await Inquiry.findByIdAndUpdate(
       id,
-      { $set: updateData },
-      { new: true, runValidators: false }
+      updateData,
+      { 
+        new: true, 
+        runValidators: true // Enable validators to ensure schema compliance
+      }
     );
- 
-    // 👇 ACTIVITY LOG (Keep existing logic)
+
+    if (!updatedInquiry) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Failed to update inquiry' 
+      });
+    }
+
+    console.log("✅ INQUIRY UPDATED SUCCESSFULLY");
+    console.log("📦 Saved passengers:", updatedInquiry.passengers);
+
+    // Activity Log
     try {
         const { userEmail, adminId } = req.body;
         if (userEmail) {
+            const getModuleFromInquiryType = (inquiryType, serviceName) => {
+                const typeMapping = {
+                    'FLIGHT_BOOKING': 'Flight Booking',
+                    'VISA': 'Visa Application',
+                    'PASSPORT': 'Passport',
+                    'PSA': 'PSA Documents',
+                    'CENOMAR': 'CENOMAR',
+                    'GENERAL': 'General Inquiries'
+                };
+                return typeMapping[inquiryType] || 'General Inquiries';
+            };
+            
+            const ActivityLog = require('../models/ActivityLog');
             const specificModule = getModuleFromInquiryType(
                 updatedInquiry.inquiryType || 'GENERAL',
                 updatedInquiry.serviceName
             );
+            
             await ActivityLog.create({
                 action: 'UPDATE',
                 module: specificModule,
@@ -578,6 +796,7 @@ const updateInquiry = async (req, res) => {
                     method: 'PUT',
                     changes: changes,
                     inquiryType: updatedInquiry.inquiryType,
+                    passengersCount: updatedInquiry.passengers.length,
                     docCount: updatedInquiry.deliveredDocuments.length
                 }
             });
@@ -585,11 +804,15 @@ const updateInquiry = async (req, res) => {
     } catch (logError) {
         console.error('⚠️ Failed to save activity log:', logError.message);
     }
- 
+
     res.json({ success: true, data: updatedInquiry });
   } catch (error) {
-    console.error('Update Error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('❌ UPDATE ERROR:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Server error updating inquiry'
+    });
   }
 };
  
