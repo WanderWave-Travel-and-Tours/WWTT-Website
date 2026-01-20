@@ -64,7 +64,7 @@ const testimonialRoutes = require('./routes/testimonialRoute');
 const promoRoutes = require('./routes/promoRoute');
 const adminRoutes = require('./routes/adminRoute');
 const posterRoutes = require('./routes/posters'); 
-const blogRoutes = require('./routes/blogs'); 
+const blogRoutes = require('./routes/blogs');
 const paymentRoute = require('./routes/paymentRoute');
 const bookingRoute = require('./routes/bookingRoute');
 const authRoute = require('./routes/authRoute');
@@ -84,6 +84,7 @@ const activityLogRoute = require('./routes/activityLogRoute'); // ✅ SINGLE IMP
 const draftsRoutes = require('./routes/drafts');
 const activityLogsRoutes = require('./routes/activityLogRoute');
 const favoriteRoute = require('./routes/favoriteRoute');
+const feedbackRoutes = require('./routes/feedbackRoutes'); // ✅ NEW: FEEDBACK ROUTES
 
 // ===================================================================
 // ENSURE UPLOAD DIRECTORY EXISTS
@@ -267,6 +268,7 @@ app.use('/api/activity-logs', activityLogRoute); // ✅ SINGLE REGISTRATION
 app.use('/api/drafts', require('./routes/drafts'));
 app.use('/api/activity-logs', activityLogRoute); // ✅ Already there!
 app.use('/api/favorites', favoriteRoute);
+app.use('/api/feedback', feedbackRoutes); // ✅ NEW: FEEDBACK ROUTES REGISTERED
 
 
 // ===================================================================
@@ -584,4 +586,5 @@ if (fs.existsSync(frontendBuildPath)) {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Feedback API available at: http://localhost:${PORT}/api/feedback`);
 });
