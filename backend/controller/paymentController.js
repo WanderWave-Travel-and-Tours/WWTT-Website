@@ -7,7 +7,7 @@ const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API = 'https://api.paymongo.com/v1';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://wanderwaveph.com';
 
-// ⭐ FIX: ADD COLON BEFORE BASE64 ENCODING
+// ✅ FIX: ADD COLON BEFORE BASE64 ENCODING
 const authHeader = Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64');
 
 const createInquiryCheckoutSession = async (req, res) => {
@@ -59,7 +59,7 @@ const createInquiryCheckoutSession = async (req, res) => {
                 quantity: 1
               }
             ],
-            payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay'],
+            payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'],
             reference_number: inquiry._id.toString(),
             send_email_receipt: true,
             show_description: true,
@@ -111,14 +111,15 @@ const createInquiryCheckoutSession = async (req, res) => {
   }
 };
 
-const createBookingPaymentLink = async (req, res) => {
+// ✅ UPDATED: Changed from Payment Link to Checkout Session
+const createBookingPaymentIntent = async (req, res) => {
   try {
     console.log('=======================================');
-    console.log('PAYMENT CONTROLLER RECEIVED REQUEST');
+    console.log('BOOKING PAYMENT CHECKOUT SESSION START');
     console.log('=======================================');
     console.log('Request Body:', req.body);
 
-    const { bookingId, paymentType, paymentAmount } = req.body;
+    const { bookingId, paymentType, paymentAmount, method } = req.body;
 
     if (!bookingId) {
       console.error('Missing bookingId in request body');
@@ -131,6 +132,7 @@ const createBookingPaymentLink = async (req, res) => {
     console.log('BookingId received:', bookingId);
     console.log('Payment Type:', paymentType || 'full');
     console.log('Payment Amount:', paymentAmount);
+    console.log('Payment Method:', method);
 
     console.log('Searching for booking in database...');
     const booking = await Booking.findById(bookingId);
@@ -151,15 +153,6 @@ const createBookingPaymentLink = async (req, res) => {
       status: booking.status
     });
 
-    if (booking.paymentLinkId) {
-      console.warn('Payment link already exists');
-      return res.status(400).json({
-        success: false,
-        message: 'Payment link already exists for this booking',
-        existingLinkId: booking.paymentLinkId
-      });
-    }
-
     const amountToPay = paymentAmount || booking.totalAmount;
     const amountInCentavos = Math.round(amountToPay * 100);
     
@@ -176,16 +169,44 @@ const createBookingPaymentLink = async (req, res) => {
       description: paymentDescription
     });
 
-    console.log('Calling PayMongo API...');
+    // ✅ Determine which payment methods to enable based on user selection
+    let paymentMethods = ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'];
+    
+    // If user selected specific method, prioritize it (optional - you can keep all methods available)
+    if (method) {
+      console.log('User selected payment method:', method);
+    }
 
-    const paymentLinkResponse = await axios.post(
-      `${PAYMONGO_API}/links`,
-      {
+    console.log('Creating Checkout Session...');
+
+    const checkoutOptions = {
+      method: 'POST',
+      url: `${PAYMONGO_API}/checkout_sessions`,
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+        authorization: `Basic ${authHeader}`
+      },
+      data: {
         data: {
           attributes: {
-            amount: amountInCentavos,
-            description: `${booking.packageName} - ${paymentDescription} - ${booking.fullName}`,
-            remarks: `${paymentDescription} for ${booking.fullName}`,
+            line_items: [
+              {
+                currency: 'PHP',
+                amount: amountInCentavos,
+                description: `${booking.packageName} - ${paymentDescription}`,
+                name: booking.packageName,
+                quantity: 1
+              }
+            ],
+            payment_method_types: paymentMethods,
+            reference_number: bookingId,
+            send_email_receipt: true,
+            show_description: true,
+            description: `${paymentDescription} for ${booking.fullName}`,
+            // ✅ IMPORTANT: Use booking_id (with underscore) to match existing success page
+            success_url: `${FRONTEND_URL}/payment-success?booking_id=${bookingId}&paymentType=${paymentType || 'full'}`,
+            cancel_url: `${FRONTEND_URL}/packages`,
             metadata: {
               booking_id: bookingId,
               customer_name: booking.fullName,
@@ -199,47 +220,49 @@ const createBookingPaymentLink = async (req, res) => {
             }
           }
         }
-      },
-      {
-        headers: {
-          'Authorization': `Basic ${authHeader}`,
-          'Content-Type': 'application/json'
-        }
       }
-    );
+    };
 
-    const paymentLink = paymentLinkResponse.data.data;
+    const response = await axios.request(checkoutOptions);
+    const checkoutSession = response.data.data;
     
-    console.log('PayMongo Response:', {
-      linkId: paymentLink.id,
-      checkoutUrl: paymentLink.attributes.checkout_url,
-      referenceNumber: paymentLink.attributes.reference_number
+    console.log('PayMongo Checkout Session Created:', {
+      sessionId: checkoutSession.id,
+      checkoutUrl: checkoutSession.attributes.checkout_url,
+      referenceNumber: checkoutSession.attributes.reference_number
     });
 
-    booking.paymentLinkId = paymentLink.id;
-    booking.initialPaymentLinkId = paymentLink.id; 
-    booking.referenceNumber = paymentLink.attributes.reference_number;
+    // ✅ Update booking with checkout session details
+    booking.checkoutSessionId = checkoutSession.id;
+    booking.referenceNumber = checkoutSession.attributes.reference_number;
+    booking.paymentType = paymentType || 'full';
+    booking.initialPaymentAmount = amountToPay;
+    
+    if (isPartial) {
+      booking.remainingBalance = booking.totalAmount - amountToPay;
+    }
+    
     await booking.save();
 
-    console.log('Booking updated with payment details');
+    console.log('Booking updated with checkout session details');
     console.log('=======================================');
-    console.log('PAYMENT LINK CREATED SUCCESSFULLY');
+    console.log('CHECKOUT SESSION CREATED SUCCESSFULLY');
     console.log('=======================================');
 
     return res.json({
       success: true,
-      checkoutUrl: paymentLink.attributes.checkout_url,
-      paymentLinkId: paymentLink.id,
-      referenceNumber: paymentLink.attributes.reference_number,
+      checkoutUrl: checkoutSession.attributes.checkout_url,
+      checkoutSessionId: checkoutSession.id,
+      referenceNumber: checkoutSession.attributes.reference_number,
       bookingId: bookingId,
       paymentType: paymentType || 'full',
       paymentAmount: amountToPay,
-      message: 'Payment link created successfully'
+      message: 'Checkout session created successfully'
     });
 
   } catch (error) {
     console.error('=======================================');
-    console.error('PAYMENT CONTROLLER ERROR');
+    console.error('BOOKING CHECKOUT SESSION ERROR');
     console.error('=======================================');
     console.error('Error Type:', error.name);
     console.error('Error Message:', error.message);
@@ -247,17 +270,18 @@ const createBookingPaymentLink = async (req, res) => {
     if (error.response) {
       console.error('PayMongo API Error:');
       console.error('Status:', error.response.status);
-      console.error('Data:', error.response.data);
+      console.error('Data:', JSON.stringify(error.response.data, null, 2));
     }
     
     res.status(500).json({
       success: false,
-      message: 'Failed to create payment link',
+      message: 'Failed to create checkout session',
       error: error.response?.data?.errors || error.message
     });
   }
 };
 
+// ✅ Keep Payment Link option for balance payments
 const createBalancePaymentLink = async (req, res) => {
   try {
     console.log('=======================================');
@@ -289,7 +313,7 @@ const createBalancePaymentLink = async (req, res) => {
       });
     }
 
-    if (booking.isFullyPaid()) {
+    if (booking.isFullyPaid && booking.isFullyPaid()) {
       return res.status(400).json({
         success: false,
         message: 'Booking is already fully paid'
@@ -381,6 +405,6 @@ const createBalancePaymentLink = async (req, res) => {
 
 module.exports = { 
     createInquiryCheckoutSession, 
-    createBookingPaymentLink,
+    createBookingPaymentIntent,  // ✅ Updated export name
     createBalancePaymentLink 
 };
