@@ -5,7 +5,7 @@ const activityLogSchema = new mongoose.Schema({
     action: {
         type: String,
         required: true,
-        enum: ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'LOGIN', 'LOGOUT', 'RESTORE', 'VIEW', 'EXPORT', 'IMPORT', 'UPLOAD', 'FEATURE', 'UNFEATURE']
+        enum: ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'LOGIN', 'LOGOUT', 'RESTORE', 'VIEW', 'EXPORT', 'IMPORT', 'UPLOAD', 'FEATURE', 'UNFEATURE', 'SUCCESS']
     },
 
     module: {
@@ -77,7 +77,7 @@ const activityLogSchema = new mongoose.Schema({
 
     severity: {
         type: String,
-        enum: ['INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        enum: ['INFO', 'WARNING', 'ERROR', 'CRITICAL', 'SUCCESS'],
         default: 'INFO'
     },
 
