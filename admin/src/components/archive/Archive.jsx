@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Users, Search, Eye, RotateCcw, Archive, ChevronLeft, ChevronRight, 
-  Wrench, List, ArrowUpDown, HelpCircle, X, DollarSign
+  Wrench, List, ArrowUpDown, HelpCircle, X, DollarSign, MessageSquare
 } from 'lucide-react';
 import './Archive.css';
 import Sidebar from '../sidebar/sidebar';
@@ -27,6 +27,7 @@ import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageServi
 import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService';
 import { fetchArchivedHotels, restoreHotel } from './archiveFunctions/hotelService';
 import { fetchArchivedSellerRates, restoreSellerRate } from './archiveFunctions/sellerService';
+import { fetchArchivedFeedbacks, restoreFeedback } from './archiveFunctions/feedbackService'; // ✅ NEW IMPORT
 
 // --- Custom Confirmation Modal ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -77,7 +78,8 @@ const ARCHIVE_IMAGES = {
     ARCHIVED_LIST: 'https://picsum.photos/seed/books/800/600',    
     ARCHIVED_SERVICES: 'https://picsum.photos/seed/wrench/800/600',
     ARCHIVED_USERS: 'https://picsum.photos/seed/people/800/600',
-    ARCHIVED_SELLER: 'https://picsum.photos/seed/money/800/600', // Image for Seller Rates
+    ARCHIVED_SELLER: 'https://picsum.photos/seed/money/800/600',
+    ARCHIVED_FEEDBACK: 'https://picsum.photos/seed/feedback/800/600', // ✅ NEW IMAGE
     ITEMS_RESTORED: 'https://picsum.photos/seed/folder/800/600' 
 };
 
@@ -88,7 +90,8 @@ const ARCHIVE_TYPES = [
     'Archived List', 
     'Archived Services',
     'Archived Users',
-    'Seller Rates', // ✅ Added Seller Rates here
+    'Seller Rates',
+    'Archived Feedback' // ✅ NEW TYPE
 ];
 
 const SERVICE_SUBTYPES_LIST = [ 
@@ -126,6 +129,14 @@ const USER_ARCHIVE_ITEMS = [
     'Admin',     
 ];
 
+// ✅ NEW: Feedback Archive Items
+const FEEDBACK_ARCHIVE_ITEMS = [
+    'ALL Feedback',
+    'Bug Report',
+    'Suggestion',
+    'General'
+];
+
 const ArchiveComponent = () => {
   const toast = useToast(); 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -136,6 +147,7 @@ const ArchiveComponent = () => {
   const [filterSubtype, setFilterSubtype] = useState('ALL Services'); 
   const [filterListSubtype, setFilterListSubtype] = useState('ALL List Items');
   const [filterUserSubtype, setFilterUserSubtype] = useState('ALL Users');
+  const [filterFeedbackSubtype, setFilterFeedbackSubtype] = useState('ALL Feedback'); // ✅ NEW STATE
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -206,13 +218,14 @@ const ArchiveComponent = () => {
         fetchArchivedImages(), 
         fetchArchivedUsers(),
         fetchArchivedHotels(),
-        fetchArchivedSellerRates() 
+        fetchArchivedSellerRates(),
+        fetchArchivedFeedbacks() // ✅ NEW FETCH
       ]);
       
       console.log('📊 All fetch results:', results);
       
       results.forEach((result, index) => {
-        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels'];
+        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'Seller Rates', 'Feedbacks']; // ✅ UPDATED
         if (result.status === 'fulfilled') {
           console.log(`✅ ${names[index]}: ${result.value.length} items`);
           if (names[index] === 'Packages' && result.value.length > 0) {
@@ -268,6 +281,14 @@ const ArchiveComponent = () => {
             displayType = 'Seller Rates';
         }
 
+        // ✅ FEEDBACK TYPE MAPPING
+        if (item.type === 'Feedback') {
+          if (item.category === 'bug') displayType = 'Bug Report';
+          else if (item.category === 'suggestion') displayType = 'Suggestion';
+          else if (item.category === 'general') displayType = 'General';
+          else displayType = 'Feedback';
+        }
+
         if (item.inquiryType) {
            switch(item.inquiryType) {
              case 'VISA': displayType = 'VISA Processing'; break;
@@ -302,6 +323,8 @@ const ArchiveComponent = () => {
         return formattedItem;
       });
 
+      console.log('✅ Final formatted items:', formatted.length);
+      
       setArchiveItems(formatted);
     } catch (err) {
       console.error('❌ Archive Fetch error:', err);
@@ -346,6 +369,14 @@ const ArchiveComponent = () => {
     } else if (filterType === 'Seller Rates') {
         // ✅ Show only Seller Rate items when "Seller Rates" is selected
         filtered = filtered.filter(item => item.type === 'Seller Rates');
+    } 
+    // ✅ NEW: Feedback Filter
+    else if (filterType === 'Archived Feedback') {
+        const feedbackSubtypeNames = ['Bug Report', 'Suggestion', 'General', 'Feedback'];
+        filtered = filtered.filter(item => feedbackSubtypeNames.includes(item.type));
+        if (filterFeedbackSubtype !== 'ALL Feedback') {
+          filtered = filtered.filter(item => item.type === filterFeedbackSubtype);
+        }
     }
 
     if (lowerSearchTerm) {
@@ -365,7 +396,7 @@ const ArchiveComponent = () => {
     
     setFilteredArchiveItems(sorted);
     setCurrentPage(1); 
-  }, [searchTerm, filterType, filterSubtype, filterListSubtype, filterUserSubtype, archiveItems, sortDirection]);
+  }, [searchTerm, filterType, filterSubtype, filterListSubtype, filterUserSubtype, filterFeedbackSubtype, archiveItems, sortDirection]); // ✅ ADDED filterFeedbackSubtype
 
   const performRestore = async (item) => {
     setActionLoading(true);
@@ -398,9 +429,13 @@ const ArchiveComponent = () => {
       } else if (item.type === 'Hotel') {
         restored = await restoreHotel(id);
       } else if (item.type === 'Seller Rates' || item.type === 'Manage Services') {
-        // ✅ Support both type names for restoration
         restored = await restoreSellerRate(id);
-      } else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
+      } 
+      // ✅ NEW: Feedback Restore Logic
+      else if (['Bug Report', 'Suggestion', 'General', 'Feedback'].includes(item.type)) {
+        restored = await restoreFeedback(id);
+      }
+      else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
         restored = await restoreInquiry(id);
       }
       
@@ -448,27 +483,42 @@ const ArchiveComponent = () => {
           let failCount = 0;
           
           for (const item of filteredArchiveItems) {
-            const id = item.mongoId;
-            let restored = false;
-            
-            if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(id);
-            else if (item.type === 'Package') restored = await restorePackage(id);
-            else if (item.type === 'Booking') restored = await restoreBooking(id);
-            else if (item.type === 'Tour') restored = await restoreTour(id);
-            else if (item.type === 'Testimonial') restored = await restoreTestimonial(id);
-            else if (item.type === 'Promo') restored = await restorePromo(id);
-            else if (item.type === 'Poster') restored = await restorePoster(id);
-            else if (item.type === 'Blog') restored = await restoreBlog(id);
-            else if (item.type === 'Image Gallery') restored = await restoreImage(id);
-            else if (item.type === 'Hotel') restored = await restoreHotel(id);
-            else if (item.type === 'Seller Rates' || item.type === 'Manage Services') restored = await restoreSellerRate(id);
-            else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(id);
-            
-            if (restored) successCount++;
+            try {
+              const id = item.mongoId;
+              let restored = false;
+              
+              if (item.type === 'User' || item.type === 'Admin') restored = await restoreUser(id);
+              else if (item.type === 'Package') restored = await restorePackage(id);
+              else if (item.type === 'Booking') restored = await restoreBooking(id);
+              else if (item.type === 'Tour') restored = await restoreTour(id);
+              else if (item.type === 'Testimonial') restored = await restoreTestimonial(id);
+              else if (item.type === 'Promo') restored = await restorePromo(id);
+              else if (item.type === 'Poster') restored = await restorePoster(id);
+              else if (item.type === 'Blog') restored = await restoreBlog(id);
+              else if (item.type === 'Image Gallery') restored = await restoreImage(id);
+              else if (item.type === 'Hotel') restored = await restoreHotel(id);
+              else if (item.type === 'Seller Rates' || item.type === 'Manage Services') restored = await restoreSellerRate(id);
+              // ✅ NEW: Bulk Restore Feedback
+              else if (['Bug Report', 'Suggestion', 'General', 'Feedback'].includes(item.type)) restored = await restoreFeedback(id);
+              else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(id);
+              
+              if (restored) successCount++;
+              else failCount++;
+              
+            } catch (err) {
+              console.error('Error restoring item:', item.itemName, err);
+              failCount++;
+            }
           }
           
           await fetchArchiveItems();
-          toast.success(`Successfully restored ${successCount} item(s).`);
+          
+          if (successCount > 0) {
+            toast.success(`Successfully restored ${successCount} item(s).`);
+          }
+          if (failCount > 0) {
+            toast.error(`Failed to restore ${failCount} item(s).`);
+          }
         } catch (error) {
           console.error('Bulk restore error:', error);
           toast.error('An error occurred during bulk restore.');
@@ -491,16 +541,21 @@ const ArchiveComponent = () => {
     const serviceSubtypeNames = SERVICE_SUBTYPES_LIST.slice(1);
     const listSubtypeNames = LIST_ARCHIVE_ITEMS.slice(1);
     const userTypes = ['User', 'Admin'];
+    const feedbackTypes = ['Bug Report', 'Suggestion', 'General', 'Feedback']; // ✅ NEW
     
     const listCount = archiveItems.filter(i => listSubtypeNames.includes(i.type)).length;
     const serviceCount = archiveItems.filter(i => serviceSubtypeNames.includes(i.type)).length;
     const userCount = archiveItems.filter(i => userTypes.includes(i.type)).length;
     const sellerCount = archiveItems.filter(i => i.type === 'Seller Rates').length;
+    const feedbackCount = archiveItems.filter(i => feedbackTypes.includes(i.type)).length; // ✅ NEW COUNT
+    
+    console.log('📊 Stats - Total:', archiveItems.length, 'List:', listCount, 'Services:', serviceCount, 'Users:', userCount, 'Seller:', sellerCount, 'Feedback:', feedbackCount);
     
     return [
       { label: "Total Archived", value: archiveItems.length, icon: <Archive size={24} />, image: ARCHIVE_IMAGES.TOTAL_ITEMS },
       { label: "List Items", value: listCount, icon: <List size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_LIST },
       { label: "Seller Rates", value: sellerCount, icon: <DollarSign size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_SELLER },
+      { label: "Archived Feedback", value: feedbackCount, icon: <MessageSquare size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_FEEDBACK }, // ✅ NEW STAT
       { label: "Archived Users", value: userCount, icon: <Users size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_USERS },
     ];
   }, [archiveItems]);
@@ -528,8 +583,10 @@ const ArchiveComponent = () => {
             filterSubtype={filterSubtype} setFilterSubtype={setFilterSubtype}
             filterListSubtype={filterListSubtype} setFilterListSubtype={setFilterListSubtype}
             filterUserSubtype={filterUserSubtype} setFilterUserSubtype={setFilterUserSubtype}
+            filterFeedbackSubtype={filterFeedbackSubtype} setFilterFeedbackSubtype={setFilterFeedbackSubtype} // ✅ NEW PROP
             typeOptions={ARCHIVE_TYPES} serviceSubtypes={SERVICE_SUBTYPES_LIST}
             listSubtypes={LIST_ARCHIVE_ITEMS} userSubtypes={USER_ARCHIVE_ITEMS}
+            feedbackSubtypes={FEEDBACK_ARCHIVE_ITEMS} // ✅ NEW PROP
           />
 
           <div className="arc-table-container">

@@ -1,8 +1,3 @@
-// ============================================
-// MONGOOSE MODEL - Feedback.js
-// UPDATED: Added isArchive field for Archive Functionality
-// ============================================
-
 const mongoose = require('mongoose');
 
 const feedbackSchema = new mongoose.Schema({
