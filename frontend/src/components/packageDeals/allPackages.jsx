@@ -1,4 +1,4 @@
-// src/components/PackageDeals/allPackages.jsx - COMPLETE UPDATED CODE
+// src/components/PackageDeals/allPackages.jsx - COMPLETE CODE
 
 import { useState, useEffect, useRef } from 'react';
 import PackageCard from './packageCard';
@@ -34,7 +34,8 @@ function AllPackages({
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  
+  const itemsPerPage = 6; 
 
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const hasTriggeredRef = useRef(false);
@@ -480,15 +481,11 @@ function AllPackages({
                 <ChevronLeft size={20} />
               </button>
 
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i + 1}
-                  className={`pagination-btn ${currentPage === i + 1 ? 'active' : ''}`}
-                  onClick={() => paginate(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              <div className="pagination-info-wrapper">
+                <span className="page-label">Page</span>
+                <span className="current-page-box">{currentPage}</span>
+                <span className="total-pages-label">of {totalPages}</span>
+              </div>
 
               <button
                 className="pagination-btn"

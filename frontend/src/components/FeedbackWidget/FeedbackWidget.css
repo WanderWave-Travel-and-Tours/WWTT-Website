@@ -825,6 +825,6 @@ form {
 /* Responsive for Success Modal */
 @media (max-width: 640px) {
   .success-modal-content {
-    max-width: 90%; /* Slightly smaller on mobile */
+    max-width: 90%; 
   }
 }

@@ -9,7 +9,7 @@ import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 import { useToast } from "../toast/ToastManager"; 
 
-// 🔥 CUSTOM CONFIRM MODAL COMPONENT (Reference from EditVisa)
+// 🔥 CUSTOM CONFIRM MODAL COMPONENT
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -56,7 +56,7 @@ const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type 
 const EditHotel = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const toast = useToast(); // ✅ Initialize Toast
+    const toast = useToast(); 
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -121,7 +121,7 @@ const EditHotel = () => {
         roomService: false, laundry: false, bar: false
     });
 
-    // 🔥 FIXED: Image States - store original path instead of full URL
+    // Image States
     const [mainImageFile, setMainImageFile] = useState(null);
     const [mainImagePreview, setMainImagePreview] = useState("");
     const [existingGallery, setExistingGallery] = useState([]); 
@@ -151,6 +151,8 @@ const EditHotel = () => {
 
     const [draftPayload, setDraftPayload] = useState(null);
 
+    // 🔥 FIXED: Added existingGallery and deletedImages to dependencies and payload
+    // This ensures that when you delete an image, the draft updates immediately.
     useEffect(() => {
         const updateDraft = async () => {
             if (isLoading) {
@@ -164,7 +166,8 @@ const EditHotel = () => {
                 !formData.city && 
                 !formData.price && 
                 !formData.maxCapacity && 
-                !mainImageFile;
+                !mainImageFile &&
+                deletedImages.length === 0; // Considered active if images are deleted
 
             if (isFormEmpty) {
                 setDraftPayload(null);
@@ -190,7 +193,10 @@ const EditHotel = () => {
                 amenities,
                 mainImage: mainImageBase64,
                 mainImageMeta: mainImageMeta,
-                originalId: id 
+                originalId: id,
+                // 🔥 SAVING GALLERY STATE TO DRAFT
+                existingGallery: existingGallery,
+                deletedImages: deletedImages
             });
         };
 
@@ -199,7 +205,7 @@ const EditHotel = () => {
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [formData, amenities, mainImageFile, isLoading, id]);
+    }, [formData, amenities, mainImageFile, isLoading, id, existingGallery, deletedImages]); 
 
     const restoreDraftData = async (data) => {
         if (!data) return;
@@ -221,6 +227,10 @@ const EditHotel = () => {
         });
 
         if (data.amenities) setAmenities(data.amenities);
+
+        // 🔥 RESTORING GALLERY STATE FROM DRAFT
+        if (data.existingGallery) setExistingGallery(data.existingGallery);
+        if (data.deletedImages) setDeletedImages(data.deletedImages);
 
         if (data.mainImage && data.mainImageMeta) {
             try {
@@ -258,13 +268,13 @@ const EditHotel = () => {
     const handleRestoreDraft = () => {
         restoreDraft();
         setShowRestoreModal(false);
-        toast.info("Draft restored successfully.");
+        toast.info("Draft restored. Deleted images are gone.");
     };
 
     const handleDiscardDraft = async () => {
         await discardDraft();
         setShowRestoreModal(false);
-        toast.info("Draft discarded.");
+        toast.info("Draft discarded. Showing server data.");
     };
 
     // =========================================================
@@ -306,14 +316,16 @@ const EditHotel = () => {
                 if (data.amenities) setAmenities(prev => ({ ...prev, ...data.amenities }));
                 if (data.mainImage) setMainImagePreview(getImageUrl(data.mainImage));
 
-                // 🔥 FIXED: Store both original path and display URL
+                // 🔥 Only set existingGallery IF we are not about to restore a draft that might overwrite it
+                // Ideally, this runs, shows data, then the Restore Modal appears. 
+                // If user clicks Restore, the restored data overwrites this.
                 if (data.images && Array.isArray(data.images)) {
                     const formattedGallery = data.images.map(img => {
                         const originalPath = typeof img === 'string' ? img : img.url;
                         return {
                             id: img._id || img,
                             url: getImageUrl(originalPath),
-                            originalPath: originalPath // Store original path
+                            originalPath: originalPath 
                         };
                     });
                     setExistingGallery(formattedGallery);
@@ -329,7 +341,8 @@ const EditHotel = () => {
         };
 
         if (id) loadData();
-    }, [id, toast]);
+        // Removed toast to prevent loop
+    }, [id]); 
 
     // --- HANDLERS ---
     const handleInputChange = (e) => {
@@ -363,15 +376,23 @@ const EditHotel = () => {
         toast.info(`Added ${files.length} photos to gallery.`);
     };
 
-    // 🔥 FIXED: Store original path in deletedImages
+    // 🔥 FIXED: Logic to remove image and trigger draft update
     const removeExistingImage = (imgId) => {
         const imageToDelete = existingGallery.find(img => img.id === imgId);
+        
         if (imageToDelete) {
-            setDeletedImages(prev => [...prev, imageToDelete.originalPath]);
-            console.log('Marking for deletion:', imageToDelete.originalPath); // Debug log
+            // 1. Add to deleted list immediately
+            setDeletedImages(prev => {
+                const updated = [...prev, imageToDelete.originalPath];
+                console.log('Marking for deletion (Updated List):', updated);
+                return updated;
+            });
+
+            // 2. Remove from visual gallery immediately
+            setExistingGallery(prev => prev.filter(img => img.id !== imgId));
+
+            toast.warning("Photo marked for deletion (Saved to Draft).");
         }
-        setExistingGallery(prev => prev.filter(img => img.id !== imgId));
-        toast.warning("Photo marked for deletion.");
     };
 
     const removeNewImage = (tempId) => {
@@ -389,7 +410,6 @@ const EditHotel = () => {
         );
     };
 
-    // 🔥 FIXED: Send correct data format to backend
     const performSubmit = async () => {
         setSubmitting(true);
         try {
@@ -400,12 +420,12 @@ const EditHotel = () => {
             if (mainImageFile) formDataToSend.append("mainImage", mainImageFile);
             newGalleryFiles.forEach(item => formDataToSend.append("galleryImages", item.file));
             
-            // 🔥 FIXED: Send original paths for both deleted and existing images
-            console.log('Deleted images:', deletedImages); // Debug log
+            // Send original paths for both deleted and existing images
+            console.log('Final Deleted images to send:', deletedImages); 
             formDataToSend.append("deletedImages", JSON.stringify(deletedImages));
             
             const remainingImages = existingGallery.map(img => img.originalPath);
-            console.log('Remaining images:', remainingImages); // Debug log
+            console.log('Final Remaining images to send:', remainingImages); 
             formDataToSend.append("existingImages", JSON.stringify(remainingImages));
 
             const response = await fetch(`${API_BASE_URL}/api/hotels/update/${id}`, {
@@ -505,6 +525,7 @@ const EditHotel = () => {
                                     <input type="file" multiple accept="image/*" onChange={handleGalleryUpload} hidden />
                                     <Plus size={24} /><span>Add Photos</span>
                                 </label>
+                                {/* Display Existing Gallery (Filtered by state) */}
                                 {existingGallery.map((img, idx) => (
                                     <div key={img.id || idx} className="eho-gallery-item">
                                         <img src={img.url} alt="Gallery" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150?text=Error"; }} />
@@ -512,6 +533,7 @@ const EditHotel = () => {
                                         <span className="eho-badge-existing">Saved</span>
                                     </div>
                                 ))}
+                                {/* Display New Uploads */}
                                 {newGalleryFiles.map((item) => (
                                     <div key={item.id} className="eho-gallery-item eho-new-upload">
                                         <img src={item.preview} alt="New Upload" />
