@@ -3,7 +3,6 @@
 .all-packages-section {
   margin-bottom: 48px;
   position: relative;
-  width: 100%;
 }
 
 .packages-main-title {
@@ -16,10 +15,8 @@
   letter-spacing: 1px;
 }
 
-/* --- MAIN LAYOUT --- */
 .all-packages-layout {
   display: grid;
-  /* Desktop Default: Sidebar (280px) + Grid (Auto) */
   grid-template-columns: 280px 1fr;
   gap: 32px;
   align-items: start; 
@@ -27,7 +24,7 @@
   margin-top: 24px;
 }
 
-/* --- SIDEBAR FILTER STYLES --- */
+/* Side Filter Styles (Unchanged mostly, just cleaner) */
 .side-filter {
   background: var(--white);
   border-radius: 16px;
@@ -39,7 +36,6 @@
   margin-top: 0;
   z-index: 20;
   transition: all 0.3s ease;
-  width: 100%; /* Ensures it fills the grid cell */
 }
 
 .side-filter-header {
@@ -302,14 +298,15 @@
   margin-left: auto; 
 }
 
-/* --- GRID SYSTEM: THE FIX FOR TABLET/DESKTOP --- */
+/* --- GRID SYSTEM: THE FIX FOR UNIFORMITY --- */
 .packages-grid {
   display: grid;
-  /* Default Desktop: 3 Columns */
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 24px; 
+  /* Auto-fill ensures cards fill the space nicely */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px; /* Consistent gap */
   width: 100%;
   margin-top: 20px;
+  /* Ensure items stretch to full height of the row */
   align-items: stretch; 
 }
 
@@ -323,52 +320,23 @@
   border: 1px dashed var(--gray-300);
 }
 
-/* --- PAGINATION (UPDATED ARROW SIZE) --- */
 .pagination-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px; 
+  gap: 12px; 
   margin-top: 50px;
   padding-top: 30px;
   border-top: 1px solid rgba(0,0,0,0.06); 
   width: 100%;
 }
 
-.pagination-info-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #ffffff;
-  padding: 6px 12px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-}
-
-.page-label { color: #64748b; font-size: 0.9rem; font-weight: 600; }
-.current-page-box {
-  background: #f1f5f9;
-  color: #0f172a;
-  font-weight: 800;
-  font-size: 1rem;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-}
-.total-pages-label { color: #64748b; font-size: 0.9rem; font-weight: 600; }
-
-/* Larger Buttons */
 .pagination-btn {
-  width: 52px; /* Increased from 46px */
-  height: 52px;
-  border-radius: 14px; 
+  width: 46px;
+  height: 46px;
+  border-radius: 50%; 
   background: #ffffff;
-  border: 1px solid #e2e8f0; 
+  border: none; 
   color: #1e293b; 
   font-weight: 700;
   font-size: 1rem;
@@ -377,29 +345,33 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: #FF8C00;
+  background: #ffffff;
+  color: #FF8C00; 
+  transform: translateY(-4px); 
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.pagination-btn.active {
+  background: #FF8C00; 
   color: #ffffff; 
-  border-color: #FF8C00;
-  transform: translateY(-2px); 
-  box-shadow: 0 6px 12px rgba(255, 140, 0, 0.25);
+  transform: scale(1.1); 
+  box-shadow: 0 8px 20px rgba(255, 140, 0, 0.4); 
 }
 
 .pagination-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   box-shadow: none;
-  background: #f8fafc;
-  color: #cbd5e1; 
+  background: #f1f5f9;
+  color: #94a3b8; 
   transform: none;
-  border-color: #f1f5f9;
 }
 
-/* BIGGER ARROW ICONS */
-.pagination-btn svg { width: 32px; height: 32px; stroke-width: 2.5px; }
+.pagination-btn svg { width: 22px; height: 22px; stroke-width: 2.5px; }
 
 /* Currency Banner */
 .currency-banner {
@@ -417,33 +389,61 @@
   flex-wrap: wrap;
 }
 
-.currency-info { display: flex; align-items: flex-start; gap: 12px; flex: 1; }
+.currency-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
 .info-icon { color: #FF8C00; flex-shrink: 0; margin-top: 2px; }
 .info-text { font-size: 0.9rem; color: #334155; line-height: 1.5; }
-.currency-toggle-container { display: flex; align-items: center; gap: 12px; }
-.toggle-label { font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
-.currency-switch { display: flex; background: #e2e8f0; padding: 4px; border-radius: 8px; gap: 4px; }
-.currency-btn { padding: 6px 16px; border-radius: 6px; border: none; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s; }
-.currency-btn.active { background: #FF8C00; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+.currency-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.currency-switch {
+  display: flex;
+  background: #e2e8f0;
+  padding: 4px;
+  border-radius: 8px;
+  gap: 4px;
+}
+
+.currency-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.currency-btn.active {
+  background: #FF8C00;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 
 @media (max-width: 768px) {
   .currency-banner { flex-direction: column; align-items: flex-start; gap: 16px; }
   .currency-toggle-container { width: 100%; justify-content: space-between; }
 }
 
-/* === RESPONSIVE RULES === */
-
-/* 1. INTERMEDIATE (Small Desktop / Tablet Landscape) */
-/* Ranges roughly from 900px to 1200px */
-@media (max-width: 1200px) and (min-width: 900px) {
-  .packages-grid {
-    grid-template-columns: repeat(2, 1fr); /* Switch to 2 columns to give space */
-  }
-}
-
-/* 2. MOBILE / PORTRAIT TABLET (< 900px) */
-/* This moves filters to top and handles grid */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .section-title-wrapper {
     flex-direction: row;
     align-items: center;
@@ -456,26 +456,40 @@
   .title-left-group { width: 100%; justify-content: space-between; }
   .packages-count-badge { margin-left: 0; font-size: 0.8rem; padding: 6px 12px; }
 
-  /* Mobile Layout: Column */
-  .all-packages-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .main-content { display: contents; }
-
-  /* Ordering */
   .packages-filter-bar-container {
-    order: 1;
     width: 100%;
     margin-bottom: 5px;
     margin-top: 0 !important;
     position: relative;
   }
 
+  .packages-scope-filter-container {
+    width: 100%;
+    padding-bottom: 4px;
+    gap: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .packages-scope-filter-container::-webkit-scrollbar { display: none; }
+  .packages-scope-filter-btn { padding: 7px 14px; font-size: 0.85rem; gap: 6px; }
+  .packages-scope-filter-btn svg { width: 14px; height: 14px; }
+  .fav-count { font-size: 0.8rem; }
+
+  .all-packages-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .main-content { display: contents; }
+  .section-title-wrapper { order: 1; width: 100%; }
+  .packages-filter-bar-container { order: 2; }
+  
   .side-filter {
-    order: 2;
+    order: 3;
     position: static;
     margin-top: 0;
     z-index: 10;
@@ -488,27 +502,13 @@
   }
 
   .packages-grid {
-    order: 3;
-    /* On tablet portrait (768px - 900px), 2 columns is still okay */
-    grid-template-columns: repeat(2, 1fr); 
+    order: 4;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* Adaptive Grid */
     margin-top: 0;
   }
 
-  .pagination-container { order: 4; margin-top: 30px; }
+  .pagination-container { order: 5; }
 
-  .packages-scope-filter-container {
-    width: 100%;
-    padding-bottom: 4px;
-    gap: 8px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    padding-left: 2px;
-    padding-right: 2px;
-  }
-  .packages-scope-filter-container::-webkit-scrollbar { display: none; }
-  .packages-scope-filter-btn { padding: 7px 14px; font-size: 0.85rem; gap: 6px; }
-
-  /* Mobile Toggle Button */
   .mobile-filter-toggle {
     display: flex;
     align-items: center;
@@ -529,6 +529,7 @@
   }
   
   .mobile-filter-toggle:active { transform: scale(0.98); }
+
   .mobile-filter-toggle.active {
     background-color: var(--primary-navy);
     color: var(--white);
@@ -555,13 +556,11 @@
   .side-filter-header { display: none; }
 }
 
-@media (max-width: 580px) {
-  /* On small mobile, drop to 1 column */
-  .packages-grid { 
-    grid-template-columns: 1fr; 
-  }
-  .pagination-container { gap: 10px; }
-  .pagination-info-wrapper { gap: 6px; padding: 4px 10px; }
+@media (max-width: 480px) {
+  .packages-main-title { font-size: 1.5rem; }
+  .packages-scope-filter-btn { padding: 7px 14px; font-size: 0.8rem; }
+  .packages-count-badge { font-size: 0.75rem; padding: 5px 10px; }
+  .packages-grid { grid-template-columns: 1fr; /* Full width on tiny screens */ }
 }
 
 @keyframes slideDown {

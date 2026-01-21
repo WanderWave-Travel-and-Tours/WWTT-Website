@@ -481,4 +481,4 @@ const SellerRate = () => {
   );
 };
 
-export default SellerRate;
+export default SellerRate; 
