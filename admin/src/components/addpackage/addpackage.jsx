@@ -317,23 +317,33 @@ const AddPackage = () => {
         setInclusions(updated.length ? updated : [""]);
     };
 
-    const handleInclusionPaste = useCallback((pastedText) => {
-        const lines = pastedText
-            .split(/\r?\n/)
-            .map(l => l.trim())
-            .filter(l => l);
+    // ✅ UPDATED: Smart Paste for Inclusions (Same logic as Tours)
+    const handleInclusionPaste = (index, e) => {
+        const pastedText = e.clipboardData.getData("text");
+        const lines = pastedText.split(/\r?\n/).filter((line) => line.trim());
 
-        if (lines.length > 0) {
-            setInclusions(lines);
-            toast.success(
-                `Pasted ${lines.length} inclusion(s) successfully!`,
-                "Paste Successful",
-                2000
-            );
-        } else {
-            toast.warning("No valid text detected. Please try again.", "Paste Failed");
+        if (lines.length > 1) {
+            e.preventDefault();
+            // Clean common bullet characters
+            const cleanedLines = lines.map((line) => {
+                return line.replace(/^[✓✔️☑️•\-\s]+/, "").trim();
+            });
+
+            const newInclusions = [...inclusions];
+            
+            // Update the current focused input with the first line
+            newInclusions[index] = cleanedLines[0];
+
+            // Splice the rest of the lines after the current index
+            let currentIndex = index;
+            cleanedLines.slice(1).forEach((line) => {
+                newInclusions.splice(++currentIndex, 0, line);
+            });
+
+            setInclusions(newInclusions);
+            toast.info(`${lines.length} inclusions pasted and formatted.`, "Inclusions Updated");
         }
-    }, [toast]);
+    };
 
     // --- ITINERARY ---
     const handleDayTitle = (dayIndex, value) => {
@@ -362,6 +372,33 @@ const AddPackage = () => {
         const updated = [...itinerary];
         updated[dayIndex].activities[actIndex] = value;
         setItinerary(updated);
+    };
+
+    // ✅ NEW: Smart Paste for Itinerary Activities
+    const handleActivityPaste = (dayIndex, actIndex, e) => {
+        const pastedText = e.clipboardData.getData("text");
+        const lines = pastedText.split(/\r?\n/).filter((line) => line.trim());
+
+        if (lines.length > 1) {
+            e.preventDefault();
+            const cleanedLines = lines.map((line) => {
+                return line.replace(/^[✓✔️☑️•\-\s]+/, "").trim();
+            });
+
+            const updatedItinerary = [...itinerary];
+            
+            // Update the current focused activity field with the first line
+            updatedItinerary[dayIndex].activities[actIndex] = cleanedLines[0];
+
+            // Insert the rest of the activities into this day's array
+            let currentActIndex = actIndex;
+            cleanedLines.slice(1).forEach((line) => {
+                updatedItinerary[dayIndex].activities.splice(++currentActIndex, 0, line);
+            });
+
+            setItinerary(updatedItinerary);
+            toast.info(`${lines.length} activities added to Day ${itinerary[dayIndex].day}.`, "Itinerary Updated");
+        }
     };
 
     const addDay = () => {
@@ -598,6 +635,7 @@ const AddPackage = () => {
                                     addAct={addAct}
                                     removeAct={removeAct}
                                     handleAct={handleAct}
+                                    handleActivityPaste={handleActivityPaste} 
                                     addDay={addDay}
                                     removeDay={removeDay}
                                 />

@@ -13,7 +13,7 @@ const IconRemove = () => (
     </svg>
 );
 
-const ItineraryBuilder = ({ itinerary, handleDayTitle, addAct, removeAct, handleAct, addDay, removeDay }) => {
+const ItineraryBuilder = ({ itinerary, handleDayTitle, addAct, removeAct, handleAct, handleActivityPaste, addDay, removeDay }) => {
     return (
         <section className="apkg-section">
             <div className="apkg-section-header">
@@ -59,6 +59,9 @@ const ItineraryBuilder = ({ itinerary, handleDayTitle, addAct, removeAct, handle
                                             value={act}
                                             onChange={(e) =>
                                                 handleAct(dayIdx, actIdx, e.target.value)
+                                            }
+                                            onPaste={(e) => 
+                                                handleActivityPaste ? handleActivityPaste(dayIdx, actIdx, e) : null
                                             }
                                         />
                                         {day.activities.length > 1 && (
