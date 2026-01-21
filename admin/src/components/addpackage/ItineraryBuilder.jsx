@@ -13,7 +13,16 @@ const IconRemove = () => (
     </svg>
 );
 
-const ItineraryBuilder = ({ itinerary, handleDayTitle, addAct, removeAct, handleAct, addDay, removeDay }) => {
+const ItineraryBuilder = ({ 
+    itinerary, 
+    handleDayTitle, 
+    addAct, 
+    removeAct, 
+    handleAct, 
+    handleActivityPaste, // Ito ang prop para sa Smart Paste
+    addDay, 
+    removeDay 
+}) => {
     return (
         <section className="apkg-section">
             <div className="apkg-section-header">
@@ -55,10 +64,14 @@ const ItineraryBuilder = ({ itinerary, handleDayTitle, addAct, removeAct, handle
                                     <div key={actIdx} className="apkg-activity">
                                         <input
                                             type="text"
-                                            placeholder="Add activity"
+                                            placeholder="Add activity (Paste multiple lines supported)"
                                             value={act}
                                             onChange={(e) =>
                                                 handleAct(dayIdx, actIdx, e.target.value)
+                                            }
+                                            // ✅ SMART PASTE TRIGGER
+                                            onPaste={(e) => 
+                                                handleActivityPaste ? handleActivityPaste(dayIdx, actIdx, e) : null
                                             }
                                         />
                                         {day.activities.length > 1 && (
