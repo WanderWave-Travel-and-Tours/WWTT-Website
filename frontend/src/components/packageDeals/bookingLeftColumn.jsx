@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Check, X, MapPin, Calendar, Plane, Hotel, 
@@ -21,6 +21,24 @@ const BookingLeftColumn = ({
   const [isExcludedExpanded, setIsExcludedExpanded] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
+
+  // Debug: Log the package data when component mounts
+  useEffect(() => {
+    console.log('📦 Package Data Received:', pkg);
+    console.log('📦 Full Package Object:', JSON.stringify(pkg, null, 2));
+    console.log('💰 Seller Price:', pkg?.sellerPrice);
+    console.log('💵 Price:', pkg?.price);
+    console.log('📈 Markup:', pkg?.markup);
+    
+    // Check if pkg is empty or missing critical data
+    if (!pkg || Object.keys(pkg).length === 0) {
+      console.error('⚠️ WARNING: Package data is empty or undefined!');
+    }
+    if (pkg && !pkg.sellerPrice && pkg.sellerPrice !== 0) {
+      console.error('⚠️ WARNING: sellerPrice is missing from package data!');
+      console.error('Available properties:', Object.keys(pkg));
+    }
+  }, [pkg]);
 
   const hasExclusions = pkg.excludes && pkg.excludes.length > 0;
   const itinerary = pkg.itinerary || [];
@@ -47,7 +65,40 @@ const BookingLeftColumn = ({
     if (currency === 'PHP') return phpPrice;
     return (phpPrice / exchangeRate) * 1.30;
   };
-  const displayPrice = convertPrice(pkg.price || 0);
+  
+  // ✅ Get actual price (with markup) - This is what we display as final price
+  let actualPriceNum = 0;
+  if (pkg?.price !== undefined && pkg?.price !== null) {
+    actualPriceNum = typeof pkg.price === 'number' ? pkg.price : parseFloat(pkg.price) || 0;
+  }
+  
+  // ✅ Get markup
+  let markupNum = 0;
+  if (pkg?.markup !== undefined && pkg?.markup !== null) {
+    markupNum = typeof pkg.markup === 'number' ? pkg.markup : parseFloat(pkg.markup) || 0;
+  }
+  
+  // ✅ CALCULATE seller price: price - markup = sellerPrice
+  // This is the original price before markup (crossed out)
+  let sellerPriceNum = 0;
+  
+  // First try to get it directly from pkg.sellerPrice
+  if (pkg?.sellerPrice !== undefined && pkg?.sellerPrice !== null) {
+    sellerPriceNum = typeof pkg.sellerPrice === 'number' ? pkg.sellerPrice : parseFloat(pkg.sellerPrice) || 0;
+  }
+  
+  // If sellerPrice is still 0 or undefined, calculate it from price - markup
+  if ((sellerPriceNum === 0 || isNaN(sellerPriceNum)) && actualPriceNum > 0) {
+    sellerPriceNum = actualPriceNum - markupNum;
+  }
+  
+  console.log('💲 Calculated Seller Price:', sellerPriceNum);
+  console.log('💲 Calculated Actual Price:', actualPriceNum);
+  console.log('📈 Markup:', markupNum);
+  
+  // Convert both prices to display currency
+  const displaySellerPrice = convertPrice(sellerPriceNum);
+  const displayActualPrice = convertPrice(actualPriceNum);
 
   return (
     <div className="blc-container">
@@ -62,22 +113,41 @@ const BookingLeftColumn = ({
       <div className="blc-image-wrapper">
         <img 
             src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'} 
-            alt={pkg.name} 
+            alt={pkg.name || pkg.title} 
             className="blc-main-image" 
         />
       </div>
 
       {/* HEADER INFO */}
       <div className="blc-header-section">
-        <h1 className="blc-title">{pkg.name}</h1>
+        <h1 className="blc-title">{pkg.name || pkg.title}</h1>
         
         <div className="blc-price-row">
-          <span className="blc-price">
-            {currencySymbol}{displayPrice.toLocaleString(undefined, { 
-              minimumFractionDigits: currency === 'USD' ? 2 : 0,
-              maximumFractionDigits: currency === 'USD' ? 2 : 0 
-            })}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            {/* ✅ Seller Price (ORIGINAL PRICE) - Crossed Out */}
+            {sellerPriceNum > 0 && (
+              <span style={{ 
+                fontSize: '1.2rem',
+                color: '#94a3b8',
+                textDecoration: 'line-through',
+                fontWeight: '500'
+              }}>
+                {currencySymbol}{displaySellerPrice.toLocaleString(undefined, { 
+                  minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0 
+                })}
+              </span>
+            )}
+            
+            {/* ✅ Actual Price (WITH MARKUP) - Final Price */}
+            <span className="blc-price">
+              {currencySymbol}{displayActualPrice.toLocaleString(undefined, { 
+                minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                maximumFractionDigits: currency === 'USD' ? 2 : 0 
+              })}
+            </span>
+          </div>
+          
           {isCustomized && (
             <span className="blc-customized-badge">
               <Settings size={14} /> Customized

@@ -1,4 +1,4 @@
-// src/components/PackageDeals/packageDeals.jsx - COMPLETE CODE
+// src/components/PackageDeals/packageDeals.jsx - COMPLETE CODE WITH RANDOMIZED RATINGS
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import BrowseCategory from './browseCategory';
@@ -267,7 +267,7 @@ function PackageDeals() {
   }, [hasShownModal]); 
 
   // ============================================================
-  // ⭐ NEW: LISTEN FOR FAVORITE REMOVAL FROM DROPDOWN
+  // LISTEN FOR FAVORITE REMOVAL FROM DROPDOWN
   // ============================================================
   useEffect(() => {
     const handleFavoriteRemoved = (event) => {
@@ -290,7 +290,7 @@ function PackageDeals() {
   }, []);
 
   // ============================================================
-  // ⭐ NEW: HANDLE URL PARAMETERS AND CUSTOM EVENTS
+  // HANDLE URL PARAMETERS AND CUSTOM EVENTS
   // ============================================================
   useEffect(() => {
     // Check URL parameters for filter
@@ -447,28 +447,44 @@ function PackageDeals() {
         
         if (result.status === 'ok') {
           const data = result.data;
-          const formattedPackages = data.map((pkg, index) => ({
-            id: pkg._id,
-            name: pkg.title,
-            category: pkg.category.toLowerCase(),
-            scope: pkg.category.toLowerCase() === 'local' ? 'local' : 'international',
-            location: pkg.destination,
-            duration: pkg.duration,
-            nights: pkg.duration && pkg.duration.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights', 
-            price: pkg.price,
-            originalPrice: pkg.price + Math.floor(pkg.price * 0.3),
-            discount: 30,
-            rating: 4.5,
-            reviews: 100, 
-            image: pkg.image, 
-            inclusions: pkg.inclusions || [], 
-            itinerary: pkg.itinerary || [], 
-            excludes: [], 
-            maxGuests: 4, 
-            featured: index === 0, 
-            description: pkg.title,
-            includes: pkg.inclusions || [],
-          }));
+          const formattedPackages = data.map((pkg, index) => {
+            // ⭐ RANDOMIZED RATING LOGIC (4.0 - 5.0, with fewer 5.0s)
+            // Generates a base number between 4.0 and 4.9
+            let calculatedRating = (Math.random() * 0.9 + 4.0).toFixed(1);
+            
+            // 5% Chance to get a perfect 5.0
+            if (Math.random() > 0.95) {
+              calculatedRating = "5.0";
+            }
+
+            // ⭐ RANDOMIZED REVIEWS (Between 40 and 500 reviews)
+            const randomReviews = Math.floor(Math.random() * 460) + 40;
+
+            return {
+              id: pkg._id,
+              name: pkg.title,
+              category: pkg.category.toLowerCase(),
+              scope: pkg.category.toLowerCase() === 'local' ? 'local' : 'international',
+              location: pkg.destination,
+              duration: pkg.duration,
+              nights: pkg.duration && pkg.duration.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights', 
+              price: pkg.price,
+                  sellerPrice: pkg.sellerPrice,  // ← ADD THIS
+    markup: pkg.markup,    
+              originalPrice: pkg.price + Math.floor(pkg.price * 0.3),
+              discount: 30,
+              rating: calculatedRating, // Applied random rating
+              reviews: randomReviews,   // Applied random reviews
+              image: pkg.image, 
+              inclusions: pkg.inclusions || [], 
+              itinerary: pkg.itinerary || [], 
+              excludes: [], 
+              maxGuests: 4, 
+              featured: index === 0, 
+              description: pkg.title,
+              includes: pkg.inclusions || [],
+            };
+          });
           console.log(`✅ Fetched ${formattedPackages.length} packages`);
           setPackages(formattedPackages);
         } else {
@@ -654,12 +670,12 @@ function PackageDeals() {
       });
 
       // ============================================================
-      // ⭐ NOTIFY NAVBAR TO UPDATE WISHLIST COUNT
+      // NOTIFY NAVBAR TO UPDATE WISHLIST COUNT
       // ============================================================
       window.dispatchEvent(new Event('wishlistUpdated'));
       console.log('🔔 Wishlist update event dispatched!');
       
-      // ⭐ If removed, also dispatch favoriteRemoved event
+      // If removed, also dispatch favoriteRemoved event
       if (result.action === 'removed') {
         window.dispatchEvent(new CustomEvent('favoriteRemoved', { 
           detail: { packageId } 

@@ -1,5 +1,3 @@
-/* src/components/PackageDeals/packageDeals.css */
-
 .package-deals-page {
   min-height: 100vh;
   width: 100%;
@@ -21,7 +19,7 @@
   flex-direction: column;
   align-items: center;
   padding-bottom: 60px;
-  padding-top: 20px;
+  padding-top: 20px; /* Minimal lang sa large screens */
 }
 
 .section-divider-orange {
@@ -48,35 +46,36 @@
   min-height: 800px;
 }
 
-/* --- ADJUSTED CONTAINER: REDUCED PADDING --- */
 .content-container {
   width: 100%;
-  max-width: 1480px; 
+  max-width: 1400px; 
   margin: 0 auto;
-  /* Reduced padding to 16px to prevent "compressed" feel on small screens */
-  padding: 0 16px; 
+  padding: 0 30px; 
   box-sizing: border-box;
 }
 
 @media (max-width: 1024px) {
   .content-container {
-    padding: 0 16px;
-    max-width: 100%;
+    padding: 0 20px;
   }
   
   .top-section-bg {
-    padding-top: 100px;
+    padding-top: 100px; /* Dito pa lang mag-start ng extra padding */
   }
 }
 
 @media (max-width: 768px) {
+  .content-container {
+    padding: 0 16px;
+  }
+  
   .section-divider-orange {
     height: 40px; 
   }
   
   .top-section-bg {
     padding-bottom: 40px;
-    padding-top: 120px;
+    padding-top: 120px; /* Mas malaki para sa mobile navbar */
   }
   
   .bottom-section-bg {

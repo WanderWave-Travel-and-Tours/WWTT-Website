@@ -1,11 +1,11 @@
-// backend/models/activityLog.js - COMPLETE CODE WITH FAVORITES
+// backend/models/ActivityLog.js
 const mongoose = require('mongoose');
 
 const activityLogSchema = new mongoose.Schema({
     action: {
         type: String,
         required: true,
-        enum: ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'LOGIN', 'LOGOUT', 'RESTORE', 'VIEW', 'EXPORT', 'IMPORT', 'UPLOAD', 'FEATURE', 'UNFEATURE']
+        enum: ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'LOGIN', 'LOGOUT', 'RESTORE', 'VIEW', 'EXPORT', 'IMPORT', 'UPLOAD', 'FEATURE', 'UNFEATURE', 'SUCCESS']
     },
 
     module: {
@@ -23,7 +23,7 @@ const activityLogSchema = new mongoose.Schema({
             'Services', 
             'Hotels',      
             'Tours',
-            'Favorites',        // ✅ FAVORITES MODULE
+            'Favorites',
             
             // Marketing & Content
             'Promos', 
@@ -40,6 +40,9 @@ const activityLogSchema = new mongoose.Schema({
             'CENOMAR',
             'General Inquiries',
             
+            // ✅ ADDED: Feedback Module
+            'Feedback',
+            
             // System
             'System'
         ]
@@ -54,75 +57,64 @@ const activityLogSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, 
         default: null 
     },
-
-    user: {
+    
+    // Who performed the action
+    user: { 
         type: String, 
-        required: true,
-        default: 'System'
-    },
+        required: true 
+    }, 
     
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Admin',
-        default: null
-    },
+    userId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        default: null 
+    }, 
     
-    adminId: {
-        type: mongoose.Schema.Types.ObjectId,
+    adminId: { 
+        type: mongoose.Schema.Types.ObjectId, 
         ref: 'Admin',
-        default: null
+        default: null 
     },
 
     severity: {
         type: String,
-        enum: ['INFO', 'SUCCESS', 'WARNING', 'ERROR'],
+        enum: ['INFO', 'WARNING', 'ERROR', 'CRITICAL', 'SUCCESS'],
         default: 'INFO'
     },
-    
-    description: {
-        type: String,
-        required: true
-    },
-    
-    ipAddress: { 
+
+    description: { 
         type: String, 
-        default: 'N/A' 
+        required: true 
     },
     
-    userAgent: { 
-        type: String, 
-        default: 'N/A' 
-    },
+    // Technical Details
+    ipAddress: { type: String, default: 'N/A' },
+    userAgent: { type: String, default: 'N/A' },
+    details: { type: mongoose.Schema.Types.Mixed, default: {} },
     
-    details: {
-        recordTitle: { type: String, default: null },
-        recordId: { type: String, default: null },
-        changes: { type: Object, default: null },
-        affectedRecords: { type: Number, default: 1 },
-        method: { type: String, default: 'N/A' },
-        endpoint: { type: String, default: 'N/A' },
-        
-        // Inquiry-specific fields
-        inquiryType: { type: String, default: null },
-        serviceName: { type: String, default: null },
-        clientName: { type: String, default: null },
-        clientEmail: { type: String, default: null },
-        
-        // File-related fields for EXPORT actions
-        exportFormat: { type: String, default: null },
-        fileName: { type: String, default: null },
-        fileUrl: { type: String, default: null },
-        filePath: { type: String, default: null },
-        fileSize: { type: Number, default: null },
-        sections: { type: String, default: null },
-        exportedAt: { type: String, default: null },
-        
-        // Additional fields
-        duration: { type: String, default: null },
-        statusCode: { type: Number, default: null },
-        errorMessage: { type: String, default: null },
-        errorStack: { type: String, default: null }
-    }
+    // Request Info
+    method: { type: String, default: 'N/A' },
+    endpoint: { type: String, default: 'N/A' },
+    
+    // Inquiry-specific fields
+    inquiryType: { type: String, default: null },
+    serviceName: { type: String, default: null },
+    clientName: { type: String, default: null },
+    clientEmail: { type: String, default: null },
+    
+    // File-related fields for EXPORT actions
+    exportFormat: { type: String, default: null },
+    fileName: { type: String, default: null },
+    fileUrl: { type: String, default: null },
+    filePath: { type: String, default: null },
+    fileSize: { type: Number, default: null },
+    sections: { type: String, default: null },
+    exportedAt: { type: String, default: null },
+    
+    // Additional fields
+    duration: { type: String, default: null },
+    statusCode: { type: Number, default: null },
+    errorMessage: { type: String, default: null },
+    errorStack: { type: String, default: null }
 }, {
     timestamps: true
 });
@@ -133,7 +125,5 @@ activityLogSchema.index({ action: 1 });
 activityLogSchema.index({ module: 1 });
 activityLogSchema.index({ user: 1 });
 activityLogSchema.index({ severity: 1 });
-activityLogSchema.index({ 'details.fileUrl': 1 });
-activityLogSchema.index({ 'details.inquiryType': 1 });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);
