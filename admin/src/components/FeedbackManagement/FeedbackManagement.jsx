@@ -24,7 +24,7 @@ const FeedbackManagement = () => {
   // STATE MANAGEMENT
   // ============================================
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [feedbacks, setFeedbacks] = useState([]); // Raw data
+  const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -61,17 +61,29 @@ const FeedbackManagement = () => {
   }, [searchQuery, filterCategory, filterRating]);
 
   // ============================================
-  // API FUNCTIONS
+  // API FUNCTIONS (WITH AUTH TOKEN)
   // ============================================
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('adminToken');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
+
   const fetchFeedbacks = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/feedback');
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/feedback', {
+        headers: getAuthHeaders()
+      });
+      
       if (!response.ok) {
         console.error('Failed to fetch feedbacks:', response.status);
         setFeedbacks([]);
         return;
       }
+      
       const data = await response.json();
       if (data.success) {
         setFeedbacks(Array.isArray(data.feedbacks) ? data.feedbacks : []);
@@ -87,16 +99,14 @@ const FeedbackManagement = () => {
   };
 
   // ============================================
-  // ACTION HANDLERS (UPDATED TO ARCHIVE)
+  // ACTION HANDLERS
   // ============================================
   const handleView = (feedback) => {
     setSelectedFeedback(feedback);
     setShowViewModal(true);
   };
 
-  // 🔥 UPDATED: Logic for Archiving instead of Deleting
   const handleArchive = (id) => {
-    // Find name for the modal message
     const targetFeedback = feedbacks.find(f => f._id === id);
     const feedbackName = targetFeedback ? (targetFeedback.name || 'Anonymous') : 'this item';
 
@@ -104,22 +114,18 @@ const FeedbackManagement = () => {
       isOpen: true,
       title: 'Archive Feedback',
       message: `Are you sure you want to archive the feedback from ${feedbackName}? This will hide it from the active list.`,
-      type: 'warning', // Yellow/Orange warning style
+      type: 'warning',
       onConfirm: async () => {
         try {
-          // Use the specific Archive Endpoint
           const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/feedback/${id}/archive`, {
-            method: 'PATCH', // Changed to PATCH
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-            }
+            method: 'PATCH',
+            headers: getAuthHeaders()
           });
 
           if (response.ok) {
             toast.success('Feedback archived successfully!', 'Archived');
             
-            // Optimistic Update: Remove from view immediately without refetching all
+            // Optimistic Update
             setFeedbacks(prev => prev.map(item => 
               item._id === id ? { ...item, isArchive: 'Yes' } : item
             ));
@@ -138,45 +144,67 @@ const FeedbackManagement = () => {
     });
   };
 
-  const exportToCSV = () => {
-    const headers = ['Date', 'Category', 'Rating', 'Message', 'Status', 'Browser', 'Screen Size'];
-    
-    // Only export active feedbacks
-    const rows = filteredFeedbacks.map(f => [
-      new Date(f.createdAt).toLocaleDateString(),
-      f.category,
-      f.rating || 'N/A',
-      `"${f.message.replace(/"/g, '""')}"`, // Handle quotes in message
-      f.status,
-      f.technicalData?.browser || 'N/A',
-      f.technicalData?.screenSize || 'N/A'
-    ]);
+  const exportToCSV = async () => {
+    try {
+      const headers = ['Date', 'Category', 'Rating', 'Message', 'Status', 'Browser', 'Screen Size'];
+      
+      const rows = filteredFeedbacks.map(f => [
+        new Date(f.createdAt).toLocaleDateString(),
+        f.category,
+        f.rating || 'N/A',
+        `"${f.message.replace(/"/g, '""')}"`,
+        f.status,
+        f.technicalData?.browser || 'N/A',
+        f.technicalData?.screenSize || 'N/A'
+      ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `feedback_export_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    
-    toast.success('Feedback exported successfully!', 'Export Complete');
+      const fileName = `feedback_export_${new Date().toISOString().split('T')[0]}.csv`;
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      
+      toast.success('Feedback exported successfully!', 'Export Complete');
+
+      // 📝 OPTIONAL: Log the export action to Backend
+      await fetch('https://wanderwaveph-backend.onrender.com/api/activity-logs', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+              action: 'EXPORT',
+              module: 'Feedback',
+              description: `Exported ${filteredFeedbacks.length} feedback records to CSV`,
+              details: {
+                  fileName: fileName,
+                  exportFormat: 'CSV',
+                  affectedRecords: filteredFeedbacks.length
+              }
+          })
+      });
+
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export feedback');
+    }
   };
 
   // ============================================
-  // FILTER & SEARCH LOGIC (Excludes Archived)
+  // FILTER & SEARCH LOGIC
   // ============================================
   const filteredFeedbacks = useMemo(() => {
     return feedbacks.filter(feedback => {
       
-      // 1. FILTER OUT ARCHIVED ITEMS (Matches ViewTestimonials logic)
+      // Filter out archived items
       if (feedback.isArchive === 'Yes') return false;
 
-      // 2. Search filter
+      // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch = 
@@ -186,12 +214,12 @@ const FeedbackManagement = () => {
         if (!matchesSearch) return false;
       }
 
-      // 3. Category filter
+      // Category filter
       if (filterCategory !== 'all' && feedback.category !== filterCategory) {
         return false;
       }
 
-      // 4. Rating filter
+      // Rating filter
       if (filterRating !== 'all') {
         const rating = parseInt(filterRating);
         if (feedback.rating !== rating) return false;
@@ -209,7 +237,7 @@ const FeedbackManagement = () => {
   const totalPages = Math.ceil(filteredFeedbacks.length / itemsPerPage);
 
   // ============================================
-  // STATS CALCULATION (Only Active Items)
+  // STATS CALCULATION
   // ============================================
   const activeFeedbacks = feedbacks.filter(f => f.isArchive !== 'Yes');
   
@@ -273,7 +301,7 @@ const FeedbackManagement = () => {
             loading={loading}
             feedbacks={paginatedFeedbacks}
             onView={handleView}
-            onArchive={handleArchive} /* 🔥 Passing handleArchive here */
+            onArchive={handleArchive}
           />
 
           {!loading && filteredFeedbacks.length > 0 && totalPages > 1 && (
@@ -290,7 +318,7 @@ const FeedbackManagement = () => {
             show={showViewModal}
             onClose={() => setShowViewModal(false)}
             feedback={selectedFeedback}
-            onArchive={handleArchive} /* 🔥 Passing handleArchive here too */
+            onArchive={handleArchive}
           />
 
           {/* CUSTOM CONFIRMATION MODAL */}
