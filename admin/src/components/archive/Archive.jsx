@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Users, Search, Eye, RotateCcw, Archive, ChevronLeft, ChevronRight, 
-  Wrench, List, ArrowUpDown, HelpCircle, X, DollarSign, MessageSquare
+  Wrench, List, ArrowUpDown, HelpCircle, X
 } from 'lucide-react';
 import './Archive.css';
 import Sidebar from '../sidebar/sidebar';
@@ -26,8 +26,6 @@ import { fetchArchivedBlogs, restoreBlog } from './archiveFunctions/blogService'
 import { fetchArchivedImages, restoreImage } from './archiveFunctions/imageService'; 
 import { fetchArchivedUsers, restoreUser } from './archiveFunctions/userService';
 import { fetchArchivedHotels, restoreHotel } from './archiveFunctions/hotelService';
-import { fetchArchivedSellerRates, restoreSellerRate } from './archiveFunctions/sellerService';
-import { fetchArchivedFeedbacks, restoreFeedback } from './archiveFunctions/feedbackService'; // ✅ NEW IMPORT
 
 // --- Custom Confirmation Modal ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
@@ -78,8 +76,6 @@ const ARCHIVE_IMAGES = {
     ARCHIVED_LIST: 'https://picsum.photos/seed/books/800/600',    
     ARCHIVED_SERVICES: 'https://picsum.photos/seed/wrench/800/600',
     ARCHIVED_USERS: 'https://picsum.photos/seed/people/800/600',
-    ARCHIVED_SELLER: 'https://picsum.photos/seed/money/800/600',
-    ARCHIVED_FEEDBACK: 'https://picsum.photos/seed/feedback/800/600', // ✅ NEW IMAGE
     ITEMS_RESTORED: 'https://picsum.photos/seed/folder/800/600' 
 };
 
@@ -90,8 +86,6 @@ const ARCHIVE_TYPES = [
     'Archived List', 
     'Archived Services',
     'Archived Users',
-    'Seller Rates',
-    'Archived Feedback' // ✅ NEW TYPE
 ];
 
 const SERVICE_SUBTYPES_LIST = [ 
@@ -129,14 +123,6 @@ const USER_ARCHIVE_ITEMS = [
     'Admin',     
 ];
 
-// ✅ NEW: Feedback Archive Items
-const FEEDBACK_ARCHIVE_ITEMS = [
-    'ALL Feedback',
-    'Bug Report',
-    'Suggestion',
-    'General'
-];
-
 const ArchiveComponent = () => {
   const toast = useToast(); 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -147,7 +133,6 @@ const ArchiveComponent = () => {
   const [filterSubtype, setFilterSubtype] = useState('ALL Services'); 
   const [filterListSubtype, setFilterListSubtype] = useState('ALL List Items');
   const [filterUserSubtype, setFilterUserSubtype] = useState('ALL Users');
-  const [filterFeedbackSubtype, setFilterFeedbackSubtype] = useState('ALL Feedback'); // ✅ NEW STATE
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -217,15 +202,13 @@ const ArchiveComponent = () => {
         fetchArchivedBlogs(), 
         fetchArchivedImages(), 
         fetchArchivedUsers(),
-        fetchArchivedHotels(),
-        fetchArchivedSellerRates(),
-        fetchArchivedFeedbacks() // ✅ NEW FETCH
+        fetchArchivedHotels()
       ]);
       
       console.log('📊 All fetch results:', results);
       
       results.forEach((result, index) => {
-        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels', 'Seller Rates', 'Feedbacks']; // ✅ UPDATED
+        const names = ['Bookings', 'Packages', 'Tours', 'Testimonials', 'Promos', 'Posters', 'Inquiries', 'Blogs', 'Images', 'Users', 'Hotels'];
         if (result.status === 'fulfilled') {
           console.log(`✅ ${names[index]}: ${result.value.length} items`);
           if (names[index] === 'Packages' && result.value.length > 0) {
@@ -256,13 +239,13 @@ const ArchiveComponent = () => {
 
       // Sort chronologically (oldest first)
       const chronologicalData = [...nonExpiredData].sort((a, b) => {
-        return new Date(a.archivedAt || a.updatedAt || a.lastUpdated || 0) - new Date(b.archivedAt || b.updatedAt || b.lastUpdated || 0);
+        return new Date(a.archivedAt || a.updatedAt || 0) - new Date(b.archivedAt || b.updatedAt || 0);
       });
 
       const formatted = chronologicalData.map((item, index) => {
         const archiveNumber = index + 1; 
         const archiveId = `AR${String(archiveNumber).padStart(4, '0')}`;
-        const dateRaw = item.archivedAt || item.updatedAt || item.lastUpdated || new Date().toISOString();
+        const dateRaw = item.archivedAt || item.updatedAt || new Date().toISOString();
 
         let displayType = item.type || 'Other';
         
@@ -275,19 +258,6 @@ const ArchiveComponent = () => {
         }
         if (item.discountValue || displayType === 'Promo') displayType = 'Promo';
         if (item.referenceNumber && !item.inquiryType && !item.packageName) displayType = 'Booking';
-
-        // ✅ Identify Seller Rate items specifically
-        if (item.activity && (item.supplierRate !== undefined || item.sellingPrice !== undefined)) {
-            displayType = 'Seller Rates';
-        }
-
-        // ✅ FEEDBACK TYPE MAPPING
-        if (item.type === 'Feedback') {
-          if (item.category === 'bug') displayType = 'Bug Report';
-          else if (item.category === 'suggestion') displayType = 'Suggestion';
-          else if (item.category === 'general') displayType = 'General';
-          else displayType = 'Feedback';
-        }
 
         if (item.inquiryType) {
            switch(item.inquiryType) {
@@ -306,12 +276,12 @@ const ArchiveComponent = () => {
           id: archiveId,
           mongoId: item._id || item.mongoId,
           archiveNumber,
-          itemName: item.activity || item.itemName || item.packageName || item.code || item.name || item.fullName || item.title || item.imageName || 'Unnamed Item', 
+          itemName: item.itemName || item.packageName || item.code || item.name || item.fullName || item.title || item.imageName || 'Unnamed Item', 
           type: displayType, 
           dateArchived: new Date(dateRaw).toLocaleDateString('en-CA'),
           archivedAtISO: dateRaw,
           daysRemaining: getDaysRemaining(dateRaw),
-          reference: item.destination || item.reference || item.referenceNumber || item.code || item.email || item.author || item._id?.substring(0, 8) || 'N/A',
+          reference: item.reference || item.referenceNumber || item.code || item.email || item.author || item._id?.substring(0, 8) || 'N/A',
           status: item.isArchive === "Yes" ? 'Archived' : (item.status || 'Archived'), 
           rawData: item.rawData || item
         };
@@ -324,6 +294,7 @@ const ArchiveComponent = () => {
       });
 
       console.log('✅ Final formatted items:', formatted.length);
+      console.log('📦 Packages in formatted:', formatted.filter(i => i.type === 'Package').length);
       
       setArchiveItems(formatted);
     } catch (err) {
@@ -366,17 +337,6 @@ const ArchiveComponent = () => {
         const userSubtypeNames = ['User', 'Admin'];
         filtered = filtered.filter(item => userSubtypeNames.includes(item.type));
         if (filterUserSubtype !== 'ALL Users') filtered = filtered.filter(item => item.type === filterUserSubtype);
-    } else if (filterType === 'Seller Rates') {
-        // ✅ Show only Seller Rate items when "Seller Rates" is selected
-        filtered = filtered.filter(item => item.type === 'Seller Rates');
-    } 
-    // ✅ NEW: Feedback Filter
-    else if (filterType === 'Archived Feedback') {
-        const feedbackSubtypeNames = ['Bug Report', 'Suggestion', 'General', 'Feedback'];
-        filtered = filtered.filter(item => feedbackSubtypeNames.includes(item.type));
-        if (filterFeedbackSubtype !== 'ALL Feedback') {
-          filtered = filtered.filter(item => item.type === filterFeedbackSubtype);
-        }
     }
 
     if (lowerSearchTerm) {
@@ -396,7 +356,7 @@ const ArchiveComponent = () => {
     
     setFilteredArchiveItems(sorted);
     setCurrentPage(1); 
-  }, [searchTerm, filterType, filterSubtype, filterListSubtype, filterUserSubtype, filterFeedbackSubtype, archiveItems, sortDirection]); // ✅ ADDED filterFeedbackSubtype
+  }, [searchTerm, filterType, filterSubtype, filterListSubtype, filterUserSubtype, archiveItems, sortDirection]);
 
   const performRestore = async (item) => {
     setActionLoading(true);
@@ -428,14 +388,7 @@ const ArchiveComponent = () => {
         restored = await restoreImage(id);
       } else if (item.type === 'Hotel') {
         restored = await restoreHotel(id);
-      } else if (item.type === 'Seller Rates' || item.type === 'Manage Services') {
-        restored = await restoreSellerRate(id);
-      } 
-      // ✅ NEW: Feedback Restore Logic
-      else if (['Bug Report', 'Suggestion', 'General', 'Feedback'].includes(item.type)) {
-        restored = await restoreFeedback(id);
-      }
-      else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
+      } else if (SERVICE_SUBTYPES_LIST.includes(item.type)) {
         restored = await restoreInquiry(id);
       }
       
@@ -446,6 +399,7 @@ const ArchiveComponent = () => {
         setSelectedItem(null);
         toast.success(`Successfully restored: ${item.itemName}`);
         
+        // Refresh the archive items after a short delay to ensure backend is updated
         setTimeout(() => {
           console.log('🔄 Refreshing archive items...');
           fetchArchiveItems();
@@ -497,9 +451,6 @@ const ArchiveComponent = () => {
               else if (item.type === 'Blog') restored = await restoreBlog(id);
               else if (item.type === 'Image Gallery') restored = await restoreImage(id);
               else if (item.type === 'Hotel') restored = await restoreHotel(id);
-              else if (item.type === 'Seller Rates' || item.type === 'Manage Services') restored = await restoreSellerRate(id);
-              // ✅ NEW: Bulk Restore Feedback
-              else if (['Bug Report', 'Suggestion', 'General', 'Feedback'].includes(item.type)) restored = await restoreFeedback(id);
               else if (SERVICE_SUBTYPES_LIST.includes(item.type)) restored = await restoreInquiry(id);
               
               if (restored) successCount++;
@@ -541,21 +492,17 @@ const ArchiveComponent = () => {
     const serviceSubtypeNames = SERVICE_SUBTYPES_LIST.slice(1);
     const listSubtypeNames = LIST_ARCHIVE_ITEMS.slice(1);
     const userTypes = ['User', 'Admin'];
-    const feedbackTypes = ['Bug Report', 'Suggestion', 'General', 'Feedback']; // ✅ NEW
     
     const listCount = archiveItems.filter(i => listSubtypeNames.includes(i.type)).length;
     const serviceCount = archiveItems.filter(i => serviceSubtypeNames.includes(i.type)).length;
     const userCount = archiveItems.filter(i => userTypes.includes(i.type)).length;
-    const sellerCount = archiveItems.filter(i => i.type === 'Seller Rates').length;
-    const feedbackCount = archiveItems.filter(i => feedbackTypes.includes(i.type)).length; // ✅ NEW COUNT
     
-    console.log('📊 Stats - Total:', archiveItems.length, 'List:', listCount, 'Services:', serviceCount, 'Users:', userCount, 'Seller:', sellerCount, 'Feedback:', feedbackCount);
+    console.log('📊 Stats - Total:', archiveItems.length, 'List:', listCount, 'Services:', serviceCount, 'Users:', userCount);
     
     return [
       { label: "Total Archived", value: archiveItems.length, icon: <Archive size={24} />, image: ARCHIVE_IMAGES.TOTAL_ITEMS },
-      { label: "List Items", value: listCount, icon: <List size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_LIST },
-      { label: "Seller Rates", value: sellerCount, icon: <DollarSign size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_SELLER },
-      { label: "Archived Feedback", value: feedbackCount, icon: <MessageSquare size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_FEEDBACK }, // ✅ NEW STAT
+      { label: "Archived List Items", value: listCount, icon: <List size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_LIST },
+      { label: "Archived Services", value: serviceCount, icon: <Wrench size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_SERVICES },
       { label: "Archived Users", value: userCount, icon: <Users size={24} />, image: ARCHIVE_IMAGES.ARCHIVED_USERS },
     ];
   }, [archiveItems]);
@@ -583,10 +530,8 @@ const ArchiveComponent = () => {
             filterSubtype={filterSubtype} setFilterSubtype={setFilterSubtype}
             filterListSubtype={filterListSubtype} setFilterListSubtype={setFilterListSubtype}
             filterUserSubtype={filterUserSubtype} setFilterUserSubtype={setFilterUserSubtype}
-            filterFeedbackSubtype={filterFeedbackSubtype} setFilterFeedbackSubtype={setFilterFeedbackSubtype} // ✅ NEW PROP
             typeOptions={ARCHIVE_TYPES} serviceSubtypes={SERVICE_SUBTYPES_LIST}
             listSubtypes={LIST_ARCHIVE_ITEMS} userSubtypes={USER_ARCHIVE_ITEMS}
-            feedbackSubtypes={FEEDBACK_ARCHIVE_ITEMS} // ✅ NEW PROP
           />
 
           <div className="arc-table-container">
@@ -603,7 +548,7 @@ const ArchiveComponent = () => {
             <PaginationControls 
               totalItems={filteredArchiveItems.length} itemsPerPage={itemsPerPage}
               currentPage={currentPage} onPageChange={(p) => setCurrentPage(p)}
-              ChevronLeftIcon={ChevronLeft} ChevronRightIcon={ChevronRight}
+              ChevronLeftIcon={ChevronLeft} ChevronRightIcon={ChevronRight} 
             />
           )}
         </div>
