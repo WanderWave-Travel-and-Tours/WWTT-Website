@@ -469,8 +469,7 @@ function PackageDeals() {
               duration: pkg.duration,
               nights: pkg.duration && pkg.duration.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights', 
               price: pkg.price,
-                  sellerPrice: pkg.sellerPrice,  // ← ADD THIS
-    markup: pkg.markup,    
+              
               originalPrice: pkg.price + Math.floor(pkg.price * 0.3),
               discount: 30,
               rating: calculatedRating, // Applied random rating

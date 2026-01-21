@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Check, X, MapPin, Calendar, Plane, Hotel, 
   Utensils, Bus, Camera, Briefcase, ChevronDown, ChevronUp, 
-  CheckSquare, XCircle, CalendarDays, ChevronLeft, Settings 
+  CheckSquare, XCircle, CalendarDays, ChevronLeft, Settings, Clock 
 } from 'lucide-react';
 import PackageCustomizer from './PackageCustomizer';
 import './BookingLeftColumn.css';
@@ -22,29 +22,134 @@ const BookingLeftColumn = ({
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
 
-  // Debug: Log the package data when component mounts
-  useEffect(() => {
-    console.log('📦 Package Data Received:', pkg);
-    console.log('📦 Full Package Object:', JSON.stringify(pkg, null, 2));
-    console.log('💰 Seller Price:', pkg?.sellerPrice);
-    console.log('💵 Price:', pkg?.price);
-    console.log('📈 Markup:', pkg?.markup);
-    
-    // Check if pkg is empty or missing critical data
-    if (!pkg || Object.keys(pkg).length === 0) {
-      console.error('⚠️ WARNING: Package data is empty or undefined!');
-    }
-    if (pkg && !pkg.sellerPrice && pkg.sellerPrice !== 0) {
-      console.error('⚠️ WARNING: sellerPrice is missing from package data!');
-      console.error('Available properties:', Object.keys(pkg));
-    }
-  }, [pkg]);
+  // ============================================
+  // TIMER STATES
+  // ============================================
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [timerExpired, setTimerExpired] = useState(false);
+  const [userIpAddress, setUserIpAddress] = useState(null);
 
   const hasExclusions = pkg.excludes && pkg.excludes.length > 0;
   const itinerary = pkg.itinerary || [];
   const INITIAL_DAYS = 3;
   const shouldShowButton = itinerary.length > INITIAL_DAYS;
   const visibleItinerary = isItineraryExpanded ? itinerary : itinerary.slice(0, INITIAL_DAYS);
+
+  // ============================================
+  // GET USER IP ADDRESS
+  // ============================================
+  useEffect(() => {
+    const fetchIpAddress = async () => {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        setUserIpAddress(data.ip);
+        console.log('✅ User IP:', data.ip);
+      } catch (error) {
+        console.error('❌ Error fetching IP:', error);
+        setUserIpAddress('unknown');
+      }
+    };
+    fetchIpAddress();
+  }, []);
+
+  // ============================================
+  // TIMER MANAGEMENT - 15 MINUTES
+  // ============================================
+  useEffect(() => {
+    if (!userIpAddress) {
+      console.log('⏰ Waiting for IP address...');
+      return;
+    }
+    
+    if (!pkg._id && !pkg.id) {
+      console.log('⏰ Waiting for package ID...');
+      return;
+    }
+
+    const packageId = pkg._id || pkg.id;
+    const timerKey = `timer_${packageId}_${userIpAddress}`;
+    const storedTimer = localStorage.getItem(timerKey);
+
+    console.log('⏰ Timer Key:', timerKey);
+    console.log('⏰ Stored Timer:', storedTimer);
+
+    if (storedTimer) {
+      const timerData = JSON.parse(storedTimer);
+      const now = Date.now();
+      const elapsed = now - timerData.startTime;
+      const remaining = Math.max(0, 900000 - elapsed); // 15 minutes = 900000ms
+
+      if (remaining > 0) {
+        setTimeRemaining(remaining);
+        setTimerExpired(false);
+        console.log('✅ Timer resumed:', Math.floor(remaining / 1000), 'seconds left');
+      } else {
+        setTimeRemaining(0);
+        setTimerExpired(true);
+        console.log('⏰ Timer expired');
+      }
+    } else {
+      // Start new timer
+      const startTime = Date.now();
+      localStorage.setItem(timerKey, JSON.stringify({ startTime }));
+      setTimeRemaining(900000); // 15 minutes
+      setTimerExpired(false);
+      console.log('🚀 Timer started - 15 minutes');
+    }
+  }, [userIpAddress, pkg._id, pkg.id]);
+
+  // ============================================
+  // COUNTDOWN TIMER
+  // ============================================
+  useEffect(() => {
+    if (timeRemaining === null || timeRemaining <= 0) return;
+
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1000) {
+          setTimerExpired(true);
+          return 0;
+        }
+        return prev - 1000;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timeRemaining]);
+
+  // ============================================
+  // RESET TIMER DAILY
+  // ============================================
+  useEffect(() => {
+    if (!userIpAddress) return;
+    if (!pkg._id && !pkg.id) return;
+
+    const packageId = pkg._id || pkg.id;
+
+    const checkDailyReset = () => {
+      const timerKey = `timer_${packageId}_${userIpAddress}`;
+      const lastResetKey = `lastReset_${packageId}_${userIpAddress}`;
+      const lastReset = localStorage.getItem(lastResetKey);
+      const today = new Date().toDateString();
+
+      if (lastReset !== today) {
+        localStorage.removeItem(timerKey);
+        localStorage.setItem(lastResetKey, today);
+        
+        const startTime = Date.now();
+        localStorage.setItem(timerKey, JSON.stringify({ startTime }));
+        setTimeRemaining(900000);
+        setTimerExpired(false);
+        console.log('🔄 Timer reset for new day');
+      }
+    };
+
+    checkDailyReset();
+    const dailyCheck = setInterval(checkDailyReset, 60000); // Check every minute
+
+    return () => clearInterval(dailyCheck);
+  }, [userIpAddress, pkg._id, pkg.id]);
 
   const toggleDay = (index) => {
     setExpandedDayIndices(prev => ({
@@ -65,40 +170,15 @@ const BookingLeftColumn = ({
     if (currency === 'PHP') return phpPrice;
     return (phpPrice / exchangeRate) * 1.30;
   };
-  
-  // ✅ Get actual price (with markup) - This is what we display as final price
-  let actualPriceNum = 0;
-  if (pkg?.price !== undefined && pkg?.price !== null) {
-    actualPriceNum = typeof pkg.price === 'number' ? pkg.price : parseFloat(pkg.price) || 0;
-  }
-  
-  // ✅ Get markup
-  let markupNum = 0;
-  if (pkg?.markup !== undefined && pkg?.markup !== null) {
-    markupNum = typeof pkg.markup === 'number' ? pkg.markup : parseFloat(pkg.markup) || 0;
-  }
-  
-  // ✅ CALCULATE seller price: price - markup = sellerPrice
-  // This is the original price before markup (crossed out)
-  let sellerPriceNum = 0;
-  
-  // First try to get it directly from pkg.sellerPrice
-  if (pkg?.sellerPrice !== undefined && pkg?.sellerPrice !== null) {
-    sellerPriceNum = typeof pkg.sellerPrice === 'number' ? pkg.sellerPrice : parseFloat(pkg.sellerPrice) || 0;
-  }
-  
-  // If sellerPrice is still 0 or undefined, calculate it from price - markup
-  if ((sellerPriceNum === 0 || isNaN(sellerPriceNum)) && actualPriceNum > 0) {
-    sellerPriceNum = actualPriceNum - markupNum;
-  }
-  
-  console.log('💲 Calculated Seller Price:', sellerPriceNum);
-  console.log('💲 Calculated Actual Price:', actualPriceNum);
-  console.log('📈 Markup:', markupNum);
-  
-  // Convert both prices to display currency
-  const displaySellerPrice = convertPrice(sellerPriceNum);
-  const displayActualPrice = convertPrice(actualPriceNum);
+
+  // ============================================
+  // CALCULATE PRICE WITH TIMER LOGIC
+  // ============================================
+  const basePrice = pkg.price || 0;
+  const originalPriceWithMarkup = Math.round(basePrice * 1.10);
+  const displayPrice = timerExpired ? originalPriceWithMarkup : basePrice;
+  const convertedDisplayPrice = convertPrice(displayPrice);
+  const convertedOriginalPrice = convertPrice(originalPriceWithMarkup);
 
   return (
     <div className="blc-container">
@@ -113,49 +193,99 @@ const BookingLeftColumn = ({
       <div className="blc-image-wrapper">
         <img 
             src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'} 
-            alt={pkg.name || pkg.title} 
+            alt={pkg.name} 
             className="blc-main-image" 
         />
       </div>
 
       {/* HEADER INFO */}
       <div className="blc-header-section">
-        <h1 className="blc-title">{pkg.name || pkg.title}</h1>
+        <h1 className="blc-title">{pkg.name}</h1>
         
-        <div className="blc-price-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            {/* ✅ Seller Price (ORIGINAL PRICE) - Crossed Out */}
-            {sellerPriceNum > 0 && (
-              <span style={{ 
-                fontSize: '1.2rem',
-                color: '#94a3b8',
-                textDecoration: 'line-through',
-                fontWeight: '500'
-              }}>
-                {currencySymbol}{displaySellerPrice.toLocaleString(undefined, { 
+        {/* PRICE ROW WITH ALIGNED TIMER */}
+        <div className="blc-price-timer-wrapper">
+          
+          {/* LEFT: PRICE */}
+          <div className="blc-price-section">
+            {!timerExpired && (
+              <span className="blc-price-original">
+                {currencySymbol}{convertedOriginalPrice.toLocaleString(undefined, { 
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0 
                 })}
               </span>
             )}
-            
-            {/* ✅ Actual Price (WITH MARKUP) - Final Price */}
-            <span className="blc-price">
-              {currencySymbol}{displayActualPrice.toLocaleString(undefined, { 
+            <span className="blc-price" style={{
+              color: !timerExpired ? '#10b981' : '#fc9c1b'
+            }}>
+              {currencySymbol}{convertedDisplayPrice.toLocaleString(undefined, { 
                 minimumFractionDigits: currency === 'USD' ? 2 : 0,
                 maximumFractionDigits: currency === 'USD' ? 2 : 0 
               })}
             </span>
+            {isCustomized && (
+              <span className="blc-customized-badge">
+                <Settings size={14} /> Customized
+              </span>
+            )}
           </div>
-          
-          {isCustomized && (
-            <span className="blc-customized-badge">
-              <Settings size={14} /> Customized
-            </span>
+
+          {/* RIGHT: TIMER */}
+          {!timerExpired && timeRemaining !== null && (
+            <div className="blc-timer-compact">
+              <div className="blc-timer-compact-header">
+                ⚡ HURRY - SPECIAL OFFER ENDS SOON!
+              </div>
+              <div className="blc-timer-compact-boxes">
+                <div className="blc-timer-compact-box">
+                  <div className="blc-timer-compact-number">
+                    {Math.floor(timeRemaining / 60000).toString().padStart(2, '0')}
+                  </div>
+                  <div className="blc-timer-compact-label">MINUTES</div>
+                </div>
+                <div className="blc-timer-compact-colon">:</div>
+                <div className="blc-timer-compact-box">
+                  <div className="blc-timer-compact-number">
+                    {Math.floor((timeRemaining % 60000) / 1000).toString().padStart(2, '0')}
+                  </div>
+                  <div className="blc-timer-compact-label">SECONDS</div>
+                </div>
+              </div>
+              <div className="blc-timer-compact-savings">
+                🔥 Save {currencySymbol}{(convertedOriginalPrice - convertedDisplayPrice).toLocaleString(undefined, { 
+                  minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0 
+                })}!
+              </div>
+            </div>
           )}
         </div>
         
-        <div className="blc-meta-row">
+        {!timerExpired && (
+          <div style={{
+            background: '#d1fae5',
+            color: '#047857',
+            padding: '10px 14px',
+            borderRadius: '12px',
+            fontSize: '0.9rem',
+            fontWeight: '700',
+            marginTop: '12px',
+            textAlign: 'center',
+            border: '2px solid #10b981',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            boxShadow: '0 4px 6px rgba(16, 185, 129, 0.1)'
+          }}>
+            <Clock size={18} />
+            <span>
+              🎉 Special Offer Active - Save {Math.round(((originalPriceWithMarkup - basePrice) / originalPriceWithMarkup) * 100)}%!
+            </span>
+          </div>
+        )}
+        
+        <div className="blc-meta-row" style={{ marginTop: '20px' }}>
           <div className="blc-meta-item">
             <MapPin size={18} color="#f97316"/> {pkg.location || pkg.destination}
           </div>

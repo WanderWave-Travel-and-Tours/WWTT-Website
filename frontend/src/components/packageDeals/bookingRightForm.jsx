@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Plane, Ticket, UserCheck  
+  ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Plane, Ticket, UserCheck, Clock  
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
@@ -9,37 +9,6 @@ import HotelRoomSelector from './hotelRoomSelector';
 import BookingFormModal from './BookingFormModal';
 import AppointmentModal from './AppointmentModal';
 import './BookingRightForm.css';
-
-// Add this CSS to BookingRightForm.css
-const walkInButtonStyle = `
-.brf-walk-in-btn {
-  width: 100%;
-  background-color: #3b82f6;
-  color: white;
-  padding: 18px;
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.brf-walk-in-btn:hover { 
-  background-color: #2563eb; 
-}
-
-.brf-walk-in-btn:disabled { 
-  cursor: not-allowed; 
-  opacity: 0.5; 
-}
-`;
 
 const BookingRightForm = ({ 
   pkg,
@@ -74,6 +43,124 @@ const BookingRightForm = ({
   const [isCheckingPromo, setIsCheckingPromo] = useState(false);
   const [paymentType, setPaymentType] = useState('full');
   const [customizationData, setCustomizationData] = useState(initialCustomizationData);
+
+  // ============================================
+  // TIMER STATES
+  // ============================================
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [timerExpired, setTimerExpired] = useState(false);
+  const [userIpAddress, setUserIpAddress] = useState(null);
+
+  // ============================================
+  // GET USER IP ADDRESS
+  // ============================================
+  useEffect(() => {
+    const fetchIpAddress = async () => {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        setUserIpAddress(data.ip);
+        console.log('✅ User IP:', data.ip);
+      } catch (error) {
+        console.error('❌ Error fetching IP:', error);
+        setUserIpAddress('unknown');
+      }
+    };
+    fetchIpAddress();
+  }, []);
+
+  // ============================================
+  // TIMER MANAGEMENT - 15 MINUTES
+  // ============================================
+  useEffect(() => {
+    if (!userIpAddress || !pkg._id) return;
+
+    const timerKey = `timer_${pkg._id}_${userIpAddress}`;
+    const storedTimer = localStorage.getItem(timerKey);
+
+    if (storedTimer) {
+      const timerData = JSON.parse(storedTimer);
+      const now = Date.now();
+      const elapsed = now - timerData.startTime;
+      const remaining = Math.max(0, 900000 - elapsed); // 15 minutes = 900000ms
+
+      if (remaining > 0) {
+        setTimeRemaining(remaining);
+        setTimerExpired(false);
+        console.log('⏰ Timer resumed:', Math.floor(remaining / 1000), 'seconds left');
+      } else {
+        setTimeRemaining(0);
+        setTimerExpired(true);
+        console.log('⏰ Timer expired');
+      }
+    } else {
+      // Start new timer
+      const startTime = Date.now();
+      localStorage.setItem(timerKey, JSON.stringify({ startTime }));
+      setTimeRemaining(900000); // 15 minutes
+      setTimerExpired(false);
+      console.log('⏰ Timer started');
+    }
+  }, [userIpAddress, pkg._id]);
+
+  // ============================================
+  // COUNTDOWN TIMER
+  // ============================================
+  useEffect(() => {
+    if (timeRemaining === null || timeRemaining <= 0) return;
+
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1000) {
+          setTimerExpired(true);
+          return 0;
+        }
+        return prev - 1000;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timeRemaining]);
+
+  // ============================================
+  // RESET TIMER DAILY
+  // ============================================
+  useEffect(() => {
+    if (!userIpAddress || !pkg._id) return;
+
+    const checkDailyReset = () => {
+      const timerKey = `timer_${pkg._id}_${userIpAddress}`;
+      const lastResetKey = `lastReset_${pkg._id}_${userIpAddress}`;
+      const lastReset = localStorage.getItem(lastResetKey);
+      const today = new Date().toDateString();
+
+      if (lastReset !== today) {
+        localStorage.removeItem(timerKey);
+        localStorage.setItem(lastResetKey, today);
+        
+        const startTime = Date.now();
+        localStorage.setItem(timerKey, JSON.stringify({ startTime }));
+        setTimeRemaining(900000);
+        setTimerExpired(false);
+        console.log('🔄 Timer reset for new day');
+      }
+    };
+
+    checkDailyReset();
+    const dailyCheck = setInterval(checkDailyReset, 60000); // Check every minute
+
+    return () => clearInterval(dailyCheck);
+  }, [userIpAddress, pkg._id]);
+
+  // ============================================
+  // FORMAT TIMER DISPLAY
+  // ============================================
+  const formatTime = (ms) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
@@ -144,15 +231,11 @@ const BookingRightForm = ({
 
   useEffect(() => {
     const bookingData = sessionStorage.getItem('pendingBookingData');
-    console.log('Checking for pending booking data:', bookingData);
     
     if (bookingData) {
       const data = JSON.parse(bookingData);
-      console.log('Parsed booking data:', data);
       
       if (data.selectedFlight && data.packageId === pkg._id) {
-        console.log('Found selected flight for this package:', data.selectedFlight);
-        
         setSelectedFlight(data.selectedFlight);
         setBookingWithAirfare(true);
         setSelectedDate(data.selectedDate);
@@ -174,10 +257,7 @@ const BookingRightForm = ({
     const fetchHotelData = async () => {
       const destination = pkg.destination || pkg.location;
       
-      if (!destination) {
-        console.log('❌ No destination or location found in package');
-        return;
-      }
+      if (!destination) return;
       
       try {
         setLoadingHotelData(true);
@@ -196,8 +276,6 @@ const BookingRightForm = ({
           
           const sortedRooms = [...roomTypes].sort((a, b) => a.price - b.price);
           setSelectedRoomType(sortedRooms[0]);
-        } else {
-          console.log('⚠️ No room types found for:', city);
         }
       } catch (error) {
         console.error('❌ Error:', error);
@@ -244,10 +322,13 @@ const BookingRightForm = ({
     });
   }, [quantities.adult]);
 
-  const packageTotal = (() => {
+  // ============================================
+  // CALCULATE PACKAGE TOTAL WITH TIMER LOGIC
+  // ============================================
+  const calculateBasePackageTotal = () => {
     const basePax = quantities.adult || 1;
     const effectivePrice = effectivePackageTotal || pkg.price;
-    const basePackagePrice = effectivePrice * basePax;
+    let basePackagePrice = effectivePrice * basePax;
     
     if (!selectedRoomType) return basePackagePrice;
 
@@ -268,8 +349,16 @@ const BookingRightForm = ({
     const upgradeTotal = pricePerPerson * basePax;
 
     return basePackagePrice + upgradeTotal;
-  })();
+  };
 
+  const basePackageTotal = calculateBasePackageTotal();
+  
+  // If timer is active (not expired), show original price with 10% markup
+  const originalPriceWithMarkup = Math.round(basePackageTotal * 1.10);
+  
+  // The displayed price
+  const packageTotal = timerExpired ? originalPriceWithMarkup : basePackageTotal;
+  
   const discountAmount = calculateDiscount();
   const finalPackageTotal = Math.max(0, packageTotal - discountAmount);
 
@@ -410,8 +499,6 @@ const BookingRightForm = ({
     };
 
     sessionStorage.setItem('pendingBookingData', JSON.stringify(bookingData));
-    
-    console.log('Saving booking data with returnPath:', bookingData.returnPath);
 
     navigate('/flights', {
       state: {
@@ -615,8 +702,6 @@ const BookingRightForm = ({
           formData.append(`passportFile_${idx}`, passenger.passportFile);
         }
       });
-
-      console.log('Submitting Booking Data to backend...');
       
       const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -625,7 +710,6 @@ const BookingRightForm = ({
       if (bookingResponse.data.success) {
         const bookingId = bookingResponse.data.bookingId;
         
-        console.log(`✅ Booking saved. Initiating PayMongo link creation for ID: ${bookingId}`);
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
         const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
@@ -643,7 +727,6 @@ const BookingRightForm = ({
           return;
           
         } else {
-          const redirectId = bookingResponse.data.bookingId || bookingResponse.data.data._id; 
           toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
           setTimeout(() => {
             navigate('/dashboard');
@@ -680,6 +763,120 @@ const BookingRightForm = ({
         <h2>Book Your Journey</h2>
         <p className="brf-subtitle">Select your preferred dates and customize your trip</p>
       </div>
+
+      {/* ============================================ */}
+      {/* TIMER DISPLAY */}
+      {/* ============================================ */}
+      {!timerExpired && timeRemaining !== null && (
+        <div style={{
+          background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+          color: 'white',
+          padding: '20px',
+          borderRadius: '12px',
+          marginBottom: '20px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+          border: '2px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <div style={{ 
+            textAlign: 'center',
+            fontSize: '0.95rem',
+            fontWeight: '700',
+            marginBottom: '12px',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase'
+          }}>
+            ⚡ HURRY - Limited Time Offer!
+          </div>
+
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '8px',
+            marginBottom: '12px'
+          }}>
+            {/* MINUTES BOX */}
+            <div style={{
+              background: 'white',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              minWidth: '70px',
+              textAlign: 'center',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+            }}>
+              <div style={{ 
+                fontSize: '1.8rem', 
+                fontWeight: '800',
+                color: '#ef4444',
+                lineHeight: '1',
+                fontFamily: 'monospace'
+              }}>
+                {Math.floor(timeRemaining / 60000).toString().padStart(2, '0')}
+              </div>
+              <div style={{
+                fontSize: '0.65rem',
+                color: '#6b7280',
+                marginTop: '4px',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                MINUTES
+              </div>
+            </div>
+
+            {/* COLON SEPARATOR */}
+            <div style={{
+              fontSize: '1.5rem',
+              fontWeight: '800',
+              color: 'white',
+              lineHeight: '1'
+            }}>
+              :
+            </div>
+
+            {/* SECONDS BOX */}
+            <div style={{
+              background: 'white',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              minWidth: '70px',
+              textAlign: 'center',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+            }}>
+              <div style={{ 
+                fontSize: '1.8rem', 
+                fontWeight: '800',
+                color: '#ef4444',
+                lineHeight: '1',
+                fontFamily: 'monospace'
+              }}>
+                {Math.floor((timeRemaining % 60000) / 1000).toString().padStart(2, '0')}
+              </div>
+              <div style={{
+                fontSize: '0.65rem',
+                color: '#6b7280',
+                marginTop: '4px',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                SECONDS
+              </div>
+            </div>
+          </div>
+
+          <div style={{ 
+            textAlign: 'center',
+            fontSize: '0.85rem',
+            opacity: 0.9,
+            color: '#fbbf24',
+            fontWeight: '600'
+          }}>
+            💰 Save ₱{(originalPriceWithMarkup - basePackageTotal).toLocaleString()}!
+          </div>
+        </div>
+      )}
 
       <div className="brf-calendar-wrapper">
         <div className="brf-calendar-box">
@@ -725,7 +922,6 @@ const BookingRightForm = ({
 
               const isStartDate = selectedDate === day;
               const isInRange = isInSelectedRange(day);
-              const isEndDate = selectedDate && day === getCalculatedDates();
               
               return (
                 <button
@@ -735,7 +931,6 @@ const BookingRightForm = ({
                   className={`brf-calendar-day 
                     ${isStartDate ? 'brf-selected' : ''} 
                     ${isInRange && !isStartDate ? 'brf-in-range' : ''} 
-                    ${isEndDate ? 'brf-end-date' : ''} 
                     ${isPastDate ? 'brf-disabled-date' : ''} 
                   `}
                 >
@@ -946,12 +1141,28 @@ const BookingRightForm = ({
         )}
       </div>
 
+      {/* ============================================ */}
+      {/* BOOKING FOOTER WITH TIMER PRICING */}
+      {/* ============================================ */}
       <div className="brf-booking-footer">
         <div className="brf-total-row">
           <span className="brf-total-label">Package Total</span>
-          <span className="brf-total-amount">
-            ₱{packageTotal.toLocaleString()}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {!timerExpired && (
+              <span style={{
+                textDecoration: 'line-through',
+                color: '#9ca3af',
+                fontSize: '0.9rem'
+              }}>
+                ₱{originalPriceWithMarkup.toLocaleString()}
+              </span>
+            )}
+            <span className="brf-total-amount" style={{
+              color: !timerExpired ? '#10b981' : '#1f2937'
+            }}>
+              ₱{packageTotal.toLocaleString()}
+            </span>
+          </div>
         </div>
 
         {appliedPromo && (
@@ -1024,6 +1235,24 @@ const BookingRightForm = ({
           className="brf-walk-in-btn" 
           onClick={handleWalkInClick}
           disabled={!selectedRoomType}
+          style={{
+            width: '100%',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            padding: '18px',
+            border: 'none',
+            borderRadius: '12px',
+            fontWeight: '700',
+            fontSize: '1.1rem',
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)',
+            marginBottom: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
         >
           <UserCheck size={20} />
           Pay Over the Counter
@@ -1105,6 +1334,12 @@ const BookingRightForm = ({
         customizationData={customizationData}
       />
       
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.9; }
+        }
+      `}</style>
     </div>
   );
 };
