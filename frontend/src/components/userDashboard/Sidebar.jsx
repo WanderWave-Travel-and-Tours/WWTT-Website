@@ -11,8 +11,23 @@ const StatusIcons = {
 
 const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, isLoading, userInteractions }) => {
     
-    // --- STATE FOR FILTERING ---
+    // --- STATE FOR FILTERING & UI ---
     const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL', 'SERVICES', 'BOOKINGS'
+    const [searchQuery, setSearchQuery] = useState('');
+    
+    // Manage collapsible sections (Attention & Process Open by default, History Closed)
+    const [sectionState, setSectionState] = useState({
+        attention: true,
+        process: true,
+        history: false 
+    });
+
+    const toggleSection = (section) => {
+        setSectionState(prev => ({
+            ...prev,
+            [section]: !prev[section]
+        }));
+    };
 
     // 1. Define UI State (Message & Icon Color)
     const getInquiryState = (inquiry) => {
@@ -35,13 +50,26 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
         const onProcess = [];
         const history = [];
 
-        // --- FILTERING STEP ---
+        // --- FILTERING STEP (Type + Search) ---
         const filteredInquiries = inquiries.filter(inq => {
+            // A. Type Filter
             const isBooking = inq.inquiryType === 'FLIGHT_BOOKING' || inq.inquiryType === 'BOOKING';
-            
-            if (activeFilter === 'BOOKINGS') return isBooking;
-            if (activeFilter === 'SERVICES') return !isBooking; // Visa, PSA, etc.
-            return true; // ALL
+            let typeMatch = true;
+            if (activeFilter === 'BOOKINGS') typeMatch = isBooking;
+            if (activeFilter === 'SERVICES') typeMatch = !isBooking; 
+
+            // B. Search Filter
+            let searchMatch = true;
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                const name = inq.serviceName ? inq.serviceName.toLowerCase() : '';
+                const id = inq._id ? inq._id.toLowerCase() : '';
+                const status = inq.status ? inq.status.toLowerCase() : '';
+                // Search by Name, ID, or Status
+                searchMatch = name.includes(query) || id.includes(query) || status.includes(query);
+            }
+
+            return typeMatch && searchMatch;
         });
 
         // --- GROUPING STEP ---
@@ -64,9 +92,7 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
             }
 
             // CASE B: NEEDS ATTENTION
-            // 1. Not seen yet
-            // 2. Status changed (Admin update)
-            // 3. Completed but NOT downloaded (Documents Ready!)
+            // 1. Not seen yet, 2. Status changed, 3. Completed but NOT downloaded
             const hasNewUpdate = savedStatus !== inquiry.status;
 
             if (!hasSeen || hasNewUpdate || (isCompleted && !isDownloaded)) {
@@ -75,7 +101,6 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
             }
 
             // CASE C: ON PROCESS
-            // Everything else (Waiting)
             onProcess.push({ ...inquiry, uiState: state });
         });
 
@@ -86,15 +111,26 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
         history.sort(sortFn);
 
         return { needsAttention, onProcess, history };
-    }, [inquiries, userInteractions, activeFilter]);
+    }, [inquiries, userInteractions, activeFilter, searchQuery]);
 
     const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    // Helper for Accordion Chevron
+    const ChevronIcon = ({ isOpen }) => (
+        <svg 
+            className={`ud-section-chevron ${isOpen ? 'open' : 'closed'}`} 
+            width="16" height="16" viewBox="0 0 24 24" 
+            fill="none" stroke="currentColor" strokeWidth="3" 
+            strokeLinecap="round" strokeLinejoin="round"
+        >
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    );
 
     const renderCard = (inquiry, category) => {
         const { type, msg } = inquiry.uiState;
         const isActive = selectedInquiry?._id === inquiry._id;
         
-        // Styles
         let cardClass = `ud-notify-card`;
         if (category === 'attention') {
             cardClass += ` type-${type}`; 
@@ -126,7 +162,24 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
                     <h2>MY APPLICATIONS</h2>
                 </div>
                 
-                {/* --- NEW FILTER TABS --- */}
+                {/* --- SEARCH BAR --- */}
+                <div className="ud-search-container">
+                    <div className="ud-search-box">
+                        <svg className="ud-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input 
+                            type="text" 
+                            className="ud-search-input"
+                            placeholder="Search applications..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                {/* --- FILTER TABS --- */}
                 <div className="ud-filter-tabs">
                     <button 
                         className={`ud-filter-btn ${activeFilter === 'ALL' ? 'active' : ''}`}
@@ -159,33 +212,50 @@ const Sidebar = ({ inquiries, selectedInquiry, onSelectInquiry, mobileMenuOpen, 
                         {/* Empty Filter State */}
                         {needsAttention.length === 0 && onProcess.length === 0 && history.length === 0 && (
                             <div className="ud-empty-filter">
-                                <p>No {activeFilter.toLowerCase()} found.</p>
+                                <p>No results found for "{searchQuery || activeFilter}".</p>
                             </div>
                         )}
 
-                        {/* Needs Attention */}
+                        {/* SECTION 1: Needs Attention */}
                         {needsAttention.length > 0 && (
                             <div className="ud-sidebar-section">
-                                <h4 className="ud-section-title">
-                                    Needs Attention <span className="ud-count-badge">{needsAttention.length}</span>
-                                </h4>
-                                {needsAttention.map(i => renderCard(i, 'attention'))}
+                                <div className="ud-section-header" onClick={() => toggleSection('attention')}>
+                                    <div className="ud-section-title-wrap">
+                                        <h4 className="ud-section-title">Needs Attention</h4>
+                                        <span className="ud-count-badge">{needsAttention.length}</span>
+                                    </div>
+                                    <ChevronIcon isOpen={sectionState.attention} />
+                                </div>
+                                
+                                <div className={`ud-section-content ${!sectionState.attention ? 'hidden' : ''}`}>
+                                    {needsAttention.map(i => renderCard(i, 'attention'))}
+                                </div>
                             </div>
                         )}
 
-                        {/* On Process */}
+                        {/* SECTION 2: On Process */}
                         {onProcess.length > 0 && (
                             <div className="ud-sidebar-section">
-                                <h4 className="ud-section-title">On Process</h4>
-                                {onProcess.map(i => renderCard(i, 'process'))}
+                                <div className="ud-section-header" onClick={() => toggleSection('process')}>
+                                    <h4 className="ud-section-title">On Process</h4>
+                                    <ChevronIcon isOpen={sectionState.process} />
+                                </div>
+                                <div className={`ud-section-content ${!sectionState.process ? 'hidden' : ''}`}>
+                                    {onProcess.map(i => renderCard(i, 'process'))}
+                                </div>
                             </div>
                         )}
 
-                        {/* History */}
+                        {/* SECTION 3: History (Default Closed) */}
                         {history.length > 0 && (
                             <div className="ud-sidebar-section">
-                                <h4 className="ud-section-title">History</h4>
-                                {history.map(i => renderCard(i, 'history'))}
+                                <div className="ud-section-header" onClick={() => toggleSection('history')}>
+                                    <h4 className="ud-section-title">History</h4>
+                                    <ChevronIcon isOpen={sectionState.history} />
+                                </div>
+                                <div className={`ud-section-content ${!sectionState.history ? 'hidden' : ''}`}>
+                                    {history.map(i => renderCard(i, 'history'))}
+                                </div>
                             </div>
                         )}
                     </>

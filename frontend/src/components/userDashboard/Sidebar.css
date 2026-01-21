@@ -12,7 +12,7 @@
     display: flex; 
     flex-direction: column; 
     overflow-y: auto; 
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 50;
     padding-bottom: 20px;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
@@ -49,7 +49,7 @@
 }
 
 .ud-header-top {
-    padding: 24px 28px 12px;
+    padding: 24px 28px 16px;
     display: flex; 
     align-items: center; 
     gap: 14px;
@@ -75,11 +75,59 @@
     margin: 0;
 }
 
+/* --- SEARCH BAR (UPDATED FOR MID & MOBILE) --- */
+.ud-search-container {
+    padding: 0 24px 16px;
+    /* Ensure it takes space correctly */
+    flex-shrink: 0;
+}
+
+.ud-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.ud-search-icon {
+    position: absolute;
+    left: 14px;
+    color: #94a3b8;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.ud-search-input {
+    width: 100%;
+    padding: 12px 12px 12px 42px; /* Taller padding for touch targets */
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    -webkit-appearance: none; /* Removes default iOS shadow */
+}
+
+.ud-search-input:focus {
+    outline: none;
+    background: #ffffff;
+    border-color: #f97316;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+}
+
+.ud-search-input::placeholder {
+    color: #cbd5e1;
+}
+
 /* --- FILTER TABS - Enhanced Modern Style --- */
 .ud-filter-tabs {
     display: flex;
     padding: 0 24px 20px;
-    gap: 10px;
+    gap: 8px;
 }
 
 .ud-filter-btn {
@@ -87,14 +135,15 @@
     border: none;
     background: #f1f5f9;
     color: #64748b;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-size: 0.8rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap; /* Prevent text wrap on small screens */
 }
 
 .ud-filter-btn:hover {
@@ -115,7 +164,35 @@
     padding: 24px; 
     display: flex; 
     flex-direction: column; 
-    gap: 28px;
+    gap: 16px; 
+}
+
+/* --- COLLAPSIBLE SECTIONS --- */
+.ud-sidebar-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.ud-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 6px;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    margin-bottom: 8px;
+}
+
+.ud-section-header:hover {
+    background: #f1f5f9;
+}
+
+.ud-section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .ud-section-title {
@@ -123,57 +200,66 @@
     text-transform: uppercase;
     color: #64748b;
     font-weight: 900;
-    margin: 28px 0 16px;
-    padding-left: 6px;
+    margin: 0;
     letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-bottom: 2px dashed #e2e8f0;
-    padding-bottom: 10px;
 }
 
-/* First section fix */
-.ud-sidebar-section:first-child .ud-section-title {
-    margin-top: 0;
+.ud-section-chevron {
+    color: #94a3b8;
+    transition: transform 0.3s ease;
+}
+
+.ud-section-chevron.closed {
+    transform: rotate(-90deg);
+}
+
+.ud-section-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+}
+
+.ud-section-content.hidden {
+    display: none;
 }
 
 .ud-count-badge {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     color: white;
-    font-size: 0.75rem;
-    padding: 4px 10px;
+    font-size: 0.7rem;
+    padding: 2px 8px;
     border-radius: 100px;
     font-weight: 800;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
-/* --- NOTIFICATION CARD - Premium Travel Theme --- */
+/* --- NOTIFICATION CARD --- */
 .ud-notify-card {
     display: flex;
     align-items: flex-start;
-    gap: 16px;
-    padding: 18px;
-    border-radius: 18px;
+    gap: 14px;
+    padding: 14px; 
+    border-radius: 16px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     border: 2px solid transparent;
-    margin-bottom: 14px;
     position: relative;
     overflow: hidden;
+    background: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .ud-notify-card:hover {
-    transform: translateY(-3px) translateX(4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
-/* ICON BOX - Enhanced Design */
 .ud-notify-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
+    width: 40px; 
+    height: 40px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -182,11 +268,10 @@
 }
 
 .ud-notify-icon-box svg {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
 }
 
-/* TEXT CONTENT */
 .ud-notify-content {
     flex: 1;
     display: flex;
@@ -198,24 +283,24 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .ud-notify-title {
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #1e293b;
     letter-spacing: 0.2px;
 }
 
 .ud-notify-time {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #94a3b8;
     font-weight: 600;
 }
 
 .ud-notify-desc {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #475569;
     font-weight: 600;
     line-height: 1.4;
@@ -225,154 +310,104 @@
     text-overflow: ellipsis; 
 }
 
-/* --- COLOR VARIANTS - Premium Gradients --- */
-
-/* 1. INFO (Blue) */
-.type-info {
-    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 80%);
-    border: 2px solid #dbeafe;
-}
-
-.type-info:hover {
-    border-color: #93c5fd;
-    background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-}
-
-.type-info .ud-notify-icon-box { 
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    color: #2563eb; 
-}
-
+/* --- COLOR VARIANTS --- */
+.type-info { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 80%); border: 2px solid #dbeafe; }
+.type-info:hover { border-color: #93c5fd; }
+.type-info .ud-notify-icon-box { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #2563eb; }
 .type-info .ud-notify-title { color: #1e3a8a; }
 
-/* 2. SUCCESS (Green) */
-.type-success {
-    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 80%);
-    border: 2px solid #bbf7d0;
-}
-
-.type-success:hover {
-    border-color: #86efac;
-    background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
-}
-
-.type-success .ud-notify-icon-box { 
-    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-    color: #16a34a; 
-}
-
+.type-success { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 80%); border: 2px solid #bbf7d0; }
+.type-success:hover { border-color: #86efac; }
+.type-success .ud-notify-icon-box { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #16a34a; }
 .type-success .ud-notify-title { color: #14532d; }
 
-/* 3. WARNING (Yellow/Orange) */
-.type-warning {
-    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 80%);
-    border: 2px solid #fde68a;
-}
-
-.type-warning:hover {
-    border-color: #fcd34d;
-    background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
-}
-
-.type-warning .ud-notify-icon-box { 
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    color: #d97706; 
-}
-
+.type-warning { background: linear-gradient(135deg, #fffbeb 0%, #ffffff 80%); border: 2px solid #fde68a; }
+.type-warning:hover { border-color: #fcd34d; }
+.type-warning .ud-notify-icon-box { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706; }
 .type-warning .ud-notify-title { color: #78350f; }
 
-/* 4. ERROR (Red) */
-.type-error {
-    background: linear-gradient(135deg, #fef2f2 0%, #ffffff 80%);
-    border: 2px solid #fecaca;
-}
-
-.type-error:hover {
-    border-color: #fca5a5;
-    background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
-}
-
-.type-error .ud-notify-icon-box { 
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    color: #dc2626; 
-}
-
+.type-error { background: linear-gradient(135deg, #fef2f2 0%, #ffffff 80%); border: 2px solid #fecaca; }
+.type-error:hover { border-color: #fca5a5; }
+.type-error .ud-notify-icon-box { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; }
 .type-error .ud-notify-title { color: #7f1d1d; }
 
-/* --- HISTORY / READ STATE --- */
-.type-history {
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
-}
-
-.type-history:hover {
-    border-color: #cbd5e1;
-    background: #f8fafc;
-}
-
-.type-history .ud-notify-icon-box { 
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    color: #64748b; 
-}
-
-.type-history .ud-notify-title { 
-    color: #334155; 
-    font-weight: 700; 
-}
-
+.type-history { background: #ffffff; border: 2px solid #e2e8f0; }
+.type-history:hover { border-color: #cbd5e1; background: #f8fafc; }
+.type-history .ud-notify-icon-box { background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); color: #64748b; }
+.type-notify-title { color: #334155; }
 .type-history.card-active {
     border-color: #f97316;
     background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
     box-shadow: 0 4px 16px rgba(249, 115, 22, 0.15);
 }
+.type-history.card-active .ud-notify-icon-box { background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); color: #ea580c; }
 
-.type-history.card-active .ud-notify-icon-box { 
-    background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
-    color: #ea580c; 
-}
-
-/* Empty Filter Message */
 .ud-empty-filter {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 0.9rem;
-    margin-top: 48px;
-    font-style: italic;
-    font-weight: 500;
+    text-align: center; color: #94a3b8; font-size: 0.9rem; margin-top: 48px; font-style: italic; font-weight: 500;
 }
 
-/* Responsive */
+/* Loading & Empty States */
+.ud-loading-state, .ud-empty-state { text-align: center; padding: 48px; color: #94a3b8; }
+.ud-loader { width: 28px; height: 28px; border: 3px solid #e2e8f0; border-top-color: #f97316; border-radius: 50%; margin: 0 auto 16px; animation: ud-spin 1s infinite linear; }
+@keyframes ud-spin { to { transform: rotate(360deg); } }
+
+/* --- RESPONSIVE / MOBILE / MID SCREEN ADJUSTMENTS --- */
+@media (max-width: 1024px) {
+    /* MID SCREENS (Tablets / Small Laptops) */
+    .ud-sidebar {
+        /* Optional: Makes sidebar slightly narrower on mid screens if needed, 
+           or keeps it standard. Here we ensure search fits well. */
+        width: 340px;
+    }
+}
+
 @media (max-width: 768px) {
+    /* MOBILE & PORTRAIT TABLETS */
     .ud-sidebar { 
         transform: translateX(-100%); 
         width: 100%; 
-        max-width: 360px;
+        max-width: 380px; /* Wider drawer for mobile for better touch targets */
         box-shadow: 8px 0 30px rgba(0, 0, 0, 0.15);
+        border-right: none;
     }
     
     .ud-sidebar-open { 
         transform: translateX(0); 
     }
+
+    /* Adjust Header for Mobile */
+    .ud-header-top {
+        padding: 20px 24px 12px; /* Slightly tighter vertical padding */
+    }
+
+    /* SEARCH BAR OPTIMIZATION FOR MOBILE */
+    .ud-search-input {
+        font-size: 16px; /* IMPT: Prevents iOS from zooming in when typing */
+        padding: 12px 12px 12px 44px; /* Larger touch target */
+    }
+
+    .ud-filter-tabs {
+        padding: 0 24px 16px;
+    }
+
+    /* Larger cards on mobile for easier tapping */
+    .ud-notify-card {
+        padding: 16px;
+    }
 }
 
-/* Loading & Empty States */
-.ud-loading-state, 
-.ud-empty-state { 
-    text-align: center; 
-    padding: 48px; 
-    color: #94a3b8;
-}
+@media (max-width: 480px) {
+    /* SMALL MOBILE PHONES */
+    .ud-sidebar {
+        max-width: 100%; /* Full screen sidebar on small phones */
+    }
 
-.ud-loader {
-    width: 28px; 
-    height: 28px; 
-    border: 3px solid #e2e8f0; 
-    border-top-color: #f97316;
-    border-radius: 50%; 
-    margin: 0 auto 16px;
-    animation: ud-spin 1s infinite linear;
-}
-
-@keyframes ud-spin { 
-    to { transform: rotate(360deg); } 
+    .ud-filter-tabs {
+        gap: 6px; /* Tighter gap for buttons */
+    }
+    
+    .ud-filter-btn {
+        font-size: 0.7rem; /* Slightly smaller text to fit 3 buttons */
+        padding: 8px 6px;
+    }
 }
