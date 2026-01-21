@@ -34,7 +34,7 @@
 .blc-image-wrapper {
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12); /* Slightly deeper shadow for depth */
   margin-bottom: 24px;
   width: 100%;
   position: relative;
@@ -48,6 +48,11 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.5s ease;
+}
+
+.blc-image-wrapper:hover .blc-main-image {
+  transform: scale(1.03); /* Subtle zoom effect */
 }
 
 /* --- Header Info --- */
@@ -59,8 +64,34 @@
   font-size: 2rem;
   font-weight: 800;
   color: #1e293b;
-  margin: 0 0 8px 0;
+  margin: 0 0 16px 0;
   line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/* ============================================ */
+/* PRICE AND TIMER SECTION */
+/* ============================================ */
+.blc-price-timer-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.blc-price-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.blc-price-original {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .blc-price-row {
@@ -82,6 +113,85 @@
   font-size: 0.9rem;
 }
 
+/* ============================================ */
+/* COUNTDOWN TIMER STYLES - ORANGE BRANDING */
+/* ============================================ */
+.blc-timer-compact {
+  background: linear-gradient(135deg, #ff8c00 0%, #ff7a00 100%);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  max-width: 220px;
+  flex-shrink: 0;
+}
+
+.blc-timer-compact-header {
+  text-align: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.blc-timer-compact-boxes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.blc-timer-compact-box {
+  background: white;
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-width: 50px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.blc-timer-compact-number {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ff8c00;
+  line-height: 1;
+  font-family: monospace;
+}
+
+.blc-timer-compact-label {
+  font-size: 0.5rem;
+  color: #6b7280;
+  margin-top: 2px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.blc-timer-compact-colon {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.blc-timer-compact-savings {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1.3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================ */
+/* META AND OTHER SECTIONS */
+/* ============================================ */
 .blc-meta-row {
   display: flex;
   flex-wrap: wrap;
@@ -119,6 +229,11 @@
   border-radius: 16px;
   border: 1px solid #e2e8f0;
   margin-bottom: 32px;
+  transition: box-shadow 0.3s ease;
+}
+
+.blc-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .blc-card-header {
@@ -243,6 +358,7 @@
 
 .blc-day-card.active {
   border-color: #f97316;
+  background-color: #fffaf5; /* Subtle highlight for active day */
 }
 
 .blc-day-title {
@@ -300,6 +416,7 @@
 .blc-expand-btn:hover {
   border-color: #f97316;
   color: #c2410c;
+  background: #fffaf5;
 }
 
 .blc-customized-badge {
@@ -364,14 +481,53 @@
   }
 }
 
+/* Tablet/Mobile (Max Width: 768px) */
+@media (max-width: 768px) {
+  .blc-price-timer-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .blc-timer-compact {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .blc-customized-badge {
+    margin-left: 0;
+    margin-top: 8px;
+    font-size: 0.8rem;
+  }
+
+  .blc-price-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .blc-customizer-toggle {
+    font-size: 0.9rem;
+    padding: 14px;
+  }
+
+  .blc-customizer-toggle span {
+    font-size: 0.9rem;
+  }
+}
+
 /* Mobile Devices (Max Width: 640px) */
 @media (max-width: 640px) {
   .blc-title {
-    font-size: 1.5rem; /* Smaller title on mobile */
+    font-size: 1.5rem;
+    margin-bottom: 12px;
   }
 
   .blc-price {
-    font-size: 1.75rem; /* Smaller price */
+    font-size: 1.75rem;
+  }
+
+  .blc-price-original {
+    font-size: 1rem;
   }
   
   .blc-image-wrapper {
@@ -386,6 +542,37 @@
 
   .blc-section-title {
     font-size: 1.1rem; 
+  }
+
+  /* Timer - Mobile */
+  .blc-timer-compact {
+    padding: 8px 12px;
+  }
+
+  .blc-timer-compact-header {
+    font-size: 0.5rem;
+    margin-bottom: 6px;
+  }
+
+  .blc-timer-compact-box {
+    padding: 5px 8px;
+    min-width: 45px;
+  }
+
+  .blc-timer-compact-number {
+    font-size: 1.1rem;
+  }
+
+  .blc-timer-compact-label {
+    font-size: 0.45rem;
+  }
+
+  .blc-timer-compact-colon {
+    font-size: 1rem;
+  }
+
+  .blc-timer-compact-savings {
+    font-size: 0.6rem;
   }
 
   /* Distribute icons evenly */
@@ -426,29 +613,5 @@
 
   .blc-day-title {
     font-size: 0.95rem;
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .blc-customized-badge {
-    margin-left: 0;
-    margin-top: 8px;
-    font-size: 0.8rem;
-  }
-
-  .blc-price-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .blc-customizer-toggle {
-    font-size: 0.9rem;
-    padding: 14px;
-  }
-
-  .blc-customizer-toggle span {
-    font-size: 0.9rem;
   }
 }
