@@ -8,7 +8,7 @@ import HotelsTable from './HotelsTable';
 import { useToast } from '../toast/ToastManager';
 import './viewhotel.css'; // ✅ Imported updated CSS
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+const API_BASE_URL = 'http://localhost:5000';
 
 // Custom Confirmation Modal
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {

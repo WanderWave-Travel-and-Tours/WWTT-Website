@@ -96,10 +96,10 @@ const Dashboard = () => {
     let bookings = [], packages = [], blogs = [], promos = [], testimonials = [], inquiries = [];
 
     try {
-      const bookingsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/admin/bookings");
+      const bookingsRes = await fetch("http://localhost:5000/api/admin/bookings");
       if (bookingsRes.ok) bookings = await bookingsRes.json();
       
-      const packagesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/packages/all");
+      const packagesRes = await fetch("http://localhost:5000/api/packages/all");
       if (packagesRes.ok) {
         const pkgData = await packagesRes.json();
         let packagesArray = [];
@@ -117,16 +117,16 @@ const Dashboard = () => {
         console.error('❌ Packages fetch failed:', packagesRes.status);
       }
 
-      const blogsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/blogs");
+      const blogsRes = await fetch("http://localhost:5000/api/blogs");
       if (blogsRes.ok) blogs = await blogsRes.json();
 
-      const promosRes = await fetch("https://wanderwaveph-backend.onrender.com/api/promos");
+      const promosRes = await fetch("http://localhost:5000/api/promos");
       if (promosRes.ok) promos = await promosRes.json();
 
-      const testimonialsRes = await fetch("https://wanderwaveph-backend.onrender.com/api/testimonials");
+      const testimonialsRes = await fetch("http://localhost:5000/api/testimonials");
       if (testimonialsRes.ok) testimonials = await testimonialsRes.json();
 
-      const inquiriesRes = await fetch("https://wanderwaveph-backend.onrender.com/api/inquiries");
+      const inquiriesRes = await fetch("http://localhost:5000/api/inquiries");
       if (inquiriesRes.ok) {
         const inquiriesData = await inquiriesRes.json();
         inquiries = inquiriesData.data || inquiriesData || [];
@@ -582,7 +582,7 @@ const Dashboard = () => {
             }
         };
 
-        await fetch('https://wanderwaveph-backend.onrender.com/api/activity-logs', {
+        await fetch('http://localhost:5000/api/activity-logs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(activityLogData)

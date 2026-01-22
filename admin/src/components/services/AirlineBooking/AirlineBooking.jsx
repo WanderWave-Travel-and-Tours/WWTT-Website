@@ -90,7 +90,7 @@ const AirlineBooking = () => {
     const fetchFlightBookings = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/inquiries?isArchive=No');
+            const response = await axios.get('http://localhost:5000/api/inquiries?isArchive=No');
             if (response.data.success) {
                 const filtered = response.data.data.filter(inq => 
                     inq.inquiryType === 'FLIGHT_BOOKING' && inq.isArchive === 'No'
@@ -163,7 +163,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.put(
-                        `https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/status`,
+                        `http://localhost:5000/api/inquiries/${id}/status`,
                         { 
                             status: newStatus,
                             userEmail,
@@ -199,7 +199,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.post(
-                        `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/request-payment`,
+                        `http://localhost:5000/api/inquiries/${selectedBooking._id}/request-payment`,
                         { userEmail, adminId }
                     );
                     
@@ -227,7 +227,7 @@ const AirlineBooking = () => {
                     const { userEmail, adminId } = getAdminData();
 
                     const response = await axios.put(
-                        `https://wanderwaveph-backend.onrender.com/api/inquiries/${id}/archive`, 
+                        `http://localhost:5000/api/inquiries/${id}/archive`, 
                         { 
                             isArchive: 'Yes',
                             userEmail,
@@ -266,7 +266,7 @@ const AirlineBooking = () => {
             if (contactEvidence) formData.append('evidence', contactEvidence);
 
             const response = await axios.put(
-                `https://wanderwaveph-backend.onrender.com/api/inquiries/${selectedBooking._id}/status`,
+                `http://localhost:5000/api/inquiries/${selectedBooking._id}/status`,
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );

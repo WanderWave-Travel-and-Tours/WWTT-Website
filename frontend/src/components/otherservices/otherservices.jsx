@@ -163,7 +163,7 @@ const OtherServices = ({ setAuthPage }) => {
 
   const fetchServices = async () => {
     try {
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/services');
+      const response = await fetch('http://localhost:5000/api/services');
       const data = await response.json();
       
       if (data.success) {
@@ -173,7 +173,7 @@ const OtherServices = ({ setAuthPage }) => {
             icon: iconMap[service.icon] || <Globe size={24} />,
             title: service.title,
             desc: service.description,
-            img: service.image.startsWith('http') ? service.image : `https://wanderwaveph-backend.onrender.com/uploads/${service.image}`,
+            img: service.image.startsWith('http') ? service.image : `http://localhost:5000/uploads/${service.image}`,
             price: service.price,
             requirements: service.requirements || [],
             order: service.order || 999,
@@ -409,7 +409,7 @@ const OtherServices = ({ setAuthPage }) => {
   const handlePassportWizardSubmit = async (wizardData) => {
     try {
       const emailToCheck = wizardData.applicants[0].email;
-      const emailCheckResponse = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/check-email?email=${emailToCheck}`);
+      const emailCheckResponse = await fetch(`http://localhost:5000/api/users/check-email?email=${emailToCheck}`);
       const emailCheckResult = await emailCheckResponse.json();
 
       if (!emailCheckResult.exists) {
@@ -445,7 +445,7 @@ const OtherServices = ({ setAuthPage }) => {
         }
       };
 
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/inquiries', {
+      const response = await fetch('http://localhost:5000/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inquiryData)
@@ -475,7 +475,7 @@ const OtherServices = ({ setAuthPage }) => {
     e.preventDefault();
     
     try {
-      const emailCheckResponse = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/check-email?email=${formData.email}`);
+      const emailCheckResponse = await fetch(`http://localhost:5000/api/users/check-email?email=${formData.email}`);
       const emailCheckResult = await emailCheckResponse.json();
 
       if (!emailCheckResult.exists) {
@@ -510,7 +510,7 @@ const OtherServices = ({ setAuthPage }) => {
         };
       }
 
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/inquiries', {
+      const response = await fetch('http://localhost:5000/api/inquiries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

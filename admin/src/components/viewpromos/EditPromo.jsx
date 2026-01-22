@@ -203,7 +203,7 @@ const EditPromo = () => {
     useEffect(() => {
         const fetchPromoDetails = async () => {
             try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`);
+                const response = await fetch(`http://localhost:5000/api/promos/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch promo details');
                 
                 const data = await response.json();
@@ -336,7 +336,7 @@ const EditPromo = () => {
                 data.append('image', imageFile);
             }
 
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
+            const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                 method: 'PUT',
                 body: data, // No Content-Type header needed for FormData
             });

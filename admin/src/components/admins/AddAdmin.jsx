@@ -108,7 +108,7 @@ const AddAdmin = () => {
       };
 
       const response = await axios.post(
-        'https://wanderwaveph-backend.onrender.com/api/admin/create', 
+        'http://localhost:5000/api/admin/create', 
         adminData,
         {
           headers: {
