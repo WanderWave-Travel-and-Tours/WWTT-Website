@@ -8,26 +8,32 @@
   box-sizing: border-box;
 }
 
-/* --- Go Back Button --- */
+/* --- Go Back Button (UPDATED UI) --- */
 .blc-back-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: #64748b;
+  gap: 6px;
+  /* Color matched to screenshot style (slate blue/gray) */
+  color: #536279; 
   font-weight: 600;
-  background: none;
-  border: none;
+  background: transparent; /* Ensure no background */
+  border: none; /* Ensure no border */
   cursor: pointer;
-  margin-bottom: 20px;
-  font-size: 0.9rem;
+  margin-bottom: 24px;
+  font-size: 1rem;
   padding: 0;
   width: fit-content;
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
+  line-height: 1;
 }
 
 .blc-back-btn:hover {
-  color: #f97316;
+  color: #f97316; /* Orange on hover */
   transform: translateX(-4px);
+}
+
+.blc-back-btn:focus {
+  outline: none;
 }
 
 /* --- Image Section --- */
@@ -72,7 +78,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 1px solid #ffedd5;
   z-index: 10;
-  max-width: 90%; /* Prevent overflow on small screens */
+  max-width: 90%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -90,7 +96,7 @@
   margin: 0 0 16px 0;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  word-wrap: break-word; /* Ensure long titles wrap */
+  word-wrap: break-word;
 }
 
 /* --- Price Section --- */
@@ -99,7 +105,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
-  flex-wrap: wrap; /* Allow wrapping on small screens */
+  flex-wrap: wrap; 
   gap: 10px;
 }
 
@@ -432,7 +438,7 @@
 
 @media (max-width: 480px) {
   .blc-title {
-    font-size: 1.25rem; /* Even smaller for small phones */
+    font-size: 1.25rem;
   }
   .blc-price {
     font-size: 1.5rem;
