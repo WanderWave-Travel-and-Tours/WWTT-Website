@@ -13,13 +13,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #374151;
+  color: #64748b;
   font-weight: 600;
   background: none;
   border: none;
   cursor: pointer;
   margin-bottom: 20px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   padding: 0;
   width: fit-content;
   transition: transform 0.2s ease, color 0.2s ease;
@@ -34,7 +34,7 @@
 .blc-image-wrapper {
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12); /* Slightly deeper shadow for depth */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   margin-bottom: 24px;
   width: 100%;
   position: relative;
@@ -52,7 +52,30 @@
 }
 
 .blc-image-wrapper:hover .blc-main-image {
-  transform: scale(1.03); /* Subtle zoom effect */
+  transform: scale(1.03); 
+}
+
+/* --- BADGE OVERLAY STYLE --- */
+.blc-offer-badge-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #ffedd5;
+  z-index: 10;
+  max-width: 90%; /* Prevent overflow on small screens */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- Header Info --- */
@@ -67,22 +90,22 @@
   margin: 0 0 16px 0;
   line-height: 1.2;
   letter-spacing: -0.02em;
+  word-wrap: break-word; /* Ensure long titles wrap */
 }
 
-/* ============================================ */
-/* PRICE AND TIMER SECTION */
-/* ============================================ */
+/* --- Price Section --- */
 .blc-price-timer-wrapper {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  gap: 10px;
 }
 
 .blc-price-section {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -94,104 +117,12 @@
   font-weight: 600;
 }
 
-.blc-price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
 .blc-price {
   font-size: 2.2rem;
   font-weight: 700;
-  color: #10b981;
 }
 
-.blc-pax {
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
-/* ============================================ */
-/* COUNTDOWN TIMER STYLES - ORANGE BRANDING */
-/* ============================================ */
-.blc-timer-compact {
-  background: linear-gradient(135deg, #ff8c00 0%, #ff7a00 100%);
-  color: white;
-  padding: 10px 14px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  max-width: 220px;
-  flex-shrink: 0;
-}
-
-.blc-timer-compact-header {
-  text-align: center;
-  font-size: 0.55rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  line-height: 1.2;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.blc-timer-compact-boxes {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.blc-timer-compact-box {
-  background: white;
-  border-radius: 6px;
-  padding: 6px 10px;
-  min-width: 50px;
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.blc-timer-compact-number {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #ff8c00;
-  line-height: 1;
-  font-family: monospace;
-}
-
-.blc-timer-compact-label {
-  font-size: 0.5rem;
-  color: #6b7280;
-  margin-top: 2px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
-}
-
-.blc-timer-compact-colon {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: white;
-  line-height: 1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.blc-timer-compact-savings {
-  text-align: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: white;
-  line-height: 1.3;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-/* ============================================ */
-/* META AND OTHER SECTIONS */
-/* ============================================ */
+/* --- Meta and Other Sections --- */
 .blc-meta-row {
   display: flex;
   flex-wrap: wrap;
@@ -205,15 +136,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  font-weight: 500;
 }
 
-/* --- Icons Row --- */
 .blc-icons-row {
   display: flex;
   gap: 20px;
   padding: 20px 0;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
   flex-wrap: wrap;
 }
 
@@ -222,18 +153,12 @@
   flex-shrink: 0;
 }
 
-/* --- Content Cards (Inclusions & Itinerary) --- */
+/* --- Content Cards --- */
 .blc-card {
-  background: #f8fafc;
-  padding: 24px;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  background: white;
+  padding: 0; 
+  border: none;
   margin-bottom: 32px;
-  transition: box-shadow 0.3s ease;
-}
-
-.blc-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .blc-card-header {
@@ -242,11 +167,21 @@
   align-items: center;
   cursor: pointer;
   user-select: none;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.blc-card-header:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .blc-section-title {
-  font-size: 1.25rem;
-  font-weight: 800;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #1e293b;
   margin: 0;
   display: flex;
@@ -264,7 +199,6 @@
   transform: rotate(180deg);
 }
 
-/* Collapsible Content Area */
 .blc-collapsible {
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -295,12 +229,6 @@
   line-height: 1.5;
 }
 
-.blc-divider {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px dashed #cbd5e1;
-}
-
 /* --- Itinerary Timeline --- */
 .blc-timeline-container {
   position: relative;
@@ -313,7 +241,7 @@
   bottom: 30px;
   left: 7px;
   width: 2px;
-  background: #cbd5e1;
+  background: #e2e8f0;
 }
 
 .blc-timeline-item {
@@ -352,22 +280,25 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: nowrap; 
   gap: 8px;
+}
+
+.blc-day-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .blc-day-card.active {
   border-color: #f97316;
-  background-color: #fffaf5; /* Subtle highlight for active day */
+  background-color: #fff7ed;
 }
 
 .blc-day-title {
   font-weight: 700;
   color: #1e293b;
-  font-size: 1.05rem;
+  font-size: 1rem;
   margin: 0;
   flex: 1;
-  word-break: break-word;
 }
 
 .blc-day-content {
@@ -386,9 +317,8 @@
 .blc-day-inner {
   background: #f8fafc;
   padding: 16px;
-  border-radius: 0 0 12px 12px;
+  border-radius: 12px;
   border: 1px solid #f1f5f9;
-  margin: -8px 4px 0 4px;
 }
 
 .blc-expand-btn-container {
@@ -402,7 +332,7 @@
   align-items: center;
   gap: 8px;
   background: white;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #e2e8f0;
   padding: 10px 24px;
   border-radius: 30px;
   color: #475569;
@@ -410,26 +340,26 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .blc-expand-btn:hover {
   border-color: #f97316;
   color: #c2410c;
-  background: #fffaf5;
+  background: #fff7ed;
 }
 
 .blc-customized-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  color: white;
-  font-size: 0.85rem;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.8rem;
   font-weight: 600;
   border-radius: 20px;
   margin-left: 12px;
+  border: 1px solid #e2e8f0;
 }
 
 .blc-customizer-section {
@@ -448,170 +378,67 @@
   border-radius: 12px;
   color: #f97316;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .blc-customizer-toggle:hover {
-  background: #f97316;
-  color: white;
+  background: #fff7ed;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
 }
 
 .blc-customizer-toggle.active {
   background: #f97316;
   color: white;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
-}
-
-.blc-customizer-toggle span {
-  font-size: 1rem;
 }
 
 /* =========================================
    RESPONSIVE MEDIA QUERIES
    ========================================= */
 
-/* Tablet (Max Width: 1024px) */
-@media (max-width: 1024px) {
-  .blc-title {
-    font-size: 1.75rem;
-  }
-}
-
-/* Tablet/Mobile (Max Width: 768px) */
 @media (max-width: 768px) {
-  .blc-price-timer-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .blc-timer-compact {
-    max-width: 100%;
-    width: 100%;
-  }
-
-  .blc-customized-badge {
-    margin-left: 0;
-    margin-top: 8px;
-    font-size: 0.8rem;
-  }
-
-  .blc-price-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .blc-customizer-toggle {
-    font-size: 0.9rem;
-    padding: 14px;
-  }
-
-  .blc-customizer-toggle span {
-    font-size: 0.9rem;
-  }
-}
-
-/* Mobile Devices (Max Width: 640px) */
-@media (max-width: 640px) {
   .blc-title {
     font-size: 1.5rem;
-    margin-bottom: 12px;
   }
-
   .blc-price {
     font-size: 1.75rem;
   }
-
   .blc-price-original {
     font-size: 1rem;
   }
   
-  .blc-image-wrapper {
-    margin-bottom: 16px;
-    border-radius: 12px;
+  /* Make the badge smaller on tablet/mobile */
+  .blc-offer-badge-overlay {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    top: 12px;
+    right: 12px;
   }
-
-  .blc-card {
-    padding: 16px;
-    margin-bottom: 24px;
+  
+  .blc-customized-badge {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: center;
   }
-
-  .blc-section-title {
-    font-size: 1.1rem; 
-  }
-
-  /* Timer - Mobile */
-  .blc-timer-compact {
-    padding: 8px 12px;
-  }
-
-  .blc-timer-compact-header {
-    font-size: 0.5rem;
-    margin-bottom: 6px;
-  }
-
-  .blc-timer-compact-box {
-    padding: 5px 8px;
-    min-width: 45px;
-  }
-
-  .blc-timer-compact-number {
-    font-size: 1.1rem;
-  }
-
-  .blc-timer-compact-label {
-    font-size: 0.45rem;
-  }
-
-  .blc-timer-compact-colon {
-    font-size: 1rem;
-  }
-
-  .blc-timer-compact-savings {
-    font-size: 0.6rem;
-  }
-
-  /* Distribute icons evenly */
+  
   .blc-icons-row {
     gap: 12px;
-    justify-content: space-between; 
+    justify-content: space-between;
   }
-  
-  .blc-icon {
-    width: 20px;
-    height: 20px;
-  }
+}
 
-  .blc-list-item, .blc-meta-item {
-    font-size: 0.85rem;
+@media (max-width: 480px) {
+  .blc-title {
+    font-size: 1.25rem; /* Even smaller for small phones */
   }
-
-  /* Tighten timeline padding */
-  .blc-timeline-item {
-    padding-left: 20px;
+  .blc-price {
+    font-size: 1.5rem;
   }
-  
-  .blc-timeline-dot {
-    width: 8px;
-    height: 8px;
-    top: 19px;
-    left: 4px;
-    border-width: 2px;
-  }
-  
-  .blc-timeline-line {
-    left: 7px;
-  }
-
-  .blc-day-card {
-    padding: 12px;
-  }
-
-  .blc-day-title {
-    font-size: 0.95rem;
+  .blc-offer-badge-overlay {
+    font-size: 0.7rem;
+    padding: 4px 10px;
   }
 }
