@@ -229,29 +229,36 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-// 3. ARCHIVE TOGGLE ✅ VERIFIED - This sets archivedAt timestamp
+// 3. ARCHIVE TOGGLE ✅ FIX: Bypasses Validation for legacy data
 router.post('/:id/archive', async (req, res) => {
     try {
         const { userEmail, adminId } = req.body; 
         const logUserId = getValidAdminId(adminId);
 
+        // 1. Fetch package first to get current status and title
         const pkg = await Package.findById(req.params.id);
+        
         if (!pkg) {
             console.log('❌ Package not found:', req.params.id);
             return res.status(404).json({ status: "error", message: "Package not found" });
         }
 
+        // 2. Determine new values
         const newStatus = pkg.isArchive === 'Yes' ? 'No' : 'Yes';
-        pkg.isArchive = newStatus;
+        const newArchivedAt = newStatus === 'Yes' ? new Date() : null;
         
-        // ✅ Set archivedAt timestamp when archiving
-        if (newStatus === 'Yes') {
-            pkg.archivedAt = new Date();
-        } else {
-            pkg.archivedAt = null; // Clear when restoring
-        }
-        
-        await pkg.save();
+        // 3. UPDATE using findByIdAndUpdate with runValidators: false
+        // This avoids validation errors (like "pax required") on old data when just archiving
+        await Package.findByIdAndUpdate(
+            req.params.id,
+            { 
+                $set: { 
+                    isArchive: newStatus,
+                    archivedAt: newArchivedAt
+                } 
+            },
+            { new: true, runValidators: false } // <--- CRITICAL FIX
+        );
 
         const actionType = newStatus === 'Yes' ? 'ARCHIVE' : 'RESTORE';
         const severity = newStatus === 'Yes' ? 'WARNING' : 'SUCCESS';
