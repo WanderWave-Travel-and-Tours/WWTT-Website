@@ -8,7 +8,7 @@ const getImageUrl = (image) => {
   if (image.startsWith('http://') || image.startsWith('https://')) {
     return image;
   }
-  return `https://wanderwaveph-backend.onrender.com${image.startsWith('/') ? '' : '/'}${image}`;
+  return `http://localhost:5000${image.startsWith('/') ? '' : '/'}${image}`;
 };
 
 function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishlistUpdate }) {
@@ -27,7 +27,7 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
         const userId = currentUser._id;
         console.log('📥 Fetching wishlist items for dropdown...');
 
-        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites/${userId}`, {
+        const response = await fetch(`http://localhost:5000/api/favorites/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
           const itemsWithDetails = await Promise.all(
             result.data.map(async (item) => {
               try {
-                const pkgResponse = await fetch(`https://wanderwaveph-backend.onrender.com/api/packages/${item.promo_id}`);
+                const pkgResponse = await fetch(`http://localhost:5000/api/packages/${item.promo_id}`);
                 if (pkgResponse.ok) {
                   const pkgResult = await pkgResponse.json();
                   if (pkgResult.status === 'ok') {
@@ -103,7 +103,7 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
       const userId = currentUser._id;
       console.log('🗑️ Removing from wishlist:', packageId);
 
-      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites`, {
+      const response = await fetch(`http://localhost:5000/api/favorites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

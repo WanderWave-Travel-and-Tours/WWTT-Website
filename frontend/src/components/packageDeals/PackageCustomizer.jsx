@@ -61,7 +61,7 @@ const PackageCustomizer = ({
       console.log('🌐 API Call: Fetching activities for', destination);
       
       const response = await fetch(
-        `https://wanderwaveph-backend.onrender.com/api/seller-rates?destination=${encodeURIComponent(destination)}&status=active`
+        `http://localhost:5000/api/seller-rates?destination=${encodeURIComponent(destination)}&status=active`
       );
 
       if (!response.ok) {

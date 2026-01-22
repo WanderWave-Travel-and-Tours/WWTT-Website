@@ -9,7 +9,7 @@ import './viewtours.css';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../toast/ToastManager';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/tours';
+const API_BASE_URL = 'http://localhost:5000/api/tours';
 
 // --- CONFIRMATION MODAL ---
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {

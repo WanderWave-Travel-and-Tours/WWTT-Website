@@ -48,7 +48,7 @@ const ViewPromos = () => {
     const fetchPromos = async () => {
         setLoading(true);
         try {
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos');
+            const response = await fetch('http://localhost:5000/api/promos');
             if (!response.ok) {
                 throw new Error('Failed to fetch promos');
             }
@@ -86,7 +86,7 @@ const ViewPromos = () => {
         const { id, code } = confirmModal;
         
         try {
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
+            const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ isArchive: 'Yes' }),
