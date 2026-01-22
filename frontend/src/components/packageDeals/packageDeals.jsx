@@ -215,7 +215,7 @@ function PackageDeals() {
         const userId = currentUser._id;
         console.log('📥 Fetching favorites for user:', userId);
 
-        const response = await fetch(`http://localhost:5000/api/favorites/${userId}`, {
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -437,7 +437,7 @@ function PackageDeals() {
     const fetchPackages = async () => {
       try {
         console.log('📦 Fetching packages...');
-        const response = await fetch('http://localhost:5000/api/packages/all'); 
+        const response = await fetch('https://wanderwaveph-backend.onrender.com/api/packages/all'); 
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -612,7 +612,7 @@ function PackageDeals() {
           : [...prev, packageId]
       );
       
-      const response = await fetch(`http://localhost:5000/api/favorites`, {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/favorites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

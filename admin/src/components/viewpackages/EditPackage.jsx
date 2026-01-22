@@ -8,10 +8,6 @@ import "./editpackage.css";
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
-// ✅ Imports for Toast and Confirmation Modal
-import { useToast } from '../../components/toast/ToastManager';
-import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
-
 // 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
 const getAdminData = () => {
     try {
@@ -28,51 +24,14 @@ const getAdminData = () => {
 
 const EditPackage = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams(); // Get ID from URL params
   const packageId = id;
-  const toast = useToast();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // ✅ Confirmation Modal States
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: null,
-    type: "primary"
-  });
-
-  // ✅ Helper function to open confirmation modal
-  const openConfirmModal = (title, message, onConfirm, type = "primary") => {
-    setConfirmModal({
-      isOpen: true,
-      title,
-      message,
-      onConfirm,
-      type
-    });
-  };
-
-  const closeConfirmModal = () => {
-    setConfirmModal({
-      isOpen: false,
-      title: "",
-      message: "",
-      onConfirm: null,
-      type: "primary"
-    });
-  };
-
-  const handleConfirm = () => {
-    if (confirmModal.onConfirm) {
-      confirmModal.onConfirm();
-    }
-    closeConfirmModal();
-  };
-
+  // Form state
   const [formData, setFormData] = useState({
     title: "",
     destination: "",
@@ -84,6 +43,7 @@ const EditPackage = () => {
     existingImagePublicId: "" 
   });
 
+  // ✅ Store original data to track changes for Activity Logs
   const [originalData, setOriginalData] = useState(null);
 
   const [imageFile, setImageFile] = useState(null);
@@ -298,12 +258,12 @@ const EditPackage = () => {
           }
         } else {
           console.error("Error in response:", result.error);
-          toast.error(result.error || "Failed to load package data", "Error");
+          alert("Failed to load package data: " + result.error);
           navigate("/view-packages");
         }
       } catch (err) {
         console.error("Error fetching package:", err);
-        toast.error("Failed to load package data. Please try again.", "Error");
+        alert("Failed to load package data. Please try again.");
         navigate("/view-packages");
       } finally {
         setLoading(false);
@@ -336,21 +296,40 @@ const EditPackage = () => {
     setInclusions(newInclusions);
   };
 
+  // ✅ NEW: Smart Paste for Inclusions (same as AddPackage)
+  const handleInclusionPaste = (index, e) => {
+    const pastedText = e.clipboardData.getData("text");
+    const lines = pastedText.split(/\r?\n/).filter((line) => line.trim());
+
+    if (lines.length > 1) {
+      e.preventDefault();
+      // Clean common bullet characters
+      const cleanedLines = lines.map((line) => {
+        return line.replace(/^[✓✔️☑️•\-\s]+/, "").trim();
+      });
+
+      const newInclusions = [...inclusions];
+      
+      // Update the current focused input with the first line
+      newInclusions[index] = cleanedLines[0];
+
+      // Splice the rest of the lines after the current index
+      let currentIndex = index;
+      cleanedLines.slice(1).forEach((line) => {
+        newInclusions.splice(++currentIndex, 0, line);
+      });
+
+      setInclusions(newInclusions);
+    }
+  };
+
   const addInclusion = () => {
     setInclusions([...inclusions, ""]);
   };
 
   const removeInclusion = (index) => {
     if (inclusions.length > 1) {
-      openConfirmModal(
-        "Remove Inclusion",
-        "Are you sure you want to remove this inclusion?",
-        () => {
-          setInclusions(inclusions.filter((_, i) => i !== index));
-          toast.success("Inclusion removed successfully");
-        },
-        "danger"
-      );
+      setInclusions(inclusions.filter((_, i) => i !== index));
     }
   };
 
@@ -360,33 +339,36 @@ const EditPackage = () => {
     setItinerary(newItinerary);
   };
 
-  // ✅ NEW: Handle paste event to auto-split activities
-  const handleActivityPaste = (itineraryIndex, activityIndex, e) => {
-    const pastedText = e.clipboardData.getData('text');
-    
-    // Check if pasted text contains multiple lines
-    const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line !== '');
-    
-    if (lines.length > 1) {
-      e.preventDefault(); // Prevent default paste behavior
-      
-      const newItinerary = [...itinerary];
-      // Replace current activity with first line
-      newItinerary[itineraryIndex].activities[activityIndex] = lines[0];
-      
-      // Add remaining lines as new activities
-      for (let i = 1; i < lines.length; i++) {
-        newItinerary[itineraryIndex].activities.splice(activityIndex + i, 0, lines[i]);
-      }
-      
-      setItinerary(newItinerary);
-    }
-  };
-
   const handleActivityChange = (itineraryIndex, activityIndex, value) => {
     const newItinerary = [...itinerary];
     newItinerary[itineraryIndex].activities[activityIndex] = value;
     setItinerary(newItinerary);
+  };
+
+  // ✅ NEW: Smart Paste for Itinerary Activities (same as AddPackage)
+  const handleActivityPaste = (dayIndex, actIndex, e) => {
+    const pastedText = e.clipboardData.getData("text");
+    const lines = pastedText.split(/\r?\n/).filter((line) => line.trim());
+
+    if (lines.length > 1) {
+      e.preventDefault();
+      const cleanedLines = lines.map((line) => {
+        return line.replace(/^[✓✔️☑️•\-\s]+/, "").trim();
+      });
+
+      const updatedItinerary = [...itinerary];
+      
+      // Update the current focused activity field with the first line
+      updatedItinerary[dayIndex].activities[actIndex] = cleanedLines[0];
+
+      // Insert the rest of the activities into this day's array
+      let currentActIndex = actIndex;
+      cleanedLines.slice(1).forEach((line) => {
+        updatedItinerary[dayIndex].activities.splice(++currentActIndex, 0, line);
+      });
+
+      setItinerary(updatedItinerary);
+    }
   };
 
   const addActivity = (itineraryIndex) => {
@@ -398,18 +380,10 @@ const EditPackage = () => {
   const removeActivity = (itineraryIndex, activityIndex) => {
     const newItinerary = [...itinerary];
     if (newItinerary[itineraryIndex].activities.length > 1) {
-      openConfirmModal(
-        "Remove Activity",
-        "Are you sure you want to remove this activity?",
-        () => {
-          newItinerary[itineraryIndex].activities = newItinerary[
-            itineraryIndex
-          ].activities.filter((_, i) => i !== activityIndex);
-          setItinerary(newItinerary);
-          toast.success("Activity removed successfully");
-        },
-        "danger"
-      );
+      newItinerary[itineraryIndex].activities = newItinerary[
+        itineraryIndex
+      ].activities.filter((_, i) => i !== activityIndex);
+      setItinerary(newItinerary);
     }
   };
 
@@ -422,19 +396,11 @@ const EditPackage = () => {
 
   const removeItineraryDay = (index) => {
     if (itinerary.length > 1) {
-      openConfirmModal(
-        "Remove Day",
-        "Are you sure you want to remove this entire day from the itinerary?",
-        () => {
-          const newItinerary = itinerary.filter((_, i) => i !== index);
-          newItinerary.forEach((item, i) => {
-            item.day = i + 1;
-          });
-          setItinerary(newItinerary);
-          toast.success("Day removed successfully");
-        },
-        "danger"
-      );
+      const newItinerary = itinerary.filter((_, i) => i !== index);
+      newItinerary.forEach((item, i) => {
+        item.day = i + 1;
+      });
+      setItinerary(newItinerary);
     }
   };
 
@@ -447,7 +413,7 @@ const EditPackage = () => {
       !formData.sellerPrice ||
       !formData.duration
     ) {
-      toast.error("Please fill in all required fields", "Validation Error");
+      alert("Please fill in all required fields");
       return;
     }
 
@@ -530,17 +496,15 @@ const EditPackage = () => {
       const result = await response.json();
 
       if (result.status === "ok") {
-        toast.success("Package updated successfully", "Success");
+        alert("Package updated successfully!");
         await clearDraft();
-        setTimeout(() => {
-          navigate("/view-packages");
-        }, 1500);
+        navigate("/view-packages");
       } else {
-        toast.error(result.error || "Unknown error occurred", "Update Failed");
+        alert("Failed to update package: " + (result.error || "Unknown error"));
       }
     } catch (err) {
       console.error("Error updating package:", err);
-      toast.error("Error updating package. Please try again.", "Error");
+      alert("Error updating package. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -574,16 +538,6 @@ const EditPackage = () => {
   return (
     <div className="epa-page">
       
-      {/* Confirmation Modal */}
-      <CustomConfirmModal
-        isOpen={confirmModal.isOpen}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        onConfirm={handleConfirm}
-        onCancel={closeConfirmModal}
-        type={confirmModal.type}
-      />
-
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -770,6 +724,7 @@ const EditPackage = () => {
                       onChange={(e) =>
                         handleInclusionChange(index, e.target.value)
                       }
+                      onPaste={(e) => handleInclusionPaste(index, e)}
                       className="epa-input"
                       placeholder="Enter inclusion"
                     />
@@ -879,16 +834,9 @@ const EditPackage = () => {
               <button
                 type="button"
                 className="epa-btn epa-btn--cancel"
-                onClick={() => {
-                  openConfirmModal(
-                    "Cancel Changes",
-                    "Are you sure you want to cancel? All unsaved changes will be lost.",
-                    async () => {
-                      await clearDraft();
-                      navigate("/view-packages");
-                    },
-                    "danger"
-                  );
+                onClick={async () => {
+                    await clearDraft(); 
+                    navigate("/view-packages");
                 }}
                 disabled={submitting}
               >

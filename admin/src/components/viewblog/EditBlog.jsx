@@ -125,7 +125,7 @@ const EditBlog = () => {
     const getImageUrl = (imagePath) => {
         if (!imagePath) return '';
         if (imagePath.startsWith('http')) return imagePath;
-        return `http://localhost:5000/${imagePath.replace(/\\/g, '/')}`;
+        return `https://wanderwaveph-backend.onrender.com/${imagePath.replace(/\\/g, '/')}`;
     };
 
     // Helper: Convert ISO Date to Input compatible string (YYYY-MM-DDTHH:MM)
@@ -254,7 +254,7 @@ const EditBlog = () => {
     useEffect(() => {
         const fetchBlog = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/blogs/${id}`);
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/${id}`);
                 if (!response.ok) throw new Error('Blog not found');
                 
                 const blog = await response.json();
@@ -369,7 +369,7 @@ const EditBlog = () => {
                 formDataToSend.append('imageUrl', imageFile);
             }
 
-            const response = await fetch(`http://localhost:5000/api/blogs/update/${id}`, {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/update/${id}`, {
                 method: 'PUT',
                 body: formDataToSend,
             });

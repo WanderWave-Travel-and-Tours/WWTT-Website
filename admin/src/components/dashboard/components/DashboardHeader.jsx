@@ -32,7 +32,7 @@ const DashboardHeader = ({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
   const sections = [
     { value: 'all', label: 'All Sections', icon: 'BarChart2' },

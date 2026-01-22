@@ -17,7 +17,7 @@ import {
   Save,
 } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:5000/api/services";
+const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/services";
 
 const EditService = () => {
   const { id } = useParams();
@@ -93,7 +93,7 @@ const EditService = () => {
 
           const imgUrl = data.image.startsWith("http")
             ? data.image
-            : `http://localhost:5000/uploads/${data.image}`;
+            : `https://wanderwaveph-backend.onrender.com/uploads/${data.image}`;
           setCurrentImage(imgUrl);
         } else {
           setError("Service not found.");
