@@ -69,32 +69,38 @@ const Booking = () => {
 
       const formatted = bookingsArray
         .filter(b => (b.isArchive || 'No') === 'No')
-        .map((b, index) => ({
-          id: `BK${String(count - index).padStart(4, '0')}`,
-          mongoId: b._id,
-          customerName: b.fullName || 'N/A',
-          email: b.email || 'N/A',
-          packageName: b.packageName || 'Unknown Package',
-          travelDate: b.startDate || 'Not specified',
-          startDate: b.startDate,
-          endDate: b.endDate,
-          duration: b.duration,
-          totalAmount: b.totalAmount || 0,
-          guests: b.pax?.adult || 1,
-          status: b.status || 'pending',
-          bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
-          message: b.message || '',
-          referenceNumber: b.referenceNumber || 'N/A',
-          paymentLinkId: b.paymentLinkId,
-          paymentType: b.paymentType || 'full',
-          initialPaymentAmount: b.initialPaymentAmount || 0,
-          remainingBalance: b.remainingBalance || 0,
-          balancePaidAmount: b.balancePaidAmount || 0,
-          balancePaidAt: b.balancePaidAt,
-          isWalkin: b.isWalkin || false,
-          rawData: b,
-          isArchive: b.isArchive || 'No'
-        }));
+        .map((b, index) => {
+          // ✅ BAGONG LOGIC: Kung walk-in, automatic CONFIRMED at PAID
+          const isWalkin = b.isWalkin || false;
+          const actualStatus = isWalkin ? 'confirmed' : (b.status || 'pending');
+          
+          return {
+            id: `BK${String(count - index).padStart(4, '0')}`,
+            mongoId: b._id,
+            customerName: b.fullName || 'N/A',
+            email: b.email || 'N/A',
+            packageName: b.packageName || 'Unknown Package',
+            travelDate: b.startDate || 'Not specified',
+            startDate: b.startDate,
+            endDate: b.endDate,
+            duration: b.duration,
+            totalAmount: b.totalAmount || 0,
+            guests: b.pax?.adult || 1,
+            status: actualStatus, // ✅ Auto-confirmed for walk-in
+            bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
+            message: b.message || '',
+            referenceNumber: b.referenceNumber || 'N/A',
+            paymentLinkId: b.paymentLinkId,
+            paymentType: b.paymentType || 'full',
+            initialPaymentAmount: b.initialPaymentAmount || 0,
+            remainingBalance: isWalkin ? 0 : (b.remainingBalance || 0), // ✅ Walk-in = no balance
+            balancePaidAmount: isWalkin ? b.totalAmount : (b.balancePaidAmount || 0), // ✅ Walk-in fully paid
+            balancePaidAt: b.balancePaidAt,
+            isWalkin: isWalkin,
+            rawData: b,
+            isArchive: b.isArchive || 'No'
+          };
+        });
 
       setBookings(formatted);
       
@@ -122,19 +128,25 @@ const Booking = () => {
     if (paymentFilter !== 'ALL') {
       if (paymentFilter === 'PENDING_BALANCE') {
         filtered = filtered.filter(b => {
+          // ✅ Walk-in bookings NEVER have pending balance
+          if (b.isWalkin) return false;
           return b.paymentType === 'partial' && 
                  b.remainingBalance > 0 && 
                  b.balancePaidAmount === 0;
         });
       } else if (paymentFilter === 'FULLY_PAID') {
         filtered = filtered.filter(b => {
+          // ✅ Walk-in bookings are ALWAYS fully paid
+          if (b.isWalkin) return true;
+          
           if (b.paymentType === 'full') {
             return b.status === 'confirmed' || b.status === 'fully_paid';
           }
           return b.balancePaidAmount > 0 && (b.totalAmount - b.initialPaymentAmount - b.balancePaidAmount) <= 0;
         });
       } else if (paymentFilter === 'PARTIAL_ONLY') {
-        filtered = filtered.filter(b => b.paymentType === 'partial');
+        // ✅ Walk-in bookings are never partial
+        filtered = filtered.filter(b => !b.isWalkin && b.paymentType === 'partial');
       }
     }
 
@@ -161,8 +173,6 @@ const Booking = () => {
 
     setFilteredBookings(filtered);
     setCurrentPage(1);
-    
-    // Inalis na dito ang toast.info para sa filtering/search results.
 
   }, [searchTerm, filterStatus, paymentFilter, typeFilter, bookings]);
 
@@ -193,7 +203,7 @@ const Booking = () => {
       await fetchBookings();
       toast.success(
         `Booking ${booking.id} for ${booking.customerName} confirmed!`,
-        "Booking Confirmed",
+        "✅ Booking Confirmed",
         4000
       );
       
@@ -311,14 +321,17 @@ const Booking = () => {
       .filter(b => b.status === 'confirmed')
       .reduce((sum, b) => sum + b.totalAmount, 0);
 
+    // ✅ Exclude walk-in from pending balance count
     const pendingBalanceCount = bookings.filter(b => 
+      !b.isWalkin &&
       b.paymentType === 'partial' && 
       b.remainingBalance > 0 && 
       b.balancePaidAmount === 0
     ).length;
 
+    // ✅ Exclude walk-in from total pending balance
     const totalPendingBalance = bookings
-      .filter(b => b.paymentType === 'partial' && b.remainingBalance > 0)
+      .filter(b => !b.isWalkin && b.paymentType === 'partial' && b.remainingBalance > 0)
       .reduce((sum, b) => sum + b.remainingBalance, 0);
 
     return [
