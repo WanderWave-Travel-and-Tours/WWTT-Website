@@ -180,7 +180,7 @@ export const PSAApplicationModal = ({ isOpen, onClose, refreshData, psaDocs = []
         data.append(key, formData.files[key]);
       });
 
-      const response = await axios.post('http://localhost:5000/api/inquiries/upload-application', data, {
+      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries/upload-application', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

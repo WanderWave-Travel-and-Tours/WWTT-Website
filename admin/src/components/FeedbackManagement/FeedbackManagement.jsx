@@ -74,7 +74,7 @@ const FeedbackManagement = () => {
   const fetchFeedbacks = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/feedback', {
+      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/feedback', {
         headers: getAuthHeaders()
       });
       
@@ -117,7 +117,7 @@ const FeedbackManagement = () => {
       type: 'warning',
       onConfirm: async () => {
         try {
-          const response = await fetch(`http://localhost:5000/api/feedback/${id}/archive`, {
+          const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/feedback/${id}/archive`, {
             method: 'PATCH',
             headers: getAuthHeaders()
           });
@@ -174,7 +174,7 @@ const FeedbackManagement = () => {
       toast.success('Feedback exported successfully!', 'Export Complete');
 
       // 📝 OPTIONAL: Log the export action to Backend
-      await fetch('http://localhost:5000/api/activity-logs', {
+      await fetch('https://wanderwaveph-backend.onrender.com/api/activity-logs', {
           method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify({

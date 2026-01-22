@@ -40,7 +40,7 @@ const ViewPackages = () => {
         message: ''
     });
 
-    const API_BASE_URL = 'http://localhost:5000/api/packages';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
 
     // ✅ Toggle Function
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -77,7 +77,7 @@ const ViewPackages = () => {
     const getImageUrl = (image) => {
         if (!image) return "https://via.placeholder.com/400x300?text=No+Image";
         if (image.startsWith("http")) return image;
-        return `http://localhost:5000/uploads/${image}`;
+        return `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
     };
 
     const handleImageError = (e, pkg) => {

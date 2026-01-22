@@ -6,7 +6,7 @@ import { Mail, CheckCircle, XCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react
 // Import Toast Hook
 import { useToast } from '../toast/ToastManager';
 
-const API_BASE_URL = 'http://localhost:5000/api/auth'; 
+const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/auth'; 
 
 // --- OTP Verification Form Component (Modal) ---
 const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading }) => {
@@ -330,7 +330,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         setIsLoading(true);
         
         try {
-            const res = await fetch(`http://localhost:5000/api/auth/login`, {
+            const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

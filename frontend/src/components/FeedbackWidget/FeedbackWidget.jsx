@@ -76,7 +76,7 @@ const FeedbackWidget = () => {
     };
 
     try {
-      const API_URL = 'http://localhost:5000';
+      const API_URL = 'https://wanderwaveph-backend.onrender.com';
       const endpoint = `${API_URL}/api/feedback`;
       
       console.log('Submitting feedback to:', endpoint);

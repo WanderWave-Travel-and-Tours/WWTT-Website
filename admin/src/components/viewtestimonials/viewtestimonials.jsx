@@ -84,7 +84,7 @@ const ViewTestimonials = () => {
         type: "primary"
     });
     
-    const API_BASE_URL = 'http://localhost:5000';
+    const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
 
     const askConfirmation = (title, message, onConfirm, type = "primary") => {
         setConfirmConfig({

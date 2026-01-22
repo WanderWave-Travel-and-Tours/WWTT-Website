@@ -35,7 +35,7 @@ const PackageDetailModal = ({
     }
     
     // DEFAULT: Try database/uploads folder first
-    return `http://localhost:5000/uploads/${image}`;
+    return `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
   };
 
   // Smart error handler: If database fails, try Cloudinary
