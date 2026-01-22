@@ -55,7 +55,7 @@ function CurrencyModal({ isOpen, onClose, currency, setCurrency }) {
           <div className="main-notice">
             <h3 className="notice-title">Important Notice</h3>
             <p className="notice-text">
-              Prices for <strong>International Packages</strong> may fluctuate daily based on current foreign exchange rates.
+              Prices are displayed in <strong>PHP or USD</strong>
             </p>
             <p className="notice-subtext">
               Transaction fees may also apply depending on your chosen payment method.
