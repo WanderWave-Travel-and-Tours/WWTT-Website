@@ -137,20 +137,22 @@ export const BookingDetailModal = ({
     const statusConfig = getStatusConfig(status);
     const StatusIcon = statusConfig.icon;
 
-    // Payment calculations
-    const isPartialPayment = selectedBooking.paymentType === 'partial';
+    // ✅ Walk-in logic
+    const isWalkin = selectedBooking.isWalkin || false;
+    
+    // Payment calculations - ✅ Adjusted for walk-in
+    const isPartialPayment = !isWalkin && selectedBooking.paymentType === 'partial'; // Walk-in never partial
     const totalAmount = selectedBooking.totalAmount || 0;
-    const remainingBalance = selectedBooking.remainingBalance || 0;
-    const balancePaid = selectedBooking.balancePaidAmount || 0;
+    const remainingBalance = isWalkin ? 0 : (selectedBooking.remainingBalance || 0); // Walk-in has no balance
+    const balancePaid = isWalkin ? totalAmount : (selectedBooking.balancePaidAmount || 0); // Walk-in is fully paid
     
     const initialPaid = totalAmount - remainingBalance;
     const totalPaid = initialPaid + balancePaid;
     
-    const isFullyPaid = balancePaid > 0 && remainingBalance <= 0;
-    const isPendingPayment = !isPartialPayment && status === 'PENDING';
+    const isFullyPaid = isWalkin || (balancePaid > 0 && remainingBalance <= 0); // ✅ Walk-in is always fully paid
+    const isPendingPayment = !isWalkin && !isPartialPayment && status === 'PENDING'; // ✅ Walk-in never pending payment
 
-    // ✅ NEW: Payment Method Logic
-    const isWalkin = selectedBooking.isWalkin || false;
+    // Payment Method Logic
     const paymentMethod = isWalkin ? 'Pay Over the Counter' : 'Online Payment';
     const PaymentMethodIcon = isWalkin ? Store : Smartphone;
 
@@ -205,9 +207,7 @@ export const BookingDetailModal = ({
                                 <div className="cnm-info-item">
                                     <div className="cnm-info-icon"><DollarSign size={18} /></div>
                                     <div className="cnm-info-content">
-                                        <label className="cnm-info-label">
-                                            {isPartialPayment ? 'Total Amount' : 'Total Amount'}
-                                        </label>
+                                        <label className="cnm-info-label">Total Amount</label>
                                         <span className="cnm-info-value cnm-val-amount">₱{selectedBooking.totalAmount.toLocaleString()}</span>
                                     </div>
                                 </div>
@@ -229,17 +229,16 @@ export const BookingDetailModal = ({
                                     PAYMENT DETAILS
                                 </div>
                                 <div className={`cnm-payment-badge ${isPartialPayment ? 'partial' : 'full'}`}>
-                                    {isPartialPayment ? 'PARTIAL PAYMENT' : 'FULL PAYMENT'}
+                                    {isWalkin ? 'PAID OVER THE COUNTER' : (isPartialPayment ? 'PARTIAL PAYMENT' : 'FULL PAYMENT')}
                                 </div>
                             </div>
                             
                             <div className="cnm-payment-body">
                                 {/* Payment Method and Type */}
                                 <div className="cnm-payment-section">
-                                    {/* ✅ NEW: Payment Method Row */}
+                                    {/* Payment Method Row */}
                                     <div className="cnm-payment-row">
                                         <span className="cnm-payment-label">
-                                            
                                             Payment Method:
                                         </span>
                                         <span className="cnm-payment-value" style={{
@@ -253,7 +252,7 @@ export const BookingDetailModal = ({
                                     <div className="cnm-payment-row">
                                         <span className="cnm-payment-label">Payment Type:</span>
                                         <span className="cnm-payment-value">
-                                            {isPartialPayment ? 'Pay in Partial' : 'Pay in Full'}
+                                            {isWalkin ? 'Paid in Full' : (isPartialPayment ? 'Pay in Partial' : 'Pay in Full')}
                                         </span>
                                     </div>
                                     <div className="cnm-payment-row">
@@ -262,8 +261,30 @@ export const BookingDetailModal = ({
                                     </div>
                                 </div>
 
-                                {/* Partial Payment Breakdown */}
-                                {isPartialPayment && (
+                                {/* ✅ WALK-IN: Always show as FULLY PAID */}
+                                {isWalkin && (
+                                    <>
+                                        <div className="cnm-payment-divider"></div>
+                                        
+                                        <div className="cnm-payment-status-box paid">
+                                            <div className="cnm-payment-status-left">
+                                                <div className="cnm-payment-status-title">
+                                                    <CheckCircle size={14} style={{marginRight: '4px', display: 'inline'}} />
+                                                    FULLY PAID (WALK-IN)
+                                                </div>
+                                                <div className="cnm-payment-status-amount">
+                                                    ₱{totalAmount.toLocaleString()}
+                                                </div>
+                                            </div>
+                                            <div className="cnm-payment-status-icon">
+                                                <CheckCircle size={24} />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Partial Payment Breakdown - Only for NON-walk-in */}
+                                {!isWalkin && isPartialPayment && (
                                     <>
                                         <div className="cnm-payment-divider"></div>
                                         
@@ -332,8 +353,8 @@ export const BookingDetailModal = ({
                                     </>
                                 )}
 
-                                {/* Full Payment Status */}
-                                {!isPartialPayment && (
+                                {/* Full Payment Status - Only for NON-walk-in */}
+                                {!isWalkin && !isPartialPayment && (
                                     <>
                                         <div className="cnm-payment-divider"></div>
                                         
@@ -413,7 +434,8 @@ export const BookingDetailModal = ({
                             </button>
                         )}
                         
-                        {status === 'PENDING' && (
+                        {/* ✅ Walk-in bookings are auto-confirmed, no confirm button needed */}
+                        {status === 'PENDING' && !isWalkin && (
                             <>
                                 <button 
                                     className="cnm-btn cnm-btn-success"
