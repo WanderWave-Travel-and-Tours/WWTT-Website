@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   MapPin, Calendar, Plane, Hotel,
   Utensils, Bus, Camera, Briefcase, ChevronDown, ChevronUp,
-  CheckSquare, XCircle, CalendarDays, ChevronLeft, Settings, Clock
+  CheckSquare, CalendarDays, ChevronLeft, Settings, Clock
 } from 'lucide-react';
 import PackageCustomizer from './PackageCustomizer';
 import './BookingLeftColumn.css';
@@ -15,15 +15,20 @@ const BookingLeftColumn = ({
   onCustomizationChange,
   timerExpired = false
 }) => {
+  // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
+
   const [isItineraryExpanded, setIsItineraryExpanded] = useState(false);
   const [expandedDayIndices, setExpandedDayIndices] = useState({});
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
-  const [isExcludedExpanded, setIsExcludedExpanded] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
 
-  const hasExclusions = pkg.excludes && pkg.excludes.length > 0;
+  // --- HARDCODED REDIRECT TO FLIGHTS ---
+  const handleBackClick = () => {
+    navigate('/flights');
+  };
+
   const itinerary = pkg.itinerary || [];
   const INITIAL_DAYS = 3;
   const shouldShowButton = itinerary.length > INITIAL_DAYS;
@@ -57,9 +62,14 @@ const BookingLeftColumn = ({
 
   return (
     <div className="blc-container">
-      <button className="blc-back-btn" onClick={() => navigate(-1)}>
-        <ChevronLeft size={20} />
-        Go Back
+      {/* --- GO BACK BUTTON (Redirects to /flights) --- */}
+      <button 
+        className="blc-back-btn" 
+        onClick={handleBackClick}
+        type="button"
+      >
+        <ChevronLeft size={22} strokeWidth={2.5} />
+        <span>Go Back</span>
       </button>
 
       <div className="blc-image-wrapper">
