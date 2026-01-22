@@ -167,8 +167,8 @@ function AllPackages({
         <div className="currency-info">
           <Info className="info-icon" size={20} />
           <div className="info-text">
-            <strong>International Booking Notice:</strong> Prices may vary due to currency exchange rates and bank transaction fees.
-            Displayed USD prices are estimates based on the current exchange rate (₱{exchangeRate} = $1).
+            <strong>Pricing is shown based on your selected location:</strong> Switch between <strong>PHP (Local)</strong> and <strong>USD (International)</strong> to view estimated prices. 
+            Final charges may vary due to exchange rates and bank fees.
           </div>
         </div>
 

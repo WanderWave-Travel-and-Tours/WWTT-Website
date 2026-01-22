@@ -1,43 +1,59 @@
-/* Container para sa gitna */
-.maintenance-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 80vh;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #f8fafc;
-    padding: 20px;
+/* GLOBAL RESET */
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
-/* Card na mukhang Boarding Pass */
+/* WRAPPER: Ito ang magdedetect kung gaano kalaki ang space */
+.maintenance-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #f8fafc;
+    
+    /* THE MAGIC: Enables Container Queries */
+    container-type: inline-size;
+    container-name: maintenance-card-wrapper;
+}
+
+/* CONTAINER: Safe bounds */
+.maintenance-container {
+    width: 100%;
+    max-width: 800px; /* Mas malapad nang konti para maganda pag full screen */
+    margin: 0 auto;
+}
+
+/* CARD DESIGN */
 .maintenance-card {
     background: white;
     border-radius: 24px;
-    box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.1);
-    width: 100%;
-    max-width: 650px;
+    box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.1);
+    border: 1px solid #e2e8f0;
     display: flex;
     overflow: hidden;
-    border: 1px solid #e2e8f0;
+    
+    /* DEFAULT LAYOUT (Mobile Style / Masikip Style) */
+    flex-direction: column; 
 }
 
-/* Left Side (Navy Blue) */
+/* --- VISUAL SIDE (TOP/LEFT) --- */
 .maintenance-visual {
     background: #0f172a;
-    padding: 40px;
+    padding: 32px 24px; /* Default smaller padding */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     color: white;
-    min-width: 240px;
     text-align: center;
     position: relative;
+    min-height: 200px;
 }
 
 .maintenance-bg-icon {
-    margin-bottom: 20px;
-    opacity: 0.2;
+    opacity: 0.1; /* Mas subtle para hindi distracting */
     transform: scale(3);
     position: absolute;
     pointer-events: none;
@@ -46,12 +62,16 @@
 .maintenance-visual-content {
     position: relative;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .maintenance-visual-title {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 800;
     margin: 0;
+    line-height: 1.2;
 }
 
 .maintenance-visual-sub {
@@ -60,76 +80,142 @@
     font-size: 14px;
 }
 
-/* Right Side (Content) */
+/* --- CONTENT SIDE (BOTTOM/RIGHT) --- */
 .maintenance-content {
-    padding: 40px;
+    padding: 24px; /* Reduced default padding to prevent cutting text */
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
+/* Status Row Adjustment - The Fix for "Cut Off Text" */
 .maintenance-status-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
     border-bottom: 2px dashed #e2e8f0;
-    padding-bottom: 20px;
+    padding-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap; /* Ito ang solusyon para di magpatungan kung sobrang sikip */
+}
+
+.status-item {
+    min-width: 0; /* Prevents flex item from overflowing */
+}
+
+.status-item.right-align {
+    text-align: right;
+    margin-left: auto; /* Pushes to right */
 }
 
 .maintenance-label {
-    font-size: 12px;
+    font-size: 11px;
     color: #64748b;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     display: block;
+    margin-bottom: 4px;
 }
 
 .maintenance-value {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
     color: #0f172a;
+    white-space: nowrap; /* Keep text on one line */
 }
 
 .maintenance-value.highlight {
-    color: #f59e0b; /* Orange */
+    color: #f59e0b;
 }
 
 .maintenance-title {
     font-size: 18px;
     font-weight: 700;
-    margin-bottom: 12px;
+    margin: 0 0 12px 0;
     color: #0f172a;
+    line-height: 1.3;
 }
 
 .maintenance-desc {
     font-size: 14px;
     color: #64748b;
-    line-height: 1.6;
-    margin-bottom: 30px;
+    line-height: 1.5;
+    margin: 0 0 24px 0;
 }
 
 .maintenance-btn {
     background: #0f172a;
     color: white;
     border: none;
-    padding: 14px 24px;
-    border-radius: 12px;
-    font-weight: 700;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 600;
     font-size: 14px;
-    cursor: not-allowed;
-    opacity: 0.8;
+    cursor: pointer; /* Changed to pointer */
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     width: 100%;
+    transition: background 0.2s;
 }
 
-/* Mobile Responsive */
-@media (max-width: 640px) {
+.maintenance-btn:hover {
+    background: #1e293b;
+}
+
+/* =========================================
+   CONTAINER QUERIES (The "Sidebar Aware" Logic)
+   ========================================= */
+
+/* Kapag ang CONTAINER ay mas malapad sa 600px (e.g. Walang sidebar o Malaking screen) */
+@container maintenance-card-wrapper (min-width: 600px) {
     .maintenance-card {
-        flex-direction: column;
+        flex-direction: row; /* Balik sa side-by-side */
+        text-align: left;
     }
+
     .maintenance-visual {
-        padding: 30px;
-        min-width: auto;
+        min-width: 260px; /* Fixed width for visual part */
+        padding: 40px;
+    }
+    
+    .maintenance-content {
+        padding: 40px; /* Balik sa maluwag na padding */
+    }
+
+    .maintenance-visual-title {
+        font-size: 26px;
+    }
+
+    .maintenance-value {
+        font-size: 20px;
+    }
+}
+
+/* Kapag SOBRANG SIKIP (e.g. < 350px dahil sa malapad na Sidebar) */
+@container maintenance-card-wrapper (max-width: 350px) {
+    .maintenance-content {
+        padding: 16px; /* Super nipis na padding para magkasya text */
+    }
+
+    .maintenance-status-row {
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .maintenance-title {
+        font-size: 16px;
+    }
+    
+    .maintenance-desc {
+        font-size: 13px;
+    }
+
+    /* Paliitin ang STATUS text para hindi maputol */
+    .maintenance-value {
+        font-size: 14px; 
     }
 }

@@ -762,6 +762,7 @@ const BookingRightForm = ({
       <div className="brf-header">
         <h2>Book Your Journey</h2>
         <p className="brf-subtitle">Select your preferred dates and customize your trip</p>
+        <br></br>
       </div>
 
       {/* ============================================ */}
