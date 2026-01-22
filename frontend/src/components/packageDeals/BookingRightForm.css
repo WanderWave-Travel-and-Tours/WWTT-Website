@@ -15,7 +15,6 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
   width: 1px;
   height: 20px;
   background: #e5e7eb;
@@ -30,6 +29,8 @@
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .brf-calendar-wrapper:hover {
@@ -54,6 +55,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  text-align: center;
 }
 
 .brf-calendar-nav-btn {
@@ -69,6 +71,7 @@
   transition: all 0.2s ease;
   color: #64748b;
   font-weight: 700;
+  flex-shrink: 0; /* Prevents button from squishing */
 }
 
 .brf-calendar-nav-btn:hover {
@@ -82,6 +85,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
+  width: 100%;
 }
 
 .brf-calendar-day-label {
@@ -97,6 +101,7 @@
 
 .brf-calendar-day {
   height: 44px;
+  width: 100%; /* Ensure it takes full width of grid cell */
   border-radius: 12px;
   border: 2px solid transparent;
   background: white;
@@ -110,6 +115,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  padding: 0; /* Remove default padding */
 }
 
 .brf-calendar-day:hover {
@@ -117,6 +123,7 @@
   border-color: #fc9c1b;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(252, 156, 27, 0.2);
+  z-index: 2;
 }
 
 .brf-calendar-day.brf-selected {
@@ -126,6 +133,7 @@
   border-color: #1e3a5f;
   box-shadow: 0 6px 16px rgba(30, 58, 95, 0.3);
   transform: scale(1.05);
+  z-index: 2;
 }
 
 .brf-calendar-day.brf-selected::after {
@@ -831,11 +839,9 @@
   .brf-modal-card {
     max-width: 1000px;
   }
-
   .brf-form-grid {
     gap: 24px;
   }
-
   .brf-modal-form-wrapper {
     padding: 40px 56px;
   }
@@ -846,7 +852,6 @@
   .brf-modal-card {
     max-width: 900px;
   }
-
   .brf-modal-title {
     font-size: 1.85rem;
   }
@@ -857,35 +862,36 @@
   .brf-modal-card {
     max-width: 720px;
   }
-
   .brf-modal-header {
     padding: 32px 36px 28px 36px;
   }
-
   .brf-modal-title {
     font-size: 1.65rem;
   }
-
   .brf-modal-subtitle {
     font-size: 0.95rem;
   }
-
   .brf-modal-form-wrapper {
     padding: 28px 36px;
   }
-
   .brf-modal-trip-summary {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     padding: 16px;
   }
-
   .brf-form-grid {
     gap: 18px;
   }
-
   .brf-form-section-header {
     font-size: 1.05rem;
+  }
+  /* Calendar Adjustments for Tablet */
+  .brf-calendar-wrapper {
+    padding: 20px;
+  }
+  .brf-calendar-day {
+    height: 40px;
+    font-size: 0.9rem;
   }
 }
 
@@ -894,100 +900,92 @@
   .brf-modal-overlay {
     padding: 16px;
   }
-
   .brf-modal-card {
     max-width: 100%;
     border-radius: 20px;
     max-height: 94vh;
   }
-
   .brf-modal-header {
     padding: 28px 28px 24px 28px;
   }
-
   .brf-modal-title {
     font-size: 1.5rem;
   }
-
   .brf-modal-subtitle {
     font-size: 0.9rem;
     margin-bottom: 20px;
   }
-
   .brf-modal-logo {
     height: 42px;
     margin-bottom: 16px;
   }
-
   .brf-modal-trip-summary {
     grid-template-columns: 1fr;
     gap: 10px;
     padding: 16px;
   }
-
   .brf-summary-item {
     padding: 10px;
   }
-
   .brf-summary-label {
     font-size: 0.65rem;
   }
-
   .brf-summary-value {
     font-size: 0.95rem;
   }
-
   .brf-summary-value.brf-price {
     font-size: 1.2rem;
   }
-
   .brf-document-requirement-box {
     padding: 12px 16px;
     font-size: 0.85rem;
   }
-
   .brf-modal-form-wrapper {
     padding: 24px 28px;
   }
-
   .brf-form-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-
   .brf-form-section-header {
     font-size: 1rem;
     gap: 8px;
   }
-
   .brf-passenger-number-badge {
     font-size: 0.8rem;
     padding: 5px 12px;
   }
-
   .brf-progress-section {
     padding: 16px;
   }
-
   .brf-progress-label {
     font-size: 0.85rem;
   }
-
   .brf-progress-primary-badge {
     font-size: 0.65rem;
     padding: 2px 8px;
   }
-
   .brf-modal-actions {
     gap: 10px;
     margin-top: 24px;
     padding-top: 20px;
   }
-
   .brf-back-btn,
   .brf-modal-submit-btn {
     padding: 14px;
     font-size: 0.95rem;
+  }
+  
+  /* Calendar Responsive Fix */
+  .brf-calendar-wrapper {
+    padding: 16px;
+  }
+  .brf-calendar-grid {
+    gap: 6px;
+  }
+  .brf-calendar-day {
+    height: 38px;
+    font-size: 0.9rem;
   }
 }
 
@@ -996,116 +994,93 @@
   .brf-modal-overlay {
     padding: 12px;
   }
-
   .brf-modal-card {
     max-width: 100%;
     border-radius: 16px;
     max-height: 95vh;
   }
-
   .brf-modal-close-btn {
     width: 38px;
     height: 38px;
     top: 12px;
     right: 12px;
   }
-
   .brf-modal-header {
     padding: 24px 20px 20px 20px;
   }
-
   .brf-modal-header::before {
     width: 300px;
     height: 300px;
   }
-
   .brf-modal-logo {
     height: 38px;
     margin-bottom: 14px;
   }
-
   .brf-modal-title {
     font-size: 1.35rem;
     margin-bottom: 10px;
   }
-
   .brf-modal-subtitle {
     font-size: 0.85rem;
     margin-bottom: 18px;
     line-height: 1.5;
   }
-
   .brf-modal-trip-summary {
     grid-template-columns: 1fr;
     gap: 10px;
     padding: 14px;
   }
-
   .brf-summary-item {
     padding: 10px;
   }
-
   .brf-summary-label {
     font-size: 0.65rem;
   }
-
   .brf-summary-value {
     font-size: 0.9rem;
   }
-
   .brf-summary-value.brf-price {
     font-size: 1.15rem;
   }
-
   .brf-document-requirement-box {
     padding: 12px 14px;
     font-size: 0.8rem;
     margin-bottom: 18px;
   }
-
   .brf-modal-form-wrapper {
     padding: 20px;
   }
-
   .brf-modal-form-wrapper::-webkit-scrollbar {
     width: 4px;
   }
-
   .brf-progress-section {
     padding: 14px;
     margin-bottom: 24px;
   }
-
   .brf-progress-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
   }
-
   .brf-progress-label {
     font-size: 0.8rem;
   }
-
   .brf-progress-primary-badge {
     font-size: 0.6rem;
     padding: 2px 8px;
     margin-left: 6px;
   }
-
   .brf-progress-percent {
     font-size: 0.8rem;
     align-self: flex-end;
   }
-
   .brf-progress-bar-container {
     height: 6px;
   }
-
   .brf-form-grid {
     grid-template-columns: 1fr;
     gap: 14px;
   }
-
   .brf-form-section-header {
     font-size: 0.95rem;
     margin-bottom: 18px;
@@ -1114,17 +1089,14 @@
     align-items: flex-start;
     gap: 6px;
   }
-
   .brf-passenger-number-badge {
     font-size: 0.75rem;
     padding: 4px 10px;
   }
-
   .brf-form-group label {
     font-size: 0.65rem;
     margin-bottom: 8px;
   }
-
   .brf-form-group input,
   .brf-form-group textarea,
   .brf-form-group select {
@@ -1132,34 +1104,28 @@
     font-size: 0.9rem;
     border-radius: 10px;
   }
-
   .brf-file-upload-label {
     padding: 20px;
     gap: 8px;
   }
-
   .brf-file-uploaded {
     padding: 12px 14px;
     flex-direction: column;
     align-items: flex-start;
   }
-
   .brf-file-uploaded-info {
     width: 100%;
   }
-
   .brf-remove-file-btn {
     width: 100%;
     padding: 10px 16px;
   }
-
   .brf-modal-actions {
     flex-direction: column;
     gap: 10px;
     margin-top: 20px;
     padding-top: 18px;
   }
-
   .brf-back-btn,
   .brf-modal-submit-btn {
     width: 100%;
@@ -1168,13 +1134,23 @@
     font-size: 0.9rem;
   }
 
-  .brf-calendar-day {
-    font-size: 0.8rem;
-    height: 32px;
+  /* Calendar Responsive Fix */
+  .brf-calendar-wrapper {
+    padding: 14px;
   }
-
+  .brf-calendar-grid {
+    gap: 5px;
+  }
+  .brf-calendar-day {
+    font-size: 0.85rem;
+    height: 36px;
+    border-radius: 8px;
+  }
   .brf-calendar-day-label {
     font-size: 0.7rem;
+  }
+  .brf-calendar-header h3 {
+    font-size: 1rem;
   }
 }
 
@@ -1183,106 +1159,85 @@
   .brf-modal-overlay {
     padding: 8px;
   }
-
   .brf-modal-card {
     max-width: 100%;
     border-radius: 12px;
     max-height: 96vh;
   }
-
   .brf-modal-close-btn {
     width: 36px;
     height: 36px;
     top: 10px;
     right: 10px;
   }
-
   .brf-modal-header {
     padding: 20px 16px 18px 16px;
   }
-
   .brf-modal-logo {
     height: 36px;
     margin-bottom: 12px;
   }
-
   .brf-modal-title {
     font-size: 1.25rem;
     margin-bottom: 8px;
   }
-
   .brf-modal-subtitle {
     font-size: 0.8rem;
     margin-bottom: 16px;
     line-height: 1.4;
   }
-
   .brf-modal-trip-summary {
     grid-template-columns: 1fr;
     gap: 8px;
     padding: 12px;
   }
-
   .brf-summary-item {
     padding: 8px;
   }
-
   .brf-summary-label {
     font-size: 0.6rem;
   }
-
   .brf-summary-value {
     font-size: 0.85rem;
   }
-
   .brf-summary-value.brf-price {
     font-size: 1.1rem;
   }
-
   .brf-document-requirement-box {
     padding: 10px 12px;
     font-size: 0.75rem;
     margin-bottom: 16px;
   }
-
   .brf-modal-form-wrapper {
     padding: 18px 16px;
   }
-
   .brf-progress-section {
     padding: 12px;
     margin-bottom: 20px;
   }
-
   .brf-progress-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
-
   .brf-progress-label {
     font-size: 0.75rem;
   }
-
   .brf-progress-primary-badge {
     font-size: 0.55rem;
     padding: 1px 6px;
     margin-left: 4px;
   }
-
   .brf-progress-percent {
     font-size: 0.75rem;
   }
-
   .brf-progress-bar-container {
     height: 5px;
   }
-
   .brf-form-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-
   .brf-form-section-header {
     font-size: 0.9rem;
     margin-bottom: 16px;
@@ -1291,17 +1246,14 @@
     align-items: flex-start;
     gap: 4px;
   }
-
   .brf-passenger-number-badge {
     font-size: 0.7rem;
     padding: 3px 8px;
   }
-
   .brf-form-group label {
     font-size: 0.6rem;
     margin-bottom: 6px;
   }
-
   .brf-form-group input,
   .brf-form-group textarea,
   .brf-form-group select {
@@ -1309,74 +1261,77 @@
     font-size: 0.85rem;
     border-radius: 8px;
   }
-
   .brf-file-upload-label {
     padding: 18px;
     gap: 6px;
   }
-
   .brf-file-upload-label svg {
     width: 28px;
     height: 28px;
   }
-
   .brf-file-upload-label span:first-of-type {
     font-size: 0.85rem;
   }
-
   .brf-file-upload-label span:last-of-type {
     font-size: 0.7rem;
   }
-
   .brf-file-uploaded {
     padding: 10px 12px;
     flex-direction: column;
     gap: 8px;
   }
-
   .brf-remove-file-btn {
     width: 100%;
     padding: 8px 14px;
     font-size: 0.8rem;
   }
-
   .brf-modal-actions {
     flex-direction: column;
     gap: 8px;
     margin-top: 18px;
     padding-top: 16px;
   }
-
   .brf-back-btn,
   .brf-modal-submit-btn {
     width: 100%;
     padding: 13px;
     font-size: 0.85rem;
   }
-
-  .brf-calendar-day {
-    font-size: 0.75rem;
-    height: 30px;
-  }
-
-  .brf-calendar-day-label {
-    font-size: 0.65rem;
-  }
-
   .brf-quantity-item {
     padding: 12px;
   }
-
   .brf-quantity-label {
     font-size: 0.85rem;
   }
-
   .brf-total-label {
     font-size: 1rem;
   }
-
   .brf-total-amount {
     font-size: 1.3rem;
+  }
+
+  /* Calendar Responsive Fix */
+  .brf-calendar-wrapper {
+    padding: 10px; /* Reduced padding */
+  }
+  .brf-calendar-grid {
+    gap: 3px; /* Tighter gap */
+  }
+  .brf-calendar-day {
+    font-size: 0.8rem;
+    height: 32px; /* Smaller height */
+    border-radius: 8px;
+  }
+  .brf-calendar-day-label {
+    font-size: 0.65rem;
+    padding: 4px 0;
+  }
+  .brf-calendar-header h3 {
+    font-size: 0.95rem;
+  }
+  .brf-calendar-nav-btn {
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -1385,110 +1340,88 @@
   .brf-modal-overlay {
     padding: 4px;
   }
-
   .brf-modal-card {
     border-radius: 10px;
     max-height: 97vh;
   }
-
   .brf-modal-close-btn {
     width: 32px;
     height: 32px;
     top: 8px;
     right: 8px;
   }
-
   .brf-modal-close-btn svg {
     width: 20px;
     height: 20px;
   }
-
   .brf-modal-header {
     padding: 18px 14px 16px 14px;
   }
-
   .brf-modal-logo {
     height: 32px;
     margin-bottom: 10px;
   }
-
   .brf-modal-title {
     font-size: 1.1rem;
     margin-bottom: 6px;
   }
-
   .brf-modal-subtitle {
     font-size: 0.75rem;
     margin-bottom: 14px;
     line-height: 1.3;
   }
-
   .brf-modal-trip-summary {
     grid-template-columns: 1fr;
     gap: 6px;
     padding: 10px;
   }
-
   .brf-summary-item {
     padding: 6px 8px;
   }
-
   .brf-summary-label {
     font-size: 0.55rem;
   }
-
   .brf-summary-value {
     font-size: 0.8rem;
   }
-
   .brf-summary-value.brf-price {
     font-size: 1rem;
   }
-
   .brf-document-requirement-box {
     padding: 8px 10px;
     font-size: 0.7rem;
     margin-bottom: 14px;
   }
-
   .brf-modal-form-wrapper {
     padding: 16px 14px;
   }
-
   .brf-progress-section {
     padding: 10px;
     margin-bottom: 18px;
   }
-
   .brf-progress-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
-
   .brf-progress-label {
     font-size: 0.7rem;
   }
-
   .brf-progress-primary-badge {
     font-size: 0.5rem;
     padding: 1px 5px;
     margin-left: 3px;
   }
-
   .brf-progress-percent {
     font-size: 0.7rem;
   }
-
   .brf-progress-bar-container {
     height: 4px;
   }
-
   .brf-form-grid {
     grid-template-columns: 1fr;
     gap: 10px;
   }
-
   .brf-form-section-header {
     font-size: 0.85rem;
     margin-bottom: 14px;
@@ -1498,17 +1431,14 @@
     align-items: flex-start;
     gap: 3px;
   }
-
   .brf-passenger-number-badge {
     font-size: 0.65rem;
     padding: 2px 7px;
   }
-
   .brf-form-group label {
     font-size: 0.55rem;
     margin-bottom: 5px;
   }
-
   .brf-form-group input,
   .brf-form-group textarea,
   .brf-form-group select {
@@ -1517,53 +1447,43 @@
     border-radius: 8px;
     border-width: 1.5px;
   }
-
   .brf-file-upload-label {
     padding: 16px;
     gap: 5px;
   }
-
   .brf-file-upload-label svg {
     width: 24px;
     height: 24px;
   }
-
   .brf-file-upload-label span:first-of-type {
     font-size: 0.8rem;
   }
-
   .brf-file-upload-label span:last-of-type {
     font-size: 0.65rem;
   }
-
   .brf-file-uploaded {
     padding: 8px 10px;
     flex-direction: column;
     gap: 6px;
   }
-
   .brf-file-uploaded-info svg {
     width: 16px;
     height: 16px;
   }
-
   .brf-file-uploaded-info span {
     font-size: 0.75rem;
   }
-
   .brf-remove-file-btn {
     width: 100%;
     padding: 7px 12px;
     font-size: 0.75rem;
   }
-
   .brf-modal-actions {
     flex-direction: column;
     gap: 6px;
     margin-top: 16px;
     padding-top: 14px;
   }
-
   .brf-back-btn,
   .brf-modal-submit-btn {
     width: 100%;
@@ -1571,49 +1491,54 @@
     font-size: 0.8rem;
     letter-spacing: 0.3px;
   }
-
-  .brf-calendar-day {
-    font-size: 0.7rem;
-    height: 28px;
-  }
-
-  .brf-calendar-day-label {
-    font-size: 0.6rem;
-  }
-
-  .brf-calendar-grid {
-    gap: 4px;
-  }
-
   .brf-quantity-item {
     padding: 10px;
     flex-direction: column;
     gap: 8px;
     align-items: flex-start;
   }
-
   .brf-quantity-label {
     font-size: 0.8rem;
   }
-
   .brf-quantity-btn {
     width: 28px;
     height: 28px;
   }
-
   .brf-total-label {
     font-size: 0.9rem;
   }
-
   .brf-total-amount {
     font-size: 1.2rem;
   }
-
   .brf-book-now-btn,
   .brf-book-with-airfare-btn,
   .brf-contact-sales-btn {
     padding: 14px;
     font-size: 0.9rem;
+  }
+
+  /* Calendar Responsive Fix for Very Small Screens */
+  .brf-calendar-wrapper {
+    padding: 8px;
+  }
+  .brf-calendar-grid {
+    gap: 2px;
+  }
+  .brf-calendar-day {
+    font-size: 0.7rem;
+    height: 28px;
+    border-radius: 6px;
+  }
+  .brf-calendar-day-label {
+    font-size: 0.6rem;
+    padding: 2px 0;
+  }
+  .brf-calendar-header h3 {
+    font-size: 0.9rem;
+  }
+  .brf-calendar-nav-btn {
+    width: 28px;
+    height: 28px;
   }
 }
 
@@ -1622,48 +1547,38 @@
   .brf-modal-card {
     max-height: 98vh;
   }
-
   .brf-modal-header {
     padding: 20px 28px 16px 28px;
   }
-
   .brf-modal-logo {
     height: 36px;
     margin-bottom: 10px;
   }
-
   .brf-modal-title {
     font-size: 1.3rem;
   }
-
   .brf-modal-subtitle {
     font-size: 0.85rem;
     margin-bottom: 14px;
   }
-
   .brf-modal-trip-summary {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     padding: 12px;
   }
-
   .brf-modal-form-wrapper {
     padding: 20px 24px;
   }
-
   .brf-progress-section {
     padding: 12px;
     margin-bottom: 16px;
   }
-
   .brf-form-section-header {
     margin-bottom: 16px;
   }
-
   .brf-form-grid {
     gap: 14px;
   }
-
   .brf-modal-actions {
     margin-top: 20px;
     padding-top: 16px;
@@ -1677,11 +1592,9 @@
   .brf-modal-submit-btn {
     display: none;
   }
-
   .brf-modal-overlay {
     background: white;
   }
-
   .brf-modal-card {
     box-shadow: none;
     max-height: none;
