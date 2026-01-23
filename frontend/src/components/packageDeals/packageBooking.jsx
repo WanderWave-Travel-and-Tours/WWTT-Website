@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import BookingLeftColumn from './bookingLeftColumn';
-import BookingRightForm from './BookingRightForm';
+import BookingRightForm from './bookingRightForm';
 import { 
   Plane, X, Timer, ChevronRight, 
   Flame, Eye, TrendingUp, Shield, 
