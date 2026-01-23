@@ -1037,87 +1037,47 @@ const BookingRightForm = ({
         </div>
       )}
 
-      <div className="brf-promo-section" style={{
-        background: '#fff',
-        border: '2px solid #e2e8f0',
-        borderRadius: '12px',
-        padding: '16px',
-        marginBottom: '16px'
-      }}>
-        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
+      <div className="brf-promo-section">
+        <div className="brf-promo-header">
           <Ticket size={20} color="#fc9c1b"/>
-          <strong style={{fontSize: '0.95rem', color: '#1f2937'}}>Have a Promo Code?</strong>
+          <span className="brf-promo-header-text">Have a Promo Code?</span>
         </div>
 
         {!appliedPromo ? (
           <>
-            <div style={{display: 'flex', gap: '8px'}}>
+            <div className="brf-promo-input-group">
               <input
                 type="text"
+                className={`brf-promo-input ${promoError ? 'error' : ''}`}
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                 placeholder="Enter promo code"
-                style={{
-                  flex: 1,
-                  padding: '10px 14px',
-                  border: `2px solid ${promoError ? '#ef4444' : '#e2e8f0'}`,
-                  borderRadius: '8px',
-                  fontSize: '0.9rem',
-                  textTransform: 'uppercase',
-                  fontWeight: '600',
-                  letterSpacing: '1px'
-                }}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') handleApplyPromo();
                 }}
               />
               <button
+                className="brf-promo-apply-btn"
                 onClick={handleApplyPromo}
                 disabled={isCheckingPromo}
-                style={{
-                  padding: '10px 20px',
-                  background: '#fc9c1b',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  whiteSpace: 'nowrap'
-                }}
               >
                 {isCheckingPromo ? 'Checking...' : 'Apply'}
               </button>
             </div>
             
             {promoError && (
-              <div style={{
-                marginTop: '8px',
-                padding: '8px 12px',
-                background: '#fee2e2',
-                color: '#dc2626',
-                borderRadius: '6px',
-                fontSize: '0.85rem'
-              }}>
+              <div className="brf-promo-error-msg">
                 {promoError}
               </div>
             )}
           </>
         ) : (
-          <div style={{
-            background: '#d1fae5',
-            border: '2px solid #10b981',
-            borderRadius: '8px',
-            padding: '12px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
+          <div className="brf-promo-success-box">
             <div>
-              <div style={{fontWeight: '700', color: '#047857', fontSize: '0.95rem'}}>
+              <div className="brf-promo-code-text">
                 {appliedPromo.code}
               </div>
-              <div style={{fontSize: '0.85rem', color: '#065f46', marginTop: '2px'}}>
+              <div className="brf-promo-desc-text">
                 {appliedPromo.discountType === 'Percentage' 
                   ? `${appliedPromo.discountValue}% discount applied`
                   : `₱${appliedPromo.discountValue.toLocaleString()} discount applied`
@@ -1125,16 +1085,8 @@ const BookingRightForm = ({
               </div>
             </div>
             <button
+              className="brf-promo-remove-btn"
               onClick={handleRemovePromo}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#dc2626',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                textDecoration: 'underline',
-                fontWeight: '600'
-              }}
             >
               Remove
             </button>
