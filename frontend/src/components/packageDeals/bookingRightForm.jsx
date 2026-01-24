@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { 
   ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Plane, Ticket, UserCheck, Clock  
 } from 'lucide-react';
@@ -9,6 +10,7 @@ import HotelRoomSelector from './hotelRoomSelector';
 import BookingFormModal from './BookingFormModal';
 import AppointmentModal from './AppointmentModal';
 import './BookingRightForm.css';
+import { BookingStateManager } from '../../utils/bookingStateManager';
 
 const BookingRightForm = ({ 
   pkg,
@@ -17,11 +19,10 @@ const BookingRightForm = ({
   effectivePackageTotal = null 
 }) => {
   const navigate = useNavigate();
+  const { code } = useParams();
   const [selectedDate, setSelectedDate] = useState(null);
   const [quantities, setQuantities] = useState({ adult: 1 });
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
-  const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); 
   const [showModal, setShowModal] = useState(false);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState(null);
@@ -31,29 +32,34 @@ const BookingRightForm = ({
   const [loadingHotelData, setLoadingHotelData] = useState(false);
   const [passengerStep, setPassengerStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const totalPassengers = quantities.adult || 1;
-  const isInternationalFlight = selectedFlight && 
-    selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
-  const requiresPassport = isInternationalFlight;
-  const requiresID = selectedFlight && !isInternationalFlight;
-
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
   const [isCheckingPromo, setIsCheckingPromo] = useState(false);
   const [paymentType, setPaymentType] = useState('full');
   const [customizationData, setCustomizationData] = useState(initialCustomizationData);
-
-  // ============================================
-  // TIMER STATES
-  // ============================================
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [timerExpired, setTimerExpired] = useState(false);
   const [userIpAddress, setUserIpAddress] = useState(null);
+  const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
+  const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); 
+  const totalPassengers = quantities.adult || 1;
+  const isInternationalFlight = selectedFlight && 
+    selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
+  const requiresPassport = isInternationalFlight;
+  const requiresID = selectedFlight && !isInternationalFlight;
 
-  // ============================================
-  // GET USER IP ADDRESS
-  // ============================================
+  const [passengers, setPassengers] = useState(
+    Array.from({ length: totalPassengers }, (_, idx) => ({
+      passengerNumber: idx + 1,
+      firstName: '', lastName: '', email: '', phone: '',
+      dateOfBirth: '', age: '', gender: '', address: '',
+      nationality: 'Filipino',
+      idFile: null, idFileName: '',
+      passportFile: null, passportFileName: ''
+    }))
+  );
+
   useEffect(() => {
     const fetchIpAddress = async () => {
       try {
@@ -69,9 +75,64 @@ const BookingRightForm = ({
     fetchIpAddress();
   }, []);
 
-  // ============================================
-  // TIMER MANAGEMENT - 15 MINUTES
-  // ============================================
+  useEffect(() => {
+    const savedState = BookingStateManager.getBookingState(code);
+    if (savedState && savedState.formData) {
+      if (savedState.formData.selectedDate) {
+        setSelectedDate(savedState.formData.selectedDate);
+      }
+      
+      if (savedState.formData.quantities) {
+        setQuantities(savedState.formData.quantities);
+      }
+      
+      if (savedState.formData.currentMonth) {
+        setCurrentMonth(new Date(savedState.formData.currentMonth));
+      }
+      
+      if (savedState.formData.selectedFlight) {
+        setSelectedFlight(savedState.formData.selectedFlight);
+        setBookingWithAirfare(true);
+      }
+      
+      if (savedState.formData.selectedRoomType) {
+        setSelectedRoomType(savedState.formData.selectedRoomType);
+      }
+      
+      if (savedState.formData.passengers && savedState.formData.passengers.length > 0) {
+        setPassengers(savedState.formData.passengers);
+      }
+      
+      if (savedState.formData.appliedPromo) {
+        setAppliedPromo(savedState.formData.appliedPromo);
+        setPromoCode(savedState.formData.appliedPromo.code || '');
+      }
+      
+      if (savedState.formData.paymentType) {
+        setPaymentType(savedState.formData.paymentType);
+      }
+      
+      console.log('✅ Booking state restored from localStorage');
+    }
+  }, [code]);
+
+  useEffect(() => {
+    if (selectedDate || quantities.adult > 1 || selectedFlight || appliedPromo) {
+      const stateToSave = {
+        selectedDate,
+        quantities,
+        currentMonth: currentMonth.toISOString(),
+        selectedFlight,
+        selectedRoomType,
+        passengers,
+        appliedPromo,
+        paymentType
+      };
+      
+      BookingStateManager.saveBookingState(code, stateToSave, customizationData);
+    }
+  }, [selectedDate, quantities, selectedFlight, selectedRoomType, passengers, appliedPromo, paymentType, customizationData, code, currentMonth]);
+
   useEffect(() => {
     if (!userIpAddress || !pkg._id) return;
 
@@ -82,7 +143,7 @@ const BookingRightForm = ({
       const timerData = JSON.parse(storedTimer);
       const now = Date.now();
       const elapsed = now - timerData.startTime;
-      const remaining = Math.max(0, 900000 - elapsed); // 15 minutes = 900000ms
+      const remaining = Math.max(0, 900000 - elapsed);
 
       if (remaining > 0) {
         setTimeRemaining(remaining);
@@ -94,18 +155,14 @@ const BookingRightForm = ({
         console.log('⏰ Timer expired');
       }
     } else {
-      // Start new timer
       const startTime = Date.now();
       localStorage.setItem(timerKey, JSON.stringify({ startTime }));
-      setTimeRemaining(900000); // 15 minutes
+      setTimeRemaining(900000);
       setTimerExpired(false);
       console.log('⏰ Timer started');
     }
   }, [userIpAddress, pkg._id]);
 
-  // ============================================
-  // COUNTDOWN TIMER
-  // ============================================
   useEffect(() => {
     if (timeRemaining === null || timeRemaining <= 0) return;
 
@@ -122,9 +179,6 @@ const BookingRightForm = ({
     return () => clearInterval(interval);
   }, [timeRemaining]);
 
-  // ============================================
-  // RESET TIMER DAILY
-  // ============================================
   useEffect(() => {
     if (!userIpAddress || !pkg._id) return;
 
@@ -147,87 +201,10 @@ const BookingRightForm = ({
     };
 
     checkDailyReset();
-    const dailyCheck = setInterval(checkDailyReset, 60000); // Check every minute
+    const dailyCheck = setInterval(checkDailyReset, 60000);
 
     return () => clearInterval(dailyCheck);
   }, [userIpAddress, pkg._id]);
-
-  // ============================================
-  // FORMAT TIMER DISPLAY
-  // ============================================
-  const formatTime = (ms) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const handleApplyPromo = async () => {
-    if (!promoCode.trim()) {
-      setPromoError('Please enter a promo code');
-      return;
-    }
-
-    setIsCheckingPromo(true);
-    setPromoError('');
-
-    try {
-      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}`);
-      const data = await response.json();
-
-      if (response.ok && data.valid) {
-        const promo = data.promo;
-        
-        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
-          setPromoError('This promo code has reached its usage limit');
-          setAppliedPromo(null);
-          return;
-        }
-
-        setAppliedPromo({
-          code: promo.code,
-          discountType: promo.discountType,
-          discountValue: promo.discountValue,
-          promoId: promo._id
-        });
-        
-        toast.success(`✅ Promo "${promo.code}" applied successfully!`, { duration: 3000 });
-      } else {
-        setPromoError(data.message || 'Invalid or expired promo code');
-        setAppliedPromo(null);
-      }
-    } catch (error) {
-      console.error('Error validating promo:', error);
-      setPromoError('Failed to validate promo code');
-      setAppliedPromo(null);
-    } finally {
-      setIsCheckingPromo(false);
-    }
-  };
-
-  const handleRemovePromo = () => {
-    setAppliedPromo(null);
-    setPromoCode('');
-    setPromoError('');
-    toast.success('Promo code removed', { duration: 2000 });
-  };
-
-  const calculateDiscount = () => {
-    if (!appliedPromo) return 0;
-
-    if (appliedPromo.discountType === 'Percentage') {
-      return (packageTotal * appliedPromo.discountValue) / 100;
-    } else {
-      return appliedPromo.discountValue;
-    }
-  };
-
-  const calculateRoomsNeeded = () => {
-    if (!selectedRoomType) return 1;
-    return Math.ceil(totalPassengers / (selectedRoomType.capacity || 4));
-  };
-
-  const numberOfRooms = calculateRoomsNeeded();
 
   useEffect(() => {
     const bookingData = sessionStorage.getItem('pendingBookingData');
@@ -293,17 +270,6 @@ const BookingRightForm = ({
     }
   }, [initialCustomizationData]);
 
-  const [passengers, setPassengers] = useState(
-    Array.from({ length: totalPassengers }, (_, idx) => ({
-      passengerNumber: idx + 1,
-      firstName: '', lastName: '', email: '', phone: '',
-      dateOfBirth: '', age: '', gender: '', address: '',
-      nationality: 'Filipino',
-      idFile: null, idFileName: '',
-      passportFile: null, passportFileName: ''
-    }))
-  );
-
   useEffect(() => {
     const newTotal = quantities.adult || 1;
     setPassengers(prevPassengers => {
@@ -322,9 +288,6 @@ const BookingRightForm = ({
     });
   }, [quantities.adult]);
 
-  // ============================================
-  // CALCULATE PACKAGE TOTAL WITH TIMER LOGIC
-  // ============================================
   const calculateBasePackageTotal = () => {
     const basePax = quantities.adult || 1;
     const effectivePrice = effectivePackageTotal || pkg.price;
@@ -351,44 +314,25 @@ const BookingRightForm = ({
     return basePackagePrice + upgradeTotal;
   };
 
-  const basePackageTotal = calculateBasePackageTotal();
-  
-  // If timer is active (not expired), show original price with 10% markup
-  const originalPriceWithMarkup = Math.round(basePackageTotal * 1.10);
-  
-  // The displayed price
-  const packageTotal = timerExpired ? originalPriceWithMarkup : basePackageTotal;
-  
-  const discountAmount = calculateDiscount();
-  const finalPackageTotal = Math.max(0, packageTotal - discountAmount);
+  const calculateDiscount = () => {
+    if (!appliedPromo) return 0;
 
-  const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
-  
-  const finalTotalAmount = finalPackageTotal + airfareTotal;
-  const totalAmount = packageTotal + airfareTotal;
-  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-  const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    if (appliedPromo.discountType === 'Percentage') {
+      return (packageTotal * appliedPromo.discountValue) / 100;
+    } else {
+      return appliedPromo.discountValue;
+    }
+  };
+
+  const calculateRoomsNeeded = () => {
+    if (!selectedRoomType) return 1;
+    return Math.ceil(totalPassengers / (selectedRoomType.capacity || 4));
+  };
 
   const calculatePartialAmount = () => {
     const finalAmount = selectedFlight ? finalTotalAmount : finalPackageTotal;
     const percentage = selectedFlight ? 0.85 : 0.50;
     return Math.round(finalAmount * percentage);
-  };
-
-  const partialAmount = calculatePartialAmount();
-
-  const isInSelectedRange = (day) => {
-    if (!selectedDate) return false;
-    
-    const { start, end } = getCalculatedDates();
-    const currentCheckDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    
-    currentCheckDate.setHours(0,0,0,0);
-    if(start) start.setHours(0,0,0,0);
-    if(end) end.setHours(0,0,0,0);
-
-    return currentCheckDate >= start && currentCheckDate <= end;
   };
 
   const getCalculatedDates = () => {
@@ -405,6 +349,7 @@ const BookingRightForm = ({
     const { start, end } = getCalculatedDates();
     if (!start || !end) return '';
 
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const startMonth = monthNames[start.getMonth()];
     const endMonth = monthNames[end.getMonth()];
     const startYear = start.getFullYear();
@@ -421,6 +366,84 @@ const BookingRightForm = ({
     }
 
     return `${startMonth} ${startDay}, ${startYear} - ${endMonth} ${endDay}, ${endYear}`;
+  };
+
+  const isInSelectedRange = (day) => {
+    if (!selectedDate) return false;
+    
+    const { start, end } = getCalculatedDates();
+    const currentCheckDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    
+    currentCheckDate.setHours(0,0,0,0);
+    if(start) start.setHours(0,0,0,0);
+    if(end) end.setHours(0,0,0,0);
+
+    return currentCheckDate >= start && currentCheckDate <= end;
+  };
+
+  const basePackageTotal = calculateBasePackageTotal();
+  const originalPriceWithMarkup = Math.round(basePackageTotal * 1.10);
+  const packageTotal = timerExpired ? originalPriceWithMarkup : basePackageTotal;
+  const discountAmount = calculateDiscount();
+  const finalPackageTotal = Math.max(0, packageTotal - discountAmount);
+  const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
+  const finalTotalAmount = finalPackageTotal + airfareTotal;
+  const totalAmount = packageTotal + airfareTotal;
+  const partialAmount = calculatePartialAmount();
+  const numberOfRooms = calculateRoomsNeeded();
+  
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Please enter a promo code');
+      return;
+    }
+
+    setIsCheckingPromo(true);
+    setPromoError('');
+
+    try {
+      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}`);
+      const data = await response.json();
+
+      if (response.ok && data.valid) {
+        const promo = data.promo;
+        
+        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+          setPromoError('This promo code has reached its usage limit');
+          setAppliedPromo(null);
+          return;
+        }
+
+        setAppliedPromo({
+          code: promo.code,
+          discountType: promo.discountType,
+          discountValue: promo.discountValue,
+          promoId: promo._id
+        });
+        
+        toast.success(`✅ Promo "${promo.code}" applied successfully!`, { duration: 3000 });
+      } else {
+        setPromoError(data.message || 'Invalid or expired promo code');
+        setAppliedPromo(null);
+      }
+    } catch (error) {
+      console.error('Error validating promo:', error);
+      setPromoError('Failed to validate promo code');
+      setAppliedPromo(null);
+    } finally {
+      setIsCheckingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode('');
+    setPromoError('');
+    toast.success('Promo code removed', { duration: 2000 });
   };
 
   const handleQuantity = (type, delta) => {
@@ -482,6 +505,19 @@ const BookingRightForm = ({
     const departureDateStr = formatDate(start);
     const returnDateStr = formatDate(end);    
 
+    const completeState = {
+      selectedDate,
+      quantities,
+      currentMonth: currentMonth.toISOString(),
+      selectedFlight,
+      selectedRoomType,
+      passengers,
+      appliedPromo,
+      paymentType
+    };
+    
+    BookingStateManager.saveBookingState(code, completeState, customizationData);
+
     const bookingData = {
       packageId: pkg._id || pkg.id,
       packageName: pkg.name,
@@ -495,11 +531,12 @@ const BookingRightForm = ({
       destination: pkg.location || pkg.destination,
       departureDate: departureDateStr, 
       returnToBooking: true,
-      returnPath: `/packages/book`
+      returnPath: `/packages/${code}`
     };
 
     sessionStorage.setItem('pendingBookingData', JSON.stringify(bookingData));
-
+    BookingStateManager.setFlightSearchContext(code, pkg);
+    
     navigate('/flights', {
       state: {
         fromBooking: true,
@@ -765,9 +802,6 @@ const BookingRightForm = ({
         <br></br>
       </div>
 
-      {/* ============================================ */}
-      {/* TIMER DISPLAY */}
-      {/* ============================================ */}
       {!timerExpired && timeRemaining !== null && (
         <div style={{
           background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
@@ -796,7 +830,6 @@ const BookingRightForm = ({
             gap: '8px',
             marginBottom: '12px'
           }}>
-            {/* MINUTES BOX */}
             <div style={{
               background: 'white',
               borderRadius: '8px',
@@ -826,7 +859,6 @@ const BookingRightForm = ({
               </div>
             </div>
 
-            {/* COLON SEPARATOR */}
             <div style={{
               fontSize: '1.5rem',
               fontWeight: '800',
@@ -836,7 +868,6 @@ const BookingRightForm = ({
               :
             </div>
 
-            {/* SECONDS BOX */}
             <div style={{
               background: 'white',
               borderRadius: '8px',
@@ -1094,9 +1125,6 @@ const BookingRightForm = ({
         )}
       </div>
 
-      {/* ============================================ */}
-      {/* BOOKING FOOTER WITH TIMER PRICING */}
-      {/* ============================================ */}
       <div className="brf-booking-footer">
         <div className="brf-total-row">
           <span className="brf-total-label">Package Total</span>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   MapPin, Calendar, Plane, Hotel,
   Utensils, Bus, Camera, Briefcase, ChevronDown, ChevronUp,
@@ -17,7 +17,7 @@ const BookingLeftColumn = ({
 }) => {
   // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
-
+  const { code } = useParams();
   const [isItineraryExpanded, setIsItineraryExpanded] = useState(false);
   const [expandedDayIndices, setExpandedDayIndices] = useState({});
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
@@ -26,7 +26,7 @@ const BookingLeftColumn = ({
 
   // --- HARDCODED REDIRECT TO FLIGHTS ---
   const handleBackClick = () => {
-    navigate('/flights');
+    navigate('/packages');
   };
 
   const itinerary = pkg.itinerary || [];
@@ -62,7 +62,6 @@ const BookingLeftColumn = ({
 
   return (
     <div className="blc-container">
-      {/* --- GO BACK BUTTON (Redirects to /flights) --- */}
       <button 
         className="blc-back-btn" 
         onClick={handleBackClick}

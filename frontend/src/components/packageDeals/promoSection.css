@@ -79,7 +79,6 @@
   width: 100%;
   overflow: hidden;
   border-radius: 24px;
-  /* Min-height ensures consistent sizing before content loads */
   min-height: 320px; 
 }
 
@@ -90,14 +89,13 @@
   width: 100%;
   transition: transform 0.6s ease;
   opacity: 0;
-  /* Ensure slide height adjusts to content */
   height: 100%; 
 }
 
 .promo-slide.active {
   position: relative;
   opacity: 1;
-  height: auto; /* Allows expansion */
+  height: auto; 
 }
 
 .promo-voucher-card {
@@ -106,7 +104,7 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   display: flex;
-  min-height: 340px; /* Changed from fixed height to min-height */
+  min-height: 340px;
   position: relative;
   overflow: hidden;
   border-radius: 24px;
@@ -118,7 +116,7 @@
   position: relative;
   overflow: hidden;
   border-radius: 24px 0 0 24px;
-  min-height: 100%; /* Ensures it stretches with content */
+  min-height: 100%; 
 }
 
 .destination-bg-image {
@@ -126,7 +124,7 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.8s ease;
-  position: absolute; /* Ensures it covers the area even if card grows */
+  position: absolute;
   top: 0;
   left: 0;
 }
@@ -224,8 +222,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Reduced gap slightly */
-  margin-bottom: 20px; /* Ensure space before code box */
+  gap: 10px; 
+  margin-bottom: 20px; 
 }
 
 .promo-title {
@@ -237,26 +235,23 @@
   letter-spacing: -0.5px;
 }
 
-/* Updated Description Styles for Line Clamping */
 .promo-description {
   font-size: 0.95rem;
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.6;
   margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 3; /* Limit to 3 lines by default */
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
-/* Class to remove limit when expanded */
 .promo-description.expanded {
   -webkit-line-clamp: unset;
   overflow: visible;
 }
 
-/* Read More Button Styling */
 .read-more-btn {
   background: none;
   border: none;
@@ -285,7 +280,7 @@
   padding: 10px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  margin-top: auto; /* Pushes to bottom */
+  margin-top: auto; 
 }
 
 .code-label {
@@ -302,7 +297,7 @@
   display: flex;
   gap: 10px;
   align-items: stretch;
-  width: 100%; /* Ensure full width usage */
+  width: 100%; 
 }
 
 .code-display {
@@ -314,7 +309,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 0; /* Prevents text overflow issues */
+  min-width: 0;
 }
 
 .code-value {
@@ -323,15 +318,14 @@
   color: white;
   font-family: 'Courier New', monospace;
   letter-spacing: 4px;
-  white-space: nowrap; /* Keep code on one line */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* UPDATED COPY BUTTON */
 .copy-btn {
-  flex-shrink: 0; /* Prevents button from being squashed */
-  width: 60px; /* Increased default size */
+  flex-shrink: 0; 
+  width: 60px;
   border: none;
   border-radius: 12px;
   background: linear-gradient(135deg, #FF8C00 0%, #FFB347 100%);
@@ -480,7 +474,7 @@
   }
 
   .copy-btn {
-    width: 55px; /* Kept larger here */
+    width: 55px; 
   }
 }
 
@@ -554,7 +548,7 @@
   }
   
   .copy-btn {
-    width: 50px; /* Force minimum clickable width */
+    width: 50px;
   }
 }
 
@@ -630,9 +624,8 @@
     letter-spacing: 2px;
   }
 
-  /* Fixed Mobile Copy Button */
   .copy-btn {
-    width: 48px; /* Slightly larger for touch targets */
+    width: 48px;
     border-radius: 10px;
   }
 }
@@ -703,9 +696,8 @@
     letter-spacing: 1.5px;
   }
 
-  /* Fixed: Copy button won't disappear */
   .copy-btn {
-    width: 44px; /* Minimum safe touch width */
+    width: 44px;
   }
 }
 
@@ -764,6 +756,6 @@
   }
 
   .copy-btn {
-    width: 42px; /* Kept visible size */
+    width: 42px; 
   }
 }

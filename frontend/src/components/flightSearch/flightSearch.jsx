@@ -4,13 +4,24 @@ import axios from "axios";
 import "./flightSearch.css";
 import FlightSearchForm from "./FlightSearchForm";
 import FlightSearchResults from "./FlightSearchResults";
+import { ChevronLeft } from 'lucide-react';
+import { BookingStateManager } from '../../utils/bookingStateManager';
 
 function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestination, prefilledPassengers }) {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
+  const context = BookingStateManager.getFlightSearchContext();
   const isFromBooking = location.state?.fromBooking || false;
   const packageData = location.state?.packageData || null;
+  
+  useEffect(() => {
+    if (!isFromBooking && !packageData) {
+      BookingStateManager.clearFlightSearchContext();
+    }
+  }, [isFromBooking, packageData]);
+
+  const shouldShowBackButton = context && context.returnTo && (isFromBooking || packageData);
 
   const [searchParams, setSearchParams] = useState({
     journeyType: "round-trip",
@@ -61,6 +72,16 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
   const suggestionsRef = useRef(null);
   const searchTimerRef = useRef(null);
   const multiCityContainerRef = useRef(null); 
+
+  const handleBackToBooking = () => {
+    if (context && context.returnTo) {
+      navigate(context.returnTo, { 
+        state: { packageData: context.packageData },
+        replace: true 
+      });
+    }
+  };
+
 
   function getTomorrowDate() {
     const tomorrow = new Date();
@@ -425,6 +446,18 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
 
   return (
     <div className="flight-search-container">
+      {shouldShowBackButton && (
+        <div className="back-button-wrapper">
+          <button 
+            className="back-button"
+            onClick={handleBackToBooking}
+          >
+            <ChevronLeft size={20} strokeWidth={2.5} />
+            <span>Back to Package Booking</span>
+          </button>
+        </div>
+      )}
+
       <FlightSearchForm
         searchParams={searchParams}
         minDate={today}
