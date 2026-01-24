@@ -38,15 +38,6 @@ function PackageCard({
 
   return (
     <div className="package-card">
-      {pkg.featured && (
-        <span className="badge badge-featured">🔥 Featured</span>
-      )}
-      {pkg.discount && (
-        <span className="badge badge-discount">
-          {pkg.discount}% OFF {currencySymbol}{displayOriginalPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-        </span>
-      )}
-      
       <button 
         className={`favorite-button ${isFavorite ? 'active' : ''}`}
         onClick={handleFavoriteClick}

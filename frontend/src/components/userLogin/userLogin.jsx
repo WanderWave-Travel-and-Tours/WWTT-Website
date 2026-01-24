@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
 import './userLogin.css';
 // Import icons (Added Eye, EyeOff, and ArrowLeft)
@@ -6,7 +7,7 @@ import { Mail, CheckCircle, XCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react
 // Import Toast Hook
 import { useToast } from '../toast/ToastManager';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/auth'; 
+const API_BASE_URL = 'http://localhost:5000/api/auth'; 
 
 // --- OTP Verification Form Component (Modal) ---
 const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading }) => {
@@ -84,7 +85,7 @@ const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading })
 const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     // Toast Hook
     const toast = useToast();
-
+    const navigate = useNavigate();
     const [isSignup, setIsSignup] = useState(false);
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState(''); 
@@ -160,7 +161,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
     // Handle back button navigation
     const handleBackNavigation = () => {
-        window.history.back();
+        navigate('/packages');
     };
 
     const handleRecaptchaChange = (token) => {
@@ -330,7 +331,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
         setIsLoading(true);
         
         try {
-            const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/auth/login`, {
+            const res = await fetch(`http://localhost:5000/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
