@@ -831,6 +831,120 @@
 }
 
 /* ============================================
+   PROMO CODE SECTION (UPDATED RESPONSIVE)
+   ============================================ */
+.brf-promo-section {
+  background: #fff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.brf-promo-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.brf-promo-header-text {
+  font-size: 0.95rem;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.brf-promo-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.brf-promo-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 1px;
+  width: 100%;
+  box-sizing: border-box; /* Ensures padding doesn't affect width */
+}
+
+.brf-promo-input.error {
+  border-color: #ef4444;
+}
+
+.brf-promo-input:focus {
+  outline: none;
+  border-color: #fc9c1b;
+}
+
+.brf-promo-apply-btn {
+  padding: 10px 20px;
+  background: #fc9c1b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.brf-promo-apply-btn:hover {
+  background: #e68a0f;
+}
+
+.brf-promo-apply-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.brf-promo-error-msg {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.brf-promo-success-box {
+  background: #d1fae5;
+  border: 2px solid #10b981;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brf-promo-code-text {
+  font-weight: 700;
+  color: #047857;
+  font-size: 0.95rem;
+}
+
+.brf-promo-desc-text {
+  font-size: 0.85rem;
+  color: #065f46;
+  margin-top: 2px;
+}
+
+.brf-promo-remove-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+/* ============================================
    RESPONSIVE BREAKPOINTS
    ============================================ */
 
@@ -1152,6 +1266,15 @@
   .brf-calendar-header h3 {
     font-size: 1rem;
   }
+
+  /* PROMO RESPONSIVE */
+  .brf-promo-input-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .brf-promo-apply-btn {
+    width: 100%;
+  }
 }
 
 /* --- MOBILE MEDIUM (375px - 479px) --- */
@@ -1332,6 +1455,15 @@
   .brf-calendar-nav-btn {
     width: 32px;
     height: 32px;
+  }
+
+  /* PROMO RESPONSIVE */
+  .brf-promo-input-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .brf-promo-apply-btn {
+    width: 100%;
   }
 }
 
@@ -1539,6 +1671,15 @@
   .brf-calendar-nav-btn {
     width: 28px;
     height: 28px;
+  }
+
+  /* PROMO RESPONSIVE */
+  .brf-promo-input-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .brf-promo-apply-btn {
+    width: 100%;
   }
 }
 

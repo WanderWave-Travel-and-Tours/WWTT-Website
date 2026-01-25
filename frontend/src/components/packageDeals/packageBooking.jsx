@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import BookingLeftColumn from './BookingLeftColumn';
-import BookingRightForm from './BookingRightForm';
+import BookingLeftColumn from './bookingLeftColumn';
+import BookingRightForm from './bookingRightForm';
 import { 
   Plane, X, Timer, ChevronRight, 
   Flame, Eye, TrendingUp, Shield, 
@@ -281,10 +281,6 @@ function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
   // Currency symbol
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
 
-  // Random social proof numbers for engagement
-  const viewersCount = Math.floor(Math.random() * 20) + 15; // 15-34 viewers
-  const bookingsToday = Math.floor(Math.random() * 8) + 5; // 5-12 bookings
-
   return (
     <div className="pb-page">
       
@@ -316,12 +312,12 @@ function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
             <div className="pb-modal-content">
               {/* Urgency Badge with Fire Icon */}
               <div className="pb-offer-badge">
-                <Flame size={16} className="pb-fire-icon" />
+                <Flame size={14} className="pb-fire-icon" />
                 <span>HOT DEAL - ACT FAST!</span>
               </div>
 
               {/* Enhanced Title */}
-              <div className="pb-offer-title">🎉 Exclusive Flash Sale!</div>
+              <div className="pb-offer-title">Exclusive Flash Sale!</div>
 
               {/* Package Name Display */}
               <div className="pb-offer-package-info">
@@ -335,21 +331,9 @@ function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
                 Grab this deal before it expires or prices go back up!
               </div>
 
-              {/* Social Proof Bar */}
-              <div className="pb-social-proof">
-                <div className="pb-social-item">
-                  <Eye size={18} className="pb-social-icon" />
-                  <span>{viewersCount} viewing now</span>
-                </div>
-                <div className="pb-social-item">
-                  <TrendingUp size={18} className="pb-social-icon" />
-                  <span>{bookingsToday} booked today</span>
-                </div>
-              </div>
-
               {/* Savings Highlight */}
               <div className="pb-savings-highlight">
-                <Zap size={20} />
+                <Zap size={18} />
                 <span>SAVE {currencySymbol}{savingsAmount.toLocaleString()} ({savingsPercentage}% OFF)</span>
               </div>
               
@@ -369,7 +353,7 @@ function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
               {/* Enhanced CTA Button */}
               <button className="pb-offer-cta" onClick={handleCloseModal}>
                 <span>CLAIM MY DISCOUNT NOW</span>
-                <ChevronRight size={22} className="pb-cta-icon" />
+                <ChevronRight size={20} className="pb-cta-icon" />
               </button>
 
               {/* Trust Badges */}
@@ -416,7 +400,7 @@ function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
           <div className="pb-left-panel">
             <BookingLeftColumn 
               pkg={pkg} 
-              currency={currency}      
+              currency={currency}       
               exchangeRate={exchangeRate}
               onCustomizationChange={handleCustomizationChange}
               // PASS TIMER STATE DOWN
@@ -427,12 +411,11 @@ function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
           <div className="pb-right-panel">
             <BookingRightForm 
               pkg={pkg} 
-              currency={currency}      
+              currency={currency}       
               exchangeRate={exchangeRate}
               customizationData={customizationData}
               effectivePackagePrice={effectivePackagePrice}
               effectivePackageTotal={effectivePackageTotal}
-              // PASS TIMER STATE DOWN
               timerExpired={timerExpired} 
             />
           </div>

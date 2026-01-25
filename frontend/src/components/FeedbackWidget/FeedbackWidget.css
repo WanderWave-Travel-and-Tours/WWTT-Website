@@ -1,55 +1,89 @@
 /* ============================================
-   FEEDBACK WIDGET - RESPONSIVE VERSION
+   FEEDBACK WIDGET - PEEKING SIDE TAB (2-TAP MOBILE)
    ============================================ */
 
-/* Global Box Sizing for Widget to prevent layout breakage */
 .feedback-modal-content * {
   box-sizing: border-box;
 }
 
-/* Floating Trigger Button */
+/* TRIGGER BUTTON (Side Tab) */
 .feedback-trigger-btn {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 50px; /* Low position */
+  right: 0; 
+  border-radius: 30px 0 0 30px;
   background: linear-gradient(135deg, #fc9c1b 0%, #e68a00 100%);
   color: white;
   border: none;
-  padding: 14px 24px;
-  border-radius: 50px;
-  box-shadow: 0 4px 20px rgba(252, 156, 27, 0.4);
+  padding: 10px 14px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
+  gap: 0; 
+  box-shadow: -4px 4px 15px rgba(252, 156, 27, 0.3);
   z-index: 9999;
+  cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  letter-spacing: 0.3px;
-  /* Safe Area Support for Mobile */
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  right: calc(24px + env(safe-area-inset-right));
+  
+  /* Prevent blue tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
-.feedback-trigger-btn:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 30px rgba(252, 156, 27, 0.5);
+.trigger-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+/* Text is hidden by default (width 0, opacity 0) */
+.trigger-text {
+  max-width: 0;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 0;
+}
+
+/* EXPANSION LOGIC
+   1. :hover for Desktop (Mouse)
+   2. .expanded class for Mobile (Touch - controlled by JS)
+*/
+.feedback-trigger-btn:hover,
+.feedback-trigger-btn.expanded {
+  padding-left: 18px;
+  padding-right: 20px;
+  box-shadow: -6px 6px 20px rgba(252, 156, 27, 0.4);
   background: linear-gradient(135deg, #ff9d00 0%, #f08000 100%);
+  opacity: 1;
+  transform: translateX(-4px);
+}
+
+.feedback-trigger-btn:hover .trigger-text,
+.feedback-trigger-btn.expanded .trigger-text {
+  max-width: 100px; /* Reveal text */
+  opacity: 1;
+  margin-left: 10px;
 }
 
 .feedback-trigger-btn:active {
-  transform: translateY(-1px) scale(0.98);
+  transform: translateX(0);
 }
 
-/* Modal Overlay */
+
+/* ============================================
+   MODAL & FORM STYLES (Standard)
+   ============================================ */
 .feedback-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100dvh; /* Use dvh for mobile browsers */
+  height: 100dvh;
   background: rgba(10, 25, 47, 0.75);
   backdrop-filter: blur(5px);
   z-index: 10000;
@@ -60,7 +94,6 @@
   animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Modal Content */
 .feedback-modal-content {
   background: white;
   width: 100%;
@@ -70,12 +103,11 @@
   overflow: hidden;
   animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   max-height: 90vh;
-  max-height: 90dvh; /* Dynamic height for mobile address bars */
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
 }
 
-/* Header */
 .feedback-header {
   background: linear-gradient(135deg, #0a192f 0%, #172a45 100%);
   padding: 24px;
@@ -85,7 +117,7 @@
   color: white;
   position: relative;
   overflow: hidden;
-  flex-shrink: 0; /* Prevent header from shrinking */
+  flex-shrink: 0;
 }
 
 .feedback-header::before {
@@ -154,22 +186,20 @@
   cursor: not-allowed;
 }
 
-/* Form Body */
 form {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden; /* Contains the scrollable area */
+  overflow: hidden;
 }
 
 .form-body {
   padding: 28px;
   overflow-y: auto;
   flex: 1;
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Form Groups */
 .form-group {
   margin-bottom: 24px;
 }
@@ -182,7 +212,6 @@ form {
   color: #1f2937;
 }
 
-/* Optional Label */
 .optional-label {
   font-size: 12px;
   font-weight: 500;
@@ -190,7 +219,6 @@ form {
   font-style: italic;
 }
 
-/* Name Input Field */
 .name-input {
   width: 100%;
   padding: 14px;
@@ -221,7 +249,6 @@ form {
   font-weight: 400;
 }
 
-/* Star Rating Section */
 .rating-section {
   margin-bottom: 28px;
   text-align: center;
@@ -244,7 +271,7 @@ form {
   justify-content: center;
   gap: 8px;
   margin-bottom: 12px;
-  flex-wrap: wrap; /* Prevent overflow on very tiny screens */
+  flex-wrap: wrap;
 }
 
 .star-btn {
@@ -281,7 +308,6 @@ form {
   animation: fadeInText 0.3s ease-out;
 }
 
-/* Category Grid */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -296,7 +322,7 @@ form {
   background: white;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  height: 100%; /* Ensure equal height */
+  height: 100%;
 }
 
 .category-card input[type="radio"] {
@@ -352,7 +378,6 @@ form {
   font-weight: 600;
 }
 
-/* Textarea */
 .form-group textarea {
   width: 100%;
   padding: 14px;
@@ -391,7 +416,6 @@ form {
   margin-top: 4px;
 }
 
-/* Screenshot Preview */
 .screenshot-preview {
   margin-bottom: 24px;
   border: 2px solid #e5e7eb;
@@ -460,7 +484,6 @@ form {
   cursor: not-allowed;
 }
 
-/* Form Footer */
 .form-footer {
   padding: 20px 28px;
   background: #f9fafb;
@@ -468,7 +491,7 @@ form {
   display: flex;
   gap: 12px;
   align-items: center;
-  flex-shrink: 0; /* Ensures footer sticks to bottom */
+  flex-shrink: 0;
 }
 
 .attach-btn {
@@ -548,283 +571,110 @@ form {
   animation: spin 0.6s linear infinite;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes starPulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes fadeInText { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
+.form-body::-webkit-scrollbar { width: 8px; }
+.form-body::-webkit-scrollbar-track { background: #f1f5f9; }
+.form-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.form-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-@keyframes slideDown {
-  from { transform: translateY(-10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes starPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.3); }
-  100% { transform: scale(1); }
-}
-
-@keyframes fadeInText {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Scrollbar Styling */
-.form-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.form-body::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-.form-body::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.form-body::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* =========================================
-   RESPONSIVE DESIGN BREAKPOINTS
-   ========================================= */
-
-/* Mobile Devices (Portrait) */
+/* RESPONSIVE DESIGN */
 @media (max-width: 640px) {
   .feedback-modal-content {
     max-width: 100%;
     border-radius: 16px 16px 0 0;
-    max-height: 95dvh; /* Use dynamic height for mobile address bars */
+    max-height: 95dvh;
     animation: slideUpMobile 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .feedback-overlay {
     padding: 0;
-    align-items: flex-end; /* Bottom sheet effect */
+    align-items: flex-end; 
   }
 
-  .category-grid {
-    grid-template-columns: 1fr; /* Stack vertically for easy tapping */
-    gap: 10px;
-  }
-
-  .category-content {
-    flex-direction: row; /* Horizontal layout for list items */
-    justify-content: flex-start;
-    padding: 16px;
-    gap: 16px;
-  }
+  .category-grid { grid-template-columns: 1fr; gap: 10px; }
+  .category-content { flex-direction: row; justify-content: flex-start; padding: 16px; gap: 16px; }
+  .category-content span { font-size: 14px; }
+  .form-body { padding: 20px; }
   
-  .category-content span {
-    font-size: 14px; /* Slightly larger text for mobile readability */
-  }
-
-  .form-body {
-    padding: 20px;
-  }
-
   .form-footer {
     padding: 16px 20px;
-    flex-direction: column; /* Stack buttons */
-    padding-bottom: calc(16px + env(safe-area-inset-bottom)); /* iOS Home Bar safe area */
+    flex-direction: column;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
-  .attach-btn,
-  .submit-btn {
-    width: 100%;
-    justify-content: center;
-    flex: 1;
-    padding: 14px; /* Larger touch target */
-  }
+  .attach-btn, .submit-btn { width: 100%; justify-content: center; flex: 1; padding: 14px; }
 
+  /* MOBILE TRIGGER BUTTON */
   .feedback-trigger-btn {
-    bottom: 20px;
-    right: 20px;
-    /* Adjust for bottom safety area if needed */
-    bottom: calc(20px + env(safe-area-inset-bottom));
+    bottom: calc(40px + env(safe-area-inset-bottom));
   }
   
-  @keyframes slideUpMobile {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+  /* IMPORTANT: Allow text to be revealed on mobile via .expanded class now */
+  .feedback-trigger-btn .trigger-text {
+    /* Removed "display: none" so animation can work */
   }
+  
+  @keyframes slideUpMobile { from { transform: translateY(100%); } to { transform: translateY(0); } }
 }
 
-/* Very Small Mobile Screens (iPhone SE, Foldable cover screens) */
 @media (max-width: 375px) {
-  .feedback-header {
-    padding: 16px;
-  }
-  
-  .feedback-header h3 {
-    font-size: 18px;
-  }
-  
-  .star-rating {
-    gap: 4px;
-  }
-  
-  .star-rating svg {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .form-body {
-    padding: 16px;
-  }
+  .feedback-header { padding: 16px; }
+  .feedback-header h3 { font-size: 18px; }
+  .star-rating { gap: 4px; }
+  .star-rating svg { width: 28px; height: 28px; }
+  .form-body { padding: 16px; }
 }
 
-/* Landscape Mode on Mobile */
 @media (max-height: 500px) and (orientation: landscape) {
-  .feedback-overlay {
-    align-items: center; /* Center modal instead of bottom sheet */
-    padding: 10px;
-  }
-
-  .feedback-modal-content {
-    border-radius: 16px; /* Restore full radius */
-    max-height: 95dvh;
-    max-width: 600px; /* Wider to accommodate side-by-side content if needed */
-    flex-direction: row; /* Optional: split header/footer from body if very wide */
-    flex-wrap: wrap;
-  }
-
-  .feedback-header {
-    padding: 12px 20px;
-    width: 100%;
-  }
-
-  .form-body {
-    padding: 16px 20px;
-  }
-
-  .category-grid {
-    grid-template-columns: repeat(3, 1fr); /* Return to grid in landscape */
-  }
-  
-  .category-content {
-    flex-direction: column; /* Stack icon/text vertically again */
-    padding: 10px;
-  }
-
-  .form-footer {
-    padding: 10px 20px;
-    flex-direction: row; /* Side by side buttons */
-    width: 100%;
-  }
-  
-  /* Hide illustration/extra spacing in landscape to save height */
-  .feedback-header p {
-    display: none;
-  }
+  .feedback-overlay { align-items: center; padding: 10px; }
+  .feedback-modal-content { border-radius: 16px; max-height: 95dvh; max-width: 600px; flex-direction: row; flex-wrap: wrap; }
+  .feedback-header { padding: 12px 20px; width: 100%; }
+  .form-body { padding: 16px 20px; }
+  .category-grid { grid-template-columns: repeat(3, 1fr); }
+  .category-content { flex-direction: column; padding: 10px; }
+  .form-footer { padding: 10px 20px; flex-direction: row; width: 100%; }
+  .feedback-header p { display: none; }
 }
 
-/* ============================================
-   SUCCESS MODAL
-   ============================================ */
+/* SUCCESS MODAL */
 .success-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100dvh;
-  background: rgba(10, 25, 47, 0.75);
-  backdrop-filter: blur(5px);
-  z-index: 10001; /* Higher z-index than feedback form */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+  background: rgba(10, 25, 47, 0.75); backdrop-filter: blur(5px);
+  z-index: 10001; display: flex; justify-content: center; align-items: center;
+  padding: 20px; animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .success-modal-content {
-  background: white;
-  width: 100%;
-  max-width: 400px; /* Smaller max-width for success modal */
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-  text-align: center;
+  background: white; width: 100%; max-width: 400px;
+  border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden; animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column; text-align: center;
 }
 
-.success-modal-header {
-  padding: 32px 24px 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.success-modal-header h3 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.success-modal-body {
-  padding: 0 24px 24px;
-}
-
-.success-modal-body p {
-  margin: 0;
-  font-size: 16px;
-  color: #4b5563;
-  line-height: 1.5;
-}
-
-.success-modal-footer {
-  padding: 20px 24px;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: center;
-}
+.success-modal-header { padding: 32px 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.success-modal-header h3 { margin: 0; font-size: 24px; font-weight: 700; color: #1f2937; }
+.success-modal-body { padding: 0 24px 24px; }
+.success-modal-body p { margin: 0; font-size: 16px; color: #4b5563; line-height: 1.5; }
+.success-modal-footer { padding: 20px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: center; }
 
 .success-modal-ok-btn {
   background: linear-gradient(135deg, #fc9c1b 0%, #e68a00 100%); 
-  color: white;
-  border: none;
-  padding: 12px 32px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 16px;
+  color: white; border: none; padding: 12px 32px; border-radius: 10px;
+  cursor: pointer; font-weight: 600; font-size: 16px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3);
-  font-family: inherit;
-  min-width: 120px;
+  box-shadow: 0 4px 12px rgba(252, 156, 27, 0.3); font-family: inherit; min-width: 120px;
 }
 
 .success-modal-ok-btn:hover {
   background: linear-gradient(135deg, #ff9d00 0%, #f08000 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(252, 156, 27, 0.4);
+  transform: translateY(-2px); box-shadow: 0 6px 20px rgba(252, 156, 27, 0.4);
 }
+.success-modal-ok-btn:active { transform: translateY(0); }
 
-.success-modal-ok-btn:active {
-  transform: translateY(0);
-}
-
-/* Responsive for Success Modal */
-@media (max-width: 640px) {
-  .success-modal-content {
-    max-width: 90%; 
-  }
-}
+@media (max-width: 640px) { .success-modal-content { max-width: 90%; } }

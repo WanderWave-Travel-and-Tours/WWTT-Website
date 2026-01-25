@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
 import './userLogin.css';
 // Import icons (Added Eye, EyeOff, and ArrowLeft)
@@ -84,7 +85,7 @@ const OtpVerificationForm = ({ email, onVerify, onCancel, onResend, isLoading })
 const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
     // Toast Hook
     const toast = useToast();
-
+    const navigate = useNavigate();
     const [isSignup, setIsSignup] = useState(false);
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState(''); 
@@ -160,7 +161,7 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
 
     // Handle back button navigation
     const handleBackNavigation = () => {
-        window.history.back();
+        navigate('/packages');
     };
 
     const handleRecaptchaChange = (token) => {

@@ -79,6 +79,7 @@
   width: 100%;
   overflow: hidden;
   border-radius: 24px;
+  min-height: 320px; 
 }
 
 .promo-slide {
@@ -88,11 +89,13 @@
   width: 100%;
   transition: transform 0.6s ease;
   opacity: 0;
+  height: 100%; 
 }
 
 .promo-slide.active {
   position: relative;
   opacity: 1;
+  height: auto; 
 }
 
 .promo-voucher-card {
@@ -101,10 +104,11 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   display: flex;
-  height: 320px;
+  min-height: 340px;
   position: relative;
   overflow: hidden;
   border-radius: 24px;
+  transition: all 0.3s ease;
 }
 
 .card-image-side {
@@ -112,6 +116,7 @@
   position: relative;
   overflow: hidden;
   border-radius: 24px 0 0 24px;
+  min-height: 100%; 
 }
 
 .destination-bg-image {
@@ -119,6 +124,9 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.8s ease;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .promo-slide.active .destination-bg-image {
@@ -214,7 +222,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px; 
+  margin-bottom: 20px; 
 }
 
 .promo-title {
@@ -231,6 +240,36 @@
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.6;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.promo-description.expanded {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.read-more-btn {
+  background: none;
+  border: none;
+  color: #FF8C00;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 5px;
+  align-self: flex-start;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: color 0.2s ease;
+}
+
+.read-more-btn:hover {
+  color: #ffb347;
+  text-decoration: underline;
 }
 
 .promo-code-box {
@@ -241,7 +280,7 @@
   padding: 10px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  margin-top: auto;
+  margin-top: auto; 
 }
 
 .code-label {
@@ -258,6 +297,7 @@
   display: flex;
   gap: 10px;
   align-items: stretch;
+  width: 100%; 
 }
 
 .code-display {
@@ -269,6 +309,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 0;
 }
 
 .code-value {
@@ -277,11 +318,14 @@
   color: white;
   font-family: 'Courier New', monospace;
   letter-spacing: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .copy-btn {
-  flex-shrink: 0;
-  width: 50px;
+  flex-shrink: 0; 
+  width: 60px;
   border: none;
   border-radius: 12px;
   background: linear-gradient(135deg, #FF8C00 0%, #FFB347 100%);
@@ -345,7 +389,7 @@
 /* Responsive */
 @media (max-width: 1200px) {
   .promo-voucher-card {
-    height: 300px;
+    min-height: 320px;
   }
 
   .card-details-side {
@@ -377,7 +421,7 @@
   }
 
   .promo-voucher-card {
-    height: 280px;
+    min-height: 300px;
   }
 
   .card-details-side {
@@ -430,7 +474,7 @@
   }
 
   .copy-btn {
-    width: 45px;
+    width: 55px; 
   }
 }
 
@@ -451,7 +495,7 @@
 
   .promo-voucher-card {
     flex-direction: column;
-    height: auto;
+    min-height: auto;
   }
 
   .card-image-side {
@@ -501,6 +545,10 @@
 
   .carousel-dots {
     bottom: -45px;
+  }
+  
+  .copy-btn {
+    width: 50px;
   }
 }
 
@@ -577,7 +625,7 @@
   }
 
   .copy-btn {
-    width: 42px;
+    width: 48px;
     border-radius: 10px;
   }
 }
@@ -649,7 +697,7 @@
   }
 
   .copy-btn {
-    width: 38px;
+    width: 44px;
   }
 }
 
@@ -708,6 +756,6 @@
   }
 
   .copy-btn {
-    width: 35px;
+    width: 42px; 
   }
 }

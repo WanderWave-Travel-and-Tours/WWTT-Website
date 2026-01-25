@@ -1,4 +1,4 @@
-/* PackageBooking.css - ENHANCED VERSION */
+/* PackageBooking.css - COMPACT & STATIC BG VERSION */
 
 .pb-page {
   min-height: 100vh;
@@ -144,7 +144,7 @@
   overflow-x: hidden;
 }
 
-/* Animated Background Particles */
+/* Static Background (Animation Removed per request) */
 .pb-offer-overlay::before {
   content: '';
   position: absolute;
@@ -156,14 +156,14 @@
     radial-gradient(circle at 20% 30%, rgba(249, 115, 22, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 80% 70%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.05) 0%, transparent 50%);
-  animation: pbBackgroundShift 8s ease-in-out infinite;
+  /* Animation removed to keep background fixed/static */
   pointer-events: none;
 }
 
 .pb-offer-modal {
   background: linear-gradient(180deg, #ffffff 0%, #fffbf5 100%);
   width: 100%;
-  max-width: 520px;
+  max-width: 500px; /* Reduced width slightly */
   border-radius: 28px;
   padding: 0;
   text-align: center;
@@ -223,13 +223,13 @@
 /* Enhanced Close Button */
 .pb-offer-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 15px; /* Moved up */
+  right: 15px; /* Moved right */
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   border: 2px solid #cbd5e1;
   color: #334155;
-  width: 42px;
-  height: 42px;
+  width: 36px; /* Smaller button */
+  height: 36px; /* Smaller button */
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -242,8 +242,8 @@
 }
 
 .pb-offer-close svg {
-  width: 22px;
-  height: 22px;
+  width: 18px; /* Smaller icon */
+  height: 18px; /* Smaller icon */
   stroke: currentColor;
   stroke-width: 2.5px;
   fill: none;
@@ -258,25 +258,25 @@
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
 }
 
-/* Modal Content Wrapper with Padding */
+/* Modal Content Wrapper with LESS Padding */
 .pb-modal-content {
-  padding: 50px 40px 40px 40px;
+  padding: 35px 30px 30px 30px; /* Reduced padding significantly */
 }
 
 /* Urgency Badge with Animation */
 .pb-offer-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #dc2626;
-  font-size: 0.75rem;
+  font-size: 0.65rem; /* Smaller font */
   font-weight: 900;
-  padding: 8px 20px;
+  padding: 6px 16px; /* Smaller padding */
   border-radius: 25px;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 20px;
+  letter-spacing: 1.2px;
+  margin-bottom: 12px; /* Reduced margin */
   border: 2px solid #fca5a5;
   animation: pbBadgePulse 2s ease-in-out infinite;
   box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
@@ -286,11 +286,11 @@
   animation: pbFireFlicker 0.5s ease-in-out infinite alternate;
 }
 
-/* Enhanced Title with Gradient */
+/* Enhanced Title with Gradient - SMALLER */
 .pb-offer-title {
-  font-size: 2.5rem;
+  font-size: 1.8rem; /* Reduced from 2.5rem */
   font-weight: 900;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 50%, #1e3a5f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -301,13 +301,13 @@
   background-size: 200% auto;
 }
 
-/* Package Info Card */
+/* Package Info Card - COMPACT */
 .pb-offer-package-info {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border: 2px solid #e2e8f0;
-  padding: 16px 20px;
-  border-radius: 16px;
-  margin: 0 auto 24px auto;
+  padding: 10px 16px; /* Reduced padding */
+  border-radius: 12px;
+  margin: 0 auto 16px auto; /* Reduced margin */
   display: inline-block;
   max-width: 100%;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -328,40 +328,40 @@
 
 .pb-offer-package-label {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.65rem; /* Smaller */
   text-transform: uppercase;
   color: #64748b;
   font-weight: 700;
   letter-spacing: 0.5px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .pb-offer-package-name {
   display: block;
-  font-size: 1.2rem;
+  font-size: 1rem; /* Reduced from 1.2rem */
   color: #1e293b;
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .pb-offer-subtitle {
   color: #475569;
-  font-size: 1.05rem;
-  margin-bottom: 28px;
-  line-height: 1.6;
+  font-size: 0.9rem; /* Reduced from 1.05rem */
+  margin-bottom: 20px; /* Reduced margin */
+  line-height: 1.5;
   font-weight: 500;
 }
 
-/* Social Proof Bar */
+/* Social Proof Bar - COMPACT */
 .pb-social-proof {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  margin: 20px 0;
-  padding: 12px 20px;
+  gap: 16px;
+  margin: 16px 0;
+  padding: 8px 16px; /* Reduced padding */
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 2px solid #fbbf24;
   box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
 }
@@ -369,8 +369,8 @@
 .pb-social-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
+  gap: 4px;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #92400e;
 }
@@ -379,16 +379,16 @@
   animation: pbIconBounce 2s ease-in-out infinite;
 }
 
-/* Enhanced Timer with Dynamic Colors */
+/* Enhanced Timer - SMALLER & COMPACT */
 .pb-timer-large {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  margin: 28px 0;
+  gap: 12px;
+  margin: 20px 0; /* Reduced margin */
   background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-  padding: 24px;
-  border-radius: 20px;
+  padding: 16px; /* Reduced padding */
+  border-radius: 16px;
   border: 3px dashed #fb923c;
   position: relative;
   box-shadow: inset 0 2px 8px rgba(251, 146, 60, 0.2),
@@ -398,14 +398,14 @@
 .pb-timer-large::before {
   content: '⏰ HURRY!';
   position: absolute;
-  top: -14px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: white;
-  padding: 4px 16px;
+  padding: 3px 12px; /* Smaller */
   border-radius: 20px;
-  font-size: 0.7rem;
+  font-size: 0.6rem; /* Smaller */
   font-weight: 900;
   letter-spacing: 1px;
   box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
@@ -417,9 +417,9 @@
   flex-direction: column;
   align-items: center;
   background: white;
-  padding: 16px 20px;
-  border-radius: 16px;
-  min-width: 90px;
+  padding: 10px 14px; /* Reduced padding */
+  border-radius: 12px;
+  min-width: 70px; /* Reduced width */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
@@ -431,14 +431,14 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 3px; /* Thinner */
   background: linear-gradient(90deg, #f97316, #fbbf24, #f97316);
   background-size: 200% auto;
   animation: pbTimerGradient 2s linear infinite;
 }
 
 .pb-timer-value {
-  font-size: 3.5rem;
+  font-size: 2.2rem; /* Reduced from 3.5rem */
   font-weight: 900;
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   -webkit-background-clip: text;
@@ -452,48 +452,48 @@
 }
 
 .pb-timer-label {
-  font-size: 0.75rem;
+  font-size: 0.65rem; /* Smaller */
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-top: 8px;
+  letter-spacing: 1px;
+  margin-top: 6px;
   color: #64748b;
   font-weight: 700;
 }
 
 .pb-timer-colon {
-  font-size: 3rem;
+  font-size: 2rem; /* Reduced from 3rem */
   font-weight: 900;
   color: #f97316;
-  margin-top: -8px;
+  margin-top: -6px;
   animation: pbColonBlink 1s ease-in-out infinite;
 }
 
-/* Savings Highlight */
+/* Savings Highlight - COMPACT */
 .pb-savings-highlight {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
   color: #15803d;
-  padding: 12px 24px;
-  border-radius: 30px;
-  font-size: 1.1rem;
+  padding: 8px 16px; /* Reduced padding */
+  border-radius: 20px;
+  font-size: 0.9rem; /* Reduced from 1.1rem */
   font-weight: 800;
-  margin: 20px 0;
+  margin: 12px 0 16px 0; /* Reduced margin */
   border: 2px solid #86efac;
   box-shadow: 0 6px 20px rgba(21, 128, 61, 0.2);
   animation: pbSavingsPulse 2s ease-in-out infinite;
 }
 
-/* Enhanced CTA Button */
+/* Enhanced CTA Button - SMALLER */
 .pb-offer-cta {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: white;
   border: none;
-  padding: 18px 40px;
-  font-size: 1.2rem;
+  padding: 14px 30px; /* Reduced from 18px 40px */
+  font-size: 1rem; /* Reduced from 1.2rem */
   font-weight: 800;
-  border-radius: 16px;
+  border-radius: 14px;
   cursor: pointer;
   width: 100%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -502,7 +502,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
   position: relative;
@@ -534,14 +534,14 @@
   animation: pbArrowBounce 1s ease-in-out infinite;
 }
 
-/* Trust Badges */
+/* Trust Badges - COMPACT */
 .pb-trust-badges {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  margin-top: 20px;
-  padding-top: 20px;
+  gap: 12px;
+  margin-top: 16px; /* Reduced margin */
+  padding-top: 16px; /* Reduced padding */
   border-top: 2px solid #f1f5f9;
   flex-wrap: wrap;
 }
@@ -549,8 +549,8 @@
 .pb-trust-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  gap: 4px;
+  font-size: 0.65rem; /* Smaller */
   color: #64748b;
   font-weight: 600;
 }
@@ -743,6 +743,7 @@
   }
 }
 
+/* Note: pbBackgroundShift removed/disabled for static background effect */
 @keyframes pbBackgroundShift {
   0%, 100% { transform: scale(1) rotate(0deg); }
   50% { transform: scale(1.1) rotate(5deg); }
@@ -962,7 +963,7 @@
   }
   
   .pb-modal-content {
-    padding: 40px 24px 32px 24px;
+    padding: 30px 20px 20px 20px; /* Reduced for mobile */
   }
   
   .pb-offer-modal {
@@ -970,11 +971,11 @@
   }
   
   .pb-offer-title {
-    font-size: 1.9rem;
+    font-size: 1.5rem; /* Smaller for mobile */
   }
   
   .pb-offer-subtitle {
-    font-size: 0.95rem;
+    font-size: 0.8rem;
   }
   
   .pb-social-proof {
@@ -983,28 +984,28 @@
   }
   
   .pb-timer-large {
-    padding: 16px;
-    gap: 12px;
-    margin: 20px 0;
+    padding: 12px;
+    gap: 10px;
+    margin: 16px 0;
   }
   
   .pb-timer-box {
-    min-width: 70px;
-    padding: 12px 16px;
+    min-width: 60px;
+    padding: 8px 12px;
   }
   
   .pb-timer-value {
-    font-size: 2.5rem;
+    font-size: 1.8rem; /* Smaller for mobile */
   }
   
   .pb-timer-colon {
-    font-size: 2rem;
+    font-size: 1.5rem;
     margin-top: -6px;
   }
   
   .pb-offer-cta {
-    padding: 14px 28px;
-    font-size: 1rem;
+    padding: 12px 24px;
+    font-size: 0.9rem;
   }
   
   .pb-floating-timer {
@@ -1041,20 +1042,20 @@
   }
   
   .pb-offer-title {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
   }
   
   .pb-timer-value {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
   
   .pb-timer-box {
-    min-width: 60px;
-    padding: 10px 12px;
+    min-width: 50px;
+    padding: 8px;
   }
   
   .pb-floating-timer {
-    top: 55px;
+    top: 100px;
     right: 8px;
     padding: 5px 8px;
     gap: 6px;
