@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useToast } from '../toast/ToastManager';
+import { Eye, EyeOff } from 'lucide-react'; // ✅ Add this import
 import './login.css';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false); // ✅ Password toggle state
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const recaptchaRef = useRef(null);
@@ -85,18 +87,16 @@ const Login = () => {
             const data = await response.json();
 
             if (data.status === 'ok') {
-                // ✅ Store admin data (isMainAdmin comes from backend)
                 localStorage.setItem('adminToken', data.token); 
                 localStorage.setItem('adminData', JSON.stringify(data.data)); 
                 
-                console.log('🔐 Admin logged in:', {
+                console.log('🔑 Admin logged in:', {
                     email: data.data.email,
                     isMainAdmin: data.data.isMainAdmin
                 });
                 
                 toast.success('Access Granted! Redirecting to dashboard...', 'Login Successful');
                 
-                // Navigate after a short delay to show toast
                 setTimeout(() => {
                     navigate('/dashboard');
                 }, 1500);
@@ -111,6 +111,11 @@ const Login = () => {
             if (recaptchaRef.current) recaptchaRef.current.reset();
             setRecaptchaToken(null);
         }
+    };
+
+    // ✅ Password toggle function
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
     };
 
     return (
@@ -174,21 +179,33 @@ const Login = () => {
                                 />
                             </div>
 
+                            {/* ✅ Password field with toggle */}
                             <div className="input-group">
                                 <label htmlFor="password" className="input-label">Password</label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Enter your password"
-                                    className="input-field"
-                                    required
-                                    autoComplete="current-password"
-                                />
+                                <div className="password-input-wrapper">
+                                    <input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Enter your password"
+                                        className="input-field password-field"
+                                        required
+                                        autoComplete="current-password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={togglePasswordVisibility}
+                                        className="password-toggle-btn"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="recaptcha-wrapper" style={{ marginBottom: '15px' }}>
+                            {/* ✅ Centered reCAPTCHA */}
+                            <div className="recaptcha-wrapper">
                                 <ReCAPTCHA
                                     ref={recaptchaRef}
                                     sitekey={RECAPTCHA_SITE_KEY}

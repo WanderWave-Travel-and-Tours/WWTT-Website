@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom'; // Import Link para sa internal navigation
 import './footer.css';
 
 function Footer() {
@@ -8,6 +9,8 @@ function Footer() {
     <footer className="site-footer">
       <div className="footer-content">
         <div className="footer-grid">
+          
+          {/* About Section */}
           <div className="footer-about">
             <img src={logoUrl} alt="Wanderwave Travel & Tours" className="footer-logo" />
             <p>
@@ -15,15 +18,23 @@ function Footer() {
             </p>
           </div>
 
+          {/* Quick Links Section (UPDATED) */}
           <div className="footer-links">
             <h4>QUICK LINKS</h4>
             <ul>
-              <li><a href="#">Flight Search</a></li>
-              <li><a href="#">Package Deals</a></li>
-              <li><a href="#">Other Services</a></li>
+              <li>
+                <Link to="/flights">Flight Search</Link>
+              </li>
+              <li>
+                <Link to="/packages">Package Deals</Link>
+              </li>
+              <li>
+                <Link to="/other-services">Other Services</Link>
+              </li>
             </ul>
           </div>
 
+          {/* Contact Section */}
           <div className="footer-contact">
             <h4>GET IN TOUCH</h4>
             <ul>
@@ -45,6 +56,7 @@ function Footer() {
         </div>
       </div>
       
+      {/* Footer Bottom */}
       <div className="footer-bottom">
         <p>
           © {new Date().getFullYear()} <span>Wanderwave Travel and Tours.</span> All Rights Reserved.

@@ -379,3 +379,44 @@
         margin-bottom: 12px;
     }
 }
+
+/* ✅ Password toggle styles */
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-field {
+    padding-right: 45px !important; /* Make room for the icon */
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.2s ease;
+    z-index: 10;
+}
+
+.password-toggle-btn:hover {
+    color: #ff9800;
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+}
+
+/* ✅ Center reCAPTCHA */
+.recaptcha-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
