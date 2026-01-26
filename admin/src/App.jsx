@@ -153,19 +153,34 @@ const LoadingScreen = () => (
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    backgroundColor: '#f0f2f5'
+    backgroundImage: 'url(https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691ec3335c5cab55d0046c72.png)',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed',
+    position: 'relative',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
   }}>
-    <div style={{ textAlign: 'center' }}>
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.55)',
+      zIndex: 1
+    }}></div>
+    <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
       <div style={{
         width: '60px',
         height: '60px',
-        border: '5px solid #f3f3f3',
-        borderTop: '5px solid #007bff',
+        border: '5px solid rgba(255, 255, 255, 0.2)',
+        borderTop: '5px solid #ff9800',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite',
         margin: '0 auto 20px'
       }}></div>
-      <p style={{ color: '#666', fontSize: '16px' }}>Verifying authentication...</p>
+      <p style={{ color: '#ffffff', fontSize: '16px', fontWeight: '500' }}>Verifying authentication...</p>
     </div>
     <style>{`
       @keyframes spin {
@@ -187,7 +202,7 @@ const UnauthorizedAccess = () => {
 
   useEffect(() => {
     console.log('🚫 Unauthorized Access Detected:', location.pathname);
-    console.log('📍 Is Valid Protected Route:', isValidRoute);
+    console.log('🔍 Is Valid Protected Route:', isValidRoute);
   }, [location.pathname, isValidRoute]);
 
   return (
@@ -197,165 +212,187 @@ const UnauthorizedAccess = () => {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
-      backgroundColor: '#0f172a',
-      padding: '40px 20px',
+      backgroundImage: 'url(https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/691ec3335c5cab55d0046c72.png)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      padding: '20px',
       textAlign: 'center',
-      fontFamily: 'Arial, sans-serif'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      position: 'relative'
     }}>
+      {/* Dark overlay */}
       <div style={{
-        maxWidth: '800px',
-        padding: '60px 40px',
-        backgroundColor: '#1e293b',
-        borderRadius: '16px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-      }}>
-        <div style={{
-          fontSize: '150px',
-          margin: '0',
-          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontWeight: 'bold',
-          lineHeight: '1'
-        }}>
-          {isValidRoute ? '🔒' : '404'}
-        </div>
-        
-        <h2 style={{
-          fontSize: '36px',
-          margin: '30px 0 20px 0',
-          color: '#f1f5f9',
-          fontWeight: '600'
-        }}>
-          {isValidRoute ? 'Authentication Required' : 'Page Not Found'}
-        </h2>
-        
-        <div style={{
-          backgroundColor: '#334155',
-          padding: '20px',
-          borderRadius: '10px',
-          marginBottom: '30px',
-          border: '2px solid #475569'
-        }}>
-          <p style={{
-            fontSize: '14px',
-            color: '#94a3b8',
-            margin: '0 0 10px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            fontWeight: '500'
-          }}>Attempted URL:</p>
-          <p style={{
-            fontSize: '18px',
-            color: '#ef4444',
-            margin: '0',
-            fontFamily: 'monospace',
-            wordBreak: 'break-all',
-            fontWeight: 'bold'
-          }}>{location.pathname}</p>
-        </div>
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        zIndex: 1
+      }}></div>
 
+      <div style={{
+        maxWidth: '600px',
+        width: '100%',
+        position: 'relative',
+        zIndex: 2
+      }}>
+        {/* Icon */}
+        <div style={{
+          width: '120px',
+          height: '120px',
+          margin: '0 auto 35px',
+          borderRadius: '50%',
+          border: '5px solid #ff9800',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '60px',
+          backgroundColor: 'rgba(255, 152, 0, 0.1)'
+        }}>
+          {isValidRoute ? '🔒' : '!'}
+        </div>
+        
+        {/* Title */}
+        <h1 style={{
+          fontSize: '48px',
+          margin: '0 0 20px 0',
+          color: '#ff9800',
+          fontWeight: '700',
+          textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
+        }}>
+          {isValidRoute ? 'Authentication Required' : '404 - Page Not Found'}
+        </h1>
+        
+        {/* Description */}
         <p style={{
           fontSize: '18px',
-          maxWidth: '600px',
-          margin: '0 auto 40px auto',
-          color: '#cbd5e1',
-          lineHeight: '1.8'
+          margin: '0 0 12px 0',
+          color: '#ffffff',
+          lineHeight: '1.6',
+          textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)'
         }}>
-          {isValidRoute ? (
-            <>
-              This page requires authentication. Please log in to access this resource.
-              <br/>
-              <span style={{ color: '#94a3b8', fontSize: '16px' }}>
-                You must be logged in as an admin to view this page.
-              </span>
-            </>
-          ) : (
-            <>
-              This page doesn't exist in our system.
-              <br/>
-              <span style={{ color: '#94a3b8', fontSize: '16px' }}>
-                Please check the URL or navigate using the buttons below.
-              </span>
-            </>
-          )}
+          {isValidRoute 
+            ? 'This page requires authentication. Please log in to access this resource.'
+            : 'Oops! The page you are looking for does not exist. It might have been moved or deleted.'}
         </p>
 
-        <div style={{ 
-          display: 'flex', 
-          gap: '15px', 
-          flexWrap: 'wrap', 
-          justifyContent: 'center' 
+        <p style={{
+          fontSize: '16px',
+          margin: '0 0 35px 0',
+          color: '#cbd5e1',
+          textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)'
         }}>
-          <button
-            onClick={() => navigate('/admin', { replace: true })}
-            style={{
-              padding: '16px 36px',
-              fontSize: '18px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#2563eb';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.5)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = '#3b82f6';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.4)';
-            }}
-          >
-            {isValidRoute ? 'Login to Access' : 'Go to Login Page'}
-          </button>
-          
-          {!isValidRoute && (
-            <button
-              onClick={() => window.history.back()}
-              style={{
-                padding: '16px 36px',
-                fontSize: '18px',
-                backgroundColor: '#64748b',
-                color: 'white',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#475569';
-                e.target.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = '#64748b';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              Go Back
-            </button>
-          )}
-        </div>
+          {isValidRoute 
+            ? 'You must be logged in as an admin to view this page.'
+            : ''}
+        </p>
 
+        {/* Attempted URL Box */}
+        {!isValidRoute && (
+          <div style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            padding: '18px',
+            borderRadius: '12px',
+            marginBottom: '35px',
+            border: '1px solid rgba(255, 152, 0, 0.4)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <p style={{
+              fontSize: '13px',
+              color: '#cbd5e1',
+              margin: '0 0 10px 0',
+              textTransform: 'uppercase',
+              letterSpacing: '1.5px',
+              fontWeight: '600'
+            }}>Attempted URL:</p>
+            <p style={{
+              fontSize: '16px',
+              color: '#ff9800',
+              margin: '0',
+              fontFamily: 'monospace',
+              wordBreak: 'break-all',
+              fontWeight: '600'
+            }}>{location.pathname}</p>
+          </div>
+        )}
+
+        {/* Button */}
+        <button
+          onClick={() => navigate('/admin', { replace: true })}
+          style={{
+            padding: '16px 40px',
+            fontSize: '18px',
+            background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50px',
+            cursor: 'pointer',
+            fontWeight: '700',
+            boxShadow: '0 6px 25px rgba(255, 152, 0, 0.4)',
+            transition: 'all 0.3s ease',
+            fontFamily: 'inherit'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 8px 30px rgba(255, 152, 0, 0.5)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 6px 25px rgba(255, 152, 0, 0.4)';
+          }}
+        >
+          {isValidRoute ? 'Login to Access' : 'Go Back Home'}
+        </button>
+
+        {/* Security Notice - Only for protected routes */}
+        {isValidRoute && (
+          <div style={{
+            marginTop: '35px',
+            padding: '15px 18px',
+            backgroundColor: 'rgba(255, 152, 0, 0.15)',
+            borderRadius: '10px',
+            border: '1px solid rgba(255, 152, 0, 0.4)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <p style={{
+              margin: '0',
+              color: '#ffa726',
+              fontSize: '15px',
+              fontWeight: '500',
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
+            }}>
+              🔐 <strong>Security Notice:</strong> This page requires valid admin credentials.
+            </p>
+          </div>
+        )}
+
+        {/* Footer */}
         <div style={{
-          marginTop: '40px',
-          padding: '20px',
-          backgroundColor: '#0f172a',
-          borderRadius: '10px',
-          border: '1px solid #334155'
+          marginTop: '50px',
+          paddingTop: '25px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.2)'
         }}>
+          <img
+            src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
+            alt="WanderWave Logo"
+            style={{
+              height: '35px',
+              width: 'auto',
+              objectFit: 'contain',
+              marginBottom: '10px',
+              filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))'
+            }}
+          />
           <p style={{
             margin: '0',
-            color: '#64748b',
-            fontSize: '14px'
+            color: '#94a3b8',
+            fontSize: '14px',
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
           }}>
-            🔒 <strong>Security Notice:</strong> {isValidRoute ? 'This page requires valid admin credentials.' : 'Unauthorized access attempts are logged.'}
+            © 2025 WanderWave Travel and Tours
           </p>
         </div>
       </div>
