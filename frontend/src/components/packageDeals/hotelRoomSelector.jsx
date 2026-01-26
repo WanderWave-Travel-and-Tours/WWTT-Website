@@ -180,6 +180,7 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
   const [previewImage, setPreviewImage] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const hoverTimeoutRef = useRef(null);
+  const hasAutoSelectedRef = useRef(false); // ✅ NEW: Track if we've auto-selected
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 1024);
@@ -188,14 +189,29 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // ✅ FIXED: Force select Budget on initial load, regardless of current selection
   useEffect(() => {
-    if (!selectedRoomType && roomTypes && roomTypes.length > 0) {
-      const sortedByPrice = [...roomTypes].sort((a, b) => a.price - b.price);
-      if (sortedByPrice.length > 0) {
-        onRoomTypeChange(sortedByPrice[0]); 
+    if (roomTypes && roomTypes.length > 0 && !hasAutoSelectedRef.current) {
+      // Find BUDGET room type
+      const budgetRoom = roomTypes.find(room => 
+        room.type?.toUpperCase().includes('BUDGET')
+      );
+      
+      if (budgetRoom) {
+        console.log('🎯 Auto-selecting Budget room:', budgetRoom.hotelName);
+        onRoomTypeChange(budgetRoom);
+        hasAutoSelectedRef.current = true;
+      } else {
+        // Fallback to cheapest if no BUDGET found
+        const sortedByPrice = [...roomTypes].sort((a, b) => a.price - b.price);
+        if (sortedByPrice.length > 0) {
+          console.log('💰 Auto-selecting cheapest room:', sortedByPrice[0].hotelName);
+          onRoomTypeChange(sortedByPrice[0]);
+          hasAutoSelectedRef.current = true;
+        }
       }
     }
-  }, [roomTypes, selectedRoomType, onRoomTypeChange]);
+  }, [roomTypes]); // ✅ Only depend on roomTypes, not selectedRoomType or onRoomTypeChange
 
   const groupedRoomTypes = React.useMemo(() => {
     if (!roomTypes || roomTypes.length === 0) return {};
@@ -231,6 +247,30 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
     });
 
     const sortedGroups = Object.keys(groups).sort((a, b) => {
+      // Define room type priority order
+      const typeOrder = {
+        'BUDGET': 1,
+        'STANDARD': 2,
+        '4 STAR': 3,
+        '5 STAR': 4
+      };
+      
+      const getTypePriority = (type) => {
+        const typeUpper = type?.toUpperCase() || '';
+        if (typeUpper.includes('BUDGET')) return typeOrder['BUDGET'];
+        if (typeUpper.includes('STANDARD')) return typeOrder['STANDARD'];
+        if (typeUpper.includes('4 STAR') || typeUpper.includes('4-STAR') || typeUpper.includes('FOUR STAR')) return typeOrder['4 STAR'];
+        if (typeUpper.includes('5 STAR') || typeUpper.includes('5-STAR') || typeUpper.includes('FIVE STAR')) return typeOrder['5 STAR'];
+        return 999; // Unknown types go to the end
+      };
+      
+      const priorityA = getTypePriority(a);
+      const priorityB = getTypePriority(b);
+      
+      // Sort by priority, then by price if same priority
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
       return groups[a].minPrice - groups[b].minPrice;
     });
 

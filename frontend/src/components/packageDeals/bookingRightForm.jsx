@@ -16,7 +16,9 @@ const BookingRightForm = ({
   pkg,
   customizationData: initialCustomizationData = null,
   effectivePackagePrice = null,
-  effectivePackageTotal = null 
+  effectivePackageTotal = null,
+  currency = 'PHP',
+  exchangeRate = 58
 }) => {
   const navigate = useNavigate();
   const { code } = useParams();
@@ -60,6 +62,12 @@ const BookingRightForm = ({
     }))
   );
 
+  const currencySymbol = currency === 'PHP' ? '₱' : '$';
+  const convertPrice = (phpPrice) => {
+    if (currency === 'PHP') return phpPrice;
+    return (phpPrice / exchangeRate) * 1.30; // Convert PHP to USD with markup
+  };
+
   useEffect(() => {
     const fetchIpAddress = async () => {
       try {
@@ -96,7 +104,17 @@ const BookingRightForm = ({
       }
       
       if (savedState.formData.selectedRoomType) {
-        setSelectedRoomType(savedState.formData.selectedRoomType);
+        // ✅ FIXED: Only restore if it's a Budget room, otherwise let auto-select handle it
+        const savedRoomType = savedState.formData.selectedRoomType;
+        const isBudget = savedRoomType.type?.toUpperCase().includes('BUDGET');
+        
+        if (isBudget) {
+          console.log('📦 Restoring Budget room from localStorage:', savedRoomType.hotelName);
+          setSelectedRoomType(savedRoomType);
+        } else {
+          console.log('⏭️ Skipping localStorage restore - not Budget. Will auto-select Budget instead.');
+          // Don't restore - let auto-select handle it
+        }
       }
       
       if (savedState.formData.passengers && savedState.formData.passengers.length > 0) {
@@ -251,8 +269,20 @@ const BookingRightForm = ({
             roomTypes: roomTypes
           });
           
-          const sortedRooms = [...roomTypes].sort((a, b) => a.price - b.price);
-          setSelectedRoomType(sortedRooms[0]);
+          // ✅ FIXED: Prioritize Budget room type, fallback to cheapest
+          const budgetRoom = roomTypes.find(room => 
+            room.type?.toUpperCase().includes('BUDGET')
+          );
+          
+          if (budgetRoom) {
+            console.log('🎯 Auto-selecting Budget room from fetchHotelData:', budgetRoom.hotelName);
+            setSelectedRoomType(budgetRoom);
+          } else {
+            // Fallback to cheapest if no Budget found
+            const sortedRooms = [...roomTypes].sort((a, b) => a.price - b.price);
+            console.log('💰 Auto-selecting cheapest room:', sortedRooms[0].hotelName);
+            setSelectedRoomType(sortedRooms[0]);
+          }
         }
       } catch (error) {
         console.error('❌ Error:', error);
@@ -395,6 +425,14 @@ const BookingRightForm = ({
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  const convertedPackageTotal = convertPrice(packageTotal);
+  const convertedOriginalPriceWithMarkup = convertPrice(originalPriceWithMarkup);
+  const convertedFinalPackageTotal = convertPrice(finalPackageTotal);
+  const convertedAirfareTotal = convertPrice(airfareTotal);
+  const convertedFinalTotalAmount = convertPrice(finalTotalAmount);
+  const convertedDiscountAmount = convertPrice(discountAmount);
+  const convertedPartialAmount = convertPrice(partialAmount);
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
@@ -1111,7 +1149,10 @@ const BookingRightForm = ({
               <div className="brf-promo-desc-text">
                 {appliedPromo.discountType === 'Percentage' 
                   ? `${appliedPromo.discountValue}% discount applied`
-                  : `₱${appliedPromo.discountValue.toLocaleString()} discount applied`
+                  : `${currencySymbol}${convertPrice(appliedPromo.discountValue).toLocaleString(undefined, {
+                      minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                      maximumFractionDigits: currency === 'USD' ? 2 : 0
+                    })} discount applied`
                 }
               </div>
             </div>
@@ -1135,13 +1176,19 @@ const BookingRightForm = ({
                 color: '#9ca3af',
                 fontSize: '0.9rem'
               }}>
-                ₱{originalPriceWithMarkup.toLocaleString()}
+                {currencySymbol}{convertedOriginalPriceWithMarkup.toLocaleString(undefined, {
+                  minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0
+                })}
               </span>
             )}
             <span className="brf-total-amount" style={{
               color: !timerExpired ? '#10b981' : '#1f2937'
             }}>
-              ₱{packageTotal.toLocaleString()}
+              {currencySymbol}{convertedPackageTotal.toLocaleString(undefined, {
+                minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                maximumFractionDigits: currency === 'USD' ? 2 : 0
+              })}
             </span>
           </div>
         </div>
@@ -1152,7 +1199,10 @@ const BookingRightForm = ({
               - Promo Discount ({appliedPromo.code})
             </span>
             <span style={{fontWeight: '700'}}>
-              -₱{discountAmount.toLocaleString()}
+              -{currencySymbol}{convertedDiscountAmount.toLocaleString(undefined, {
+                minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                maximumFractionDigits: currency === 'USD' ? 2 : 0
+              })}
             </span>
           </div>
         )}
@@ -1161,7 +1211,10 @@ const BookingRightForm = ({
           <div className="brf-total-row" style={{fontSize: '0.95rem', color: '#374151'}}>
             <span>Discounted Package Total</span>
             <span style={{fontWeight: '700', color: '#fc9c1b'}}>
-              ₱{finalPackageTotal.toLocaleString()}
+              {currencySymbol}{convertedFinalPackageTotal.toLocaleString(undefined, {
+                minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                maximumFractionDigits: currency === 'USD' ? 2 : 0
+              })}
             </span>
           </div>
         )}
@@ -1170,7 +1223,10 @@ const BookingRightForm = ({
           <>
             <div className="brf-total-row" style={{fontSize: '0.9rem', color: '#6b7280'}}>
               <span>+ Airfare</span>
-              <span>₱{airfareTotal.toLocaleString()}</span>
+              <span>{currencySymbol}{convertedAirfareTotal.toLocaleString(undefined, {
+                minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                maximumFractionDigits: currency === 'USD' ? 2 : 0
+              })}</span>
             </div>
             <div className="brf-total-row" style={{
               borderTop: '2px solid #fc9c1b',
@@ -1180,9 +1236,11 @@ const BookingRightForm = ({
               fontWeight: '800',
               color: '#1f2937'
             }}>
-              <span>GRAND TOTAL</span>
               <span style={{color: '#fc9c1b'}}>
-                ₱{finalTotalAmount.toLocaleString()}
+                {currencySymbol}{convertedFinalTotalAmount.toLocaleString(undefined, {
+                  minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0
+                })}
               </span>
             </div>
           </>
@@ -1199,7 +1257,10 @@ const BookingRightForm = ({
           }}>
             <span>TOTAL AMOUNT</span>
             <span style={{color: '#fc9c1b'}}>
-              ₱{finalPackageTotal.toLocaleString()}
+              {currencySymbol}{convertedFinalPackageTotal.toLocaleString(undefined, {
+                minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                maximumFractionDigits: currency === 'USD' ? 2 : 0
+              })}
             </span>
           </div>
         )}
@@ -1262,13 +1323,13 @@ const BookingRightForm = ({
         selectedDate={selectedDate}
         getCalculatedDates={getCalculatedDates}
         monthNames={monthNames}
-        packageTotal={packageTotal}
+        packageTotal={convertedPackageTotal}           // CHANGED
         appliedPromo={appliedPromo}
-        discountAmount={discountAmount}
-        finalPackageTotal={finalPackageTotal}
+        discountAmount={convertedDiscountAmount}       // CHANGED
+        finalPackageTotal={convertedFinalPackageTotal} // CHANGED
         selectedFlight={selectedFlight}
-        airfareTotal={airfareTotal}
-        totalAmount={finalTotalAmount}
+        airfareTotal={convertedAirfareTotal}           // CHANGED
+        totalAmount={convertedFinalTotalAmount}        // CHANGED
         bookingWithAirfare={bookingWithAirfare}
         isInternationalFlight={isInternationalFlight}
         requiresID={requiresID}
@@ -1277,7 +1338,7 @@ const BookingRightForm = ({
         totalPassengers={totalPassengers}
         paymentType={paymentType}
         setPaymentType={setPaymentType}
-        partialAmount={partialAmount}
+        partialAmount={convertedPartialAmount}        // CHANGED
         progressPercent={Math.round((passengerStep / totalPassengers) * 100)}
         currentPassenger={passengers[passengerStep - 1]}
         passengers={passengers}
@@ -1287,6 +1348,11 @@ const BookingRightForm = ({
         handleNextPassenger={handleNextPassenger}
         handleBackPassenger={handleBackPassenger}
         loading={loading}
+        currency={currency}                           // NEW
+        exchangeRate={exchangeRate}                   // NEW
+        currencySymbol={currencySymbol}               // NEW
+          convertPrice={convertPrice}
+
       />
 
       <AppointmentModal
@@ -1297,13 +1363,13 @@ const BookingRightForm = ({
         selectedDate={selectedDate}
         getCalculatedDates={getCalculatedDates}
         monthNames={monthNames}
-        packageTotal={packageTotal}
+        packageTotal={convertedPackageTotal}           // CHANGED
         appliedPromo={appliedPromo}
-        discountAmount={discountAmount}
-        finalPackageTotal={finalPackageTotal}
+        discountAmount={convertedDiscountAmount}       // CHANGED
+        finalPackageTotal={convertedFinalPackageTotal} // CHANGED
         selectedFlight={selectedFlight}
-        airfareTotal={airfareTotal}
-        totalAmount={finalTotalAmount}
+        airfareTotal={convertedAirfareTotal}           // CHANGED
+        totalAmount={convertedFinalTotalAmount}        // CHANGED
         bookingWithAirfare={bookingWithAirfare}
         isInternationalFlight={isInternationalFlight}
         requiresID={requiresID}
@@ -1313,6 +1379,10 @@ const BookingRightForm = ({
         selectedRoomType={selectedRoomType}
         numberOfRooms={numberOfRooms}
         customizationData={customizationData}
+        currency={currency}                           // NEW
+        exchangeRate={exchangeRate}                   // NEW
+        currencySymbol={currencySymbol}               // NEW
+        convertPrice={convertPrice}
       />
       
       <style>{`
