@@ -37,9 +37,21 @@ const BookingFormModal = ({
   paymentType,
   setPaymentType,
   partialAmount,
-  loading 
+  loading,
+  // ✅ NEW: Currency props
+  currency = 'PHP',
+  exchangeRate = 58,
+  currencySymbol = '₱'
 }) => {
   if (!isOpen) return null;
+
+  // ✅ Helper function for consistent number formatting
+  const formatCurrency = (amount) => {
+    return amount.toLocaleString(undefined, {
+      minimumFractionDigits: currency === 'USD' ? 2 : 0,
+      maximumFractionDigits: currency === 'USD' ? 2 : 0
+    });
+  };
 
   // Check if this is the last passenger (payment options should show)
   const isLastPassenger = passengerStep === totalPassengers;
@@ -93,17 +105,17 @@ const BookingFormModal = ({
                 {appliedPromo ? (
                   <>
                     <span style={{textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem', marginRight: '8px'}}>
-                      ₱{packageTotal.toLocaleString()}
+                      {currencySymbol}{formatCurrency(packageTotal)}
                     </span>
-                    ₱{finalPackageTotal.toLocaleString()}
+                    {currencySymbol}{formatCurrency(finalPackageTotal)}
                   </>
                 ) : (
-                  `₱${packageTotal.toLocaleString()}`
+                  `${currencySymbol}${formatCurrency(packageTotal)}`
                 )}
               </strong>
               {appliedPromo && (
                 <span className="bfm-summary-subtext" style={{color: '#10b981', fontWeight: '600'}}>
-                  🎉 {appliedPromo.code} applied (-₱{discountAmount.toLocaleString()})
+                  🎉 {appliedPromo.code} applied (-{currencySymbol}{formatCurrency(discountAmount)})
                 </span>
               )}
             </div>
@@ -116,7 +128,7 @@ const BookingFormModal = ({
                     Airfare ({selectedFlight.airline.name})
                   </span>
                   <strong className="bfm-summary-value bfm-accent-color">
-                    ₱{airfareTotal.toLocaleString()}
+                    {currencySymbol}{formatCurrency(airfareTotal)}
                   </strong>
                   <span className="bfm-summary-subtext">
                     {selectedFlight.departure.iataCode} → {selectedFlight.arrival.iataCode}
@@ -126,7 +138,7 @@ const BookingFormModal = ({
                 <div className="bfm-summary-item bfm-grand-total">
                   <span className="bfm-summary-label">Grand Total</span>
                   <strong className="bfm-summary-value bfm-grand-total-value">
-                    ₱{totalAmount.toLocaleString()}
+                    {currencySymbol}{formatCurrency(totalAmount)}
                   </strong>
                 </div>
               </>
@@ -386,7 +398,7 @@ const BookingFormModal = ({
                     </div>
                     <div className="bfm-payment-card-body">
                       <div className="bfm-payment-amount">
-                        ₱{finalAmount.toLocaleString()}
+                        {currencySymbol}{formatCurrency(finalAmount)}
                       </div>
                       <div className="bfm-payment-description">
                         Complete payment now and secure your booking
@@ -416,7 +428,7 @@ const BookingFormModal = ({
                     </div>
                     <div className="bfm-payment-card-body">
                       <div className="bfm-payment-amount">
-                        ₱{partialAmount.toLocaleString()}
+                        {currencySymbol}{formatCurrency(partialAmount)}
                         <span className="bfm-payment-percentage">{partialPercentageText} Down Payment</span>
                       </div>
                       <div className="bfm-payment-description">
@@ -425,11 +437,11 @@ const BookingFormModal = ({
                       <div className="bfm-payment-breakdown">
                         <div className="bfm-breakdown-row">
                           <span>Now ({partialPercentageText}):</span>
-                          <strong>₱{partialAmount.toLocaleString()}</strong>
+                          <strong>{currencySymbol}{formatCurrency(partialAmount)}</strong>
                         </div>
                         <div className="bfm-breakdown-row">
                           <span>Later ({100 - partialPercentage}%):</span>
-                          <strong>₱{(finalAmount - partialAmount).toLocaleString()}</strong>
+                          <strong>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</strong>
                         </div>
                       </div>
                     </div>
@@ -441,13 +453,13 @@ const BookingFormModal = ({
                   <div className="bfm-summary-row">
                     <span>Amount to pay now:</span>
                     <strong className="bfm-amount-highlight">
-                      ₱{(paymentType === 'full' ? finalAmount : partialAmount).toLocaleString()}
+                      {currencySymbol}{formatCurrency(paymentType === 'full' ? finalAmount : partialAmount)}
                     </strong>
                   </div>
                   {paymentType === 'partial' && (
                     <div className="bfm-summary-row bfm-remaining">
                       <span>Remaining balance:</span>
-                      <span>₱{(finalAmount - partialAmount).toLocaleString()}</span>
+                      <span>{currencySymbol}{formatCurrency(finalAmount - partialAmount)}</span>
                     </div>
                   )}
                 </div>
