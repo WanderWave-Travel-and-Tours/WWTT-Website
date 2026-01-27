@@ -26,6 +26,8 @@
     0 25px 60px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.1); 
   animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
 }
 
 /* Orange header bar like boarding pass */
@@ -45,30 +47,55 @@
   to { transform: scale(1); opacity: 1; }
 }
 
-/* --- UPDATED CLOSE BUTTON --- */
-.close-btn {
-  position: absolute;
-  top: 20px; 
-  right: 20px;
-  border: none; 
-  background: rgba(255, 255, 255, 0.2); 
-  width: 36px; 
-  height: 36px;
-  border-radius: 50%;
-  font-size: 24px; 
+/* --- UPDATED CLOSE BUTTON (Matching otherservices.css design) --- */
+.booking-modal .close-btn,
+button.close-btn {
+  position: absolute !important;
+  top: 15px !important; 
+  right: 15px !important;
+  left: auto !important;
+  margin-left: 0 !important;
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.1); 
+  color: #0a203b;
   cursor: pointer;
-  color: white; /* White color to contrast against dark header */
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-  transition: all 0.2s ease;
-  z-index: 100;
-  line-height: 1;
+  padding: 0;
+  border-radius: 50%;
+  width: 40px; 
+  height: 40px;
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: center !important;
+  transition: all 0.3s ease;
+  z-index: 1010;
+  line-height: 1 !important;
+  font-size: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.4);
+.booking-modal .close-btn:hover,
+button.close-btn:hover {
+  background: #fc9c1b;
+  color: white;
+  border-color: #fc9c1b;
   transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(252, 156, 27, 0.4);
+}
+
+/* X symbol styling */
+.booking-modal .close-btn svg,
+button.close-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+  stroke: #0a203b;
+  display: block;
+  margin: auto;
+}
+
+.booking-modal .close-btn:hover svg,
+button.close-btn:hover svg {
+  stroke: white;
 }
 /* ---------------------------- */
 
@@ -76,6 +103,7 @@
   background: linear-gradient(135deg, #0a203b 0%, #1a3a5f 100%);
   padding: 40px 30px 30px;
   position: relative;
+  flex-shrink: 0;
 }
 
 .modal-header h2 { 
@@ -101,13 +129,17 @@
 
 /* Form container with scrollable area */
 .booking-modal form {
-  max-height: calc(90vh - 160px);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
 }
 
 .form-step { 
   padding: 32px 30px; 
   background: white;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .form-step h3 { 
@@ -182,10 +214,11 @@
 }
 
 .passengers-scroll { 
-  max-height: 450px; 
+  max-height: 400px; 
   overflow-y: auto; 
   padding: 4px;
   margin-top: 8px;
+  margin-bottom: 16px;
 }
 
 .passengers-scroll::-webkit-scrollbar {
@@ -540,12 +573,19 @@
   }
 
   /* Close btn adjustments for mobile */
-  .close-btn {
-    top: 15px;
-    right: 15px;
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
+  .booking-modal .close-btn,
+  button.close-btn {
+    top: 15px !important;
+    right: 15px !important;
+    left: auto !important;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .booking-modal .close-btn svg,
+  button.close-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .passenger-card {
@@ -560,6 +600,10 @@
     flex: 0 0 100px;
     padding: 14px 16px;
     font-size: 0.9rem;
+  }
+
+  .passengers-scroll {
+    max-height: 300px;
   }
 
   .flight-search-modal-content {
@@ -614,5 +658,9 @@
   .flight-summary {
     font-size: 0.85rem;
     padding: 10px 14px;
+  }
+
+  .passengers-scroll {
+    max-height: 250px;
   }
 }
