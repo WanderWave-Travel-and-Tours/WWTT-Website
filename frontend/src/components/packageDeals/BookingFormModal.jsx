@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Plane, CheckCircle, Upload, Wallet, CreditCard } from 'lucide-react';
+import { useToast } from '../toast/ToastManager';
 // Import the new CSS file
 import './BookingFormModal.css';
 import './PaymentOption.css'
@@ -43,6 +44,8 @@ const BookingFormModal = ({
   exchangeRate = 58,
   currencySymbol = '₱'
 }) => {
+  const toast = useToast();
+
   if (!isOpen) return null;
 
   // ✅ Helper function for consistent number formatting
@@ -115,7 +118,7 @@ const BookingFormModal = ({
               </strong>
               {appliedPromo && (
                 <span className="bfm-summary-subtext" style={{color: '#10b981', fontWeight: '600'}}>
-                  🎉 {appliedPromo.code} applied (-{currencySymbol}{formatCurrency(discountAmount)})
+                  {appliedPromo.code} applied (-{currencySymbol}{formatCurrency(discountAmount)})
                 </span>
               )}
             </div>
@@ -148,7 +151,7 @@ const BookingFormModal = ({
           {/* DOCUMENT REQUIREMENTS */}
           {bookingWithAirfare && (
             <div className={`bfm-doc-req-box ${isInternationalFlight ? '' : 'bfm-domestic'}`}>
-              <strong>📋 Required Documents:</strong>
+              <strong>Required Documents:</strong>
               {isInternationalFlight ? ' Valid Passport for all passengers' : ' Valid ID for all passengers'}
             </div>
           )}
@@ -404,9 +407,9 @@ const BookingFormModal = ({
                         Complete payment now and secure your booking
                       </div>
                       <ul className="bfm-payment-benefits">
-                        <li>✓ Instant confirmation</li>
-                        <li>✓ No further payments needed</li>
-                        <li>✓ Priority processing</li>
+                        <li>Instant confirmation</li>
+                        <li>No further payments needed</li>
+                        <li>Priority processing</li>
                       </ul>
                     </div>
                   </div>
@@ -474,7 +477,7 @@ const BookingFormModal = ({
                   onClick={handleBackPassenger}
                   className="bfm-back-btn"
                 >
-                  ← Back
+                  Back
                 </button>
               )}
               

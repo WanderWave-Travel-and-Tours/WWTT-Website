@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
+import { useToast } from '../toast/ToastManager';
 import './flightBookingModal.css';
 
 const FlightBookingModal = ({ flight, searchParams, onClose }) => {
+  const toast = useToast();
   const totalPax = parseInt(searchParams.adults) + parseInt(searchParams.children) + parseInt(searchParams.infants);
   const hasAdditionalPassengers = totalPax > 1;
   const [loading, setLoading] = useState(false);
@@ -58,6 +60,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     e.preventDefault();
     if (step === 1 && hasAdditionalPassengers) {
       setStep(2);
+      toast.info('Please provide details for all passengers', 'Step 2 of 2');
     } else {
       handleSubmit(e);
     }
@@ -85,7 +88,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
     // Combine All Passengers
     const allPassengers = [primaryPassenger, ...additionalPassengers];
 
-    // ✅ FIX: Ensure estimatedPrice is a proper number
+    // FIX: Ensure estimatedPrice is a proper number
     let priceAmount = flight.price.amount;
     if (typeof priceAmount === 'string') {
       priceAmount = parseFloat(priceAmount.replace(/[^0-9.]/g, ''));
@@ -100,9 +103,9 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
       email: contactInfo.email,
       contactNumber: contactInfo.phone,
       address: contactInfo.address,
-      message: `Flight Booking Request: ${flight.departure.iataCode} ➝ ${flight.arrival.iataCode} on ${flight.departure.time}`,
+      message: `Flight Booking Request: ${flight.departure.iataCode} to ${flight.arrival.iataCode} on ${flight.departure.time}`,
       
-      estimatedPrice: priceAmount, // ✅ Now guaranteed to be a number
+      estimatedPrice: priceAmount,
       
       flightDetails: {
         origin: flight.departure.iataCode,
@@ -116,10 +119,10 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
         stops: flight.stops
       },
       
-      passengers: allPassengers // ✅ Already an array, will be sent as JSON
+      passengers: allPassengers
     };
 
-    console.log("📤 Submitting Booking Data:", JSON.stringify(bookingData, null, 2));
+    console.log("Submitting Booking Data:", JSON.stringify(bookingData, null, 2));
 
     try {
       const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/inquiries', bookingData, {
@@ -129,17 +132,19 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
       });
       
       if (res.data.success) {
-        alert('✅ Booking Request Sent Successfully! Please check your email.');
-        onClose();
+        toast.success('Your booking request has been submitted successfully. Please check your email for confirmation.', 'Booking Confirmed', 5000);
+        setTimeout(() => {
+          onClose();
+        }, 1500);
       } else {
-        alert('❌ Booking submission failed. ' + (res.data.message || ''));
+        toast.error(res.data.message || 'Unable to process your booking request. Please try again.', 'Booking Failed');
       }
 
     } catch (error) {
-      console.error("❌ Booking Error:", error);
-      console.error("❌ Error Response:", error.response?.data);
+      console.error("Booking Error:", error);
+      console.error("Error Response:", error.response?.data);
       const msg = error.response?.data?.message || error.message || "Unknown error";
-      alert('❌ Booking failed. Please try again. (' + msg + ')');
+      toast.error(`Failed to submit booking request. ${msg}`, 'Error Occurred', 6000);
     } finally {
       setLoading(false);
     }
@@ -158,7 +163,7 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
         <div className="modal-header">
           <h2>Complete Your Booking</h2>
           <div className="flight-summary">
-            {flight.airline.name} • {flight.departure.iataCode} ➝ {flight.arrival.iataCode} • {totalPax} Pax
+            {flight.airline.name} • {flight.departure.iataCode} to {flight.arrival.iataCode} • {totalPax} Pax
           </div>
         </div>
 
@@ -258,4 +263,4 @@ const FlightBookingModal = ({ flight, searchParams, onClose }) => {
   );
 };
 
-export default FlightBookingModal;
+export default FlightBookingModal;  

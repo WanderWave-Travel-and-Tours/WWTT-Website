@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, User, Mail, Phone, MapPin } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useToast } from '../toast/ToastManager';
 import axios from 'axios';
 import './appointment.css';
 
@@ -29,6 +29,7 @@ const AppointmentModal = ({
   numberOfRooms,
   customizationData
 }) => {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -148,7 +149,7 @@ const AppointmentModal = ({
       });
 
       if (response.data.success) {
-        toast.success('✅ Walk-in appointment created successfully!', { duration: 4000 });
+        toast.success('Walk-in appointment created successfully!', 'Appointment Confirmed', 4000);
         
         // Reset form
         setFormData({
@@ -162,10 +163,7 @@ const AppointmentModal = ({
         
         setTimeout(() => {
           onClose();
-          toast.success('Please visit our office to complete your booking. Confirmation email sent!', { 
-            duration: 5000,
-            icon: '📅'
-          });
+          toast.info('Please visit our office to complete your booking. Confirmation email sent!', 'Next Steps', 5000);
         }, 1500);
       } else {
         throw new Error(response.data.message || 'Failed to create appointment');
@@ -173,7 +171,7 @@ const AppointmentModal = ({
     } catch (error) {
       console.error('Walk-in Appointment Error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to create appointment. Please try again.';
-      toast.error(errorMessage);
+      toast.error(errorMessage, 'Appointment Failed');
     } finally {
       setLoading(false);
     }
@@ -232,7 +230,7 @@ const AppointmentModal = ({
               </strong>
               {appliedPromo && (
                 <span className="bfm-summary-subtext" style={{color: '#10b981', fontWeight: '600'}}>
-                  🎉 {appliedPromo.code} applied (-₱{discountAmount.toLocaleString()})
+                  {appliedPromo.code} applied (-₱{discountAmount.toLocaleString()})
                 </span>
               )}
             </div>
@@ -258,7 +256,7 @@ const AppointmentModal = ({
 
           {/* WALK-IN INFO BOX */}
           <div className="bfm-doc-req-box" style={{background: 'rgba(239, 246, 255, 0.95)', borderColor: '#3b82f6', color: '#1e40af'}}>
-            <strong>🏢 Walk-in Service:</strong> Visit our office to complete booking. Bring valid ID and payment.
+            <strong>Walk-in Service:</strong> Visit our office to complete booking. Bring valid ID and payment.
           </div>
         </div>
 
