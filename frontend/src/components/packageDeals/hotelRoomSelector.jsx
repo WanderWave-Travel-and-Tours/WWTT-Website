@@ -366,7 +366,7 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
 
       <div className="hrs-header">
         <h3>Choose Your Accommodation Package</h3>
-        <p className="hrs-subtitle">All packages include tour activities + hotel accommodation</p>
+        <p className="hrs-subtitle">Select your preferred package tier - all include tour activities + accommodation from our partner hotels</p>
       </div>
 
       <div className="hrs-list">
@@ -397,7 +397,6 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
                   <span className="hrs-icon">{getRoomTypeIcon(roomType)}</span>
                   <div>
                     <h4>{roomType}</h4>
-                    <span className="hrs-hotel-count">{group.hotels.length} Hotel{group.hotels.length > 1 ? 's' : ''} Available</span>
                   </div>
                   {roomType?.toUpperCase().includes('BUDGET') && !isSelected && (
                     <span className="hrs-badge-value">BEST VALUE</span>
@@ -410,9 +409,11 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
               </div>
 
               <div className="hrs-details" style={{borderTop: '1px dashed #e5e7eb', marginTop: '12px', paddingTop: '12px'}}>
-                <span className="hrs-label">List of Hotels:</span>
+                <div>
+                  <span className="hrs-label">Possible hotels included in this package:</span>
+                </div>
                 <div className="hrs-hotels-list">
-                  {group.hotels.map((hotel, hotelIdx) => {
+                  {group.hotels.slice(0, 3).map((hotel, hotelIdx) => {
                     const hotelKey = `${roomType}-${hotelIdx}`;
                     const hotelImages = getHotelImages(hotel);
                     const currentPopupImage = previewImage || hotelImages[0];
@@ -506,6 +507,11 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
                       </div>
                     );
                   })}
+                  {group.hotels.length > 3 && (
+                    <div style={{fontSize: '0.8rem', color: '#6b7280', marginTop: '8px', paddingLeft: '24px'}}>
+                      + {group.hotels.length - 3} more hotel{group.hotels.length - 3 > 1 ? 's' : ''} available
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
