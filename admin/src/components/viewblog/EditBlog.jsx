@@ -1,17 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft, Upload, HelpCircle, Calendar } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditBlog.css';
-
-// ✅ Imports for Draft Functionality
-import useAutoDraft from '../../hooks/useAutoDraft';
-import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
-
-// ✅ Import Toast Management
 import { useToast } from '../toast/ToastManager';
 
-// 🔥🔥🔥 HELPER FUNCTION - GET ADMIN DATA (For Activity Logs) 🔥🔥🔥
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -20,12 +13,11 @@ const getAdminData = () => {
             adminId: adminData._id || adminData.id || null
         };
     } catch (error) {
-        console.error('❌ Error getting admin data:', error);
+        console.error('Error getting admin data:', error);
         return { userEmail: 'Unknown Admin', adminId: null };
     }
 };
 
-// ✅ Custom Confirm Modal Component
 const CustomConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, type = "primary" }) => {
   if (!isOpen) return null;
   return (
@@ -76,11 +68,13 @@ const EditBlog = () => {
     const navigate = useNavigate();
     const toast = useToast(); 
 
+    // ✅ Reference for contentEditable (same as AddBlog)
+    const editorRef = useRef(null);
+
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
-    // ✅ State para sa Confirmation Modal
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
         title: "",
@@ -89,19 +83,16 @@ const EditBlog = () => {
         type: "primary"
     });
 
-    // Form State (Now includes scheduledAt)
     const [formData, setFormData] = useState({
         title: '',
         author: '',
         category: '',
         status: 'Published',
         content: '',
-        scheduledAt: '' // ✅ Added
+        scheduledAt: ''
     });
 
-    // Store original data to track changes for Activity Logs
     const [originalData, setOriginalData] = useState(null);
-
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
 
@@ -128,170 +119,36 @@ const EditBlog = () => {
         return `https://wanderwaveph-backend.onrender.com/${imagePath.replace(/\\/g, '/')}`;
     };
 
-    // Helper: Convert ISO Date to Input compatible string (YYYY-MM-DDTHH:MM)
     const formatDateForInput = (isoString) => {
         if (!isoString) return '';
         const date = new Date(isoString);
-        // Adjust for local timezone offset manually to fit input type="datetime-local"
         const offset = date.getTimezoneOffset() * 60000;
         const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
         return localISOTime;
     };
 
-    // =========================================================
-    // ✅ AUTO-DRAFT LOGIC START
-    // =========================================================
-
-    const fileToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-        });
-    };
-
-    const base64ToFile = async (base64String, fileName, mimeType) => {
-        const res = await fetch(base64String);
-        const blob = await res.blob();
-        return new File([blob], fileName, { type: mimeType });
-    };
-
-    const [draftPayload, setDraftPayload] = useState(null);
-
+    // ✅ Update editor when content changes (same as AddBlog)
     useEffect(() => {
-        const updateDraft = async () => {
-            if (isLoading) {
-                setDraftPayload(null);
-                return;
-            }
-
-            const isFormEmpty = 
-                !formData.title && 
-                !formData.author && 
-                !formData.category && 
-                !formData.content && 
-                !imageFile;
-
-            if (isFormEmpty) {
-                setDraftPayload(null);
-                return;
-            }
-
-            let imageBase64 = null;
-            let imageMeta = null;
-
-            if (imageFile) {
-                try {
-                    if (imageFile.size < 3 * 1024 * 1024) { 
-                        imageBase64 = await fileToBase64(imageFile);
-                        imageMeta = { name: imageFile.name, type: imageFile.type };
-                    }
-                } catch (err) {
-                    console.warn("Image too large for draft, saving text only.");
-                }
-            }
-
-            setDraftPayload({
-                ...formData,
-                image: imageBase64,
-                imageMeta: imageMeta,
-                originalId: id
-            });
-        };
-
-        const timeoutId = setTimeout(() => {
-            updateDraft();
-        }, 500);
-
-        return () => clearTimeout(timeoutId);
-    }, [formData, imageFile, isLoading, id]);
-
-    const restoreDraftData = async (data) => {
-        if (!data) return;
-
-        setFormData(prev => ({
-            ...prev,
-            title: data.title || prev.title,
-            author: data.author || prev.author,
-            category: data.category || prev.category,
-            status: data.status || prev.status,
-            content: data.content || prev.content,
-            scheduledAt: data.scheduledAt || prev.scheduledAt // ✅ Restore scheduled date
-        }));
-
-        if (data.image && data.imageMeta) {
-            try {
-                const restoredFile = await base64ToFile(
-                    data.image, 
-                    data.imageMeta.name, 
-                    data.imageMeta.type
-                );
-                setImageFile(restoredFile);
-                setImagePreview(data.image);
-            } catch (err) {
-                console.error("Failed to restore image:", err);
+        if (editorRef.current && formData.content !== editorRef.current.innerHTML) {
+            if (Math.abs(formData.content.length - editorRef.current.innerHTML.length) > 5) {
+                editorRef.current.innerHTML = formData.content;
             }
         }
+    }, [formData.content]);
+
+    // ✅ Handle contentEditable input (same as AddBlog)
+    const handleContentChange = (e) => {
+        const htmlContent = e.currentTarget.innerHTML;
+        setFormData(prev => ({ ...prev, content: htmlContent }));
     };
-
-    const {
-        showRestoreModal,
-        draftInfo,
-        handleRestoreDraft,
-        handleDiscardDraft,
-        clearDraft
-    } = useAutoDraft(
-        `edit-blog-${id}`,
-        draftPayload,
-        restoreDraftData
-    );
-
-    // =========================================================
-    // ✅ AUTO-DRAFT LOGIC END
-    // =========================================================
-
-    useEffect(() => {
-        const fetchBlog = async () => {
-            try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/${id}`);
-                if (!response.ok) throw new Error('Blog not found');
-                
-                const blog = await response.json();
-                
-                // Format date for input if it exists
-                const formattedDate = blog.scheduledAt ? formatDateForInput(blog.scheduledAt) : '';
-
-                const data = {
-                    title: blog.title || '',
-                    author: blog.author || '',
-                    category: blog.category || '',
-                    status: blog.status || 'Published',
-                    content: blog.content || '',
-                    scheduledAt: formattedDate // ✅ Populate
-                };
-
-                setFormData(data);
-                setOriginalData(data); // Important for tracking changes
-
-                if (blog.imageUrl) {
-                    setImagePreview(getImageUrl(blog.imageUrl));
-                }
-
-                setIsLoading(false);
-            } catch (err) {
-                console.error(err);
-                toast.error('Failed to load blog data.');
-                setIsLoading(false);
-            }
-        };
-
-        fetchBlog();
-    }, [id]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'status' && value !== 'Scheduled') {
+            setFormData(prev => ({ ...prev, scheduledAt: '' }));
+        }
     };
 
     const handleImageChange = (e) => {
@@ -306,86 +163,124 @@ const EditBlog = () => {
         }
     };
 
-    const getChangedFields = () => {
-        if (!originalData) return {};
+    // Fetch Blog Data
+    useEffect(() => {
+        const fetchBlog = async () => {
+            try {
+                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/${id}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch blog');
+                }
+                const data = await response.json();
+                
+                const formatted = {
+                    title: data.title || '',
+                    author: data.author || '',
+                    category: data.category || '',
+                    status: data.status || 'Published',
+                    content: data.content || '',
+                    scheduledAt: data.status === 'Scheduled' && data.scheduledAt 
+                        ? formatDateForInput(data.scheduledAt) 
+                        : ''
+                };
 
-        const changes = {};
-        if (formData.title !== originalData.title) changes.title = { old: originalData.title, new: formData.title };
-        if (formData.author !== originalData.author) changes.author = { old: originalData.author, new: formData.author };
-        if (formData.category !== originalData.category) changes.category = { old: originalData.category, new: formData.category };
-        if (formData.status !== originalData.status) changes.status = { old: originalData.status, new: formData.status };
-        if (formData.content !== originalData.content) changes.content = { old: originalData.content, new: formData.content };
-        // ✅ Track Schedule Change
-        if (formData.status === 'Scheduled' && formData.scheduledAt !== originalData.scheduledAt) {
-            changes.scheduledAt = { old: originalData.scheduledAt, new: formData.scheduledAt };
-        }
+                setFormData(formatted);
+                setOriginalData(formatted);
+
+                if (data.imageUrl) {
+                    setImagePreview(getImageUrl(data.imageUrl));
+                }
+            } catch (err) {
+                console.error('Error fetching blog:', err);
+                toast.showToast('Failed to load blog', 'error');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchBlog();
+    }, [id]);
+
+    const getChangedFields = () => {
+        if (!originalData) return [];
+        
+        const changes = [];
+        const fieldLabels = {
+            title: 'Title',
+            author: 'Author',
+            category: 'Category',
+            status: 'Status',
+            content: 'Content',
+            scheduledAt: 'Schedule Date'
+        };
+
+        Object.keys(fieldLabels).forEach(key => {
+            if (formData[key] !== originalData[key]) {
+                changes.push(fieldLabels[key]);
+            }
+        });
+
         if (imageFile) {
-            changes.imageUrl = { old: 'Existing Image', new: imageFile.name };
+            changes.push('Cover Image');
         }
+
         return changes;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // ✅ Validation for Scheduled Posts
-        if (formData.status === "Scheduled") {
-            if (!formData.scheduledAt) {
-                toast.warning("Please select a date and time for the scheduled post.", "⚠️ Missing Date");
-                return;
-            }
-            const scheduleDate = new Date(formData.scheduledAt);
-            const now = new Date();
-            // Optional: allow editing to a close future time, strict check might block quick edits
-            if (scheduleDate <= now) {
-                toast.warning("Scheduled time must be in the future.", "⚠️ Invalid Date");
-                return;
-            }
+        
+        const changedFields = getChangedFields();
+        if (changedFields.length === 0) {
+            toast.showToast('No changes detected', 'info');
+            return;
         }
 
         setSubmitting(true);
 
         try {
-            const formDataToSend = new FormData();
-            formDataToSend.append('title', formData.title);
-            formDataToSend.append('author', formData.author);
-            formDataToSend.append('category', formData.category);
-            formDataToSend.append('status', formData.status);
-            formDataToSend.append('content', formData.content);
+            const submitData = new FormData();
+            submitData.append('title', formData.title);
+            submitData.append('author', formData.author);
+            submitData.append('category', formData.category);
+            submitData.append('status', formData.status);
+            submitData.append('content', formData.content);
 
-            // ✅ Append scheduled date if status is scheduled
-            if (formData.status === "Scheduled" && formData.scheduledAt) {
-                formDataToSend.append("scheduledAt", formData.scheduledAt);
+            if (formData.status === 'Scheduled' && formData.scheduledAt) {
+                submitData.append('scheduledAt', new Date(formData.scheduledAt).toISOString());
             }
-
-            const { userEmail, adminId } = getAdminData();
-            formDataToSend.append("userEmail", userEmail);
-            if (adminId) formDataToSend.append("adminId", adminId);
-
-            const changedFields = getChangedFields();
-            formDataToSend.append("changedFields", JSON.stringify(changedFields));
 
             if (imageFile) {
-                formDataToSend.append('imageUrl', imageFile);
+                submitData.append('image', imageFile);
             }
 
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/blogs/update/${id}`, {
-                method: 'PUT',
-                body: formDataToSend,
-            });
+            const adminData = getAdminData();
+            const activityLog = {
+                action: 'UPDATE',
+                userEmail: adminData.userEmail,
+                adminId: adminData.adminId,
+                details: `Updated blog "${formData.title}". Modified fields: ${changedFields.join(', ')}`
+            };
+            submitData.append('activityLog', JSON.stringify(activityLog));
 
-            if (!response.ok) throw new Error('Failed to update blog');
+            const response = await fetch(
+                `https://wanderwaveph-backend.onrender.com/api/blogs/${id}`,
+                {
+                    method: 'PUT',
+                    body: submitData
+                }
+            );
 
-            const successMsg = formData.status === 'Scheduled' 
-                ? 'Blog post rescheduled successfully!' 
-                : 'Blog updated successfully!';
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to update blog');
+            }
 
-            toast.success(successMsg);
-            await clearDraft();
+            toast.showToast('Blog updated successfully!', 'success');
             navigate('/view-blogs');
         } catch (err) {
-            console.error(err);
-            toast.error('Failed to update blog. Please try again.');
+            console.error('Error updating blog:', err);
+            toast.showToast(err.message || 'Failed to update blog', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -393,55 +288,36 @@ const EditBlog = () => {
 
     if (isLoading) {
         return (
-            <div className="ebl-page">
-                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                <main className={`ebl-main ${isSidebarCollapsed ? "ebl-main--collapsed" : ""}`}>
-                    <div className="ebl-loading">
-                        <div className="ebl-spinner"></div>
-                        <p>Loading blog data...</p>
-                    </div>
-                </main>
+            <div className="ebl-loading">
+                <div className="ebl-spinner"></div>
+                <p>Loading blog...</p>
             </div>
         );
     }
 
     return (
         <div className="ebl-page">
-            <RestoreDraftModal
-                isOpen={showRestoreModal}
-                onRestore={handleRestoreDraft}
-                onDiscard={handleDiscardDraft}
-                draftInfo={draftInfo}
-            />
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
 
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
-            
-            <main className={`ebl-main ${isSidebarCollapsed ? "ebl-main--collapsed" : ""}`}>
+            <main className={`ebl-main ${isSidebarCollapsed ? 'ebl-main--collapsed' : ''}`}>
                 <div className="ebl-container">
-                    
-                    {/* Header */}
-                    <header className="ebl-header">
+                    <div className="ebl-header">
                         <div className="ebl-header-content">
                             <button className="ebl-back-btn" onClick={() => navigate('/view-blogs')}>
-                                <ArrowLeft size={18} />
-                                Back to Blogs
+                                <ArrowLeft size={20} />
+                                <span>Back to Blogs</span>
                             </button>
-                            <h1 className="ebl-title">EDIT BLOG</h1>
-                            <p className="ebl-subtitle">Update article content and settings</p>
+                            <h1 className="ebl-title">Edit Blog Post</h1>
+                            <p className="ebl-subtitle">Update your travel story</p>
                         </div>
-                    </header>
+                    </div>
 
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="ebl-form">
-                        
-                        {/* Section 1: Cover Image */}
+                    <form className="ebl-form" onSubmit={handleSubmit}>
+                        {/* Cover Image */}
                         <div className="ebl-section">
                             <h2 className="ebl-section-title">Cover Image</h2>
                             <div className="ebl-upload-area">
-                                <input
+                                <input 
                                     type="file"
                                     id="blogImageUpload"
                                     className="ebl-file-input"
@@ -467,7 +343,7 @@ const EditBlog = () => {
                             </div>
                         </div>
 
-                        {/* Section 2: Blog Details */}
+                        {/* Blog Details */}
                         <div className="ebl-section">
                             <h2 className="ebl-section-title">Article Details</h2>
                             <div className="ebl-form-grid">
@@ -526,11 +402,10 @@ const EditBlog = () => {
                                     >
                                         <option value="Published">Published</option>
                                         <option value="Draft">Draft</option>
-                                        <option value="Scheduled">Scheduled</option> {/* ✅ Added Option */}
+                                        <option value="Scheduled">Scheduled</option>
                                     </select>
                                 </div>
 
-                                {/* ✅ CONDITIONAL DATE FIELD */}
                                 {formData.status === 'Scheduled' && (
                                     <div className="ebl-form-group ebl-form-group--full">
                                         <label className="ebl-label" style={{display:'flex', gap:'5px', alignItems:'center'}}>
@@ -549,18 +424,20 @@ const EditBlog = () => {
                             </div>
                         </div>
 
-                        {/* Section 3: Content */}
+                        {/* Content Editor - ✅ CONTENTEDITABLE (Same as AddBlog) */}
                         <div className="ebl-section">
                             <h2 className="ebl-section-title">Article Content</h2>
                             <div className="ebl-form-group">
-                                <textarea 
-                                    name="content"
-                                    value={formData.content}
-                                    onChange={handleInputChange}
-                                    required
+                                <div
+                                    ref={editorRef}
+                                    contentEditable
+                                    suppressContentEditableWarning={true}
+                                    onInput={handleContentChange}
                                     className="ebl-textarea"
-                                    placeholder="Write your article content here..."
-                                ></textarea>
+                                />
+                                <p style={{ fontSize: "11px", color: "#888", marginTop: "5px" }}>
+                                    * This is a visual editor. HTML tags are supported.
+                                </p>
                             </div>
                         </div>
 
@@ -572,9 +449,8 @@ const EditBlog = () => {
                                 onClick={() => {
                                     askConfirmation(
                                         "Cancel Editing",
-                                        "Are you sure you want to cancel? Any unsaved changes and drafts will be cleared.",
-                                        async () => {
-                                            await clearDraft();
+                                        "Are you sure you want to cancel? Any unsaved changes will be lost.",
+                                        () => {
                                             navigate('/view-blogs');
                                         },
                                         "danger"
@@ -603,7 +479,6 @@ const EditBlog = () => {
                 </div>
             </main>
 
-            {/* ✅ Confirmation Modal Implementation */}
             <CustomConfirmModal 
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}

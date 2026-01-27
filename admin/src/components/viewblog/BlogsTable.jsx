@@ -9,6 +9,28 @@ const BlogsTable = ({
     getImageUrl
 }) => {
 
+    // ✅ Helper function to strip HTML tags and get plain text
+    const stripHtmlTags = (html) => {
+        if (!html) return '';
+        
+        // Create a temporary div element
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Get text content (automatically strips tags)
+        const text = tempDiv.textContent || tempDiv.innerText || '';
+        
+        return text;
+    };
+
+    // ✅ Get excerpt without HTML tags
+    const getExcerpt = (content, maxLength = 100) => {
+        const plainText = stripHtmlTags(content);
+        return plainText.length > maxLength 
+            ? plainText.substring(0, maxLength) + '...' 
+            : plainText;
+    };
+
     return (
         <div className="blt-table-wrapper">
             <div className="blt-table-container">
@@ -44,11 +66,11 @@ const BlogsTable = ({
                                     <span className="blt-blog-title" title={blog.title}>{blog.title}</span>
                                 </td>
 
-                                {/* EXCERPT */}
+                                {/* EXCERPT - ✅ NOW STRIPS HTML TAGS */}
                                 <td>
                                     <div className="blt-excerpt-cell">
-                                        <span className="blt-excerpt-text" title={blog.content}>
-                                            {blog.content.substring(0, 100)}...
+                                        <span className="blt-excerpt-text" title={stripHtmlTags(blog.content)}>
+                                            {getExcerpt(blog.content)}
                                         </span>
                                     </div>
                                 </td>
