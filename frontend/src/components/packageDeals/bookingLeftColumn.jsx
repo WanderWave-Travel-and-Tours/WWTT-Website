@@ -132,23 +132,27 @@ const BookingLeftColumn = ({
         </div>
       </div>
 
-      <div className="blc-customizer-section">
-        <button
-          className={`blc-customizer-toggle ${showCustomizer ? 'active' : ''}`}
-          onClick={() => setShowCustomizer(!showCustomizer)}
-        >
-          <Settings size={20} />
-          <span>{showCustomizer ? 'Hide Customization' : 'Customize This Package'}</span>
-        </button>
-        {showCustomizer && (
-          <PackageCustomizer
-            pkg={pkg}
-            currency={currency}
-            exchangeRate={exchangeRate}
-            onCustomizationChange={handleCustomizationChange}
-          />
-        )}
-      </div>
+      {/* ✨ Hide customizer for Batanes packages */}
+      {!pkg.location?.toLowerCase().includes('batanes') && 
+       !pkg.destination?.toLowerCase().includes('batanes') && (
+        <div className="blc-customizer-section">
+          <button
+            className={`blc-customizer-toggle ${showCustomizer ? 'active' : ''}`}
+            onClick={() => setShowCustomizer(!showCustomizer)}
+          >
+            <Settings size={20} />
+            <span>{showCustomizer ? 'Hide Customization' : 'Customize This Package'}</span>
+          </button>
+          {showCustomizer && (
+            <PackageCustomizer
+              pkg={pkg}
+              currency={currency}
+              exchangeRate={exchangeRate}
+              onCustomizationChange={handleCustomizationChange}
+            />
+          )}
+        </div>
+      )}
 
       {!showCustomizer && (
         <div className="blc-card">
