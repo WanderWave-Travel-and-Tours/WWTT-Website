@@ -1,25 +1,130 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Check, Building2, X, MapPin, 
-  Wifi, Car, Waves, Dumbbell, Utensils, Sparkles, Wind, Shirt, Wine, Star
+  Check, Building2, X, MapPin, ChevronLeft, ChevronRight,
+  Wifi, Car, Waves, Dumbbell, Utensils, Sparkles, Wind, Shirt, Wine, Star, Eye
 } from 'lucide-react';
 import './hotelRoomSelector.css';
 
-const HotelLightbox = ({ isOpen, onClose, hotelName, images, price, roomType, initialIndex = 0 }) => {
-  const [activeImgIndex, setActiveImgIndex] = useState(initialIndex);
+// ✨ HELPER: Shuffle array randomly
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+// ✨ HELPER: Get all images from all hotels in a category and randomize them
+const getAllCategoryImages = (hotels) => {
+  const allImages = [];
+  
+  console.log('🏨 Getting images for hotels:', hotels);
+  console.log('📊 Total hotels to process:', hotels.length);
+  
+  hotels.forEach((hotel, idx) => {
+    console.log(`\n--- Hotel ${idx} ---`);
+    console.log('Full hotel object:', hotel);
+    console.log('Hotel keys:', Object.keys(hotel));
+    
+    // Try multiple possible image field names
+    const possibleImageFields = [
+      'hotelImages',
+      'images', 
+      'image',
+      'hotelImage',
+      'photos',
+      'pictures',
+      'gallery'
+    ];
+    
+    let foundImages = false;
+    
+    // Check each possible field
+    for (const field of possibleImageFields) {
+      if (hotel[field]) {
+        console.log(`  ✅ Found ${field}:`, hotel[field]);
+        
+        // If it's an array
+        if (Array.isArray(hotel[field]) && hotel[field].length > 0) {
+          console.log(`    Adding ${hotel[field].length} images from ${field}`);
+          allImages.push(...hotel[field]);
+          foundImages = true;
+          break;
+        }
+        // If it's a single string/URL
+        else if (typeof hotel[field] === 'string') {
+          console.log(`    Adding single image from ${field}`);
+          allImages.push(hotel[field]);
+          foundImages = true;
+          break;
+        }
+      }
+    }
+    
+    if (!foundImages) {
+      console.log(`  ⚠️ No images found for hotel: ${hotel.hotelName || hotel.name || 'Unknown'}`);
+    }
+  });
+  
+  console.log('\n📸 Total images collected:', allImages.length);
+  console.log('Images array:', allImages);
+  
+  // If no images found, use placeholder
+  if (allImages.length === 0) {
+    console.log('⚠️ No images found, using placeholder');
+    return ['https://placehold.co/800x600?text=No+Image'];
+  }
+  
+  // Randomize the images
+  const shuffled = shuffleArray(allImages);
+  console.log('🔀 Images shuffled, returning:', shuffled.length, 'images');
+  return shuffled;
+};
+
+
+const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, roomType, hotelCount }) => {
+  const [activeImgIndex, setActiveImgIndex] = useState(0);
 
   React.useEffect(() => {
     if (isOpen) {
-      setActiveImgIndex(initialIndex);
+      setActiveImgIndex(0);
     }
-  }, [isOpen, initialIndex]);
+  }, [isOpen]);
+
+  // ✨ Keyboard navigation
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') {
+        goToPrev();
+      } else if (e.key === 'ArrowRight') {
+        goToNext();
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, activeImgIndex, images.length]);
 
   if (!isOpen) return null;
 
   const safeImages = images && images.length > 0 ? images : ['https://placehold.co/800x600?text=No+Image'];
 
+  // ✨ Navigation functions
+  const goToNext = () => {
+    setActiveImgIndex((prev) => (prev + 1) % safeImages.length);
+  };
+
+  const goToPrev = () => {
+    setActiveImgIndex((prev) => (prev - 1 + safeImages.length) % safeImages.length);
+  };
+
   const renderAmenities = (amenitiesObj) => {
-    if (!amenitiesObj) return <span style={{fontSize:'0.85rem', color:'#64748b'}}>No amenities listed</span>;
+    if (!amenitiesObj) return <span style={{fontSize:'0.85rem', color:'#64748b'}}>Standard amenities included</span>;
 
     const mapping = [
       { key: 'wifi', label: 'Free Wifi', icon: Wifi },
@@ -54,14 +159,14 @@ const HotelLightbox = ({ isOpen, onClose, hotelName, images, price, roomType, in
         {/* REDESIGNED PREMIUM HEADER */}
         <div className="hrs-lightbox-header">
           <div>
-            <h2>{hotelName}</h2>
+            <h2>{categoryName}</h2>
             <div className="hrs-lightbox-header-subtitle">
               <div className="hrs-lightbox-location">
-                <MapPin size={16} /> 
-                {roomType?.hotelLocation || 'Location available on map'}
+                <Building2 size={16} /> 
+                {hotelCount} Partner Hotel{hotelCount !== 1 ? 's' : ''} Available
               </div>
               <span className="hrs-lightbox-status-badge">
-                ✓ Active Listing
+                ✓ Sample Gallery
               </span>
             </div>
           </div>
@@ -87,55 +192,59 @@ const HotelLightbox = ({ isOpen, onClose, hotelName, images, price, roomType, in
             <div className="hrs-main-stage">
               <img 
                 src={safeImages[activeImgIndex]} 
-                alt="Main View" 
+                alt="Hotel Sample View" 
                 className="hrs-main-img"
               />
+              
+              {/* ✨ NAVIGATION ARROWS */}
+              {safeImages.length > 1 && (
+                <>
+                  <button 
+                    className="hrs-nav-arrow hrs-nav-prev"
+                    onClick={goToPrev}
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft size={32} strokeWidth={3} />
+                  </button>
+                  
+                  <button 
+                    className="hrs-nav-arrow hrs-nav-next"
+                    onClick={goToNext}
+                    aria-label="Next image"
+                  >
+                    <ChevronRight size={32} strokeWidth={3} />
+                  </button>
+                  
+                  {/* ✨ IMAGE COUNTER */}
+                  <div className="hrs-image-counter">
+                    {activeImgIndex + 1} / {safeImages.length}
+                  </div>
+                </>
+              )}
             </div>
-            {safeImages.length > 1 && (
-              <div className="hrs-side-grid">
-                {safeImages.map((img, idx) => (
-                  <img 
-                    key={idx}
-                    src={img}
-                    alt={`Thumb ${idx}`}
-                    className={`hrs-side-thumb ${idx === activeImgIndex ? 'hrs-active' : ''}`}
-                    onClick={() => setActiveImgIndex(idx)}
-                  />
-                ))}
-              </div>
-            )}
           </div>
 
           {/* LUXURY INFO SECTION */}
           <div className="hrs-info-section">
             <div className="hrs-info-card">
               <div className="hrs-info-header">
-                General Information
+                Package Information
               </div>
               <div className="hrs-info-grid">
                 <div className="hrs-info-item">
-                  <span className="hrs-info-label">Base Price</span>
-                  <span className="hrs-info-value hrs-price-highlight">
-                    ₱{price ? price.toLocaleString() : 'Check Price'}
-                  </span>
-                </div>
-                <div className="hrs-info-item">
-                  <span className="hrs-info-label">Max Capacity</span>
+                  <span className="hrs-info-label">Capacity</span>
                   <span className="hrs-info-value">{roomType?.capacity || 2} Guests</span>
                 </div>
                 <div className="hrs-info-item">
-                  <span className="hrs-info-label">Rating</span>
+                  <span className="hrs-info-label">Category</span>
                   <span className="hrs-info-value">
                     <div className="hrs-rating-display">
-                      <span className="hrs-rating-number">
-                        {roomType?.hotelRating ? roomType.hotelRating.toFixed(1) : 'N/A'}
-                      </span>
-                      <Star size={16} fill="#fbbf24" color="#fbbf24"/>
+                      <span className="hrs-rating-number">{categoryName}</span>
                     </div>
                   </span>
                 </div>
                 <div className="hrs-info-item" style={{flexDirection: 'column', alignItems: 'flex-start', gap: '8px'}}>
-                  <span className="hrs-info-label">Details</span>
+                  <span className="hrs-info-label">About This Package</span>
                   <span className="hrs-info-value" style={{
                     fontSize: '0.9rem', 
                     fontWeight: '500', 
@@ -144,7 +253,7 @@ const HotelLightbox = ({ isOpen, onClose, hotelName, images, price, roomType, in
                     textAlign: 'left',
                     color: '#475569'
                   }}>
-                    {roomType?.description || "Comfortable accommodation with standard amenities."}
+                    These are sample hotels that may be included in this package tier. The actual hotel assignment will be confirmed upon booking based on availability. All partner hotels in this category meet our quality standards and include the listed amenities.
                   </span>
                 </div>
               </div>
@@ -152,7 +261,7 @@ const HotelLightbox = ({ isOpen, onClose, hotelName, images, price, roomType, in
 
             <div className="hrs-info-card">
               <div className="hrs-info-header">
-                Amenities & Facilities
+                Typical Amenities & Facilities
               </div>
               <div style={{display:'flex', flexWrap:'wrap'}}>
                 {renderAmenities(roomType?.amenities)}
@@ -169,178 +278,99 @@ const HotelLightbox = ({ isOpen, onClose, hotelName, images, price, roomType, in
 const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) => {
   const [lightboxState, setLightboxState] = useState({
     isOpen: false,
-    hotelName: '',
+    categoryName: '',
     images: [],
-    price: 0,
+    priceRange: '',
     roomType: null,
-    initialIndex: 0
+    hotelCount: 0
   });
 
-  const [hoveredHotel, setHoveredHotel] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const hoverTimeoutRef = useRef(null);
-  const hasAutoSelectedRef = useRef(false); // ✅ NEW: Track if we've auto-selected
+  const hasAutoSelectedRef = useRef(false);
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 1024);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // ✅ FIXED: Force select Budget on initial load, regardless of current selection
+  // ✅ Auto-select Budget on initial load
   useEffect(() => {
     if (roomTypes && roomTypes.length > 0 && !hasAutoSelectedRef.current) {
-      // Find BUDGET room type
       const budgetRoom = roomTypes.find(room => 
-        room.type?.toUpperCase().includes('BUDGET')
+        room.type?.toLowerCase().includes('budget')
       );
       
-      if (budgetRoom) {
-        console.log('🎯 Auto-selecting Budget room:', budgetRoom.hotelName);
-        onRoomTypeChange(budgetRoom);
+      const firstRoom = budgetRoom || roomTypes[0];
+      
+      if (!selectedRoomType || selectedRoomType !== firstRoom) {
+        onRoomTypeChange(firstRoom);
         hasAutoSelectedRef.current = true;
-      } else {
-        // Fallback to cheapest if no BUDGET found
-        const sortedByPrice = [...roomTypes].sort((a, b) => a.price - b.price);
-        if (sortedByPrice.length > 0) {
-          console.log('💰 Auto-selecting cheapest room:', sortedByPrice[0].hotelName);
-          onRoomTypeChange(sortedByPrice[0]);
-          hasAutoSelectedRef.current = true;
-        }
       }
     }
-  }, [roomTypes]); // ✅ Only depend on roomTypes, not selectedRoomType or onRoomTypeChange
+  }, [roomTypes, selectedRoomType, onRoomTypeChange]);
 
-  const groupedRoomTypes = React.useMemo(() => {
-    if (!roomTypes || roomTypes.length === 0) return {};
-
-    const groups = {};
-    
-    roomTypes.forEach(room => {
-      const roomType = room.type?.trim();
-
-      if (!roomType || roomType === '') {
-        console.warn('⚠️ Hotel missing type field:', room.hotelName);
-        return;
-      }
-      const safePrice = Number(room.price) || 0; 
-      
-      if (!groups[roomType]) {
-        groups[roomType] = {
-          type: roomType,
-          hotels: [],
-          minPrice: safePrice,
-          maxPrice: safePrice 
-        };
-      }
-      
-      groups[roomType].hotels.push(room);
-      
-      if (safePrice < groups[roomType].minPrice) {
-        groups[roomType].minPrice = safePrice;
-      }
-      if (safePrice > groups[roomType].maxPrice) {
-        groups[roomType].maxPrice = safePrice;
-      }
-    });
-
-    const sortedGroups = Object.keys(groups).sort((a, b) => {
-      // Define room type priority order
-      const typeOrder = {
-        'BUDGET': 1,
-        'STANDARD': 2,
-        '4 STAR': 3,
-        '5 STAR': 4
-      };
-      
-      const getTypePriority = (type) => {
-        const typeUpper = type?.toUpperCase() || '';
-        if (typeUpper.includes('BUDGET')) return typeOrder['BUDGET'];
-        if (typeUpper.includes('STANDARD')) return typeOrder['STANDARD'];
-        if (typeUpper.includes('4 STAR') || typeUpper.includes('4-STAR') || typeUpper.includes('FOUR STAR')) return typeOrder['4 STAR'];
-        if (typeUpper.includes('5 STAR') || typeUpper.includes('5-STAR') || typeUpper.includes('FIVE STAR')) return typeOrder['5 STAR'];
-        return 999; // Unknown types go to the end
-      };
-      
-      const priorityA = getTypePriority(a);
-      const priorityB = getTypePriority(b);
-      
-      // Sort by priority, then by price if same priority
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
-      return groups[a].minPrice - groups[b].minPrice;
-    });
-
-    const result = {};
-    sortedGroups.forEach(key => {
-      result[key] = groups[key];
-    });
-
-    return result;
-  }, [roomTypes]);
+  const getHotelImages = (hotel) => {
+    if (hotel.hotelImages && hotel.hotelImages.length > 0) {
+      return hotel.hotelImages;
+    }
+    if (hotel.image) {
+      return [hotel.image];
+    }
+    return ['https://placehold.co/800x600?text=Hotel+Image'];
+  };
 
   const getRoomTypeIcon = (type) => {
-    const typeUpper = type?.toUpperCase() || '';
-    if (typeUpper.includes('BUDGET')) return '💰';
-    if (typeUpper.includes('STANDARD')) return '⭐';
-    if (typeUpper.includes('4 STAR')) return '⭐⭐⭐⭐';
-    if (typeUpper.includes('5 STAR')) return '⭐⭐⭐⭐⭐';
+    if (!type) return '🏨';
+    const t = type.toLowerCase();
+    if (t.includes('budget')) return '💰';
+    if (t.includes('standard')) return '🏨';
+    if (t.includes('4')) return '⭐⭐⭐⭐';
+    if (t.includes('5')) return '⭐⭐⭐⭐⭐';
     return '🏨';
   };
 
-  const getHotelImages = (room) => {
-    if (room.images && Array.isArray(room.images) && room.images.length > 0) {
-      return room.images;
-    }
-    if (room.hotelImage) {
-      return [room.hotelImage];
-    }
-    return ['https://placehold.co/600x400?text=No+Image+Available'];
+  // ✨ Get generic category display name
+  const getCategoryDisplayName = (roomType) => {
+    if (!roomType) return 'Hotels';
+    const type = roomType.toLowerCase();
+    if (type.includes('budget')) return 'Budget Hotels';
+    if (type.includes('standard')) return 'Standard Hotels';
+    if (type.includes('4')) return '4-Star Hotels';
+    if (type.includes('5')) return '5-Star Hotels';
+    return `${roomType} Hotels`;
   };
 
-  const handleMouseEnter = (hotelKey, images) => {
-    if (isMobile) return;
+  // Group room types
+  const groupedRoomTypes = roomTypes.reduce((acc, room) => {
+    const type = room.type || 'Standard';
+    if (!acc[type]) {
+      acc[type] = { 
+        hotels: [], 
+        minPrice: Infinity, 
+        maxPrice: -Infinity 
+      };
+    }
+    acc[type].hotels.push(room);
+    const price = Number(room.price) || 0;
+    if (price < acc[type].minPrice) acc[type].minPrice = price;
+    if (price > acc[type].maxPrice) acc[type].maxPrice = price;
+    return acc;
+  }, {});
+
+  // ✨ Handle opening lightbox with randomized images from entire category
+  const handleOpenCategoryGallery = (roomType, group) => {
+    const allImages = getAllCategoryImages(group.hotels);
+    const min = group.minPrice === Infinity ? 0 : group.minPrice;
+    const max = group.maxPrice === -Infinity ? 0 : group.maxPrice;
+    const priceRange = min === max 
+      ? `₱${min.toLocaleString()}` 
+      : `₱${min.toLocaleString()} - ₱${max.toLocaleString()}`;
     
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    setHoveredHotel(hotelKey);
-    setPreviewImage(images[0]);
-  };
-
-  const handleMouseLeave = () => {
-    if (isMobile) return;
+    // Get a sample room type for amenities (use first hotel)
+    const sampleRoom = group.hotels[0];
     
-    hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredHotel(null);
-    }, 300);
-  };
-
-  const handleHotelClick = (e, hotelKey, images) => {
-    e.stopPropagation();
-    
-    if (hoveredHotel === hotelKey) {
-      setHoveredHotel(null);
-    } else {
-      setHoveredHotel(hotelKey);
-      setPreviewImage(images[0]);
-    }
-  };
-
-  const handleOpenLightbox = (room, index = 0) => {
     setLightboxState({
       isOpen: true,
-      hotelName: room.hotelName,
-      images: getHotelImages(room),
-      price: room.price,
-      roomType: room,
-      initialIndex: index
+      categoryName: getCategoryDisplayName(roomType),
+      images: allImages,
+      priceRange: priceRange,
+      roomType: sampleRoom,
+      hotelCount: group.hotels.length
     });
-    setHoveredHotel(null);
   };
 
   // Handle category selection
@@ -357,11 +387,11 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
       <HotelLightbox 
         isOpen={lightboxState.isOpen}
         onClose={() => setLightboxState(prev => ({ ...prev, isOpen: false }))}
-        hotelName={lightboxState.hotelName}
+        categoryName={lightboxState.categoryName}
         images={lightboxState.images}
-        price={lightboxState.price}
+        priceRange={lightboxState.priceRange}
         roomType={lightboxState.roomType}
-        initialIndex={lightboxState.initialIndex}
+        hotelCount={lightboxState.hotelCount}
       />
 
       <div className="hrs-header">
@@ -373,12 +403,10 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
         {groupKeys.map((roomType) => {
           
           const group = groupedRoomTypes[roomType];
-          const min = group.minPrice || 0;
-          const max = group.maxPrice || 0;
+          const min = group.minPrice === Infinity ? 0 : group.minPrice;
+          const max = group.maxPrice === -Infinity ? 0 : group.maxPrice;
           const isSelected = selectedRoomType?.type === roomType;
-          const priceRange = min === max 
-            ? `₱${min.toLocaleString()}` 
-            : `₱${min.toLocaleString()} - ₱${max.toLocaleString()}`;
+          const categoryName = getCategoryDisplayName(roomType);
 
           return (
             <div 
@@ -396,7 +424,10 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
                 <div className="hrs-card-title-group">
                   <span className="hrs-icon">{getRoomTypeIcon(roomType)}</span>
                   <div>
-                    <h4>{roomType}</h4>
+                    <h4>{categoryName}</h4>
+                    <span className="hrs-hotel-count">
+                      {group.hotels.length} partner hotel{group.hotels.length !== 1 ? 's' : ''} available
+                    </span>
                   </div>
                   {roomType?.toUpperCase().includes('BUDGET') && !isSelected && (
                     <span className="hrs-badge-value">BEST VALUE</span>
@@ -404,115 +435,55 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
                 </div>
                 <div className="hrs-category-right">
                   {isSelected && <div className="hrs-badge-selected">✓ SELECTED</div>}
-                  {/* <div className="hrs-price-display">{priceRange}</div> */}
                 </div>
               </div>
 
               <div className="hrs-details" style={{borderTop: '1px dashed #e5e7eb', marginTop: '12px', paddingTop: '12px'}}>
-                <div>
-                  <span className="hrs-label">Possible hotels included in this package:</span>
+                <div style={{
+                  fontSize: '0.85rem',
+                  color: '#6b7280',
+                  marginBottom: '12px',
+                  lineHeight: '1.5'
+                }}>
+                  <strong>Note:</strong> These are sample hotels that may be included in this package. 
+                  The actual hotel will be confirmed upon booking based on availability.
                 </div>
-                <div className="hrs-hotels-list">
-                  {group.hotels.slice(0, 3).map((hotel, hotelIdx) => {
-                    const hotelKey = `${roomType}-${hotelIdx}`;
-                    const hotelImages = getHotelImages(hotel);
-                    const currentPopupImage = previewImage || hotelImages[0];
-                    
-                    const safeHotelPrice = Number(hotel.price) || 0; 
-
-                    return (
-                      <div key={hotelKey} className="hrs-hotel-item" style={{position: 'relative', marginTop: '8px'}}>
-                        <div 
-                          className="hrs-hotel-link"
-                          onMouseEnter={() => handleMouseEnter(hotelKey, hotelImages)}
-                          onMouseLeave={handleMouseLeave}
-                          onClick={(e) => handleHotelClick(e, hotelKey, hotelImages)}
-                        >
-                          <Building2 size={18} color="#059669" />
-                          <span style={{borderBottom: '1px dotted #059669', cursor: 'pointer'}}>
-                            {hotel.hotelName || 'Partner Hotel'}
-                          </span>
-                          {/*}
-                          {group.hotels.length > 1 && (
-                            <span className="hrs-hotel-price">₱{safeHotelPrice.toLocaleString()}</span>
-                          )} */}
-                        </div>
-
-                        {hoveredHotel === hotelKey && (
-                          <div 
-                            className="hrs-popup" 
-                            onClick={(e) => {
-                              e.stopPropagation(); 
-                              handleOpenLightbox(hotel);
-                            }}
-                            onMouseEnter={() => {
-                              if (!isMobile && hoverTimeoutRef.current) {
-                                clearTimeout(hoverTimeoutRef.current);
-                                hoverTimeoutRef.current = null;
-                              }
-                            }}
-                            onMouseLeave={() => {
-                              if (!isMobile) {
-                                handleMouseLeave();
-                              }
-                            }}
-                          >
-                            <div className="hrs-popup-arrow"></div>
-                            
-                            <div className="hrs-popup-img-wrapper">
-                              <img 
-                                src={currentPopupImage} 
-                                alt={hotel.hotelName} 
-                                className="hrs-popup-img"
-                              />
-                              <div className="hrs-popup-text">
-                                {hotelImages.length > 1 
-                                  ? `Click to view all ${hotelImages.length} photos` 
-                                  : 'Click to view photo'}
-                              </div>
-                            </div>
-
-                            {hotelImages.length > 1 ? (
-                              <div className="hrs-popup-thumbs">
-                                {hotelImages.slice(0, 4).map((img, i) => {
-                                  const isPreviewing = currentPopupImage === img;
-                                  return (
-                                    <img 
-                                      key={i}
-                                      src={img} 
-                                      alt="thumb" 
-                                      className={`hrs-popup-thumb ${isPreviewing ? 'hrs-active' : ''}`}
-                                      onMouseEnter={() => !isMobile && setPreviewImage(img)}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewImage(img);
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <div style={{fontSize:'0.75rem', color:'#64748b', textAlign:'center', marginTop:'4px'}}>
-                                View details
-                              </div>
-                            )}
-                            
-                            {isMobile && (
-                              <div className="hrs-mobile-close-hint">
-                                Tap outside or name again to close
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {group.hotels.length > 3 && (
-                    <div style={{fontSize: '0.8rem', color: '#6b7280', marginTop: '8px', paddingLeft: '24px'}}>
-                      + {group.hotels.length - 3} more hotel{group.hotels.length - 3 > 1 ? 's' : ''} available
-                    </div>
-                  )}
-                </div>
+                
+                {/* VIEW DETAILS BUTTON */}
+                <button
+                  className="hrs-view-details-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenCategoryGallery(roomType, group);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    transition: 'all 0.2s ease',
+                    width: '100%',
+                    justifyContent: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <Eye size={18} />
+                  View Sample Hotels Gallery
+                </button>
               </div>
             </div>
           );
