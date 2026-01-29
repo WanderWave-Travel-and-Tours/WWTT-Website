@@ -344,6 +344,86 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.post('/bulk', async (req, res) => {
+  try {
+    const rates = req.body;
+
+    if (!Array.isArray(rates) || rates.length === 0) {
+      return res.status(400).json({ message: 'Invalid data format. Expected array of rates.' });
+    }
+
+    console.log(`📊 Receiving ${rates.length} rates for bulk upload`);
+
+    // Validate and prepare rates with STRICT NaN checks
+    const validRates = [];
+    const invalidRates = [];
+
+    rates.forEach((rate, index) => {
+      try {
+        // CRITICAL: Safe parsing with NaN protection
+        const supplierRate = safeParseFloat(rate.supplierRate, 0);
+        const markup = safeParseFloat(rate.markup, 0);
+        
+        // Validation: Must have valid rate > 0
+        if (supplierRate === 0) {
+          invalidRates.push({ index: index + 1, reason: 'Invalid supplier rate' });
+          return;
+        }
+
+        // Calculate selling price
+        let sellingPrice = safeParseFloat(rate.sellingPrice, 0);
+        if (sellingPrice === 0) {
+          if (rate.markupType === 'percentage') {
+            sellingPrice = supplierRate + (supplierRate * markup / 100);
+          } else {
+            sellingPrice = supplierRate + markup;
+          }
+        }
+
+        validRates.push({
+          destination: rate.destination || 'Unspecified',
+          activity: rate.activity || 'Unspecified',
+          supplierName: rate.supplierName || 'Unspecified',
+          supplierRate: supplierRate,
+          markup: markup,
+          markupType: rate.markupType || 'percentage',
+          sellingPrice: sellingPrice,
+          pax: rate.pax || '',
+          inclusions: rate.inclusions || '',
+          notes: rate.notes || '',
+          status: rate.status || 'active',
+          dateAdded: new Date()
+        });
+      } catch (error) {
+        console.error(`Error processing rate ${index + 1}:`, error);
+        invalidRates.push({ index: index + 1, reason: error.message });
+      }
+    });
+
+    if (validRates.length === 0) {
+      return res.status(400).json({ 
+        message: 'No valid rates to upload', 
+        invalidCount: invalidRates.length,
+        invalidRates: invalidRates.slice(0, 10) // Show first 10 errors
+      });
+    }
+
+    console.log(`✅ Valid rates: ${validRates.length}, Invalid: ${invalidRates.length}`);
+
+    const insertedRates = await SellerRate.insertMany(validRates);
+    
+    res.status(201).json({
+      message: `Successfully uploaded ${insertedRates.length} rates`,
+      count: insertedRates.length,
+      skipped: invalidRates.length,
+      rates: insertedRates
+    });
+  } catch (error) {
+    console.error('Error bulk uploading rates:', error);
+    res.status(400).json({ message: 'Error uploading rates', error: error.message });
+  }
+});
+
 // ============================================
 // UPDATE RATE
 // ============================================
