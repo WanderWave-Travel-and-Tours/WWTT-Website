@@ -125,7 +125,11 @@ const PromoDetailModal = ({
                             </div>
                             <div className="prdm-info-box">
                                 <div className="prdm-box-icon green">
-                                    {selectedPromo.discountType === 'Percentage' ? <Percent size={18} /> : <DollarSign size={18} />}
+                                    {selectedPromo.discountType === 'Percentage' ? (
+                                        <Percent size={18} />
+                                    ) : (
+                                        <span className="prdm-peso-icon">₱</span>
+                                    )}
                                 </div>
                                 <div className="prdm-box-content">
                                     <label>DISCOUNT VALUE</label>
