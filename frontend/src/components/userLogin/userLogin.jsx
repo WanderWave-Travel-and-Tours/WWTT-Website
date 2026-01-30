@@ -136,11 +136,14 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
             try {
                 const userData = JSON.parse(savedUser);
                 onLoginSuccess(userData);
+                // Auto-redirect if user exists
+                // Note: You might want to uncomment this if you want auto-redirect
+                // navigate('/dashboard'); 
             } catch (error) {
                 localStorage.removeItem('wanderwave_user');
             }
         }
-    }, [onLoginSuccess]);
+    }, [onLoginSuccess, navigate]); // Added navigate to dependency
 
 
     const resetForm = () => {
@@ -296,6 +299,12 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                 setIsOtpFormVisible(false);
                 setTempEmailForVerification('');
                 resetForm();
+                
+                // Trigger success and Navigate
+                if (data.user && onLoginSuccess) {
+                    onLoginSuccess(data.user);
+                    navigate('/dashboard'); // FIX: Ensure navigation happens
+                }
 
             } else {
                 const msg = data.message || 'OTP verification failed. Please try again.';
@@ -347,6 +356,9 @@ const UserLogin = ({ setAuthPage, onLoginSuccess }) => {
                 if (data.user && onLoginSuccess) {
                     localStorage.setItem('wanderwave_user', JSON.stringify(data.user));
                     onLoginSuccess(data.user);
+                    // FIX: Explicitly navigate to dashboard
+                    // NOTE: Check if your route is '/dashboard' or '/user-dashboard'
+                    navigate('/dashboard'); 
                 }
             } else {
                 const msg = data.message || 'Login failed. Please check your credentials.';
