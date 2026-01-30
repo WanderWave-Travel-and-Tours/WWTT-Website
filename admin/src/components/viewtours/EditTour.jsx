@@ -95,10 +95,14 @@ const EditTour = () => {
     });
   };
 
+  // ✅ UPDATED: Added tourType and minPax, removed pax
   const [formData, setFormData] = useState({
     title: "",
     destination: "",
+    tourType: "private",  // ✅ NEW: Tour type field
+    minPax: "",          // ✅ CHANGED: From pax to minPax
     sellerPrice: "",
+    markupType: "percentage",
     markup: "",
     duration: "",
     category: "Local",
@@ -118,8 +122,16 @@ const EditTour = () => {
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  const calculatedPrice =
-    parseFloat(formData.sellerPrice || 0) + parseFloat(formData.markup || 0);
+  const calculatedPrice = () => {
+    const basePrice = parseFloat(formData.sellerPrice || 0);
+    const markupValue = parseFloat(formData.markup || 0);
+    
+    if (formData.markupType === 'percentage') {
+      return basePrice + (basePrice * markupValue / 100);
+    } else {
+      return basePrice + markupValue;
+    }
+  };
 
 
   const fileToBase64 = (file) => {
@@ -198,10 +210,14 @@ const EditTour = () => {
       return;
     }
 
+    // ✅ UPDATED: Changed pax to minPax and added tourType
     setFormData({
       title: data.title || "",
       destination: data.destination || "",
+      tourType: data.tourType || "private",
+      minPax: data.minPax || "",
       sellerPrice: data.sellerPrice || "",
+      markupType: data.markupType || "percentage",
       markup: data.markup || "",
       duration: data.duration || "",
       category: data.category || "Local",
@@ -282,10 +298,14 @@ const EditTour = () => {
             markupValue = 0;
           }
           
+          // ✅ FIXED: Load tourType and minPax from database
           setFormData({
             title: tour.title || "",
             destination: tour.destination || "",
+            tourType: tour.tourType || "private",  // ✅ Load tour type
+            minPax: tour.minPax || "",             // ✅ Load minPax instead of pax
             sellerPrice: sellerPriceValue,
+            markupType: tour.markupType || "percentage",
             markup: markupValue,
             duration: tour.duration || "",
             category: tour.category || "Local",
@@ -420,6 +440,7 @@ const EditTour = () => {
   const handleSubmitConfirmation = (e) => {
     e.preventDefault();
     
+    // ✅ UPDATED: Validate minPax for joiners
     if (
       !formData.title ||
       !formData.destination ||
@@ -430,6 +451,12 @@ const EditTour = () => {
       return;
     }
 
+    // ✅ NEW: Validate minPax for joiners tour type
+    if (formData.tourType === 'joiners' && (!formData.minPax || parseInt(formData.minPax) < 1)) {
+      toast.warning("Minimum pax is required for joiner tours and must be at least 1");
+      return;
+    }
+
     askConfirmation(
       "Update Tour",
       "Are you sure you want to save the changes for this tour package?",
@@ -437,95 +464,96 @@ const EditTour = () => {
     );
   };
 
-  const performSubmit = async () => {
-    setSubmitting(true);
-    const { userEmail, adminId } = getAdminData();
+// ✅ UPDATED: Fixed performSubmit to properly send tourType and minPax
+const performSubmit = async () => {
+  setSubmitting(true);
+  const { userEmail, adminId } = getAdminData();
 
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("title", formData.title);
-      formDataToSend.append("destination", formData.destination);
-      formDataToSend.append("sellerPrice", formData.sellerPrice);
-      formDataToSend.append("markup", formData.markup || 0);
-      formDataToSend.append("duration", formData.duration);
-      formDataToSend.append("category", formData.category);
-      formDataToSend.append("existingImage", formData.existingImage);
-      formDataToSend.append("userEmail", userEmail);
-      formDataToSend.append("adminId", adminId);
-
-      let changes = [];
-      const trackChange = (label, oldVal, newVal) => {
-          const cleanOld = String(oldVal || "").trim();
-          const cleanNew = String(newVal || "").trim();
-          if (cleanOld !== cleanNew) {
-              changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
-          }
-      };
-
-      if (originalData) {
-          trackChange("Title", originalData.title, formData.title);
-          trackChange("Destination", originalData.destination, formData.destination);
-          trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
-          trackChange("Markup", originalData.markup, formData.markup);
-          trackChange("Duration", originalData.duration, formData.duration);
-          trackChange("Category", originalData.category, formData.category);
-
-          if (imageFile) {
-              changes.push(`Tour image was replaced.`);
-          }
-          
-          const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
-          const oldInclusions = originalData.inclusions || [];
-          if (JSON.stringify(filteredInclusions) !== JSON.stringify(oldInclusions)) {
-              changes.push("Inclusions list updated");
-          }
-          
-          if (itinerary.length !== (originalData.itinerary?.length || 0)) {
-               changes.push("Itinerary days/structure updated");
-          }
-      }
-
-      if (changes.length > 0) {
-          formDataToSend.append("changes", JSON.stringify(changes)); 
-      }
-
-      const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
-      formDataToSend.append("inclusions", JSON.stringify(filteredInclusions));
-
-      const filteredItinerary = itinerary
-        .map((day) => ({
-          day: day.day,
-          title: day.title,
-          activities: day.activities.filter((act) => act.trim() !== ""),
-        }))
-        .filter((day) => day.title.trim() !== "");
-      formDataToSend.append("itinerary", JSON.stringify(filteredItinerary));
-
-      if (imageFile) {
-        formDataToSend.append("image", imageFile);
-      }
-
-      const response = await fetch(`${API_BASE_URL}/update/${tourId}`, {
-        method: "PUT",
-        body: formDataToSend,
-      });
-
-      const result = await response.json();
-
-      if (result.status === "ok") {
-        toast.success("Tour updated successfully!");
-        await clearDraft();
-        navigate("/view-tours");
-      } else {
-        toast.error(`Error: ${result.message || "Failed to update tour"}`);
-      }
-    } catch (err) {
-      console.error("Submit error:", err);
-      toast.error("Error connecting to server");
-    } finally {
-      setSubmitting(false);
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append("title", formData.title);
+    formDataToSend.append("destination", formData.destination);
+    
+    // ✅ FIXED: Properly send tourType and minPax
+    formDataToSend.append("tourType", formData.tourType || "private");
+    
+    // ✅ Only send minPax if tourType is joiners
+    if (formData.tourType === 'joiners' && formData.minPax) {
+      formDataToSend.append("minPax", formData.minPax);
     }
-  };
+    
+    formDataToSend.append("sellerPrice", formData.sellerPrice);
+    formDataToSend.append("markupType", formData.markupType || "percentage");
+    formDataToSend.append("markup", formData.markup || 0);
+    formDataToSend.append("duration", formData.duration);
+    formDataToSend.append("category", formData.category);
+    formDataToSend.append("existingImage", formData.existingImage);
+    formDataToSend.append("userEmail", userEmail);
+    formDataToSend.append("adminId", adminId);
+
+    let changes = [];
+    const trackChange = (label, oldVal, newVal) => {
+      const cleanOld = String(oldVal || "").trim();
+      const cleanNew = String(newVal || "").trim();
+      if (cleanOld !== cleanNew) {
+        changes.push(`${label} changed from "${cleanOld || 'None'}" to "${cleanNew}"`);
+      }
+    };
+
+    if (originalData) {
+      trackChange("Title", originalData.title, formData.title);
+      trackChange("Destination", originalData.destination, formData.destination);
+      trackChange("Tour Type", originalData.tourType, formData.tourType);
+      trackChange("Min Pax", originalData.minPax, formData.minPax);  // ✅ Fixed
+      trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
+      trackChange("Markup", originalData.markup, formData.markup);
+      trackChange("Duration", originalData.duration, formData.duration);
+      trackChange("Category", originalData.category, formData.category);
+    }
+
+    if (changes.length > 0) {
+      formDataToSend.append("changes", JSON.stringify(changes)); 
+    }
+
+    const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
+    formDataToSend.append("inclusions", JSON.stringify(filteredInclusions));
+
+    const filteredItinerary = itinerary
+      .map((day) => ({
+        day: day.day,
+        title: day.title,
+        activities: day.activities.filter((act) => act.trim() !== ""),
+      }))
+      .filter((day) => day.title.trim() !== "");
+    formDataToSend.append("itinerary", JSON.stringify(filteredItinerary));
+
+    if (imageFile) {
+      formDataToSend.append("image", imageFile);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/update/${tourId}`, {
+      method: "PUT",
+      body: formDataToSend,
+    });
+
+    const result = await response.json();
+
+    if (result.status === "ok") {
+      toast.success("Tour updated successfully!");
+      await clearDraft();
+      navigate("/view-tours");
+    } else {
+      toast.error(`Error: ${result.error || result.message || "Failed to update tour"}`);
+    }
+  } catch (err) {
+    console.error("Submit error:", err);
+    toast.error("Error connecting to server");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+
 
   if (loading) {
     return (
@@ -638,6 +666,38 @@ const EditTour = () => {
                   />
                 </div>
 
+                {/* ✅ NEW: Tour Type Selection */}
+                <div className="et-form-group">
+                  <label className="et-label">Tour Type *</label>
+                  <select
+                    name="tourType"
+                    value={formData.tourType}
+                    onChange={handleInputChange}
+                    className="et-input"
+                    required
+                  >
+                    <option value="private">Private</option>
+                    <option value="joiners">Joiners</option>
+                  </select>
+                </div>
+
+                {/* ✅ UPDATED: Show minPax field only for joiners */}
+                {formData.tourType === 'joiners' && (
+                  <div className="et-form-group">
+                    <label className="et-label">Minimum Pax *</label>
+                    <input
+                      type="number"
+                      name="minPax"
+                      value={formData.minPax}
+                      onChange={handleInputChange}
+                      className="et-input"
+                      placeholder="e.g., 4"
+                      min="1"
+                      required={formData.tourType === 'joiners'}
+                    />
+                  </div>
+                )}
+
                 <div className="et-form-group">
                   <label className="et-label">Duration *</label>
                   <input
@@ -689,14 +749,29 @@ const EditTour = () => {
                 </div>
 
                 <div className="et-form-group">
-                  <label className="et-label">Markup (₱)</label>
+                  <label className="et-label">Markup Type</label>
+                  <select
+                    name="markupType"
+                    value={formData.markupType}
+                    onChange={handleInputChange}
+                    className="et-input"
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount (₱)</option>
+                  </select>
+                </div>
+
+                <div className="et-form-group">
+                  <label className="et-label">
+                    Markup {formData.markupType === 'percentage' ? '(%)' : '(₱)'}
+                  </label>
                   <input
                     type="number"
                     name="markup"
                     value={formData.markup}
                     onChange={handleInputChange}
                     className="et-input"
-                    placeholder="0.00"
+                    placeholder={formData.markupType === 'percentage' ? '0%' : '₱0.00'}
                     step="0.01"
                   />
                 </div>
@@ -705,7 +780,10 @@ const EditTour = () => {
                   <label className="et-label">Final Price (₱)</label>
                   <input
                     type="text"
-                    value={`₱${calculatedPrice.toLocaleString()}`}
+                    value={`₱${calculatedPrice().toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}`}
                     className="et-input et-input--readonly"
                     readOnly
                   />
