@@ -229,6 +229,8 @@ exports.updateTour = async (req, res) => {
       itinerary,
       existingImage,
       isArchive,
+      tourType,      // ✅ ADDED
+      minPax,        // ✅ ADDED
       // Added for Logging
       userEmail,
       adminId,
@@ -274,6 +276,7 @@ exports.updateTour = async (req, res) => {
     const mkup = parseFloat(markup) || existingTour.markup;
     const totalPrice = sPrice + mkup;
 
+    // ✅ FIXED updateData object - properly handle tourType and minPax
     const updateData = {
       title: title || existingTour.title,
       destination: destination || existingTour.destination,
@@ -284,10 +287,27 @@ exports.updateTour = async (req, res) => {
       price: totalPrice,
       inclusions: parsedInclusions,
       itinerary: parsedItinerary,
-      isArchive: isArchive || existingTour.isArchive
+      isArchive: isArchive || existingTour.isArchive,
+      tourType: tourType || existingTour.tourType || 'private' // ✅ ADDED
     };
 
-    // Handle image update
+    // ✅ ADDED: Handle minPax based on tourType
+    if (updateData.tourType === 'joiners') {
+      // For joiners, use provided minPax or keep existing
+      updateData.minPax = minPax ? parseInt(minPax) : existingTour.minPax;
+      
+      // Validate minPax for joiners
+      if (!updateData.minPax || updateData.minPax < 1) {
+        return res.status(400).json({ 
+          status: 'error',
+          error: 'Minimum pax is required for joiner tours and must be at least 1' 
+        });
+      }
+    } else {
+      // For private tours, clear minPax
+      updateData.minPax = null;
+    }
+
     // Handle image update
     if (req.file) {
       // ✅ Cloudinary handles old image cleanup automatically

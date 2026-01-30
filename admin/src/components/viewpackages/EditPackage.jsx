@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, X, Plus, Trash2, Save } from "lucide-react"; 
 import Sidebar from "../sidebar/sidebar";
@@ -7,10 +7,6 @@ import "./editpackage.css";
 // ✅ Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
-
-// ✅ NEW: Toast and Confirmation Modal Imports
-import { useToast } from '../../components/toast/ToastManager';
-import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
 
 // 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
 const getAdminData = () => {
@@ -28,36 +24,31 @@ const getAdminData = () => {
 
 const EditPackage = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams(); // Get ID from URL params
   const packageId = id;
-  const toast = useToast(); // ✅ Toast hook
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // ✅ NEW: Confirmation Modal State
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    type: 'primary',
-    onConfirm: () => {}
-  });
-
-  // Form state with markupType
+  // Form state
   const [formData, setFormData] = useState({
     title: "",
     destination: "",
+    tourType: "private",  
+    pax: "",             
+    minPax: "",          
     sellerPrice: "",
-    markupType: "fixed", // ✅ NEW: Default to fixed
     markup: "",
+    // ✅ NEW: Markup Type added
+    markupType: "flat", 
     duration: "",
     category: "Local",
     existingImage: "",
     existingImagePublicId: "" 
   });
 
+  // ✅ Store original data to track changes for Activity Logs
   const [originalData, setOriginalData] = useState(null);
 
   const [imageFile, setImageFile] = useState(null);
@@ -70,28 +61,6 @@ const EditPackage = () => {
   const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/packages";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-
-  // ✅ Helper function to open confirmation modal
-  const openConfirmModal = (title, message, onConfirm, type = 'primary') => {
-    setConfirmModal({
-      isOpen: true,
-      title,
-      message,
-      type,
-      onConfirm
-    });
-  };
-
-  // ✅ Helper function to close confirmation modal
-  const closeConfirmModal = () => {
-    setConfirmModal({
-      isOpen: false,
-      title: '',
-      message: '',
-      type: 'primary',
-      onConfirm: () => {}
-    });
-  };
 
   // =========================================================
   // ✅ AUTO-DRAFT LOGIC START
@@ -176,9 +145,13 @@ const EditPackage = () => {
     setFormData({
       title: data.title || "",
       destination: data.destination || "",
+      tourType: data.tourType || "private",
+      pax: data.pax || "",
+      minPax: data.minPax || "",
       sellerPrice: data.sellerPrice || "",
-      markupType: data.markupType || "fixed", // ✅ Restore markupType
       markup: data.markup || "",
+      // ✅ NEW: Restore markupType
+      markupType: data.markupType || "flat",
       duration: data.duration || "",
       category: data.category || "Local",
       existingImage: data.existingImage || "",
@@ -267,9 +240,13 @@ const EditPackage = () => {
           setOriginalData({
             title: pkg.title || "",
             destination: pkg.destination || "",
+            tourType: pkg.tourType || "private",
+            pax: pkg.pax || "",
+            minPax: pkg.minPax || "",
             sellerPrice: sellerPriceValue,
-            markupType: pkg.markupType || "fixed", // ✅ Store original markupType
             markup: markupValue,
+            // ✅ NEW: Capture original markupType
+            markupType: pkg.markupType || "flat",
             duration: pkg.duration || "",
             category: pkg.category || "Local",
             inclusions: currentInclusions,
@@ -279,9 +256,13 @@ const EditPackage = () => {
           setFormData({
             title: pkg.title || "",
             destination: pkg.destination || "",
+            tourType: pkg.tourType || "private",
+            pax: pkg.pax || "",
+            minPax: pkg.minPax || "",
             sellerPrice: sellerPriceValue,
-            markupType: pkg.markupType || "fixed", // ✅ Load markupType from database
             markup: markupValue,
+            // ✅ NEW: Set markupType
+            markupType: pkg.markupType || "flat",
             duration: pkg.duration || "",
             category: pkg.category || "Local",
             existingImage: pkg.image || "",
@@ -297,12 +278,12 @@ const EditPackage = () => {
           }
         } else {
           console.error("Error in response:", result.error);
-          toast.error("Failed to load package data: " + result.error);
+          alert("Failed to load package data: " + result.error);
           navigate("/view-packages");
         }
       } catch (err) {
         console.error("Error fetching package:", err);
-        toast.error("Failed to load package data. Please try again.");
+        alert("Failed to load package data. Please try again.");
         navigate("/view-packages");
       } finally {
         setLoading(false);
@@ -310,16 +291,35 @@ const EditPackage = () => {
     };
 
     fetchPackageData();
-  }, [packageId, navigate, toast]);
+  }, [packageId, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ NEW: Dynamic Price Calculation (same logic as EditTour)
+  const calculatedPrice = useMemo(() => {
+    const price = parseFloat(formData.sellerPrice) || 0;
+    const markupVal = parseFloat(formData.markup) || 0;
+    
+    if (formData.markupType === 'percentage') {
+      return price + (price * (markupVal / 100));
+    }
+    return price + markupVal;
+  }, [formData.sellerPrice, formData.markup, formData.markupType]);
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        alert("Please select a valid image file");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size must be less than 5MB");
+        return;
+      }
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -346,7 +346,6 @@ const EditPackage = () => {
       });
 
       const newInclusions = [...inclusions];
-      
       newInclusions[index] = cleanedLines[0];
 
       let currentIndex = index;
@@ -391,7 +390,6 @@ const EditPackage = () => {
       });
 
       const updatedItinerary = [...itinerary];
-      
       updatedItinerary[dayIndex].activities[actIndex] = cleanedLines[0];
 
       let currentActIndex = actIndex;
@@ -436,19 +434,6 @@ const EditPackage = () => {
     }
   };
 
-  // ✅ NEW: Calculate selling price based on markup type
-  const calculateSellingPrice = () => {
-    const sellerPrice = parseFloat(formData.sellerPrice) || 0;
-    const markup = parseFloat(formData.markup) || 0;
-
-    if (formData.markupType === 'percentage') {
-      const markupAmount = (sellerPrice * markup) / 100;
-      return sellerPrice + markupAmount;
-    } else {
-      return sellerPrice + markup;
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -458,7 +443,17 @@ const EditPackage = () => {
       !formData.sellerPrice ||
       !formData.duration
     ) {
-      toast.error("Please fill in all required fields");
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    if (formData.tourType === 'private' && (!formData.pax || parseInt(formData.pax) < 1)) {
+      alert("Pax is required for private tours and must be at least 1");
+      return;
+    }
+
+    if (formData.tourType === 'joiners' && (!formData.minPax || parseInt(formData.minPax) < 1)) {
+      alert("Minimum pax is required for joiner tours and must be at least 1");
       return;
     }
 
@@ -470,9 +465,19 @@ const EditPackage = () => {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
       formDataToSend.append("destination", formData.destination);
+      
+      formDataToSend.append("tourType", formData.tourType);
+      if (formData.tourType === 'private') {
+        formDataToSend.append("pax", formData.pax);
+      } else if (formData.tourType === 'joiners') {
+        formDataToSend.append("minPax", formData.minPax);
+      }
+
       formDataToSend.append("sellerPrice", formData.sellerPrice);
-      formDataToSend.append("markupType", formData.markupType); // ✅ Send markupType
       formDataToSend.append("markup", formData.markup || 0);
+      // ✅ NEW: Send markupType to backend
+      formDataToSend.append("markupType", formData.markupType);
+
       formDataToSend.append("duration", formData.duration);
       formDataToSend.append("category", formData.category);
       formDataToSend.append("existingImage", formData.existingImage);
@@ -512,9 +517,19 @@ const EditPackage = () => {
       if (originalData) {
           trackChange("Title", originalData.title, formData.title);
           trackChange("Destination", originalData.destination, formData.destination);
+          trackChange("Tour Type", originalData.tourType, formData.tourType);
+          
+          if (formData.tourType === 'private') {
+            trackChange("Pax", originalData.pax, formData.pax);
+          } else if (formData.tourType === 'joiners') {
+            trackChange("Minimum Pax", originalData.minPax, formData.minPax);
+          }
+
           trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
-          trackChange("Markup Type", originalData.markupType, formData.markupType); // ✅ Track markupType change
           trackChange("Markup", originalData.markup, formData.markup);
+          // ✅ NEW: Track markupType change
+          trackChange("Markup Type", originalData.markupType, formData.markupType);
+          
           trackChange("Duration", originalData.duration, formData.duration);
           trackChange("Category", originalData.category, formData.category);
 
@@ -543,32 +558,18 @@ const EditPackage = () => {
       const result = await response.json();
 
       if (result.status === "ok") {
-        toast.success("Package updated successfully!");
+        alert("Package updated successfully!");
         await clearDraft();
         navigate("/view-packages");
       } else {
-        toast.error("Failed to update package: " + (result.error || "Unknown error"));
+        alert("Failed to update package: " + (result.error || "Unknown error"));
       }
     } catch (err) {
       console.error("Error updating package:", err);
-      toast.error("Error updating package. Please try again.");
+      alert("Error updating package. Please try again.");
     } finally {
       setSubmitting(false);
     }
-  };
-
-  // ✅ NEW: Handle Cancel with Confirmation
-  const handleCancel = () => {
-    openConfirmModal(
-      'Cancel Editing',
-      'Are you sure you want to cancel? Any unsaved changes will be lost.',
-      async () => {
-        await clearDraft();
-        navigate("/view-packages");
-        closeConfirmModal();
-      },
-      'danger'
-    );
   };
 
   if (loading) {
@@ -592,21 +593,9 @@ const EditPackage = () => {
     );
   }
 
-  const calculatedPrice = calculateSellingPrice();
-
   return (
     <div className="epa-page">
       
-      {/* ✅ Confirmation Modal */}
-      <CustomConfirmModal
-        isOpen={confirmModal.isOpen}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        type={confirmModal.type}
-        onConfirm={confirmModal.onConfirm}
-        onCancel={closeConfirmModal}
-      />
-
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -620,36 +609,53 @@ const EditPackage = () => {
       >
         <div className="epa-container">
           <div className="epa-header">
-            <button className="epa-back-btn" onClick={() => navigate("/view-packages")}>
-              <ArrowLeft size={20} /> Back to Packages
-            </button>
-            <h1 className="epa-title">Edit Package</h1>
+            <div className="epa-header-content">
+              <button
+                className="epa-back-btn"
+                onClick={() => navigate("/view-packages")}
+              >
+                <ArrowLeft size={20} />
+                Back to Packages
+              </button>
+              <h1 className="epa-title">Edit Package</h1>
+              <p className="epa-subtitle">
+                Update package information and details
+              </p>
+            </div>
           </div>
 
-          <form className="epa-form" onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="epa-form">
+
             {/* Image Upload */}
             <div className="epa-section">
               <h2 className="epa-section-title">Package Image</h2>
-              <div className="epa-image-upload">
+              <div className="epa-upload-area">
                 <input
                   type="file"
                   id="image-upload"
-                  className="epa-file-input"
-                  onChange={handleImageChange}
                   accept="image/*"
+                  onChange={handleImageChange}
+                  className="epa-file-input"
                 />
                 <label htmlFor="image-upload" className="epa-upload-label">
-                  <Upload size={24} />
-                  <span>Choose Image</span>
+                  {imagePreview ? (
+                    <div className="epa-image-preview">
+                      <img src={imagePreview} alt="Preview" />
+                      <div className="epa-image-overlay">
+                        <Upload size={24} />
+                        <span>Click to change image</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="epa-upload-placeholder">
+                      <Upload size={48} />
+                      <span>Click to upload image</span>
+                    </div>
+                  )}
                 </label>
-                {imagePreview && (
-                  <div className="epa-image-preview">
-                    <img src={imagePreview} alt="Preview" />
-                  </div>
-                )}
               </div>
             </div>
-
+            
             {/* Basic Information */}
             <div className="epa-section">
               <h2 className="epa-section-title">Basic Information</h2>
@@ -662,7 +668,7 @@ const EditPackage = () => {
                     value={formData.title}
                     onChange={handleInputChange}
                     className="epa-input"
-                    placeholder="e.g., Boracay Beach Getaway"
+                    placeholder="Enter package title"
                     required
                   />
                 </div>
@@ -675,10 +681,59 @@ const EditPackage = () => {
                     value={formData.destination}
                     onChange={handleInputChange}
                     className="epa-input"
-                    placeholder="e.g., Boracay, Philippines"
+                    placeholder="Enter destination"
                     required
                   />
                 </div>
+
+                {/* Tour Type Selection */}
+                <div className="epa-form-group">
+                  <label className="epa-label">Tour Type *</label>
+                  <select
+                    name="tourType"
+                    value={formData.tourType}
+                    onChange={handleInputChange}
+                    className="epa-input"
+                    required
+                  >
+                    <option value="private">Private</option>
+                    <option value="joiners">Joiners</option>
+                  </select>
+                </div>
+
+                {/* Show pax field only for private tours */}
+                {formData.tourType === 'private' && (
+                  <div className="epa-form-group">
+                    <label className="epa-label">Pax *</label>
+                    <input
+                      type="number"
+                      name="pax"
+                      value={formData.pax}
+                      onChange={handleInputChange}
+                      className="epa-input"
+                      placeholder="e.g., 2"
+                      min="1"
+                      required={formData.tourType === 'private'}
+                    />
+                  </div>
+                )}
+
+                {/* Show minPax field only for joiners */}
+                {formData.tourType === 'joiners' && (
+                  <div className="epa-form-group">
+                    <label className="epa-label">Minimum Pax *</label>
+                    <input
+                      type="number"
+                      name="minPax"
+                      value={formData.minPax}
+                      onChange={handleInputChange}
+                      className="epa-input"
+                      placeholder="e.g., 4"
+                      min="1"
+                      required={formData.tourType === 'joiners'}
+                    />
+                  </div>
+                )}
 
                 <div className="epa-form-group">
                   <label className="epa-label">Duration *</label>
@@ -716,6 +771,7 @@ const EditPackage = () => {
             <div className="epa-section">
               <h2 className="epa-section-title">Pricing</h2>
               <div className="epa-form-grid">
+                
                 <div className="epa-form-group">
                   <label className="epa-label">Seller Price (₱) *</label>
                   <input
@@ -739,15 +795,14 @@ const EditPackage = () => {
                     onChange={handleInputChange}
                     className="epa-input"
                   >
+                    <option value="flat">Flat Amount (₱)</option>
                     <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount (₱)</option>
                   </select>
                 </div>
 
-                {/* ✅ UPDATED: Markup input with dynamic placeholder */}
                 <div className="epa-form-group">
                   <label className="epa-label">
-                    Markup {formData.markupType === 'percentage' ? '(%)' : '(₱)'}
+                     Markup {formData.markupType === 'percentage' ? '(%)' : '(₱)'}
                   </label>
                   <input
                     type="number"
@@ -755,20 +810,16 @@ const EditPackage = () => {
                     value={formData.markup}
                     onChange={handleInputChange}
                     className="epa-input"
-                    placeholder={formData.markupType === 'percentage' ? '0%' : '₱0.00'}
+                    placeholder={formData.markupType === 'percentage' ? "e.g., 10" : "0.00"}
                     step="0.01"
                   />
                 </div>
 
-                {/* ✅ UPDATED: Final Price now uses calculated value */}
                 <div className="epa-form-group">
                   <label className="epa-label">Final Price (₱)</label>
                   <input
                     type="text"
-                    value={`₱${calculatedPrice.toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    })}`}
+                    value={`₱${calculatedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     className="epa-input epa-input--readonly"
                     readOnly
                   />
@@ -907,7 +958,10 @@ const EditPackage = () => {
               <button
                 type="button"
                 className="epa-btn epa-btn--cancel"
-                onClick={handleCancel}
+                onClick={async () => {
+                    await clearDraft(); 
+                    navigate("/view-packages");
+                }}
                 disabled={submitting}
               >
                 CANCEL
