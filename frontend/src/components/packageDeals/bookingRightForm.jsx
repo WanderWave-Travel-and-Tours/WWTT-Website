@@ -43,6 +43,10 @@ const BookingRightForm = ({
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [timerExpired, setTimerExpired] = useState(false);
   const [userIpAddress, setUserIpAddress] = useState(null);
+  
+  // ✅ NEW: IP-based OTC button access control
+  const [hasOTCAccess, setHasOTCAccess] = useState(false);
+  const [checkingOTCAccess, setCheckingOTCAccess] = useState(true);
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); 
   const totalPassengers = quantities.adult || 1;
@@ -65,7 +69,7 @@ const BookingRightForm = ({
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice = (phpPrice) => {
     if (currency === 'PHP') return phpPrice;
-    return (phpPrice / exchangeRate) * 1.30; // Convert PHP to USD with markup
+    return (phpPrice / exchangeRate) * 1.30; 
   };
 
   useEffect(() => {
@@ -81,6 +85,32 @@ const BookingRightForm = ({
       }
     };
     fetchIpAddress();
+  }, []);
+
+  useEffect(() => {
+    const checkOTCAccess = async () => {
+      try {
+        console.log('🔍 Checking OTC access...');
+        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/ip/check-otc-access');
+        
+        console.log('✅ OTC Access Response:', response.data);
+        
+        setHasOTCAccess(response.data.hasOTCAccess);
+        setCheckingOTCAccess(false);
+
+        if (response.data.hasOTCAccess) {
+          console.log('✅ OTC Payment button will be visible');
+        } else {
+          console.log('❌ OTC Payment button will be hidden');
+        }
+      } catch (error) {
+        console.error('❌ Failed to check OTC access:', error);
+        setHasOTCAccess(false);
+        setCheckingOTCAccess(false);
+      }
+    };
+
+    checkOTCAccess();
   }, []);
 
   useEffect(() => {
@@ -113,7 +143,6 @@ const BookingRightForm = ({
           setSelectedRoomType(savedRoomType);
         } else {
           console.log('⏭️ Skipping localStorage restore - not Budget. Will auto-select Budget instead.');
-          // Don't restore - let auto-select handle it
         }
       }
       
@@ -269,7 +298,6 @@ const BookingRightForm = ({
             roomTypes: roomTypes
           });
           
-          // ✅ FIXED: Prioritize Budget room type, fallback to cheapest
           const budgetRoom = roomTypes.find(room => 
             room.type?.toUpperCase().includes('BUDGET')
           );
@@ -278,7 +306,6 @@ const BookingRightForm = ({
             console.log('🎯 Auto-selecting Budget room from fetchHotelData:', budgetRoom.hotelName);
             setSelectedRoomType(budgetRoom);
           } else {
-            // Fallback to cheapest if no Budget found
             const sortedRooms = [...roomTypes].sort((a, b) => a.price - b.price);
             console.log('💰 Auto-selecting cheapest room:', sortedRooms[0].hotelName);
             setSelectedRoomType(sortedRooms[0]);
@@ -1273,32 +1300,34 @@ const BookingRightForm = ({
           {selectedFlight ? '🎫 Book Package + Flight' : 'Book This Trip'}
         </button>
 
-        <button 
+        {hasOTCAccess && (
+          <button 
           className="brf-walk-in-btn" 
           onClick={handleWalkInClick}
           disabled={!selectedRoomType}
           style={{
-            width: '100%',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            padding: '18px',
-            border: 'none',
-            borderRadius: '12px',
-            fontWeight: '700',
-            fontSize: '1.1rem',
-            cursor: 'pointer',
-            transition: 'background 0.2s',
-            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)',
-            marginBottom: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
+          width: '100%',
+          backgroundColor: '#3b82f6',
+          color: 'white',
+          padding: '18px',
+          border: 'none',
+          borderRadius: '12px',
+          fontWeight: '700',
+          fontSize: '1.1rem',
+          cursor: 'pointer',
+          transition: 'background 0.2s',
+          boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)',
+          marginBottom: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
           }}
-        >
+          >
           <UserCheck size={20} />
           Pay Over the Counter
-        </button>
+          </button>
+        )}
 
         <button className="brf-book-with-airfare-btn" onClick={handleBookWithAirfare}>
           <Plane size={20} />
@@ -1323,13 +1352,13 @@ const BookingRightForm = ({
         selectedDate={selectedDate}
         getCalculatedDates={getCalculatedDates}
         monthNames={monthNames}
-        packageTotal={convertedPackageTotal}           // CHANGED
+        packageTotal={convertedPackageTotal}         
         appliedPromo={appliedPromo}
-        discountAmount={convertedDiscountAmount}       // CHANGED
-        finalPackageTotal={convertedFinalPackageTotal} // CHANGED
+        discountAmount={convertedDiscountAmount}      
+        finalPackageTotal={convertedFinalPackageTotal} 
         selectedFlight={selectedFlight}
-        airfareTotal={convertedAirfareTotal}           // CHANGED
-        totalAmount={convertedFinalTotalAmount}        // CHANGED
+        airfareTotal={convertedAirfareTotal}          
+        totalAmount={convertedFinalTotalAmount}      
         bookingWithAirfare={bookingWithAirfare}
         isInternationalFlight={isInternationalFlight}
         requiresID={requiresID}
@@ -1338,7 +1367,7 @@ const BookingRightForm = ({
         totalPassengers={totalPassengers}
         paymentType={paymentType}
         setPaymentType={setPaymentType}
-        partialAmount={convertedPartialAmount}        // CHANGED
+        partialAmount={convertedPartialAmount}       
         progressPercent={Math.round((passengerStep / totalPassengers) * 100)}
         currentPassenger={passengers[passengerStep - 1]}
         passengers={passengers}
@@ -1348,9 +1377,9 @@ const BookingRightForm = ({
         handleNextPassenger={handleNextPassenger}
         handleBackPassenger={handleBackPassenger}
         loading={loading}
-        currency={currency}                           // NEW
-        exchangeRate={exchangeRate}                   // NEW
-        currencySymbol={currencySymbol}               // NEW
+        currency={currency}                          
+        exchangeRate={exchangeRate}                   
+        currencySymbol={currencySymbol}              
           convertPrice={convertPrice}
 
       />
@@ -1363,13 +1392,13 @@ const BookingRightForm = ({
         selectedDate={selectedDate}
         getCalculatedDates={getCalculatedDates}
         monthNames={monthNames}
-        packageTotal={convertedPackageTotal}           // CHANGED
+        packageTotal={convertedPackageTotal}         
         appliedPromo={appliedPromo}
-        discountAmount={convertedDiscountAmount}       // CHANGED
-        finalPackageTotal={convertedFinalPackageTotal} // CHANGED
+        discountAmount={convertedDiscountAmount}       
+        finalPackageTotal={convertedFinalPackageTotal} 
         selectedFlight={selectedFlight}
-        airfareTotal={convertedAirfareTotal}           // CHANGED
-        totalAmount={convertedFinalTotalAmount}        // CHANGED
+        airfareTotal={convertedAirfareTotal}           
+        totalAmount={convertedFinalTotalAmount}        
         bookingWithAirfare={bookingWithAirfare}
         isInternationalFlight={isInternationalFlight}
         requiresID={requiresID}
@@ -1379,9 +1408,9 @@ const BookingRightForm = ({
         selectedRoomType={selectedRoomType}
         numberOfRooms={numberOfRooms}
         customizationData={customizationData}
-        currency={currency}                           // NEW
-        exchangeRate={exchangeRate}                   // NEW
-        currencySymbol={currencySymbol}               // NEW
+        currency={currency}                          
+        exchangeRate={exchangeRate}                   
+        currencySymbol={currencySymbol}              
         convertPrice={convertPrice}
       />
       
