@@ -8,6 +8,10 @@ import "./editpackage.css";
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
+// ✅ NEW: Toast and Confirmation Modal Imports
+import { useToast } from '../../components/toast/ToastManager';
+import CustomConfirmModal from "../../components/confirmationModal/CustomConfirmModal";
+
 // 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
 const getAdminData = () => {
     try {
@@ -24,18 +28,29 @@ const getAdminData = () => {
 
 const EditPackage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get ID from URL params
+  const { id } = useParams();
   const packageId = id;
+  const toast = useToast(); // ✅ Toast hook
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form state
+  // ✅ NEW: Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'primary',
+    onConfirm: () => {}
+  });
+
+  // Form state with markupType
   const [formData, setFormData] = useState({
     title: "",
     destination: "",
     sellerPrice: "",
+    markupType: "fixed", // ✅ NEW: Default to fixed
     markup: "",
     duration: "",
     category: "Local",
@@ -43,7 +58,6 @@ const EditPackage = () => {
     existingImagePublicId: "" 
   });
 
-  // ✅ Store original data to track changes for Activity Logs
   const [originalData, setOriginalData] = useState(null);
 
   const [imageFile, setImageFile] = useState(null);
@@ -56,6 +70,28 @@ const EditPackage = () => {
   const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/packages";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
+  // ✅ Helper function to open confirmation modal
+  const openConfirmModal = (title, message, onConfirm, type = 'primary') => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      type,
+      onConfirm
+    });
+  };
+
+  // ✅ Helper function to close confirmation modal
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'primary',
+      onConfirm: () => {}
+    });
+  };
 
   // =========================================================
   // ✅ AUTO-DRAFT LOGIC START
@@ -141,6 +177,7 @@ const EditPackage = () => {
       title: data.title || "",
       destination: data.destination || "",
       sellerPrice: data.sellerPrice || "",
+      markupType: data.markupType || "fixed", // ✅ Restore markupType
       markup: data.markup || "",
       duration: data.duration || "",
       category: data.category || "Local",
@@ -231,6 +268,7 @@ const EditPackage = () => {
             title: pkg.title || "",
             destination: pkg.destination || "",
             sellerPrice: sellerPriceValue,
+            markupType: pkg.markupType || "fixed", // ✅ Store original markupType
             markup: markupValue,
             duration: pkg.duration || "",
             category: pkg.category || "Local",
@@ -242,6 +280,7 @@ const EditPackage = () => {
             title: pkg.title || "",
             destination: pkg.destination || "",
             sellerPrice: sellerPriceValue,
+            markupType: pkg.markupType || "fixed", // ✅ Load markupType from database
             markup: markupValue,
             duration: pkg.duration || "",
             category: pkg.category || "Local",
@@ -258,12 +297,12 @@ const EditPackage = () => {
           }
         } else {
           console.error("Error in response:", result.error);
-          alert("Failed to load package data: " + result.error);
+          toast.error("Failed to load package data: " + result.error);
           navigate("/view-packages");
         }
       } catch (err) {
         console.error("Error fetching package:", err);
-        alert("Failed to load package data. Please try again.");
+        toast.error("Failed to load package data. Please try again.");
         navigate("/view-packages");
       } finally {
         setLoading(false);
@@ -271,7 +310,7 @@ const EditPackage = () => {
     };
 
     fetchPackageData();
-  }, [packageId, navigate]);
+  }, [packageId, navigate, toast]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -296,24 +335,20 @@ const EditPackage = () => {
     setInclusions(newInclusions);
   };
 
-  // ✅ NEW: Smart Paste for Inclusions (same as AddPackage)
   const handleInclusionPaste = (index, e) => {
     const pastedText = e.clipboardData.getData("text");
     const lines = pastedText.split(/\r?\n/).filter((line) => line.trim());
 
     if (lines.length > 1) {
       e.preventDefault();
-      // Clean common bullet characters
       const cleanedLines = lines.map((line) => {
         return line.replace(/^[✓✔️☑️•\-\s]+/, "").trim();
       });
 
       const newInclusions = [...inclusions];
       
-      // Update the current focused input with the first line
       newInclusions[index] = cleanedLines[0];
 
-      // Splice the rest of the lines after the current index
       let currentIndex = index;
       cleanedLines.slice(1).forEach((line) => {
         newInclusions.splice(++currentIndex, 0, line);
@@ -345,7 +380,6 @@ const EditPackage = () => {
     setItinerary(newItinerary);
   };
 
-  // ✅ NEW: Smart Paste for Itinerary Activities (same as AddPackage)
   const handleActivityPaste = (dayIndex, actIndex, e) => {
     const pastedText = e.clipboardData.getData("text");
     const lines = pastedText.split(/\r?\n/).filter((line) => line.trim());
@@ -358,10 +392,8 @@ const EditPackage = () => {
 
       const updatedItinerary = [...itinerary];
       
-      // Update the current focused activity field with the first line
       updatedItinerary[dayIndex].activities[actIndex] = cleanedLines[0];
 
-      // Insert the rest of the activities into this day's array
       let currentActIndex = actIndex;
       cleanedLines.slice(1).forEach((line) => {
         updatedItinerary[dayIndex].activities.splice(++currentActIndex, 0, line);
@@ -404,6 +436,19 @@ const EditPackage = () => {
     }
   };
 
+  // ✅ NEW: Calculate selling price based on markup type
+  const calculateSellingPrice = () => {
+    const sellerPrice = parseFloat(formData.sellerPrice) || 0;
+    const markup = parseFloat(formData.markup) || 0;
+
+    if (formData.markupType === 'percentage') {
+      const markupAmount = (sellerPrice * markup) / 100;
+      return sellerPrice + markupAmount;
+    } else {
+      return sellerPrice + markup;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -413,7 +458,7 @@ const EditPackage = () => {
       !formData.sellerPrice ||
       !formData.duration
     ) {
-      alert("Please fill in all required fields");
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -426,6 +471,7 @@ const EditPackage = () => {
       formDataToSend.append("title", formData.title);
       formDataToSend.append("destination", formData.destination);
       formDataToSend.append("sellerPrice", formData.sellerPrice);
+      formDataToSend.append("markupType", formData.markupType); // ✅ Send markupType
       formDataToSend.append("markup", formData.markup || 0);
       formDataToSend.append("duration", formData.duration);
       formDataToSend.append("category", formData.category);
@@ -467,6 +513,7 @@ const EditPackage = () => {
           trackChange("Title", originalData.title, formData.title);
           trackChange("Destination", originalData.destination, formData.destination);
           trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
+          trackChange("Markup Type", originalData.markupType, formData.markupType); // ✅ Track markupType change
           trackChange("Markup", originalData.markup, formData.markup);
           trackChange("Duration", originalData.duration, formData.duration);
           trackChange("Category", originalData.category, formData.category);
@@ -496,18 +543,32 @@ const EditPackage = () => {
       const result = await response.json();
 
       if (result.status === "ok") {
-        alert("Package updated successfully!");
+        toast.success("Package updated successfully!");
         await clearDraft();
         navigate("/view-packages");
       } else {
-        alert("Failed to update package: " + (result.error || "Unknown error"));
+        toast.error("Failed to update package: " + (result.error || "Unknown error"));
       }
     } catch (err) {
       console.error("Error updating package:", err);
-      alert("Error updating package. Please try again.");
+      toast.error("Error updating package. Please try again.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // ✅ NEW: Handle Cancel with Confirmation
+  const handleCancel = () => {
+    openConfirmModal(
+      'Cancel Editing',
+      'Are you sure you want to cancel? Any unsaved changes will be lost.',
+      async () => {
+        await clearDraft();
+        navigate("/view-packages");
+        closeConfirmModal();
+      },
+      'danger'
+    );
   };
 
   if (loading) {
@@ -531,13 +592,21 @@ const EditPackage = () => {
     );
   }
 
-  const calculatedPrice =
-    (parseFloat(formData.sellerPrice) || 0) +
-    (parseFloat(formData.markup) || 0);
+  const calculatedPrice = calculateSellingPrice();
 
   return (
     <div className="epa-page">
       
+      {/* ✅ Confirmation Modal */}
+      <CustomConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+      />
+
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -551,53 +620,36 @@ const EditPackage = () => {
       >
         <div className="epa-container">
           <div className="epa-header">
-            <div className="epa-header-content">
-              <button
-                className="epa-back-btn"
-                onClick={() => navigate("/view-packages")}
-              >
-                <ArrowLeft size={20} />
-                Back to Packages
-              </button>
-              <h1 className="epa-title">Edit Package</h1>
-              <p className="epa-subtitle">
-                Update package information and details
-              </p>
-            </div>
+            <button className="epa-back-btn" onClick={() => navigate("/view-packages")}>
+              <ArrowLeft size={20} /> Back to Packages
+            </button>
+            <h1 className="epa-title">Edit Package</h1>
           </div>
 
-          <form onSubmit={handleSubmit} className="epa-form">
-
+          <form className="epa-form" onSubmit={handleSubmit}>
             {/* Image Upload */}
             <div className="epa-section">
               <h2 className="epa-section-title">Package Image</h2>
-              <div className="epa-upload-area">
+              <div className="epa-image-upload">
                 <input
                   type="file"
                   id="image-upload"
-                  accept="image/*"
-                  onChange={handleImageChange}
                   className="epa-file-input"
+                  onChange={handleImageChange}
+                  accept="image/*"
                 />
                 <label htmlFor="image-upload" className="epa-upload-label">
-                  {imagePreview ? (
-                    <div className="epa-image-preview">
-                      <img src={imagePreview} alt="Preview" />
-                      <div className="epa-image-overlay">
-                        <Upload size={24} />
-                        <span>Click to change image</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="epa-upload-placeholder">
-                      <Upload size={48} />
-                      <span>Click to upload image</span>
-                    </div>
-                  )}
+                  <Upload size={24} />
+                  <span>Choose Image</span>
                 </label>
+                {imagePreview && (
+                  <div className="epa-image-preview">
+                    <img src={imagePreview} alt="Preview" />
+                  </div>
+                )}
               </div>
             </div>
-            
+
             {/* Basic Information */}
             <div className="epa-section">
               <h2 className="epa-section-title">Basic Information</h2>
@@ -610,7 +662,7 @@ const EditPackage = () => {
                     value={formData.title}
                     onChange={handleInputChange}
                     className="epa-input"
-                    placeholder="Enter package title"
+                    placeholder="e.g., Boracay Beach Getaway"
                     required
                   />
                 </div>
@@ -623,7 +675,7 @@ const EditPackage = () => {
                     value={formData.destination}
                     onChange={handleInputChange}
                     className="epa-input"
-                    placeholder="Enter destination"
+                    placeholder="e.g., Boracay, Philippines"
                     required
                   />
                 </div>
@@ -678,24 +730,45 @@ const EditPackage = () => {
                   />
                 </div>
 
+                {/* ✅ NEW: Markup Type Dropdown */}
                 <div className="epa-form-group">
-                  <label className="epa-label">Markup (₱)</label>
+                  <label className="epa-label">Markup Type</label>
+                  <select
+                    name="markupType"
+                    value={formData.markupType}
+                    onChange={handleInputChange}
+                    className="epa-input"
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount (₱)</option>
+                  </select>
+                </div>
+
+                {/* ✅ UPDATED: Markup input with dynamic placeholder */}
+                <div className="epa-form-group">
+                  <label className="epa-label">
+                    Markup {formData.markupType === 'percentage' ? '(%)' : '(₱)'}
+                  </label>
                   <input
                     type="number"
                     name="markup"
                     value={formData.markup}
                     onChange={handleInputChange}
                     className="epa-input"
-                    placeholder="0.00"
+                    placeholder={formData.markupType === 'percentage' ? '0%' : '₱0.00'}
                     step="0.01"
                   />
                 </div>
 
+                {/* ✅ UPDATED: Final Price now uses calculated value */}
                 <div className="epa-form-group">
                   <label className="epa-label">Final Price (₱)</label>
                   <input
                     type="text"
-                    value={`₱${calculatedPrice.toLocaleString()}`}
+                    value={`₱${calculatedPrice.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}`}
                     className="epa-input epa-input--readonly"
                     readOnly
                   />
@@ -834,10 +907,7 @@ const EditPackage = () => {
               <button
                 type="button"
                 className="epa-btn epa-btn--cancel"
-                onClick={async () => {
-                    await clearDraft(); 
-                    navigate("/view-packages");
-                }}
+                onClick={handleCancel}
                 disabled={submitting}
               >
                 CANCEL

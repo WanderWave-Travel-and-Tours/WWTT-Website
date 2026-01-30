@@ -10,6 +10,14 @@ const PackageSchema = new mongoose.Schema({
     title: { type: String, required: true },
     destination: { type: String, required: true },
     sellerPrice: { type: Number, required: true },
+    
+    // ✅ Markup Type Field (NEW)
+    markupType: { 
+        type: String, 
+        enum: ['percentage', 'fixed'], 
+        default: 'fixed' 
+    },
+    
     markup: { type: Number, default: 0 }, 
     price: { type: Number, required: true },
     duration: { type: String, required: true },
@@ -67,12 +75,21 @@ const PackageSchema = new mongoose.Schema({
     archivedAt: { 
         type: Date, 
         default: null 
-    } // ✅ NEW: Timestamp when package is archived
+    }
     
-}, { timestamps: true }); // ✅ ENSURES createdAt & updatedAt are created
+}, { timestamps: true });
 
+// ✅ UPDATED PRE-SAVE HOOK: Calculate price based on markupType
 PackageSchema.pre('save', function(next) {
-    this.price = this.sellerPrice + this.markup;
+    // Calculate final price based on markup type
+    if (this.markupType === 'percentage') {
+        // If percentage, calculate the markup amount then add to seller price
+        const markupAmount = (this.sellerPrice * this.markup) / 100;
+        this.price = this.sellerPrice + markupAmount;
+    } else {
+        // If fixed, just add markup directly
+        this.price = this.sellerPrice + this.markup;
+    }
     
     // ✅ Clear pax if tour type is joiners
     if (this.tourType === 'joiners') {

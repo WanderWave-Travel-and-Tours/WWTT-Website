@@ -287,6 +287,7 @@ router.post('/', async (req, res) => {
       status
     } = req.body;
 
+    // ✅ FIXED: Handle 0 values properly
     const safeSupplierRate = safeParseFloat(supplierRate, 0);
     const safeMarkup = safeParseFloat(markup, 0);
 
@@ -303,27 +304,27 @@ router.post('/', async (req, res) => {
       supplierName,
       supplierRate: safeSupplierRate,
       markup: safeMarkup,
-      markupType,
+      markupType: markupType || 'percentage',
       sellingPrice,
-      pax,
-      inclusions,
-      notes,
+      pax: pax || '',
+      inclusions: inclusions || '',
+      notes: notes || '',
       status: status || 'active',
       isArchive: 'No'
     });
 
     const savedRate = await newRate.save();
 
-    // 🎯 LOG CREATION
+    // 🎯 LOG CREATE
     await logCreate(req, 'Seller Rates', `${savedRate.activity} (${savedRate.destination})`);
 
-    console.log('✅ Seller rate created successfully:', savedRate.activity);
+    console.log('✅ New seller rate created:', savedRate.activity);
 
     res.status(201).json(savedRate);
   } catch (error) {
-    console.error('❌ Seller rate creation error:', error);
-
-    // 🎯 LOG CREATION ERROR
+    console.error('Error creating rate:', error);
+    
+    // 🎯 LOG ERROR
     await logActivity({
       action: 'CREATE',
       module: 'Seller Rates',
@@ -425,7 +426,7 @@ router.post('/bulk', async (req, res) => {
 });
 
 // ============================================
-// UPDATE RATE
+// UPDATE RATE - ✅ FIXED TO HANDLE 0 VALUES
 // ============================================
 router.put('/:id', async (req, res) => {
   const startTime = Date.now();
@@ -437,10 +438,26 @@ router.put('/:id', async (req, res) => {
     }
 
     const updates = req.body;
-    const safeSupplierRate = safeParseFloat(updates.supplierRate || rate.supplierRate, 0);
-    const safeMarkup = safeParseFloat(updates.markup || rate.markup, 0);
+    
+    // ✅ CRITICAL FIX: Properly handle 0 values using explicit checks
+    // Don't use || operator because it treats 0 as falsy
+    const safeSupplierRate = safeParseFloat(
+      updates.supplierRate !== undefined && updates.supplierRate !== null && updates.supplierRate !== '' 
+        ? updates.supplierRate 
+        : rate.supplierRate, 
+      0
+    );
+    
+    const safeMarkup = safeParseFloat(
+      updates.markup !== undefined && updates.markup !== null && updates.markup !== '' 
+        ? updates.markup 
+        : rate.markup, 
+      0
+    );
+    
     const currentMarkupType = updates.markupType || rate.markupType;
 
+    // Calculate selling price
     let sellingPrice;
     if (currentMarkupType === 'percentage') {
       sellingPrice = safeSupplierRate + (safeSupplierRate * safeMarkup / 100);
@@ -448,11 +465,19 @@ router.put('/:id', async (req, res) => {
       sellingPrice = safeSupplierRate + safeMarkup;
     }
 
+    // Create update data with all fields
     const updateData = {
-      ...updates,
+      destination: updates.destination !== undefined ? updates.destination : rate.destination,
+      activity: updates.activity !== undefined ? updates.activity : rate.activity,
+      supplierName: updates.supplierName !== undefined ? updates.supplierName : rate.supplierName,
       supplierRate: safeSupplierRate,
       markup: safeMarkup,
+      markupType: currentMarkupType,
       sellingPrice,
+      pax: updates.pax !== undefined ? updates.pax : rate.pax,
+      inclusions: updates.inclusions !== undefined ? updates.inclusions : rate.inclusions,
+      notes: updates.notes !== undefined ? updates.notes : rate.notes,
+      status: updates.status !== undefined ? updates.status : rate.status,
       lastUpdated: Date.now()
     };
 
@@ -466,6 +491,7 @@ router.put('/:id', async (req, res) => {
     await logUpdate(req, 'Seller Rates', `${rate.activity} (${rate.destination})`, updates);
 
     console.log('✅ Seller rate updated:', updatedRate.activity);
+    console.log('Updated markup value:', updatedRate.markup);
 
     res.json(updatedRate);
   } catch (error) {

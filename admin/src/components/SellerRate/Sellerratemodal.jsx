@@ -18,17 +18,46 @@ const SellerRateModal = ({
     setFormData({ ...formData, [field]: value });
   };
 
+  const handleNumberChange = (field, value) => {
+    // Convert empty string to empty, keep 0 as 0, parse other numbers
+    const numValue = value === '' ? '' : Number(value);
+    setFormData({ ...formData, [field]: numValue });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.destination || !formData.activity || !formData.supplierName || 
-        !formData.supplierRate || !formData.markup) {
+    // Validate required fields - explicitly check for empty strings and null/undefined
+    if (!formData.destination || 
+        !formData.activity || 
+        !formData.supplierName || 
+        formData.supplierRate === '' || 
+        formData.supplierRate === null || 
+        formData.supplierRate === undefined ||
+        formData.markup === '' || 
+        formData.markup === null || 
+        formData.markup === undefined) {
       alert('Please fill in all required fields');
       return;
     }
 
-    // Call the parent's onSubmit with the form data
+    // Convert to numbers for validation
+    const supplierRate = Number(formData.supplierRate);
+    const markup = Number(formData.markup);
+
+    // Validate that they are valid numbers
+    if (isNaN(supplierRate) || supplierRate < 0) {
+      alert('Please enter a valid supplier rate');
+      return;
+    }
+
+    if (isNaN(markup) || markup < 0) {
+      alert('Markup cannot be negative');
+      return;
+    }
+
+    // ✅ FIXED: Just pass the event, let parent handle the formData
+    // Parent already has access to formData through props
     onSubmit(e);
   };
 
@@ -100,8 +129,8 @@ const SellerRateModal = ({
                 required
                 step="0.01"
                 min="0"
-                value={formData.supplierRate || ''}
-                onChange={(e) => handleInputChange('supplierRate', e.target.value)}
+                value={formData.supplierRate === 0 ? 0 : (formData.supplierRate || '')}
+                onChange={(e) => handleNumberChange('supplierRate', e.target.value)}
                 placeholder="0.00"
               />
             </div>
@@ -126,8 +155,8 @@ const SellerRateModal = ({
                 required
                 step="0.01"
                 min="0"
-                value={formData.markup || ''}
-                onChange={(e) => handleInputChange('markup', e.target.value)}
+                value={formData.markup === 0 ? 0 : (formData.markup || '')}
+                onChange={(e) => handleNumberChange('markup', e.target.value)}
                 placeholder={formData.markupType === 'percentage' ? '0%' : '₱0.00'}
               />
             </div>
