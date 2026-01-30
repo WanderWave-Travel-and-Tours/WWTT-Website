@@ -80,11 +80,13 @@ const uploadRoutes = require('./routes/uploadRoute');
 const hotelRoutes = require('./routes/hotelRoute');
 const imagesRoutes = require('./routes/imagesRoute');
 const sellerRateRoutes = require('./routes/sellerRoute');
-const activityLogRoute = require('./routes/activityLogRoute'); // ✅ SINGLE IMPORT
+const activityLogRoute = require('./routes/activityLogRoute'); 
 const draftsRoutes = require('./routes/drafts');
 const activityLogsRoutes = require('./routes/activityLogRoute');
 const favoriteRoute = require('./routes/favoriteRoute');
-const feedbackRoutes = require('./routes/feedbackRoutes'); // ✅ NEW: FEEDBACK ROUTES
+const feedbackRoutes = require('./routes/feedbackRoutes'); 
+const ipRoutes = require('./routes/ipRoute');
+
 
 // ===================================================================
 // ENSURE UPLOAD DIRECTORY EXISTS
@@ -264,12 +266,12 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/images', imagesRoutes);
 app.use('/api/seller-rates', sellerRateRoutes);
-app.use('/api/activity-logs', activityLogRoute); // ✅ SINGLE REGISTRATION
+app.use('/api/activity-logs', activityLogRoute); 
 app.use('/api/drafts', require('./routes/drafts'));
-app.use('/api/activity-logs', activityLogRoute); // ✅ Already there!
+app.use('/api/activity-logs', activityLogRoute); 
 app.use('/api/favorites', favoriteRoute);
-app.use('/api/feedback', feedbackRoutes); // ✅ NEW: FEEDBACK ROUTES REGISTERED
-
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/ip', ipRoutes);
 
 // ===================================================================
 // PACKAGE ADD ENDPOINT
@@ -551,23 +553,12 @@ app.get('/api/admin/statistics', async (req, res) => {
   }
 });
 
-// ===================================================================
-// SPA SUPPORT: Serve React frontend build (must be placed AFTER all API routes)
-// ===================================================================
-// Adjust this path based on your project structure
-// Common examples:
-// - path.join(__dirname, '../client/build')   → if React app is in ../client folder
-// - path.join(__dirname, './client/build')    → if in ./client
-// - path.join(__dirname, '../build')          → if in ../build
-const frontendBuildPath = path.join(__dirname, '../client/build'); // CHANGE THIS IF YOUR BUILD FOLDER IS DIFFERENT
+const frontendBuildPath = path.join(__dirname, '../client/build'); 
 
 if (fs.existsSync(frontendBuildPath)) {
-  // Serve static files (JS, CSS, images, etc.)
   app.use(express.static(frontendBuildPath));
 
-  // Catch-all handler: for any non-API route, serve index.html so React Router can handle it
   app.get('*', (req, res) => {
-    // Prevent interfering with API routes
     if (req.originalUrl.startsWith('/api')) {
       return res.status(404).json({ success: false, message: 'API endpoint not found' });
     }
@@ -580,9 +571,6 @@ if (fs.existsSync(frontendBuildPath)) {
   console.warn(`   Run 'npm run build' in your React app folder and ensure the path is correct.`);
 }
 
-// ===================================================================
-// START SERVER
-// ===================================================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
