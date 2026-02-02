@@ -49,9 +49,11 @@ const PromoDetailModal = ({
         navigate(`/edit-promo/${selectedPromo._id}`);
     };
 
-    // Construct Image URL
+    // Construct Image URL (FIXED: Handles both full URLs and local paths)
     const imageUrl = selectedPromo.image 
-        ? `https://wanderwaveph-backend.onrender.com/uploads/${selectedPromo.image}` 
+        ? (selectedPromo.image.startsWith('http') 
+            ? selectedPromo.image 
+            : `https://wanderwaveph-backend.onrender.com/uploads/${selectedPromo.image}`)
         : null;
 
     return (
