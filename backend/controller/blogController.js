@@ -559,44 +559,78 @@ const generateAIContent = async (req, res) => {
 
 const createFromSEOAutopilot = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']; 
-        const secretKey = process.env.SEO_AUTOPILOT_SECRET;
+        console.log("🚀 SEO Autopilot Webhook Received!");
+        const incomingKey = req.headers['x-api-key'];
+        const mySecret = process.env.SEO_AUTOPILOT_SECRET;
 
-        if (!authHeader || !authHeader.includes(secretKey)) {
-            console.error("❌ Unauthorized access attempt to Webhook!");
+        if (!incomingKey || incomingKey !== mySecret) {
+            console.error("❌ Unauthorized: Invalid API Key");
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
 
-        const { 
-            title, 
-            content, 
-            featured_image,
+        const payload = req.body;
+        
+        const {
+            title,
+            slug,
+            content,
+            featuredImage, 
+            author,
             category,
-            author
-        } = req.body;
+            status,
+            seo, 
+            tags,
+            contentId 
+        } = payload;
 
-        let finalImageUrl = "";
-        let finalPublicId = "";
+        console.log(`📝 Processing Blog: ${title}`);
 
-        if (featured_image) {
-            const uploadResult = await downloadAndUploadToCloudinary(featured_image);
-            finalImageUrl = uploadResult.url;
-            finalPublicId = uploadResult.publicId;
+        let finalImageUrl = "https://res.cloudinary.com/demo/image/upload/sample.jpg";
+        let finalPublicId = "sample";
+
+        if (featuredImage) {
+            try {
+                console.log("⬇️ Downloading Temporary Image:", featuredImage);
+                const uploadResult = await downloadAndUploadToCloudinary(featuredImage);
+                finalImageUrl = uploadResult.url;
+                finalPublicId = uploadResult.publicId;
+            } catch (imgError) {
+                console.warn("⚠️ Image upload failed, using default:", imgError.message);
+            }
         }
 
         const newBlog = new Blog({
-            title: title || "New AI Blog Post",
+            title: title || "New AI Blog",
+            slug: slug || title.toLowerCase().replace(/ /g, '-') + '-' + Date.now(),
             author: author || "WanderWave AI",
             category: category || "Travel Guide",
             content: content,
-            imageUrl: finalImageUrl || "https://res.cloudinary.com/demo/image/upload/sample.jpg",
-            imagePublicId: finalPublicId || "sample",
+            imageUrl: finalImageUrl,
+            imagePublicId: finalPublicId,
             status: "Published",
-            isArchive: "No"
+            isArchive: "No",
+            
+            metaDescription: seo?.metaDescription || "",
+            seoScore: seo?.seoScore || 0,
+            keywords: tags || [],
+            externalId: contentId,
+            
+            seoData: {
+                readabilityScore: seo?.readabilityScore,
+                schema: payload.schema,
+                openGraph: payload.openGraph
+            }
         });
 
         await newBlog.save();
-        return res.status(200).json({ success: true, message: "Blog posted!" });
+        console.log("✅ Blog Saved to MongoDB with ID:", newBlog._id);
+
+        return res.status(200).json({
+            success: true,
+            post_id: newBlog._id,
+            url: `/blog/${newBlog.slug}`,
+            featured_image_url: finalImageUrl 
+        });
 
     } catch (error) {
         console.error("❌ Webhook Error:", error);
