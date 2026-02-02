@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Lock, Save, Shield, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, User, Lock, Save, Shield, Eye, EyeOff } from 'lucide-react';
+import { useToast } from '../toast/ToastManager'; // Updated Import
+import CustomConfirmModal from "../confirmationModal/CustomConfirmModal"; // Added Modal Import
 import './AccountSettings.css';
-
+ 
 const AccountSettings = ({ user, onNavigateBack }) => {
+    // 1. Initialize Toast
     const toast = useToast();
     
     const [formData, setFormData] = useState({
@@ -12,6 +15,15 @@ const AccountSettings = ({ user, onNavigateBack }) => {
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
+    });
+
+    // 2. State for Confirmation Modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: '',
+        message: '',
+        type: 'primary',
+        onConfirm: () => {} 
     });
 
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -33,7 +45,10 @@ const AccountSettings = ({ user, onNavigateBack }) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleUpdateProfile = async (e) => {
+    // --- PROFILE UPDATE LOGIC ---
+
+    // Step A: Trigger (Validation & Open Modal)
+    const triggerUpdateProfile = (e) => {
         e.preventDefault();
 
         // Validation
@@ -53,11 +68,24 @@ const AccountSettings = ({ user, onNavigateBack }) => {
         }
 
         if (!user || !user.id) {
-            console.error("DEBUG: Current User Object:", user);
             toast.error("User ID not found. Please try logging in again.");
             return;
         }
-        
+
+        // Configure and Open Modal
+        setModalConfig({
+            title: "Update Profile",
+            message: "Are you sure you want to save these changes to your personal information?",
+            type: "primary",
+            onConfirm: performUpdateProfile // Pass the actual execution function
+        });
+        setIsModalOpen(true);
+    };
+
+    // Step B: Execution (API Call - called by Modal)
+    const performUpdateProfile = async () => {
+        setIsModalOpen(false); // Close modal first
+
         try {
             const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/update-profile/${user.id}`, {
                 method: 'PUT',
@@ -71,7 +99,7 @@ const AccountSettings = ({ user, onNavigateBack }) => {
             const result = await response.json();
 
             if (result.status === "ok") {
-                toast.success("Profile updated successfully!");
+                toast.success("Profile updated successfully");
                 localStorage.setItem('wanderwave_user', JSON.stringify(result.data));
             } else {
                 toast.error(result.message || "Failed to update profile");
@@ -82,7 +110,10 @@ const AccountSettings = ({ user, onNavigateBack }) => {
         }
     };
 
-    const handleChangePassword = async (e) => {
+    // --- PASSWORD UPDATE LOGIC ---
+
+    // Step A: Trigger (Validation & Open Modal)
+    const triggerChangePassword = (e) => {
         e.preventDefault();
         
         // Validation
@@ -107,15 +138,28 @@ const AccountSettings = ({ user, onNavigateBack }) => {
         }
 
         if (formData.newPassword !== formData.confirmPassword) {
-            toast.error("New passwords do not match!");
+            toast.error("New passwords do not match");
             return;
         }
 
         if (!user || !user.id) {
-            console.error("DEBUG: User ID missing in Password Update:", user);
             toast.error("User ID not found. Please log in again.");
             return;
         }
+
+        // Configure and Open Modal
+        setModalConfig({
+            title: "Change Password",
+            message: "Are you sure you want to update your password?",
+            type: "primary", // Can be 'danger' if preferred for sensitive actions
+            onConfirm: performChangePassword // Pass the actual execution function
+        });
+        setIsModalOpen(true);
+    };
+
+    // Step B: Execution (API Call - called by Modal)
+    const performChangePassword = async () => {
+        setIsModalOpen(false); // Close modal first
 
         try {
             const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/update-password/${user.id}`, {
@@ -129,7 +173,7 @@ const AccountSettings = ({ user, onNavigateBack }) => {
             const result = await response.json();
 
             if (result.status === "ok") {
-                toast.success("Password updated successfully!");
+                toast.success("Password updated successfully");
                 setFormData(prev => ({ 
                     ...prev, 
                     currentPassword: '', 
@@ -173,7 +217,8 @@ const AccountSettings = ({ user, onNavigateBack }) => {
                         <h2 className="account-settings-section-title">Personal Information</h2>
                     </div>
                     
-                    <form onSubmit={handleUpdateProfile} className="account-form">
+                    {/* Updated onSubmit to trigger validation + modal */}
+                    <form onSubmit={triggerUpdateProfile} className="account-form">
                         <div className="account-fields-grid">
                             <div className="account-field">
                                 <label className="account-label">
@@ -220,7 +265,8 @@ const AccountSettings = ({ user, onNavigateBack }) => {
                         <h2 className="account-settings-section-title">Security & Password</h2>
                     </div>
                     
-                    <form onSubmit={handleChangePassword} className="account-form">
+                    {/* Updated onSubmit to trigger validation + modal */}
+                    <form onSubmit={triggerChangePassword} className="account-form">
                         <div className="account-fields-grid">
                             <div className="account-field account-full-width">
                                 <label className="account-label">
@@ -301,14 +347,18 @@ const AccountSettings = ({ user, onNavigateBack }) => {
                     </form>
                 </section>
             </div>
+
+            {/* Confirmation Modal Component */}
+            <CustomConfirmModal 
+                isOpen={isModalOpen}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                type={modalConfig.type}
+                onConfirm={modalConfig.onConfirm}
+                onCancel={() => setIsModalOpen(false)}
+            />
         </div>
     );
 };
-
-// Simple toast notification helper
-const useToast = () => ({
-    success: (msg) => alert(msg),
-    error: (msg) => alert(msg)
-});
 
 export default AccountSettings;

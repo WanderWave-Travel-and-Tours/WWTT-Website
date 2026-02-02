@@ -17,7 +17,7 @@ const UserDashboard = ({ user, onLogout }) => {
     const [currentView, setCurrentView] = useState('applications'); 
     const [viewedHistory, setViewedHistory] = useState({});
 
-    // ⭐ NEW: State for uploaded documents
+    // тнР NEW: State for uploaded documents
     const [uploadedDocuments, setUploadedDocuments] = useState([]);
     const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
 
@@ -49,7 +49,11 @@ const UserDashboard = ({ user, onLogout }) => {
     };
 
     const fetchUserData = async () => {
-        if (!user?.email) return;
+        // FIX: If user or email is missing, stop loading immediately to avoid blank page
+        if (!user || !user.email) {
+            setIsLoading(false);
+            return;
+        }
 
         try {
             // Add small delay between requests instead of Promise.all
@@ -97,7 +101,7 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     };
 
-    // ⭐ NEW: Fetch uploaded documents for selected inquiry
+    // тнР NEW: Fetch uploaded documents for selected inquiry
     const fetchUploadedDocuments = async (inquiryId) => {
         if (!inquiryId) {
             setUploadedDocuments([]);
@@ -123,11 +127,17 @@ const UserDashboard = ({ user, onLogout }) => {
     };
 
     useEffect(() => {
+        // FIX: Ensure logic runs correctly even if user is not fully ready initially
+        setIsLoading(true);
+        fetchUserData();
+        
+        // Only set interval if user exists
         if (user?.email) {
-            setIsLoading(true);
-            fetchUserData();
             const interval = setInterval(fetchUserData, 30000); 
             return () => clearInterval(interval);
+        } else {
+            // Safety turn off loading if no user
+            setIsLoading(false);
         }
     }, [user]);
 
@@ -171,7 +181,7 @@ const UserDashboard = ({ user, onLogout }) => {
         fetchVisaDetails();
     }, [selectedInquiry]);
 
-    // ⭐ NEW: Fetch uploaded documents when inquiry changes
+    // тнР NEW: Fetch uploaded documents when inquiry changes
     useEffect(() => {
         if (selectedInquiry?._id) {
             fetchUploadedDocuments(selectedInquiry._id);
@@ -264,7 +274,7 @@ const UserDashboard = ({ user, onLogout }) => {
             alert('Documents submitted successfully!');
             setUploadedFiles({});
             
-            // ⭐ NEW: Refresh uploaded documents after submission
+            // тнР NEW: Refresh uploaded documents after submission
             await fetchUploadedDocuments(selectedInquiry._id);
             await fetchUserData(); 
         } catch (error) {
@@ -323,7 +333,7 @@ const UserDashboard = ({ user, onLogout }) => {
                             isUploading={isUploading}
                             uploadProgress={uploadProgress}
                             onDownloadComplete={handleDownloadAction}
-                            // ⭐ NEW: Pass uploaded documents data
+                            // тнР NEW: Pass uploaded documents data
                             uploadedDocuments={uploadedDocuments}
                             isLoadingDocuments={isLoadingDocuments}
                         />
