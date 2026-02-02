@@ -11,7 +11,8 @@ const {
     searchUnsplashImages, 
     downloadUnsplashImage, 
     getCuratedImages,
-    generateAIContent
+    generateAIContent,
+    createFromSEOAutopilot
 } = require('../controller/blogController');
 const { uploadBlog } = require('../config/cloudinary');
 
@@ -32,5 +33,5 @@ router.get('/archived', getArchivedBlogs);
 router.get('/:id', getBlogById);
 router.put('/update/:id', uploadBlog.single('image'), updateBlog);
 router.delete('/:id', deleteBlog);
-
+router.post('/webhook/seo-autopilot', createFromSEOAutopilot);
 module.exports = router;

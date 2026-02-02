@@ -13,20 +13,8 @@ const {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// =============================================================================
-// 🎨 AI IMAGE GENERATION USING POLLINATIONS AI (FREE!)
-// =============================================================================
-/**
- * Generate AI image using Pollinations API
- * @param {string} prompt - Detailed image description
- * @returns {Promise<string>} - Direct image URL
- */
 const generateAiImage = async (prompt) => {
     try {
-        console.log("🎨 Generating AI Image with Pollinations...");
-        console.log("📝 Prompt:", prompt);
-
-        // Enhanced prompt with consistency keywords
         const enhancedPrompt = `${prompt}, 
 professional high-quality photography, 
 photorealistic, 
@@ -42,21 +30,16 @@ trending on instagram,
 professional travel photography style`;
         
         const encodedPrompt = encodeURIComponent(enhancedPrompt);
-        
-        // Negative prompt for Pollinations (things to avoid)
+    
         const negativePrompt = encodeURIComponent(
             "blurry, distorted face, deformed, ugly, bad anatomy, wrong proportions, " +
             "extra limbs, mutation, cartoon, anime, artificial, fake, low quality, " +
             "pixelated, grainy, oversaturated, bad lighting"
         );
         
-        // Random seed para unique images every time
         const randomSeed = Math.floor(Math.random() * 1000000);
         
-        // Pollinations AI with enhanced parameters
         const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1920&height=1080&seed=${randomSeed}&nologo=true&model=flux&negative=${negativePrompt}`;
-        
-        console.log("✅ AI Image URL Generated:", imageUrl);
         
         return imageUrl;
 
@@ -66,16 +49,8 @@ professional travel photography style`;
     }
 };
 
-/**
- * Download AI-generated image and upload to Cloudinary
- * @param {string} imageUrl - URL of the AI-generated image
- * @returns {Promise<{url: string, publicId: string}>} - Cloudinary upload result
- */
 const downloadAndUploadToCloudinary = async (imageUrl) => {
     try {
-        console.log("⬇️ Downloading AI image from Pollinations...");
-        
-        // Download the image
         const response = await axios({
             method: 'GET',
             url: imageUrl,
@@ -86,10 +61,6 @@ const downloadAndUploadToCloudinary = async (imageUrl) => {
 
         const base64Image = Buffer.from(response.data).toString('base64');
         const dataUri = `data:image/jpeg;base64,${base64Image}`;
-
-        console.log("☁️ Uploading to Cloudinary...");
-        
-        // Upload to Cloudinary
         const uploadResult = await cloudinary.uploader.upload(dataUri, {
             folder: 'wanderwave/blog-ai-images',
             resource_type: 'image',
@@ -357,14 +328,12 @@ const generateGeminiContent = async (req, res) => {
         };
 
         if (type === 'FullBlog') {
-            console.log("🚀 Full Blog Chain: Title + Content + Image");
             let titlePrompt = `Generate ONE catchy travel blog title for "${prompt}". No quotes.`;
             if (imageParts.length > 0) {
                 titlePrompt = [`Look at these ${imageParts.length} images. Generate ONE catchy travel blog title that matches these visuals and the topic: "${prompt}". No quotes.`, ...imageParts];
             }
             const titleResult = await model.generateContent(titlePrompt);
             const blogTitle = titleResult.response.text().replace(/['"]/g, '').trim();
-            console.log(`✅ Title: ${blogTitle}`);
             await new Promise(resolve => setTimeout(resolve, 2000));
             const contentResult = await model.generateContent(`Write a 600-word HTML travel blog about "${blogTitle}". Use <h2>, <p>, <ul>.`);
             const blogContent = contentResult.response.text();
@@ -382,7 +351,6 @@ const generateGeminiContent = async (req, res) => {
         if (type === 'Image') {
             let finalPrompt = prompt;
             if (imageParts.length > 0) {
-                console.log("👀 Analyzing reference images for generation...");
                 const visionPrompt = `Analyze these ${imageParts.length} images in extreme detail. Describe the common theme, style, subject, composition, lighting, and colors. The goal is to write a text prompt that an AI image generator can use to recreate a new image that fits this style. User's specific instruction: "${prompt}" Combine the visual description of the images with the user's instruction. Output ONLY the detailed prompt description.`;
                 const visionResult = await model.generateContent([visionPrompt, ...imageParts]);
                 finalPrompt = visionResult.response.text();
@@ -470,9 +438,6 @@ const getArchivedBlogs = async (req, res) => {
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
-// =============================================================================
-// 🎯 MAIN AI CONTENT GENERATION ENDPOINT
-// =============================================================================
 const generateAIContent = async (req, res) => {
   try {
     const { prompt, type, image } = req.body;
@@ -484,8 +449,6 @@ const generateAIContent = async (req, res) => {
     if (!type || !["Title", "Content", "Image", "FullBlog"].includes(type)) {
       return res.status(400).json({ success: false, message: "Invalid type." });
     }
-
-    console.log(`🤖 Generating ${type}... Prompt: ${prompt}`);
 
     let generatedText;
     let generatedTitle = "";
@@ -506,47 +469,34 @@ const generateAIContent = async (req, res) => {
            
            let refinedPrompt;
            
-           // 🎯 Step 1: Check if there's a reference image uploaded
            if (image) {
-               console.log("📸 Reference image detected! Analyzing with Gemini Vision...");
-               
                try {
-                   // Use Gemini Vision to analyze the uploaded image
                    const visionAnalysis = await generateWithImage(
                        prompt || "Describe this person in extreme detail for AI image generation",
                        image,
                        "ImageAnalysis"
                    );
                    
-                   console.log("✅ Gemini Vision Analysis Complete!");
-                   console.log("📋 Character Description:", visionAnalysis.substring(0, 200) + "...");
-                   
-                   // Create a HIGHLY DETAILED prompt that prioritizes character consistency
                    refinedPrompt = `IMPORTANT - MAINTAIN EXACT CHARACTER CONSISTENCY:
 
-${visionAnalysis}
+                    ${visionAnalysis}
 
-NEW SCENE/SETTING REQUEST:
-${prompt}
+                    NEW SCENE/SETTING REQUEST:
+                    ${prompt}
 
-CRITICAL REQUIREMENTS:
-- Keep the EXACT same person from the description above
-- Maintain all facial features, hair, and physical characteristics PRECISELY
-- Only change the setting/scene/environment/clothing as requested
-- Ensure photorealistic quality with no distortions
-- Professional photography style
-- Natural lighting and realistic proportions
-- Sharp focus on face and features`;
-                   
-                   console.log("✅ Enhanced Prompt with Character Reference Created");
-                   
+                    CRITICAL REQUIREMENTS:
+                    - Keep the EXACT same person from the description above
+                    - Maintain all facial features, hair, and physical characteristics PRECISELY
+                    - Only change the setting/scene/environment/clothing as requested
+                    - Ensure photorealistic quality with no distortions
+                    - Professional photography style
+                    - Natural lighting and realistic proportions
+                    - Sharp focus on face and features`;
                } catch (visionError) {
                    console.warn("⚠️ Gemini Vision failed, trying fallback approach");
-                   // Fallback: create a more detailed prompt even without analysis
                    refinedPrompt = `${prompt}, professional portrait photography, photorealistic, natural features, sharp facial details, proper human anatomy, 4k quality, no distortions`;
                }
            } else {
-               // No reference image - use standard prompt enhancement
                try {
                    refinedPrompt = await generateImagePrompt(prompt);
                    console.log("✅ Gemini Enhanced Prompt:", refinedPrompt);
@@ -556,13 +506,8 @@ CRITICAL REQUIREMENTS:
                }
            }
            
-           // Step 2: Generate image using Pollinations AI
            const imageUrl = await generateAiImage(refinedPrompt);
-           console.log("✅ AI Image Generated:", imageUrl);
-           
-           // Step 3: Download and upload to Cloudinary
            const cloudinaryResult = await downloadAndUploadToCloudinary(imageUrl);
-           console.log("✅ Image Uploaded to Cloudinary:", cloudinaryResult.url);
            
            return res.status(200).json({
              success: true,
@@ -573,9 +518,6 @@ CRITICAL REQUIREMENTS:
            });
 
         case "FullBlog":
-           console.log("🚀 Starting Full Blog Chain...");
-           
-           console.log("...Generating Title");
            if (image) {
              generatedTitle = await generateWithImage(prompt, image, "Title");
            } else {
@@ -583,10 +525,7 @@ CRITICAL REQUIREMENTS:
            }
            
            generatedTitle = generatedTitle.replace(/^"|"$/g, '').trim();
-           console.log(`✅ Title Generated: ${generatedTitle}`);
-           console.log("⏳ Waiting 2 seconds to respect API rate limits...");
            await new Promise(resolve => setTimeout(resolve, 2000));
-           console.log("...Generating Content based on Title");
            generatedContent = await generateBlogContent(generatedTitle);
            
            break;
@@ -618,6 +557,53 @@ CRITICAL REQUIREMENTS:
   }
 };
 
+const createFromSEOAutopilot = async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization']; 
+        const secretKey = process.env.SEO_AUTOPILOT_SECRET;
+
+        if (!authHeader || !authHeader.includes(secretKey)) {
+            console.error("❌ Unauthorized access attempt to Webhook!");
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        const { 
+            title, 
+            content, 
+            featured_image,
+            category,
+            author
+        } = req.body;
+
+        let finalImageUrl = "";
+        let finalPublicId = "";
+
+        if (featured_image) {
+            const uploadResult = await downloadAndUploadToCloudinary(featured_image);
+            finalImageUrl = uploadResult.url;
+            finalPublicId = uploadResult.publicId;
+        }
+
+        const newBlog = new Blog({
+            title: title || "New AI Blog Post",
+            author: author || "WanderWave AI",
+            category: category || "Travel Guide",
+            content: content,
+            imageUrl: finalImageUrl || "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+            imagePublicId: finalPublicId || "sample",
+            status: "Published",
+            isArchive: "No"
+        });
+
+        await newBlog.save();
+        return res.status(200).json({ success: true, message: "Blog posted!" });
+
+    } catch (error) {
+        console.error("❌ Webhook Error:", error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+};
+
 module.exports = {
     addBlog, getAllBlogs, getBlogById, deleteBlog, updateBlog, getArchivedBlogs,
     generateGeminiContent,
@@ -625,6 +611,7 @@ module.exports = {
     downloadUnsplashImage,
     getCuratedImages,
     generateAIContent,
-    generateAiImage,  // Export for potential use in other controllers
-    downloadAndUploadToCloudinary  // Export for potential use in other controllers
+    generateAiImage, 
+    createFromSEOAutopilot,
+    downloadAndUploadToCloudinary  
 };
