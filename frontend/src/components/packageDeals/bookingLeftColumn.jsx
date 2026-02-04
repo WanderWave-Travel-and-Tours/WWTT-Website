@@ -23,6 +23,8 @@ const BookingLeftColumn = ({
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
+  // ✅ NEW: Store customization data locally to display pricing
+const [customizationData, setCustomizationData] = useState(null);
 
   // --- HARDCODED REDIRECT TO FLIGHTS ---
   const handleBackClick = () => {
@@ -41,12 +43,19 @@ const BookingLeftColumn = ({
     }));
   };
 
-  const handleCustomizationChange = (customizationData) => {
-    setIsCustomized(customizationData.additionalPrice > 0);
-    if (onCustomizationChange) {
-      onCustomizationChange(customizationData);
-    }
-  };
+  // ✅ UPDATED: Store customization data locally AND pass to parent
+const handleCustomizationChange = (customizationDataFromChild) => {
+  setCustomizationData(customizationDataFromChild);
+  setIsCustomized(
+    customizationDataFromChild.additionalPrice !== 0 || 
+    customizationDataFromChild.deductions > 0 ||
+    customizationDataFromChild.additions > 0
+  );
+  
+  if (onCustomizationChange) {
+    onCustomizationChange(customizationDataFromChild);
+  }
+};
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice = (phpPrice) => {
@@ -54,11 +63,17 @@ const BookingLeftColumn = ({
     return (phpPrice / exchangeRate) * 1.30;
   };
 
-  const basePrice = pkg.price || 0;
-  const originalPriceWithMarkup = Math.round(basePrice * 1.10);
-  const displayPrice = timerExpired ? originalPriceWithMarkup : basePrice;
-  const convertedDisplayPrice = convertPrice(displayPrice);
-  const convertedOriginalPrice = convertPrice(originalPriceWithMarkup);
+const basePrice = pkg.price || 0;
+const originalPriceWithMarkup = Math.round(basePrice * 1.10);
+
+// ✅ NEW: Apply customization deductions/additions to display price
+const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
+const adjustedBasePrice = basePrice + customizationAdjustment;
+const adjustedOriginalPrice = originalPriceWithMarkup + customizationAdjustment;
+
+const displayPrice = timerExpired ? adjustedOriginalPrice : adjustedBasePrice;
+const convertedDisplayPrice = convertPrice(displayPrice);
+const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
 
   return (
     <div className="blc-container">
@@ -82,7 +97,7 @@ const BookingLeftColumn = ({
           <div className="blc-offer-badge-overlay">
             <Clock size={16} />
             <span>
-              Limited Time Offer - Save {Math.round(((originalPriceWithMarkup - basePrice) / originalPriceWithMarkup) * 100)}%
+              Limited Time Offer - Save {Math.round(((adjustedOriginalPrice - adjustedBasePrice) / adjustedOriginalPrice) * 100)}%
             </span>
           </div>
         )}

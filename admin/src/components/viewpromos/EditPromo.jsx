@@ -52,6 +52,13 @@ const EditPromo = () => {
     // ✅ Store original image public ID for deletion
     const [existingImagePublicId, setExistingImagePublicId] = useState('');
 
+    // ✅ NEW: Target Packages State
+    const [packageSearch, setPackageSearch] = useState('');
+    const [packageResults, setPackageResults] = useState([]);
+    const [selectedPackages, setSelectedPackages] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showPackageDropdown, setShowPackageDropdown] = useState(false);
+
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
@@ -61,6 +68,69 @@ const EditPromo = () => {
         const date = new Date(dateString);
         return date.toISOString().split('T')[0];
     };
+
+    // ✅ NEW: Search packages function
+    const searchPackages = async (searchTerm) => {
+        if (!searchTerm.trim()) {
+            setPackageResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/search-packages?search=${encodeURIComponent(searchTerm)}`);
+            if (response.ok) {
+                const data = await response.json();
+                // Filter out already selected packages
+                const filteredData = data.filter(
+                    pkg => !selectedPackages.find(selected => selected._id === pkg._id)
+                );
+                setPackageResults(filteredData);
+            }
+        } catch (error) {
+            console.error('Error searching packages:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // ✅ NEW: Debounce search
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (packageSearch) {
+                searchPackages(packageSearch);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [packageSearch, selectedPackages]);
+
+    // ✅ NEW: Add package to selected list
+    const handleSelectPackage = (pkg) => {
+        if (!selectedPackages.find(p => p._id === pkg._id)) {
+            setSelectedPackages([...selectedPackages, pkg]);
+            setPackageSearch('');
+            setPackageResults([]);
+            setShowPackageDropdown(false);
+        }
+    };
+
+    // ✅ NEW: Remove package from selected list
+    const handleRemovePackage = (pkgId) => {
+        setSelectedPackages(selectedPackages.filter(p => p._id !== pkgId));
+    };
+
+    // ✅ NEW: Click outside handler to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.package-search-container')) {
+                setShowPackageDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC START
@@ -97,7 +167,8 @@ const EditPromo = () => {
                 !formData.startDate && 
                 !formData.validUntil && 
                 !formData.description && 
-                !imageFile;
+                !imageFile &&
+                selectedPackages.length === 0;
 
             if (isFormEmpty) {
                 setDraftPayload(null);
@@ -122,6 +193,7 @@ const EditPromo = () => {
                 ...formData,
                 image: imageBase64,
                 imageMeta: imageMeta,
+                selectedPackages: selectedPackages,
                 originalId: id
             });
         };
@@ -131,7 +203,7 @@ const EditPromo = () => {
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [formData, imageFile, isLoading, id]);
+    }, [formData, imageFile, selectedPackages, isLoading, id]);
 
     const restoreDraftData = async (data) => {
         if (!data) return;
@@ -151,6 +223,10 @@ const EditPromo = () => {
             description: data.description || '',
             durationType: data.durationType || 'Weekly'
         });
+
+        if (data.selectedPackages && Array.isArray(data.selectedPackages)) {
+            setSelectedPackages(data.selectedPackages);
+        }
 
         if (data.image && data.imageMeta) {
             try {
@@ -174,54 +250,25 @@ const EditPromo = () => {
         formData: draftPayload,
         setFormData: restoreDraftData,
         imagePreview: imagePreview, 
-        autoRestore: false
+        setImagePreview: setImagePreview 
     });
-
-    const [showRestoreModal, setShowRestoreModal] = useState(false);
-
-    useEffect(() => {
-        if (hasDraft && !isLoading) {
-            setShowRestoreModal(true);
-        }
-    }, [hasDraft, isLoading]);
-
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-    };
-
-    const handleDiscardDraft = async () => {
-        await discardDraft();
-        setShowRestoreModal(false);
-    };
 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC END
     // =========================================================
 
-    // Fetch Promo Data
     useEffect(() => {
-        const fetchPromoDetails = async () => {
-            try {
-                const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`);
-                if (!response.ok) throw new Error('Failed to fetch promo details');
-                
+        fetchPromoData();
+    }, [id]);
+
+    const fetchPromoData = async () => {
+        try {
+            setIsLoading(true);
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`);
+            if (response.ok) {
                 const data = await response.json();
                 
-                // ✅ Save Original Data for Comparison
-                setOriginalData({
-                    code: data.code,
-                    category: data.category,
-                    discountType: data.discountType,
-                    discountValue: data.discountValue,
-                    startDate: formatDateForInput(data.startDate),
-                    validUntil: formatDateForInput(data.validUntil),
-                    description: data.description,
-                    durationType: data.durationType
-                });
-
-                // Set Form Data
-                setFormData({
+                const formattedData = {
                     code: data.code || '',
                     category: data.category || '',
                     discountType: data.discountType || 'Percentage',
@@ -230,33 +277,35 @@ const EditPromo = () => {
                     validUntil: formatDateForInput(data.validUntil),
                     description: data.description || '',
                     durationType: data.durationType || 'Weekly'
-                });
+                };
+
+                setFormData(formattedData);
+                setOriginalData(formattedData);
+
+                // ✅ Set selected packages if they exist
+                if (data.targetPackages && Array.isArray(data.targetPackages)) {
+                    setSelectedPackages(data.targetPackages);
+                }
 
                 if (data.image) {
                     setCurrentImage(data.image);
                 }
+
                 if (data.imagePublicId) {
                     setExistingImagePublicId(data.imagePublicId);
                 }
-            } catch (err) {
-                console.error(err);
-                alert('Could not load promo details. Please check connection.');
-            } finally {
-                setIsLoading(false);
             }
-        };
-
-        if (id) {
-            fetchPromoDetails();
+        } catch (error) {
+            console.error('Error fetching promo:', error);
+            alert('Failed to load promo data');
+        } finally {
+            setIsLoading(false);
         }
-    }, [id]);
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -267,93 +316,93 @@ const EditPromo = () => {
         }
     };
 
-    const removeNewImage = () => {
+    const removeImage = () => {
         setImageFile(null);
         setImagePreview(null);
+        setCurrentImage(null);
     };
 
-    // ✅ UPDATED: Handle Submit with Change Tracking
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!formData.code || !formData.category || !formData.discountValue) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
         setSubmitting(true);
 
-        // 🔥 Get Admin Info
-        const { userEmail, adminId } = getAdminData();
-
         try {
-            const data = new FormData();
-            data.append('code', formData.code);
-            data.append('category', formData.category);
-            data.append('discountType', formData.discountType);
-            data.append('discountValue', formData.discountValue);
-            data.append('startDate', formData.startDate);
-            data.append('validUntil', formData.validUntil);
-            data.append('description', formData.description);
-            data.append('durationType', formData.durationType);
-
-            // Append Admin Data
-            data.append('userEmail', userEmail);
-            data.append('adminId', adminId);
-
-            // Append Existing Image ID for deletion (if replaced)
-            if (existingImagePublicId) {
-                data.append('existingImagePublicId', existingImagePublicId);
-            }
-
-            // 🔥 Logic: Track Changes
-            let changes = [];
+            const formDataToSend = new FormData();
             
-            const trackChange = (label, oldVal, newVal) => {
-                // Ensure values are strings for safe comparison
-                const cleanOld = String(oldVal || "").trim();
-                const cleanNew = String(newVal || "").trim();
-                if (cleanOld !== cleanNew) {
-                    changes.push(`${label} changed from "${cleanOld}" to "${cleanNew}"`);
-                }
-            };
-
-            if (originalData) {
-                trackChange("Code", originalData.code, formData.code);
-                trackChange("Category", originalData.category, formData.category);
-                trackChange("Discount Type", originalData.discountType, formData.discountType);
-                trackChange("Discount Value", originalData.discountValue, formData.discountValue);
-                trackChange("Start Date", originalData.startDate, formData.startDate);
-                trackChange("Valid Until", originalData.validUntil, formData.validUntil);
-                trackChange("Description", originalData.description, formData.description);
-                trackChange("Duration", originalData.durationType, formData.durationType);
-
-                if (imageFile) {
-                    changes.push("Promo image was replaced.");
-                }
-            }
-
-            // Append Changes Array as JSON string
-            if (changes.length > 0) {
-                data.append('changes', JSON.stringify(changes));
-            }
+            Object.keys(formData).forEach(key => {
+                formDataToSend.append(key, formData[key]);
+            });
 
             if (imageFile) {
-                data.append('image', imageFile);
+                formDataToSend.append('image', imageFile);
+            }
+
+            if (existingImagePublicId) {
+                formDataToSend.append('existingImagePublicId', existingImagePublicId);
+            }
+
+            // ✅ Add target packages as JSON string
+            if (selectedPackages.length > 0) {
+                const packageIds = selectedPackages.map(pkg => pkg._id);
+                formDataToSend.append('targetPackages', JSON.stringify(packageIds));
+            } else {
+                formDataToSend.append('targetPackages', JSON.stringify([]));
+            }
+
+            // ✅ Detect which fields changed (for Activity Logging)
+            const changes = [];
+            
+            if (originalData) {
+                Object.keys(formData).forEach(key => {
+                    if (formData[key] !== originalData[key]) {
+                        changes.push(key);
+                    }
+                });
+            }
+            
+            if (imageFile) {
+                changes.push('image');
+            }
+
+            // ✅ Check if target packages changed
+            const originalPackageIds = originalData?.targetPackages?.map(p => p._id).sort() || [];
+            const currentPackageIds = selectedPackages.map(p => p._id).sort();
+            if (JSON.stringify(originalPackageIds) !== JSON.stringify(currentPackageIds)) {
+                changes.push('targetPackages');
+            }
+
+            if (changes.length > 0) {
+                formDataToSend.append('changes', JSON.stringify(changes));
+            }
+
+            const { userEmail, adminId } = getAdminData();
+            formDataToSend.append('userEmail', userEmail);
+            if (adminId) {
+                formDataToSend.append('adminId', adminId);
             }
 
             const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/${id}`, {
                 method: 'PUT',
-                body: data, // No Content-Type header needed for FormData
+                body: formDataToSend
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to update promo');
+            if (response.ok) {
+                await clearDraft();
+                alert('Promo updated successfully!');
+                navigate('/view-promos');
+            } else {
+                const errorData = await response.json();
+                alert(`Failed to update promo: ${errorData.message || 'Unknown error'}`);
             }
-
-            alert('✅ Promo updated successfully!');
-            
-            // ✅ CLEAR DRAFT ON SUCCESS
-            await clearDraft();
-            
-            navigate('/view-promos'); 
-        } catch (err) {
-            console.error(err);
-            alert('❌ Failed to update promo. Please check your inputs and try again.');
+        } catch (error) {
+            console.error('Error updating promo:', error);
+            alert('An error occurred while updating the promo');
         } finally {
             setSubmitting(false);
         }
@@ -363,10 +412,10 @@ const EditPromo = () => {
         return (
             <div className="epr-page">
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-                <main className={`epr-main ${isSidebarCollapsed ? "epr-main--collapsed" : ""}`}>
+                <main className={`epr-main ${isSidebarCollapsed ? 'epr-main--collapsed' : ''}`}>
                     <div className="epr-loading">
                         <div className="epr-spinner"></div>
-                        <p>Loading promo data...</p>
+                        <p style={{ marginTop: '16px', color: '#64748b' }}>Loading promo data...</p>
                     </div>
                 </main>
             </div>
@@ -375,28 +424,28 @@ const EditPromo = () => {
 
     return (
         <div className="epr-page">
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
-            {/* ✅ RESTORE DRAFT MODAL */}
+            {/* ✅ Restore Draft Modal */}
             <RestoreDraftModal
-                isOpen={showRestoreModal}
-                onRestore={handleRestoreDraft}
-                onDiscard={handleDiscardDraft}
+                isOpen={hasDraft}
+                onRestore={restoreDraft}
+                onDiscard={discardDraft}
                 draftInfo={draftInfo}
             />
 
-            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-            
-            <main className={`epr-main ${isSidebarCollapsed ? "epr-main--collapsed" : ""}`}>
+            <main className={`epr-main ${isSidebarCollapsed ? 'epr-main--collapsed' : ''}`}>
                 <div className="epr-container">
-                    
                     <header className="epr-header">
                         <div className="epr-header-content">
-                            <button className="epr-back-btn" onClick={() => navigate('/view-promos')}>
-                                <ArrowLeft size={18} />
-                                Back to Promos
+                            <button 
+                                className="epr-back-btn" 
+                                onClick={() => navigate('/view-promos')}
+                            >
+                                <ArrowLeft size={18} /> Back to Promos
                             </button>
-                            <h1 className="epr-title">EDIT PROMO</h1>
-                            <p className="epr-subtitle">Modify promotional voucher details and terms</p>
+                            <h1 className="epr-title">Edit Promo</h1>
+                            <p className="epr-subtitle">Modify promotional voucher details</p>
                         </div>
                     </header>
 
@@ -414,7 +463,7 @@ const EditPromo = () => {
                                             <img src={imagePreview} alt="New Preview" style={{ maxWidth: '100%', maxHeight: '250px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
                                             <button 
                                                 type="button"
-                                                onClick={removeNewImage}
+                                                onClick={removeImage}
                                                 style={{
                                                     position: 'absolute', top: '20px', right: '-10px',
                                                     background: 'red', color: 'white', border: 'none',
@@ -542,6 +591,75 @@ const EditPromo = () => {
                                         min="0"
                                         className="epr-input"
                                     />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ✅ NEW: Target Packages Section */}
+                        <div className="epr-section">
+                            <h2 className="epr-section-title">Target Packages (Optional)</h2>
+                            <div className="epr-form-grid">
+                                <div className="epr-form-group epr-form-group--full">
+                                    <label className="epr-label">Search & Select Packages</label>
+                                    <small style={{fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '8px'}}>
+                                        Leave empty to apply promo to all packages
+                                    </small>
+                                    
+                                    <div className="package-search-container">
+                                        <input
+                                            type="text"
+                                            className="package-search-input"
+                                            placeholder="Search by package title or destination..."
+                                            value={packageSearch}
+                                            onChange={(e) => {
+                                                setPackageSearch(e.target.value);
+                                                setShowPackageDropdown(true);
+                                            }}
+                                            onFocus={() => setShowPackageDropdown(true)}
+                                        />
+                                        
+                                        {showPackageDropdown && (packageSearch.trim() !== '' || packageResults.length > 0) && (
+                                            <div className="package-dropdown">
+                                                {isSearching ? (
+                                                    <div className="package-dropdown-loading">Searching...</div>
+                                                ) : packageResults.length > 0 ? (
+                                                    packageResults.map(pkg => (
+                                                        <div
+                                                            key={pkg._id}
+                                                            className="package-dropdown-item"
+                                                            onClick={() => handleSelectPackage(pkg)}
+                                                        >
+                                                            <div className="package-item-title">{pkg.title}</div>
+                                                            <div className="package-item-meta">
+                                                                {pkg.destination} • {pkg.category} • ₱{pkg.price?.toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : packageSearch.trim() !== '' ? (
+                                                    <div className="package-dropdown-empty">No packages found</div>
+                                                ) : null}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {selectedPackages.length > 0 && (
+                                        <div className="selected-packages">
+                                            {selectedPackages.map(pkg => (
+                                                <div key={pkg._id} className="package-chip">
+                                                    <span className="package-chip-text">
+                                                        {pkg.title} - {pkg.destination}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        className="package-chip-remove"
+                                                        onClick={() => handleRemovePackage(pkg._id)}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
