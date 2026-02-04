@@ -1,4 +1,4 @@
-// src/components/PackageDeals/packageCard.jsx - COMPLETE CODE
+// src/components/PackageDeals/packageCard.jsx - COMPLETE CODE WITH PAX DISPLAY
 import React from 'react';
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageHelper';
@@ -24,6 +24,68 @@ function PackageCard({
     : ((pkg.originalPrice / exchangeRate) * 1.30);
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
+
+  // ============================================================
+  // PAX EXTRACTION LOGIC
+  // ============================================================
+  const getPaxNumber = () => {
+    // 1. Check if package has pax field
+    if (pkg.pax) {
+      return pkg.pax;
+    }
+
+    // 2. Extract from title if no pax field
+    const title = pkg.name.toLowerCase();
+    
+    // Check for "solo" in title
+    if (title.includes('solo')) {
+      return 1;
+    }
+    
+    // Check for "couple" or "duo" in title
+    if (title.includes('couple') || title.includes('duo')) {
+      return 2;
+    }
+    
+    // Check for "family" (common for 4 pax)
+    if (title.includes('family')) {
+      return 4;
+    }
+    
+    // Check for "group" (common for 6+ pax)
+    if (title.includes('group')) {
+      return 6;
+    }
+    
+    // Try to extract number from title patterns like "2 pax", "3pax", "for 2", etc.
+    const paxPatterns = [
+      /(\d+)\s*pax/i,           // "2 pax" or "2pax"
+      /for\s*(\d+)/i,           // "for 2" or "for 4"
+      /(\d+)\s*person/i,        // "2 person" or "2 persons"
+      /(\d+)\s*people/i,        // "2 people"
+      /(\d+)\s*guest/i,         // "2 guest" or "2 guests"
+    ];
+    
+    for (const pattern of paxPatterns) {
+      const match = title.match(pattern);
+      if (match && match[1]) {
+        const num = parseInt(match[1]);
+        if (num > 0 && num <= 50) { // Reasonable range
+          return num;
+        }
+      }
+    }
+    
+    // 3. Fallback to maxGuests if available
+    if (pkg.maxGuests) {
+      return pkg.maxGuests;
+    }
+    
+    // 4. Default fallback
+    return 2;
+  };
+
+  const paxNumber = getPaxNumber();
 
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
@@ -84,7 +146,9 @@ function PackageCard({
             </div>
             <div className="detail-row">
               <Users className="detail-icon" />
-              <span className="detail-text">Up to {pkg.maxGuests} guests</span>
+              <span className="detail-text">
+                {paxNumber} {paxNumber === 1 ? 'Pax' : 'Pax'}
+              </span>
             </div>
           </div>
         </div>
