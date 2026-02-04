@@ -64,6 +64,77 @@ const AddPromo = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOtherCategory, setIsOtherCategory] = useState(false);
 
+    // ✅ NEW: Target Packages State
+    const [packageSearch, setPackageSearch] = useState('');
+    const [packageResults, setPackageResults] = useState([]);
+    const [selectedPackages, setSelectedPackages] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showPackageDropdown, setShowPackageDropdown] = useState(false);
+
+    // ✅ NEW: Search packages function
+    const searchPackages = async (searchTerm) => {
+        if (!searchTerm.trim()) {
+            setPackageResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/search-packages?search=${encodeURIComponent(searchTerm)}`);
+            if (response.ok) {
+                const data = await response.json();
+                // Filter out already selected packages
+                const filteredData = data.filter(
+                    pkg => !selectedPackages.find(selected => selected._id === pkg._id)
+                );
+                setPackageResults(filteredData);
+            }
+        } catch (error) {
+            console.error('Error searching packages:', error);
+            toast.error('Failed to search packages');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // ✅ NEW: Debounce search
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (packageSearch) {
+                searchPackages(packageSearch);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [packageSearch]);
+
+    // ✅ NEW: Add package to selected list
+    const handleSelectPackage = (pkg) => {
+        if (!selectedPackages.find(p => p._id === pkg._id)) {
+            setSelectedPackages([...selectedPackages, pkg]);
+            setPackageSearch('');
+            setPackageResults([]);
+            setShowPackageDropdown(false);
+        }
+    };
+
+    // ✅ NEW: Remove package from selected list
+    const handleRemovePackage = (pkgId) => {
+        setSelectedPackages(selectedPackages.filter(p => p._id !== pkgId));
+    };
+
+    // ✅ NEW: Click outside handler to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.package-search-container')) {
+                setShowPackageDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC START
     // =========================================================
@@ -95,6 +166,7 @@ const AddPromo = () => {
                 !promoDetails.startDate &&
                 !promoDetails.usageLimit &&
                 promoDetails.durationType === 'Weekly' && 
+                selectedPackages.length === 0 &&
                 !imageFile;
 
             if (isFormEmpty) {
@@ -118,7 +190,8 @@ const AddPromo = () => {
 
             setDraftPayload({
                 ...promoDetails,
-                isOtherCategory, 
+                isOtherCategory,
+                selectedPackages, // ✅ Include selected packages in draft
                 image: imageBase64, 
                 imageMeta: imageMeta
             });
@@ -129,7 +202,7 @@ const AddPromo = () => {
         }, 500); 
 
         return () => clearTimeout(timeoutId);
-    }, [promoDetails, isOtherCategory, imageFile]);
+    }, [promoDetails, isOtherCategory, selectedPackages, imageFile]);
 
     const restoreDraftData = async (data) => {
         if (!data) return;
@@ -149,6 +222,11 @@ const AddPromo = () => {
 
         setIsOtherCategory(!!data.isOtherCategory);
 
+        // ✅ Restore selected packages
+        if (data.selectedPackages && Array.isArray(data.selectedPackages)) {
+            setSelectedPackages(data.selectedPackages);
+        }
+
         if (data.image && data.imageMeta) {
             try {
                 const restoredFile = await base64ToFile(data.image, data.imageMeta.name, data.imageMeta.type);
@@ -167,32 +245,10 @@ const AddPromo = () => {
         discardDraft,
         draftInfo 
     } = useAutoDraft({
-        module: 'add-promo', 
-        formData: draftPayload,
-        setFormData: restoreDraftData,
-        imagePreview: imagePreview, 
-        autoRestore: false 
+        draftKey: 'addPromo',
+        data: draftPayload,
+        onRestore: restoreDraftData
     });
-
-    const [showRestoreModal, setShowRestoreModal] = useState(false);
-
-    useEffect(() => {
-        if (hasDraft) {
-            setShowRestoreModal(true);
-        }
-    }, [hasDraft]);
-
-    const handleRestoreDraft = () => {
-        restoreDraft();
-        setShowRestoreModal(false);
-        toast.success("Your promo draft has been restored!", "Draft Restored", 3000);
-    };
-
-    const handleDiscardDraft = async () => {
-        await discardDraft(); 
-        setShowRestoreModal(false);
-        toast.info("Draft has been discarded.", "Discarded");
-    };
 
     // =========================================================
     // ✅ AUTO-DRAFT LOGIC END
@@ -200,96 +256,130 @@ const AddPromo = () => {
 
     useEffect(() => {
         if (promoDetails.startDate && promoDetails.durationType) {
-            const start = new Date(promoDetails.startDate);
-            let endDate = new Date(start);
+            const startDate = new Date(promoDetails.startDate);
+            let endDate;
 
             switch (promoDetails.durationType) {
                 case 'Weekly':
-                    endDate.setDate(start.getDate() + 7);
+                    endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 7);
                     break;
                 case 'Monthly':
-                    endDate.setMonth(start.getMonth() + 1);
+                    endDate = new Date(startDate);
+                    endDate.setMonth(startDate.getMonth() + 1);
                     break;
                 case 'Yearly':
-                    endDate.setFullYear(start.getFullYear() + 1);
+                    endDate = new Date(startDate);
+                    endDate.setFullYear(startDate.getFullYear() + 1);
                     break;
                 default:
-                    break;
+                    endDate = startDate;
             }
 
-            if (!isNaN(endDate.getTime())) {
-                const formattedDate = endDate.toISOString().split('T')[0];
-                setPromoDetails(prev => ({
-                    ...prev,
-                    validUntil: formattedDate
-                }));
-            }
+            const formattedEndDate = endDate.toISOString().split('T')[0];
+            setPromoDetails(prev => ({ ...prev, validUntil: formattedEndDate }));
         }
     }, [promoDetails.startDate, promoDetails.durationType]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setPromoDetails(prevDetails => ({
-            ...prevDetails,
-            [name]: value
-        }));
-    };
 
-    const handleCategorySelect = (e) => {
-        const value = e.target.value;
-        if (value === 'Other') {
-            setIsOtherCategory(true);
-            setPromoDetails(prev => ({ ...prev, category: '' }));
-            toast.info("Please enter your custom category name.", "Custom Category");
-        } else {
-            setIsOtherCategory(false);
-            setPromoDetails(prev => ({ ...prev, category: value }));
-            toast.success(`Category set to ${value}`, "Category Selected", 2000);
+        if (name === 'category') {
+            if (value === 'Other') {
+                setIsOtherCategory(true);
+                setPromoDetails(prev => ({ ...prev, category: '' }));
+                return;
+            } else {
+                setIsOtherCategory(false);
+            }
         }
+
+        if (name === 'discountValue') {
+            const numValue = Number(value);
+            if (promoDetails.discountType === 'Percentage' && numValue > 100) {
+                return;
+            }
+        }
+
+        setPromoDetails(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size must be less than 5MB');
+                return;
+            }
+
             setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
-            toast.success(`Image ${file.name} uploaded successfully!`, "Image Added");
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
     const removeImage = () => {
         setImageFile(null);
         setImagePreview(null);
-        toast.info("Promo image removed.", "Image Removed");
+        document.getElementById('promo-image-upload').value = '';
     };
 
-    const handleSubmit = async () => {
-        // Validation with Toasts
-        if (!promoDetails.code || !promoDetails.description || !promoDetails.category || 
-            !promoDetails.discountValue || !promoDetails.startDate || !promoDetails.usageLimit) {
-            toast.warning(
-                'Please fill in all required fields to continue.',
-                'Incomplete Form'
-            );
-            return;
-        }
-
-        // Trigger Custom Confirmation instead of window.confirm
+    const handleCancel = () => {
         askConfirmation(
-            "Create Promo",
-            `Are you sure you want to create the promo code "${promoDetails.code}"?`,
-            () => performSubmit(),
-            "primary"
+            "Cancel Promo Creation?",
+            "All your progress will be lost. This action cannot be undone.",
+            () => {
+                clearDraft();
+                window.location.href = '/promo';
+            },
+            "danger"
         );
     };
 
-    const performSubmit = async () => {
+    const handleSubmit = async () => {
+        if (!promoDetails.code) {
+            toast.error('Promo code is required');
+            return;
+        }
+
+        if (!promoDetails.description) {
+            toast.error('Description is required');
+            return;
+        }
+
+        if (!promoDetails.category) {
+            toast.error('Category is required');
+            return;
+        }
+
+        if (!promoDetails.discountValue || promoDetails.discountValue <= 0) {
+            toast.error('Discount value must be greater than 0');
+            return;
+        }
+
+        if (!promoDetails.startDate) {
+            toast.error('Start date is required');
+            return;
+        }
+
+        if (!promoDetails.usageLimit || promoDetails.usageLimit <= 0) {
+            toast.error('Usage limit must be greater than 0');
+            return;
+        }
+
+        if (!imageFile) {
+            toast.error('Promo image is required');
+            return;
+        }
+
         setIsSubmitting(true);
-        toast.info("Creating promo code...", "Processing", 2000);
 
         try {
             const formData = new FormData();
-            formData.append('code', promoDetails.code);
+            formData.append('code', promoDetails.code.toUpperCase());
             formData.append('description', promoDetails.description);
             formData.append('category', promoDetails.category);
             formData.append('discountType', promoDetails.discountType);
@@ -298,139 +388,75 @@ const AddPromo = () => {
             formData.append('startDate', promoDetails.startDate);
             formData.append('validUntil', promoDetails.validUntil);
             formData.append('usageLimit', promoDetails.usageLimit);
-            
-            if (imageFile) {
-                formData.append('image', imageFile);
+            formData.append('image', imageFile);
+
+            // ✅ Add target packages as JSON string
+            formData.append('targetPackages', JSON.stringify(selectedPackages.map(pkg => pkg._id)));
+
+            const adminData = JSON.parse(localStorage.getItem('adminData'));
+            if (adminData) {
+                formData.append('userEmail', adminData.email || '');
+                formData.append('adminId', adminData.id || '');
             }
-
-            const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-            const activeUser = adminData.email || adminData.username || adminData.user || 'Unknown User';
-            const activeId = adminData.id || adminData._id || "";
-
-            formData.append("userEmail", activeUser);
-            formData.append("adminId", activeId);
 
             const response = await fetch('https://wanderwaveph-backend.onrender.com/api/promos/add', {
                 method: 'POST',
-                body: formData,
+                body: formData
             });
 
             const data = await response.json();
 
-            if (response.ok) {
-                toast.success(
-                    `Promo code "${promoDetails.code}" has been created successfully!`,
-                    "Success",
-                    5000
-                );
-                
-                await clearDraft();
-                
-                // Reset form
-                setPromoDetails({
-                    code: '',
-                    discount: '',
-                    validUntil: '',
-                    description: '',
-                    category: '',
-                    discountType: 'Fixed Amount (Peso)',
-                    discountValue: '',
-                    durationType: 'Weekly',
-                    startDate: '',
-                    usageLimit: '' 
-                });
-                setImageFile(null);
-                setImagePreview(null);
-                setIsOtherCategory(false);
-                
+            if (response.ok && data.status === 'ok') {
+                clearDraft();
+                toast.success('Promo created successfully!');
+                setTimeout(() => {
+                    window.location.href = '/add-promo';
+                }, 1500);
             } else {
-                const errorMessage = data.message || data.error || 'Unknown error occurred';
-                toast.error(
-                    `Failed to create promo: ${errorMessage}`,
-                    "Error",
-                    5000
-                );
+                toast.error(data.message || 'Failed to create promo');
             }
-            
         } catch (error) {
-            toast.error(
-                `Unable to connect to server. Please check your connection.`,
-                "Connection Error",
-                6000
-            );
+            console.error('Error creating promo:', error);
+            toast.error('An error occurred while creating the promo');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleCancel = async () => {
-        askConfirmation(
-            "Cancel Creation",
-            "Are you sure you want to cancel? All unsaved changes and drafts will be lost.",
-            async () => {
-                await clearDraft();
-                
-                setPromoDetails({
-                    code: '',
-                    discount: '',
-                    validUntil: '',
-                    description: '',
-                    category: '',
-                    discountType: 'Fixed Amount (Peso)',
-                    discountValue: '',
-                    durationType: 'Weekly',
-                    startDate: '',
-                    usageLimit: ''
-                });
-                setImageFile(null);
-                setImagePreview(null);
-                setIsOtherCategory(false);
-                
-                toast.info("Action cancelled and form cleared.", "Cancelled");
-            },
-            "danger"
-        );
-    };
-
     return (
         <div className="promo-page">
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             
-            <RestoreDraftModal
-                isOpen={showRestoreModal}
-                onRestore={handleRestoreDraft}
-                onDiscard={handleDiscardDraft}
-                draftInfo={draftInfo}
-            />
+            {/* ✅ Draft Restore Modal */}
+            {hasDraft && (
+                <RestoreDraftModal
+                    draftInfo={draftInfo}
+                    onRestore={restoreDraft}
+                    onDiscard={discardDraft}
+                />
+            )}
 
-            {/* ✅ Custom Confirmation Modal Implementation */}
-            <CustomConfirmModal 
+            {/* ✅ Custom Confirmation Modal */}
+            <CustomConfirmModal
                 isOpen={confirmConfig.isOpen}
                 title={confirmConfig.title}
                 message={confirmConfig.message}
-                type={confirmConfig.type}
                 onConfirm={confirmConfig.onConfirm}
                 onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+                type={confirmConfig.type}
             />
 
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed} 
-                toggleSidebar={toggleSidebar} 
-            />
-            <main className={`promo-main ${isSidebarCollapsed ? "promo-main--collapsed" : ""}`}>
+            <main className={`promo-main ${isSidebarCollapsed ? 'promo-main--collapsed' : ''}`}>
                 <div className="promo-container">
                     <header className="promo-header">
                         <div className="promo-header-content">
-                            <h1 className="promo-title">PROMO CODE</h1>
-                            <p className="promo-subtitle">Create a new promotional code for your packages</p>
+                            <h1 className="promo-title">Add New Promo</h1>
+                            <p className="promo-subtitle">Create promotional codes for your packages</p>
                         </div>
                     </header>
 
                     <div className="promo-grid">
                         <div className="promo-left">
-                            <section className="promo-section">
-                                <h2 className="promo-section-title">PROMO DETAILS</h2>
-                                <div className="promo-fields">
-                                    
                                     <div className="promo-field promo-field--full">
                                         <label>Promo Image (Optional)</label>
                                         <div style={{ border: '2px dashed #e2e8f0', borderRadius: '8px', padding: '20px', textAlign: 'center', background: '#f8fafc' }}>
@@ -468,6 +494,9 @@ const AddPromo = () => {
                                         </div>
                                     </div>
 
+                            <section className="promo-section">
+                                <h2 className="promo-section-title">Promo Details</h2>
+                                <div className="promo-fields">
                                     <div className="promo-field promo-field--full">
                                         <label>Promo Code Name</label>
                                         <input
@@ -476,8 +505,75 @@ const AddPromo = () => {
                                             value={promoDetails.code}
                                             onChange={handleChange}
                                             placeholder="e.g., SUMMER2025"
-                                            style={{ textTransform: 'uppercase', letterSpacing: '1px' }}
+                                            maxLength="20"
+                                            style={{ textTransform: 'uppercase' }}
                                         />
+                                    </div>
+
+                                    {/* ✅ NEW: Target Packages Field */}
+                                    <div className="promo-field promo-field--full">
+                                        <label>Target Packages (Optional)</label>
+                                        <div className="package-search-container">
+                                            <input
+                                                type="text"
+                                                value={packageSearch}
+                                                onChange={(e) => {
+                                                    setPackageSearch(e.target.value);
+                                                    setShowPackageDropdown(true);
+                                                }}
+                                                onFocus={() => setShowPackageDropdown(true)}
+                                                placeholder="Search packages by title or destination..."
+                                                className="package-search-input"
+                                            />
+                                            
+                                            {showPackageDropdown && packageSearch && (
+                                                <div className="package-dropdown">
+                                                    {isSearching ? (
+                                                        <div className="package-dropdown-item package-dropdown-loading">
+                                                            Searching...
+                                                        </div>
+                                                    ) : packageResults.length > 0 ? (
+                                                        packageResults.map(pkg => (
+                                                            <div
+                                                                key={pkg._id}
+                                                                className="package-dropdown-item"
+                                                                onClick={() => handleSelectPackage(pkg)}
+                                                            >
+                                                                <div className="package-item-title">{pkg.title}</div>
+                                                                <div className="package-item-meta">
+                                                                    {pkg.destination} • {pkg.category} • ₱{pkg.price?.toLocaleString()}
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="package-dropdown-item package-dropdown-empty">
+                                                            No packages found
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* ✅ Selected Packages Display */}
+                                        {selectedPackages.length > 0 && (
+                                            <div className="selected-packages">
+                                                {selectedPackages.map(pkg => (
+                                                    <div key={pkg._id} className="package-chip">
+                                                        <span className="package-chip-text">{pkg.title}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemovePackage(pkg._id)}
+                                                            className="package-chip-remove"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <small style={{fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block'}}>
+                                            Leave empty to apply promo to all packages, or select specific packages
+                                        </small>
                                     </div>
 
                                     <div className="promo-field promo-field--full">
@@ -486,21 +582,21 @@ const AddPromo = () => {
                                             name="description"
                                             value={promoDetails.description}
                                             onChange={handleChange}
-                                            placeholder="Briefly describe the promo's terms and conditions"
-                                            rows="4"
-                                        ></textarea>
+                                            placeholder="e.g., Get 20% off on all summer packages"
+                                            rows="3"
+                                        />
                                     </div>
 
-                                    <div className="promo-field promo-field--full">
-                                        <label>Apply to Category</label>
+                                    <div className="promo-field">
+                                        <label>Category</label>
                                         <select
-                                            name="categorySelect"
+                                            name="category"
                                             value={isOtherCategory ? 'Other' : promoDetails.category}
-                                            onChange={handleCategorySelect}
+                                            onChange={handleChange}
                                         >
-                                            <option value="" disabled>Select Category</option>
-                                            <option value="Barkada">Barkada Package</option>
-                                            <option value="Tour Only">Tour Only</option>
+                                            <option value="">Select Category</option>
+                                            <option value="Barkada">Barkada</option>
+                                            <option value="Tour">Tour Only</option>
                                             <option value="Package (Land)">Package (Land)</option>
                                             <option value="Full Package (Airfare)">Full Package (Airfare)</option>
                                             <option value="Other" style={{fontWeight: 'bold', color: '#FF8C42'}}>+ Other (Custom)</option>
@@ -633,6 +729,22 @@ const AddPromo = () => {
                                         <p className="promo-card-desc">
                                             {promoDetails.description || 'Promo description will appear here'}
                                         </p>
+                                        
+                                        {/* ✅ Show targeted packages count in preview */}
+                                        {selectedPackages.length > 0 && (
+                                            <div style={{
+                                                fontSize: '11px',
+                                                color: '#FF8C42',
+                                                background: 'rgba(255, 140, 66, 0.1)',
+                                                padding: '6px 12px',
+                                                borderRadius: '6px',
+                                                marginBottom: '12px',
+                                                fontWeight: '600'
+                                            }}>
+                                                📦 Valid for {selectedPackages.length} selected package{selectedPackages.length > 1 ? 's' : ''}
+                                            </div>
+                                        )}
+                                        
                                         <div className="promo-card-validity">
                                             <span>
                                                 Valid: {promoDetails.startDate || '--'} to {promoDetails.validUntil || '--'}

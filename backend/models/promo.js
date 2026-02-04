@@ -25,11 +25,11 @@ const PromoSchema = new mongoose.Schema({
         type: Date, 
         required: true 
     },
-    image: {  // ✅ ADDED
+    image: {
         type: String,
         default: ''
     },
-    imagePublicId: {  // ✅ UPDATED - nandito na originally
+    imagePublicId: {
         type: String,
         default: ''
     },
@@ -49,7 +49,12 @@ const PromoSchema = new mongoose.Schema({
         type: String, 
         enum: ['No', 'Yes'], 
         default: 'No' 
-    }
+    },
+    // ✅ NEW FIELD: Target Packages
+    targetPackages: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'packages'
+    }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Promo', PromoSchema);

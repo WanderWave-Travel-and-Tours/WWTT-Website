@@ -150,10 +150,28 @@ const BookingRightForm = ({
         setPassengers(savedState.formData.passengers);
       }
       
-      if (savedState.formData.appliedPromo) {
-        setAppliedPromo(savedState.formData.appliedPromo);
-        setPromoCode(savedState.formData.appliedPromo.code || '');
-      }
+if (savedState.formData.appliedPromo) {
+  // ✅ VALIDATE: Only restore promo if it was applied to THIS package
+  const savedPromo = savedState.formData.appliedPromo;
+  const currentPackageId = (pkg._id || pkg.id).toString();
+  const savedPackageId = savedPromo.packageId ? savedPromo.packageId.toString() : null;
+  
+  console.log('🔍 Checking saved promo...');
+  console.log('   Current package:', currentPackageId);
+  console.log('   Saved package:', savedPackageId);
+  
+  if (savedPackageId && savedPackageId === currentPackageId) {
+    // Same package - restore the promo
+    setAppliedPromo(savedPromo);
+    setPromoCode(savedPromo.code || '');
+    console.log('✅ Promo restored for this package:', savedPromo.code);
+  } else {
+    // Different package - clear the promo
+    setAppliedPromo(null);
+    setPromoCode('');
+    console.log('⚠️ Promo not applicable to this package. Cleared.');
+  }
+}
       
       if (savedState.formData.paymentType) {
         setPaymentType(savedState.formData.paymentType);
@@ -461,7 +479,7 @@ const BookingRightForm = ({
   const convertedDiscountAmount = convertPrice(discountAmount);
   const convertedPartialAmount = convertPrice(partialAmount);
 
-  const handleApplyPromo = async () => {
+const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
       setPromoError('Please enter a promo code');
       return;
@@ -471,35 +489,72 @@ const BookingRightForm = ({
     setPromoError('');
 
     try {
-      const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}`);
+      const packageId = pkg._id || pkg.id;
+      console.log('🔍 ============ FRONTEND VALIDATION START ============');
+      console.log('📦 Package ID:', packageId);
+      console.log('📝 Promo Code:', promoCode);
+      
+      const url = `https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}?packageId=${packageId}`;
+      console.log('🌐 Request URL:', url);
+      
+      const response = await fetch(url);
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response OK:', response.ok);
+      
       const data = await response.json();
+      console.log('📦 Response data:', data);
+      console.log('✅ Data.valid:', data.valid);
 
       if (response.ok && data.valid) {
         const promo = data.promo;
         
+        console.log('✅ ============ PROMO ACCEPTED ============');
+        console.log('🎉 Promo details:', promo);
+        
         if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+          console.log('❌ Usage limit reached');
           setPromoError('This promo code has reached its usage limit');
           setAppliedPromo(null);
+          setIsCheckingPromo(false);
           return;
         }
 
-        setAppliedPromo({
+        const appliedPromoData = {
           code: promo.code,
           discountType: promo.discountType,
           discountValue: promo.discountValue,
-          promoId: promo._id
-        });
+          promoId: promo._id,
+          packageId: packageId
+        };
         
+        console.log('💾 Setting applied promo:', appliedPromoData);
+        setAppliedPromo(appliedPromoData);
+        
+        console.log('🎊 Showing success toast');
         toast.success(`✅ Promo "${promo.code}" applied successfully!`, { duration: 3000 });
+        console.log('✅ ============ PROMO APPLICATION COMPLETE ============');
       } else {
-        setPromoError(data.message || 'Invalid or expired promo code');
+        console.log('❌ ============ VALIDATION FAILED ============');
+        console.log('❌ Response OK:', response.ok);
+        console.log('❌ Data valid:', data.valid);
+        console.log('❌ Message:', data.message);
+        
+        const errorMsg = data.message || 'Invalid or expired promo code';
+        setPromoError(errorMsg);
         setAppliedPromo(null);
+        toast.error(errorMsg, { duration: 3000 });
       }
     } catch (error) {
-      console.error('Error validating promo:', error);
+      console.error('❌ ============ ERROR CAUGHT ============');
+      console.error('Error details:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
       setPromoError('Failed to validate promo code');
       setAppliedPromo(null);
+      toast.error('Failed to validate promo code', { duration: 3000 });
     } finally {
+      console.log('🏁 Setting isCheckingPromo to false');
       setIsCheckingPromo(false);
     }
   };
@@ -1162,10 +1217,18 @@ const BookingRightForm = ({
             </div>
             
             {promoError && (
-              <div className="brf-promo-error-msg">
-                {promoError}
-              </div>
-            )}
+  <div className="brf-promo-error" style={{
+    color: '#ef4444',
+    fontSize: '0.85rem',
+    marginTop: '8px',
+    padding: '8px 12px',
+    backgroundColor: '#fee2e2',
+    borderRadius: '6px',
+    border: '1px solid #fecaca'
+  }}>
+    ⚠️ {promoError}
+  </div>
+)}
           </>
         ) : (
           <div className="brf-promo-success-box">
