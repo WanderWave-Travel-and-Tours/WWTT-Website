@@ -16,17 +16,7 @@ const {
     getUserAgent 
 } = require('../utils/activityLogger');
 
-// ====================================================================
-// TEMPORARY STORAGE FOR UNVERIFIED USERS AND OTP
-const unverifiedUsers = new Map();
-console.log('--- Auth Controller Initialized ---');
-console.log(`Unverified users map initialized. Current size: ${unverifiedUsers.size}`);
-// ====================================================================
-
-// --- LOGO PATH CONFIGURATION ---
 const LOGO_PATH = path.join(__dirname, '..', 'assets', 'LOGOPIC.png'); 
-console.log(`Logo path configured: ${LOGO_PATH}`);
-// -------------------------------
 
 // Helper function to verify reCAPTCHA
 const verifyRecaptcha = async (token) => {

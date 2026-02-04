@@ -574,5 +574,4 @@ if (fs.existsSync(frontendBuildPath)) {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Feedback API available at: http://localhost:${PORT}/api/feedback`);
 });

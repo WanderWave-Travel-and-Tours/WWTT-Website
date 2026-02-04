@@ -12,8 +12,6 @@ try {
 
   amadeus = new Amadeus(config);
   
-  console.log(`✈️ AMADEUS INITIALIZED IN: ${isProd ? '🔴 PRODUCTION' : '🟡 TEST/SANDBOX'} MODE`);
-  
 } catch (error) {
   console.error('❌ Failed to initialize Amadeus SDK:', error.message);
 }
