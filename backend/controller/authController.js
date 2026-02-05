@@ -1,8 +1,9 @@
 // backend/controller/authController.js
+// Using RESEND - Works on Render FREE and PAID tier!
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
-const nodemailer = require('nodemailer'); 
+const { Resend } = require('resend');
 const crypto = require('crypto'); 
 const path = require('path');
 const fs = require('fs');
@@ -49,104 +50,97 @@ const verifyRecaptcha = async (token) => {
 };
 
 // --------------------------------------------------------------------
-// NODEMAILER TRANSPORT - USING BREVO (SENDINBLUE)
+// RESEND API CONFIGURATION - Works on Render FREE tier!
+// Uses HTTPS (port 443) - NEVER blocked
 // --------------------------------------------------------------------
 console.log('📧 Email Config Check:', {
     EMAIL_SERVICE: process.env.EMAIL_SERVICE || 'Not set',
-    BREVO_SMTP_USER: process.env.BREVO_SMTP_USER ? '✅ Set' : '❌ Missing',
-    BREVO_SMTP_KEY: process.env.BREVO_SMTP_KEY ? '✅ Set' : '❌ Missing',
+    RESEND_API_KEY: process.env.RESEND_API_KEY ? `✅ Set (${process.env.RESEND_API_KEY.substring(0, 10)}...)` : '❌ Missing',
     EMAIL_FROM: process.env.EMAIL_FROM ? '✅ Set' : '❌ Missing'
 });
 
-// 🎯 BREVO CONFIGURATION - Works perfectly with Render!
-const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false, // Use TLS
-    auth: {
-        user: process.env.BREVO_SMTP_USER,
-        pass: process.env.BREVO_SMTP_KEY,
-    },
-    logger: true,
-    debug: true,
-    // Timeout settings
-    connectionTimeout: 30000,
-    greetingTimeout: 20000,
-    socketTimeout: 30000
-});
+// 🎯 INITIALIZE RESEND
+let resend;
+if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+    console.log('✅ Resend API configured successfully');
+    console.log('✅ Email sending will use HTTPS (port 443) - Works on Render FREE tier!');
+} else {
+    console.error('❌ RESEND_API_KEY not found in environment variables!');
+    console.error('⚠️ Email functionality will NOT work!');
+}
 
-// Test email configuration on startup
-transporter.verify(function (error, success) {
-    if (error) {
-        console.error('❌ BREVO EMAIL CONFIGURATION ERROR:', error);
-        console.error('⚠️ Check your BREVO_SMTP_USER and BREVO_SMTP_KEY in Render environment variables');
-    } else {
-        console.log('✅ Brevo SMTP server is ready to send messages');
-    }
-});
-
+// --------------------------------------------------------------------
+// EMAIL SENDING FUNCTION - Using Resend API
+// --------------------------------------------------------------------
 const sendEmail = async (to, subject, html) => {
-    console.log(`\n📧 === EMAIL SENDING ATTEMPT (Brevo) ===`);
+    console.log(`\n📧 === EMAIL SENDING ATTEMPT (Resend API) ===`);
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
-    console.log(`From: ${process.env.EMAIL_FROM || process.env.BREVO_SMTP_USER}`);
+    console.log(`From: ${process.env.EMAIL_FROM}`);
+    console.log(`Method: HTTPS (port 443) - Works on Render FREE tier!`);
     
     try {
-        if (!process.env.BREVO_SMTP_USER || !process.env.BREVO_SMTP_KEY) {
-            console.error("❌ Brevo configuration missing: BREVO_SMTP_USER or BREVO_SMTP_KEY not set");
+        if (!process.env.RESEND_API_KEY) {
+            console.error("❌ Resend API key missing: RESEND_API_KEY not set");
             return false;
         }
 
-        const fromEmail = process.env.EMAIL_FROM || process.env.BREVO_SMTP_USER;
+        if (!process.env.EMAIL_FROM) {
+            console.error("❌ Sender email missing: EMAIL_FROM not set");
+            return false;
+        }
+
+        const fromEmail = process.env.EMAIL_FROM;
         const fromName = process.env.EMAIL_FROM_NAME || 'WanderWave Customer Service';
 
-        // Check if logo file exists
-        const logoExists = fs.existsSync(LOGO_PATH);
-        console.log(`Logo file status: ${logoExists ? '✅ Found' : '⚠️ Not found'} at ${LOGO_PATH}`);
+        console.log('🚀 Sending email via Resend API (HTTPS)...');
         
-        const mailOptions = {
-            from: `${fromName} <${fromEmail}>`, 
-            to, 
-            subject,
-            html
-        };
+        // Send email using Resend API
+        const data = await resend.emails.send({
+            from: `${fromName} <${fromEmail}>`,
+            to: [to],
+            subject: subject,
+            html: html,
+        });
 
-        // Only add logo attachment if file exists
-        if (logoExists) {
-            console.log('📎 Attaching logo to email');
-            mailOptions.attachments = [{
-                filename: 'LOGOPIC.png',
-                path: LOGO_PATH, 
-                cid: 'logo@wanderwave.com'
-            }];
-        }
-
-        console.log('🚀 Sending email via Brevo SMTP...');
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ EMAIL SENT SUCCESSFULLY via Brevo!`);
-        console.log(`Message ID: ${info.messageId}`);
-        console.log(`Response: ${info.response}`);
-        return true; 
+        console.log(`✅ EMAIL SENT SUCCESSFULLY via Resend!`);
+        console.log(`Message ID: ${data.id}`);
+        console.log(`Status: Email queued for delivery`);
+        
+        return true;
+        
     } catch (error) {
-        console.error("\n❌ ========== BREVO EMAIL ERROR ==========");
+        console.error("\n❌ ========== RESEND EMAIL ERROR ==========");
         console.error("Error Message:", error.message);
-        console.error("Error Code:", error.code);
-        console.error("Error Command:", error.command);
-        console.error("Full Error:", error);
         
-        if (error.code === 'EAUTH') {
-            console.error("\n⚠️ BREVO AUTHENTICATION FAILED!");
-            console.error("Make sure:");
-            console.error("1. BREVO_SMTP_USER is your Brevo login email");
-            console.error("2. BREVO_SMTP_KEY is your generated SMTP key (not password!)");
-            console.error("3. Generate SMTP key at: https://app.brevo.com/settings/keys/smtp");
+        if (error.message.includes('API key')) {
+            console.error("\n⚠️ RESEND AUTHENTICATION FAILED!");
+            console.error("Possible causes:");
+            console.error("1. Invalid API Key");
+            console.error("2. API Key not verified");
+            console.error("\nSolutions:");
+            console.error("1. Get API Key from: https://resend.com/api-keys");
+            console.error("2. Make sure you verified your domain/email");
         }
         
+        if (error.message.includes('not verified')) {
+            console.error("\n⚠️ SENDER EMAIL NOT VERIFIED!");
+            console.error("You need to verify your email/domain first:");
+            console.error("1. Go to: https://resend.com/domains");
+            console.error("2. Add and verify your domain");
+            console.error("3. OR use Resend's test domain: onboarding@resend.dev");
+        }
+        
+        console.error("\nFull Error:", error);
         console.error("========================================\n");
         return false;
     }
 };
 
+// --------------------------------------------------------------------
+// EMAIL HTML TEMPLATE
+// --------------------------------------------------------------------
 const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
     return `
 <!DOCTYPE html>
@@ -165,7 +159,7 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
         .otp-box { background-color: #001b3e; color: #ffffff; padding: 30px; border-radius: 10px; text-align: center; margin: 30px 0; }
         .otp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0; opacity: 0.9; }
         .otp-code { font-size: 42px; font-weight: bold; letter-spacing: 12px; font-family: 'Courier New', monospace; margin: 0; }
-        .warning { background-color: #FFF7ED; border-left: 4px solid #FF8C00; padding: 15px 20px; margin: 20px 0; color: #92400e; }
+        .warning { background-color: #FFF7ED; border-left: 4px solid #FF8C00; padding: 15px 20px; margin: 20px 0; color: #92400e; border-radius: 4px; }
         .footer { background-color: #001b3e; color: #ffffff; padding: 25px; text-align: center; font-size: 12px; }
         @media screen and (max-width: 600px) {
             .content { padding: 20px; }
@@ -189,7 +183,7 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
             </div>
             
             <div class="warning">
-                <strong>⏱ Valid for ${otpDurationMinutes} minutes</strong> • This code will expire shortly. Please complete verification soon.
+                <p style="margin: 0; line-height: 1.6;"><strong>⏱ Valid for ${otpDurationMinutes} minutes</strong> • This code will expire shortly. Please complete verification soon.</p>
             </div>
             
             <p style="margin-top: 30px; font-size: 14px; color: #001b3e;">
@@ -229,8 +223,10 @@ const generateAndSendOtp = async (email) => {
     return { success: true, emailSent };
 };
 
+// REST OF CONTROLLERS (signup, login, etc.) - same as before
+
 // --------------------------------------------------------------------
-// SIGNUP CONTROLLER - WITH ACTIVITY LOGGING
+// SIGNUP CONTROLLER
 // --------------------------------------------------------------------
 const signup = async (req, res) => {
     console.log('\n==============================================');
@@ -245,208 +241,107 @@ const signup = async (req, res) => {
     console.log(`User: ${fullName} (${email})`);
 
     try {
-        // Validation
         if (!fullName || !email || !username || !password || !confirmPassword) {
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email || 'Unknown',
-                severity: 'ERROR',
+                action: 'CREATE', module: 'Auth', user: email || 'Unknown', severity: 'ERROR',
                 description: `Failed signup attempt: Missing required fields`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(400).json({ 
-                success: false, 
-                message: 'All fields are required.' 
-            });
+            return res.status(400).json({ success: false, message: 'All fields are required.' });
         }
 
         if (password !== confirmPassword) {
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email,
-                severity: 'WARNING',
+                action: 'CREATE', module: 'Auth', user: email, severity: 'WARNING',
                 description: `Failed signup attempt: Password mismatch for ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Passwords do not match.' 
-            });
+            return res.status(400).json({ success: false, message: 'Passwords do not match.' });
         }
 
-        // Check existing user
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email,
-                severity: 'WARNING',
+                action: 'CREATE', module: 'Auth', user: email, severity: 'WARNING',
                 description: `Failed signup attempt: Email already registered - ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(400).json({ 
-                success: false, 
-                message: 'This email is already registered. Please log in.' 
-            });
+            return res.status(400).json({ success: false, message: 'This email is already registered. Please log in.' });
         }
 
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email,
-                severity: 'WARNING',
+                action: 'CREATE', module: 'Auth', user: email, severity: 'WARNING',
                 description: `Failed signup attempt: Username already taken - ${username}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(400).json({ 
-                success: false, 
-                message: 'This username is already taken.' 
-            });
+            return res.status(400).json({ success: false, message: 'This username is already taken.' });
         }
 
-        // reCAPTCHA
         if (!recaptchaToken) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Please complete the reCAPTCHA.' 
-            });
+            return res.status(400).json({ success: false, message: 'Please complete the reCAPTCHA.' });
         }
 
         const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
         if (!isValidRecaptcha) {
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email,
-                severity: 'WARNING',
+                action: 'CREATE', module: 'Auth', user: email, severity: 'WARNING',
                 description: `Failed signup attempt: reCAPTCHA verification failed for ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(400).json({ 
-                success: false, 
-                message: 'reCAPTCHA failed. Please try again.' 
-            });
+            return res.status(400).json({ success: false, message: 'reCAPTCHA failed. Please try again.' });
         }
 
-        // Clean old session
         if (unverifiedUsers.has(email)) unverifiedUsers.delete(email);
 
         const hashedPassword = await bcrypt.hash(password, 12);
         unverifiedUsers.set(email, { fullName, email, username, password: hashedPassword });
 
-        console.log('🔄 Generating and sending OTP via Brevo...');
+        console.log('🔄 Generating and sending OTP via Resend...');
         const result = await generateAndSendOtp(email);
 
         if (!result.success) {
             unverifiedUsers.delete(email);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Failed to send verification code. Please try again.' 
-            });
+            return res.status(500).json({ success: false, message: 'Failed to send verification code. Please try again.' });
         }
 
         await logActivity({
-            action: 'CREATE',
-            module: 'Auth',
-            user: email,
-            severity: 'INFO',
+            action: 'CREATE', module: 'Auth', user: email, severity: 'INFO',
             description: `OTP verification code sent to ${email} (User: ${fullName})`,
-            ipAddress: getIpAddress(req),
-            userAgent: getUserAgent(req),
-            details: {
-                method: req.method,
-                endpoint: req.originalUrl,
-                statusCode: 200,
-                duration: `${Date.now() - startTime}ms`,
-                recordTitle: `Signup initiated - ${email}`
-            }
+            ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+            details: { method: req.method, endpoint: req.originalUrl, statusCode: 200, duration: `${Date.now() - startTime}ms`, recordTitle: `Signup initiated - ${email}` }
         });
 
-        console.log('✅ Signup initiated successfully via Brevo');
+        console.log('✅ Signup initiated successfully via Resend');
         console.log('==============================================\n');
 
         return res.status(200).json({
             success: true,
-            message: result.emailSent 
-                ? 'Verification code sent! Check your inbox.'
-                : 'Code generated. Try resending if not received.',
+            message: result.emailSent ? 'Verification code sent! Check your inbox.' : 'Code generated. Try resending if not received.',
             verificationRequired: true,
             email
         });
 
     } catch (error) {
         console.error('❌ Signup error:', error);
-
         await logActivity({
-            action: 'CREATE',
-            module: 'Auth',
-            user: email || 'System',
-            severity: 'ERROR',
+            action: 'CREATE', module: 'Auth', user: email || 'System', severity: 'ERROR',
             description: `Signup system error: ${error.message}`,
-            ipAddress: getIpAddress(req),
-            userAgent: getUserAgent(req),
-            details: {
-                method: req.method,
-                endpoint: req.originalUrl,
-                statusCode: 500,
-                duration: `${Date.now() - startTime}ms`
-            }
+            ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+            details: { method: req.method, endpoint: req.originalUrl, statusCode: 500, duration: `${Date.now() - startTime}ms` }
         });
-
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Server error. Please try again later.' 
-        });
+        return res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
     }
 };
 
 // --------------------------------------------------------------------
-// RESEND OTP - WITH ACTIVITY LOGGING
+// RESEND OTP
 // --------------------------------------------------------------------
 const resendOtp = async (req, res) => {
     console.log('\n--- RESEND OTP Controller Hit ---');
@@ -455,89 +350,44 @@ const resendOtp = async (req, res) => {
     const email = emailInput.toLowerCase();
 
     try {
-        if (!email) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Email is required.' 
-            });
-        }
-
-        if (!unverifiedUsers.has(email)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'No active signup session. Please start over.' 
-            });
-        }
+        if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
+        if (!unverifiedUsers.has(email)) return res.status(400).json({ success: false, message: 'No active signup session. Please start over.' });
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             unverifiedUsers.delete(email);
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Account already verified. Please log in.' 
-            });
+            return res.status(400).json({ success: false, message: 'Account already verified. Please log in.' });
         }
 
         const result = await generateAndSendOtp(email);
 
         await logActivity({
-            action: 'CREATE',
-            module: 'Auth',
-            user: email,
-            severity: 'INFO',
+            action: 'CREATE', module: 'Auth', user: email, severity: 'INFO',
             description: `OTP verification code resent to ${email}`,
-            ipAddress: getIpAddress(req),
-            userAgent: getUserAgent(req),
-            details: {
-                method: req.method,
-                endpoint: req.originalUrl,
-                statusCode: 200,
-                duration: `${Date.now() - startTime}ms`,
-                recordTitle: `OTP Resent - ${email}`
-            }
+            ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+            details: { method: req.method, endpoint: req.originalUrl, statusCode: 200, duration: `${Date.now() - startTime}ms`, recordTitle: `OTP Resent - ${email}` }
         });
 
         if (result.emailSent) {
-            return res.status(200).json({
-                success: true,
-                message: 'New code sent! Check your inbox & spam folder.'
-            });
+            return res.status(200).json({ success: true, message: 'New code sent! Check your inbox & spam folder.' });
         } else {
-            return res.status(200).json({
-                success: true,
-                message: 'New code generated. Check spam or try resending again.',
-                warning: 'Email delivery delayed, but code is active.'
-            });
+            return res.status(200).json({ success: true, message: 'New code generated. Check spam or try resending again.', warning: 'Email delivery delayed, but code is active.' });
         }
 
     } catch (error) {
         console.error('❌ Resend OTP error:', error);
-
         await logActivity({
-            action: 'CREATE',
-            module: 'Auth',
-            user: email || 'System',
-            severity: 'ERROR',
+            action: 'CREATE', module: 'Auth', user: email || 'System', severity: 'ERROR',
             description: `Resend OTP error: ${error.message}`,
-            ipAddress: getIpAddress(req),
-            userAgent: getUserAgent(req),
-            details: {
-                method: req.method,
-                endpoint: req.originalUrl,
-                statusCode: 500,
-                duration: `${Date.now() - startTime}ms`
-            }
+            ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+            details: { method: req.method, endpoint: req.originalUrl, statusCode: 500, duration: `${Date.now() - startTime}ms` }
         });
-
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Server error. Please try again.' 
-        });
+        return res.status(500).json({ success: false, message: 'Server error. Please try again.' });
     }
 };
 
 // --------------------------------------------------------------------
-// VERIFY OTP - WITH ACTIVITY LOGGING
+// VERIFY OTP
 // --------------------------------------------------------------------
 const verifyOtp = async (req, res) => {
     console.log('\n--- VERIFY OTP Controller Hit ---');
@@ -550,82 +400,42 @@ const verifyOtp = async (req, res) => {
 
         if (!userData) {
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email,
-                severity: 'WARNING',
+                action: 'CREATE', module: 'Auth', user: email, severity: 'WARNING',
                 description: `Failed OTP verification: Session expired for ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Session expired. Please sign up again.' 
-            });
+            return res.status(400).json({ success: false, message: 'Session expired. Please sign up again.' });
         }
 
         if (userData.otp !== otp) {
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email,
-                severity: 'WARNING',
+                action: 'CREATE', module: 'Auth', user: email, severity: 'WARNING',
                 description: `Failed OTP verification: Invalid code entered for ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Invalid code. Please check and try again.' 
-            });
+            return res.status(400).json({ success: false, message: 'Invalid code. Please check and try again.' });
         }
 
-        if (Date.now() > userData.otpExpires) { 
+        if (Date.now() > userData.otpExpires) {
             unverifiedUsers.delete(email);
-
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email,
-                severity: 'WARNING',
+                action: 'CREATE', module: 'Auth', user: email, severity: 'WARNING',
                 description: `Failed OTP verification: Code expired for ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Code has expired. Please request a new one.' 
-            });
+            return res.status(400).json({ success: false, message: 'Code has expired. Please request a new one.' });
         }
 
         const newUser = new User({
             fullName: userData.fullName,
             email: userData.email,
             username: userData.username,
-            password: userData.password, 
+            password: userData.password,
         });
-         
+
         const savedUser = await newUser.save();
         unverifiedUsers.delete(email);
 
@@ -649,253 +459,132 @@ const verifyOtp = async (req, res) => {
 
         if (error.code === 11000) {
             unverifiedUsers.delete(email);
-
             await logActivity({
-                action: 'CREATE',
-                module: 'Auth',
-                user: email,
-                severity: 'ERROR',
+                action: 'CREATE', module: 'Auth', user: email, severity: 'ERROR',
                 description: `Failed OTP verification: Duplicate user error for ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 409,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 409, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(409).json({ 
-                success: false, 
-                message: 'Email or username already in use.' 
-            });
+            return res.status(409).json({ success: false, message: 'Email or username already in use.' });
         }
 
         await logActivity({
-            action: 'CREATE',
-            module: 'Auth',
-            user: email || 'System',
-            severity: 'ERROR',
+            action: 'CREATE', module: 'Auth', user: email || 'System', severity: 'ERROR',
             description: `OTP verification system error: ${error.message}`,
-            ipAddress: getIpAddress(req),
-            userAgent: getUserAgent(req),
-            details: {
-                method: req.method,
-                endpoint: req.originalUrl,
-                statusCode: 500,
-                duration: `${Date.now() - startTime}ms`
-            }
+            ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+            details: { method: req.method, endpoint: req.originalUrl, statusCode: 500, duration: `${Date.now() - startTime}ms` }
         });
 
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Server error. Please try again.' 
-        });
+        return res.status(500).json({ success: false, message: 'Server error. Please try again.' });
     }
 };
 
 // --------------------------------------------------------------------
-// LOGIN CONTROLLER - WITH ACTIVITY LOGGING
+// LOGIN CONTROLLER
 // --------------------------------------------------------------------
 const login = async (req, res) => {
     console.log('\n--- LOGIN Controller Hit ---');
     const startTime = Date.now();
     const { email: emailInput, password, recaptchaToken } = req.body;
     const email = emailInput ? emailInput.toLowerCase() : '';
-  
+
     try {
-        if (!recaptchaToken) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Please complete reCAPTCHA.' 
-            });
-        }
+        if (!recaptchaToken) return res.status(400).json({ success: false, message: 'Please complete reCAPTCHA.' });
 
         const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
         if (!isValidRecaptcha) {
             await logActivity({
-                action: 'LOGIN',
-                module: 'Auth',
-                user: email || 'Unknown',
-                severity: 'WARNING',
+                action: 'LOGIN', module: 'Auth', user: email || 'Unknown', severity: 'WARNING',
                 description: `Failed login attempt: reCAPTCHA verification failed`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 400,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 400, duration: `${Date.now() - startTime}ms` }
             });
+            return res.status(400).json({ success: false, message: 'reCAPTCHA failed.' });
+        }
 
-            return res.status(400).json({ 
-                success: false, 
-                message: 'reCAPTCHA failed.' 
-            });
-        }
-         
-        if (!email || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Email and password required.' 
-            });
-        }
+        if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required.' });
 
         const user = await User.findOne({ email }).select('+password');
         if (!user) {
             await logActivity({
-                action: 'LOGIN',
-                module: 'Auth',
-                user: email,
-                severity: 'WARNING',
+                action: 'LOGIN', module: 'Auth', user: email, severity: 'WARNING',
                 description: `Failed login attempt: User not found - ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 401,
-                    duration: `${Date.now() - startTime}ms`
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 401, duration: `${Date.now() - startTime}ms` }
             });
-
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Invalid email or password.' 
-            });
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
         }
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             console.log('Password mismatch for user:', email);
-
             await logActivity({
-                action: 'LOGIN',
-                module: 'Auth',
-                user: email,
-                userId: user._id,
-                severity: 'WARNING',
+                action: 'LOGIN', module: 'Auth', user: email, userId: user._id, severity: 'WARNING',
                 description: `Failed login attempt: Invalid password for ${email}`,
-                ipAddress: getIpAddress(req),
-                userAgent: getUserAgent(req),
-                details: {
-                    method: req.method,
-                    endpoint: req.originalUrl,
-                    statusCode: 401,
-                    duration: `${Date.now() - startTime}ms`,
-                    recordId: user._id.toString()
-                }
+                ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+                details: { method: req.method, endpoint: req.originalUrl, statusCode: 401, duration: `${Date.now() - startTime}ms`, recordId: user._id.toString() }
             });
-
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Invalid email or password.' 
-            });
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
         }
 
         await logLogin(req, user);
-
         console.log('✅ User logged in successfully:', email);
 
         return res.json({
             success: true,
             message: 'Login successful!',
-            user: { 
-                _id: user._id, 
-                id: user._id, 
-                fullName: user.fullName, 
-                email: user.email, 
-                username: user.username, 
+            user: {
+                _id: user._id,
+                id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                username: user.username,
                 role: user.role || 'user'
             }
         });
 
     } catch (error) {
         console.error('❌ Login error:', error);
-
         await logActivity({
-            action: 'LOGIN',
-            module: 'Auth',
-            user: email || 'System',
-            severity: 'ERROR',
+            action: 'LOGIN', module: 'Auth', user: email || 'System', severity: 'ERROR',
             description: `Login system error: ${error.message}`,
-            ipAddress: getIpAddress(req),
-            userAgent: getUserAgent(req),
-            details: {
-                method: req.method,
-                endpoint: req.originalUrl,
-                statusCode: 500,
-                duration: `${Date.now() - startTime}ms`
-            }
+            ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+            details: { method: req.method, endpoint: req.originalUrl, statusCode: 500, duration: `${Date.now() - startTime}ms` }
         });
-
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Server error.' 
-        });
+        return res.status(500).json({ success: false, message: 'Server error.' });
     }
 };
 
 // --------------------------------------------------------------------
-// LOGOUT CONTROLLER - WITH ACTIVITY LOGGING
+// LOGOUT CONTROLLER
 // --------------------------------------------------------------------
 const logout = async (req, res) => {
     console.log('\n--- LOGOUT Controller Hit ---');
     const startTime = Date.now();
-    
+
     try {
         const userEmail = req.body.email || req.user?.email || 'Unknown';
         const userId = req.body.userId || req.user?._id || null;
 
         await logActivity({
-            action: 'LOGOUT',
-            module: 'Auth',
-            user: userEmail,
-            userId: userId,
-            severity: 'INFO',
+            action: 'LOGOUT', module: 'Auth', user: userEmail, userId: userId, severity: 'INFO',
             description: `User logged out: ${userEmail}`,
-            ipAddress: getIpAddress(req),
-            userAgent: getUserAgent(req),
-            details: {
-                method: req.method,
-                endpoint: req.originalUrl,
-                statusCode: 200,
-                duration: `${Date.now() - startTime}ms`
-            }
+            ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+            details: { method: req.method, endpoint: req.originalUrl, statusCode: 200, duration: `${Date.now() - startTime}ms` }
         });
 
         console.log('✅ User logged out:', userEmail);
-
-        return res.status(200).json({
-            success: true,
-            message: 'Logout successful'
-        });
+        return res.status(200).json({ success: true, message: 'Logout successful' });
 
     } catch (error) {
         console.error('❌ Logout error:', error);
-
         await logActivity({
-            action: 'LOGOUT',
-            module: 'Auth',
-            user: 'System',
-            severity: 'ERROR',
+            action: 'LOGOUT', module: 'Auth', user: 'System', severity: 'ERROR',
             description: `Logout error: ${error.message}`,
-            ipAddress: getIpAddress(req),
-            userAgent: getUserAgent(req),
-            details: {
-                method: req.method,
-                endpoint: req.originalUrl,
-                statusCode: 500,
-                duration: `${Date.now() - startTime}ms`
-            }
+            ipAddress: getIpAddress(req), userAgent: getUserAgent(req),
+            details: { method: req.method, endpoint: req.originalUrl, statusCode: 500, duration: `${Date.now() - startTime}ms` }
         });
-
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Logout failed.' 
-        });
+        return res.status(500).json({ success: false, message: 'Logout failed.' });
     }
 };
 

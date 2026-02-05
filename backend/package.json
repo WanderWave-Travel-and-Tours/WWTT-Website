@@ -30,6 +30,7 @@
     "nodemailer": "^7.0.11",
     "pexels": "^1.4.0",
     "react-hot-toast": "^2.6.0",
+    "resend": "^6.9.1",
     "serpapi": "^2.2.1",
     "unsplash-js": "^7.0.20"
   },
