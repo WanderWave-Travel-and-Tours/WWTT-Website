@@ -1,4 +1,3 @@
-// backend/controller/authController.js
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
@@ -6,7 +5,6 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto'); 
 const path = require('path');
 
-// 🎯 IMPORT ACTIVITY LOGGER
 const { 
     logLogin, 
     logLogout, 
@@ -17,8 +15,8 @@ const {
 } = require('../utils/activityLogger');
 
 const LOGO_PATH = path.join(__dirname, '..', 'assets', 'LOGOPIC.png'); 
+const unverifiedUsers = new Map();
 
-// Helper function to verify reCAPTCHA
 const verifyRecaptcha = async (token) => {
   console.log('🔍 Starting reCAPTCHA verification...');
   try {
@@ -42,9 +40,6 @@ const verifyRecaptcha = async (token) => {
   }
 };
 
-// --------------------------------------------------------------------
-// NODEMAILER TRANSPORT AND EMAIL HELPER
-// --------------------------------------------------------------------
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -258,9 +253,6 @@ const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
         `;
 };
 
-// --------------------------------------------------------------------
-// OTP LOGIC
-// --------------------------------------------------------------------
 const OTP_DURATION_MINUTES = 5; 
 
 const generateAndSendOtp = async (email) => {
@@ -278,9 +270,6 @@ const generateAndSendOtp = async (email) => {
     return { success: true, emailSent };
 };
 
-// --------------------------------------------------------------------
-// SIGNUP CONTROLLER - WITH ACTIVITY LOGGING
-// --------------------------------------------------------------------
 const signup = async (req, res) => {
     console.log('\n--- SIGNUP Controller Hit ---');
     const startTime = Date.now();
@@ -290,9 +279,7 @@ const signup = async (req, res) => {
     const username = usernameInput.toLowerCase();
 
     try {
-        // Validation
         if (!fullName || !email || !username || !password || !confirmPassword) {
-            // 🎯 LOG FAILED SIGNUP ATTEMPT
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -316,7 +303,6 @@ const signup = async (req, res) => {
         }
 
         if (password !== confirmPassword) {
-            // 🎯 LOG PASSWORD MISMATCH
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -339,10 +325,8 @@ const signup = async (req, res) => {
             });
         }
 
-        // Check existing user
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            // 🎯 LOG DUPLICATE EMAIL ATTEMPT
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -367,7 +351,6 @@ const signup = async (req, res) => {
 
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
-            // 🎯 LOG DUPLICATE USERNAME ATTEMPT
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -390,7 +373,6 @@ const signup = async (req, res) => {
             });
         }
 
-        // reCAPTCHA
         if (!recaptchaToken) {
             return res.status(400).json({ 
                 success: false, 
@@ -400,7 +382,6 @@ const signup = async (req, res) => {
 
         const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
         if (!isValidRecaptcha) {
-            // 🎯 LOG RECAPTCHA FAILURE
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -423,7 +404,6 @@ const signup = async (req, res) => {
             });
         }
 
-        // Clean old session
         if (unverifiedUsers.has(email)) unverifiedUsers.delete(email);
 
         const hashedPassword = await bcrypt.hash(password, 12);
@@ -439,7 +419,6 @@ const signup = async (req, res) => {
             });
         }
 
-        // 🎯 LOG SUCCESSFUL OTP SENT
         await logActivity({
             action: 'CREATE',
             module: 'Auth',
@@ -469,7 +448,6 @@ const signup = async (req, res) => {
     } catch (error) {
         console.error('❌ Signup error:', error);
 
-        // 🎯 LOG SYSTEM ERROR
         await logActivity({
             action: 'CREATE',
             module: 'Auth',
@@ -493,9 +471,6 @@ const signup = async (req, res) => {
     }
 };
 
-// --------------------------------------------------------------------
-// RESEND OTP - WITH ACTIVITY LOGGING
-// --------------------------------------------------------------------
 const resendOtp = async (req, res) => {
     console.log('\n--- RESEND OTP Controller Hit ---');
     const startTime = Date.now();
@@ -528,7 +503,6 @@ const resendOtp = async (req, res) => {
 
         const result = await generateAndSendOtp(email);
 
-        // 🎯 LOG OTP RESEND
         await logActivity({
             action: 'CREATE',
             module: 'Auth',
@@ -562,7 +536,6 @@ const resendOtp = async (req, res) => {
     } catch (error) {
         console.error('❌ Resend OTP error:', error);
 
-        // 🎯 LOG RESEND ERROR
         await logActivity({
             action: 'CREATE',
             module: 'Auth',
@@ -586,9 +559,6 @@ const resendOtp = async (req, res) => {
     }
 };
 
-// --------------------------------------------------------------------
-// VERIFY OTP - WITH ACTIVITY LOGGING
-// --------------------------------------------------------------------
 const verifyOtp = async (req, res) => {
     console.log('\n--- VERIFY OTP Controller Hit ---');
     const startTime = Date.now();
@@ -599,7 +569,6 @@ const verifyOtp = async (req, res) => {
         const userData = unverifiedUsers.get(email);
 
         if (!userData) {
-            // 🎯 LOG EXPIRED SESSION
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -623,7 +592,6 @@ const verifyOtp = async (req, res) => {
         }
 
         if (userData.otp !== otp) {
-            // 🎯 LOG INVALID OTP
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -649,7 +617,6 @@ const verifyOtp = async (req, res) => {
         if (Date.now() > userData.otpExpires) { 
             unverifiedUsers.delete(email);
 
-            // 🎯 LOG EXPIRED OTP
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -682,7 +649,6 @@ const verifyOtp = async (req, res) => {
         const savedUser = await newUser.save();
         unverifiedUsers.delete(email);
 
-        // 🎯 LOG SUCCESSFUL USER REGISTRATION
         await logCreate(req, 'Users', `${savedUser.fullName} (${savedUser.email})`);
 
         console.log('✅ User registered and verified successfully:', email);
@@ -704,7 +670,6 @@ const verifyOtp = async (req, res) => {
         if (error.code === 11000) {
             unverifiedUsers.delete(email);
 
-            // 🎯 LOG DUPLICATE ERROR
             await logActivity({
                 action: 'CREATE',
                 module: 'Auth',
@@ -727,7 +692,6 @@ const verifyOtp = async (req, res) => {
             });
         }
 
-        // 🎯 LOG SYSTEM ERROR
         await logActivity({
             action: 'CREATE',
             module: 'Auth',
@@ -751,9 +715,6 @@ const verifyOtp = async (req, res) => {
     }
 };
 
-// --------------------------------------------------------------------
-// LOGIN CONTROLLER - WITH ACTIVITY LOGGING
-// --------------------------------------------------------------------
 const login = async (req, res) => {
     console.log('\n--- LOGIN Controller Hit ---');
     const startTime = Date.now();
@@ -770,7 +731,6 @@ const login = async (req, res) => {
 
         const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
         if (!isValidRecaptcha) {
-            // 🎯 LOG RECAPTCHA FAILURE
             await logActivity({
                 action: 'LOGIN',
                 module: 'Auth',
@@ -802,7 +762,6 @@ const login = async (req, res) => {
 
         const user = await User.findOne({ email }).select('+password');
         if (!user) {
-            // 🎯 LOG FAILED LOGIN - USER NOT FOUND
             await logActivity({
                 action: 'LOGIN',
                 module: 'Auth',
@@ -829,7 +788,6 @@ const login = async (req, res) => {
         if (!isMatch) {
             console.log('Password mismatch for user:', email);
 
-            // 🎯 LOG FAILED LOGIN - WRONG PASSWORD
             await logActivity({
                 action: 'LOGIN',
                 module: 'Auth',
@@ -854,7 +812,6 @@ const login = async (req, res) => {
             });
         }
 
-        // 🎯 LOG SUCCESSFUL LOGIN
         await logLogin(req, user);
 
         console.log('✅ User logged in successfully:', email);
@@ -875,7 +832,6 @@ const login = async (req, res) => {
     } catch (error) {
         console.error('❌ Login error:', error);
 
-        // 🎯 LOG SYSTEM ERROR
         await logActivity({
             action: 'LOGIN',
             module: 'Auth',
@@ -899,19 +855,14 @@ const login = async (req, res) => {
     }
 };
 
-// --------------------------------------------------------------------
-// LOGOUT CONTROLLER - WITH ACTIVITY LOGGING
-// --------------------------------------------------------------------
 const logout = async (req, res) => {
     console.log('\n--- LOGOUT Controller Hit ---');
     const startTime = Date.now();
     
     try {
-        // Get user info from request (if available from middleware)
         const userEmail = req.body.email || req.user?.email || 'Unknown';
         const userId = req.body.userId || req.user?._id || null;
 
-        // 🎯 LOG LOGOUT
         await logActivity({
             action: 'LOGOUT',
             module: 'Auth',
@@ -939,7 +890,6 @@ const logout = async (req, res) => {
     } catch (error) {
         console.error('❌ Logout error:', error);
 
-        // 🎯 LOG LOGOUT ERROR
         await logActivity({
             action: 'LOGOUT',
             module: 'Auth',
@@ -963,9 +913,6 @@ const logout = async (req, res) => {
     }
 };
 
-// --------------------------------------------------------------------
-// GET ME CONTROLLER
-// --------------------------------------------------------------------
 const getMe = (req, res) => {
     res.status(200).json({
         _id: req.user._id,
@@ -974,9 +921,6 @@ const getMe = (req, res) => {
     });
 };
 
-// --------------------------------------------------------------------
-// EXPORTS
-// --------------------------------------------------------------------
 module.exports = {
     signup,
     login,
