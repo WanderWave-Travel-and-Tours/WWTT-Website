@@ -1,10 +1,13 @@
+// backend/controller/authController.js
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
 const nodemailer = require('nodemailer'); 
 const crypto = require('crypto'); 
 const path = require('path');
+const fs = require('fs');
 
+// 🎯 IMPORT ACTIVITY LOGGER
 const { 
     logLogin, 
     logLogout, 
@@ -15,8 +18,13 @@ const {
 } = require('../utils/activityLogger');
 
 const LOGO_PATH = path.join(__dirname, '..', 'assets', 'LOGOPIC.png'); 
+
+// --------------------------------------------------------------------
+// 🎯 IN-MEMORY STORAGE FOR UNVERIFIED USERS (OTP SESSION)
+// --------------------------------------------------------------------
 const unverifiedUsers = new Map();
 
+// Helper function to verify reCAPTCHA
 const verifyRecaptcha = async (token) => {
   console.log('🔍 Starting reCAPTCHA verification...');
   try {
@@ -40,44 +48,101 @@ const verifyRecaptcha = async (token) => {
   }
 };
 
+// --------------------------------------------------------------------
+// NODEMAILER TRANSPORT - USING BREVO (SENDINBLUE)
+// --------------------------------------------------------------------
+console.log('📧 Email Config Check:', {
+    EMAIL_SERVICE: process.env.EMAIL_SERVICE || 'Not set',
+    BREVO_SMTP_USER: process.env.BREVO_SMTP_USER ? '✅ Set' : '❌ Missing',
+    BREVO_SMTP_KEY: process.env.BREVO_SMTP_KEY ? '✅ Set' : '❌ Missing',
+    EMAIL_FROM: process.env.EMAIL_FROM ? '✅ Set' : '❌ Missing'
+});
+
+// 🎯 BREVO CONFIGURATION - Works perfectly with Render!
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // Use TLS
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, 
+        user: process.env.BREVO_SMTP_USER,
+        pass: process.env.BREVO_SMTP_KEY,
     },
-    logger: true, 
-    debug: true
+    logger: true,
+    debug: true,
+    // Timeout settings
+    connectionTimeout: 30000,
+    greetingTimeout: 20000,
+    socketTimeout: 30000
+});
+
+// Test email configuration on startup
+transporter.verify(function (error, success) {
+    if (error) {
+        console.error('❌ BREVO EMAIL CONFIGURATION ERROR:', error);
+        console.error('⚠️ Check your BREVO_SMTP_USER and BREVO_SMTP_KEY in Render environment variables');
+    } else {
+        console.log('✅ Brevo SMTP server is ready to send messages');
+    }
 });
 
 const sendEmail = async (to, subject, html) => {
-    console.log(`📧 Attempting to send email to: ${to} with subject: "${subject}"`);
+    console.log(`\n📧 === EMAIL SENDING ATTEMPT (Brevo) ===`);
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`From: ${process.env.EMAIL_FROM || process.env.BREVO_SMTP_USER}`);
+    
     try {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.error("❌ Email configuration missing: EMAIL_USER or EMAIL_PASS not set in .env");
+        if (!process.env.BREVO_SMTP_USER || !process.env.BREVO_SMTP_KEY) {
+            console.error("❌ Brevo configuration missing: BREVO_SMTP_USER or BREVO_SMTP_KEY not set");
             return false;
         }
 
+        const fromEmail = process.env.EMAIL_FROM || process.env.BREVO_SMTP_USER;
+        const fromName = process.env.EMAIL_FROM_NAME || 'WanderWave Customer Service';
+
+        // Check if logo file exists
+        const logoExists = fs.existsSync(LOGO_PATH);
+        console.log(`Logo file status: ${logoExists ? '✅ Found' : '⚠️ Not found'} at ${LOGO_PATH}`);
+        
         const mailOptions = {
-            from: `WanderWave Customer Service <${process.env.EMAIL_USER}>`, 
+            from: `${fromName} <${fromEmail}>`, 
             to, 
             subject,
-            html,
-            attachments: [{
+            html
+        };
+
+        // Only add logo attachment if file exists
+        if (logoExists) {
+            console.log('📎 Attaching logo to email');
+            mailOptions.attachments = [{
                 filename: 'LOGOPIC.png',
                 path: LOGO_PATH, 
                 cid: 'logo@wanderwave.com'
-            }]
-        };
+            }];
+        }
 
+        console.log('🚀 Sending email via Brevo SMTP...');
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Email sent successfully. Message ID: ${info.messageId}`);
+        console.log(`✅ EMAIL SENT SUCCESSFULLY via Brevo!`);
+        console.log(`Message ID: ${info.messageId}`);
+        console.log(`Response: ${info.response}`);
         return true; 
     } catch (error) {
-        console.error("❌ Nodemailer Error:", error); 
-        if (error.code === 'ENOENT') {
-            console.error(`⚠️ Logo file not found at path: ${LOGO_PATH}`);
+        console.error("\n❌ ========== BREVO EMAIL ERROR ==========");
+        console.error("Error Message:", error.message);
+        console.error("Error Code:", error.code);
+        console.error("Error Command:", error.command);
+        console.error("Full Error:", error);
+        
+        if (error.code === 'EAUTH') {
+            console.error("\n⚠️ BREVO AUTHENTICATION FAILED!");
+            console.error("Make sure:");
+            console.error("1. BREVO_SMTP_USER is your Brevo login email");
+            console.error("2. BREVO_SMTP_KEY is your generated SMTP key (not password!)");
+            console.error("3. Generate SMTP key at: https://app.brevo.com/settings/keys/smtp");
         }
+        
+        console.error("========================================\n");
         return false;
     }
 };
@@ -85,174 +150,66 @@ const sendEmail = async (to, subject, html) => {
 const getOtpEmailHtml = (fullName, otp, otpDurationMinutes) => {
     return `
 <!DOCTYPE html>
-<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="x-apple-disable-message-reformatting">
-    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
-    <meta name="color-scheme" content="light">
-    <meta name="supported-color-schemes" content="light">
     <title>WanderWave OTP Verification</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            -webkit-text-size-adjust: 100%;
-            -ms-text-size-adjust: 100%;
-            background-color: #ffffff !important;
-        }
-        table {
-            border-collapse: collapse;
-            border-spacing: 0;
-            mso-table-lspace: 0pt;
-            mso-table-rspace: 0pt;
-        }
-        img {
-            border: 0;
-            height: auto;
-            line-height: 100%;
-            outline: none;
-            text-decoration: none;
-            -ms-interpolation-mode: bicubic;
-        }
-        a {
-            text-decoration: none;
-        }
-        
-        @media (prefers-color-scheme: dark) {
-            body {
-                background-color: #ffffff !important;
-            }
-            .email-body {
-                background-color: #ffffff !important;
-            }
-            .email-container {
-                background-color: #ffffff !important;
-            }
-            .white-bg {
-                background-color: #ffffff !important;
-            }
-        }
-        
+        body { margin: 0; padding: 0; background-color: #ffffff; font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #001b3e; color: #ffffff; padding: 30px; text-align: center; border-bottom: 4px solid #FF8C00; }
+        .logo { font-size: 28px; font-weight: bold; margin: 0; }
+        .tagline { font-size: 11px; letter-spacing: 2px; margin: 10px 0 0 0; opacity: 0.9; }
+        .content { background-color: #ffffff; padding: 40px; }
+        .otp-box { background-color: #001b3e; color: #ffffff; padding: 30px; border-radius: 10px; text-align: center; margin: 30px 0; }
+        .otp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0; opacity: 0.9; }
+        .otp-code { font-size: 42px; font-weight: bold; letter-spacing: 12px; font-family: 'Courier New', monospace; margin: 0; }
+        .warning { background-color: #FFF7ED; border-left: 4px solid #FF8C00; padding: 15px 20px; margin: 20px 0; color: #92400e; }
+        .footer { background-color: #001b3e; color: #ffffff; padding: 25px; text-align: center; font-size: 12px; }
         @media screen and (max-width: 600px) {
-            .email-container {
-                width: 100% !important;
-                max-width: 100% !important;
-                border-radius: 0 !important;
-            }
-            .mobile-padding {
-                padding: 20px !important;
-            }
-            .mobile-padding-sm {
-                padding: 15px 20px !important;
-            }
-            .otp-text {
-                font-size: 36px !important;
-                letter-spacing: 8px !important;
-            }
-            .logo-img {
-                max-width: 110px !important;
-            }
-            .header-label {
-                font-size: 10px !important;
-                padding: 6px 18px !important;
-            }
-        }
-        
-        @media screen and (max-width: 480px) {
-            .otp-text {
-                font-size: 32px !important;
-                letter-spacing: 6px !important;
-            }
+            .content { padding: 20px; }
+            .otp-code { font-size: 36px; letter-spacing: 8px; }
         }
     </style>
 </head>
-<body style="margin:0;padding:0;background-color:#ffffff;width:100%;">
-    <div style="background-color:#ffffff;padding:20px 0;">
-        <center>
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#ffffff;">
-                <tr>
-                    <td align="center" style="padding:0;">
-                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);overflow:hidden;">
-                            
-                            <tr>
-                                <td style="background-color:#001b3e !important;border-bottom:4px solid #FF8C00;padding:25px 30px 20px;text-align:right;" class="mobile-padding-sm">
-                                    <span class="header-label" style="display:inline-block;background-color:#FFF3E0 !important;color:#001b3e !important;padding:8px 24px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:1.5px;font-family:Arial,sans-serif;">OTP VERIFICATION</span>
-                                </td>
-                            </tr>
-                            
-                            <tr>
-                                <td class="white-bg mobile-padding-sm" style="background-color:#ffffff !important;padding:25px 30px;border-bottom:1px dashed #001b3e;">
-                                    <img src="cid:logo@wanderwave.com" alt="WanderWave Logo" class="logo-img" style="max-width:130px;height:auto;display:block;border:0;" width="130" />
-                                </td>
-                            </tr>
-                            
-                            <tr>
-                                <td class="white-bg mobile-padding" style="background-color:#ffffff !important;padding:35px 40px;">
-                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                        <tr>
-                                            <td style="padding:0;">
-                                                <p style="font-size:16px;color:#001b3e !important;margin:0 0 8px 0;font-weight:600;font-family:Arial,sans-serif;">Hi ${fullName || 'New User'},</p>
-                                                
-                                                <p style="font-size:14px;color:#64748b !important;line-height:1.7;margin:0 0 30px 0;font-family:Arial,sans-serif;">Thank you for signing up with <span style="color:#FF8C00 !important;font-weight:600;">WanderWave</span>! To complete your registration, please use the verification code below:</p>
-                                                
-                                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0;">
-                                                    <tr>
-                                                        <td style="background-color:#001b3e !important;border-radius:10px;padding:35px 20px;text-align:center;">
-                                                            <p style="font-size:11px;color:#ffffff !important;text-transform:uppercase;letter-spacing:2px;margin:0 0 15px 0;font-weight:700;opacity:0.9;font-family:Arial,sans-serif;">Your Verification Code</p>
-                                                            <p class="otp-text" style="font-size:42px;font-weight:800;color:#ffffff !important;letter-spacing:12px;font-family:'Courier New',Consolas,monospace;margin:0;">${otp}</p>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                                
-                                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0;">
-                                                    <tr>
-                                                        <td style="background-color:#FFF7ED !important;border-left:4px solid #FF8C00;padding:15px 20px;border-radius:4px;">
-                                                            <p style="font-size:13px;color:#92400e !important;margin:0;line-height:1.6;font-family:Arial,sans-serif;"><strong>⏱ Valid for ${otpDurationMinutes} minutes</strong> • This code will expire shortly. Please complete verification soon.</p>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                                
-                                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:30px 0 0 0;">
-                                                    <tr>
-                                                        <td>
-                                                            <p style="font-size:14px;color:#001b3e !important;margin:0 0 6px 0;font-weight:700;font-family:Arial,sans-serif;">Best regards,</p>
-                                                            <p style="font-size:14px;color:#FF8C00 !important;font-weight:700;margin:0;font-family:Arial,sans-serif;">WanderWave Team</p>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            
-                            <tr>
-                                <td class="mobile-padding" style="background-color:#001b3e !important;padding:25px 40px;text-align:center;">
-                                    <p style="font-size:12px;color:#ffffff !important;margin:0 0 8px 0;line-height:1.6;font-family:Arial,sans-serif;">If you did not request this verification code, please ignore this email.</p>
-                                    <p style="font-size:11px;color:#ffffff !important;margin:0;opacity:0.9;font-family:Arial,sans-serif;">This is an automated message. Please do not reply to this email.</p>
-                                </td>
-                            </tr>
-                            
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </center>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo">WanderWave</h1>
+            <p class="tagline">OTP VERIFICATION</p>
+        </div>
+        <div class="content">
+            <p style="font-size: 16px; font-weight: 600; color: #001b3e; margin: 0 0 8px 0;">Hi ${fullName || 'New User'},</p>
+            <p style="font-size: 14px; color: #64748b; line-height: 1.7; margin: 0 0 30px 0;">Thank you for signing up with <strong style="color: #FF8C00;">WanderWave</strong>! To complete your registration, please use the verification code below:</p>
+            
+            <div class="otp-box">
+                <p class="otp-label">Your Verification Code</p>
+                <p class="otp-code">${otp}</p>
+            </div>
+            
+            <div class="warning">
+                <strong>⏱ Valid for ${otpDurationMinutes} minutes</strong> • This code will expire shortly. Please complete verification soon.
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #001b3e;">
+                <strong>Best regards,</strong><br>
+                <span style="color: #FF8C00; font-weight: bold;">WanderWave Team</span>
+            </p>
+        </div>
+        <div class="footer">
+            <p style="margin: 0 0 8px 0; line-height: 1.6;">If you did not request this verification code, please ignore this email.</p>
+            <p style="margin: 0; opacity: 0.9;">This is an automated message. Please do not reply to this email.</p>
+        </div>
     </div>
 </body>
 </html>
-        `;
+    `;
 };
 
+// --------------------------------------------------------------------
+// OTP LOGIC
+// --------------------------------------------------------------------
 const OTP_DURATION_MINUTES = 5; 
 
 const generateAndSendOtp = async (email) => {
@@ -263,6 +220,8 @@ const generateAndSendOtp = async (email) => {
     const otpExpires = Date.now() + OTP_DURATION_MINUTES * 60 * 1000; 
 
     unverifiedUsers.set(email, { ...userData, otp, otpExpires });
+    console.log(`\n🔐 OTP Generated for ${email}: ${otp}`);
+    console.log(`⏰ OTP expires at: ${new Date(otpExpires).toLocaleString()}`);
 
     const emailBody = getOtpEmailHtml(userData.fullName, otp, OTP_DURATION_MINUTES);
     const emailSent = await sendEmail(email, 'WanderWave - Verification Code', emailBody);
@@ -270,15 +229,23 @@ const generateAndSendOtp = async (email) => {
     return { success: true, emailSent };
 };
 
+// --------------------------------------------------------------------
+// SIGNUP CONTROLLER - WITH ACTIVITY LOGGING
+// --------------------------------------------------------------------
 const signup = async (req, res) => {
-    console.log('\n--- SIGNUP Controller Hit ---');
+    console.log('\n==============================================');
+    console.log('📝 SIGNUP Controller Hit');
+    console.log('==============================================');
     const startTime = Date.now();
     const { fullName, email: emailInput, username: usernameInput, password, confirmPassword, recaptchaToken } = req.body;
 
     const email = emailInput.toLowerCase();
     const username = usernameInput.toLowerCase();
 
+    console.log(`User: ${fullName} (${email})`);
+
     try {
+        // Validation
         if (!fullName || !email || !username || !password || !confirmPassword) {
             await logActivity({
                 action: 'CREATE',
@@ -325,6 +292,7 @@ const signup = async (req, res) => {
             });
         }
 
+        // Check existing user
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             await logActivity({
@@ -373,6 +341,7 @@ const signup = async (req, res) => {
             });
         }
 
+        // reCAPTCHA
         if (!recaptchaToken) {
             return res.status(400).json({ 
                 success: false, 
@@ -404,11 +373,13 @@ const signup = async (req, res) => {
             });
         }
 
+        // Clean old session
         if (unverifiedUsers.has(email)) unverifiedUsers.delete(email);
 
         const hashedPassword = await bcrypt.hash(password, 12);
         unverifiedUsers.set(email, { fullName, email, username, password: hashedPassword });
 
+        console.log('🔄 Generating and sending OTP via Brevo...');
         const result = await generateAndSendOtp(email);
 
         if (!result.success) {
@@ -435,6 +406,9 @@ const signup = async (req, res) => {
                 recordTitle: `Signup initiated - ${email}`
             }
         });
+
+        console.log('✅ Signup initiated successfully via Brevo');
+        console.log('==============================================\n');
 
         return res.status(200).json({
             success: true,
@@ -471,6 +445,9 @@ const signup = async (req, res) => {
     }
 };
 
+// --------------------------------------------------------------------
+// RESEND OTP - WITH ACTIVITY LOGGING
+// --------------------------------------------------------------------
 const resendOtp = async (req, res) => {
     console.log('\n--- RESEND OTP Controller Hit ---');
     const startTime = Date.now();
@@ -559,6 +536,9 @@ const resendOtp = async (req, res) => {
     }
 };
 
+// --------------------------------------------------------------------
+// VERIFY OTP - WITH ACTIVITY LOGGING
+// --------------------------------------------------------------------
 const verifyOtp = async (req, res) => {
     console.log('\n--- VERIFY OTP Controller Hit ---');
     const startTime = Date.now();
@@ -715,6 +695,9 @@ const verifyOtp = async (req, res) => {
     }
 };
 
+// --------------------------------------------------------------------
+// LOGIN CONTROLLER - WITH ACTIVITY LOGGING
+// --------------------------------------------------------------------
 const login = async (req, res) => {
     console.log('\n--- LOGIN Controller Hit ---');
     const startTime = Date.now();
@@ -855,6 +838,9 @@ const login = async (req, res) => {
     }
 };
 
+// --------------------------------------------------------------------
+// LOGOUT CONTROLLER - WITH ACTIVITY LOGGING
+// --------------------------------------------------------------------
 const logout = async (req, res) => {
     console.log('\n--- LOGOUT Controller Hit ---');
     const startTime = Date.now();
@@ -913,6 +899,9 @@ const logout = async (req, res) => {
     }
 };
 
+// --------------------------------------------------------------------
+// GET ME CONTROLLER
+// --------------------------------------------------------------------
 const getMe = (req, res) => {
     res.status(200).json({
         _id: req.user._id,
@@ -921,6 +910,9 @@ const getMe = (req, res) => {
     });
 };
 
+// --------------------------------------------------------------------
+// EXPORTS
+// --------------------------------------------------------------------
 module.exports = {
     signup,
     login,
