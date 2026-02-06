@@ -675,13 +675,37 @@ const PackageCustomizer = ({
 
   /**
    * Toggle inclusion checkbox
+   * ✅ VALIDATION: Prevent unchecking all inclusions
    */
   const toggleInclusion = (id) => {
-    setCustomizedInclusions(prev => 
-      prev.map(inc => 
+    setCustomizedInclusions(prev => {
+      // Find the inclusion being toggled
+      const inclusionToToggle = prev.find(inc => inc.id === id);
+      
+      // If trying to uncheck
+      if (inclusionToToggle && inclusionToToggle.isChecked) {
+        // Count currently checked inclusions
+        const checkedCount = prev.filter(inc => inc.isChecked).length;
+        
+        // ⚠️ PREVENT: Don't allow unchecking if it's the last remaining inclusion
+        if (checkedCount === 1) {
+          setError('⚠️ At least one inclusion must remain selected. You cannot remove all inclusions from your package.');
+          
+          // Auto-clear error after 4 seconds
+          setTimeout(() => setError(''), 4000);
+          
+          return prev; // Return unchanged state
+        }
+      }
+      
+      // Clear any previous error
+      setError('');
+      
+      // Proceed with toggle
+      return prev.map(inc => 
         inc.id === id ? { ...inc, isChecked: !inc.isChecked } : inc
-      )
-    );
+      );
+    });
   };
 
   /**
@@ -781,13 +805,39 @@ const PackageCustomizer = ({
         )}
       </div>
 
-      {/* Error Alert */}
+      {/* Error/Warning Alert */}
       {error && (
-        <div className="pc-error-alert">
-          <AlertCircle size={20} />
-          <div>
-            <strong>Error Loading Activities</strong>
-            <p>{error}</p>
+        <div className="pc-error-alert" style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+          padding: '16px',
+          marginBottom: '20px',
+          background: error.includes('⚠️') ? '#fef3c7' : '#fee2e2',
+          border: `2px solid ${error.includes('⚠️') ? '#f59e0b' : '#ef4444'}`,
+          borderRadius: '12px',
+          color: error.includes('⚠️') ? '#92400e' : '#991b1b'
+        }}>
+          <AlertCircle size={20} style={{ 
+            marginTop: '2px',
+            flexShrink: 0,
+            color: error.includes('⚠️') ? '#f59e0b' : '#ef4444'
+          }} />
+          <div style={{ flex: 1 }}>
+            <strong style={{ 
+              display: 'block',
+              marginBottom: '4px',
+              fontSize: '0.95rem'
+            }}>
+              {error.includes('⚠️') ? 'Validation Warning' : 'Error Loading Activities'}
+            </strong>
+            <p style={{ 
+              margin: 0,
+              fontSize: '0.9rem',
+              lineHeight: '1.5'
+            }}>
+              {error}
+            </p>
           </div>
         </div>
       )}
@@ -806,41 +856,63 @@ const PackageCustomizer = ({
         </div>
 
         <div className="pc-inclusions-list">
-          {customizedInclusions.map((inclusion) => (
-            <div 
-              key={inclusion.id}
-              className={`pc-inclusion-item ${inclusion.isChecked ? 'checked' : 'unchecked'}`}
-            >
-              <div className="pc-inclusion-main">
-                <input
-                  type="checkbox"
-                  className="pc-checkbox"
-                  checked={inclusion.isChecked}
-                  onChange={() => toggleInclusion(inclusion.id)}
-                />
-                
-                <div className="pc-inclusion-info">
-                  <div className="pc-inclusion-name">
-                    {inclusion.name}
-                    
-                    {inclusion.isOriginal && (
-                      <span 
-                        className="pc-badge" 
-                        style={{ 
-                          background: inclusion.price > 0 ? '#dcfce7' : '#fee2e2',
-                          color: inclusion.price > 0 ? '#166534' : '#991b1b'
-                        }}
-                      >
-                        {inclusion.price > 0 ? 'Priced' : 'No Rate'}
-                      </span>
-                    )}
-                    
-                    {!inclusion.isOriginal && (
-                      <span className="pc-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
-                        Added
-                      </span>
-                    )}
-                  </div>
+          {customizedInclusions.map((inclusion) => {
+            // ✅ Check if this is the last remaining checked inclusion
+            const checkedCount = customizedInclusions.filter(inc => inc.isChecked).length;
+            const isLastRemaining = inclusion.isChecked && checkedCount === 1;
+            
+            return (
+              <div 
+                key={inclusion.id}
+                className={`pc-inclusion-item ${inclusion.isChecked ? 'checked' : 'unchecked'} ${isLastRemaining ? 'last-remaining' : ''}`}
+              >
+                <div className="pc-inclusion-main">
+                  <input
+                    type="checkbox"
+                    className="pc-checkbox"
+                    checked={inclusion.isChecked}
+                    onChange={() => toggleInclusion(inclusion.id)}
+                    disabled={isLastRemaining}
+                    title={isLastRemaining ? "This is the last remaining inclusion and cannot be removed" : ""}
+                  />
+                  
+                  <div className="pc-inclusion-info">
+                    <div className="pc-inclusion-name">
+                      {inclusion.name}
+                      
+                      {isLastRemaining && (
+                        <span 
+                          className="pc-badge" 
+                          style={{ 
+                            background: '#fef3c7',
+                            color: '#92400e',
+                            fontSize: '0.75rem',
+                            padding: '2px 6px'
+                          }}
+                          title="At least one inclusion must remain in your package"
+                        >
+                          Required
+                        </span>
+                      )}
+                      
+                      {inclusion.isOriginal && !isLastRemaining && (
+                        <span 
+                          className="pc-badge" 
+                          style={{ 
+                            background: inclusion.price > 0 ? '#dcfce7' : '#fee2e2',
+                            color: inclusion.price > 0 ? '#166534' : '#991b1b'
+                          }}
+                        >
+                          {inclusion.price > 0 ? 'Priced' : 'No Rate'}
+                        </span>
+                      )}
+                      
+                      {!inclusion.isOriginal && (
+                        <span className="pc-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
+                          Added
+                        </span>
+                      )}
+                    </div>
                   
                   
                   
@@ -878,7 +950,8 @@ const PackageCustomizer = ({
                 )}
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
 
