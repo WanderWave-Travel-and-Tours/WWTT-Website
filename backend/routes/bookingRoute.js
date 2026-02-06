@@ -9,7 +9,7 @@ const Promo = require('../models/promo');
 const Package = require('../models/package');
 const ActivityLog = require('../models/ActivityLog'); 
 const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
-
+ 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadPath = file.fieldname.includes('passport') 

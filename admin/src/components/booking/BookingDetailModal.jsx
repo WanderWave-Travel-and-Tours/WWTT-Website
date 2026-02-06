@@ -464,7 +464,7 @@ export const BookingDetailModal = ({
                         )}
                     </div>
                 </div>
-            </div>
+            </div> 
 
             {/* Voucher Preview Modal */}
             {showVoucherPreview && voucherData && (
