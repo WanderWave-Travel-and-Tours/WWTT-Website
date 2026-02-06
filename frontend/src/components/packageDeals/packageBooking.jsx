@@ -221,13 +221,9 @@ function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
         localStorage.setItem(lastResetKey, today);
         sessionStorage.removeItem(`seenModal_${packageId}_${userIpAddress}`);
         
-        // ✅ FIXED: Reset state instead of reloading page
+        // Reload page to restart the whole sequence nicely
         if (isMounted.current) {
-          setTimeRemaining(900000); // Reset to 15 minutes
-          setTimerExpired(false);
-          setShowAnimation(true);
-          setShowOfferModal(false);
-          setHasOfferClosed(false);
+          window.location.reload(); 
         }
       }
     };

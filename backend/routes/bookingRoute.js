@@ -61,7 +61,9 @@ const generateTempPassword = () => {
 router.get('/user/:email', async (req, res) => {
   try {
     const { email } = req.params;
-    const bookings = await Booking.find({ email: email }).sort({ createdAt: -1 });
+    const bookings = await Booking.find({ email: email })
+      .populate('packageId')
+      .sort({ createdAt: -1 });
 
     res.json({
       success: true,
@@ -699,13 +701,12 @@ router.get('/stats/customization', async (req, res) => {
         $match: { 
           'customizedInclusions.isOriginal': false,
           'customizedInclusions.isChecked': true
-        } 
+        }
       },
       {
         $group: {
           _id: '$customizedInclusions.name',
           count: { $sum: 1 },
-          avgPrice: { $avg: '$customizedInclusions.price' },
           totalRevenue: { $sum: '$customizedInclusions.price' }
         }
       },
@@ -714,135 +715,34 @@ router.get('/stats/customization', async (req, res) => {
     ]);
 
     res.json({
-      totalBookings,
-      customizedBookings,
-      customizationRate: parseFloat(customizationRate),
-      revenue: customizationRevenue[0] || { 
-        totalRevenue: 0, 
-        avgAdditionalPrice: 0, 
-        count: 0 
-      },
-      popularInclusions
+      success: true,
+      stats: {
+        totalBookings,
+        customizedBookings,
+        customizationRate: parseFloat(customizationRate),
+        revenue: customizationRevenue[0] || {
+          totalRevenue: 0,
+          avgAdditionalPrice: 0,
+          count: 0
+        },
+        popularInclusions
+      }
     });
 
   } catch (error) {
     console.error('Error fetching customization stats:', error);
     res.status(500).json({ 
-      message: 'Error fetching statistics', 
+      success: false,
+      message: 'Error fetching customization statistics',
       error: error.message 
     });
   }
 });
 
-router.put('/:id/confirm', async (req, res) => {
+router.post('/:id/cancel', async (req, res) => {
   try {
-    const { id } = req.params;
-    const booking = await Booking.findById(id);
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    if (booking.status === 'confirmed') {
-      return res.status(400).json({
-        success: false,
-        message: 'Booking is already confirmed'
-      });
-    }
-
-    if (booking.status === 'cancelled') {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot confirm a cancelled booking'
-      });
-    }
-
-    if (booking.promoId) {
-      try {
-        console.log(`🎟️ Incrementing promo usage count for booking ${id}...`);
-        
-        const promo = await Promo.findById(booking.promoId);
-        
-        if (promo) {
-          if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
-            return res.status(400).json({
-              success: false,
-              message: 'Promo code usage limit has been reached. Cannot confirm booking.'
-            });
-          }
-
-          promo.usedCount += 1;
-          await promo.save();
-          
-          console.log(`✅ Promo usage incremented: ${promo.code} (${promo.usedCount}/${promo.usageLimit || '∞'})`);
-        } else {
-          console.warn(`⚠️ Warning: Promo ID ${booking.promoId} not found, but continuing with booking confirmation`);
-        }
-      } catch (promoError) {
-        console.error('❌ Error incrementing promo usage:', promoError);
-      }
-    }
-
-    booking.status = 'confirmed';
-    booking.updatedAt = new Date();
+    const booking = await Booking.findById(req.params.id);
     
-    if (!booking.paidAt) {
-      booking.paidAt = new Date();
-    }
-
-    await booking.save();
-
-    console.log('✅ Booking confirmed:', id);
-
-    // 👇👇👇 ACTIVITY LOG START (CONFIRM BOOKING) 👇👇👇
-    try {
-        const { userEmail, adminId } = req.body;
-        if (userEmail) {
-            await ActivityLog.create({
-                action: 'UPDATE',
-                module: 'Bookings',
-                user: userEmail,
-                userId: adminId || null,
-                description: `Confirmed booking: ${booking.packageName} for ${booking.fullName}`,
-                severity: 'SUCCESS',
-                details: {
-                    recordTitle: `${booking.packageName} - ${booking.fullName}`,
-                    recordId: booking._id.toString(),
-                    method: 'PUT',
-                    statusChange: 'pending → confirmed'
-                }
-            });
-            console.log('✅ Activity Log saved for Confirm Booking');
-        }
-    } catch (logError) {
-        console.error('⚠️ Failed to save activity log:', logError.message);
-    }
-    // 👆👆👆 ACTIVITY LOG END 👆👆👆
-
-    res.json({
-      success: true,
-      message: 'Booking confirmed successfully',
-      booking: booking
-    });
-
-  } catch (error) {
-    console.error('❌ Confirm booking error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to confirm booking',
-      error: error.message
-    });
-  }
-});
-
-router.put('/:id/cancel', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const booking = await Booking.findById(id);
-
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -858,9 +758,7 @@ router.put('/:id/cancel', async (req, res) => {
     }
 
     booking.status = 'cancelled';
-    booking.updatedAt = new Date();
     booking.cancelledAt = new Date();
-
     await booking.save();
 
     // 👇👇👇 ACTIVITY LOG START (CANCEL BOOKING) 👇👇👇
@@ -868,17 +766,17 @@ router.put('/:id/cancel', async (req, res) => {
         const { userEmail, adminId } = req.body;
         if (userEmail) {
             await ActivityLog.create({
-                action: 'DELETE',
+                action: 'UPDATE',
                 module: 'Bookings',
                 user: userEmail,
                 userId: adminId || null,
-                description: `Cancelled booking: ${booking.packageName} for ${booking.fullName}`,
+                description: `Cancelled booking: ${booking.packageName} (${booking.fullName})`,
                 severity: 'WARNING',
                 details: {
                     recordTitle: `${booking.packageName} - ${booking.fullName}`,
                     recordId: booking._id.toString(),
-                    method: 'PUT',
-                    previousStatus: 'confirmed/pending',
+                    method: 'POST',
+                    previousStatus: 'pending/confirmed',
                     newStatus: 'cancelled'
                 }
             });
@@ -892,11 +790,11 @@ router.put('/:id/cancel', async (req, res) => {
     res.json({
       success: true,
       message: 'Booking cancelled successfully',
-      booking: booking
+      booking
     });
 
   } catch (error) {
-    console.error('❌ Cancel booking error:', error);
+    console.error('Error cancelling booking:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to cancel booking',
@@ -905,9 +803,11 @@ router.put('/:id/cancel', async (req, res) => {
   }
 });
 
-router.get('/:id/balance', async (req, res) => {
+router.post('/:id/confirm-payment', async (req, res) => {
   try {
     const { id } = req.params;
+    const { paymentId } = req.body;
+    
     const booking = await Booking.findById(id);
 
     if (!booking) {
@@ -917,29 +817,71 @@ router.get('/:id/balance', async (req, res) => {
       });
     }
 
-    const balanceInfo = {
-      bookingId: booking._id,
-      totalAmount: booking.totalAmount,
-      paymentType: booking.paymentType,
-      initialPaymentAmount: booking.initialPaymentAmount,
-      remainingBalance: booking.remainingBalance,
-      balancePaidAmount: booking.balancePaidAmount,
-      isFullyPaid: booking.isFullyPaid(),
-      paymentStatus: booking.getPaymentStatusDescription(),
-      initialPaymentDate: booking.paidAt,
-      balancePaymentDate: booking.balancePaidAt
-    };
+    if (booking.status === 'confirmed' || booking.status === 'fully_paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already confirmed'
+      });
+    }
+
+    // For full payment
+    if (booking.paymentType === 'full') {
+      booking.status = 'confirmed';
+      booking.paidAt = new Date();
+      booking.paymentId = paymentId;
+    } 
+    // For partial payment (initial)
+    else if (booking.paymentType === 'partial') {
+      booking.status = 'partial_paid';
+      booking.paidAt = new Date();
+      booking.initialPaymentId = paymentId;
+    }
+
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    console.log(`✅ Payment confirmed for booking ${id}`);
+
+    // 👇👇👇 ACTIVITY LOG START (PAYMENT CONFIRMATION) 👇👇👇
+    try {
+        const { userEmail, adminId } = req.body;
+        if (userEmail) {
+            await ActivityLog.create({
+                action: 'UPDATE',
+                module: 'Bookings',
+                user: userEmail,
+                userId: adminId || null,
+                description: `Payment confirmed for booking: ${booking.packageName} (${booking.fullName})`,
+                severity: 'SUCCESS',
+                details: {
+                    recordTitle: `${booking.packageName} - ${booking.fullName}`,
+                    recordId: booking._id.toString(),
+                    method: 'POST',
+                    paymentType: booking.paymentType,
+                    amount: booking.paymentType === 'full' ? booking.totalAmount : booking.initialPaymentAmount,
+                    paymentId: paymentId
+                }
+            });
+            console.log('✅ Activity Log saved for Payment Confirmation');
+        }
+    } catch (logError) {
+        console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
     res.json({
       success: true,
-      balanceInfo: balanceInfo
+      message: booking.paymentType === 'full' 
+        ? 'Payment confirmed successfully' 
+        : 'Initial payment confirmed successfully',
+      booking: booking
     });
 
   } catch (error) {
-    console.error('❌ Error fetching balance info:', error);
+    console.error('❌ Error confirming payment:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch balance information',
+      message: 'Failed to confirm payment',
       error: error.message
     });
   }
@@ -948,6 +890,7 @@ router.get('/:id/balance', async (req, res) => {
 router.post('/:id/create-balance-payment', async (req, res) => {
   try {
     const { id } = req.params;
+    
     const booking = await Booking.findById(id);
 
     if (!booking) {
@@ -960,14 +903,7 @@ router.post('/:id/create-balance-payment', async (req, res) => {
     if (booking.paymentType !== 'partial') {
       return res.status(400).json({
         success: false,
-        message: 'This booking was paid in full'
-      });
-    }
-
-    if (booking.remainingBalance <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No remaining balance to pay'
+        message: 'This booking is not set for partial payment'
       });
     }
 
@@ -1158,4 +1094,81 @@ router.patch('/:id/customization', async (req, res) => {
   }
 });
 
+// ✅ PUT route for updating bookings - MOVED BEFORE module.exports
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    console.log('📝 Updating booking:', id);
+    console.log('Update data:', updateData);
+
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    // Update allowed fields
+    const allowedUpdates = [
+      'packageName', 'fullName', 'email', 'message', 
+      'startDate', 'endDate', 'duration', 'pax',
+      'selectedRoomType', 'hotelName', 'numberOfRooms',
+      'flightDetails', 'passengers'
+    ];
+
+    allowedUpdates.forEach(field => {
+      if (updateData[field] !== undefined) {
+        booking[field] = updateData[field];
+      }
+    });
+
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    // 👇👇👇 ACTIVITY LOG START 👇👇👇
+    try {
+      const { userEmail, adminId } = updateData;
+      if (userEmail) {
+        await ActivityLog.create({
+          action: 'UPDATE',
+          module: 'Bookings',
+          user: userEmail,
+          userId: adminId || null,
+          description: `Updated booking: ${booking.packageName} (${booking.fullName})`,
+          severity: 'INFO',
+          details: {
+            recordTitle: `${booking.packageName} - ${booking.fullName}`,
+            recordId: booking._id.toString(),
+            method: 'PUT',
+            updatedFields: allowedUpdates.filter(field => updateData[field] !== undefined)
+          }
+        });
+        console.log('✅ Activity Log saved for Booking Update');
+      }
+    } catch (logError) {
+      console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+    // 👆👆👆 ACTIVITY LOG END 👆👆👆
+
+    res.json({
+      success: true,
+      message: 'Booking updated successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating booking:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update booking',
+      error: error.message
+    });
+  }
+});
+
+// ✅ FIXED: module.exports moved to the very end
 module.exports = router;

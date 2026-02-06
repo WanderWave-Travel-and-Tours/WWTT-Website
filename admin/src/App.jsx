@@ -523,7 +523,7 @@ function App() {
           <Route path="/view-testimonials" element={<ProtectedRoute><ViewTestimonials /></ProtectedRoute>} />
           <Route path="/add-testimonial" element={<ProtectedRoute><AddTestimonial /></ProtectedRoute>} />
           <Route path="/edit-testimonial/:id" element={<ProtectedRoute><EditTestimonial /></ProtectedRoute>} />
-          
+           
           {/* Hotel Inventory Management */}
           <Route path="/add-hotel" element={<ProtectedRoute><AddHotel /></ProtectedRoute>} />
           <Route path="/view-hotels" element={<ProtectedRoute><ViewHotels /></ProtectedRoute>} />
