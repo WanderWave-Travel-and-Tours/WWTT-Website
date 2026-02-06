@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+ 
 const passengerSchema = new mongoose.Schema({
   passengerNumber: { type: Number, required: true },
   firstName: { type: String, required: true },
