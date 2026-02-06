@@ -1,4 +1,4 @@
-/* BookingFormModal.css - FULLY RESPONSIVE */
+/* BookingFormModal.css - FULLY RESPONSIVE & IMPROVED CALENDAR WITH DROPDOWNS */
 
 /* ============================================
    BASE STYLES (Desktop First)
@@ -14,7 +14,7 @@
   justify-content: center;
   z-index: 99999;
   padding: 20px;
-  padding-top: 100px;
+  padding-top: 50px;
   overflow-y: auto;
   animation: bfmFadeIn 0.2s ease-out;
 }
@@ -33,7 +33,7 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: bfmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   height: auto;
-  max-height: calc(100vh - 140px);
+  max-height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -54,8 +54,8 @@
   border: 1px solid rgba(255, 255, 255, 0.5);
   color: white;
   cursor: pointer;
-  width: 40px; 
-  height: 40px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,7 +78,7 @@
   background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80');
   background-size: cover;
   background-position: center;
-  padding: 24px 32px; 
+  padding: 20px 24px; 
   position: relative;
   overflow: hidden;
   flex-shrink: 0; 
@@ -103,14 +103,14 @@
 
 .bfm-modal-logo {
   display: block;
-  height: 32px; 
-  margin: 0 auto 12px auto;
+  height: 28px; 
+  margin: 0 auto 10px auto;
   object-fit: contain;
   filter: brightness(0) invert(1);
 }
 
 .bfm-modal-title {
-  font-size: 1.4rem; 
+  font-size: 1.25rem; 
   font-weight: 800;
   color: white;
   text-align: center;
@@ -121,8 +121,8 @@
 .bfm-modal-subtitle {
   text-align: center;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 0.8rem;
-  margin-bottom: 16px;
+  font-size: 0.75rem;
+  margin-bottom: 12px;
   line-height: 1.4;
   display: block;
 }
@@ -131,47 +131,47 @@
 .bfm-trip-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255, 255, 255, 0.1); 
   backdrop-filter: blur(8px);
-  padding: 10px;
+  padding: 8px;
   border-radius: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .bfm-summary-item { 
   flex: 1;
-  min-width: 120px;
+  min-width: 100px;
   display: flex; 
   flex-direction: column; 
   justify-content: center;
   gap: 2px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: rgba(255, 255, 255, 0.95); 
   border-radius: 8px;
 }
 
 .bfm-summary-label { 
-  font-size: 0.6rem; 
+  font-size: 0.55rem; 
   text-transform: uppercase; 
   color: #64748b; 
   font-weight: 700;
 }
 
 .bfm-summary-value { 
-  font-size: 0.85rem; 
+  font-size: 0.8rem; 
   font-weight: 700; 
   color: #1e3a5f;
   white-space: nowrap;
 }
 
 .bfm-summary-subtext {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: #64748b;
 }
 
-.bfm-price { color: #10b981; font-size: 1rem; }
+.bfm-price { color: #10b981; font-size: 0.95rem; }
 .bfm-accent-color { color: #fc9c1b; }
 
 .bfm-grand-total {
@@ -180,7 +180,7 @@
 }
 
 .bfm-grand-total-value {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #ea580c;
 }
 
@@ -189,8 +189,8 @@
   background: rgba(239, 246, 255, 0.95); 
   border: 1px solid #93c5fd;
   border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.75rem;
+  padding: 6px 10px;
+  font-size: 0.7rem;
   color: #1e40af;
   font-weight: 600;
   margin-bottom: 0;
@@ -208,13 +208,13 @@
   flex: 1; 
   overflow-y: auto; 
   overscroll-behavior: contain; 
-  padding: 24px 32px;
+  padding: 20px 24px;
   background: #f8fafc;
 }
 
 /* Custom Scrollbar */
 .bfm-form-wrapper::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .bfm-form-wrapper::-webkit-scrollbar-track {
@@ -233,18 +233,18 @@
 
 /* --- Progress Section --- */
 .bfm-progress-section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .bfm-progress-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .bfm-progress-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #475569;
   display: flex;
@@ -255,21 +255,21 @@
 .bfm-primary-badge {
   background: #f97316;
   color: white;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
 }
 
 .bfm-progress-percent {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #64748b;
   font-weight: 600;
 }
 
 .bfm-progress-bar-container {
   width: 100%;
-  height: 8px;
+  height: 6px;
   background: #e2e8f0;
   border-radius: 4px;
   overflow: hidden;
@@ -285,10 +285,10 @@
 /* --- Form Inputs --- */
 .bfm-form-section-header {
   color: #1e3a5f;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 800;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
   border-bottom: 2px solid #e2e8f0;
   display: flex;
   align-items: center;
@@ -300,14 +300,14 @@
 .bfm-passenger-badge {
   background: #1e3a5f;
   color: white;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
 .bfm-primary-contact-label { 
-  font-size: 0.75rem; 
+  font-size: 0.7rem; 
   color: #f97316; 
   font-weight: 700; 
 }
@@ -315,7 +315,7 @@
 .bfm-form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
+  gap: 12px;
 }
 
 .bfm-form-group { 
@@ -328,27 +328,19 @@
 
 .bfm-form-group label { 
   display: block; 
-  font-size: 0.75rem; 
+  font-size: 0.7rem; 
   font-weight: 700; 
   color: #475569; 
   margin-bottom: 4px; 
 }
 
-.bfm-upload-hint {
-  font-size: 0.65rem;
-  color: #94a3b8;
-  font-weight: 400;
-  display: block;
-  margin-top: 2px;
-}
-
 .bfm-form-group input, 
 .bfm-form-group select {
   width: 100%; 
-  padding: 10px 12px; 
+  padding: 8px 10px; 
   border: 1px solid #cbd5e1; 
   border-radius: 8px; 
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   background-color: white; 
   color: #334155; 
   box-sizing: border-box;
@@ -367,6 +359,247 @@
   margin-left: 2px; 
 }
 
+.bfm-upload-hint {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+/* =======================================================
+   ✅ CUSTOM DATE PICKER STYLES - WORKS ON ALL PLATFORMS
+   ======================================================= */
+
+.bfm-date-picker-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.bfm-calendar-trigger {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.bfm-calendar-trigger:hover {
+  border-color: #fc9c1b;
+  background: #fffbf5;
+}
+
+.bfm-date-value {
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.bfm-date-placeholder {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.bfm-trigger-icon {
+  color: #64748b;
+  transition: transform 0.2s;
+}
+
+.bfm-calendar-trigger:hover .bfm-trigger-icon {
+  color: #fc9c1b;
+  transform: scale(1.1);
+}
+
+/* Calendar Popup Container */
+.bfm-custom-calendar {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 300px;
+  max-width: 90vw;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  z-index: 100;
+  margin-top: 6px;
+  animation: calendarSlideDown 0.2s ease-out;
+}
+
+@keyframes calendarSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ✅ Calendar Header with Navigation and Dropdowns */
+.bfm-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.bfm-cal-nav-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #475569;
+  padding: 0;
+}
+
+.bfm-cal-nav-btn:hover {
+  background: #fc9c1b;
+  border-color: #fc9c1b;
+  color: white;
+  transform: scale(1.05);
+}
+
+.bfm-cal-nav-btn:active {
+  transform: scale(0.95);
+}
+
+/* ✅ Dropdown Selectors Container */
+.bfm-calendar-selectors {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+.bfm-month-select,
+.bfm-year-select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  padding-right: 24px;
+}
+
+.bfm-month-select:hover,
+.bfm-year-select:hover {
+  border-color: #fc9c1b;
+  background-color: #fffbf5;
+}
+
+.bfm-month-select:focus,
+.bfm-year-select:focus {
+  outline: none;
+  border-color: #fc9c1b;
+  box-shadow: 0 0 0 3px rgba(252, 156, 27, 0.1);
+}
+
+.bfm-month-select {
+  flex: 1.2;
+}
+
+.bfm-year-select {
+  flex: 0.8;
+}
+
+/* Weekday Headers */
+.bfm-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.bfm-cal-weekday {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+
+/* Calendar Days Grid */
+.bfm-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.bfm-cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #334155;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: white;
+  border: 1px solid transparent;
+}
+
+.bfm-cal-day:not(.empty):not(.disabled):hover {
+  background-color: #fff7ed;
+  border-color: #fc9c1b;
+  transform: scale(1.05);
+  font-weight: 600;
+}
+
+.bfm-cal-day.selected {
+  background: linear-gradient(135deg, #fc9c1b, #f97316);
+  color: white;
+  font-weight: 700;
+  border-color: #ea8c0d;
+  box-shadow: 0 2px 8px rgba(252, 156, 27, 0.3);
+}
+
+.bfm-cal-day.empty {
+  cursor: default;
+  background: transparent;
+  border: none;
+}
+
+.bfm-cal-day.disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.bfm-cal-day.disabled:hover {
+  background: #f8fafc;
+  border-color: transparent;
+  transform: none;
+}
+
 /* --- File Upload --- */
 .bfm-file-upload-box {
   width: 100%;
@@ -378,7 +611,7 @@
   align-items: center; 
   justify-content: center; 
   gap: 4px;
-  padding: 16px; 
+  padding: 12px; 
   border: 2px dashed #cbd5e1; 
   border-radius: 8px; 
   cursor: pointer; 
@@ -395,11 +628,11 @@
 .bfm-upload-text { 
   font-weight: 600; 
   color: #475569; 
-  font-size: 0.85rem; 
+  font-size: 0.8rem; 
 }
 
 .bfm-upload-subtext { 
-  font-size: 0.7rem; 
+  font-size: 0.65rem; 
   color: #94a3b8; 
 }
 
@@ -407,7 +640,7 @@
   display: flex; 
   justify-content: space-between; 
   align-items: center; 
-  padding: 8px 12px; 
+  padding: 6px 10px; 
   background: #f0fdf4; 
   border: 1px solid #86efac; 
   border-radius: 8px;
@@ -420,7 +653,7 @@
 }
 
 .bfm-file-name { 
-  font-size: 0.8rem; 
+  font-size: 0.75rem; 
   font-weight: 600; 
   color: #166534; 
 }
@@ -429,9 +662,9 @@
   background: #fff; 
   color: #dc2626; 
   border: 1px solid #fecaca; 
-  padding: 4px 10px; 
+  padding: 2px 8px; 
   border-radius: 4px; 
-  font-size: 0.7rem; 
+  font-size: 0.65rem; 
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -443,21 +676,21 @@
 
 /* --- Payment Section --- */
 .bfm-payment-section {
-  margin-top: 20px;
-  padding-top: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 2px solid #e2e8f0;
 }
 
 .bfm-payment-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 10px;
   color: #1e3a5f;
 }
 
 .bfm-payment-header h3 {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 800;
   margin: 0;
 }
@@ -465,14 +698,14 @@
 .bfm-payment-options {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .bfm-payment-card {
   border: 2px solid #e2e8f0;
   border-radius: 10px;
-  padding: 12px;
+  padding: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   background: white;
@@ -492,13 +725,13 @@
 .bfm-payment-card-header {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .bfm-payment-radio {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 2px solid #cbd5e1;
   border-radius: 50%;
   display: flex;
@@ -513,8 +746,8 @@
 }
 
 .bfm-radio-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: transparent;
   transition: all 0.2s ease;
@@ -528,9 +761,9 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #1e3a5f;
 }
@@ -538,62 +771,62 @@
 .bfm-recommended-badge {
   background: #10b981;
   color: white;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
 }
 
 .bfm-flexible-badge {
   background: #3b82f6;
   color: white;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
 }
 
 .bfm-payment-card-body {
-  padding-left: 30px;
+  padding-left: 26px;
 }
 
 .bfm-payment-amount {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #fc9c1b;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .bfm-payment-percentage {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #64748b;
   font-weight: 600;
   margin-top: 2px;
 }
 
 .bfm-payment-description {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #64748b;
-  margin-bottom: 8px;
-  line-height: 1.4;
+  margin-bottom: 6px;
+  line-height: 1.3;
 }
 
 .bfm-payment-benefits {
   list-style: none;
   padding: 0;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #475569;
 }
 
 .bfm-payment-benefits li {
-  padding: 3px 0;
+  padding: 2px 0;
 }
 
 .bfm-payment-breakdown {
-  margin-top: 8px;
-  padding: 8px;
+  margin-top: 6px;
+  padding: 6px;
   background: #f8fafc;
   border-radius: 6px;
 }
@@ -602,9 +835,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #64748b;
-  padding: 3px 0;
+  padding: 2px 0;
 }
 
 .bfm-breakdown-row strong {
@@ -616,7 +849,7 @@
   background: #fff7ed;
   border: 2px solid #fc9c1b;
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 
 .bfm-summary-row {
@@ -624,18 +857,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #64748b;
 }
 
 .bfm-summary-row.bfm-remaining {
   border-top: 1px dashed #fcd34d;
   margin-top: 6px;
-  padding-top: 8px;
+  padding-top: 6px;
 }
 
 .bfm-amount-highlight {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #ea580c;
 }
@@ -644,16 +877,16 @@
 .bfm-actions {
   display: flex;
   gap: 10px;
-  margin-top: 24px;
+  margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid #e2e8f0;
 }
 
 .bfm-back-btn, .bfm-submit-btn {
-  padding: 12px;
+  padding: 10px;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
   border: none;
   transition: all 0.2s ease;
@@ -693,72 +926,19 @@
 @media (min-width: 641px) and (max-width: 1024px) {
   .bfm-overlay {
     padding: 16px;
-    padding-top: 90px;
+    padding-top: 50px;
   }
 
   .bfm-modal-card {
     max-width: 600px;
-    max-height: calc(100vh - 130px);
-  }
-
-  .bfm-modal-header {
-    padding: 20px 24px;
-  }
-
-  .bfm-modal-logo {
-    height: 28px;
-  }
-
-  .bfm-modal-title {
-    font-size: 1.25rem;
-  }
-
-  .bfm-modal-subtitle {
-    font-size: 0.75rem;
-  }
-
-  .bfm-trip-summary {
-    gap: 6px;
-    padding: 8px;
-  }
-
-  .bfm-summary-item {
-    padding: 6px 10px;
-    min-width: 100px;
-  }
-
-  .bfm-summary-label {
-    font-size: 0.55rem;
-  }
-
-  .bfm-summary-value {
-    font-size: 0.8rem;
-  }
-
-  .bfm-form-wrapper {
-    padding: 20px 24px;
-  }
-
-  .bfm-form-grid {
-    gap: 12px;
-  }
-
-  .bfm-form-group input,
-  .bfm-form-group select {
-    padding: 10px;
-    font-size: 0.85rem;
   }
 
   .bfm-payment-options {
     gap: 8px;
   }
 
-  .bfm-payment-card {
-    padding: 10px;
-  }
-
-  .bfm-payment-amount {
-    font-size: 1.3rem;
+  .bfm-custom-calendar {
+    width: 280px;
   }
 }
 
@@ -769,7 +949,7 @@
 @media (max-width: 640px) {
   .bfm-overlay {
     padding: 0;
-    padding-top: 80px;
+    padding-top: 40px;
     align-items: flex-start;
   }
 
@@ -777,40 +957,22 @@
     border-radius: 12px 12px 0 0;
     width: 100%;
     height: auto;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 40px);
     max-width: 100%;
     margin-top: 0;
   }
 
   .bfm-modal-header {
-    padding: 16px 20px;
+    padding: 16px;
   }
 
-  .bfm-modal-logo { 
-    height: 24px; 
-    margin-bottom: 8px; 
-  }
-
-  .bfm-modal-title { 
-    font-size: 1.1rem; 
-    margin-bottom: 2px; 
-  }
-
-  .bfm-modal-subtitle { 
-    display: none;
-  }
-
-  /* Summary Grid on Mobile */
   .bfm-trip-summary {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
-    padding: 8px;
-    margin-bottom: 0;
   }
   
   .bfm-summary-item { 
-    padding: 6px 8px; 
     min-width: auto; 
   }
 
@@ -819,322 +981,54 @@
     white-space: normal;
   }
 
-  .bfm-summary-label { 
-    font-size: 0.5rem; 
-  }
-
-  .bfm-summary-subtext {
-    font-size: 0.6rem;
-  }
-
-  .bfm-price {
-    font-size: 0.85rem;
-  }
-
-  .bfm-grand-total-value {
-    font-size: 0.95rem;
-  }
-
-  .bfm-doc-req-box {
-    font-size: 0.7rem;
-    padding: 6px 10px;
-  }
-
   .bfm-form-wrapper {
-    padding: 16px 20px;
+    padding: 16px;
     padding-bottom: 40px;
-  }
-
-  .bfm-progress-section {
-    margin-bottom: 16px;
-  }
-
-  .bfm-progress-label {
-    font-size: 0.75rem;
-  }
-
-  .bfm-primary-badge {
-    font-size: 0.65rem;
-    padding: 2px 6px;
-  }
-
-  .bfm-progress-percent {
-    font-size: 0.7rem;
-  }
-
-  .bfm-form-section-header {
-    font-size: 0.85rem;
-    margin-bottom: 12px;
-  }
-
-  .bfm-passenger-badge {
-    font-size: 0.7rem;
-    padding: 3px 8px;
-  }
-
-  .bfm-primary-contact-label {
-    font-size: 0.7rem;
   }
 
   /* Single Column Form on Mobile */
   .bfm-form-grid {
     grid-template-columns: 1fr; 
-    gap: 12px;
+    gap: 10px;
   }
 
-  .bfm-form-group.bfm-full-width { 
-    grid-column: auto; 
+  /* ✅ Mobile Calendar Adjustments */
+  .bfm-custom-calendar {
+    width: 280px;
+    max-width: calc(100vw - 32px);
+    left: 50%;
+    transform: translateX(-50%);
   }
 
-  .bfm-form-group label {
-    font-size: 0.7rem;
+  .bfm-month-select,
+  .bfm-year-select {
+    font-size: 0.75rem;
+    padding: 5px 6px;
+    padding-right: 22px;
   }
 
-  .bfm-upload-hint {
-    font-size: 0.6rem;
+  .bfm-cal-nav-btn {
+    width: 28px;
+    height: 28px;
   }
 
-  .bfm-form-group input, 
-  .bfm-form-group select {
-    padding: 12px;
-    font-size: 1rem;
-  }
-
-  .bfm-file-upload-label {
-    padding: 12px;
-  }
-
-  .bfm-upload-text {
-    font-size: 0.8rem;
-  }
-
-  .bfm-upload-subtext {
-    font-size: 0.65rem;
-  }
-
-  .bfm-file-name {
+  .bfm-cal-day {
     font-size: 0.75rem;
   }
 
   /* Payment Section Mobile */
-  .bfm-payment-section {
-    margin-top: 16px;
-    padding-top: 16px;
-  }
-
-  .bfm-payment-header {
-    margin-bottom: 10px;
-  }
-
-  .bfm-payment-header h3 {
-    font-size: 0.85rem;
-  }
-
   .bfm-payment-options {
     grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .bfm-payment-card {
-    padding: 10px;
-  }
-
-  .bfm-payment-amount {
-    font-size: 1.3rem;
-  }
-
-  .bfm-payment-description {
-    font-size: 0.72rem;
-  }
-
-  .bfm-payment-benefits {
-    font-size: 0.72rem;
-  }
-
-  .bfm-breakdown-row {
-    font-size: 0.72rem;
-  }
-
-  .bfm-payment-summary {
-    padding: 8px 12px;
-  }
-
-  .bfm-summary-row {
-    font-size: 0.78rem;
-  }
-
-  .bfm-amount-highlight {
-    font-size: 1.05rem;
+    gap: 8px;
   }
 
   .bfm-actions {
     flex-direction: column-reverse;
-    gap: 12px;
-  }
-
-  .bfm-back-btn, .bfm-submit-btn {
-    width: 100%;
-    padding: 14px;
-    font-size: 0.85rem;
-  }
-  
-  .bfm-close-btn {
-    width: 32px;
-    height: 32px;
-    top: 12px;
-    right: 12px;
-  }
-}
-
-/* ============================================
-   EXTRA SMALL DEVICES (Max width: 375px)
-   ============================================ */
-
-@media (max-width: 375px) {
-  .bfm-modal-title {
-    font-size: 1rem;
-  }
-
-  .bfm-modal-logo {
-    height: 20px;
-  }
-
-  .bfm-summary-value {
-    font-size: 0.7rem;
-  }
-
-  .bfm-summary-label {
-    font-size: 0.45rem;
-  }
-
-  .bfm-form-wrapper {
-    padding: 12px 16px;
-    padding-bottom: 36px;
-  }
-
-  .bfm-form-group input,
-  .bfm-form-group select {
-    padding: 10px;
-    font-size: 0.95rem;
-  }
-
-  .bfm-payment-amount {
-    font-size: 1.2rem;
-  }
-
-  .bfm-actions {
     gap: 10px;
   }
 
   .bfm-back-btn, .bfm-submit-btn {
+    width: 100%;
     padding: 12px;
-    font-size: 0.8rem;
-  }
-}
-
-/* ============================================
-   LARGE SCREENS (Min width: 1025px)
-   ============================================ */
-
-@media (min-width: 1025px) {
-  .bfm-modal-card {
-    max-width: 750px;
-    max-height: 75vh; /* REDUCED FROM 82vh to 75vh */
-  }
-
-  .bfm-modal-header {
-    padding: 28px 36px;
-  }
-
-  .bfm-modal-title {
-    font-size: 1.5rem;
-  }
-
-  .bfm-modal-subtitle {
-    font-size: 0.85rem;
-  }
-
-  .bfm-form-wrapper {
-    padding: 28px 36px;
-  }
-
-  .bfm-form-grid {
-    gap: 16px;
-  }
-
-  .bfm-form-group input,
-  .bfm-form-group select {
-    padding: 11px 14px;
-    font-size: 0.95rem;
-  }
-
-  .bfm-payment-options {
-    gap: 12px;
-  }
-
-  .bfm-payment-card {
-    padding: 14px;
-  }
-
-  .bfm-payment-amount {
-    font-size: 1.6rem;
-  }
-
-  .bfm-actions {
-    gap: 12px;
-  }
-
-  .bfm-back-btn, .bfm-submit-btn {
-    padding: 14px;
-    font-size: 0.95rem;
-  }
-}
-
-/* Add this to your existing BookingRightForm.css file */
-
-/* Walk-in Button Styles */
-.brf-walk-in-btn {
-  width: 100%;
-  background-color: #3b82f6;
-  color: white;
-  padding: 18px;
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.brf-walk-in-btn:hover { 
-  background-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
-}
-
-.brf-walk-in-btn:disabled { 
-  cursor: not-allowed; 
-  opacity: 0.5;
-  transform: none;
-}
-
-/* Responsive Styles for Walk-in Button */
-@media (max-width: 640px) {
-  .brf-walk-in-btn {
-    padding: 14px;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 375px) {
-  .brf-walk-in-btn {
-    padding: 12px;
-    font-size: 0.85rem;
   }
 }
