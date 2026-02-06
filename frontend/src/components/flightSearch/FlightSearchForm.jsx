@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom"; // Inimport ang useNavigate para sa redirection
+import { useNavigate } from "react-router-dom"; 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./FlightSearchForm.css";
@@ -58,7 +58,7 @@ const FlightSearchForm = ({
   const [selectedOrigin, setSelectedOrigin] = useState(null);
   const [selectedDestination, setSelectedDestination] = useState(null);
 
-  const navigate = useNavigate(); // Ininitialize ang navigate function
+  const navigate = useNavigate(); 
   const formRef = useRef(null);
   const calendarRef = useRef(null);
 
@@ -130,10 +130,9 @@ const FlightSearchForm = ({
     setShowSignInModal(true);
   };
 
-  // Bagong function para sa redirection
   const handleRedirectToLogin = () => {
-    setShowSignInModal(false); // Isara ang modal bago mag-redirect
-    navigate("/login"); // I-re-redirect sa /login route
+    setShowSignInModal(false); 
+    navigate("/login"); 
   };
 
   const handleAirportSelect = (airport, type) => {
@@ -245,18 +244,28 @@ const FlightSearchForm = ({
                   {activeDropdown === "origin" && (
                     <div className="sb-dropdown">
                       {!originSearchTerm ? (
-                        <div className="recent-searches-section">
-                          {recentSearches.length > 0 && (
-                            <>
-                              <div className="recent-header">
-                                <span className="recent-title">Recent Searches</span>
-                                <button type="button" className="clear-btn" onClick={clearRecentSearches}>clear</button>
+                        // If no text typed, check if we have recent searches
+                        recentSearches.length > 0 ? (
+                            <div className="recent-searches-section">
+                              {/* Header with Close Button */}
+                              <div className="dropdown-top-bar">
+                                  <div className="dtb-left">
+                                    <span className="recent-title">Recent Searches</span>
+                                  </div>
+                                  <div className="dtb-right">
+                                    <button type="button" className="clear-btn" onClick={clearRecentSearches}>clear</button>
+                                    <button type="button" className="close-dropdown-btn" onClick={() => setActiveDropdown(null)}>
+                                      <svg className="close-icon-desktop" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                      <svg className="close-icon-mobile" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                  </div>
                               </div>
+                              
                               <div className="recent-list">
                                 {recentSearches.map((search, idx) => (
                                   <div key={idx} className="recent-item" onClick={() => handleRecentSearchClick(search)}>
                                     <div className="recent-icon">
-                                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <circle cx="12" cy="10" r="3"></circle>
                                         <path d="M12 2a8 8 0 0 0-8 8c0 1.892.402 3.13 1.5 4.5L12 22l6.5-7.5c1.098-1.37 1.5-2.608 1.5-4.5a8 8 0 0 0-8-8z"></path>
                                       </svg>
@@ -268,22 +277,29 @@ const FlightSearchForm = ({
                                   </div>
                                 ))}
                               </div>
-                            </>
-                          )}
-                          <div className="sign-in-prompt" onClick={handleSignInClick}>
-                            <div className="sign-in-icon">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                              </svg>
+
+                              {/* Sign In Prompt - Only shows if recent searches exist */}
+                              <div className="sign-in-prompt" onClick={handleSignInClick}>
+                                <div className="sign-in-icon">
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                  </svg>
+                                </div>
+                                <div className="sign-in-text">
+                                  <div className="sign-in-title">Sign In / Sign Up</div>
+                                  <div className="sign-in-subtitle">You can still search without signing up. <br></br> Sign in only to view your transactions.</div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="sign-in-text">
-                              <div className="sign-in-title">Sign In / Sign Up</div>
-                              <div className="sign-in-subtitle">Access your searches on any device</div>
-                            </div>
-                          </div>
-                        </div>
+                        ) : (
+                          // If NO recent searches, show simple prompt or default list (prevents big empty box with sign in)
+                           <div className="dropdown-list custom-scrollbar">
+                              <div className="dd-msg">Start typing to search...</div>
+                           </div>
+                        )
                       ) : (
+                        // Search Results List
                         <div className="dropdown-list custom-scrollbar">
                           {airportSearchLoading ? <div className="dd-msg">Searching...</div> : 
                           originSuggestions.length > 0 ? originSuggestions.map((airport, idx) => (
@@ -323,18 +339,27 @@ const FlightSearchForm = ({
                   {activeDropdown === "destination" && (
                     <div className="sb-dropdown">
                       {!destinationSearchTerm ? (
-                        <div className="recent-searches-section">
-                          {recentSearches.length > 0 && (
-                            <>
-                              <div className="recent-header">
-                                <span className="recent-title">Recent Searches</span>
-                                <button type="button" className="clear-btn" onClick={clearRecentSearches}>clear</button>
+                        recentSearches.length > 0 ? (
+                           <div className="recent-searches-section">
+                              {/* Header with Close Button */}
+                              <div className="dropdown-top-bar">
+                                  <div className="dtb-left">
+                                    <span className="recent-title">Recent Searches</span>
+                                  </div>
+                                  <div className="dtb-right">
+                                    <button type="button" className="clear-btn" onClick={clearRecentSearches}>clear</button>
+                                    <button type="button" className="close-dropdown-btn" onClick={() => setActiveDropdown(null)}>
+                                      <svg className="close-icon-desktop" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                      <svg className="close-icon-mobile" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                  </div>
                               </div>
+
                               <div className="recent-list">
                                 {recentSearches.map((search, idx) => (
                                   <div key={idx} className="recent-item" onClick={() => handleRecentSearchClick(search)}>
                                     <div className="recent-icon">
-                                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <circle cx="12" cy="10" r="3"></circle>
                                         <path d="M12 2a8 8 0 0 0-8 8c0 1.892.402 3.13 1.5 4.5L12 22l6.5-7.5c1.098-1.37 1.5-2.608 1.5-4.5a8 8 0 0 0-8-8z"></path>
                                       </svg>
@@ -346,21 +371,25 @@ const FlightSearchForm = ({
                                   </div>
                                 ))}
                               </div>
-                            </>
-                          )}
-                          <div className="sign-in-prompt" onClick={handleSignInClick}>
-                            <div className="sign-in-icon">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                              </svg>
-                            </div>
-                            <div className="sign-in-text">
-                              <div className="sign-in-title">Sign In / Sign Up</div>
-                              <div className="sign-in-subtitle">Access your searches on any device</div>
-                            </div>
-                          </div>
-                        </div>
+                              
+                              <div className="sign-in-prompt" onClick={handleSignInClick}>
+                                <div className="sign-in-icon">
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                  </svg>
+                                </div>
+                                <div className="sign-in-text">
+                                  <div className="sign-in-title">Sign In / Sign Up</div>
+                                  <div className="sign-in-subtitle">You can still search without signing up. <br></br>create an account only if you want to save your searches.</div>
+                                </div>
+                              </div>
+                           </div>
+                        ) : (
+                           <div className="dropdown-list custom-scrollbar">
+                              <div className="dd-msg">Start typing to search...</div>
+                           </div>
+                        )
                       ) : (
                         <div className="dropdown-list custom-scrollbar">
                           {airportSearchLoading ? <div className="dd-msg">Searching...</div> : 
@@ -602,9 +631,8 @@ const FlightSearchForm = ({
         <div className="modal-overlay" onClick={() => setShowSignInModal(false)}>
           <div className="sign-in-modal" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setShowSignInModal(false)}>×</button>
-            <h2 className="modal-title">See your recent searches on any device.</h2>
-            <p className="modal-subtitle">Sign in to keep track of your searches and get right back to them in one click.</p>
-            {/* Dito inapply ang onClick handler para sa redirection */}
+            <h2 className="modal-title">See your recent transactions</h2>
+            <p className="modal-subtitle">You can still search without signing up. Signing in is required only to view your transactions.</p>
             <button className="sign-in-button" onClick={handleRedirectToLogin}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
