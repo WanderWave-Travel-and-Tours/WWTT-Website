@@ -408,15 +408,8 @@ const OtherServices = ({ setAuthPage }) => {
 
   const handlePassportWizardSubmit = async (wizardData) => {
     try {
-      const emailToCheck = wizardData.applicants[0].email;
-      const emailCheckResponse = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/check-email?email=${emailToCheck}`);
-      const emailCheckResult = await emailCheckResponse.json();
-
-      if (!emailCheckResult.exists) {
-        toast.error("Inquiry denied: The email provided is not registered.", "Submission Error");
-        return;
-      }
-
+      // ✅ REMOVED EMAIL CHECK - Backend will auto-create user if needed
+      
       let appType = 'NEW';
       const selectedType = selectedPackage.serviceType ? selectedPackage.serviceType.toUpperCase() : 'NEW';
 
@@ -454,7 +447,11 @@ const OtherServices = ({ setAuthPage }) => {
       const result = await response.json();
 
       if (result.success) {
-        toast.success(`Passport Applications Received! Ref: ${result.data._id}`, "Success");
+        // ✅ Enhanced success message for new users
+        toast.success(
+          `Passport Applications Received! Ref: ${result.data._id}. If you're a new user, check your email for login credentials.`, 
+          "Success"
+        );
         setShowModal(false);
         setIsPassportService(false);
       } else {
@@ -475,14 +472,8 @@ const OtherServices = ({ setAuthPage }) => {
     e.preventDefault();
     
     try {
-      const emailCheckResponse = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/check-email?email=${formData.email}`);
-      const emailCheckResult = await emailCheckResponse.json();
-
-      if (!emailCheckResult.exists) {
-        toast.error("Inquiry denied: The email provided is not registered in our database.", "Registration Required");
-        return;
-      }
-
+      // ✅ REMOVED EMAIL CHECK - Backend will auto-create user if needed
+      
       const inquiryData = {
         serviceId: selectedPackage.serviceId,
         serviceName: selectedPackage.title,
@@ -521,7 +512,11 @@ const OtherServices = ({ setAuthPage }) => {
       const result = await response.json();
 
       if (result.success) {
-        toast.success(`Your inquiry for "${selectedPackage.title}" has been submitted successfully!`, "Inquiry Sent");
+        // ✅ Enhanced success message for new users
+        toast.success(
+          `Your inquiry for "${selectedPackage.title}" has been submitted successfully! If you're a new user, check your email for login credentials.`, 
+          "Inquiry Sent"
+        );
         
         setShowModal(false);
         setIsVisaService(false);
