@@ -447,18 +447,29 @@ function PackageDeals() {
         
         if (result.status === 'ok') {
           const data = result.data;
+          
+          // ✅ HELPER: Deterministic pseudo-random generator based on package ID
+          const seededRandom = (seed) => {
+            const x = Math.sin(seed) * 10000;
+            return x - Math.floor(x);
+          };
+          
           const formattedPackages = data.map((pkg, index) => {
-            // ⭐ RANDOMIZED RATING LOGIC (4.0 - 5.0, with fewer 5.0s)
-            // Generates a base number between 4.0 and 4.9
-            let calculatedRating = (Math.random() * 0.9 + 4.0).toFixed(1);
+            // ✅ FIXED: Generate consistent seed from package ID
+            const seed = pkg._id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            
+            // ⭐ DETERMINISTIC RATING (4.0 - 5.0, same for each package always)
+            const ratingRandom = seededRandom(seed);
+            let calculatedRating = (ratingRandom * 0.9 + 4.0).toFixed(1);
             
             // 5% Chance to get a perfect 5.0
-            if (Math.random() > 0.95) {
+            if (seededRandom(seed + 1) > 0.95) {
               calculatedRating = "5.0";
             }
 
-            // ⭐ RANDOMIZED REVIEWS (Between 40 and 500 reviews)
-            const randomReviews = Math.floor(Math.random() * 460) + 40;
+            // ⭐ DETERMINISTIC REVIEWS (Between 40 and 500, consistent per package)
+            const reviewsRandom = seededRandom(seed + 2);
+            const randomReviews = Math.floor(reviewsRandom * 460) + 40;
 
             return {
               id: pkg._id,
@@ -472,7 +483,7 @@ function PackageDeals() {
               
               originalPrice: pkg.price + Math.floor(pkg.price * 0.3),
               discount: 30,
-              rating: calculatedRating, // Applied random rating
+              rating: calculatedRating, // Applied deterministic rating
               reviews: randomReviews,   // Applied random reviews
               image: pkg.image, 
               inclusions: pkg.inclusions || [], 

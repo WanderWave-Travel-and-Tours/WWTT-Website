@@ -509,7 +509,7 @@ const Booking = () => {
         ArchiveIcon={Archive}
         RotateCcwIcon={RotateCcw}
       />
-
+ 
       {/* Confirmation Modal Component */}
       <CustomConfirmModal 
         isOpen={confirmConfig.isOpen}
