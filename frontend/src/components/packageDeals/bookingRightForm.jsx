@@ -364,30 +364,46 @@ if (savedState.formData.appliedPromo) {
   }, [quantities.adult]);
 
   const calculateBasePackageTotal = () => {
-    const basePax = quantities.adult || 1;
-    const effectivePrice = effectivePackageTotal || pkg.price;
-    let basePackagePrice = effectivePrice * basePax;
+  const basePax = quantities.adult || 1;
+  
+  // ✅ UPDATED: Apply customization adjustments to base price first
+  let effectivePrice = effectivePackageTotal || pkg.price;
+  
+  // Apply customization deductions/additions to the base price
+  // This ensures removed inclusions reduce the price and added activities increase it
+  if (customizationData) {
+    effectivePrice = effectivePrice + customizationData.additionalPrice;
     
-    if (!selectedRoomType) return basePackagePrice;
+    console.log('📊 Customization Applied:');
+    console.log('  Base Price:', pkg.price);
+    console.log('  Deductions:', customizationData.deductions);
+    console.log('  Additions:', customizationData.additions);
+    console.log('  Net Adjustment:', customizationData.additionalPrice);
+    console.log('  Effective Price:', effectivePrice);
+  }
+  
+  let basePackagePrice = effectivePrice * basePax;
+  
+  if (!selectedRoomType) return basePackagePrice;
 
-    const roomType = selectedRoomType.type?.toUpperCase() || '';
-    
-    let upgradePrice = 0;
-    
-    if (roomType.includes('STANDARD')) {
-      upgradePrice = 900;
-    } else if (roomType.includes('4 STAR')) {
-      upgradePrice = 1150;
-    } else if (roomType.includes('5 STAR')) {
-      upgradePrice = 1400;
-    }
-    
-    const baseRoomCapacity = 4;
-    const pricePerPerson = upgradePrice / baseRoomCapacity;
-    const upgradeTotal = pricePerPerson * basePax;
+  const roomType = selectedRoomType.type?.toUpperCase() || '';
+  
+  let upgradePrice = 0;
+  
+  if (roomType.includes('STANDARD')) {
+    upgradePrice = 900;
+  } else if (roomType.includes('4 STAR')) {
+    upgradePrice = 1150;
+  } else if (roomType.includes('5 STAR')) {
+    upgradePrice = 1400;
+  }
+  
+  const baseRoomCapacity = 4;
+  const pricePerPerson = upgradePrice / baseRoomCapacity;
+  const upgradeTotal = pricePerPerson * basePax;
 
-    return basePackagePrice + upgradeTotal;
-  };
+  return basePackagePrice + upgradeTotal;
+};
 
   const calculateDiscount = () => {
     if (!appliedPromo) return 0;
@@ -833,7 +849,9 @@ const handleApplyPromo = async () => {
           sellerRateId: inc.sellerRateId
         })) : [],
         customizationAdditionalPrice: customizationData ? customizationData.additionalPrice : 0,
-        originalInclusions: customizationData ? (pkg.inclusions || []) : [],
+customizationDeductions: customizationData ? customizationData.deductions : 0,
+customizationAdditions: customizationData ? customizationData.additions : 0,
+originalInclusions: customizationData ? (pkg.inclusions || []) : [],
         
         passengers: passengers.map(p => ({
           passengerNumber: p.passengerNumber || 1,
@@ -1282,6 +1300,74 @@ const handleApplyPromo = async () => {
             </span>
           </div>
         </div>
+
+{/* ✅ NEW: Display customization adjustments breakdown */}
+{customizationData && (customizationData.deductions > 0 || customizationData.additions > 0) && (
+  <>
+    {/* Show removed inclusions as deduction */}
+    {customizationData.deductions > 0 && (
+      <div className="brf-total-row" style={{
+        fontSize: '0.85rem', 
+        color: '#dc2626',
+        fontStyle: 'italic'
+      }}>
+        <span>
+          ↓ Removed Inclusions ({customizationData.inclusions.filter(inc => 
+            inc.isOriginal && !inc.isChecked && inc.price > 0
+          ).length})
+        </span>
+        <span>
+          -{currencySymbol}{convertPrice(customizationData.deductions).toLocaleString(undefined, {
+            minimumFractionDigits: currency === 'USD' ? 2 : 0,
+            maximumFractionDigits: currency === 'USD' ? 2 : 0
+          })}
+        </span>
+      </div>
+    )}
+    
+    {/* Show added activities as addition */}
+    {customizationData.additions > 0 && (
+      <div className="brf-total-row" style={{
+        fontSize: '0.85rem', 
+        color: '#059669',
+        fontStyle: 'italic'
+      }}>
+        <span>
+          ↑ Added Activities ({customizationData.inclusions.filter(inc => 
+            !inc.isOriginal && inc.isChecked
+          ).length})
+        </span>
+        <span>
+          +{currencySymbol}{convertPrice(customizationData.additions).toLocaleString(undefined, {
+            minimumFractionDigits: currency === 'USD' ? 2 : 0,
+            maximumFractionDigits: currency === 'USD' ? 2 : 0
+          })}
+        </span>
+      </div>
+    )}
+    
+    {/* Show net customization adjustment */}
+    <div className="brf-total-row" style={{
+      fontSize: '0.9rem', 
+      color: customizationData.additionalPrice >= 0 ? '#059669' : '#dc2626',
+      borderTop: '1px dashed #e5e7eb',
+      paddingTop: '8px',
+      marginTop: '4px',
+      fontWeight: '600'
+    }}>
+      <span>
+        Net Customization
+      </span>
+      <span style={{fontWeight: '700'}}>
+        {customizationData.additionalPrice > 0 && '+'}
+        {currencySymbol}{convertPrice(customizationData.additionalPrice).toLocaleString(undefined, {
+          minimumFractionDigits: currency === 'USD' ? 2 : 0,
+          maximumFractionDigits: currency === 'USD' ? 2 : 0
+        })}
+      </span>
+    </div>
+  </>
+)}
 
         {appliedPromo && (
           <div className="brf-total-row" style={{color: '#10b981', fontSize: '0.9rem'}}>

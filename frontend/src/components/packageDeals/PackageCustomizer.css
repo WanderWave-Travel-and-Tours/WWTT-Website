@@ -477,6 +477,63 @@
   font-size: 1.3rem;
 }
 
+.pc-inclusion-item.last-remaining {
+  background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%) !important;
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15) !important;
+}
+
+.pc-inclusion-item.last-remaining .pc-checkbox {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.pc-inclusion-item.last-remaining .pc-checkbox:hover {
+  cursor: not-allowed !important;
+}
+
+/* Disabled checkbox styling */
+.pc-checkbox:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+  background-color: #f3f4f6;
+}
+
+.pc-checkbox:disabled:hover {
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Enhanced error/warning alert */
+.pc-error-alert {
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse animation for last remaining badge */
+.pc-inclusion-item.last-remaining .pc-badge {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .pc-container {
