@@ -1,9 +1,235 @@
-import React from 'react';
-import { X, Plane, CheckCircle, Upload, Wallet, CreditCard } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
 // Import the new CSS file
 import './BookingFormModal.css';
 import './PaymentOption.css'
+
+// ✅ CUSTOM DATE PICKER COMPONENT - WORKS ON ALL PLATFORMS
+const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(value || '');
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const calendarRef = useRef(null);
+
+  // Parse the date string (YYYY-MM-DD format)
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return { year, month: month - 1, day };
+  };
+
+  const currentDate = parseDate(selectedDate);
+
+  // Generate year options (100 years back from maxDate)
+  const maxYear = maxDate ? new Date(maxDate).getFullYear() : new Date().getFullYear();
+  const minYear = maxYear - 100;
+  const years = [];
+  for (let y = maxYear; y >= minYear; y--) {
+    years.push(y);
+  }
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  // Get days in month
+  const getDaysInMonth = (month, year) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  // Get first day of month (0-6)
+  const getFirstDayOfMonth = (month, year) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  // Format date to YYYY-MM-DD
+  const formatDate = (year, month, day) => {
+    const m = String(month + 1).padStart(2, '0');
+    const d = String(day).padStart(2, '0');
+    return `${year}-${m}-${d}`;
+  };
+
+  // Format display date
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  };
+
+  // Handle date selection
+  const handleDateClick = (day) => {
+    const newDate = formatDate(viewYear, viewMonth, day);
+    setSelectedDate(newDate);
+    onChange({ target: { value: newDate } });
+    setIsOpen(false);
+  };
+
+  // Navigate months
+  const previousMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+
+  // Handle month/year change
+  const handleMonthChange = (e) => {
+    setViewMonth(parseInt(e.target.value));
+  };
+
+  const handleYearChange = (e) => {
+    setViewYear(parseInt(e.target.value));
+  };
+
+  // Generate calendar days
+  const generateCalendar = () => {
+    const daysInMonth = getDaysInMonth(viewMonth, viewYear);
+    const firstDay = getFirstDayOfMonth(viewMonth, viewYear);
+    const days = [];
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="bfm-cal-day empty"></div>);
+    }
+
+    // Days of month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = formatDate(viewYear, viewMonth, day);
+      const isSelected = currentDate && 
+                        currentDate.year === viewYear && 
+                        currentDate.month === viewMonth && 
+                        currentDate.day === day;
+      
+      // Check if date is in the future (past maxDate)
+      const isDisabled = maxDate && new Date(dateStr) > new Date(maxDate);
+      
+      days.push(
+        <div
+          key={day}
+          className={`bfm-cal-day ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+          onClick={() => !isDisabled && handleDateClick(day)}
+        >
+          {day}
+        </div>
+      );
+    }
+
+    return days;
+  };
+
+  // Close calendar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Update view when value changes externally
+  useEffect(() => {
+    if (value && value !== selectedDate) {
+      setSelectedDate(value);
+      const parsed = parseDate(value);
+      if (parsed) {
+        setViewMonth(parsed.month);
+        setViewYear(parsed.year);
+      }
+    }
+  }, [value]);
+
+  return (
+    <div className="bfm-date-picker-wrapper" ref={calendarRef}>
+      <div 
+        className="bfm-calendar-trigger"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className={selectedDate ? 'bfm-date-value' : 'bfm-date-placeholder'}>
+          {selectedDate ? formatDisplayDate(selectedDate) : (placeholder || 'Select date')}
+        </span>
+        <CalendarIcon size={16} className="bfm-trigger-icon" />
+      </div>
+
+      {isOpen && (
+        <div className="bfm-custom-calendar">
+          <div className="bfm-calendar-header">
+            <button 
+              type="button"
+              className="bfm-cal-nav-btn" 
+              onClick={previousMonth}
+              aria-label="Previous month"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <div className="bfm-calendar-selectors">
+              <select 
+                className="bfm-month-select"
+                value={viewMonth}
+                onChange={handleMonthChange}
+              >
+                {monthNames.map((month, idx) => (
+                  <option key={idx} value={idx}>{month}</option>
+                ))}
+              </select>
+
+              <select 
+                className="bfm-year-select"
+                value={viewYear}
+                onChange={handleYearChange}
+              >
+                {years.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            <button 
+              type="button"
+              className="bfm-cal-nav-btn" 
+              onClick={nextMonth}
+              aria-label="Next month"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          <div className="bfm-calendar-weekdays">
+            {weekDays.map(day => (
+              <div key={day} className="bfm-cal-weekday">{day}</div>
+            ))}
+          </div>
+
+          <div className="bfm-calendar-days">
+            {generateCalendar()}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const BookingFormModal = ({ 
   isOpen, 
@@ -227,14 +453,15 @@ const BookingFormModal = ({
                 />
               </div>
 
+              {/* ✅ CUSTOM DATE PICKER - REPLACES NATIVE INPUT */}
               <div className="bfm-form-group">
                 <label>Date of Birth <span className="bfm-required">*</span></label>
-                <input 
-                  required 
-                  type="date"
+                <CustomDatePicker
                   value={currentPassenger.dateOfBirth}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'dateOfBirth', e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
+                  maxDate={new Date().toISOString().split('T')[0]}
+                  required
+                  placeholder="Select birth date"
                 />
               </div>
 
