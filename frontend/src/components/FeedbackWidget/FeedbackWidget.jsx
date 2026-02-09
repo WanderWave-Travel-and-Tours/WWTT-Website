@@ -84,7 +84,7 @@ const FeedbackWidget = () => {
     };
 
     try {
-      const API_URL = 'https://wanderwaveph-backend.onrender.com';
+      const API_URL = 'https://wanderwaveph.onrender.com';
       const endpoint = `${API_URL}/api/feedback`;
       
       const response = await fetch(endpoint, {

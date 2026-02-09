@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://wanderwaveph-backend.onrender.com/api/blogs'; // Palitan base sa iyong Port
+const API_URL = 'https://wanderwaveph.onrender.com/api/blogs'; // Palitan base sa iyong Port
 
 export const fetchArchivedBlogs = async () => {
     try {

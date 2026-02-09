@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../sidebar/sidebar';
 import './editpackage.css';
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/packages';
+const API_BASE_URL = 'https://wanderwaveph.onrender.com/api/packages';
 
 const EditPackage = () => {
     const location = useLocation();
@@ -113,7 +113,7 @@ const EditPackage = () => {
                                     <label className="edit-upload">
                                         <input type="file" onChange={handleFileChange} accept="image/*" hidden />
                                         <div className="edit-upload-preview">
-                                            <img src={previewUrl || `https://wanderwaveph-backend.onrender.com/uploads/${existingImage}`} alt="Package" onError={(e) => { e.target.src = 'https://placehold.co/400x250/eee/999?text=No+Image'; }} />
+                                            <img src={previewUrl || `https://wanderwaveph.onrender.com/uploads/${existingImage}`} alt="Package" onError={(e) => { e.target.src = 'https://placehold.co/400x250/eee/999?text=No+Image'; }} />
                                             <span className="edit-upload-change">Change Photo</span>
                                         </div>
                                     </label>
@@ -219,7 +219,7 @@ const EditPackage = () => {
                                     <span className="edit-preview-label">PREVIEW</span>
                                     <div className="edit-card">
                                         <div className="edit-card-image">
-                                            <img src={previewUrl || `https://wanderwaveph-backend.onrender.com/uploads/${existingImage}`} alt="Preview" onError={(e) => { e.target.src = 'https://placehold.co/400x200/eee/999?text=No+Image'; }} />
+                                            <img src={previewUrl || `https://wanderwaveph.onrender.com/uploads/${existingImage}`} alt="Preview" onError={(e) => { e.target.src = 'https://placehold.co/400x200/eee/999?text=No+Image'; }} />
                                         </div>
                                         <div className="edit-card-body">
                                             <span className="edit-card-badge">{category}</span>

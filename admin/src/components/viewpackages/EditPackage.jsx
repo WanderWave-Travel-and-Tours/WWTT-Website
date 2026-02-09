@@ -58,7 +58,7 @@ const EditPackage = () => {
     { day: 1, title: "", activities: [""] },
   ]);
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/packages";
+  const API_BASE_URL = "https://wanderwaveph.onrender.com/api/packages";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -273,7 +273,7 @@ const EditPackage = () => {
           setItinerary(currentItinerary);
 
           if (pkg.image) {
-            const imgUrl = pkg.image.startsWith('http') ? pkg.image : `https://wanderwaveph-backend.onrender.com/uploads/${pkg.image}`;
+            const imgUrl = pkg.image.startsWith('http') ? pkg.image : `https://wanderwaveph.onrender.com/uploads/${pkg.image}`;
             setImagePreview(imgUrl);
           }
         } else {

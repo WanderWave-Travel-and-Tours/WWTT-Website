@@ -91,7 +91,7 @@ const BookingRightForm = ({
     const checkOTCAccess = async () => {
       try {
         console.log('🔍 Checking OTC access...');
-        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/ip/check-otc-access');
+        const response = await axios.get('https://wanderwaveph.onrender.com/api/ip/check-otc-access');
         
         console.log('✅ OTC Access Response:', response.data);
         
@@ -304,7 +304,7 @@ if (savedState.formData.appliedPromo) {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`https://wanderwaveph.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -510,7 +510,7 @@ const handleApplyPromo = async () => {
       console.log('📦 Package ID:', packageId);
       console.log('📝 Promo Code:', promoCode);
       
-      const url = `https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}?packageId=${packageId}`;
+      const url = `https://wanderwaveph.onrender.com/api/promos/validate/${promoCode.toUpperCase()}?packageId=${packageId}`;
       console.log('🌐 Request URL:', url);
       
       const response = await fetch(url);
@@ -878,7 +878,7 @@ originalInclusions: customizationData ? (pkg.inclusions || []) : [],
         }
       });
       
-      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
+      const bookingResponse = await axios.post('https://wanderwaveph.onrender.com/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -887,7 +887,7 @@ originalInclusions: customizationData ? (pkg.inclusions || []) : [],
         
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
-        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
+        const paymentResponse = await axios.post('https://wanderwaveph.onrender.com/api/payment/create-intent', {
           bookingId: bookingId,
           paymentType: paymentType || 'full',
           paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount

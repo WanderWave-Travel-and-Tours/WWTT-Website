@@ -58,14 +58,14 @@ const UserDashboard = ({ user, onLogout }) => {
         try {
             // Add small delay between requests instead of Promise.all
             const inquiriesData = await fetch(
-                `https://wanderwaveph-backend.onrender.com/api/inquiries/email/${user.email}`
+                `https://wanderwaveph.onrender.com/api/inquiries/email/${user.email}`
             ).then(res => res.json());
             
             // Small delay before next request
             await new Promise(resolve => setTimeout(resolve, 200));
             
             const bookingsData = await fetch(
-                `https://wanderwaveph-backend.onrender.com/api/bookings/user/${user.email}`
+                `https://wanderwaveph.onrender.com/api/bookings/user/${user.email}`
             ).then(res => res.json());
 
             let combinedData = [];
@@ -110,7 +110,7 @@ const UserDashboard = ({ user, onLogout }) => {
 
         try {
             setIsLoadingDocuments(true);
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/documents/inquiry/${inquiryId}`);
+            const response = await fetch(`https://wanderwaveph.onrender.com/api/documents/inquiry/${inquiryId}`);
             const data = await response.json();
             
             if (data.success) {
@@ -150,7 +150,7 @@ const UserDashboard = ({ user, onLogout }) => {
             const verifyPayment = async () => {
                 try {
                     setIsLoading(true);
-                    await axios.put(`https://wanderwaveph-backend.onrender.com/api/inquiries/${inquiryId}/pay`);
+                    await axios.put(`https://wanderwaveph.onrender.com/api/inquiries/${inquiryId}/pay`);
                     alert('Payment successful! Status updated.');
                     window.history.replaceState({}, document.title, window.location.pathname);
                     await fetchUserData();
@@ -168,7 +168,7 @@ const UserDashboard = ({ user, onLogout }) => {
         const fetchVisaDetails = async () => {
             if (selectedInquiry?.visaId) {
                 try {
-                    const response = await axios.get(`https://wanderwaveph-backend.onrender.com/api/visas/${selectedInquiry.visaId}`);
+                    const response = await axios.get(`https://wanderwaveph.onrender.com/api/visas/${selectedInquiry.visaId}`);
                     if (response.data) setVisaDetails(response.data);
                 } catch (error) {
                     console.error('Error fetching visa details:', error);
@@ -213,7 +213,7 @@ const UserDashboard = ({ user, onLogout }) => {
         if (!selectedInquiry) return;
         try {
             setIsLoading(true);
-            const response = await fetch('https://wanderwaveph-backend.onrender.com/api/payment/create-inquiry-checkout', {
+            const response = await fetch('https://wanderwaveph.onrender.com/api/payment/create-inquiry-checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ inquiryId: selectedInquiry._id })
@@ -270,7 +270,7 @@ const UserDashboard = ({ user, onLogout }) => {
         });
 
         try {
-            await fetch('https://wanderwaveph-backend.onrender.com/api/documents/upload', { method: 'POST', body: formData });
+            await fetch('https://wanderwaveph.onrender.com/api/documents/upload', { method: 'POST', body: formData });
             alert('Documents submitted successfully!');
             setUploadedFiles({});
             

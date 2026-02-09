@@ -62,7 +62,7 @@ const EditAirline = () => {
     flightNumber: "",
   });
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/inquiries"; 
+  const API_BASE_URL = "https://wanderwaveph.onrender.com/api/inquiries"; 
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 

@@ -81,7 +81,7 @@ const SellerRate = () => {
     try {
       // Backend should ideally filter isArchive="No", 
       // but we handle it in frontend too for safety
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/seller-rates');
+      const response = await fetch('https://wanderwaveph.onrender.com/api/seller-rates');
       if (!response.ok) {
         console.error('Failed to fetch rates:', response.status);
         setRates([]);
@@ -130,8 +130,8 @@ const SellerRate = () => {
 
     try {
       const url = editingRate 
-        ? `https://wanderwaveph-backend.onrender.com/api/seller-rates/${editingRate._id}`
-        : 'https://wanderwaveph-backend.onrender.com/api/seller-rates';
+        ? `https://wanderwaveph.onrender.com/api/seller-rates/${editingRate._id}`
+        : 'https://wanderwaveph.onrender.com/api/seller-rates';
       
       const method = editingRate ? 'PUT' : 'POST';
 
@@ -214,7 +214,7 @@ const SellerRate = () => {
         return;
       }
 
-      const response = await fetch('https://wanderwaveph-backend.onrender.com/api/seller-rates/bulk', {
+      const response = await fetch('https://wanderwaveph.onrender.com/api/seller-rates/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedRates)
@@ -262,7 +262,7 @@ const SellerRate = () => {
       type: 'danger',
       onConfirm: async () => {
         try {
-          const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/seller-rates/${id}`, {
+          const response = await fetch(`https://wanderwaveph.onrender.com/api/seller-rates/${id}`, {
             method: 'DELETE'
           });
 
@@ -290,7 +290,7 @@ const SellerRate = () => {
       onConfirm: async () => {
         try {
           // Gamitin ang patch/put base sa iyong API. Gagayahin natin ang logic ng ViewBlog.
-          const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/seller-rates/${id}/archive`, {
+          const response = await fetch(`https://wanderwaveph.onrender.com/api/seller-rates/${id}/archive`, {
             method: 'PATCH', // O 'PUT' depende sa route na ginawa mo sa sellerRoute.js
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 

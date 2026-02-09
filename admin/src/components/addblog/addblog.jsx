@@ -29,7 +29,7 @@ import "./addblog.css";
 const AddBlog = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com";
+  const API_BASE_URL = "https://wanderwaveph.onrender.com";
 
   // Sidebar state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);

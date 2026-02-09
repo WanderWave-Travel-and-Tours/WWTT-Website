@@ -14,7 +14,7 @@ const NotificationDropdown = ({
   const dropdownRef = useRef(null);
   const audioRef = useRef(null);
 
-  const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+  const API_BASE_URL = 'https://wanderwaveph.onrender.com';
 
   const getReadNotifications = () => {
     const stored = localStorage.getItem('readNotifications');

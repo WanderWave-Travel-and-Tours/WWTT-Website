@@ -14,7 +14,7 @@ import './addhotel.css';
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
  
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+const API_BASE_URL = 'https://wanderwaveph.onrender.com';
  
 const AddHotel = () => {
   const navigate = useNavigate();
