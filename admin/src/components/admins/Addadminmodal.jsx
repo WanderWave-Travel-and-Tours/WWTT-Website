@@ -121,7 +121,7 @@ const AddAdminModal = ({ isOpen, onClose, onAdminAdded }) => {
       };
 
       const response = await axios.post(
-        'https://wanderwaveph-backend.onrender.com/api/admin/create', 
+        'https://wanderwaveph.onrender.com/api/admin/create', 
         adminData,
         {
           headers: {

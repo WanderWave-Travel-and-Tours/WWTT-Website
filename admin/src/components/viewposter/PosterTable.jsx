@@ -38,7 +38,7 @@ const PostersTable = ({
                                 <td>
                                     <div className="pst-image-preview">
                                         <img 
-                                            src={`https://wanderwaveph-backend.onrender.com/${poster.imageUrl}`} 
+                                            src={`https://wanderwaveph.onrender.com/${poster.imageUrl}`} 
                                             alt={poster.title}
                                             onError={(e) => e.target.src="https://via.placeholder.com/150"}
                                         />

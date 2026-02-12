@@ -56,9 +56,9 @@ const Booking = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      let res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings/active');
+      let res = await fetch('https://wanderwaveph.onrender.com/api/bookings/active');
       if (!res.ok) {
-        res = await fetch('https://wanderwaveph-backend.onrender.com/api/bookings');
+        res = await fetch('https://wanderwaveph.onrender.com/api/bookings');
       }
 
       if (!res.ok) throw new Error('Failed to fetch bookings');
@@ -193,7 +193,7 @@ const Booking = () => {
   const executeConfirm = async (booking) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/confirm`, {
+      const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/confirm`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -230,7 +230,7 @@ const Booking = () => {
   const executeCancel = async (booking) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/cancel`, {
+      const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/cancel`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -267,7 +267,7 @@ const Booking = () => {
   const executeArchive = async (booking, action) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph-backend.onrender.com/api/bookings/${booking.mongoId}/archive`, {
+      const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/archive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

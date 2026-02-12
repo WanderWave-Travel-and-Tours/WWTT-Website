@@ -2,7 +2,7 @@
 // archiveFunctions/userService.js
 import axios from 'axios';
 
-const API_URL = 'https://wanderwaveph-backend.onrender.com/api/users'; // Palitan base sa iyong server config
+const API_URL = 'https://wanderwaveph.onrender.com/api/users'; // Palitan base sa iyong server config
 
 export const fetchArchivedUsers = async () => {
     try {

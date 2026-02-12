@@ -3,7 +3,7 @@ import DocumentsSection from './DocumentsSection';
 import UploadedDocumentsView from './UploadedDocumentsView';
 import './ApplicationDetails.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph-backend.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com';
 
 const ApplicationDetails = ({ 
     inquiry, 

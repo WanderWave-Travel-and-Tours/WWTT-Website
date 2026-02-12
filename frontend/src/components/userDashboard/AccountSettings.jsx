@@ -87,7 +87,7 @@ const AccountSettings = ({ user, onNavigateBack }) => {
         setIsModalOpen(false); // Close modal first
 
         try {
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/update-profile/${user.id}`, {
+            const response = await fetch(`https://wanderwaveph.onrender.com/api/users/update-profile/${user.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -162,7 +162,7 @@ const AccountSettings = ({ user, onNavigateBack }) => {
         setIsModalOpen(false); // Close modal first
 
         try {
-            const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/users/update-password/${user.id}`, {
+            const response = await fetch(`https://wanderwaveph.onrender.com/api/users/update-password/${user.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

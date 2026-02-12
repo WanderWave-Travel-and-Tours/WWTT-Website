@@ -7,5 +7,5 @@ export const getImageUrl = (image, placeholder = 'No+Image') => {
     return image;
   }
   
-  return `https://wanderwaveph-backend.onrender.com/uploads/${image}`;
+  return `https://wanderwaveph.onrender.com/uploads/${image}`;
 };

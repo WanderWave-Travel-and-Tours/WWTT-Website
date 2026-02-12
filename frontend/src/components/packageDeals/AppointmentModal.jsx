@@ -142,7 +142,7 @@ const AppointmentModal = ({
 
       console.log('Submitting Walk-in Booking Data:', bookingData);
 
-      const response = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', {
+      const response = await axios.post('https://wanderwaveph.onrender.com/api/bookings', {
         bookingData: JSON.stringify(bookingData)
       }, {
         headers: { 'Content-Type': 'application/json' }

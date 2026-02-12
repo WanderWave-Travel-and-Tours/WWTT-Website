@@ -8,7 +8,7 @@ import "./ViewHotelModal.css";
 // In-import ang Toast Manager
 import { useToast } from "../toast/ToastManager"; 
 
-const API_BASE_URL = 'https://wanderwaveph-backend.onrender.com';
+const API_BASE_URL = 'https://wanderwaveph.onrender.com';
 
 // Helper: Fix Image URL
 const getImageUrl = (imagePath) => {

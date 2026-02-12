@@ -379,7 +379,7 @@ const AddTour = () => {
     toast.info("Uploading tour package to server...", "Please Wait");
 
     try {
-      const res = await fetch("https://wanderwaveph-backend.onrender.com/api/tours/add", {
+      const res = await fetch("https://wanderwaveph.onrender.com/api/tours/add", {
         method: "POST",
         body: formData,
       });

@@ -112,7 +112,7 @@ const ViewPoster = () => {
     const fetchPosters = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/posters');
+            const response = await axios.get('https://wanderwaveph.onrender.com/api/posters');
             
             const processedPosters = response.data
                 .filter(poster => poster.isArchive === "No")
@@ -142,7 +142,7 @@ const ViewPoster = () => {
         askConfirmation("Archive Poster?", `Are you sure you want to archive "${title}"?`, async () => {
             const { userEmail, adminId } = getAdminData();
             try {
-                const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                const response = await axios.put(`https://wanderwaveph.onrender.com/api/posters/${id}/status`, { 
                     isArchive: 'Yes', userEmail, adminId
                 });
                 if (response.data) {
@@ -160,7 +160,7 @@ const ViewPoster = () => {
         askConfirmation("Change Status?", `Change poster status to ${newStatus}?`, async () => {
             const { userEmail, adminId } = getAdminData();
             try {
-                const response = await axios.put(`https://wanderwaveph-backend.onrender.com/api/posters/${id}/status`, { 
+                const response = await axios.put(`https://wanderwaveph.onrender.com/api/posters/${id}/status`, { 
                     status: newStatus, userEmail, adminId
                 });
                 if (response.data) {

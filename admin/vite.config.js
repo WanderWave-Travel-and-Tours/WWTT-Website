@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/api': {
-        target: 'https://wanderwaveph-backend.onrender.com',
+        target: 'https://wanderwaveph.onrender.com',
         changeOrigin: true,
         secure: true
       }

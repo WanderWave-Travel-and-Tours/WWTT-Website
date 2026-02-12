@@ -420,7 +420,7 @@ const ProtectedRoute = ({ children }) => {
       }
 
       try {
-        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/admin/verify', {
+        const response = await axios.get('https://wanderwaveph.onrender.com/api/admin/verify', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 

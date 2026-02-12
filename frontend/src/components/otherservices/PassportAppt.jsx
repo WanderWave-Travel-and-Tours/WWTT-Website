@@ -34,7 +34,7 @@ const PassportAppt = () => {
 
     const fetchPassportData = async () => {
         try {
-            const res = await axios.get('https://wanderwaveph-backend.onrender.com/api/passports');
+            const res = await axios.get('https://wanderwaveph.onrender.com/api/passports');
             if (res.data.success && res.data.data.length > 0) {
                 setPassportData(res.data.data[0]);
             }
@@ -49,7 +49,7 @@ const PassportAppt = () => {
         if (!window.confirm('Initialize default passport data? This will only work if no data exists.')) return;
         
         try {
-            const res = await axios.post('https://wanderwaveph-backend.onrender.com/api/passports/initialize');
+            const res = await axios.post('https://wanderwaveph.onrender.com/api/passports/initialize');
             if (res.data.success) {
                 alert('Passport data initialized successfully!');
                 fetchPassportData();
@@ -74,7 +74,7 @@ const PassportAppt = () => {
 
         try {
             const res = await axios.put(
-                `https://wanderwaveph-backend.onrender.com/api/passports/${editData._id}`, 
+                `https://wanderwaveph.onrender.com/api/passports/${editData._id}`, 
                 editData
             );
             if (res.data.success) {

@@ -118,7 +118,7 @@ const EditTour = () => {
     { day: 1, title: "", activities: [""] },
   ]);
 
-  const API_BASE_URL = "https://wanderwaveph-backend.onrender.com/api/tours";
+  const API_BASE_URL = "https://wanderwaveph.onrender.com/api/tours";
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 

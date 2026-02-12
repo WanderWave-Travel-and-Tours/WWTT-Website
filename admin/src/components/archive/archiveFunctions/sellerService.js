@@ -1,12 +1,12 @@
 // archiveFunctions/sellerService.js
 import axios from 'axios';
 
-// For local development, use 'https://wanderwaveph-backend.onrender.com/api/seller-rates'
-// For production, use 'https://wanderwaveph-backend.onrender.com/api/seller-rates'
+// For local development, use 'https://wanderwaveph.onrender.com/api/seller-rates'
+// For production, use 'https://wanderwaveph.onrender.com/api/seller-rates'
 // Adjust based on your environment; perhaps use environment variables
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://wanderwaveph-backend.onrender.com/api/seller-rates' 
-  : 'https://wanderwaveph-backend.onrender.com/api/seller-rates';
+  ? 'https://wanderwaveph.onrender.com/api/seller-rates' 
+  : 'https://wanderwaveph.onrender.com/api/seller-rates';
 
 export const fetchArchivedSellerRates = async () => {
   try {

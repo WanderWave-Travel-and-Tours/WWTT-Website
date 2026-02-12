@@ -1,7 +1,7 @@
 // archiveFunctions/hotelService.js
 import axios from 'axios';
 
-const BASE_URL = 'https://wanderwaveph-backend.onrender.com/api/hotels';
+const BASE_URL = 'https://wanderwaveph.onrender.com/api/hotels';
 
 export const fetchArchivedHotels = async () => {
     try {
