@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plane, CheckCircle, Upload, Wallet, CreditCard, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 // Import the new CSS file
 import './BookingFormModal.css';
 import './PaymentOption.css'
@@ -231,6 +232,38 @@ const CustomDatePicker = ({ value, onChange, maxDate, required, placeholder }) =
   );
 };
 
+// ✅ BOOKING COMPLETED NOTIFICATION MODAL (NO BUTTONS - AUTO CLOSE)
+const BookingCompletedModal = ({ isOpen, onClose, packageName }) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Auto close and redirect after 3 seconds
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="bfm-overlay" style={{ zIndex: 10001 }}>
+      <div className="bfm-modal-card" style={{ maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <CheckCircle size={64} color="#22c55e" strokeWidth={2} />
+        </div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+          Booking Completed
+        </h2>
+        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
+          Your booking has been successfully confirmed! Click close to proceed.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const BookingFormModal = ({ 
   isOpen, 
   onClose, 
@@ -271,6 +304,17 @@ const BookingFormModal = ({
   currencySymbol = '₱'
 }) => {
   const toast = useToast();
+  
+  // ============================================
+  // CONFIRMATION MODAL STATE
+  // ============================================
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(null);
+  
+  // ============================================
+  // BOOKING COMPLETED NOTIFICATION MODAL STATE
+  // ============================================
+  const [showBookingCompletedModal, setShowBookingCompletedModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -282,6 +326,36 @@ const BookingFormModal = ({
     });
   };
 
+  // ✅ Calculate age from date of birth
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return '';
+    
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    // Adjust age if birthday hasn't occurred this year yet
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age >= 0 ? age : '';
+  };
+
+  // ✅ Handle date of birth change with auto age calculation
+  const handleDateOfBirthChange = (passengerIndex, dateValue) => {
+    // Update date of birth
+    handlePassengerChange(passengerIndex, 'dateOfBirth', dateValue);
+    
+    // Auto calculate and update age
+    const calculatedAge = calculateAge(dateValue);
+    if (calculatedAge !== '') {
+      handlePassengerChange(passengerIndex, 'age', calculatedAge.toString());
+    }
+  };
+
   // Check if this is the last passenger (payment options should show)
   const isLastPassenger = passengerStep === totalPassengers;
   const finalAmount = selectedFlight ? totalAmount : finalPackageTotal;
@@ -289,6 +363,52 @@ const BookingFormModal = ({
   // Dynamic percentage based on airfare
   const partialPercentage = selectedFlight ? 85 : 50;
   const partialPercentageText = selectedFlight ? '85%' : '50%';
+
+  // ============================================
+  // HANDLE FORM SUBMISSION WITH CONFIRMATION
+  // ============================================
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    
+    // For last passenger, show confirmation modal
+    if (isLastPassenger) {
+      setPendingSubmit(e);
+      setShowConfirmModal(true);
+    } else {
+      // For non-last passengers, proceed directly
+      handleNextPassenger(e);
+    }
+  };
+
+  // ============================================
+  // CONFIRM BOOKING ACTION
+  // ============================================
+  const handleConfirmBooking = () => {
+    setShowConfirmModal(false);
+    if (pendingSubmit) {
+      handleNextPassenger(pendingSubmit);
+      // Show booking completed modal after confirming
+      setShowBookingCompletedModal(true);
+    }
+    setPendingSubmit(null);
+  };
+
+  // ============================================
+  // CANCEL CONFIRMATION
+  // ============================================
+  const handleCancelConfirmation = () => {
+    setShowConfirmModal(false);
+    setPendingSubmit(null);
+  };
+
+  // ============================================
+  // CLOSE BOOKING COMPLETED MODAL & REDIRECT
+  // ============================================
+  const handleCloseBookingCompleted = () => {
+    setShowBookingCompletedModal(false);
+    // This is where the redirect or page change happens
+    onClose(); // Close the booking form modal
+  };
 
   return (
     <div className="bfm-overlay">
@@ -400,7 +520,7 @@ const BookingFormModal = ({
             </div>
           </div>
 
-          <form className="bfm-form" onSubmit={handleNextPassenger}>
+          <form className="bfm-form" onSubmit={handleFormSubmit}>
             <div className="bfm-form-section-header">
               <span className="bfm-passenger-badge">Passenger {passengerStep}</span>
               {passengerStep === 1 && <span className="bfm-primary-contact-label">Primary Contact</span>}
@@ -453,12 +573,12 @@ const BookingFormModal = ({
                 />
               </div>
 
-              {/* ✅ CUSTOM DATE PICKER - REPLACES NATIVE INPUT */}
+              {/* ✅ CUSTOM DATE PICKER - WITH AUTO AGE CALCULATION */}
               <div className="bfm-form-group">
                 <label>Date of Birth <span className="bfm-required">*</span></label>
                 <CustomDatePicker
                   value={currentPassenger.dateOfBirth}
-                  onChange={(e) => handlePassengerChange(passengerStep - 1, 'dateOfBirth', e.target.value)}
+                  onChange={(e) => handleDateOfBirthChange(passengerStep - 1, e.target.value)}
                   maxDate={new Date().toISOString().split('T')[0]}
                   required
                   placeholder="Select birth date"
@@ -472,9 +592,11 @@ const BookingFormModal = ({
                   type="number"
                   value={currentPassenger.age}
                   onChange={(e) => handlePassengerChange(passengerStep - 1, 'age', e.target.value)}
-                  placeholder="25"
+                  placeholder="Auto-calculated"
                   min="0"
                   max="120"
+                  readOnly
+                  style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                 />
               </div>
 
@@ -726,6 +848,27 @@ const BookingFormModal = ({
         </div>
 
       </div>
+
+      {/* ============================================
+          CONFIRMATION MODAL FOR BOOKING
+          ============================================ */}
+      <CustomConfirmModal
+        isOpen={showConfirmModal}
+        title="Confirm Your Booking"
+        message={`Are you sure you want to confirm this booking for ${pkg.name}? You will be redirected to the payment page.`}
+        onConfirm={handleConfirmBooking}
+        onCancel={handleCancelConfirmation}
+        type="primary"
+      />
+
+      {/* ============================================
+          BOOKING COMPLETED NOTIFICATION MODAL (NO BUTTONS)
+          ============================================ */}
+      <BookingCompletedModal
+        isOpen={showBookingCompletedModal}
+        onClose={handleCloseBookingCompleted}
+        packageName={pkg.name}
+      />
     </div>
   );
 };

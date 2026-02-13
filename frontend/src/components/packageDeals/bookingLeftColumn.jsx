@@ -66,14 +66,25 @@ const handleCustomizationChange = (customizationDataFromChild) => {
 const basePrice = pkg.price || 0;
 const originalPriceWithMarkup = Math.round(basePrice * 1.10);
 
-// ✅ NEW: Apply customization deductions/additions to display price
-const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
-const adjustedBasePrice = basePrice + customizationAdjustment;
-const adjustedOriginalPrice = originalPriceWithMarkup + customizationAdjustment;
+// ✅ KEY FIX: Determine which base price to use for calculations
+const activeBasePrice = timerExpired ? originalPriceWithMarkup : basePrice;
 
-const displayPrice = timerExpired ? adjustedOriginalPrice : adjustedBasePrice;
+// ✅ Apply customization deductions/additions to the CORRECT base price
+const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
+const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
+
+// ✅ Display price logic - ensure it shows 0 when appropriate
+const displayPrice = adjustedActivePrice;
 const convertedDisplayPrice = convertPrice(displayPrice);
+
+// ✅ Show original price only when timer is active (not expired)
+const adjustedOriginalPrice = originalPriceWithMarkup + customizationAdjustment;
 const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
+
+// ✅ Calculate discount percentage properly
+const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
+  ? Math.round(((adjustedOriginalPrice - displayPrice) / adjustedOriginalPrice) * 100)
+  : 0;
 
   return (
     <div className="blc-container">
@@ -93,11 +104,11 @@ const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
           className="blc-main-image"
         />
 
-        {!timerExpired && (
+        {!timerExpired && discountPercentage > 0 && (
           <div className="blc-offer-badge-overlay">
             <Clock size={16} />
             <span>
-              Limited Time Offer - Save {Math.round(((adjustedOriginalPrice - adjustedBasePrice) / adjustedOriginalPrice) * 100)}%
+              Limited Time Offer - Save {discountPercentage}%
             </span>
           </div>
         )}
@@ -107,7 +118,7 @@ const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
         <h1 className="blc-title">{pkg.name}</h1>
         <div className="blc-price-timer-wrapper">
           <div className="blc-price-section">
-            {!timerExpired && (
+            {!timerExpired && convertedOriginalPrice > convertedDisplayPrice && (
               <span className="blc-price-original">
                 {currencySymbol}{convertedOriginalPrice.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -164,6 +175,8 @@ const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
               currency={currency}
               exchangeRate={exchangeRate}
               onCustomizationChange={handleCustomizationChange}
+              timerExpired={timerExpired}
+              activeBasePrice={activeBasePrice}
             />
           )}
         </div>

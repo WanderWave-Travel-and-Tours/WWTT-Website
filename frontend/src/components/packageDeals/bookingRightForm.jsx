@@ -18,7 +18,8 @@ const BookingRightForm = ({
   effectivePackagePrice = null,
   effectivePackageTotal = null,
   currency = 'PHP',
-  exchangeRate = 58
+  exchangeRate = 58,
+  timerExpired: timerExpiredFromParent = false
 }) => {
   const navigate = useNavigate();
   const { code } = useParams();
@@ -41,7 +42,7 @@ const BookingRightForm = ({
   const [paymentType, setPaymentType] = useState('full');
   const [customizationData, setCustomizationData] = useState(initialCustomizationData);
   const [timeRemaining, setTimeRemaining] = useState(null);
-  const [timerExpired, setTimerExpired] = useState(false);
+  const [timerExpired, setTimerExpired] = useState(timerExpiredFromParent);
   const [userIpAddress, setUserIpAddress] = useState(null);
   
   // ✅ NEW: IP-based OTC button access control
@@ -78,7 +79,6 @@ const BookingRightForm = ({
         const response = await fetch('https://api.ipify.org?format=json');
         const data = await response.json();
         setUserIpAddress(data.ip);
-        console.log('✅ User IP:', data.ip);
       } catch (error) {
         console.error('❌ Error fetching IP:', error);
         setUserIpAddress('unknown');
@@ -90,18 +90,14 @@ const BookingRightForm = ({
   useEffect(() => {
     const checkOTCAccess = async () => {
       try {
-        console.log('🔍 Checking OTC access...');
-        const response = await axios.get('https://wanderwaveph.onrender.com/api/ip/check-otc-access');
+        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/ip/check-otc-access');
         
-        console.log('✅ OTC Access Response:', response.data);
         
         setHasOTCAccess(response.data.hasOTCAccess);
         setCheckingOTCAccess(false);
 
         if (response.data.hasOTCAccess) {
-          console.log('✅ OTC Payment button will be visible');
         } else {
-          console.log('❌ OTC Payment button will be hidden');
         }
       } catch (error) {
         console.error('❌ Failed to check OTC access:', error);
@@ -139,10 +135,8 @@ const BookingRightForm = ({
         const isBudget = savedRoomType.type?.toUpperCase().includes('BUDGET');
         
         if (isBudget) {
-          console.log('📦 Restoring Budget room from localStorage:', savedRoomType.hotelName);
           setSelectedRoomType(savedRoomType);
         } else {
-          console.log('⏭️ Skipping localStorage restore - not Budget. Will auto-select Budget instead.');
         }
       }
       
@@ -156,20 +150,15 @@ if (savedState.formData.appliedPromo) {
   const currentPackageId = (pkg._id || pkg.id).toString();
   const savedPackageId = savedPromo.packageId ? savedPromo.packageId.toString() : null;
   
-  console.log('🔍 Checking saved promo...');
-  console.log('   Current package:', currentPackageId);
-  console.log('   Saved package:', savedPackageId);
   
   if (savedPackageId && savedPackageId === currentPackageId) {
     // Same package - restore the promo
     setAppliedPromo(savedPromo);
     setPromoCode(savedPromo.code || '');
-    console.log('✅ Promo restored for this package:', savedPromo.code);
   } else {
     // Different package - clear the promo
     setAppliedPromo(null);
     setPromoCode('');
-    console.log('⚠️ Promo not applicable to this package. Cleared.');
   }
 }
       
@@ -177,9 +166,13 @@ if (savedState.formData.appliedPromo) {
         setPaymentType(savedState.formData.paymentType);
       }
       
-      console.log('✅ Booking state restored from localStorage');
     }
   }, [code]);
+  // ✅ Sync timerExpired state with parent
+  useEffect(() => {
+    setTimerExpired(timerExpiredFromParent);
+  }, [timerExpiredFromParent]);
+
 
   useEffect(() => {
     if (selectedDate || quantities.adult > 1 || selectedFlight || appliedPromo) {
@@ -213,18 +206,15 @@ if (savedState.formData.appliedPromo) {
       if (remaining > 0) {
         setTimeRemaining(remaining);
         setTimerExpired(false);
-        console.log('⏰ Timer resumed:', Math.floor(remaining / 1000), 'seconds left');
       } else {
         setTimeRemaining(0);
         setTimerExpired(true);
-        console.log('⏰ Timer expired');
       }
     } else {
       const startTime = Date.now();
       localStorage.setItem(timerKey, JSON.stringify({ startTime }));
       setTimeRemaining(900000);
       setTimerExpired(false);
-      console.log('⏰ Timer started');
     }
   }, [userIpAddress, pkg._id]);
 
@@ -261,7 +251,6 @@ if (savedState.formData.appliedPromo) {
         localStorage.setItem(timerKey, JSON.stringify({ startTime }));
         setTimeRemaining(900000);
         setTimerExpired(false);
-        console.log('🔄 Timer reset for new day');
       }
     };
 
@@ -304,7 +293,7 @@ if (savedState.formData.appliedPromo) {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`https://wanderwaveph.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -321,11 +310,9 @@ if (savedState.formData.appliedPromo) {
           );
           
           if (budgetRoom) {
-            console.log('🎯 Auto-selecting Budget room from fetchHotelData:', budgetRoom.hotelName);
             setSelectedRoomType(budgetRoom);
           } else {
             const sortedRooms = [...roomTypes].sort((a, b) => a.price - b.price);
-            console.log('💰 Auto-selecting cheapest room:', sortedRooms[0].hotelName);
             setSelectedRoomType(sortedRooms[0]);
           }
         }
@@ -366,23 +353,28 @@ if (savedState.formData.appliedPromo) {
   const calculateBasePackageTotal = () => {
   const basePax = quantities.adult || 1;
   
-  // ✅ UPDATED: Apply customization adjustments to base price first
-  let effectivePrice = effectivePackageTotal || pkg.price;
+  // ✅ FIXED: Use customizationData.totalPrice which includes timer-aware pricing
+  let effectivePrice;
   
-  // Apply customization deductions/additions to the base price
-  // This ensures removed inclusions reduce the price and added activities increase it
-  if (customizationData) {
-    effectivePrice = effectivePrice + customizationData.additionalPrice;
+  if (customizationData && customizationData.totalPrice !== undefined) {
+    // Use the totalPrice from PackageCustomizer (already includes timer-aware base + adjustments)
+    effectivePrice = customizationData.totalPrice;
     
-    console.log('📊 Customization Applied:');
-    console.log('  Base Price:', pkg.price);
-    console.log('  Deductions:', customizationData.deductions);
-    console.log('  Additions:', customizationData.additions);
-    console.log('  Net Adjustment:', customizationData.additionalPrice);
-    console.log('  Effective Price:', effectivePrice);
+  } else {
+    // Fallback: Calculate based on timer status
+    const basePrice = pkg.price || 0;
+    const originalPriceWithMarkup = Math.round(basePrice * 1.10);
+    effectivePrice = timerExpired ? originalPriceWithMarkup : basePrice;
+    
   }
   
   let basePackagePrice = effectivePrice * basePax;
+  
+  // ✅ FIX: If package price is 0 or negative (all priced inclusions removed), return 0
+  // Don't add room upgrade price to an empty package
+  if (basePackagePrice <= 0) {
+    return 0;
+  }
   
   if (!selectedRoomType) return basePackagePrice;
 
@@ -474,7 +466,7 @@ if (savedState.formData.appliedPromo) {
 
   const basePackageTotal = calculateBasePackageTotal();
   const originalPriceWithMarkup = Math.round(basePackageTotal * 1.10);
-  const packageTotal = timerExpired ? originalPriceWithMarkup : basePackageTotal;
+  const packageTotal = basePackageTotal; // ✅ FIXED: Always use basePackageTotal (already timer-aware)
   const discountAmount = calculateDiscount();
   const finalPackageTotal = Math.max(0, packageTotal - discountAmount);
   const airfareTotal = selectedFlight ? selectedFlight.price.amount : 0;
@@ -490,6 +482,9 @@ if (savedState.formData.appliedPromo) {
   const convertedPackageTotal = convertPrice(packageTotal);
   const convertedOriginalPriceWithMarkup = convertPrice(originalPriceWithMarkup);
   const convertedFinalPackageTotal = convertPrice(finalPackageTotal);
+  
+  // ✅ VALIDATION: Check if package total is zero (all inclusions removed)
+  const hasValidPackageTotal = finalPackageTotal > 0;
   const convertedAirfareTotal = convertPrice(airfareTotal);
   const convertedFinalTotalAmount = convertPrice(finalTotalAmount);
   const convertedDiscountAmount = convertPrice(discountAmount);
@@ -506,29 +501,18 @@ const handleApplyPromo = async () => {
 
     try {
       const packageId = pkg._id || pkg.id;
-      console.log('🔍 ============ FRONTEND VALIDATION START ============');
-      console.log('📦 Package ID:', packageId);
-      console.log('📝 Promo Code:', promoCode);
       
-      const url = `https://wanderwaveph.onrender.com/api/promos/validate/${promoCode.toUpperCase()}?packageId=${packageId}`;
-      console.log('🌐 Request URL:', url);
+      const url = `https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}?packageId=${packageId}`;
       
       const response = await fetch(url);
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response OK:', response.ok);
       
       const data = await response.json();
-      console.log('📦 Response data:', data);
-      console.log('✅ Data.valid:', data.valid);
 
       if (response.ok && data.valid) {
         const promo = data.promo;
         
-        console.log('✅ ============ PROMO ACCEPTED ============');
-        console.log('🎉 Promo details:', promo);
         
         if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
-          console.log('❌ Usage limit reached');
           setPromoError('This promo code has reached its usage limit');
           setAppliedPromo(null);
           setIsCheckingPromo(false);
@@ -543,17 +527,10 @@ const handleApplyPromo = async () => {
           packageId: packageId
         };
         
-        console.log('💾 Setting applied promo:', appliedPromoData);
         setAppliedPromo(appliedPromoData);
         
-        console.log('🎊 Showing success toast');
         toast.success(`✅ Promo "${promo.code}" applied successfully!`, { duration: 3000 });
-        console.log('✅ ============ PROMO APPLICATION COMPLETE ============');
       } else {
-        console.log('❌ ============ VALIDATION FAILED ============');
-        console.log('❌ Response OK:', response.ok);
-        console.log('❌ Data valid:', data.valid);
-        console.log('❌ Message:', data.message);
         
         const errorMsg = data.message || 'Invalid or expired promo code';
         setPromoError(errorMsg);
@@ -570,7 +547,6 @@ const handleApplyPromo = async () => {
       setAppliedPromo(null);
       toast.error('Failed to validate promo code', { duration: 3000 });
     } finally {
-      console.log('🏁 Setting isCheckingPromo to false');
       setIsCheckingPromo(false);
     }
   };
@@ -878,7 +854,7 @@ originalInclusions: customizationData ? (pkg.inclusions || []) : [],
         }
       });
       
-      const bookingResponse = await axios.post('https://wanderwaveph.onrender.com/api/bookings', formData, {
+      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -887,7 +863,7 @@ originalInclusions: customizationData ? (pkg.inclusions || []) : [],
         
         toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
         
-        const paymentResponse = await axios.post('https://wanderwaveph.onrender.com/api/payment/create-intent', {
+        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
           bookingId: bookingId,
           paymentType: paymentType || 'full',
           paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
@@ -1301,74 +1277,6 @@ originalInclusions: customizationData ? (pkg.inclusions || []) : [],
           </div>
         </div>
 
-{/* ✅ NEW: Display customization adjustments breakdown */}
-{customizationData && (customizationData.deductions > 0 || customizationData.additions > 0) && (
-  <>
-    {/* Show removed inclusions as deduction */}
-    {customizationData.deductions > 0 && (
-      <div className="brf-total-row" style={{
-        fontSize: '0.85rem', 
-        color: '#dc2626',
-        fontStyle: 'italic'
-      }}>
-        <span>
-          ↓ Removed Inclusions ({customizationData.inclusions.filter(inc => 
-            inc.isOriginal && !inc.isChecked && inc.price > 0
-          ).length})
-        </span>
-        <span>
-          -{currencySymbol}{convertPrice(customizationData.deductions).toLocaleString(undefined, {
-            minimumFractionDigits: currency === 'USD' ? 2 : 0,
-            maximumFractionDigits: currency === 'USD' ? 2 : 0
-          })}
-        </span>
-      </div>
-    )}
-    
-    {/* Show added activities as addition */}
-    {customizationData.additions > 0 && (
-      <div className="brf-total-row" style={{
-        fontSize: '0.85rem', 
-        color: '#059669',
-        fontStyle: 'italic'
-      }}>
-        <span>
-          ↑ Added Activities ({customizationData.inclusions.filter(inc => 
-            !inc.isOriginal && inc.isChecked
-          ).length})
-        </span>
-        <span>
-          +{currencySymbol}{convertPrice(customizationData.additions).toLocaleString(undefined, {
-            minimumFractionDigits: currency === 'USD' ? 2 : 0,
-            maximumFractionDigits: currency === 'USD' ? 2 : 0
-          })}
-        </span>
-      </div>
-    )}
-    
-    {/* Show net customization adjustment */}
-    <div className="brf-total-row" style={{
-      fontSize: '0.9rem', 
-      color: customizationData.additionalPrice >= 0 ? '#059669' : '#dc2626',
-      borderTop: '1px dashed #e5e7eb',
-      paddingTop: '8px',
-      marginTop: '4px',
-      fontWeight: '600'
-    }}>
-      <span>
-        Net Customization
-      </span>
-      <span style={{fontWeight: '700'}}>
-        {customizationData.additionalPrice > 0 && '+'}
-        {currencySymbol}{convertPrice(customizationData.additionalPrice).toLocaleString(undefined, {
-          minimumFractionDigits: currency === 'USD' ? 2 : 0,
-          maximumFractionDigits: currency === 'USD' ? 2 : 0
-        })}
-      </span>
-    </div>
-  </>
-)}
-
         {appliedPromo && (
           <div className="brf-total-row" style={{color: '#10b981', fontSize: '0.9rem'}}>
             <span>
@@ -1444,10 +1352,30 @@ originalInclusions: customizationData ? (pkg.inclusions || []) : [],
         <button 
           className="brf-book-now-btn" 
           onClick={handleBookClick}
-          disabled={!selectedRoomType}
+          disabled={!selectedRoomType || !hasValidPackageTotal}
         >
           {selectedFlight ? '🎫 Book Package + Flight' : 'Book This Trip'}
         </button>
+        
+        {!hasValidPackageTotal && (
+          <div style={{
+            marginTop: '12px',
+            padding: '16px',
+            background: '#fef3c7',
+            border: '2px solid #f59e0b',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            color: '#92400e'
+          }}>
+            <div style={{fontSize: '24px'}}>⚠️</div>
+            <div>
+              <strong style={{display: 'block', marginBottom: '4px'}}>Cannot proceed with booking</strong>
+              <span style={{fontSize: '0.9rem'}}>You must have at least one inclusion selected. Please add inclusions to your package or reset customization.</span>
+            </div>
+          </div>
+        )}
 
         {hasOTCAccess && (
           <button 
