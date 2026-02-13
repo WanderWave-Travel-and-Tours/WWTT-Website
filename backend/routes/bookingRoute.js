@@ -493,6 +493,42 @@ router.post('/', upload.any(), async (req, res) => {
     console.log('  - Promo:', bookingData.promoCode || 'None');
     console.log('  - Total Amount:', bookingData.totalAmount);
 
+    // ✅ SANITIZE CUSTOMIZED INCLUSIONS - Ensure all have required 'source' field
+    let sanitizedCustomizedInclusions = [];
+    if (bookingData.customizedInclusions && Array.isArray(bookingData.customizedInclusions)) {
+      sanitizedCustomizedInclusions = bookingData.customizedInclusions.map(inclusion => {
+        // Ensure source field exists
+        if (!inclusion.source) {
+          // Determine source based on available data
+          if (inclusion.sellerRateId || inclusion.supplier) {
+            inclusion.source = 'seller-rate';
+          } else {
+            inclusion.source = 'package';
+          }
+        }
+        
+        // Ensure all required fields exist with defaults
+        return {
+          id: inclusion.id || `inc-${Date.now()}-${Math.random()}`,
+          name: inclusion.name || 'Unknown Inclusion',
+          price: inclusion.price || 0,
+          supplierRate: inclusion.supplierRate || null,
+          markup: inclusion.markup || null,
+          markupType: inclusion.markupType || null,
+          supplier: inclusion.supplier || null,
+          destination: inclusion.destination || null,
+          pax: inclusion.pax || null,
+          notes: inclusion.notes || null,
+          isOriginal: inclusion.isOriginal !== undefined ? inclusion.isOriginal : false,
+          isChecked: inclusion.isChecked !== undefined ? inclusion.isChecked : true,
+          source: inclusion.source, // Now guaranteed to exist
+          sellerRateId: inclusion.sellerRateId || null
+        };
+      });
+      
+      console.log(`✅ Sanitized ${sanitizedCustomizedInclusions.length} customized inclusions`);
+    }
+
     // ✅ Create booking with all fields
     const newBooking = new Booking({
       packageName: bookingData.packageName,
@@ -511,7 +547,7 @@ router.post('/', upload.any(), async (req, res) => {
       
       // Customization fields
       isCustomized: bookingData.isCustomized || false,
-      customizedInclusions: bookingData.customizedInclusions || [],
+      customizedInclusions: sanitizedCustomizedInclusions, // ✅ FIXED: Use sanitized inclusions
       customizationAdditionalPrice: bookingData.customizationAdditionalPrice || 0,
       originalInclusions: bookingData.originalInclusions || [],
       

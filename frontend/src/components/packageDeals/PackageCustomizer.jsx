@@ -9,7 +9,9 @@ const PackageCustomizer = ({
   pkg, 
   currency = 'PHP', 
   exchangeRate = 58,
-  onCustomizationChange 
+  onCustomizationChange,
+  timerExpired = false,
+  activeBasePrice = null
 }) => {
   const [customizedInclusions, setCustomizedInclusions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -473,7 +475,8 @@ const PackageCustomizer = ({
           notes: matchedRate.notes,
           isOriginal: true,
           isChecked: true,
-          source: 'package'
+          source: 'seller-rate', // ✅ FIXED: Added source field
+          sellerRateId: matchedRate._id // ✅ FIXED: Added sellerRateId
         };
       } else {
         return {
@@ -484,7 +487,7 @@ const PackageCustomizer = ({
           price: 0,
           isOriginal: true,
           isChecked: true,
-          source: 'package'
+          source: 'package' // ✅ FIXED: Added source field for unmatched inclusions
         };
       }
     });
@@ -554,7 +557,7 @@ const PackageCustomizer = ({
         price: 0,
         isOriginal: true,
         isChecked: true,
-        source: 'package'
+        source: 'package' // ✅ FIXED: Added source field
       }));
       setCustomizedInclusions(basicInclusions);
     } finally {
@@ -593,7 +596,7 @@ const PackageCustomizer = ({
   }, [searchQuery, availableActivities]);
 
   /**
-   * Calculate total price
+   * ✅ FIXED: Calculate total price with proper handling for expired timers
    */
   useEffect(() => {
     let totalDeductions = 0;
@@ -609,20 +612,35 @@ const PackageCustomizer = ({
       }
     });
     
-    const totalChange = totalAdditions - totalDeductions;
-    const totalPrice = (pkg.price || 0) + totalChange;
+    // ✅ KEY FIX: Check if all priced original inclusions are unchecked
+    const originalPkgPrice = activeBasePrice !== null ? activeBasePrice : (pkg.price || 0);
+    const pricedOriginalInclusions = customizedInclusions.filter(
+      inc => inc.isOriginal && inc.price > 0
+    );
+    const allPricedOriginalUnchecked = pricedOriginalInclusions.length > 0 && 
+      pricedOriginalInclusions.every(inc => !inc.isChecked);
+    
+    // ✅ If all priced inclusions are unchecked, deduction should equal the package price
+    let adjustedDeductions = totalDeductions;
+    if (allPricedOriginalUnchecked) {
+      adjustedDeductions = originalPkgPrice;
+    }
+    
+    const totalChange = totalAdditions - adjustedDeductions;
     setTotalCustomPrice(totalChange);
     
     if (onCustomizationChange) {
+      const finalTotalPrice = Math.max(0, originalPkgPrice + totalChange);
+      
       onCustomizationChange({
         inclusions: customizedInclusions,
         additionalPrice: totalChange,
-        totalPrice: totalPrice,
-        deductions: totalDeductions,
-        additions: totalAdditions
+        deductions: adjustedDeductions,
+        additions: totalAdditions,
+        totalPrice: finalTotalPrice
       });
     }
-  }, [customizedInclusions, pkg.price]);
+  }, [customizedInclusions, onCustomizationChange, activeBasePrice, pkg.price]);
 
   /**
    * Toggle inclusion checkbox
@@ -679,8 +697,8 @@ const PackageCustomizer = ({
       notes: rate.notes,
       isOriginal: false,
       isChecked: true,
-      source: 'seller-rate',
-      sellerRateId: rate._id
+      source: 'seller-rate', // ✅ FIXED: Added source field
+      sellerRateId: rate._id // ✅ FIXED: Added sellerRateId
     };
     
     setCustomizedInclusions(prev => [...prev, newInclusion]);
@@ -694,9 +712,13 @@ const PackageCustomizer = ({
   };
 
   /**
-   * Reset customization
+   * ✅ FIXED: Reset customization - properly resets refs to force re-fetch
    */
   const resetCustomization = () => {
+    // Reset the refs to allow re-fetching
+    hasFetchedRef.current = false;
+    currentDestinationRef.current = '';
+    
     const packageDestination = pkg.destination || pkg.location || '';
     fetchSellerRates(packageDestination);
     setSearchQuery('');
@@ -716,16 +738,29 @@ const PackageCustomizer = ({
     })}`;
   };
 
-  // Calculate prices
+  // ✅ FIXED: Calculate prices with proper handling for when all priced inclusions are unchecked
   const packageDestination = pkg.destination || pkg.location || 'Unknown';
-  const originalPackagePrice = pkg.price || 0;
+  const originalPackagePrice = activeBasePrice !== null ? activeBasePrice : (pkg.price || 0);
+  
   const deductionsTotal = customizedInclusions
     .filter(inc => !inc.isChecked && inc.isOriginal && inc.price > 0)
     .reduce((sum, inc) => sum + inc.price, 0);
+  
   const additionsTotal = customizedInclusions
     .filter(inc => inc.isChecked && !inc.isOriginal)
     .reduce((sum, inc) => sum + inc.price, 0);
-  const newTotalPrice = originalPackagePrice - deductionsTotal + additionsTotal;
+  
+  // ✅ Check if all priced original inclusions are unchecked
+  const pricedOriginalInclusions = customizedInclusions.filter(
+    inc => inc.isOriginal && inc.price > 0
+  );
+  const allPricedOriginalUnchecked = pricedOriginalInclusions.length > 0 && 
+    pricedOriginalInclusions.every(inc => !inc.isChecked);
+  
+  // ✅ If all priced inclusions are unchecked and no additions, price should be 0
+  const newTotalPrice = allPricedOriginalUnchecked && additionsTotal === 0 
+    ? 0 
+    : Math.max(0, originalPackagePrice - (allPricedOriginalUnchecked ? originalPackagePrice : deductionsTotal) + additionsTotal);
 
   return (
     <div className="pc-container">
@@ -964,7 +999,11 @@ const PackageCustomizer = ({
                           </span>
                         )}
                       </div>
-                      
+                      {rate.inclusions && (
+                        <div className="pc-activity-inclusions">
+                          <small>Includes: {rate.inclusions}</small>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pc-activity-actions">
@@ -1010,63 +1049,6 @@ const PackageCustomizer = ({
                 <p>Loading activities...</p>
               </div>
             )}
-          </div>
-        )}
-      </div>
-
-      {/* Price Summary */}
-      <div className="pc-price-summary">
-        <div className="pc-price-row">
-          <span>Original Package Price:</span>
-          <span>{formatPrice(originalPackagePrice)}</span>
-        </div>
-        
-        {customizedInclusions.filter(inc => !inc.isChecked && inc.isOriginal && inc.price > 0).length > 0 && (
-          <div className="pc-price-row" style={{ color: '#dc2626' }}>
-            <span>Less: Removed Inclusions</span>
-            <span>
-              - {formatPrice(
-                customizedInclusions
-                  .filter(inc => !inc.isChecked && inc.isOriginal && inc.price > 0)
-                  .reduce((sum, inc) => sum + inc.price, 0)
-              )}
-            </span>
-          </div>
-        )}
-        
-        {customizedInclusions.filter(inc => inc.isChecked && !inc.isOriginal).length > 0 && (
-          <div className="pc-price-row highlight">
-            <span>Additional Inclusions:</span>
-            <span className="pc-price-added">
-              + {formatPrice(
-                customizedInclusions
-                  .filter(inc => inc.isChecked && !inc.isOriginal)
-                  .reduce((sum, inc) => sum + inc.price, 0)
-              )}
-            </span>
-          </div>
-        )}
-        
-        <div className="pc-price-row total">
-          <span>New Total Price:</span>
-          <span className="pc-price-total">
-            {formatPrice(newTotalPrice)}
-          </span>
-        </div>
-        
-        {totalCustomPrice !== 0 && (
-          <div style={{ 
-            marginTop: '12px', 
-            padding: '8px', 
-            background: totalCustomPrice < 0 ? '#dcfce7' : '#fff7ed',
-            borderRadius: '6px',
-            textAlign: 'center',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: totalCustomPrice < 0 ? '#059669' : '#ea580c'
-          }}>
-            {totalCustomPrice < 0 ? '💰 You save: ' : '💳 Additional cost: '}
-            {formatPrice(Math.abs(totalCustomPrice))}
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-// src/components/PackageDeals/packageDeals.jsx - COMPLETE CODE WITH RANDOMIZED RATINGS
+// src/components/PackageDeals/packageDeals.jsx - COMPLETE CODE WITH DISCOUNT EXPIRATION SUPPORT
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import BrowseCategory from './browseCategory';
@@ -398,25 +398,18 @@ function PackageDeals() {
       name: 'Hong Kong Disneyland', 
       subtitle: 'Hong Kong',
       scope: 'international',
-      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69118686c3a1eafb4f245065.jpg' 
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911aacfc3a1eaf00b1f3a06.jpg'
     },
     { 
-      id: 'bangkok', 
-      name: 'Bangkok', 
-      subtitle: 'Thailand',
+      id: 'singapore', 
+      name: 'Singapore', 
+      subtitle: 'Singapore',
       scope: 'international',
-      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/69171615ac7fad32f8341f78.jpg' 
+      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911aec1d1ba95f893f41f5c.jpg'
     },
     { 
-      id: 'hanoi', 
-      name: 'Hanoi', 
-      subtitle: 'Vietnam',
-      scope: 'international',
-      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911855175ec1e9b374b5977.jpg' 
-    },
-    { 
-      id: 'japan', 
-      name: 'Japan', 
+      id: 'tokyo', 
+      name: 'Tokyo Disneyland', 
       subtitle: 'Japan',
       scope: 'international',
       image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6917166d01e5bcc9cd11a103.jpg' 
@@ -431,7 +424,23 @@ function PackageDeals() {
   ];
 
   // ============================================================
-  // FETCH PACKAGES
+  // ✅ DISCOUNT EXPIRATION HELPER
+  // ============================================================
+  const checkDiscountExpiration = (discountEndDate) => {
+    if (!discountEndDate) return false;
+    
+    try {
+      const endDate = new Date(discountEndDate);
+      const now = new Date();
+      return now > endDate; // Returns true if expired
+    } catch (error) {
+      console.error('Error checking discount expiration:', error);
+      return false;
+    }
+  };
+
+  // ============================================================
+  // FETCH PACKAGES WITH DISCOUNT EXPIRATION SUPPORT
   // ============================================================
   useEffect(() => {
     const fetchPackages = async () => {
@@ -471,6 +480,32 @@ function PackageDeals() {
             const reviewsRandom = seededRandom(seed + 2);
             const randomReviews = Math.floor(reviewsRandom * 460) + 40;
 
+            // ✅ CHECK DISCOUNT EXPIRATION
+            const hasDiscount = pkg.discountPercentage && pkg.discountEndDate;
+            const isDiscountExpired = hasDiscount ? checkDiscountExpiration(pkg.discountEndDate) : false;
+            
+            // ✅ CALCULATE PRICES BASED ON DISCOUNT STATUS
+            let displayPrice = pkg.price;
+            let originalPrice = pkg.price;
+            let discountValue = 0;
+            
+            if (hasDiscount && !isDiscountExpired) {
+              // Discount is active
+              discountValue = pkg.discountPercentage;
+              originalPrice = pkg.price / (1 - discountValue / 100);
+              displayPrice = pkg.price; // Already discounted price from DB
+            } else if (hasDiscount && isDiscountExpired) {
+              // Discount expired - revert to original price
+              originalPrice = pkg.price / (1 - (pkg.discountPercentage || 0) / 100);
+              displayPrice = originalPrice;
+              discountValue = 0;
+            } else {
+              // No discount - use fake 30% discount for display
+              originalPrice = pkg.price + Math.floor(pkg.price * 0.3);
+              displayPrice = pkg.price;
+              discountValue = 30;
+            }
+
             return {
               id: pkg._id,
               name: pkg.title,
@@ -479,17 +514,25 @@ function PackageDeals() {
               location: pkg.destination,
               duration: pkg.duration,
               nights: pkg.duration && pkg.duration.includes('Days') ? `${parseInt(pkg.duration.split(' ')[0]) - 1} Nights` : '0 Nights', 
-              price: pkg.price,
               
-              originalPrice: pkg.price + Math.floor(pkg.price * 0.3),
-              discount: 30,
-              rating: calculatedRating, // Applied deterministic rating
-              reviews: randomReviews,   // Applied random reviews
+              // ✅ UPDATED PRICE LOGIC
+              price: displayPrice,
+              originalPrice: originalPrice,
+              discount: discountValue,
+              hasRealDiscount: hasDiscount,
+              isDiscountExpired: isDiscountExpired,
+              discountEndDate: pkg.discountEndDate,
+              
+              rating: calculatedRating,
+              reviews: randomReviews,
               image: pkg.image, 
               inclusions: pkg.inclusions || [], 
               itinerary: pkg.itinerary || [], 
               excludes: [], 
-              maxGuests: 4, 
+              maxGuests: pkg.pax || pkg.minPax || 4,
+              pax: pkg.pax,
+              minPax: pkg.minPax,
+              tourType: pkg.tourType || 'private',
               featured: index === 0, 
               description: pkg.title,
               includes: pkg.inclusions || [],
