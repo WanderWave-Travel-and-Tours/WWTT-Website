@@ -240,6 +240,99 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
     }
 });
 
+
+
+// ============================================================================
+// 🐛 DEBUG: Log ALL incoming requests
+// ============================================================================
+app.use((req, res, next) => {
+  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// ============================================================================
+// ✅ BOOKING UPDATE ROUTE - MUST BE BEFORE app.use('/api/bookings')
+// ============================================================================
+app.put('/api/bookings/:id', async (req, res) => {
+  console.log('');
+  console.log('🔥🔥🔥 BOOKING UPDATE ROUTE HIT! 🔥🔥🔥');
+  console.log('📍 Route: PUT /api/bookings/:id');
+  console.log('🆔 Booking ID:', req.params.id);
+  console.log('📦 Body:', JSON.stringify(req.body, null, 2));
+  console.log('');
+
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    if (!id || id === 'undefined' || id === 'null') {
+      console.log('❌ Invalid booking ID');
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid booking ID'
+      });
+    }
+
+    console.log('🔍 Finding booking:', id);
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      console.log('❌ Booking not found');
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    console.log('✅ Booking found:', booking.packageName);
+
+    const allowedUpdates = [
+      'packageName', 'fullName', 'email', 'message', 
+      'startDate', 'endDate', 'duration', 'pax',
+      'selectedRoomType', 'hotelName', 'numberOfRooms',
+      'flightDetails', 'passengers'
+    ];
+
+    let updatedFields = [];
+    allowedUpdates.forEach(field => {
+      if (updateData[field] !== undefined) {
+        booking[field] = updateData[field];
+        updatedFields.push(field);
+      }
+    });
+
+    console.log('📝 Updated:', updatedFields.join(', '));
+
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    console.log('💾 Saved!');
+    console.log('✅ Success!');
+    console.log('');
+
+    res.json({
+      success: true,
+      message: 'Booking updated successfully',
+      booking: booking
+    });
+
+  } catch (error) {
+    console.error('');
+    console.error('❌❌❌ ERROR ❌❌❌');
+    console.error('Message:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('');
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update booking',
+      error: error.message
+    });
+  }
+});
+
+console.log('✅ Booking update route registered');
+
 // ===================================================================
 // REGISTER ALL ROUTES
 // ===================================================================

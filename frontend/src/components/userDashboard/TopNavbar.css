@@ -41,6 +41,14 @@
 .ud-nav-right { gap: 28px; }
 .ud-user-info { gap: 14px; }
 
+.ud-brand-section {
+    transition: all 0.3s ease;
+}
+
+.ud-brand-section:hover {
+    transform: translateY(-2px);
+}
+
 .ud-brand-logo { 
     height: 44px; 
     width: auto; 

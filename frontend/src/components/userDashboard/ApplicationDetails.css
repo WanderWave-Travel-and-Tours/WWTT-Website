@@ -542,3 +542,389 @@
         margin-top: 10px; 
     }
 }
+
+/* --- CANCEL BOOKING BUTTON ANIMATION --- */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.ad-cancel-booking-btn:active {
+    transform: translateY(0) !important;
+}
+
+.ad-cancel-booking-btn:disabled {
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+}
+
+/* ============================================
+   ENHANCED CUSTOMIZED INCLUSIONS STYLING
+   ============================================ */
+
+/* Main container for enhanced inclusions list */
+.ad-inclusions-list-enhanced {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* Individual inclusion card */
+.ad-inclusion-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ad-inclusion-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    transform: translateY(-1px);
+}
+
+/* Header section of inclusion card */
+.ad-inclusion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.ad-inclusion-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0; /* Allows text to truncate if needed */
+}
+
+/* Checkmark icon */
+.ad-inclusion-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+/* Inclusion name/title */
+.ad-inclusion-name-enhanced {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+/* Price badge */
+.ad-inclusion-price-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+}
+
+/* Metadata section */
+.ad-inclusion-metadata {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border-left: 3px solid #e5e7eb;
+}
+
+.ad-meta-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.ad-meta-label {
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 100px;
+}
+
+.ad-meta-value {
+    color: #374151;
+    font-weight: 500;
+    flex: 1;
+    word-break: break-word;
+}
+
+/* Notes section - full width */
+.ad-meta-notes {
+    flex-direction: column;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 4px;
+}
+
+.ad-meta-notes .ad-meta-label {
+    min-width: auto;
+    margin-bottom: 4px;
+}
+
+.ad-meta-notes .ad-meta-value {
+    color: #6b7280;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .ad-inclusion-card {
+        padding: 14px;
+    }
+
+    .ad-inclusion-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ad-inclusion-price-badge {
+        align-self: flex-start;
+        margin-top: 8px;
+    }
+
+    .ad-meta-label {
+        min-width: 80px;
+        font-size: 12px;
+    }
+
+    .ad-meta-value {
+        font-size: 12px;
+    }
+
+    .ad-inclusion-name-enhanced {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ad-inclusions-list-enhanced {
+        gap: 10px;
+    }
+
+    .ad-inclusion-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .ad-inclusion-metadata {
+        padding: 10px;
+        gap: 6px;
+    }
+
+    .ad-meta-item {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .ad-meta-label {
+        min-width: auto;
+        font-size: 11px;
+    }
+
+    .ad-meta-value {
+        font-size: 12px;
+    }
+}
+
+/* ============================================
+   ORIGINAL INCLUSIONS (NON-CUSTOMIZED) - KEEP EXISTING STYLES
+   ============================================ */
+
+.ad-inclusions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.ad-inclusion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border-left: 3px solid #10b981;
+}
+
+.ad-inclusion-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.ad-inclusion-icon {
+    color: #10b981;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.ad-inclusion-name {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.ad-inclusion-price {
+    color: #f59e0b;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* ============================================
+   SECTION STYLING
+   ============================================ */
+
+.ad-inclusions-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.ad-section-subtitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ad-section-subtitle::before {
+    content: '📋';
+    font-size: 18px;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.ad-inclusions-empty {
+    padding: 32px;
+    text-align: center;
+    background: #f9fafb;
+    border-radius: 12px;
+    border: 2px dashed #e5e7eb;
+}
+
+.ad-inclusions-empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.ad-inclusions-empty-text {
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ============================================
+   ADDITIONAL ENHANCEMENTS
+   ============================================ */
+
+/* Inclusion count badge */
+.ad-inclusions-count {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: #e5e7eb;
+    color: #4b5563;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+/* Total customization cost */
+.ad-customization-summary {
+    margin-top: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 12px;
+    border: 1px solid #fbbf24;
+}
+
+.ad-customization-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #78350f;
+}
+
+.ad-customization-total-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ad-customization-total-amount {
+    font-size: 18px;
+}
+
+/* Animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ad-inclusion-card {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Print Styles */
+@media print {
+    .ad-inclusion-card {
+        box-shadow: none;
+        border: 1px solid #d1d5db;
+        page-break-inside: avoid;
+    }
+
+    .ad-inclusion-card:hover {
+        transform: none;
+    }
+
+    .ad-inclusion-metadata {
+        background: white;
+    }
+}

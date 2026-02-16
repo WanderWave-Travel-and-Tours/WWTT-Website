@@ -60,7 +60,14 @@ const bookingSchema = new mongoose.Schema({
   sellerPrice: { type: Number, required: true },
   markup: { type: Number, required: true },
   price: { type: Number, required: true }, 
-
+timerExpiredAtBooking: { type: Boolean, default: false },
+  priceType: { 
+    type: String, 
+    enum: ['discounted', 'markup'],
+    default: 'discounted'
+  },
+  originalPackagePrice: { type: Number },
+  appliedMarkup: { type: Number, default: 0 },
   startDate: { type: String, required: true },   
   endDate:   { type: String, required: true },  
   duration:  { type: String, required: true },  
