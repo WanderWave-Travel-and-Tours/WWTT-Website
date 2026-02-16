@@ -260,6 +260,50 @@ router.post('/', upload.any(), async (req, res) => {
         });
     }
 
+// ✅ PRICE VALIDATION - Verify submitted price matches expected price
+if (bookingData.packageId) {
+  try {
+    const pkg = await Package.findById(bookingData.packageId);
+    
+    if (pkg) {
+      const basePrice = pkg.price;
+      const markupPrice = Math.round(basePrice * 1.10);
+      const submittedPrice = bookingData.price;
+      
+      console.log('🔍 ===== BACKEND PRICE VALIDATION =====');
+      console.log('Package Base Price:', basePrice);
+      console.log('Markup Price (10%):', markupPrice);
+      console.log('Submitted Price:', submittedPrice);
+      console.log('Timer Expired:', bookingData.timerExpiredAtBooking);
+      console.log('Price Type:', bookingData.priceType);
+      console.log('Is Customized:', bookingData.isCustomized);
+      console.log('====================================');
+      
+      // Validate that submitted price is reasonable
+      // Allow flexibility for customization and room upgrades
+      const isValidPrice = 
+        Math.abs(submittedPrice - basePrice) < 100 ||  // Close to base price
+        Math.abs(submittedPrice - markupPrice) < 100 || // Close to markup price
+        bookingData.isCustomized; // Allow any price if customized
+      
+      if (!isValidPrice) {
+        console.warn('⚠️ Price validation warning:', {
+          expected: `${basePrice} (discounted) or ${markupPrice} (markup)`,
+          received: submittedPrice,
+          difference: Math.abs(submittedPrice - basePrice)
+        });
+        // Note: We log a warning but don't fail the booking
+        // This allows room upgrades and customization to work
+      } else {
+        console.log('✅ Price validation passed');
+      }
+    }
+  } catch (priceValidationError) {
+    console.error('⚠️ Price validation error (non-fatal):', priceValidationError);
+    // Don't fail the booking due to validation error
+  }
+}
+
     // Promo validation
     if (bookingData.promoId) {
       console.log('🎟️ Validating promo code...');
@@ -544,7 +588,10 @@ router.post('/', upload.any(), async (req, res) => {
       hotelName: bookingData.hotelName,
       numberOfRooms: bookingData.numberOfRooms,
       packageTotal: bookingData.packageTotal || bookingData.totalAmount,
-      
+      timerExpiredAtBooking: bookingData.timerExpiredAtBooking || false,
+  priceType: bookingData.priceType || 'discounted',
+  originalPackagePrice: bookingData.originalPackagePrice || bookingData.price || 0,
+  appliedMarkup: bookingData.appliedMarkup || 0,
       // Customization fields
       isCustomized: bookingData.isCustomized || false,
       customizedInclusions: sanitizedCustomizedInclusions, // ✅ FIXED: Use sanitized inclusions
@@ -1130,81 +1177,90 @@ router.patch('/:id/customization', async (req, res) => {
   }
 });
 
-// ✅ PUT route for updating bookings - MOVED BEFORE module.exports
+// Sa loob ng bookingRoute.js
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
-
-    console.log('📝 Updating booking:', id);
-    console.log('Update data:', updateData);
-
     const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    // Update allowed fields
-    const allowedUpdates = [
-      'packageName', 'fullName', 'email', 'message', 
-      'startDate', 'endDate', 'duration', 'pax',
-      'selectedRoomType', 'hotelName', 'numberOfRooms',
-      'flightDetails', 'passengers'
-    ];
-
-    allowedUpdates.forEach(field => {
-      if (updateData[field] !== undefined) {
-        booking[field] = updateData[field];
-      }
-    });
-
+    // I-update ang fields (gaya ng passengers)
+    Object.assign(booking, req.body);
     booking.updatedAt = new Date();
     await booking.save();
 
-    // 👇👇👇 ACTIVITY LOG START 👇👇👇
+    res.json({ success: true, message: 'Booking updated successfully', booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Cancel booking route
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+    
+    if (!booking) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Booking not found' 
+      });
+    }
+
+    // Check if booking can be cancelled
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Booking is already cancelled' 
+      });
+    }
+
+    // Update booking status to cancelled
+    booking.status = 'cancelled';
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    // 👇👇👇 ACTIVITY LOG START (CANCEL BOOKING) 👇👇👇
     try {
-      const { userEmail, adminId } = updateData;
+      const { userEmail, adminId } = req.body;
       if (userEmail) {
         await ActivityLog.create({
           action: 'UPDATE',
           module: 'Bookings',
           user: userEmail,
           userId: adminId || null,
-          description: `Updated booking: ${booking.packageName} (${booking.fullName})`,
-          severity: 'INFO',
+          description: `Cancelled booking: ${booking.packageName} (${booking.fullName})`,
+          severity: 'WARNING',
           details: {
             recordTitle: `${booking.packageName} - ${booking.fullName}`,
             recordId: booking._id.toString(),
-            method: 'PUT',
-            updatedFields: allowedUpdates.filter(field => updateData[field] !== undefined)
+            method: 'POST',
+            previousStatus: 'pending',
+            newStatus: 'cancelled'
           }
         });
-        console.log('✅ Activity Log saved for Booking Update');
+        console.log('✅ Activity Log saved for Cancel Booking');
       }
     } catch (logError) {
       console.error('⚠️ Failed to save activity log:', logError.message);
     }
     // 👆👆👆 ACTIVITY LOG END 👆👆👆
 
-    res.json({
-      success: true,
-      message: 'Booking updated successfully',
-      booking: booking
+    res.json({ 
+      success: true, 
+      message: 'Booking cancelled successfully', 
+      booking 
     });
 
   } catch (error) {
-    console.error('❌ Error updating booking:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update booking',
-      error: error.message
+    console.error('❌ Error cancelling booking:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to cancel booking',
+      error: error.message 
     });
   }
 });
 
-// ✅ FIXED: module.exports moved to the very end
 module.exports = router;

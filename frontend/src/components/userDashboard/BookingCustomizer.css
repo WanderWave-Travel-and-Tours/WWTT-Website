@@ -1,0 +1,830 @@
+/* BookingCustomizer.css - Width-constrained version matching DocumentsSection */
+
+.bc-container {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 0 auto 24px auto;
+  max-width: 900px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bc-header {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.bc-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.bc-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.bc-subtitle {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin: 8px 0;
+}
+
+.bc-destination-badge {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 20px;
+}
+
+.bc-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bc-reset-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+.bc-reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Error Alert */
+.bc-error-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: #fef3c7;
+  border: 2px solid #fbbf24;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  color: #78350f;
+  animation: slideInDown 0.3s ease-out;
+}
+
+.bc-error-alert svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bc-error-alert strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.bc-error-alert p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Section */
+.bc-section {
+  margin-bottom: 24px;
+}
+
+.bc-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.bc-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0;
+}
+
+/* Inclusions List */
+.bc-inclusions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bc-inclusion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.2s;
+  background: white;
+}
+
+.bc-inclusion-item.checked {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.bc-inclusion-item.unchecked {
+  background: #fef2f2;
+  border-color: #fecaca;
+  opacity: 0.7;
+}
+
+.bc-inclusion-item.last-remaining {
+  background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%) !important;
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15) !important;
+}
+
+.bc-inclusion-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bc-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.bc-checkbox:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.bc-inclusion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bc-inclusion-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bc-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.bc-badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.bc-inclusion-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.bc-meta-item {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.bc-inclusion-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.bc-inclusion-price {
+  font-weight: 700;
+  color: #059669;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.bc-remove-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bc-remove-btn:hover {
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+/* Search Toggle Button */
+.bc-search-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bc-search-toggle:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.bc-search-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Search Panel */
+.bc-search-panel {
+  margin-top: 16px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.bc-info-box {
+  padding: 12px;
+  background: #dbeafe;
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.bc-info-box p {
+  margin: 0;
+  color: #1e40af;
+  font-size: 0.9rem;
+}
+
+.bc-info-box .bc-count {
+  margin-top: 6px;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.bc-search-box {
+  margin-bottom: 16px;
+}
+
+.bc-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.bc-search-input:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+/* Activities List */
+.bc-activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bc-activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.2s;
+  gap: 16px;
+}
+
+.bc-activity-item:hover {
+  border-color: #f97316;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.1);
+}
+
+.bc-activity-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bc-activity-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1rem;
+  margin: 0 0 8px 0;
+}
+
+.bc-activity-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.bc-meta-tag {
+  font-size: 0.8rem;
+  color: #64748b;
+  padding: 3px 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+.bc-activity-inclusions {
+  margin-top: 6px;
+}
+
+.bc-activity-inclusions small {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.bc-activity-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.bc-activity-price {
+  font-weight: 700;
+  color: #059669;
+  font-size: 1.1rem;
+  white-space: nowrap;
+}
+
+.bc-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.bc-add-btn:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.bc-add-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Empty States */
+.bc-empty-state,
+.bc-no-activities {
+  text-align: center;
+  padding: 32px;
+  color: #64748b;
+}
+
+.bc-empty-state p,
+.bc-no-activities p {
+  margin: 8px 0;
+}
+
+.bc-hint {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.bc-clear-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bc-clear-btn:hover {
+  background: #e2e8f0;
+}
+
+/* Loading */
+.bc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.bc-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+.bc-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Price Summary */
+.bc-price-summary {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #86efac;
+  border-radius: 12px;
+}
+
+.bc-price-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.bc-price-row.highlight {
+  color: #059669;
+  font-weight: 600;
+  border-top: 1px solid #a7f3d0;
+  margin-top: 4px;
+  padding-top: 14px;
+}
+
+.bc-price-row.bc-discount {
+  color: #dc2626;
+  font-weight: 600;
+  border-top: 1px solid #fecaca;
+  margin-top: 4px;
+  padding-top: 14px;
+}
+
+.bc-price-row.total {
+  border-top: 2px solid #34d399;
+  margin-top: 8px;
+  padding-top: 14px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.bc-price-added {
+  color: #059669;
+}
+
+.bc-price-discount {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.bc-price-total {
+  color: #047857;
+  font-size: 1.3rem;
+}
+
+/* Save Section */
+.bc-save-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: #fef9e7;
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.bc-save-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+
+.bc-save-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.bc-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bc-save-note {
+  margin: 0;
+  color: #92400e;
+  font-size: 0.85rem;
+}
+
+.bc-empty {
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
+}
+
+/* Animations */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.bc-inclusion-item.last-remaining .bc-badge {
+  animation: pulse 2s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bc-container {
+    padding: 16px;
+    max-width: 100%;
+    margin: 0 0 24px 0;
+  }
+
+  .bc-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bc-reset-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bc-activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bc-activity-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .bc-inclusion-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .bc-inclusion-main {
+    width: 100%;
+  }
+
+  .bc-inclusion-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .bc-title {
+    font-size: 1.2rem;
+  }
+
+  .bc-search-toggle {
+    font-size: 0.9rem;
+    padding: 12px;
+  }
+
+  .bc-activity-price {
+    font-size: 1rem;
+  }
+
+  .bc-save-btn {
+    font-size: 1rem;
+  }
+}
+
+/* Save Button Styles */
+.pc-save-btn {
+  padding: 8px 16px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.pc-save-btn:hover:not(:disabled) {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.pc-save-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Spinner for Save Button */
+.pc-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+/* Simplified Activity Item Styles */
+.pc-activity-item-simple {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.pc-activity-item-simple:hover {
+  border-color: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+  transform: translateY(-1px);
+}
+
+.pc-activity-title {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.pc-activity-actions-simple {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.pc-activity-actions-simple .pc-activity-price {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #059669;
+  min-width: 100px;
+  text-align: right;
+}
+
+.pc-activity-actions-simple .pc-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.pc-activity-actions-simple .pc-add-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.pc-activity-actions-simple .pc-add-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .pc-activity-item-simple {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .pc-activity-title {
+    font-size: 0.9rem;
+  }
+
+  .pc-activity-actions-simple {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .pc-activity-actions-simple .pc-activity-price {
+    min-width: auto;
+    font-size: 1rem;
+  }
+
+  .pc-activity-actions-simple .pc-add-btn {
+    padding: 10px 20px;
+  }
+}

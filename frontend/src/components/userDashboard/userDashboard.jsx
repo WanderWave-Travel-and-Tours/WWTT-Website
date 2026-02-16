@@ -17,7 +17,7 @@ const UserDashboard = ({ user, onLogout }) => {
     const [currentView, setCurrentView] = useState('applications'); 
     const [viewedHistory, setViewedHistory] = useState({});
 
-    // тнР NEW: State for uploaded documents
+    // NEW: State for uploaded documents
     const [uploadedDocuments, setUploadedDocuments] = useState([]);
     const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
 
@@ -101,7 +101,7 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     };
 
-    // тнР NEW: Fetch uploaded documents for selected inquiry
+    // NEW: Fetch uploaded documents for selected inquiry
     const fetchUploadedDocuments = async (inquiryId) => {
         if (!inquiryId) {
             setUploadedDocuments([]);
@@ -181,7 +181,7 @@ const UserDashboard = ({ user, onLogout }) => {
         fetchVisaDetails();
     }, [selectedInquiry]);
 
-    // тнР NEW: Fetch uploaded documents when inquiry changes
+    // NEW: Fetch uploaded documents when inquiry changes
     useEffect(() => {
         if (selectedInquiry?._id) {
             fetchUploadedDocuments(selectedInquiry._id);
@@ -231,6 +231,26 @@ const UserDashboard = ({ user, onLogout }) => {
         }
     };
 
+    // ✅ NEW: Handler for booking updates (passenger edits, customizations)
+    const handleBookingUpdate = async (updatedBooking) => {
+        console.log('📝 Booking updated:', updatedBooking);
+        
+        // Update the selected inquiry with new booking data
+        setSelectedInquiry(updatedBooking);
+        
+        // Also update in the inquiries list
+        setInquiries(prev => prev.map(inq => 
+            inq._id === updatedBooking._id ? {
+                ...updatedBooking,
+                serviceName: updatedBooking.packageName,
+                inquiryType: 'BOOKING',
+                status: updatedBooking.status ? updatedBooking.status.toUpperCase() : 'PENDING',
+                estimatedPrice: updatedBooking.totalAmount,
+                message: updatedBooking.message || `Booking for ${updatedBooking.packageName}`
+            } : inq
+        ));
+    };
+
     const handleFiles = async (files, section) => { 
         setIsUploading(true);
         for (let i = 0; i <= 100; i += 20) {
@@ -274,7 +294,7 @@ const UserDashboard = ({ user, onLogout }) => {
             alert('Documents submitted successfully!');
             setUploadedFiles({});
             
-            // тнР NEW: Refresh uploaded documents after submission
+            // NEW: Refresh uploaded documents after submission
             await fetchUploadedDocuments(selectedInquiry._id);
             await fetchUserData(); 
         } catch (error) {
@@ -333,9 +353,9 @@ const UserDashboard = ({ user, onLogout }) => {
                             isUploading={isUploading}
                             uploadProgress={uploadProgress}
                             onDownloadComplete={handleDownloadAction}
-                            // тнР NEW: Pass uploaded documents data
                             uploadedDocuments={uploadedDocuments}
                             isLoadingDocuments={isLoadingDocuments}
+                            onBookingUpdate={handleBookingUpdate}  // ✅ NEW: Pass booking update handler
                         />
                     ) : (
                         <div className="ud-welcome-state">

@@ -257,7 +257,7 @@ const BookingCompletedModal = ({ isOpen, onClose, packageName }) => {
           Booking Completed
         </h2>
         <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
-          Your booking has been successfully confirmed! Click close to proceed.
+          Your booking has been successfully confirmed!
         </p>
       </div>
     </div>

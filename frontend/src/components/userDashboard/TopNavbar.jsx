@@ -27,13 +27,22 @@ const TopNavbar = ({ user, onLogout, onNavigateSettings, mobileMenuOpen, setMobi
         onNavigateSettings(); 
     };
 
+    const handleHomeClick = () => {
+        setDropdownOpen(false);
+        window.location.href = 'https://wanderwaveph.com/packages';
+    };
+
+    const handleBrandClick = () => {
+        window.location.href = 'https://wanderwaveph.com/packages';
+    };
+
     return (
         <header className="ud-navbar">
             <div className="ud-nav-left">
                 <button className="ud-mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                     <span style={{color: 'white'}}>☰</span>
                 </button>
-                <div className="ud-brand-section">
+                <div className="ud-brand-section" onClick={handleBrandClick} style={{cursor: 'pointer'}}>
                     <img src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png" alt="WanderWave" className="ud-brand-logo" />
                     <span className="ud-brand-name">WanderWave</span>
                 </div>
@@ -54,6 +63,9 @@ const TopNavbar = ({ user, onLogout, onNavigateSettings, mobileMenuOpen, setMobi
 
                     {dropdownOpen && (
                         <div className="ud-dropdown-menu">
+                            <div className="ud-dropdown-item" onClick={handleHomeClick}>
+                                <span>🏠 Home</span>
+                            </div>
                             <div className="ud-dropdown-item" onClick={handleSettingsClick}>
                                 <span>⚙️ Account Settings</span>
                             </div>

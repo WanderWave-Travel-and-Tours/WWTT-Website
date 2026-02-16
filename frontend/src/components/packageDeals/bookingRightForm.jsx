@@ -90,7 +90,7 @@ const BookingRightForm = ({
   useEffect(() => {
     const checkOTCAccess = async () => {
       try {
-        const response = await axios.get('https://wanderwaveph-backend.onrender.com/api/ip/check-otc-access');
+        const response = await axios.get('https://wanderwaveph.onrender.com/api/ip/check-otc-access');
         
         
         setHasOTCAccess(response.data.hasOTCAccess);
@@ -293,7 +293,7 @@ if (savedState.formData.appliedPromo) {
       try {
         setLoadingHotelData(true);
         const city = destination.split(',')[0].trim();
-        const response = await fetch(`https://wanderwaveph-backend.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
+        const response = await fetch(`https://wanderwaveph.onrender.com/api/hotels/location/${encodeURIComponent(city)}/rooms`);
         const data = await response.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -502,7 +502,7 @@ const handleApplyPromo = async () => {
     try {
       const packageId = pkg._id || pkg.id;
       
-      const url = `https://wanderwaveph-backend.onrender.com/api/promos/validate/${promoCode.toUpperCase()}?packageId=${packageId}`;
+      const url = `https://wanderwaveph.onrender.com/api/promos/validate/${promoCode.toUpperCase()}?packageId=${packageId}`;
       
       const response = await fetch(url);
       
@@ -723,182 +723,221 @@ const handleApplyPromo = async () => {
     });
   };
 
-  const handleNextPassenger = async (e) => {
-    e.preventDefault();
+  // ✅ ADD THIS NEW HELPER FUNCTION RIGHT BEFORE handleNextPassenger (around line 725)
+const getTimerAwarePrice = () => {
+  const basePrice = pkg.price || 0;
+  
+  // Check if customization is active
+  if (customizationData && customizationData.totalPrice !== undefined) {
+    // Use customization total (already includes timer-aware base + adjustments)
+    return customizationData.totalPrice;
+  }
+  
+  // No customization - apply timer logic to base price
+  if (timerExpired) {
+    return Math.round(basePrice * 1.10); // 10% markup
+  }
+  
+  return basePrice; // Discounted price
+};
+
+const handleNextPassenger = async (e) => {
+  e.preventDefault();
+  
+  const currentPassengerData = passengers[passengerStep - 1];
+  
+  if (bookingWithAirfare && requiresID && !currentPassengerData.idFile) {
+    toast.error('Please upload a valid ID for this passenger');
+    return;
+  }
+  
+  if (bookingWithAirfare && requiresPassport && !currentPassengerData.passportFile) {
+    toast.error('Please upload a valid passport for this passenger');
+    return;
+  }
+
+  if (passengerStep < totalPassengers) {
+    setPassengerStep(prev => prev + 1);
+    return;
+  }
+
+  setLoading(true);
+  
+  try {
+    const formData = new FormData();
+    const { start, end } = getCalculatedDates(); 
+
+    const formatDate = (date) => {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const startDateFormatted = formatDate(start);
+    const endDateFormatted = formatDate(end);
+
+    // ✅ CALCULATE THE CORRECT PRICE BASED ON TIMER STATUS
+    const correctPrice = getTimerAwarePrice();
+    const basePriceForComparison = pkg.price || 0;
     
-    const currentPassengerData = passengers[passengerStep - 1];
-    
-    if (bookingWithAirfare && requiresID && !currentPassengerData.idFile) {
-      toast.error('Please upload a valid ID for this passenger');
-      return;
-    }
-    
-    if (bookingWithAirfare && requiresPassport && !currentPassengerData.passportFile) {
-      toast.error('Please upload a valid passport for this passenger');
-      return;
-    }
+    console.log('🔍 ===== PRICE DEBUG =====');
+    console.log('Timer Expired:', timerExpired);
+    console.log('Base Package Price:', basePriceForComparison);
+    console.log('Correct Price to Save:', correctPrice);
+    console.log('Package Total:', packageTotal);
+    console.log('Final Package Total:', finalPackageTotal);
+    console.log('========================');
 
-    if (passengerStep < totalPassengers) {
-      setPassengerStep(prev => prev + 1);
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      const formData = new FormData();
-      const { start, end } = getCalculatedDates(); 
-
-      const formatDate = (date) => {
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      };
-
-      const startDateFormatted = formatDate(start);
-      const endDateFormatted = formatDate(end);
-
-      const baseBookingData = {
-        packageId: pkg._id,
-        packageName: pkg.name,
-        packagePrice: pkg.price,
-        startDate: startDateFormatted,
-        endDate: endDateFormatted,
-        duration: pkg.duration,
-        pax: {
-          adult: quantities.adult,
-          children: quantities.children || 0,
-          infants: quantities.infants || 0,
-        },
-        packageTotal: packageTotal,
-        promoCode: appliedPromo ? appliedPromo.code : null,
-        promoId: appliedPromo ? appliedPromo.promoId : null,
-        discountAmount: discountAmount,
-        finalPackageTotal: finalPackageTotal,
-        includesAirfare: !!selectedFlight,
-        flightDetails: selectedFlight ? ({
-          airline: selectedFlight.airline.name,
-          flightNumber: selectedFlight.airline.flightNumber || 'N/A',
-          departure: selectedFlight.departure,
-          arrival: selectedFlight.arrival,
-          duration: selectedFlight.duration,
-          stops: selectedFlight.stops,
-          price: selectedFlight.price, 
-          isInternational: isInternationalFlight
-        }) : null,
-        
-        airfareTotal: airfareTotal,
-        totalAmount: finalTotalAmount,
-        paymentType: paymentType || 'full',
-        initialPaymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount,
-        remainingBalance: paymentType === 'partial' ? (finalTotalAmount - partialAmount) : 0,
-        
+    const baseBookingData = {
+      packageId: pkg._id,
+      packageName: pkg.name,
+      packagePrice: correctPrice, // ✅ FIXED - Uses timer-aware price
+      startDate: startDateFormatted,
+      endDate: endDateFormatted,
+      duration: pkg.duration,
+      pax: {
+        adult: quantities.adult,
+        children: quantities.children || 0,
+        infants: quantities.infants || 0,
+      },
+      packageTotal: packageTotal,
+      promoCode: appliedPromo ? appliedPromo.code : null,
+      promoId: appliedPromo ? appliedPromo.promoId : null,
+      discountAmount: discountAmount,
+      finalPackageTotal: finalPackageTotal,
+      
+      // ✅ ADD NEW FIELDS FOR PRICE TRACKING
+      timerExpiredAtBooking: timerExpired,
+      priceType: timerExpired ? 'markup' : 'discounted',
+      originalPackagePrice: basePriceForComparison,
+      appliedMarkup: timerExpired ? Math.round(basePriceForComparison * 0.10) : 0,
+      
+      includesAirfare: !!selectedFlight,
+      flightDetails: selectedFlight ? ({
+        airline: selectedFlight.airline.name,
+        flightNumber: selectedFlight.airline.flightNumber || 'N/A',
+        departure: selectedFlight.departure,
+        arrival: selectedFlight.arrival,
+        duration: selectedFlight.duration,
+        stops: selectedFlight.stops,
+        price: selectedFlight.price, 
+        isInternational: isInternationalFlight
+      }) : null,
+      
+      airfareTotal: airfareTotal,
+      totalAmount: finalTotalAmount,
+      paymentType: paymentType || 'full',
+      initialPaymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount,
+      remainingBalance: paymentType === 'partial' ? (finalTotalAmount - partialAmount) : 0,
+      
+      fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
+      email: passengers[0].email,
+      message: '',
+      
+      primaryContact: {
         fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
         email: passengers[0].email,
-        message: '',
-        
-        primaryContact: {
-          fullName: `${passengers[0].firstName} ${passengers[0].lastName}`,
-          email: passengers[0].email,
-        },
-        
-        selectedRoomType: selectedRoomType ? selectedRoomType.type : null,
-        hotelName: selectedRoomType ? selectedRoomType.hotelName : null,
-        numberOfRooms: numberOfRooms,
-        sellerPrice: pkg.price || 0, 
-        markup: 0, 
-        price: pkg.price || 0,
-        
-        isCustomized: customizationData ? true : false,
-        customizedInclusions: customizationData ? customizationData.inclusions.map(inc => ({
-          id: inc.id,
-          name: inc.name,
-          price: inc.price || 0,
-          supplierRate: inc.supplierRate,
-          markup: inc.markup,
-          markupType: inc.markupType,
-          supplier: inc.supplier,
-          destination: inc.destination,
-          pax: inc.pax,
-          notes: inc.notes,
-          isOriginal: inc.isOriginal,
-          isChecked: inc.isChecked,
-          source: inc.source,
-          sellerRateId: inc.sellerRateId
-        })) : [],
-        customizationAdditionalPrice: customizationData ? customizationData.additionalPrice : 0,
-customizationDeductions: customizationData ? customizationData.deductions : 0,
-customizationAdditions: customizationData ? customizationData.additions : 0,
-originalInclusions: customizationData ? (pkg.inclusions || []) : [],
-        
-        passengers: passengers.map(p => ({
-          passengerNumber: p.passengerNumber || 1,
-          firstName: p.firstName || '',
-          lastName: p.lastName || '',
-          email: p.email || '',
-          phone: p.phone || '',
-          dateOfBirth: p.dateOfBirth || '',
-          age: p.age || 0,
-          gender: p.gender || '',
-          address: p.address || '',
-          nationality: p.nationality || 'Filipino',
-        }))
-      };
+      },
       
-      formData.append('bookingData', JSON.stringify(baseBookingData));
+      selectedRoomType: selectedRoomType ? selectedRoomType.type : null,
+      hotelName: selectedRoomType ? selectedRoomType.hotelName : null,
+      numberOfRooms: numberOfRooms,
+      
+      // ✅ FIXED - All price fields use correct timer-aware price
+      sellerPrice: correctPrice, 
+      markup: timerExpired ? Math.round(basePriceForComparison * 0.10) : 0, 
+      price: correctPrice, // ✅ CRITICAL FIX - This is what gets saved to DB
+      
+      isCustomized: customizationData ? true : false,
+      customizedInclusions: customizationData ? customizationData.inclusions.map(inc => ({
+        id: inc.id,
+        name: inc.name,
+        price: inc.price || 0,
+        supplierRate: inc.supplierRate,
+        markup: inc.markup,
+        markupType: inc.markupType,
+        supplier: inc.supplier,
+        destination: inc.destination,
+        pax: inc.pax,
+        notes: inc.notes,
+        isOriginal: inc.isOriginal,
+        isChecked: inc.isChecked,
+        source: inc.source,
+        sellerRateId: inc.sellerRateId
+      })) : [],
+      customizationAdditionalPrice: customizationData ? customizationData.additionalPrice : 0,
+      customizationDeductions: customizationData ? customizationData.deductions : 0,
+      customizationAdditions: customizationData ? customizationData.additions : 0,
+      originalInclusions: customizationData ? (pkg.inclusions || []) : [],
+      
+      passengers: passengers.map(p => ({
+        passengerNumber: p.passengerNumber || 1,
+        firstName: p.firstName || '',
+        lastName: p.lastName || '',
+        email: p.email || '',
+        phone: p.phone || '',
+        dateOfBirth: p.dateOfBirth || '',
+        age: p.age || 0,
+        gender: p.gender || '',
+        address: p.address || '',
+        nationality: p.nationality || 'Filipino',
+      }))
+    };
+    
+    formData.append('bookingData', JSON.stringify(baseBookingData));
 
-      passengers.forEach((passenger, idx) => {
-        if (passenger.idFile) {
-          formData.append(`idFile_${idx}`, passenger.idFile);
-        }
-        if (passenger.passportFile) {
-          formData.append(`passportFile_${idx}`, passenger.passportFile);
-        }
+    passengers.forEach((passenger, idx) => {
+      if (passenger.idFile) {
+        formData.append(`idFile_${idx}`, passenger.idFile);
+      }
+      if (passenger.passportFile) {
+        formData.append(`passportFile_${idx}`, passenger.passportFile);
+      }
+    });
+    
+    const bookingResponse = await axios.post('https://wanderwaveph.onrender.com/api/bookings', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    if (bookingResponse.data.success) {
+      const bookingId = bookingResponse.data.bookingId;
+      
+      toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
+      
+      const paymentResponse = await axios.post('https://wanderwaveph.onrender.com/api/payment/create-intent', {
+        bookingId: bookingId,
+        paymentType: paymentType || 'full',
+        paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
       });
       
-      const bookingResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/bookings', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (bookingResponse.data.success) {
-        const bookingId = bookingResponse.data.bookingId;
+      if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
+        const checkoutUrl = paymentResponse.data.checkoutUrl;
+        toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
+        setShowModal(false);
         
-        toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
+        window.location.href = checkoutUrl; 
+        return;
         
-        const paymentResponse = await axios.post('https://wanderwaveph-backend.onrender.com/api/payment/create-intent', {
-          bookingId: bookingId,
-          paymentType: paymentType || 'full',
-          paymentAmount: paymentType === 'partial' ? partialAmount : finalTotalAmount
-        });
-        
-        if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
-          const checkoutUrl = paymentResponse.data.checkoutUrl;
-          toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
-          setShowModal(false);
-          
-          window.location.href = checkoutUrl; 
-          return;
-          
-        } else {
-          toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 1500);
-        }
       } else {
-        throw new Error(bookingResponse.data.message || 'Booking submission failed on server.');
+        toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
       }
-    } catch (error) {
-      console.error('Booking/Payment Error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking. Please try again.';
-      
-      if (error.response?.data?.error) {
-        console.error("Payment API Error Details:", error.response.data.error);
-      }
-      
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+    } else {
+      throw new Error(bookingResponse.data.message || 'Booking submission failed on server.');
     }
-  };
+  } catch (error) {
+    console.error('Booking/Payment Error:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking. Please try again.';
+    
+    if (error.response?.data?.error) {
+      console.error("Payment API Error Details:", error.response.data.error);
+    }
+    
+    toast.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleBackPassenger = () => {
     if (passengerStep > 1) {
