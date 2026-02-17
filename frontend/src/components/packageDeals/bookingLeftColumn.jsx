@@ -57,6 +57,14 @@ const handleCustomizationChange = (customizationDataFromChild) => {
   }
 };
 
+  // ✅ Destinations that support package customization
+  const CUSTOMIZABLE_DESTINATIONS = [
+    'siargao', 'siquijor', 'bohol', 'cebu',
+    'el nido', 'coron', 'palawan', 'puerto princesa', // ← fixed spelling (princesa not prinsesa)
+  ];
+  const dest = (pkg.destination || pkg.location || '').toLowerCase().trim();
+  const isCustomizableDestination = CUSTOMIZABLE_DESTINATIONS.some(d => dest.includes(d));
+
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice = (phpPrice) => {
     if (currency === 'PHP') return phpPrice;
@@ -158,9 +166,8 @@ const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
         </div>
       </div>
 
-      {/* ✨ Hide customizer for Batanes packages */}
-      {!pkg.location?.toLowerCase().includes('batanes') && 
-       !pkg.destination?.toLowerCase().includes('batanes') && (
+      {/* ✨ Show customizer ONLY for supported destinations */}
+      {isCustomizableDestination && (
         <div className="blc-customizer-section">
           <button
             className={`blc-customizer-toggle ${showCustomizer ? 'active' : ''}`}
