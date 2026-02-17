@@ -38,6 +38,7 @@ const BookingRightForm = ({
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
+  const [promoWarning, setPromoWarning] = useState(''); // ✅ For partial usage warnings
   const [isCheckingPromo, setIsCheckingPromo] = useState(false);
   const [paymentType, setPaymentType] = useState('full');
   const [customizationData, setCustomizationData] = useState(initialCustomizationData);
@@ -51,6 +52,17 @@ const BookingRightForm = ({
   const durationDays = parseInt(pkg.duration?.match(/(\d+)D/)?.[1] || 1);
   const durationNights = parseInt(pkg.duration?.match(/(\d+)N/)?.[1] || durationDays - 1); 
   const totalPassengers = quantities.adult || 1;
+  const basePax = totalPassengers; // ✅ Component-level pax count for promo calculations
+
+  // ✅ Component-level effective per-pax price (mirrors calculateBasePackageTotal logic)
+  const effectivePerPaxPrice = (() => {
+    if (customizationData && customizationData.totalPrice !== undefined) {
+      return customizationData.totalPrice;
+    }
+    const bp = pkg.price || 0;
+    return timerExpired ? Math.round(bp * 1.10) : bp;
+  })();
+
   const isInternationalFlight = selectedFlight && 
     selectedFlight.departure.iataCode.substring(0, 2) !== selectedFlight.arrival.iataCode.substring(0, 2);
   const requiresPassport = isInternationalFlight;
@@ -400,10 +412,24 @@ if (savedState.formData.appliedPromo) {
   const calculateDiscount = () => {
     if (!appliedPromo) return 0;
 
+    // ✅ PRIORITY ORDER for determining pax coverage:
+    // 1. remainingUses (global usage limit remaining) — most restrictive
+    // 2. maxUsesPerBooking (per-booking pax cap)
+    // 3. Full pax count (no restrictions)
+    let maxPaxCovered = basePax;
+
+    if (appliedPromo.remainingUses !== null && appliedPromo.remainingUses !== undefined) {
+      maxPaxCovered = Math.min(maxPaxCovered, appliedPromo.remainingUses);
+    }
+
+    if (appliedPromo.maxUsesPerBooking) {
+      maxPaxCovered = Math.min(maxPaxCovered, appliedPromo.maxUsesPerBooking);
+    }
+
     if (appliedPromo.discountType === 'Percentage') {
-      return (packageTotal * appliedPromo.discountValue) / 100;
+      return (effectivePerPaxPrice * appliedPromo.discountValue / 100) * maxPaxCovered;
     } else {
-      return appliedPromo.discountValue;
+      return appliedPromo.discountValue * maxPaxCovered;
     }
   };
 
@@ -510,13 +536,35 @@ const handleApplyPromo = async () => {
 
       if (response.ok && data.valid) {
         const promo = data.promo;
-        
-        
-        if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
-          setPromoError('This promo code has reached its usage limit');
+        const currentPax = quantities.adult || 1;
+
+        // ✅ USAGE LIMIT VALIDATION
+        const hasUsageLimit = promo.usageLimit && promo.usageLimit > 0;
+        const usedCount = promo.usedCount || 0;
+        const remainingUses = hasUsageLimit ? (promo.usageLimit - usedCount) : Infinity;
+
+        // ❌ CASE 1: Fully exhausted — block completely
+        if (hasUsageLimit && remainingUses <= 0) {
+          setPromoError(
+            `This promo code has reached its usage limit (${promo.usageLimit}/${promo.usageLimit} uses). ` +
+            `Please try a different promo code.`
+          );
+          setPromoWarning('');
           setAppliedPromo(null);
           setIsCheckingPromo(false);
           return;
+        }
+
+        // ⚠️ CASE 2: Partial — remaining uses < pax count, can still apply but limited
+        let effectivePaxCovered = currentPax;
+        if (hasUsageLimit && remainingUses < currentPax) {
+          effectivePaxCovered = remainingUses;
+          setPromoWarning(
+            `Only ${remainingUses} use${remainingUses > 1 ? 's' : ''} remaining out of ${promo.usageLimit} total limit. ` +
+            `Discount will apply to ${remainingUses} of ${currentPax} pax only.`
+          );
+        } else {
+          setPromoWarning('');
         }
 
         const appliedPromoData = {
@@ -524,12 +572,27 @@ const handleApplyPromo = async () => {
           discountType: promo.discountType,
           discountValue: promo.discountValue,
           promoId: promo._id,
-          packageId: packageId
+          packageId: packageId,
+          maxUsesPerBooking: promo.maxUsesPerBooking || null,
+          // ✅ Store remaining uses info for discount calculation
+          remainingUses: hasUsageLimit ? remainingUses : null,
+          usageLimit: promo.usageLimit || null,
+          usedCount: usedCount,
         };
-        
+
         setAppliedPromo(appliedPromoData);
-        
-        toast.success(`✅ Promo "${promo.code}" applied successfully!`, { duration: 3000 });
+
+        if (hasUsageLimit && remainingUses < currentPax) {
+          toast(
+            `⚠️ Promo "${promo.code}" applied with limited coverage: ${remainingUses} of ${currentPax} pax.`,
+            { duration: 5000, icon: '⚠️' }
+          );
+        } else {
+          toast.success(
+            `✅ Promo "${promo.code}" applied to ${currentPax} pax.`,
+            { duration: 3000 }
+          );
+        }
       } else {
         
         const errorMsg = data.message || 'Invalid or expired promo code';
@@ -555,6 +618,7 @@ const handleApplyPromo = async () => {
     setAppliedPromo(null);
     setPromoCode('');
     setPromoError('');
+    setPromoWarning('');
     toast.success('Promo code removed', { duration: 2000 });
   };
 
@@ -1250,34 +1314,112 @@ const handleNextPassenger = async (e) => {
             </div>
             
             {promoError && (
-  <div className="brf-promo-error" style={{
-    color: '#ef4444',
-    fontSize: '0.85rem',
-    marginTop: '8px',
-    padding: '8px 12px',
-    backgroundColor: '#fee2e2',
-    borderRadius: '6px',
-    border: '1px solid #fecaca'
-  }}>
-    ⚠️ {promoError}
-  </div>
-)}
+              <div style={{
+                color: '#ef4444',
+                fontSize: '0.85rem',
+                marginTop: '8px',
+                padding: '10px 12px',
+                backgroundColor: '#fee2e2',
+                borderRadius: '8px',
+                border: '1px solid #fecaca',
+                lineHeight: '1.5'
+              }}>
+                ❌ {promoError}
+              </div>
+            )}
           </>
         ) : (
           <div className="brf-promo-success-box">
-            <div>
+            <div style={{ flex: 1 }}>
               <div className="brf-promo-code-text">
                 {appliedPromo.code}
               </div>
-              <div className="brf-promo-desc-text">
-                {appliedPromo.discountType === 'Percentage' 
-                  ? `${appliedPromo.discountValue}% discount applied`
+              {/* ✅ Per-pax discount breakdown with usage limit awareness */}
+              {(() => {
+                // Compute effective pax covered (same logic as calculateDiscount)
+                let coveredPax = basePax;
+                if (appliedPromo.remainingUses !== null && appliedPromo.remainingUses !== undefined) {
+                  coveredPax = Math.min(coveredPax, appliedPromo.remainingUses);
+                }
+                if (appliedPromo.maxUsesPerBooking) {
+                  coveredPax = Math.min(coveredPax, appliedPromo.maxUsesPerBooking);
+                }
+
+                const isLimitedByUsage = appliedPromo.remainingUses !== null &&
+                  appliedPromo.remainingUses !== undefined &&
+                  appliedPromo.remainingUses < basePax;
+
+                const isLimitedByBooking = appliedPromo.maxUsesPerBooking &&
+                  appliedPromo.maxUsesPerBooking < basePax;
+
+                const perPaxDiscount = appliedPromo.discountType === 'Percentage'
+                  ? `${appliedPromo.discountValue}% per pax`
                   : `${currencySymbol}${convertPrice(appliedPromo.discountValue).toLocaleString(undefined, {
                       minimumFractionDigits: currency === 'USD' ? 2 : 0,
                       maximumFractionDigits: currency === 'USD' ? 2 : 0
-                    })} discount applied`
-                }
-              </div>
+                    })} per pax`;
+
+                return (
+                  <>
+                    <div className="brf-promo-desc-text">
+                      {perPaxDiscount} × {coveredPax} pax
+                      {(isLimitedByUsage || isLimitedByBooking) && (
+                        <span style={{ color: '#d97706', marginLeft: '6px', fontSize: '0.78rem', fontWeight: 600 }}>
+                          ({coveredPax} of {basePax} pax covered)
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Usage limit warning */}
+                    {isLimitedByUsage && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '6px',
+                        marginTop: '6px',
+                        fontSize: '0.8rem',
+                        color: '#92400e',
+                        background: '#fef3c7',
+                        border: '1px solid #fde68a',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
+                        lineHeight: '1.4'
+                      }}>
+                        <span style={{ marginTop: '1px' }}>⚠️</span>
+                        <span>
+                          Only <strong>{appliedPromo.remainingUses}</strong> use{appliedPromo.remainingUses > 1 ? 's' : ''} remaining
+                          (used {appliedPromo.usedCount}/{appliedPromo.usageLimit}).
+                          Discount applies to <strong>{coveredPax}</strong> of <strong>{basePax}</strong> pax.
+                          The remaining {basePax - coveredPax} pax will be charged at full price.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Per-booking pax cap warning (not usage-limited) */}
+                    {!isLimitedByUsage && isLimitedByBooking && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '6px',
+                        marginTop: '6px',
+                        fontSize: '0.8rem',
+                        color: '#92400e',
+                        background: '#fef3c7',
+                        border: '1px solid #fde68a',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
+                        lineHeight: '1.4'
+                      }}>
+                        <span>⚠️</span>
+                        <span>
+                          This promo is limited to <strong>{appliedPromo.maxUsesPerBooking}</strong> pax per booking.
+                          Remaining {basePax - coveredPax} pax will be at full price.
+                        </span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
             <button
               className="brf-promo-remove-btn"
@@ -1316,19 +1458,50 @@ const handleNextPassenger = async (e) => {
           </div>
         </div>
 
-        {appliedPromo && (
-          <div className="brf-total-row" style={{color: '#10b981', fontSize: '0.9rem'}}>
-            <span>
-              - Promo Discount ({appliedPromo.code})
-            </span>
-            <span style={{fontWeight: '700'}}>
-              -{currencySymbol}{convertedDiscountAmount.toLocaleString(undefined, {
-                minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                maximumFractionDigits: currency === 'USD' ? 2 : 0
-              })}
-            </span>
-          </div>
-        )}
+        {appliedPromo && (() => {
+          // Mirror same coverage logic as calculateDiscount
+          let coveredPax = basePax;
+          if (appliedPromo.remainingUses !== null && appliedPromo.remainingUses !== undefined) {
+            coveredPax = Math.min(coveredPax, appliedPromo.remainingUses);
+          }
+          if (appliedPromo.maxUsesPerBooking) {
+            coveredPax = Math.min(coveredPax, appliedPromo.maxUsesPerBooking);
+          }
+          const isPartial = coveredPax < basePax;
+
+          return (
+            <div className="brf-total-row" style={{color: '#10b981', fontSize: '0.9rem'}}>
+              <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span>- Promo Discount ({appliedPromo.code})</span>
+                <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>
+                  {appliedPromo.discountType === 'Percentage'
+                    ? `${appliedPromo.discountValue}% × ${coveredPax} pax`
+                    : `${currencySymbol}${convertPrice(appliedPromo.discountValue).toLocaleString(undefined, {
+                        minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                        maximumFractionDigits: currency === 'USD' ? 2 : 0
+                      })} × ${coveredPax} pax`
+                  }
+                  {isPartial && (
+                    <span style={{ color: '#d97706', marginLeft: '4px' }}>
+                      ({coveredPax}/{basePax} pax)
+                    </span>
+                  )}
+                </span>
+                {appliedPromo.usageLimit && (
+                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                    Usage: {appliedPromo.usedCount}/{appliedPromo.usageLimit} uses
+                  </span>
+                )}
+              </span>
+              <span style={{fontWeight: '700'}}>
+                -{currencySymbol}{convertedDiscountAmount.toLocaleString(undefined, {
+                  minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                  maximumFractionDigits: currency === 'USD' ? 2 : 0
+                })}
+              </span>
+            </div>
+          );
+        })()}
 
         {appliedPromo && (
           <div className="brf-total-row" style={{fontSize: '0.95rem', color: '#374151'}}>
