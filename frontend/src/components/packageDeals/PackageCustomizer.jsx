@@ -22,43 +22,33 @@ const PackageCustomizer = ({
   const [showSearch, setShowSearch] = useState(false);
   const [error, setError] = useState('');
   const [matchedInclusionCount, setMatchedInclusionCount] = useState(0);
-  
-  // Use ref to track if we've already fetched for this destination
   const hasFetchedRef = useRef(false);
   const currentDestinationRef = useRef('');
 
-  /**
-   * 🔧 ENHANCED SYNONYM MAPPING
-   */
   const SYNONYM_MAP = {
-    // Flight-related - EXPANDED for Roundtrip matching
     'flight': ['airfare', 'air', 'plane', 'aviation', 'ticket', 'roundtrip', 'round trip', 'rt'],
     'airfare': ['flight', 'air', 'plane', 'ticket', 'roundtrip', 'round trip'],
     'roundtrip': ['round trip', 'return', 'twoway', 'two way', 'rt', 'flight', 'airfare', 'air'],
-    'round': ['roundtrip', 'return'], // Special handling for "round trip"
-    'trip': ['journey', 'travel'], // Special handling for "round trip"
+    'round': ['roundtrip', 'return'], 
+    'trip': ['journey', 'travel'],
     'oneway': ['one way', 'single', 'ow'],
     
-    // Accommodation-related
     'accommodation': ['hotel', 'lodging', 'stay', 'room', 'inn'],
     'hotel': ['accommodation', 'lodging', 'inn', 'resort'],
     'resort': ['hotel', 'accommodation', 'inn'],
     'room': ['accommodation', 'hotel', 'lodging'],
     
-    // Transport-related
     'transport': ['transfer', 'transportation', 'shuttle', 'vehicle', 'ride'],
     'transfer': ['transport', 'shuttle', 'pickup', 'dropoff'],
     'van': ['vehicle', 'shuttle', 'transport'],
     'tricycle': ['trike', 'vehicle'],
     'boat': ['ferry', 'vessel', 'ship'],
     
-    // Meal-related
     'meal': ['food', 'dining', 'breakfast', 'lunch', 'dinner'],
     'breakfast': ['meal', 'food', 'morning'],
     'lunch': ['meal', 'food', 'midday', 'luncheon'],
     'dinner': ['meal', 'food', 'evening', 'supper'],
     
-    // Tour-related
     'tour': ['trip', 'excursion', 'visit', 'sightseeing', 'experience'],
     'island': ['isle', 'islet'],
     'hopping': ['hop', 'jumping', 'tour'],
@@ -69,33 +59,22 @@ const PackageCustomizer = ({
     'beach': ['shore', 'coast', 'seaside'],
     'coastal': ['coast', 'beach', 'shore', 'seaside'],
     
-    // Other
     'guide': ['escort', 'leader', 'companion'],
     'entrance': ['admission', 'entry', 'fee', 'ticket'],
     'museum': ['gallery', 'exhibit'],
   };
 
-  /**
-   * 🔥 SPECIAL CROSS-DESTINATION ACTIVITIES
-   * These activities should match regardless of destination
-   */
   const CROSS_DESTINATION_KEYWORDS = [
     'roundtrip', 'round trip', 'rt', 'flight', 'airfare', 'air ticket',
     'return flight', 'return ticket', 'plane ticket'
   ];
 
-  /**
-   * Get all synonyms for a word including the word itself
-   */
   const getSynonyms = (word) => {
     const lower = word.toLowerCase();
     const syns = SYNONYM_MAP[lower] || [];
     return [lower, ...syns];
   };
 
-  /**
-   * Check if an activity is cross-destination (like roundtrip flights)
-   */
   const isCrossDestinationActivity = (activityText) => {
     const normalized = activityText.toLowerCase();
     return CROSS_DESTINATION_KEYWORDS.some(keyword => 
@@ -103,9 +82,6 @@ const PackageCustomizer = ({
     );
   };
 
-  /**
-   * Extract location keywords from destination
-   */
   const extractLocationKeywords = (destination) => {
     if (!destination) return [];
     
@@ -115,7 +91,6 @@ const PackageCustomizer = ({
       .replace(/\s+/g, ' ')
       .trim();
     
-    // Remove common package-related words but KEEP location names
     const wordsToRemove = [
       'tour', 'package', 'trip', 'travel', 'holiday', 'vacation',
       'day', 'days', 'night', 'nights', 'd', 'n',
@@ -140,21 +115,14 @@ const PackageCustomizer = ({
     };
   };
 
-  /**
-   * 🔧 ENHANCED: Destination matching with special handling for cross-destination activities
-   */
   const destinationsMatch = (rateDestination, packageDestination, activityName = '') => {
     if (!rateDestination || !packageDestination) return false;
     
-    // 🔥 SPECIAL CASE: If this is a cross-destination activity (like roundtrip flight),
-    // check if the package destination is mentioned in the rate destination
     if (activityName && isCrossDestinationActivity(activityName)) {
       
       const pkgLoc = extractLocationKeywords(packageDestination);
       const rateLoc = extractLocationKeywords(rateDestination);
       
-      
-      // If package location is mentioned in rate destination, it's a match
       if (pkgLoc.mainLocation) {
         const rateDestLower = rateDestination.toLowerCase();
         const pkgLocLower = pkgLoc.mainLocation.toLowerCase();
@@ -164,7 +132,6 @@ const PackageCustomizer = ({
         }
       }
       
-      // Also check if any package keyword is in rate destination
       const hasKeywordMatch = pkgLoc.keywords.some(kw => 
         rateDestination.toLowerCase().includes(kw)
       );
@@ -177,15 +144,12 @@ const PackageCustomizer = ({
     const loc1 = extractLocationKeywords(rateDestination);
     const loc2 = extractLocationKeywords(packageDestination);
     
-    
-    // Strategy 1: Main location exact match
     if (loc1.mainLocation && loc2.mainLocation) {
       if (loc1.mainLocation === loc2.mainLocation) {
         return true;
       }
     }
     
-    // Strategy 2: Any keyword from one appears in the other
     const hasCommonKeyword = loc1.keywords.some(k1 => 
       loc2.keywords.some(k2 => k1 === k2 || k1.includes(k2) || k2.includes(k1))
     );
@@ -194,7 +158,6 @@ const PackageCustomizer = ({
       return true;
     }
     
-    // Strategy 3: Check if one destination string contains the other's main location
     if (loc1.mainLocation && packageDestination.toLowerCase().includes(loc1.mainLocation)) {
       return true;
     }
@@ -203,7 +166,6 @@ const PackageCustomizer = ({
       return true;
     }
     
-    // Strategy 4: Partial string matching
     const norm1 = loc1.fullNormalized;
     const norm2 = loc2.fullNormalized;
     
@@ -216,9 +178,6 @@ const PackageCustomizer = ({
     return false;
   };
 
-  /**
-   * Normalize activity/inclusion name for matching
-   */
   const normalizeActivity = (activity) => {
     if (!activity) return '';
     
@@ -228,7 +187,6 @@ const PackageCustomizer = ({
       .replace(/\s+/g, ' ')
       .trim();
     
-    // Handle compound words
     normalized = normalized
       .replace(/roundtrip/g, 'round trip')
       .replace(/twoway/g, 'two way')
@@ -237,9 +195,6 @@ const PackageCustomizer = ({
     return normalized;
   };
 
-  /**
-   * Extract meaningful keywords from text
-   */
   const extractKeywords = (text) => {
     const normalized = normalizeActivity(text);
     const words = normalized.split(' ');
@@ -257,9 +212,6 @@ const PackageCustomizer = ({
     return keywords;
   };
 
-  /**
-   * 🔥 ENHANCED: Calculate semantic similarity with special handling for roundtrip/flight
-   */
   const calculateSimilarity = (text1, text2) => {
     const keywords1 = extractKeywords(text1);
     const keywords2 = extractKeywords(text2);
@@ -271,20 +223,17 @@ const PackageCustomizer = ({
     let matchScore = 0;
     let totalPossibleScore = 0;
     
-    // 🔥 SPECIAL BOOST: If both texts contain flight/roundtrip related terms
     const text1Lower = text1.toLowerCase();
     const text2Lower = text2.toLowerCase();
-    
     const flightKeywords = ['roundtrip', 'round trip', 'flight', 'airfare', 'air ticket', 'rt'];
     const hasFlightTerm1 = flightKeywords.some(k => text1Lower.includes(k));
     const hasFlightTerm2 = flightKeywords.some(k => text2Lower.includes(k));
     
     if (hasFlightTerm1 && hasFlightTerm2) {
-      matchScore += 10; // Significant boost for flight matches
+      matchScore += 10; 
       totalPossibleScore += 10;
     }
     
-    // Strategy 1: Exact keyword matches (highest weight)
     keywords1.forEach(kw1 => {
       const weight = Math.min(kw1.length / 4, 3);
       totalPossibleScore += weight * 3;
@@ -296,7 +245,6 @@ const PackageCustomizer = ({
       });
     });
     
-    // Strategy 2: Synonym matches (medium weight)
     keywords1.forEach(kw1 => {
       const weight = Math.min(kw1.length / 4, 3);
       
@@ -308,7 +256,6 @@ const PackageCustomizer = ({
       });
     });
     
-    // Strategy 3: Partial word matches (low weight)
     keywords1.forEach(kw1 => {
       const weight = Math.min(kw1.length / 4, 3);
       
@@ -330,26 +277,19 @@ const PackageCustomizer = ({
     return similarity;
   };
 
-  /**
-   * 🔥 ENHANCED: Activity matching with special roundtrip handling
-   */
   const activitiesMatch = (inclusion, activity) => {
     const norm1 = normalizeActivity(inclusion);
     const norm2 = normalizeActivity(activity);
     
-    
-    // Level 1: Exact match
     if (norm1 === norm2) {
       return true;
     }
     
-    // 🔥 SPECIAL LEVEL: Cross-destination activity matching (for flights/roundtrip)
     const isCrossDest1 = isCrossDestinationActivity(inclusion);
     const isCrossDest2 = isCrossDestinationActivity(activity);
     
     if (isCrossDest1 || isCrossDest2) {
       
-      // If both mention flight/roundtrip terms, they should match
       const flightKeywords = ['roundtrip', 'round trip', 'flight', 'airfare', 'air', 'ticket', 'rt'];
       const hasFlightTerm1 = flightKeywords.some(k => norm1.includes(k));
       const hasFlightTerm2 = flightKeywords.some(k => norm2.includes(k));
@@ -359,17 +299,13 @@ const PackageCustomizer = ({
       }
     }
     
-    // Level 2: Semantic similarity
     const similarity = calculateSimilarity(norm1, norm2);
-    
-    // Lower threshold for flight-related activities
     const threshold = (isCrossDest1 || isCrossDest2) ? 0.50 : 0.60;
     
     if (similarity >= threshold) {
       return true;
     }
     
-    // Level 3: Category safety check
     const keywords1 = extractKeywords(norm1);
     const keywords2 = extractKeywords(norm2);
     
@@ -406,30 +342,20 @@ const PackageCustomizer = ({
     return false;
   };
 
-  /**
-   * 🔥 ENHANCED: Match inclusions with special handling for cross-destination activities
-   */
   const matchInclusionsWithPrices = useCallback((inclusions, sellerRates, destination) => {
     
     let matchCount = 0;
     
     const matchedInclusions = inclusions.map((inclusion, idx) => {
-      
-      // 🔥 SPECIAL HANDLING: Check if this is a cross-destination activity
       const isCrossDest = isCrossDestinationActivity(inclusion);
       
       let destinationMatchedRates;
       
       if (isCrossDest) {
-        
-        // For cross-destination activities, search all rates but prioritize
-        // those that mention the package destination
         destinationMatchedRates = sellerRates.filter(rate => {
-          // Check if activity matches (flight/roundtrip)
           const activityMatches = isCrossDestinationActivity(rate.activity);
           
           if (activityMatches) {
-            // If it's a flight activity, check if package destination is mentioned
             return destinationsMatch(rate.destination, destination, rate.activity);
           }
           
@@ -438,20 +364,17 @@ const PackageCustomizer = ({
         
         
       } else {
-        // For regular activities, filter by destination first
         destinationMatchedRates = sellerRates.filter(rate => 
           destinationsMatch(rate.destination, destination)
         );
         
       }
       
-      // Show matched rates
       if (destinationMatchedRates.length > 0) {
         destinationMatchedRates.forEach((rate, i) => {
         });
       }
       
-      // Find matching activity
       const matchedRate = destinationMatchedRates.find(rate => {
         const actMatch = activitiesMatch(inclusion, rate.activity);
         return actMatch;
@@ -475,8 +398,8 @@ const PackageCustomizer = ({
           notes: matchedRate.notes,
           isOriginal: true,
           isChecked: true,
-          source: 'seller-rate', // ✅ FIXED: Added source field
-          sellerRateId: matchedRate._id // ✅ FIXED: Added sellerRateId
+          source: 'seller-rate', 
+          sellerRateId: matchedRate._id 
         };
       } else {
         return {
@@ -487,7 +410,7 @@ const PackageCustomizer = ({
           price: 0,
           isOriginal: true,
           isChecked: true,
-          source: 'package' // ✅ FIXED: Added source field for unmatched inclusions
+          source: 'package' 
         };
       }
     });
@@ -497,9 +420,6 @@ const PackageCustomizer = ({
     return matchedInclusions;
   }, []);
 
-  /**
-   * Fetch seller rates
-   */
   const fetchSellerRates = useCallback(async (destination) => {
     const destinationKey = (destination || '').toLowerCase().trim();
     
@@ -519,7 +439,6 @@ const PackageCustomizer = ({
       
       const allRates = await response.json();
       
-      // For display purposes, show destination-matched rates
       const matchingRates = allRates.filter(rate => 
         destinationsMatch(rate.destination, destination)
       );
@@ -530,10 +449,9 @@ const PackageCustomizer = ({
       setAvailableActivities(matchingRates);
       setFilteredActivities(matchingRates);
       
-      // Match with ALL rates (not just destination-matched) for cross-destination activities
       const matched = matchInclusionsWithPrices(
         pkg.inclusions || [],
-        allRates, // Use ALL rates here
+        allRates, 
         destination
       );
       
@@ -556,7 +474,7 @@ const PackageCustomizer = ({
         price: 0,
         isOriginal: true,
         isChecked: true,
-        source: 'package' // ✅ FIXED: Added source field
+        source: 'package' 
       }));
       setCustomizedInclusions(basicInclusions);
     } finally {
@@ -564,9 +482,6 @@ const PackageCustomizer = ({
     }
   }, [pkg.inclusions, matchInclusionsWithPrices]);
 
-  /**
-   * Initialize
-   */
   useEffect(() => {
     const packageDestination = pkg.destination || pkg.location || '';
     
@@ -575,9 +490,6 @@ const PackageCustomizer = ({
     }
   }, [pkg.destination, pkg.location, fetchSellerRates]);
 
-  /**
-   * Filter activities based on search query
-   */
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredActivities(availableActivities);
@@ -594,9 +506,6 @@ const PackageCustomizer = ({
     setFilteredActivities(filtered);
   }, [searchQuery, availableActivities]);
 
-  /**
-   * ✅ FIXED: Calculate total price with proper handling for expired timers
-   */
   useEffect(() => {
     let totalDeductions = 0;
     let totalAdditions = 0;
@@ -611,7 +520,6 @@ const PackageCustomizer = ({
       }
     });
     
-    // ✅ KEY FIX: Check if all priced original inclusions are unchecked
     const originalPkgPrice = activeBasePrice !== null ? activeBasePrice : (pkg.price || 0);
     const pricedOriginalInclusions = customizedInclusions.filter(
       inc => inc.isOriginal && inc.price > 0
@@ -619,7 +527,6 @@ const PackageCustomizer = ({
     const allPricedOriginalUnchecked = pricedOriginalInclusions.length > 0 && 
       pricedOriginalInclusions.every(inc => !inc.isChecked);
     
-    // ✅ If all priced inclusions are unchecked, deduction should equal the package price
     let adjustedDeductions = totalDeductions;
     if (allPricedOriginalUnchecked) {
       adjustedDeductions = originalPkgPrice;
@@ -641,44 +548,30 @@ const PackageCustomizer = ({
     }
   }, [customizedInclusions, onCustomizationChange, activeBasePrice, pkg.price]);
 
-  /**
-   * Toggle inclusion checkbox
-   * ✅ VALIDATION: Prevent unchecking all inclusions
-   */
   const toggleInclusion = (id) => {
     setCustomizedInclusions(prev => {
-      // Find the inclusion being toggled
       const inclusionToToggle = prev.find(inc => inc.id === id);
       
-      // If trying to uncheck
       if (inclusionToToggle && inclusionToToggle.isChecked) {
-        // Count currently checked inclusions
         const checkedCount = prev.filter(inc => inc.isChecked).length;
         
-        // ⚠️ PREVENT: Don't allow unchecking if it's the last remaining inclusion
         if (checkedCount === 1) {
           setError('⚠️ At least one inclusion must remain selected. You cannot remove all inclusions from your package.');
           
-          // Auto-clear error after 4 seconds
           setTimeout(() => setError(''), 4000);
           
-          return prev; // Return unchanged state
+          return prev; 
         }
       }
       
-      // Clear any previous error
       setError('');
       
-      // Proceed with toggle
       return prev.map(inc => 
         inc.id === id ? { ...inc, isChecked: !inc.isChecked } : inc
       );
     });
   };
 
-  /**
-   * Add new inclusion
-   */
   const addInclusion = (rate) => {
     const newInclusion = {
       id: `added-${Date.now()}`,
@@ -696,25 +589,18 @@ const PackageCustomizer = ({
       notes: rate.notes,
       isOriginal: false,
       isChecked: true,
-      source: 'seller-rate', // ✅ FIXED: Added source field
-      sellerRateId: rate._id // ✅ FIXED: Added sellerRateId
+      source: 'seller-rate', 
+      sellerRateId: rate._id
     };
     
     setCustomizedInclusions(prev => [...prev, newInclusion]);
   };
 
-  /**
-   * Remove added inclusion
-   */
   const removeInclusion = (id) => {
     setCustomizedInclusions(prev => prev.filter(inc => inc.id !== id));
   };
 
-  /**
-   * ✅ FIXED: Reset customization - properly resets refs to force re-fetch
-   */
   const resetCustomization = () => {
-    // Reset the refs to allow re-fetching
     hasFetchedRef.current = false;
     currentDestinationRef.current = '';
     
@@ -724,9 +610,6 @@ const PackageCustomizer = ({
     setShowSearch(false);
   };
 
-  /**
-   * Format price
-   */
   const formatPrice = (phpPrice) => {
     const price = currency === 'PHP' ? phpPrice : (phpPrice / exchangeRate) * 1.30;
     const symbol = currency === 'PHP' ? '₱' : '$';
@@ -737,7 +620,6 @@ const PackageCustomizer = ({
     })}`;
   };
 
-  // ✅ FIXED: Calculate prices with proper handling for when all priced inclusions are unchecked
   const packageDestination = pkg.destination || pkg.location || 'Unknown';
   const originalPackagePrice = activeBasePrice !== null ? activeBasePrice : (pkg.price || 0);
   
@@ -749,21 +631,18 @@ const PackageCustomizer = ({
     .filter(inc => inc.isChecked && !inc.isOriginal)
     .reduce((sum, inc) => sum + inc.price, 0);
   
-  // ✅ Check if all priced original inclusions are unchecked
   const pricedOriginalInclusions = customizedInclusions.filter(
     inc => inc.isOriginal && inc.price > 0
   );
   const allPricedOriginalUnchecked = pricedOriginalInclusions.length > 0 && 
     pricedOriginalInclusions.every(inc => !inc.isChecked);
   
-  // ✅ If all priced inclusions are unchecked and no additions, price should be 0
   const newTotalPrice = allPricedOriginalUnchecked && additionsTotal === 0 
     ? 0 
     : Math.max(0, originalPackagePrice - (allPricedOriginalUnchecked ? originalPackagePrice : deductionsTotal) + additionsTotal);
 
   return (
     <div className="pc-container">
-      {/* Header */}
       <div className="pc-header">
         <div className="pc-title-row">
           <Package size={24} color="#f97316" />
@@ -843,7 +722,6 @@ const PackageCustomizer = ({
 
         <div className="pc-inclusions-list">
           {customizedInclusions.map((inclusion) => {
-            // ✅ Check if this is the last remaining checked inclusion
             const checkedCount = customizedInclusions.filter(inc => inc.isChecked).length;
             const isLastRemaining = inclusion.isChecked && checkedCount === 1;
             
@@ -880,29 +758,12 @@ const PackageCustomizer = ({
                           Required
                         </span>
                       )}
-                      
-                      {inclusion.isOriginal && !isLastRemaining && (
-                        <span 
-                          className="pc-badge" 
-                          style={{ 
-                            background: inclusion.price > 0 ? '#dcfce7' : '#fee2e2',
-                            color: inclusion.price > 0 ? '#166534' : '#991b1b'
-                          }}
-                        >
-                          {inclusion.price > 0 ? 'Priced' : 'No Rate'}
-                        </span>
-                      )}
-                      
                       {!inclusion.isOriginal && (
                         <span className="pc-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
                           Added
                         </span>
                       )}
                     </div>
-                  
-                  
-                  
-            
                 </div>
               </div>
 
@@ -920,8 +781,7 @@ const PackageCustomizer = ({
                         ? (!inclusion.isChecked ? 'Will be deducted from package price' : 'Included in package')
                         : 'Will be added to package price'
                     }
-                  >
-                    
+                  > 
                   </span>
                 )}
                 
