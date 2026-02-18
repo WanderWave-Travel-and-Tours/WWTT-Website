@@ -8,6 +8,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import HotelRoomSelector from './hotelRoomSelector';
 import BookingFormModal from './BookingFormModal';
+import PackagePreviewModal from './PackagePreviewModal';
 import AppointmentModal from './AppointmentModal';
 import './BookingRightForm.css';
 import { BookingStateManager } from '../../utils/bookingStateManager';
@@ -27,6 +28,7 @@ const BookingRightForm = ({
   const [quantities, setQuantities] = useState({ adult: 1 });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ Package preview before booking
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [bookingWithAirfare, setBookingWithAirfare] = useState(false);
@@ -639,6 +641,7 @@ const handleApplyPromo = async () => {
     toast.success(`Selected: ${roomType.type} at ${roomType.hotelName}`, { duration: 2000 });
   };
 
+  // ✅ Step 1: Show package preview before booking
   const handleBookClick = () => {
     if (!selectedDate) {
       toast.error("Please select a travel date first!", {
@@ -647,6 +650,12 @@ const handleApplyPromo = async () => {
       });
       return;
     }
+    setShowPreviewModal(true);
+  };
+
+  // ✅ Step 2: Proceed from preview to actual booking modal
+  const handleProceedFromPreview = () => {
+    setShowPreviewModal(false);
     setBookingWithAirfare(false);
     setPassengerStep(1);
     setShowModal(true);
@@ -1632,6 +1641,16 @@ const handleNextPassenger = async (e) => {
           No payment required today.
         </p>
       </div>
+
+      {/* ✅ Package Preview Modal - shows before booking */}
+      <PackagePreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        onProceed={handleProceedFromPreview}
+        pkg={pkg}
+        currency={currency}
+        exchangeRate={exchangeRate}
+      />
 
       <BookingFormModal 
         isOpen={showModal}
