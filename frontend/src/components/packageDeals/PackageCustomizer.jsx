@@ -512,8 +512,7 @@ const PackageCustomizer = ({
     
     try {
       
-      const response = await fetch('/api/seller-rates');
-      
+    const response = await fetch('https://wanderwaveph.onrender.com/api/seller-rates');      
       if (!response.ok) {
         throw new Error('Failed to fetch seller rates');
       }
