@@ -144,7 +144,10 @@ function PackageDeals() {
   const [showLoginNotice, setShowLoginNotice] = useState(false);
 
   const [currency, setCurrency] = useState('PHP');        
-  const exchangeRate = 58; 
+  const exchangeRate = 58;
+
+  // 2705 Holds raw URL destination param until packages are loaded
+  const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);
   
   const handleLoginRequired = () => {
     console.log('🚨 Login Required triggered!');
@@ -296,6 +299,25 @@ function PackageDeals() {
     // Check URL parameters for filter
     const urlParams = new URLSearchParams(location.search);
     const filterParam = urlParams.get('filter');
+    const destinationParam = urlParams.get('destination');
+
+    // ✅ DESTINATION FILTER — from GHL "Book Now" button
+    if (destinationParam) {
+      const decodedDestination = decodeURIComponent(destinationParam);
+      console.log('🗺️ URL parameter detected: filtering by destination:', decodedDestination);
+      // ✅ Store raw value — will resolve to exact DB case once packages load
+      setPendingDestinationFilter(decodedDestination);
+
+      // Scroll to packages section
+      setTimeout(() => {
+        if (packagesRef.current) {
+          const yOffset = -120;
+          const element = packagesRef.current;
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }, 600);
+    }
     
     if (filterParam === 'favorites') {
       console.log('🎯 URL parameter detected: showing favorites');
@@ -337,6 +359,50 @@ function PackageDeals() {
 
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
+
+  // ============================================================
+  // ✅ RESOLVE PENDING DESTINATION FILTER ONCE PACKAGES ARE LOADED
+  //    Matches case-insensitively against actual DB location values
+  //    e.g. URL: ?destination=Siargao → matches DB value: "SIARGAO"
+  // ============================================================
+  useEffect(() => {
+    if (!pendingDestinationFilter || allLocations.length === 0) return;
+
+    const matched = allLocations.find(
+      (loc) => loc.toLowerCase() === pendingDestinationFilter.toLowerCase()
+    );
+
+    if (matched) {
+      console.log('✅ Destination resolved:', matched);
+      setSelectedDestinations([matched]);
+    } else {
+      // Partial match fallback (e.g. "El Nido" → "EL NIDO, PALAWAN")
+      const partial = allLocations.find(
+        (loc) => loc.toLowerCase().includes(pendingDestinationFilter.toLowerCase())
+      );
+      if (partial) {
+        console.log('✅ Destination partial match:', partial);
+        setSelectedDestinations([partial]);
+      }
+    }
+
+    setPendingDestinationFilter(null); // clear after resolving
+
+    // ✅ CRITICAL: Remove ?destination param from URL so user can freely
+    //    change filters without SIARGAO (or any destination) getting re-locked.
+    //    replace: true so it doesn't add a new history entry (back button safe)
+    navigate('/packages', { replace: true });
+
+    // Scroll to packages section
+    setTimeout(() => {
+      if (packagesRef.current) {
+        const yOffset = -120;
+        const element = packagesRef.current;
+        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 400);
+  }, [pendingDestinationFilter, allLocations]);
 
   const handleBookNow = (pkg) => {
     setSelectedPackageForBooking(pkg);
