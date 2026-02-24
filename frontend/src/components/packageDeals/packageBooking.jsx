@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import './packageBooking.css';
 
-function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
+function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) {
   const [customizationData, setCustomizationData] = useState(null);
   
   // ============================================
@@ -407,8 +407,8 @@ function PackageBooking({ pkg, currency = 'PHP', exchangeRate = 58 }) {
               currency={currency}       
               exchangeRate={exchangeRate}
               onCustomizationChange={handleCustomizationChange}
-              // PASS TIMER STATE DOWN
               timerExpired={timerExpired}
+              onGoBack={onGoBack}
             />
           </div>
 

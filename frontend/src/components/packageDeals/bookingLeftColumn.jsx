@@ -13,7 +13,8 @@ const BookingLeftColumn = ({
   currency = 'PHP',
   exchangeRate = 58,
   onCustomizationChange,
-  timerExpired = false
+  timerExpired = false,
+  onGoBack         // ✅ ADDED: receive onGoBack from PackageBooking → PackageDeals
 }) => {
   // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
@@ -23,12 +24,16 @@ const BookingLeftColumn = ({
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
-  // ✅ NEW: Store customization data locally to display pricing
-const [customizationData, setCustomizationData] = useState(null);
+  const [customizationData, setCustomizationData] = useState(null);
 
-  // --- HARDCODED REDIRECT TO FLIGHTS ---
+  // ✅ FIXED: Use onGoBack prop if available (same-page view switch),
+  //           fallback to navigate only if rendered standalone
   const handleBackClick = () => {
-    navigate('/packages');
+    if (onGoBack) {
+      onGoBack();
+    } else {
+      navigate('/packages');
+    }
   };
 
   const itinerary = pkg.itinerary || [];
@@ -43,24 +48,22 @@ const [customizationData, setCustomizationData] = useState(null);
     }));
   };
 
-  // ✅ UPDATED: Store customization data locally AND pass to parent
-const handleCustomizationChange = (customizationDataFromChild) => {
-  setCustomizationData(customizationDataFromChild);
-  setIsCustomized(
-    customizationDataFromChild.additionalPrice !== 0 || 
-    customizationDataFromChild.deductions > 0 ||
-    customizationDataFromChild.additions > 0
-  );
-  
-  if (onCustomizationChange) {
-    onCustomizationChange(customizationDataFromChild);
-  }
-};
+  const handleCustomizationChange = (customizationDataFromChild) => {
+    setCustomizationData(customizationDataFromChild);
+    setIsCustomized(
+      customizationDataFromChild.additionalPrice !== 0 || 
+      customizationDataFromChild.deductions > 0 ||
+      customizationDataFromChild.additions > 0
+    );
+    
+    if (onCustomizationChange) {
+      onCustomizationChange(customizationDataFromChild);
+    }
+  };
 
-  // ✅ Destinations that support package customization
   const CUSTOMIZABLE_DESTINATIONS = [
     'siargao', 'siquijor', 'bohol', 'cebu',
-    'el nido', 'coron', 'palawan', 'puerto princesa', // ← fixed spelling (princesa not prinsesa)
+    'el nido', 'coron', 'palawan', 'puerto princesa',
   ];
   const dest = (pkg.destination || pkg.location || '').toLowerCase().trim();
   const isCustomizableDestination = CUSTOMIZABLE_DESTINATIONS.some(d => dest.includes(d));
@@ -71,28 +74,18 @@ const handleCustomizationChange = (customizationDataFromChild) => {
     return (phpPrice / exchangeRate) * 1.30;
   };
 
-const basePrice = pkg.price || 0;
-const originalPriceWithMarkup = Math.round(basePrice * 1.10);
-
-// ✅ KEY FIX: Determine which base price to use for calculations
-const activeBasePrice = timerExpired ? originalPriceWithMarkup : basePrice;
-
-// ✅ Apply customization deductions/additions to the CORRECT base price
-const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
-const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
-
-// ✅ Display price logic - ensure it shows 0 when appropriate
-const displayPrice = adjustedActivePrice;
-const convertedDisplayPrice = convertPrice(displayPrice);
-
-// ✅ Show original price only when timer is active (not expired)
-const adjustedOriginalPrice = originalPriceWithMarkup + customizationAdjustment;
-const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
-
-// ✅ Calculate discount percentage properly
-const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
-  ? Math.round(((adjustedOriginalPrice - displayPrice) / adjustedOriginalPrice) * 100)
-  : 0;
+  const basePrice = pkg.price || 0;
+  const originalPriceWithMarkup = Math.round(basePrice * 1.10);
+  const activeBasePrice = timerExpired ? originalPriceWithMarkup : basePrice;
+  const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
+  const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
+  const displayPrice = adjustedActivePrice;
+  const convertedDisplayPrice = convertPrice(displayPrice);
+  const adjustedOriginalPrice = originalPriceWithMarkup + customizationAdjustment;
+  const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
+  const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
+    ? Math.round(((adjustedOriginalPrice - displayPrice) / adjustedOriginalPrice) * 100)
+    : 0;
 
   return (
     <div className="blc-container">
@@ -166,7 +159,6 @@ const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
         </div>
       </div>
 
-      {/* ✨ Show customizer ONLY for supported destinations */}
       {isCustomizableDestination && (
         <div className="blc-customizer-section">
           <button
