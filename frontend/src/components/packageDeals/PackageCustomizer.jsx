@@ -843,32 +843,9 @@ const PackageCustomizer = ({
                   <div key={rate._id} className="pc-activity-item">
                     <div className="pc-activity-info">
                       <div className="pc-activity-name">{rate.activity}</div>
-                      <div className="pc-activity-meta">
-                        <span className="pc-meta-tag">
-                          📍 {rate.destination}
-                        </span>
-                        {rate.supplierName && (
-                          <span className="pc-meta-tag">
-                            🏢 {rate.supplierName}
-                          </span>
-                        )}
-                        {rate.pax && (
-                          <span className="pc-meta-tag">
-                            👥 {rate.pax}
-                          </span>
-                        )}
-                      </div>
-                      {rate.inclusions && (
-                        <div className="pc-activity-inclusions">
-                          <small>Includes: {rate.inclusions}</small>
-                        </div>
-                      )}
                     </div>
 
                     <div className="pc-activity-actions">
-                      <div className="pc-activity-price">
-                        {formatPrice(rate.sellingPrice)}
-                      </div>
                       <button
                         className="pc-add-btn"
                         onClick={() => addInclusion(rate)}
