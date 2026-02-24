@@ -59,7 +59,7 @@ const createInquiryCheckoutSession = async (req, res) => {
                 quantity: 1
               }
             ],
-            payment_method_types: ['qrph'], // ✅ LOCKED TO QRPH ONLY
+            payment_method_types: ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'],
             reference_number: inquiry._id.toString(),
             send_email_receipt: true,
             show_description: true,
@@ -169,9 +169,13 @@ const createBookingPaymentIntent = async (req, res) => {
       description: paymentDescription
     });
 
-    // ✅ LOCKED TO QRPH ONLY — dagdag ng ibang methods dito kapag handa na
-    const paymentMethods = ['qrph'];
-    console.log('Payment method locked to QRPH only');
+    // ✅ Determine which payment methods to enable based on user selection
+    let paymentMethods = ['card', 'gcash', 'paymaya', 'grab_pay', 'dob', 'dob_ubp', 'qrph'];
+    
+    // If user selected specific method, prioritize it (optional - you can keep all methods available)
+    if (method) {
+      console.log('User selected payment method:', method);
+    }
 
     console.log('Creating Checkout Session...');
 
