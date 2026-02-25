@@ -432,22 +432,36 @@ const PackageCustomizer = ({
     
     try {
       
-    const response = await fetch('https://wanderwaveph.onrender.com/api/seller-rates');      
+    // ✅ Pass destination as query param → backend filters, less data transfer
+      const encodedDest = encodeURIComponent(destination);
+      const response = await fetch(
+        `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}`
+      );
       if (!response.ok) {
         throw new Error('Failed to fetch seller rates');
       }
-      
       const allRates = await response.json();
       
       const matchingRates = allRates.filter(rate => 
         destinationsMatch(rate.destination, destination)
       );
-      
-      
-      const uniqueDestinations = [...new Set(matchingRates.map(r => r.destination))];
-      
-      setAvailableActivities(matchingRates);
-      setFilteredActivities(matchingRates);
+
+      // ✅ DEDUPLICATE BY ACTIVITY NAME
+      // If multiple suppliers offer the same activity for this destination,
+      // keep only the one with the lowest sellingPrice (best deal for user).
+      // This prevents duplicate "Island Hopping", "RT Transfer" etc. in the list.
+      const deduplicatedRates = Object.values(
+        matchingRates.reduce((acc, rate) => {
+          const key = rate.activity.trim().toLowerCase();
+          if (!acc[key] || rate.sellingPrice < acc[key].sellingPrice) {
+            acc[key] = rate;
+          }
+          return acc;
+        }, {})
+      );
+
+      setAvailableActivities(deduplicatedRates);
+      setFilteredActivities(deduplicatedRates);
       
       const matched = matchInclusionsWithPrices(
         pkg.inclusions || [],
