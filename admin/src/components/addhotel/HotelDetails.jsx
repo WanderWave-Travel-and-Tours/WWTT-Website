@@ -9,16 +9,11 @@ const HotelDetails = ({
   loading, 
   fetchDestinations 
 }) => {
-  const calculateRooms = (guests) => {
-    const maxCapacity = hotelDetails.maxCapacity || 4;
-    return Math.ceil(guests / maxCapacity);
-  };
-
-  const exampleGuests = [4, 5, 8, 10];
-  const roomCalculations = exampleGuests.map(guests => ({
+  const exampleGuests = [2, 3, 4];
+  const pricePerPax = Number(hotelDetails.price) || 0;
+  const paxCalculations = exampleGuests.map(guests => ({
     guests,
-    rooms: calculateRooms(guests),
-    totalPrice: calculateRooms(guests) * (Number(hotelDetails.price) || 0)
+    totalPrice: guests * pricePerPax
   }));
 
   return (
@@ -100,25 +95,25 @@ const HotelDetails = ({
             onChange={(e) => updateField('maxCapacity', e.target.value)}
             required
             min="1"
-            max="10"
+            max="4"
           />
         </div>
 
         <div className="hotel-field hotel-field--full">
-          <label>Price per Room per Night (₱)</label>
+          <label>Price per Person per Night (₱)</label>
           <input
             type="number"
-            placeholder="e.g. 2500"
+            placeholder="e.g. 1500"
             value={hotelDetails.price}
             onChange={(e) => updateField('price', e.target.value)}
             required
             min="0"
           />
         </div>
-{/*}
-        {hotelDetails.price && hotelDetails.maxCapacity && (
+
+        {hotelDetails.price && (
           <div className="hotel-field hotel-field--full">
-            <label>Room Calculation Preview</label>
+            <label>Price Calculation Preview</label>
             <div className="hotel-calculation-box">
               <p className="hotel-calculation-header">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -127,13 +122,13 @@ const HotelDetails = ({
                   <path d="M23 21v-2a4 4 0 00-3-3.87" />
                   <path d="M16 3.13a4 4 0 010 7.75" />
                 </svg>
-                Example: {hotelDetails.maxCapacity} persons/room @ ₱{hotelDetails.price}/room/night
+                ₱{pricePerPax.toLocaleString()} per person per night
               </p>
               <div className="hotel-calculation-list">
-                {roomCalculations.map(calc => (
+                {paxCalculations.map(calc => (
                   <div key={calc.guests} className="hotel-calculation-item">
                     <span className="hotel-calculation-guests">
-                      {calc.guests} guests = {calc.rooms} room{calc.rooms > 1 ? 's' : ''}
+                      {calc.guests} pax
                     </span>
                     <span className="hotel-calculation-price">
                       ₱{calc.totalPrice.toLocaleString()}
@@ -144,7 +139,6 @@ const HotelDetails = ({
             </div>
           </div>
         )}
-          */}
       </div>
     </section>
   );
