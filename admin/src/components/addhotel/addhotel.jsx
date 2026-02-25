@@ -52,7 +52,8 @@ const AddHotel = () => {
     maxCapacity: 4,
     amenities: {
       wifi: false, parking: false, pool: false, gym: false, restaurant: false,
-      spa: false, airConditioning: false, roomService: false, laundry: false, bar: false
+      spa: false, airConditioning: false, roomService: false, laundry: false, bar: false,
+      breakfast: false, bathroom: 'none'
     }
   });
  
@@ -251,11 +252,24 @@ const AddHotel = () => {
     }
   };
  
-  const handleAmenityChange = (amenityId) => {
-    setHotelDetails(prev => ({
-      ...prev,
-      amenities: { ...prev.amenities, [amenityId]: !prev.amenities[amenityId] }
-    }));
+  const handleAmenityChange = (amenityId, value) => {
+    if (amenityId === 'bathroom') {
+      setHotelDetails(prev => ({
+        ...prev,
+        amenities: {
+          ...prev.amenities,
+          bathroom: value
+        }
+      }));
+    } else {
+      setHotelDetails(prev => ({
+        ...prev,
+        amenities: {
+          ...prev.amenities,
+          [amenityId]: !prev.amenities[amenityId]
+        }
+      }));
+    }
   };
  
   const handleSubmit = (e) => {
@@ -348,7 +362,8 @@ const AddHotel = () => {
       name: '', destination: '', price: '', maxCapacity: 4,
       amenities: {
         wifi: false, parking: false, pool: false, gym: false, restaurant: false,
-        spa: false, airConditioning: false, roomService: false, laundry: false, bar: false
+        spa: false, airConditioning: false, roomService: false, laundry: false, bar: false,
+      breakfast: false, bathroom: 'none'
       }
     });
     setFile(null); setPreviewUrl(null); setGalleryFiles([]); setType("Budget");

@@ -102,9 +102,6 @@ const HotelDetails = ({
             min="1"
             max="10"
           />
-          <span className="hotel-field-hint">
-            Default: 4 persons per room
-          </span>
         </div>
 
         <div className="hotel-field hotel-field--full">
@@ -118,7 +115,7 @@ const HotelDetails = ({
             min="0"
           />
         </div>
-
+{/*}
         {hotelDetails.price && hotelDetails.maxCapacity && (
           <div className="hotel-field hotel-field--full">
             <label>Room Calculation Preview</label>
@@ -147,6 +144,7 @@ const HotelDetails = ({
             </div>
           </div>
         )}
+          */}
       </div>
     </section>
   );

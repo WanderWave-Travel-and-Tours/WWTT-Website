@@ -92,7 +92,12 @@ const hotelSchema = new mongoose.Schema({
     roomService: { type: Boolean, default: false },
     laundry: { type: Boolean, default: false },
     bar: { type: Boolean, default: false },
-    breakfast: { type: Boolean, default: false }
+    breakfast: { type: Boolean, default: false },
+    bathroom: { 
+      type: String, 
+      enum: ['none', 'private', 'shared'], 
+      default: 'none' 
+    }
   },
   roomTypes: [{
     type: {
