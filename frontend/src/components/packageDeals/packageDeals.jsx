@@ -9,9 +9,6 @@ import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
 import toast, { Toaster } from 'react-hot-toast';
 
-// ============================================================
-// LOGIN NOTICE MODAL COMPONENT
-// ============================================================
 const LoginNoticeModal = ({ isOpen, onClose, onLogin }) => {
   if (!isOpen) return null;
 
@@ -116,9 +113,6 @@ const LoginNoticeModal = ({ isOpen, onClose, onLogin }) => {
   );
 };
 
-// ============================================================
-// MAIN PACKAGE DEALS COMPONENT
-// ============================================================
 function PackageDeals() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -148,7 +142,7 @@ function PackageDeals() {
 
   // 2705 Holds raw URL destination param until packages are loaded
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);
-  
+  const [shouldScrollToPackages, setShouldScrollToPackages] = useState(false);
   const handleLoginRequired = () => {
     console.log('🚨 Login Required triggered!');
     setShowLoginNotice(true);
@@ -360,48 +354,45 @@ function PackageDeals() {
   const allLocations = useMemo(() => [...new Set(packages.map(p => p.location))].sort(), [packages]);
   const allDurations = useMemo(() => [...new Set(packages.map(p => p.duration))].sort(), [packages]);
 
-  // ============================================================
-  // ✅ RESOLVE PENDING DESTINATION FILTER ONCE PACKAGES ARE LOADED
-  //    Matches case-insensitively against actual DB location values
-  //    e.g. URL: ?destination=Siargao → matches DB value: "SIARGAO"
-  // ============================================================
   useEffect(() => {
     if (!pendingDestinationFilter || allLocations.length === 0) return;
 
+    // ✅ Support both string (old URL param) and object (new card click)
+    const filterName = typeof pendingDestinationFilter === 'object' 
+      ? pendingDestinationFilter.name 
+      : pendingDestinationFilter;
+    const isFromCard = typeof pendingDestinationFilter === 'object' 
+      && pendingDestinationFilter.source === 'card';
+
     const matched = allLocations.find(
-      (loc) => loc.toLowerCase() === pendingDestinationFilter.toLowerCase()
+      (loc) => loc.toLowerCase() === filterName.toLowerCase()
     );
 
     if (matched) {
-      console.log('✅ Destination resolved:', matched);
       setSelectedDestinations([matched]);
     } else {
-      // Partial match fallback (e.g. "El Nido" → "EL NIDO, PALAWAN")
       const partial = allLocations.find(
-        (loc) => loc.toLowerCase().includes(pendingDestinationFilter.toLowerCase())
+        (loc) => loc.toLowerCase().includes(filterName.toLowerCase())
       );
-      if (partial) {
-        console.log('✅ Destination partial match:', partial);
-        setSelectedDestinations([partial]);
-      }
+      if (partial) setSelectedDestinations([partial]);
     }
 
-    setPendingDestinationFilter(null); // clear after resolving
+    setPendingDestinationFilter(null);
 
-    // ✅ CRITICAL: Remove ?destination param from URL so user can freely
-    //    change filters without SIARGAO (or any destination) getting re-locked.
-    //    replace: true so it doesn't add a new history entry (back button safe)
-    navigate('/packages', { replace: true });
+    // ✅ Only navigate (clear URL) if it came from URL param, NOT from card click
+    if (!isFromCard) {
+      navigate('/packages', { replace: true });
+    }
 
-    // Scroll to packages section
-    setTimeout(() => {
-      if (packagesRef.current) {
-        const yOffset = -120;
-        const element = packagesRef.current;
-        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-      }
-    }, 400);
+    // ✅ Scroll only for URL param source — card click handled by selectedDestinations useEffect
+    if (!isFromCard) {
+      setTimeout(() => {
+        if (packagesRef.current) {
+          const y = packagesRef.current.getBoundingClientRect().top + window.pageYOffset - 120;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }, 400);
+    }
   }, [pendingDestinationFilter, allLocations]);
 
   const handleBookNow = (pkg) => {
@@ -620,6 +611,19 @@ function PackageDeals() {
 
     fetchPackages();
   }, []);
+
+  useEffect(() => {
+  if (!shouldScrollToPackages) return;
+  
+  const timer = setTimeout(() => {
+    if (packagesRef.current) {
+      packagesRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    setShouldScrollToPackages(false); // reset
+  }, 400);
+
+  return () => clearTimeout(timer);
+}, [shouldScrollToPackages]);
 
   if (loading) {
     return (
@@ -855,20 +859,15 @@ function PackageDeals() {
             categories={mostVisitedCategories}
             selectedFilter={selectedFilter}
             onFilterChange={setSelectedFilter}
-            onCategoryClick={(category) => {          
+            onCategoryClick={(category) => {
               if (!category) {
                 setSelectedDestinations([]);
                 setScopeFilter('all');
               } else {
-                setPendingDestinationFilter(category.name);
+                setPendingDestinationFilter({ name: category.name, source: 'card' });
                 setScopeFilter('all');
               }
-              setTimeout(() => {
-                if (packagesRef.current) {
-                  const y = packagesRef.current.getBoundingClientRect().top + window.pageYOffset - 120;
-                  window.scrollTo({ top: y, behavior: 'smooth' });
-                }
-              }, 300);
+              setShouldScrollToPackages(true);
             }}
           />
         </div>
