@@ -41,7 +41,7 @@ const HotelPreview = ({ hotelDetails, previewUrl, type }) => {
                     <div className="apkg-card-divider"></div>
                     <div className="apkg-card-meta">
                         <div>
-                            <span>Rate</span>
+                            <span>Rate (2 Pax)</span>
                             <strong>₱{formattedPrice}</strong>
                         </div>
                         <div>

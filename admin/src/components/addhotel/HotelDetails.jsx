@@ -9,11 +9,23 @@ const HotelDetails = ({
   loading, 
   fetchDestinations 
 }) => {
-  const exampleGuests = [2, 3, 4];
-  const pricePerPax = Number(hotelDetails.price) || 0;
+  // Siargao & Bohol: 1 pax allowed, price = per pax
+  // All other destinations: minimum 2 pax, price = good for 2 pax
+  const SINGLE_PAX_DESTINATIONS = ['Siargao', 'Bohol'];
+  const isSinglePaxAllowed = SINGLE_PAX_DESTINATIONS.includes(hotelDetails.destination);
+
+  const basePrice = Number(hotelDetails.price) || 0;
+  const pricePerAdditionalPax = basePrice / 2;
+
+  const exampleGuests = isSinglePaxAllowed ? [1, 2, 3, 4] : [2, 3, 4];
+
   const paxCalculations = exampleGuests.map(guests => ({
     guests,
-    totalPrice: guests * pricePerPax
+    totalPrice: isSinglePaxAllowed
+      ? guests * basePrice
+      : guests === 2
+        ? basePrice
+        : basePrice + (guests - 2) * pricePerAdditionalPax
   }));
 
   return (
@@ -94,13 +106,17 @@ const HotelDetails = ({
             value={hotelDetails.maxCapacity}
             onChange={(e) => updateField('maxCapacity', e.target.value)}
             required
-            min="1"
+            min={isSinglePaxAllowed ? "1" : "2"}
             max="4"
           />
         </div>
 
         <div className="hotel-field hotel-field--full">
-          <label>Price per Person per Night (₱)</label>
+          <label>
+            {isSinglePaxAllowed
+              ? "Price per Person per Night (₱)"
+              : "Price per Room per Night – Good for 2 Pax (₱)"}
+          </label>
           <input
             type="number"
             placeholder="e.g. 1500"
@@ -122,7 +138,9 @@ const HotelDetails = ({
                   <path d="M23 21v-2a4 4 0 00-3-3.87" />
                   <path d="M16 3.13a4 4 0 010 7.75" />
                 </svg>
-                ₱{pricePerPax.toLocaleString()} per person per night
+                {isSinglePaxAllowed
+                  ? `₱${basePrice.toLocaleString()} per person per night`
+                  : `₱${basePrice.toLocaleString()} base rate (good for 2 pax) · +₱${pricePerAdditionalPax.toLocaleString()} per additional pax`}
               </p>
               <div className="hotel-calculation-list">
                 {paxCalculations.map(calc => (
