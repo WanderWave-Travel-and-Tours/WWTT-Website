@@ -853,6 +853,23 @@ function PackageDeals() {
           <BrowseCategory 
             title="Most Visited Destination"
             categories={mostVisitedCategories}
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+            onCategoryClick={(category) => {          
+              if (!category) {
+                setSelectedDestinations([]);
+                setScopeFilter('all');
+              } else {
+                setPendingDestinationFilter(category.name);
+                setScopeFilter('all');
+              }
+              setTimeout(() => {
+                if (packagesRef.current) {
+                  const y = packagesRef.current.getBoundingClientRect().top + window.pageYOffset - 120;
+                  window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+              }, 300);
+            }}
           />
         </div>
       </section>

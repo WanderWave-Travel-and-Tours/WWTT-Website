@@ -78,7 +78,7 @@ function BrowseCategory({ title, categories, selectedFilter, onFilterChange, onC
               onClick={() => {
                 onFilterChange('all');
                 if (onCategoryClick) {
-                  onCategoryClick();
+                  onCategoryClick(null);
                 }
               }}
             >
@@ -102,7 +102,7 @@ function BrowseCategory({ title, categories, selectedFilter, onFilterChange, onC
               onClick={() => {
                 onFilterChange(category.id);
                 if (onCategoryClick) {
-                  onCategoryClick();
+                  onCategoryClick(category);
                 }
               }}
             >
