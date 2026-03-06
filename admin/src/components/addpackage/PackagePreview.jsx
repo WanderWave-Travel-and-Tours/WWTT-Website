@@ -48,7 +48,11 @@ const PackagePreview = ({
                         )}
                     </div>
                     <h3 className="apkg-card-title">
-                        {title || "Package Name"}
+                        {duration && title
+                            ? `${duration} ${title}`
+                            : duration && !title
+                            ? `${duration} Package Name`
+                            : title || "Package Name"}
                     </h3>
                     <p className="apkg-card-location">
                         <IconLocation />

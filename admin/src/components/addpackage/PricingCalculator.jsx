@@ -13,7 +13,21 @@ const IconPeso = () => (
     </svg>
 );
 
-const PricingCalculator = ({ supplierRate, handleSupplierRateChange, markupValue, handleMarkupChange, markupType, toggleMarkupType, price }) => {
+const PricingCalculator = ({ 
+    supplierRate, 
+    handleSupplierRateChange, 
+    markupValue, 
+    handleMarkupChange, 
+    markupType, 
+    toggleMarkupType, 
+    price,
+    // ✅ NEW: Pax Mode Props
+    paxMode,
+    onPaxModeChange,
+    tourType,
+    pax,
+    minPax
+}) => {
     
     const supplierRateNum = parseFloat(supplierRate) || 0;
     const markupValueNum = parseFloat(markupValue) || 0;
@@ -30,10 +44,55 @@ const PricingCalculator = ({ supplierRate, handleSupplierRateChange, markupValue
         maximumFractionDigits: 2,
     });
 
+    // ✅ Compute current multiplier for display
+    const currentMultiplier = paxMode === 'solo'
+        ? 2
+        : (tourType === 'private' ? parseInt(pax) || 1 : parseInt(minPax) || 1);
+
+    // ✅ Pax label for hint text
+    const paxLabel = tourType === 'private'
+        ? (pax ? `${pax} pax (Private)` : '— pax (set in Basic Info)')
+        : (minPax ? `${minPax} min pax (Joiners)` : '— pax (set in Basic Info)');
+
+    // ✅ Per-pax base amount for breakdown display
+    const perPaxAmount = supplierRateNum + markupInPeso;
+
     return (
         <section className="apkg-section">
             <h2 className="apkg-section-title">PRICING</h2>
             <div className="apkg-pricing-layout">
+
+                {/* ✅ PAX MODE TOGGLE */}
+                <div className="apkg-field">
+                    <label className="apkg-pax-mode-label">
+                        Pricing Mode
+                    </label>
+                    <div className="apkg-pax-mode-toggle">
+                        <button
+                            type="button"
+                            className={`apkg-pax-btn ${paxMode === 'solo' ? 'active' : ''}`}
+                            onClick={() => onPaxModeChange('solo')}
+                        >
+                            <span className="apkg-pax-icon">👤</span>
+                            <span className="apkg-pax-text">Solo</span>
+                        </button>
+                        <button
+                            type="button"
+                            className={`apkg-pax-btn ${paxMode === 'multiple' ? 'active' : ''}`}
+                            onClick={() => onPaxModeChange('multiple')}
+                        >
+                            <span className="apkg-pax-icon">👥</span>
+                            <span className="apkg-pax-text">Multiple Pax</span>
+                        </button>
+                    </div>
+                    <span className="apkg-pax-hint">
+                        {paxMode === 'solo'
+                            ? '💡 Solo rate — supplier rate and markup are doubled (×2)'
+                            : `📋 Based on ${paxLabel} from Basic Info`
+                        }
+                    </span>
+                </div>
+
                 <div className="apkg-pricing-inputs">
                     <div className="apkg-field">
                         <label>Supplier Rate (PHP)</label>
@@ -42,6 +101,7 @@ const PricingCalculator = ({ supplierRate, handleSupplierRateChange, markupValue
                             placeholder="0.00"
                             value={supplierRate}
                             onChange={handleSupplierRateChange}
+                            onWheel={(e) => e.target.blur()}
                             required
                             step="0.01"
                             min="0"
@@ -62,6 +122,7 @@ const PricingCalculator = ({ supplierRate, handleSupplierRateChange, markupValue
                                 }
                                 value={markupValue}
                                 onChange={handleMarkupChange}
+                                onWheel={(e) => e.target.blur()}
                                 required
                                 step="0.01"
                                 min="0"
@@ -98,17 +159,33 @@ const PricingCalculator = ({ supplierRate, handleSupplierRateChange, markupValue
                                   })
                                 : "0.00"}
                         </div>
+
+                        {/* ✅ UPDATED BREAKDOWN: Shows multiplier */}
                         <div className="apkg-total-price-breakdown">
                             {supplierRate && markupValue ? (
                                 <>
                                     <span>
-                                        ₱{Number(supplierRate).toLocaleString()}
+                                        (₱{Number(supplierRate).toLocaleString()}
                                     </span>
                                     <span className="apkg-plus">+</span>
                                     <span>
                                         {markupType === "percentage"
-                                            ? `${markupValue}% (₱${formattedMarkupInPeso})`
-                                            : `₱${Number(markupValue).toLocaleString()}`}
+                                            ? `${markupValue}% / ₱${formattedMarkupInPeso})`
+                                            : `₱${Number(markupValue).toLocaleString()})`}
+                                    </span>
+                                    <span className="apkg-plus">×</span>
+                                    <span className="apkg-multiplier-badge">
+                                        {currentMultiplier} {paxMode === 'solo' ? 'solo' : 'pax'}
+                                    </span>
+                                </>
+                            ) : supplierRate ? (
+                                <>
+                                    <span>
+                                        ₱{Number(supplierRate).toLocaleString()}
+                                    </span>
+                                    <span className="apkg-plus">×</span>
+                                    <span className="apkg-multiplier-badge">
+                                        {currentMultiplier} {paxMode === 'solo' ? 'solo' : 'pax'}
                                     </span>
                                 </>
                             ) : (
@@ -117,6 +194,13 @@ const PricingCalculator = ({ supplierRate, handleSupplierRateChange, markupValue
                                 </span>
                             )}
                         </div>
+
+                        {/* ✅ Per-pax note */}
+                        {supplierRate && perPaxAmount > 0 && (
+                            <div className="apkg-per-pax-note">
+                                ₱{perPaxAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} base rate × {currentMultiplier} {paxMode === 'solo' ? '(solo ×2)' : `pax`}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

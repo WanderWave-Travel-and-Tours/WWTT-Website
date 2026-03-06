@@ -2,6 +2,22 @@
 /* GLOBAL WRAPPERS & LAYOUT (apkg- prefix)          */
 /* ================================================= */
 
+/* ================================================= */
+/* REMOVE NUMBER INPUT SPINNERS GLOBALLY            */
+/* ================================================= */
+
+.apkg-main input[type="number"]::-webkit-inner-spin-button,
+.apkg-main input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.apkg-main input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* ================================================= */
+
 .apkg-page {
     display: flex;
     min-height: 100vh;
