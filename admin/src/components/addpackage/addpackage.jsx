@@ -43,6 +43,9 @@ const AddPackage = () => {
     const [tourType, setTourType] = useState("private"); // "private" or "joiners"
     const [pax, setPax] = useState(""); // Only for private
     const [minPax, setMinPax] = useState(""); // Only for joiners
+
+    // ✅ Pax Mode State (Solo = ×2, Multiple = ×pax/minPax)
+    const [paxMode, setPaxMode] = useState("solo"); // "solo" | "multiple"
     
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -76,6 +79,21 @@ const AddPackage = () => {
             },
             type
         });
+    };
+
+    // =========================================================
+    // ✅ PAX MULTIPLIER HELPER
+    // =========================================================
+
+    /**
+     * Returns the price multiplier based on paxMode and tourType.
+     * - solo:    always ×2
+     * - multiple: ×pax (private) or ×minPax (joiners)
+     */
+    const getMultiplier = (pMode, tType, paxVal, minPaxVal) => {
+        if (pMode === 'solo') return 2;
+        if (tType === 'private') return parseInt(paxVal) || 1;
+        return parseInt(minPaxVal) || 1;
     };
 
     // =========================================================
@@ -144,6 +162,7 @@ const AddPackage = () => {
                 tourType,
                 pax,
                 minPax,
+                paxMode, // ✅ NEW: Save paxMode to draft
                 inclusions,
                 itinerary,
                 image: imageBase64,
@@ -156,7 +175,7 @@ const AddPackage = () => {
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [title, destination, supplierRate, markupValue, markupType, price, duration, category, tourType, pax, minPax, inclusions, itinerary, file]);
+    }, [title, destination, supplierRate, markupValue, markupType, price, duration, category, tourType, pax, minPax, paxMode, inclusions, itinerary, file]);
 
     const restoreDraftData = async (data) => {
         if (!data) return;
@@ -172,6 +191,7 @@ const AddPackage = () => {
         setTourType(data.tourType || "private");
         setPax(data.pax || "");
         setMinPax(data.minPax || "");
+        setPaxMode(data.paxMode || "solo"); // ✅ NEW: Restore paxMode
         setInclusions(data.inclusions || [""]);
         setItinerary(data.itinerary || [{ day: 1, title: "Day 1: Arrival", activities: [""] }]);
 
@@ -257,7 +277,10 @@ const AddPackage = () => {
         }, 100);
     };
 
-    // --- PRICING ---
+    // =========================================================
+    // ✅ PRICING — Updated to use paxMode multiplier
+    // =========================================================
+
     const handleSupplierRateChange = (e) => {
         const value = e.target.value;
         if (value === "" || !isNaN(value)) {
@@ -270,7 +293,8 @@ const AddPackage = () => {
                 ? (supplierRateNum * markupValueNum) / 100
                 : markupValueNum;
 
-            const total = Math.round((supplierRateNum + markupInPeso) * 100) / 100;
+            const multiplier = getMultiplier(paxMode, tourType, pax, minPax);
+            const total = Math.round((supplierRateNum + markupInPeso) * multiplier * 100) / 100;
             setPrice(total.toString());
         }
     };
@@ -297,9 +321,33 @@ const AddPackage = () => {
             ? (supplierRateNum * markupValueNum) / 100
             : markupValueNum;
 
-        const total = Math.round((supplierRateNum + markupInPeso) * 100) / 100;
+        const multiplier = getMultiplier(paxMode, tourType, pax, minPax);
+        const total = Math.round((supplierRateNum + markupInPeso) * multiplier * 100) / 100;
         setPrice(total.toString());
     };
+
+    // ✅ Switch paxMode and clear pricing inputs
+    const handlePaxModeChange = (mode) => {
+        setPaxMode(mode);
+        setSupplierRate("");
+        setMarkupValue("");
+        setPrice("");
+    };
+
+    // ✅ Recalculate price when paxMode, pax, minPax, or tourType changes
+    useEffect(() => {
+        const supplierRateNum = Number(supplierRate) || 0;
+        const markupValueNum = Number(markupValue) || 0;
+
+        const markupInPeso = markupType === "percentage"
+            ? (supplierRateNum * markupValueNum) / 100
+            : markupValueNum;
+
+        const multiplier = getMultiplier(paxMode, tourType, pax, minPax);
+        const total = Math.round((supplierRateNum + markupInPeso) * multiplier * 100) / 100;
+        setPrice(total.toString());
+    }, [paxMode, pax, minPax, tourType]);
+    // Note: supplierRate, markupValue, markupType changes are handled by their own handlers above
 
     // --- INCLUSIONS ---
     const handleIncChange = (index, value) => {
@@ -462,6 +510,7 @@ const AddPackage = () => {
             return;
         }
 
+        // ✅ Apply paxMode multiplier to sellerPrice and markup before sending
         const supplierRateNum = Number(supplierRate) || 0;
         const markupValueNum = Number(markupValue) || 0;
         let markupInPeso = markupType === "percentage" 
@@ -469,11 +518,15 @@ const AddPackage = () => {
             : markupValueNum;
         markupInPeso = Math.round(markupInPeso * 100) / 100;
 
+        const multiplier = getMultiplier(paxMode, tourType, pax, minPax);
+        const finalSellerPrice = Math.round(supplierRateNum * multiplier * 100) / 100;
+        const finalMarkup = Math.round(markupInPeso * multiplier * 100) / 100;
+
         const formData = new FormData();
-        formData.append("title", title);
+        formData.append("title", duration ? `${duration} ${title}` : title);
         formData.append("destination", destination);
-        formData.append("sellerPrice", supplierRateNum.toString());
-        formData.append("markup", markupInPeso.toString());
+        formData.append("sellerPrice", finalSellerPrice.toString()); // ✅ Multiplied
+        formData.append("markup", finalMarkup.toString());           // ✅ Multiplied
         formData.append("duration", duration);
         formData.append("category", category === "Local Tour" ? "Local" : "International");
         formData.append("tourType", tourType);
@@ -528,6 +581,7 @@ const AddPackage = () => {
                 setTourType("private");
                 setPax("");
                 setMinPax("");
+                setPaxMode("solo"); // ✅ Reset paxMode
                 setFile(null);
                 setPreviewUrl(null);
                 setInclusions([""]);
@@ -621,6 +675,12 @@ const AddPackage = () => {
                                     markupType={markupType}
                                     toggleMarkupType={toggleMarkupType}
                                     price={price}
+                                    // ✅ NEW: Pax Mode Props
+                                    paxMode={paxMode}
+                                    onPaxModeChange={handlePaxModeChange}
+                                    tourType={tourType}
+                                    pax={pax}
+                                    minPax={minPax}
                                 />
                                 <InclusionsList
                                     inclusions={inclusions}
