@@ -3,7 +3,8 @@ import { X, Plane } from 'lucide-react';
 import './CurrencyModal.css';
 
 function CurrencyModal({ isOpen, onClose, currency, setCurrency }) {
-  if (!isOpen) return null;
+  // ✅ Modal disabled - no longer displayed
+  return null;
 
   return (
     <div className="modal-overlay">

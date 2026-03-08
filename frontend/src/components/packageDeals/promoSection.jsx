@@ -123,10 +123,6 @@ function PromoSection({ onBookNow }) {
 
   return (
     <section className="promo-destination-section">
-      <div className="section-title-header">
-        <h2 className="section-main-title">PROMO</h2>
-      </div>
-
       <div className="promo-carousel-wrapper">
         {promos.length > 1 && (
           <>

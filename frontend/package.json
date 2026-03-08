@@ -15,6 +15,7 @@
     "canvas-confetti": "^1.9.4",
     "date-fns": "^4.1.0",
     "dompurify": "^3.3.1",
+    "framer-motion": "^12.35.0",
     "html2canvas": "^1.4.1",
     "iso-country-currency": "^0.7.2",
     "lucide-react": "^0.553.0",

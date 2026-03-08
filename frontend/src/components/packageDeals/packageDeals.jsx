@@ -8,6 +8,8 @@ import './packageDeals.css';
 import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
 import toast, { Toaster } from 'react-hot-toast';
+import sampleGif from '../../../../backend/assets/sample.gif';
+import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 
 const LoginNoticeModal = ({ isOpen, onClose, onLogin }) => {
   if (!isOpen) return null;
@@ -139,6 +141,7 @@ function PackageDeals() {
 
   const [currency, setCurrency] = useState('PHP');        
   const exchangeRate = 58;
+  const [feedbackTrigger, setFeedbackTrigger] = useState(0);
 
   // 2705 Holds raw URL destination param until packages are loaded
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);
@@ -853,29 +856,6 @@ function PackageDeals() {
 
       <section className="top-section-bg">
         <div className="content-container">
-          <PromoSection onBookNow={scrollToPackages} />
-          <BrowseCategory 
-            title="Most Visited Destination"
-            categories={mostVisitedCategories}
-            selectedFilter={selectedFilter}
-            onFilterChange={setSelectedFilter}
-            onCategoryClick={(category) => {
-              if (!category) {
-                setSelectedDestinations([]);
-                setScopeFilter('all');
-              } else {
-                setPendingDestinationFilter({ name: category.name, source: 'card' });
-                setScopeFilter('all');
-              }
-              setShouldScrollToPackages(true);
-            }}
-          />
-        </div>
-      </section>
-
-      <div className="section-divider-orange"></div>
-      <section className="bottom-section-bg">
-        <div className="content-container">
           <AllPackages 
             packages={filteredPackages}
             categoryName={headerTitle} 
@@ -899,7 +879,39 @@ function PackageDeals() {
             onLoginRequired={handleLoginRequired}
             currency={currency}           
             exchangeRate={exchangeRate}     
-            setCurrency={setCurrency}  
+            setCurrency={setCurrency}
+            onPromoBookNow={scrollToPackages}
+          />
+        </div>
+      </section>
+
+      <img
+        src={sampleGif}
+        alt="mascot"
+        className="mascot-gif"
+        onClick={() => setFeedbackTrigger(prev => prev + 1)}
+      />
+
+      <FeedbackWidget triggerOpen={feedbackTrigger} />
+
+      <div className="section-divider-orange"></div>
+      <section className="bottom-section-bg">
+        <div className="content-container">
+          <BrowseCategory 
+            title="Most Visited Destination"
+            categories={mostVisitedCategories}
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+            onCategoryClick={(category) => {
+              if (!category) {
+                setSelectedDestinations([]);
+                setScopeFilter('all');
+              } else {
+                setPendingDestinationFilter({ name: category.name, source: 'card' });
+                setScopeFilter('all');
+              }
+              setShouldScrollToPackages(true);
+            }}
           />
         </div>
       </section>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import PackageCard from './packageCard';
 import CurrencyModal from './CurrencyModal';
+import PromoSection from './promoSection';
 import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, LogIn } from 'lucide-react';
 import './allPackages.css';
 
@@ -29,7 +30,8 @@ function AllPackages({
   onLoginRequired,
   currency = 'PHP',
   exchangeRate = 58,
-  setCurrency     
+  setCurrency,
+  onPromoBookNow
 }) {
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -191,7 +193,23 @@ function AllPackages({
         </div>
       </div>
 
-      <div className="all-packages-layout">
+      {onPromoBookNow && (
+        <div style={{ 
+          marginTop: '8px',
+          marginBottom: '8px',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
+        }}>
+          <PromoSection onBookNow={onPromoBookNow} />
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* LAYOUT with mascot hanging at the sidebar/content border      */}
+      {/* ============================================================ */}
+      <div className="all-packages-layout" style={{ position: 'relative' }}>
+
         <aside className={`side-filter ${isMobileFilterOpen ? 'mobile-open' : ''}`}>
           <button
             className={`mobile-filter-toggle ${isMobileFilterOpen ? 'active' : ''}`}

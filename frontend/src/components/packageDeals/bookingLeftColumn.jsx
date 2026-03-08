@@ -8,13 +8,105 @@ import {
 import PackageCustomizer from './PackageCustomizer';
 import './BookingLeftColumn.css';
 
+// ✅ Unique accent color per duration — WanderWave branded
+const DURATION_COLORS = {
+  '2D1N':  { top: '#c2410c', text: '#c2410c' },
+  '3D2N':  { top: '#ea580c', text: '#ea580c' },
+  '4D3N':  { top: '#1d4ed8', text: '#1d4ed8' },
+  '5D4N':  { top: '#dc2626', text: '#dc2626' },
+  '6D5N':  { top: '#b45309', text: '#b45309' },
+  '7D6N':  { top: '#15803d', text: '#15803d' },
+  '8D7N':  { top: '#7c3aed', text: '#7c3aed' },
+  '9D8N':  { top: '#0e7490', text: '#0e7490' },
+  '10D9N': { top: '#9f1239', text: '#9f1239' },
+};
+const DEFAULT_DURATION_COLOR = { top: '#ea580c', text: '#ea580c' };
+
+// ✅ Calendar icon badge — matches packageCard design
+const CalendarDurationBadge = ({ duration }) => {
+  const colors = DURATION_COLORS[duration] || DEFAULT_DURATION_COLOR;
+  const fontSize = duration.length >= 5 ? "11" : "12.5";
+  const gradId = `blc_grad_${duration}`;
+  const bodyGradId = `blc_bodygrad_${duration}`;
+  const ringGradId = `blc_ringgrad_${duration}`;
+  return (
+    <span className="blc-duration-calendar-badge" aria-label={duration}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 54 54"
+        className="blc-duration-calendar-svg"
+      >
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0.10" />
+          </linearGradient>
+          <linearGradient id={bodyGradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor="#dde3ea" />
+          </linearGradient>
+          <linearGradient id={ringGradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#e2e8f0" />
+            <stop offset="100%" stopColor="#94a3b8" />
+          </linearGradient>
+        </defs>
+
+        {/* Outer shadow */}
+        <rect x="3" y="9" width="48" height="43" rx="8" ry="8" fill="rgba(0,0,0,0.12)" />
+        {/* White/gray body */}
+        <rect x="2" y="8" width="48" height="43" rx="8" ry="8" fill={`url(#${bodyGradId})`} />
+        {/* Colored top header */}
+        <rect x="2" y="8" width="48" height="13" rx="8" ry="8" fill={colors.top} />
+        {/* Square off bottom of header */}
+        <rect x="2" y="14" width="48" height="7" fill={colors.top} />
+        {/* Shine on header */}
+        <rect x="2" y="8" width="48" height="13" rx="8" ry="8" fill={`url(#${gradId})`} />
+        {/* Separator line */}
+        <rect x="2" y="21" width="48" height="1" fill="rgba(0,0,0,0.08)" />
+        {/* LEFT ring */}
+        <rect x="9" y="1" width="8" height="14" rx="4" ry="4" fill="#64748b" />
+        <rect x="10" y="1.5" width="6" height="12" rx="3" ry="3" fill={`url(#${ringGradId})`} />
+        {/* RIGHT ring */}
+        <rect x="37" y="1" width="8" height="14" rx="4" ry="4" fill="#64748b" />
+        <rect x="38" y="1.5" width="6" height="12" rx="3" ry="3" fill={`url(#${ringGradId})`} />
+        {/* Duration text */}
+        <text
+          x="26"
+          y="38"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill={colors.text}
+          fontSize={fontSize}
+          fontWeight="900"
+          fontFamily="'Arial Black', Arial, sans-serif"
+          letterSpacing="0.3"
+        >
+          {duration}
+        </text>
+      </svg>
+    </span>
+  );
+};
+
+// ✅ Extracts duration code and rest of title
+const parseTitleDuration = (title) => {
+  if (!title) return { duration: null, restOfTitle: title };
+  const durationRegex = /(\d+D\d+N)/i;
+  const match = title.match(durationRegex);
+  if (!match) return { duration: null, restOfTitle: title };
+  const duration = match[0].toUpperCase();
+  const restOfTitle = title.replace(durationRegex, '').replace(/\s{2,}/g, ' ').trim();
+  return { duration, restOfTitle };
+};
+
 const BookingLeftColumn = ({
   pkg,
   currency = 'PHP',
   exchangeRate = 58,
   onCustomizationChange,
   timerExpired = false,
-  onGoBack         // ✅ ADDED: receive onGoBack from PackageBooking → PackageDeals
+  onGoBack,         // ✅ ADDED: receive onGoBack from PackageBooking → PackageDeals
+  paxCount = 2      // ✅ Lifted from right form — default 2 since base price is for 2 pax
 }) => {
   // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
@@ -55,7 +147,6 @@ const BookingLeftColumn = ({
       customizationDataFromChild.deductions > 0 ||
       customizationDataFromChild.additions > 0
     );
-    
     if (onCustomizationChange) {
       onCustomizationChange(customizationDataFromChild);
     }
@@ -79,13 +170,19 @@ const BookingLeftColumn = ({
   const activeBasePrice = timerExpired ? originalPriceWithMarkup : basePrice;
   const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
   const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
-  const displayPrice = adjustedActivePrice;
+
+  // ✅ 1 pax = 2×, 2 pax = 1×, 3 pax = 2×, 4 pax = 3×, etc.
+  const paxMultiplier = paxCount === 1 ? 2 : paxCount - 1;
+
+  const displayPrice = Math.round(adjustedActivePrice * paxMultiplier);
   const convertedDisplayPrice = convertPrice(displayPrice);
-  const adjustedOriginalPrice = originalPriceWithMarkup + customizationAdjustment;
+  const adjustedOriginalPrice = Math.round((originalPriceWithMarkup + customizationAdjustment) * paxMultiplier);
   const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
   const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
     ? Math.round(((adjustedOriginalPrice - displayPrice) / adjustedOriginalPrice) * 100)
     : 0;
+
+  const { duration, restOfTitle } = parseTitleDuration(pkg.name);
 
   return (
     <div className="blc-container">
@@ -104,51 +201,49 @@ const BookingLeftColumn = ({
           alt={pkg.name}
           className="blc-main-image"
         />
-
         {!timerExpired && discountPercentage > 0 && (
           <div className="blc-offer-badge-overlay">
             <Clock size={16} />
-            <span>
-              Limited Time Offer - Save {discountPercentage}%
-            </span>
+            <span>Limited Time Offer - Save {discountPercentage}%</span>
           </div>
         )}
       </div>
 
       <div className="blc-header-section">
-        <h1 className="blc-title">{pkg.name}</h1>
-        <div className="blc-price-timer-wrapper">
-          <div className="blc-price-section">
-            {!timerExpired && convertedOriginalPrice > convertedDisplayPrice && (
-              <span className="blc-price-original">
-                {currencySymbol}{convertedOriginalPrice.toLocaleString(undefined, {
+
+        {/* ✅ Badge left | Title + Price stacked right */}
+        <div className="blc-title-badge-row">
+          {duration && <CalendarDurationBadge duration={duration} />}
+          <div className="blc-badge-right-col">
+            <h1 className="blc-title">{restOfTitle || pkg.name}</h1>
+            <div className="blc-price-section">
+              {!timerExpired && convertedOriginalPrice > convertedDisplayPrice && (
+                <span className="blc-price-original">
+                  {currencySymbol}{convertedOriginalPrice.toLocaleString(undefined, {
+                    minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                    maximumFractionDigits: currency === 'USD' ? 2 : 0
+                  })}
+                </span>
+              )}
+              <span className="blc-price" style={{ color: !timerExpired ? '#f97316' : '#64748b' }}>
+                {currencySymbol}{convertedDisplayPrice.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
                 })}
               </span>
-            )}
-            <span className="blc-price" style={{
-              color: !timerExpired ? '#f97316' : '#64748b'
-            }}>
-              {currencySymbol}{convertedDisplayPrice.toLocaleString(undefined, {
-                minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                maximumFractionDigits: currency === 'USD' ? 2 : 0
-              })}
-            </span>
-            {isCustomized && (
-              <span className="blc-customized-badge">
-                <Settings size={14} /> Customized
-              </span>
-            )}
+              <span className="blc-price-pax">/{paxCount} pax</span>
+              {isCustomized && (
+                <span className="blc-customized-badge">
+                  <Settings size={14} /> Customized
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="blc-meta-row" style={{ marginTop: '10px' }}>
+        <div className="blc-meta-row">
           <div className="blc-meta-item">
             <MapPin size={18} color="#f97316" /> {pkg.location || pkg.destination}
-          </div>
-          <div className="blc-meta-item">
-            <Calendar size={18} color="#f97316" /> {pkg.duration}
           </div>
         </div>
 
