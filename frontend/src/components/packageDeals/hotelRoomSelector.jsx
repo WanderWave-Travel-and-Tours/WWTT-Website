@@ -287,14 +287,15 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
 
   const hasAutoSelectedRef = useRef(false);
 
-  // ✅ Auto-select Budget on initial load
+  // ✅ Auto-select Standard (merged Budget+Standard) on initial load
   useEffect(() => {
     if (roomTypes && roomTypes.length > 0 && !hasAutoSelectedRef.current) {
-      const budgetRoom = roomTypes.find(room => 
+      const standardRoom = roomTypes.find(room => 
+        room.type?.toLowerCase().includes('standard') ||
         room.type?.toLowerCase().includes('budget')
       );
       
-      const firstRoom = budgetRoom || roomTypes[0];
+      const firstRoom = standardRoom || roomTypes[0];
       
       if (!selectedRoomType || selectedRoomType !== firstRoom) {
         onRoomTypeChange(firstRoom);
@@ -316,7 +317,6 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
   const getRoomTypeIcon = (type) => {
     if (!type) return '🏨';
     const t = type.toLowerCase();
-    if (t.includes('budget')) return '💰';
     if (t.includes('standard')) return '🏨';
     if (t.includes('4')) return '⭐⭐⭐⭐';
     if (t.includes('5')) return '⭐⭐⭐⭐⭐';
@@ -327,16 +327,17 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
   const getCategoryDisplayName = (roomType) => {
     if (!roomType) return 'Hotels';
     const type = roomType.toLowerCase();
-    if (type.includes('budget')) return 'Budget Hotels';
     if (type.includes('standard')) return 'Standard Hotels';
     if (type.includes('4')) return '4-Star Hotels';
     if (type.includes('5')) return '5-Star Hotels';
     return `${roomType} Hotels`;
   };
 
-  // Group room types
+  // Group room types — Budget hotels are merged into Standard
   const groupedRoomTypes = roomTypes.reduce((acc, room) => {
-    const type = room.type || 'Standard';
+    const rawType = room.type || 'Standard';
+    // ✅ Merge budget into standard
+    const type = rawType.toLowerCase().includes('budget') ? 'Standard' : rawType;
     if (!acc[type]) {
       acc[type] = { 
         hotels: [], 
@@ -429,9 +430,7 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
                       {group.hotels.length} partner hotel{group.hotels.length !== 1 ? 's' : ''} available
                     </span>
                   </div>
-                  {roomType?.toUpperCase().includes('BUDGET') && !isSelected && (
-                    <span className="hrs-badge-value">BEST VALUE</span>
-                  )}
+
                 </div>
                 <div className="hrs-category-right">
                   {isSelected && <div className="hrs-badge-selected">✓ SELECTED</div>}

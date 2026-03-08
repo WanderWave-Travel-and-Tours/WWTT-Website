@@ -99,3 +99,33 @@
     padding-bottom: 60px;
   }
 }
+/* ============================================================ */
+/* MASCOT GIF — FIXED BOTTOM RIGHT                              */
+/* ============================================================ */
+.mascot-gif {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 220px;
+  height: auto;
+  z-index: 999;
+  pointer-events: all;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.mascot-gif:hover {
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .mascot-gif {
+    width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mascot-gif {
+    width: 110px;
+  }
+}

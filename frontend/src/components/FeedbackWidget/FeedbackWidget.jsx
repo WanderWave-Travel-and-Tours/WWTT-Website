@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, MessageSquare, Send, Star, Sparkles, Bug, FileText, Upload, CheckCircle } from 'lucide-react';
 import './FeedbackWidget.css';
 
-const FeedbackWidget = () => {
+const FeedbackWidget = ({ triggerOpen = 0 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [screenshot, setScreenshot] = useState(null);
@@ -20,6 +20,14 @@ const FeedbackWidget = () => {
     category: 'bug',
     message: ''
   });
+
+  // Open modal when triggered externally (e.g. from GIF click)
+  useEffect(() => {
+    if (triggerOpen > 0) {
+      setIsOpen(true);
+      setIsExpanded(false);
+    }
+  }, [triggerOpen]);
 
   // Handle clicking outside to collapse the button on mobile (Optional UX improvement)
   useEffect(() => {

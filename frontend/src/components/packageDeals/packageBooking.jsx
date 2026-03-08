@@ -10,6 +10,7 @@ import './packageBooking.css';
 
 function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) {
   const [customizationData, setCustomizationData] = useState(null);
+  const [paxCount, setPaxCount] = useState(1); // ✅ Lifted pax state — synced from BookingRightForm via onPaxChange
   
   // ============================================
   // TIMER & OFFER STATES (LIFTED FROM CHILD)
@@ -409,6 +410,7 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
               onCustomizationChange={handleCustomizationChange}
               timerExpired={timerExpired}
               onGoBack={onGoBack}
+              paxCount={paxCount}
             />
           </div>
 
@@ -420,7 +422,8 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
               customizationData={customizationData}
               effectivePackagePrice={effectivePackagePrice}
               effectivePackageTotal={effectivePackageTotal}
-              timerExpired={timerExpired} 
+              timerExpired={timerExpired}
+              onPaxChange={setPaxCount}
             />
           </div>
         </div>

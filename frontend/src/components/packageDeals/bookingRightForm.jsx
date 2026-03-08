@@ -20,12 +20,13 @@ const BookingRightForm = ({
   effectivePackageTotal = null,
   currency = 'PHP',
   exchangeRate = 58,
-  timerExpired: timerExpiredFromParent = false
+  timerExpired: timerExpiredFromParent = false,
+  onPaxChange = null
 }) => {
   const navigate = useNavigate();
   const { code } = useParams();
   const [selectedDate, setSelectedDate] = useState(null);
-  const [quantities, setQuantities] = useState({ adult: 1 });
+  const [quantities, setQuantities] = useState({ adult: 2 });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ Package preview before booking
@@ -341,6 +342,12 @@ if (savedState.formData.appliedPromo) {
   }, [pkg.destination, pkg.location]);
 
   useEffect(() => {
+    if (onPaxChange) {
+      onPaxChange(quantities.adult);
+    }
+  }, []);// eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     if (initialCustomizationData) {
       setCustomizationData(initialCustomizationData);
     }
@@ -365,27 +372,23 @@ if (savedState.formData.appliedPromo) {
   }, [quantities.adult]);
 
   const calculateBasePackageTotal = () => {
-  const basePax = quantities.adult || 1;
+  const basePax = quantities.adult || 2;
+
+  // ✅ 1 pax = 2×, 2 pax = 1×, 3 pax = 2×, 4 pax = 3×, etc.
+  const paxMultiplier = basePax === 1 ? 2 : basePax - 1;
   
-  // ✅ FIXED: Use customizationData.totalPrice which includes timer-aware pricing
   let effectivePrice;
   
   if (customizationData && customizationData.totalPrice !== undefined) {
-    // Use the totalPrice from PackageCustomizer (already includes timer-aware base + adjustments)
     effectivePrice = customizationData.totalPrice;
-    
   } else {
-    // Fallback: Calculate based on timer status
     const basePrice = pkg.price || 0;
     const originalPriceWithMarkup = Math.round(basePrice * 1.10);
     effectivePrice = timerExpired ? originalPriceWithMarkup : basePrice;
-    
   }
   
-  let basePackagePrice = effectivePrice * basePax;
+  let basePackagePrice = Math.round(effectivePrice * paxMultiplier);
   
-  // ✅ FIX: If package price is 0 or negative (all priced inclusions removed), return 0
-  // Don't add room upgrade price to an empty package
   if (basePackagePrice <= 0) {
     return 0;
   }
@@ -625,10 +628,14 @@ const handleApplyPromo = async () => {
   };
 
   const handleQuantity = (type, delta) => {
-    setQuantities(prev => ({
-      ...prev,
-      [type]: Math.max(1, Math.min(20, (prev[type] || 1) + delta))
-    }));
+    setQuantities(prev => {
+      const newVal = Math.max(1, Math.min(20, (prev[type] || 1) + delta));
+      const updated = { ...prev, [type]: newVal };
+      if (type === 'adult' && onPaxChange) {
+        onPaxChange(newVal);
+      }
+      return updated;
+    });
   };
 
   const changeMonth = (offset) => {
@@ -1261,6 +1268,29 @@ const handleNextPassenger = async (e) => {
           durationDays={durationDays}
           durationNights={durationNights}
         />
+      )}
+
+      {hotelData && hotelData.roomTypes && hotelData.roomTypes.length > 0 && (
+        <div style={{
+          background: '#f0fdf4',
+          border: '1px solid #86efac',
+          borderRadius: '10px',
+          padding: '12px 16px',
+          marginTop: '16px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '10px',
+          fontSize: '0.875rem',
+          color: '#166534',
+          lineHeight: '1.5'
+        }}>
+          <span style={{ fontSize: '1.1rem', marginTop: '1px' }}>💬</span>
+          <span>
+            <strong>Prefer a specific hotel?</strong> The accommodation listed above is our standard inclusion, but you're welcome to request your preferred hotel. 
+            Just <strong>contact us</strong> after booking and we'll do our best to arrange it for you.
+          </span>
+        </div>
       )}
 
       {selectedFlight && (
