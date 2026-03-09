@@ -1,5 +1,5 @@
 // src/components/PackageDeals/packageCard.jsx - WITH AUTOMATIC TIMER-BASED PRICING
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageHelper';
 import sampleGif from '../../../../backend/assets/sample.gif';
@@ -124,101 +124,15 @@ function PackageCard({
   isLoggedIn, 
   onLoginRequired 
 }) { 
-  const [timerExpired, setTimerExpired] = useState(false);
-  const [userIpAddress, setUserIpAddress] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
   const gifImgRef = useRef(null);
 
-  // ============================================================
-  // ✅ FETCH USER IP ADDRESS
-  // ============================================================
-  useEffect(() => {
-    const fetchIpAddress = async () => {
-      try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        setUserIpAddress(data.ip);
-      } catch (error) {
-        console.error('❌ Error fetching IP:', error);
-        setUserIpAddress('unknown');
-      }
-    };
-    fetchIpAddress();
-  }, []);
-
-  // ============================================================
-  // ✅ CHECK TIMER STATUS FROM LOCALSTORAGE (SAME AS BOOKINGRIGHTFORM)
-  // ============================================================
-  useEffect(() => {
-    if (!userIpAddress || !pkg.id) return;
-
-    const checkTimerStatus = () => {
-      const timerKey = `timer_${pkg.id}_${userIpAddress}`;
-      const storedTimer = localStorage.getItem(timerKey);
-
-      if (storedTimer) {
-        try {
-          const timerData = JSON.parse(storedTimer);
-          const now = Date.now();
-          const elapsed = now - timerData.startTime;
-          const remaining = Math.max(0, 900000 - elapsed); // 15 minutes = 900000ms
-
-          if (remaining > 0) {
-            setTimerExpired(false);
-          } else {
-            setTimerExpired(true);
-          }
-        } catch (error) {
-          console.error('Error parsing timer:', error);
-          setTimerExpired(false);
-        }
-      } else {
-        // No timer exists yet, so discount is still active
-        setTimerExpired(false);
-      }
-    };
-
-    // Check immediately
-    checkTimerStatus();
-
-    // Check every second to stay in sync
-    const interval = setInterval(checkTimerStatus, 1000);
-
-    return () => clearInterval(interval);
-  }, [userIpAddress, pkg.id]);
-
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
 
-  // ============================================================
-  // ✅ PRICE CALCULATION BASED ON TIMER STATUS
-  // ============================================================
-  let displayPrice = pkg.price;
-  let displayOriginalPrice = pkg.price;
-  let showDiscount = false;
-  let discountPercentage = 0;
-
-  if (timerExpired) {
-    // Timer expired - show 10% markup price (same as bookingRightForm)
-    displayPrice = Math.round(pkg.price * 1.10);
-    displayOriginalPrice = displayPrice;
-    showDiscount = false;
-    discountPercentage = 0;
-  } else {
-    // Timer active - show discounted price
-    displayPrice = pkg.price;
-    displayOriginalPrice = pkg.originalPrice || Math.round(pkg.price * 1.10);
-    showDiscount = true;
-    discountPercentage = Math.round((1 - pkg.price / displayOriginalPrice) * 100);
-  }
-
-  // Apply currency conversion
-  const convertedPrice = currency === 'PHP' 
-    ? displayPrice 
-    : ((displayPrice / exchangeRate) * 1.30);
-
-  const convertedOriginalPrice = currency === 'PHP'
-    ? displayOriginalPrice
-    : ((displayOriginalPrice / exchangeRate) * 1.30);
+  // Apply currency conversion for fallback base price
+  const convertedPrice = currency === 'PHP'
+    ? pkg.price
+    : ((pkg.price / exchangeRate) * 1.30);
 
   // ============================================================
   // ✅ SOLO & MULTIPLE PAX PRICES — directly from database fields
@@ -345,25 +259,6 @@ function PackageCard({
       >
         <Heart strokeWidth={2.5} fill={isFavorite ? 'currentColor' : 'none'} />
       </button>
-
-      {/* ✅ SHOW DISCOUNT BADGE ONLY IF TIMER NOT EXPIRED */}
-      {showDiscount && discountPercentage > 0 && (
-        <div className="discount-badge" style={{
-          position: 'absolute',
-          top: '15px',
-          right: '15px',
-          backgroundColor: '#FF8C00',
-          color: 'white',
-          padding: '6px 12px',
-          borderRadius: '20px',
-          fontWeight: '700',
-          fontSize: '13px',
-          zIndex: 2,
-          boxShadow: '0 2px 8px rgba(255, 140, 0, 0.4)'
-        }}>
-          {discountPercentage}% OFF
-        </div>
-      )}
 
       <div className="card-image">
         <img 
