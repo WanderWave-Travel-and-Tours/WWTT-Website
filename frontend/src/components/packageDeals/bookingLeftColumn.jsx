@@ -10,15 +10,15 @@ import './BookingLeftColumn.css';
 
 // ✅ Unique accent color per duration — WanderWave branded
 const DURATION_COLORS = {
-  '2D1N':  { top: '#c2410c', text: '#c2410c' },
-  '3D2N':  { top: '#ea580c', text: '#ea580c' },
-  '4D3N':  { top: '#1d4ed8', text: '#1d4ed8' },
-  '5D4N':  { top: '#dc2626', text: '#dc2626' },
-  '6D5N':  { top: '#b45309', text: '#b45309' },
-  '7D6N':  { top: '#15803d', text: '#15803d' },
-  '8D7N':  { top: '#7c3aed', text: '#7c3aed' },
-  '9D8N':  { top: '#0e7490', text: '#0e7490' },
-  '10D9N': { top: '#9f1239', text: '#9f1239' },
+  '2D1N':  { top: '#334155', text: '#334155' },  // dark slate
+  '3D2N':  { top: '#ea580c', text: '#ea580c' },  // orange
+  '4D3N':  { top: '#1d4ed8', text: '#1d4ed8' },  // blue
+  '5D4N':  { top: '#dc2626', text: '#dc2626' },  // red
+  '6D5N':  { top: '#b45309', text: '#b45309' },  // amber
+  '7D6N':  { top: '#15803d', text: '#15803d' },  // green
+  '8D7N':  { top: '#7c3aed', text: '#7c3aed' },  // purple
+  '9D8N':  { top: '#0e7490', text: '#0e7490' },  // cyan
+  '10D9N': { top: '#9f1239', text: '#9f1239' },  // rose
 };
 const DEFAULT_DURATION_COLOR = { top: '#ea580c', text: '#ea580c' };
 
@@ -106,7 +106,7 @@ const BookingLeftColumn = ({
   onCustomizationChange,
   timerExpired = false,
   onGoBack,         // ✅ ADDED: receive onGoBack from PackageBooking → PackageDeals
-  paxCount = 2      // ✅ Lifted from right form — default 2 since base price is for 2 pax
+  paxCount = 1      // ✅ Lifted from right form — price multiplies directly per pax
 }) => {
   // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
@@ -171,32 +171,14 @@ const BookingLeftColumn = ({
   const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
   const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
 
-  // ✅ Solo pax: use soloPaxPrice directly (flat total, no multiplier)
-  // 1 pax = soloPaxPrice (if set), else fallback to price×2
-  // 2 pax = price×1, 3 pax = price×2, 4 pax = price×3, etc.
-  const hasSoloPaxPrice = paxCount === 1 && pkg.soloPaxPrice != null;
-  const soloActivePrice = hasSoloPaxPrice
-    ? (timerExpired ? Math.round(pkg.soloPaxPrice * 1.10) : pkg.soloPaxPrice) + customizationAdjustment
-    : null;
-
-  const paxMultiplier = paxCount === 1 ? 2 : paxCount - 1;
-
-  const displayPrice = hasSoloPaxPrice
-    ? Math.round(soloActivePrice)
-    : Math.round(adjustedActivePrice * paxMultiplier);
-
+  // ✅ Price multiplies directly per pax — 1 pax = 1×price, 2 pax = 2×price, etc.
+  const displayPrice = Math.round(adjustedActivePrice * paxCount);
   const convertedDisplayPrice = convertPrice(displayPrice);
 
-  // ✅ Original (strikethrough) price for solo pax
-  const soloOriginalPrice = hasSoloPaxPrice
-    ? Math.round(Math.round(pkg.soloPaxPrice * 1.10) + customizationAdjustment)
-    : null;
-
-  const adjustedOriginalPrice = hasSoloPaxPrice
-    ? soloOriginalPrice
-    : Math.round((originalPriceWithMarkup + customizationAdjustment) * paxMultiplier);
-
+  // ✅ Original (strikethrough) price — same straight multiplication
+  const adjustedOriginalPrice = Math.round((originalPriceWithMarkup + customizationAdjustment) * paxCount);
   const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
+
   const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
     ? Math.round(((adjustedOriginalPrice - displayPrice) / adjustedOriginalPrice) * 100)
     : 0;

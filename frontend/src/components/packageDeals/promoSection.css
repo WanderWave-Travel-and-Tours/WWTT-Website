@@ -75,7 +75,7 @@
   width: 100%;
   overflow: hidden;
   border-radius: 24px;
-  min-height: 320px; 
+  min-height: 220px; 
 }
 
 .promo-slide {
@@ -100,7 +100,7 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   display: flex;
-  min-height: 340px;
+  min-height: 240px;
   position: relative;
   overflow: hidden;
   border-radius: 24px;
@@ -142,13 +142,13 @@
 
 .card-details-side {
   flex: 1;
-  padding: 40px 45px;
+  padding: 24px 32px;
   background: linear-gradient(135deg, #001b3e 0%, #003366 100%);
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: -15px;
+  gap: 4px;
+  margin-top: 0;
 }
 
 .card-details-side::before {
@@ -173,7 +173,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .deal-type-badge {
@@ -218,12 +218,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px; 
-  margin-bottom: 20px; 
+  gap: 6px; 
+  margin-bottom: 10px; 
 }
 
 .promo-title {
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   font-weight: 900;
   color: white;
   margin: 0;
@@ -273,7 +273,7 @@
   z-index: 2;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  padding: 10px;
+  padding: 8px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   margin-top: auto; 
@@ -301,7 +301,7 @@
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 140, 0, 0.3);
   border-radius: 12px;
-  padding: 14px 20px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -309,7 +309,7 @@
 }
 
 .code-value {
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: white;
   font-family: 'Courier New', monospace;

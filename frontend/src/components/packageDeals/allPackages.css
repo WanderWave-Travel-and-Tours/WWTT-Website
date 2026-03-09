@@ -236,7 +236,7 @@
 }
 
 @media (min-width: 1025px) {
-  .packages-filter-bar-container { margin-top: -125px; }
+  .packages-filter-bar-container { margin-top: -80px; }
 }
 
 .packages-scope-filter-container {
