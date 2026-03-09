@@ -62,10 +62,6 @@ const BookingRightForm = ({
     if (customizationData && customizationData.totalPrice !== undefined) {
       return customizationData.totalPrice;
     }
-    const pax = quantities.adult || 2;
-    if (pax === 1 && pkg.soloPaxPrice != null) {
-      return timerExpired ? Math.round(pkg.soloPaxPrice * 1.10) : pkg.soloPaxPrice;
-    }
     const bp = pkg.price || 0;
     return timerExpired ? Math.round(bp * 1.10) : bp;
   })();
@@ -376,29 +372,25 @@ if (savedState.formData.appliedPromo) {
   }, [quantities.adult]);
 
   const calculateBasePackageTotal = () => {
-  const basePax = quantities.adult || 2;
-
-  // ✅ 1 pax = soloPaxPrice (flat, no multiplier), 2 pax = 1×, 3 pax = 2×, 4 pax = 3×, etc.
-  const paxMultiplier = basePax === 1 ? 1 : basePax - 1;
+  const basePax = quantities.adult || 1;
   
+  // ✅ FIXED: Use customizationData.totalPrice which includes timer-aware pricing
   let effectivePrice;
   
   if (customizationData && customizationData.totalPrice !== undefined) {
+    // Use the totalPrice from PackageCustomizer (already includes timer-aware base + adjustments)
     effectivePrice = customizationData.totalPrice;
-  } else if (basePax === 1 && pkg.soloPaxPrice != null) {
-    // ✅ Solo booking: use soloPaxPrice directly (already the flat total for 1 pax)
-    const originalSoloWithMarkup = Math.round(pkg.soloPaxPrice * 1.10);
-    effectivePrice = timerExpired ? originalSoloWithMarkup : pkg.soloPaxPrice;
   } else {
+    // Fallback: Calculate based on timer status
     const basePrice = pkg.price || 0;
     const originalPriceWithMarkup = Math.round(basePrice * 1.10);
     effectivePrice = timerExpired ? originalPriceWithMarkup : basePrice;
   }
   
-  let basePackagePrice = basePax === 1 && pkg.soloPaxPrice != null
-    ? Math.round(effectivePrice)           // soloPaxPrice is already the flat total
-    : Math.round(effectivePrice * paxMultiplier);
+  // ✅ Price adds/subtracts directly per pax — 1 pax = 1×price, 2 pax = 2×price, etc.
+  let basePackagePrice = effectivePrice * basePax;
   
+  // ✅ FIX: If package price is 0 or negative (all priced inclusions removed), return 0
   if (basePackagePrice <= 0) {
     return 0;
   }
@@ -813,22 +805,11 @@ const handleApplyPromo = async () => {
     });
   };
 
-  // ✅ ADD THIS NEW HELPER FUNCTION RIGHT BEFORE handleNextPassenger (around line 725)
+  // ✅ Returns the correct per-pax price based on timer status and customization
 const getTimerAwarePrice = () => {
-  const basePax = quantities.adult || 2;
-  
   // Check if customization is active
   if (customizationData && customizationData.totalPrice !== undefined) {
-    // Use customization total (already includes timer-aware base + adjustments)
     return customizationData.totalPrice;
-  }
-  
-  // ✅ Solo pax: use soloPaxPrice if set
-  if (basePax === 1 && pkg.soloPaxPrice != null) {
-    if (timerExpired) {
-      return Math.round(pkg.soloPaxPrice * 1.10);
-    }
-    return pkg.soloPaxPrice;
   }
   
   const basePrice = pkg.price || 0;
@@ -1493,9 +1474,7 @@ const handleNextPassenger = async (e) => {
       <div className="brf-booking-footer">
         <div className="brf-total-row">
           <span className="brf-total-label">
-            {quantities.adult === 1 && pkg.soloPaxPrice != null
-              ? 'Solo Pax Price'
-              : 'Package Total'}
+            Package Total
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {!timerExpired && (

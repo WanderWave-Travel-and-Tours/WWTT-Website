@@ -1,21 +1,20 @@
 // src/components/PackageDeals/packageCard.jsx - WITH AUTOMATIC TIMER-BASED PRICING
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageHelper';
-import sampleGif from '../../../../backend/assets/sample.gif';
 import './packageCard.css';
 
 // ✅ Unique accent color per duration — WanderWave branded
 const DURATION_COLORS = {
-  '2D1N':  { top: '#7c3aed', text: '#7c3aed' },  // deep purple
-  '3D2N':  { top: '#ea580c', text: '#ea580c' },  // original — unchanged
-  '4D3N':  { top: '#1e40af', text: '#1e40af' },  // deep blue
-  '5D4N':  { top: '#b91c1c', text: '#b91c1c' },  // dark red
+  '2D1N':  { top: '#334155', text: '#334155' },  // dark slate
+  '3D2N':  { top: '#f97316', text: '#ea580c' },  // orange
+  '4D3N':  { top: '#1d4ed8', text: '#1d4ed8' },  // blue
+  '5D4N':  { top: '#dc2626', text: '#dc2626' },  // red
   '6D5N':  { top: '#0f766e', text: '#0f766e' },  // dark teal
   '7D6N':  { top: '#065f46', text: '#065f46' },  // dark green
-  '8D7N':  { top: '#4c1d95', text: '#4c1d95' },  // deep violet
-  '9D8N':  { top: '#164e63', text: '#164e63' },  // dark cyan
-  '10D9N': { top: '#831843', text: '#831843' },  // dark rose
+  '8D7N':  { top: '#6d28d9', text: '#5b21b6' },  // violet
+  '9D8N':  { top: '#0369a1', text: '#075985' },  // deep sky blue
+  '10D9N': { top: '#9f1239', text: '#881337' },  // dark rose
 };
 const DEFAULT_DURATION_COLOR = { top: '#ea580c', text: '#ea580c' };
 
@@ -124,9 +123,6 @@ function PackageCard({
   isLoggedIn, 
   onLoginRequired 
 }) { 
-  const [isHovered, setIsHovered] = useState(false);
-  const gifImgRef = useRef(null);
-
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
 
   // Apply currency conversion for fallback base price
@@ -237,15 +233,6 @@ function PackageCard({
 
   return (
     <div className="package-card"
-      onMouseEnter={() => {
-        setIsHovered(true);
-        // Synchronously reset gif — bypasses React re-render delay
-        if (gifImgRef.current) {
-          gifImgRef.current.src = '';
-          gifImgRef.current.src = `${sampleGif}?v=${Date.now()}`;
-        }
-      }}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <button 
         className={`favorite-button ${isFavorite ? 'active' : ''}`}
@@ -271,26 +258,6 @@ function PackageCard({
         />
       </div>
 
-      {/* ✅ SAMPLE GIF — appears on card hover, resets playback on every hover */}
-      <img
-        ref={gifImgRef}
-        src={sampleGif}
-        alt=""
-        style={{
-          position: 'absolute',
-          right: '-22px',
-          bottom: '60px',
-          width: '160px',
-          height: '160px',
-          objectFit: 'contain',
-          zIndex: 4,
-          pointerEvents: 'none',
-          filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.30))',
-          opacity: isHovered ? 1 : 0,
-          transform: isHovered ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.85)',
-          transition: 'opacity 0.3s ease, transform 0.3s ease',
-        }}
-      />
       
       <div className="card-body">
         <div>
