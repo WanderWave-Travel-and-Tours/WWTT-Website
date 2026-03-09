@@ -278,19 +278,32 @@ const AddPackage = () => {
     };
 
     // --- PRICING ---
+
+    // ✅ Central price computation — applies pax multiplier based on paxMode
+    const computePrice = (supplierRateVal, markupVal, markupTypeVal, paxModeVal, tourTypeVal, paxVal, minPaxVal) => {
+        const supplierRateNum = Number(supplierRateVal) || 0;
+        const markupValueNum = Number(markupVal) || 0;
+
+        const markupInPeso = markupTypeVal === "percentage"
+            ? (supplierRateNum * markupValueNum) / 100
+            : markupValueNum;
+
+        const basePerPax = supplierRateNum + markupInPeso;
+
+        // Solo = ×1 (price for 1 person, no doubling)
+        // Multiple = ×actual pax count from Basic Info
+        const multiplier = paxModeVal === 'solo'
+            ? 1
+            : (tourTypeVal === 'private' ? parseInt(paxVal) || 1 : parseInt(minPaxVal) || 1);
+
+        return Math.round(basePerPax * multiplier * 100) / 100;
+    };
+
     const handleSupplierRateChange = (e) => {
         const value = e.target.value;
         if (value === "" || !isNaN(value)) {
             setSupplierRate(value);
-
-            const supplierRateNum = Number(value) || 0;
-            const markupValueNum = Number(markupValue) || 0;
-
-            const markupInPeso = markupType === "percentage"
-                ? (supplierRateNum * markupValueNum) / 100
-                : markupValueNum;
-
-            const total = Math.round((supplierRateNum + markupInPeso) * 100) / 100;
+            const total = computePrice(value, markupValue, markupType, paxMode, tourType, pax, minPax);
             setPrice(total.toString());
         }
     };
@@ -310,16 +323,17 @@ const AddPackage = () => {
     };
 
     const updatePriceFromMarkup = (mValue, mType) => {
-        const supplierRateNum = Number(supplierRate) || 0;
-        const markupValueNum = Number(mValue) || 0;
-
-        const markupInPeso = mType === "percentage"
-            ? (supplierRateNum * markupValueNum) / 100
-            : markupValueNum;
-
-        const total = Math.round((supplierRateNum + markupInPeso) * 100) / 100;
+        const total = computePrice(supplierRate, mValue, mType, paxMode, tourType, pax, minPax);
         setPrice(total.toString());
     };
+
+    // ✅ Recompute price whenever paxMode, tourType, pax, or minPax changes
+    useEffect(() => {
+        if (supplierRate) {
+            const total = computePrice(supplierRate, markupValue, markupType, paxMode, tourType, pax, minPax);
+            setPrice(total.toString());
+        }
+    }, [paxMode, tourType]); // ✅ Only recompute on pricing mode or tour type change — NOT on pax/minPax input
 
     // ✅ Solo Pax Price handler — accepts numbers only, updates soloPaxPrice state
     const handleSoloPaxPriceChange = (e) => {
@@ -498,8 +512,17 @@ const AddPackage = () => {
             : markupValueNum;
         markupInPeso = Math.round(markupInPeso * 100) / 100;
 
+        // ✅ Build the full formatted title to send to DB: "{duration} {title} (Solo)" or "{duration} {title} (min of 2 pax)"
+        const paxSuffix = paxMode === 'solo' ? ' (Solo)' : ' (min of 2 pax)';
+        const baseTitle = duration && title
+            ? `${duration} ${title}`
+            : duration && !title
+            ? `${duration} Package Name`
+            : title || 'Package Name';
+        const formattedTitle = `${baseTitle}${paxSuffix}`;
+
         const formData = new FormData();
-        formData.append("title", title);
+        formData.append("title", formattedTitle);
         formData.append("destination", destination);
         formData.append("sellerPrice", supplierRateNum.toString());
         formData.append("markup", markupInPeso.toString());
@@ -697,6 +720,7 @@ const AddPackage = () => {
                                     tourType={tourType}
                                     pax={pax}
                                     minPax={minPax}
+                                    paxMode={paxMode}
                                     // ✅ Pass solo and multiple pax prices to PackagePreview
                                     soloPaxPrice={soloPaxPrice}
                                     multiplePaxPrice={multiplePaxPrice}

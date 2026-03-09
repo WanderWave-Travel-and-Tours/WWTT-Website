@@ -50,8 +50,9 @@ const PricingCalculator = ({
     });
 
     // Compute current multiplier for display
+    // Solo = ×1 (base price for 1 person), Multiple = ×actual pax count from Basic Info
     const currentMultiplier = paxMode === 'solo'
-        ? 2
+        ? 1
         : (tourType === 'private' ? parseInt(pax) || 1 : parseInt(minPax) || 1);
 
     // Pax label for hint text
@@ -92,7 +93,7 @@ const PricingCalculator = ({
                     </div>
                     <span className="apkg-pax-hint">
                         {paxMode === 'solo'
-                            ? '💡 Solo rate — supplier rate and markup are doubled (×2)'
+                            ? '💡 Solo rate — base price for a single person booking (×1)'
                             : `📋 Based on ${paxLabel} from Basic Info`
                         }
                     </span>
@@ -245,7 +246,7 @@ const PricingCalculator = ({
                         {/* Per-pax note */}
                         {supplierRate && perPaxAmount > 0 && (
                             <div className="apkg-per-pax-note">
-                                ₱{perPaxAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} base rate × {currentMultiplier} {paxMode === 'solo' ? '(solo ×2)' : `pax`}
+                                ₱{perPaxAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} base rate × {currentMultiplier} {paxMode === 'solo' ? '(solo ×1)' : `pax`}
                             </div>
                         )}
                     </div>

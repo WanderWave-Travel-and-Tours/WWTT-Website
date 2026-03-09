@@ -13,7 +13,9 @@ const PackagePreview = ({
     inclusions, itinerary, tourType, pax, minPax,
     // ✅ Pax pricing props
     soloPaxPrice,
-    multiplePaxPrice
+    multiplePaxPrice,
+    // ✅ Pricing mode — needed to build the preview title suffix
+    paxMode,
 }) => {
     
     const activeInclusionsCount = inclusions.filter((i) => i.trim()).length;
@@ -27,6 +29,22 @@ const PackagePreview = ({
         : "0";
 
     const hasPaxPricing = soloPaxPrice || multiplePaxPrice;
+
+    // ✅ Build the pax suffix for the preview title
+    // Solo mode   → "(Solo)"
+    // Multiple    → always "(min of 2 pax)" hardcoded
+    const paxSuffix = paxMode === 'solo'
+        ? ' (Solo)'
+        : ' (min of 2 pax)';
+
+    // ✅ Full preview title: "{duration} {title} {paxSuffix}"
+    const baseTitle = duration && title
+        ? `${duration} ${title}`
+        : duration && !title
+        ? `${duration} Package Name`
+        : title || 'Package Name';
+
+    const previewTitle = `${baseTitle}${paxSuffix}`;
 
     return (
         <div className="apkg-preview">
@@ -53,11 +71,7 @@ const PackagePreview = ({
                         )}
                     </div>
                     <h3 className="apkg-card-title">
-                        {duration && title
-                            ? `${duration} ${title}`
-                            : duration && !title
-                            ? `${duration} Package Name`
-                            : title || "Package Name"}
+                        {previewTitle}
                     </h3>
                     <p className="apkg-card-location">
                         <IconLocation />
