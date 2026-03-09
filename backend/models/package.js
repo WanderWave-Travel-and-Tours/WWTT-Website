@@ -11,7 +11,7 @@ const PackageSchema = new mongoose.Schema({
     destination: { type: String, required: true },
     sellerPrice: { type: Number, required: true },
     
-    // ✅ Markup Type Field (NEW)
+    // ✅ Markup Type Field
     markupType: { 
         type: String, 
         enum: ['percentage', 'fixed'], 
@@ -34,11 +34,10 @@ const PackageSchema = new mongoose.Schema({
         default: null,
         validate: {
             validator: function(value) {
-                // Only validate if tourType is private
                 if (this.tourType === 'private') {
                     return value != null && value >= 1;
                 }
-                return true; // No validation for joiners
+                return true;
             },
             message: 'Pax is required for private tours and must be at least 1'
         }
@@ -48,15 +47,21 @@ const PackageSchema = new mongoose.Schema({
         default: null,
         validate: {
             validator: function(value) {
-                // Only validate if tourType is joiners
                 if (this.tourType === 'joiners') {
                     return value != null && value >= 1;
                 }
-                return true; // No validation for private tours
+                return true;
             },
             message: 'Minimum pax is required for joiner tours and must be at least 1'
         }
     },
+
+    // ✅ Pax Pricing Fields
+    // soloPaxPrice  — custom selling price set by admin for a 1-person (solo) booking
+    // multiplePaxPrice — custom selling price set by admin for a group/multiple-person booking
+    // null means no custom price was set for that booking type
+    soloPaxPrice: { type: Number, default: null, set: (v) => (v === '' || v === undefined) ? null : Number(v) },
+    multiplePaxPrice: { type: Number, default: null, set: (v) => (v === '' || v === undefined) ? null : Number(v) },
     
     image: { type: String },
     imagePublicId: {
@@ -79,15 +84,13 @@ const PackageSchema = new mongoose.Schema({
     
 }, { timestamps: true });
 
-// ✅ UPDATED PRE-SAVE HOOK: Calculate price based on markupType
+// ✅ PRE-SAVE HOOK: Calculate price based on markupType, clear opposing pax fields
 PackageSchema.pre('save', function(next) {
     // Calculate final price based on markup type
     if (this.markupType === 'percentage') {
-        // If percentage, calculate the markup amount then add to seller price
         const markupAmount = (this.sellerPrice * this.markup) / 100;
         this.price = this.sellerPrice + markupAmount;
     } else {
-        // If fixed, just add markup directly
         this.price = this.sellerPrice + this.markup;
     }
     

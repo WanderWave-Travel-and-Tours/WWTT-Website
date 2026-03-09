@@ -10,7 +10,10 @@ const IconLocation = () => (
 
 const PackagePreview = ({ 
     previewUrl, category, title, destination, price, duration, 
-    inclusions, itinerary, tourType, pax, minPax 
+    inclusions, itinerary, tourType, pax, minPax,
+    // ✅ Pax pricing props
+    soloPaxPrice,
+    multiplePaxPrice
 }) => {
     
     const activeInclusionsCount = inclusions.filter((i) => i.trim()).length;
@@ -22,6 +25,8 @@ const PackagePreview = ({
     const formattedPrice = price 
         ? Number(price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : "0";
+
+    const hasPaxPricing = soloPaxPrice || multiplePaxPrice;
 
     return (
         <div className="apkg-preview">
@@ -82,11 +87,89 @@ const PackagePreview = ({
                             Minimum {minPax} pax required
                         </p>
                     )}
+
+                    {/* ✅ Pax Pricing Preview */}
+                    {hasPaxPricing && (
+                        <div style={{
+                            marginTop: '10px',
+                            padding: '10px 12px',
+                            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px'
+                        }}>
+                            <span style={{
+                                fontSize: '10px',
+                                fontWeight: '800',
+                                color: '#001F3F',
+                                letterSpacing: '1.5px',
+                                textTransform: 'uppercase'
+                            }}>
+                                Pax Pricing
+                            </span>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                {soloPaxPrice && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                        background: '#fff',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '6px',
+                                        padding: '5px 10px',
+                                        flex: '1',
+                                        minWidth: '100px'
+                                    }}>
+                                        <span style={{ fontSize: '13px' }}>👤</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>SOLO</span>
+                                            <span style={{ 
+                                                fontSize: '13px', 
+                                                fontWeight: '900', 
+                                                color: '#001F3F',
+                                                fontFamily: "'Arial Black', sans-serif"
+                                            }}>
+                                                ₱{Number(soloPaxPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                                {multiplePaxPrice && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                        background: '#fff',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '6px',
+                                        padding: '5px 10px',
+                                        flex: '1',
+                                        minWidth: '100px'
+                                    }}>
+                                        <span style={{ fontSize: '13px' }}>👥</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>MULTIPLE</span>
+                                            <span style={{ 
+                                                fontSize: '13px', 
+                                                fontWeight: '900', 
+                                                color: '#001F3F',
+                                                fontFamily: "'Arial Black', sans-serif"
+                                            }}>
+                                                ₱{Number(multiplePaxPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     
                     <div className="apkg-card-divider"></div>
                     <div className="apkg-card-meta">
                         <div>
-                            <span>Price</span>
+                            <span>Base Price</span>
                             <strong>
                                 ₱{formattedPrice}
                             </strong>

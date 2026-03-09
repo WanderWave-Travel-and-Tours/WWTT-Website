@@ -171,12 +171,31 @@ const BookingLeftColumn = ({
   const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
   const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
 
-  // ✅ 1 pax = 2×, 2 pax = 1×, 3 pax = 2×, 4 pax = 3×, etc.
+  // ✅ Solo pax: use soloPaxPrice directly (flat total, no multiplier)
+  // 1 pax = soloPaxPrice (if set), else fallback to price×2
+  // 2 pax = price×1, 3 pax = price×2, 4 pax = price×3, etc.
+  const hasSoloPaxPrice = paxCount === 1 && pkg.soloPaxPrice != null;
+  const soloActivePrice = hasSoloPaxPrice
+    ? (timerExpired ? Math.round(pkg.soloPaxPrice * 1.10) : pkg.soloPaxPrice) + customizationAdjustment
+    : null;
+
   const paxMultiplier = paxCount === 1 ? 2 : paxCount - 1;
 
-  const displayPrice = Math.round(adjustedActivePrice * paxMultiplier);
+  const displayPrice = hasSoloPaxPrice
+    ? Math.round(soloActivePrice)
+    : Math.round(adjustedActivePrice * paxMultiplier);
+
   const convertedDisplayPrice = convertPrice(displayPrice);
-  const adjustedOriginalPrice = Math.round((originalPriceWithMarkup + customizationAdjustment) * paxMultiplier);
+
+  // ✅ Original (strikethrough) price for solo pax
+  const soloOriginalPrice = hasSoloPaxPrice
+    ? Math.round(Math.round(pkg.soloPaxPrice * 1.10) + customizationAdjustment)
+    : null;
+
+  const adjustedOriginalPrice = hasSoloPaxPrice
+    ? soloOriginalPrice
+    : Math.round((originalPriceWithMarkup + customizationAdjustment) * paxMultiplier);
+
   const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
   const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
     ? Math.round(((adjustedOriginalPrice - displayPrice) / adjustedOriginalPrice) * 100)

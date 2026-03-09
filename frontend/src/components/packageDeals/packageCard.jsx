@@ -188,7 +188,7 @@ function PackageCard({
   }, [userIpAddress, pkg.id]);
 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
-  
+
   // ============================================================
   // ✅ PRICE CALCULATION BASED ON TIMER STATUS
   // ============================================================
@@ -221,20 +221,18 @@ function PackageCard({
     : ((displayOriginalPrice / exchangeRate) * 1.30);
 
   // ============================================================
-  // ✅ SOLO PRICE — double the base price, with currency conversion
+  // ✅ SOLO & MULTIPLE PAX PRICES — directly from database fields
   // ============================================================
-  const soloBasePrice = pkg.price * 2;
-  const convertedSoloPrice = currency === 'PHP'
-    ? soloBasePrice
-    : ((soloBasePrice / exchangeRate) * 1.30);
+  const hasSoloPaxPrice = pkg.soloPaxPrice != null;
+  const hasMultiplePaxPrice = pkg.multiplePaxPrice != null;
 
-  // ============================================================
-  // ✅ SELLER RATE (MARKUP) PRICE — 10% markup on base price
-  // ============================================================
-  const sellerRateBasePrice = Math.round(pkg.price * 1.10);
-  const convertedSellerRatePrice = currency === 'PHP'
-    ? sellerRateBasePrice
-    : ((sellerRateBasePrice / exchangeRate) * 1.30);
+  const convertedSoloPrice = hasSoloPaxPrice
+    ? (currency === 'PHP' ? pkg.soloPaxPrice : ((pkg.soloPaxPrice / exchangeRate) * 1.30))
+    : null;
+
+  const convertedMultiplePaxPrice = hasMultiplePaxPrice
+    ? (currency === 'PHP' ? pkg.multiplePaxPrice : ((pkg.multiplePaxPrice / exchangeRate) * 1.30))
+    : null;
 
   // ============================================================
   // PAX EXTRACTION LOGIC
@@ -420,47 +418,48 @@ function PackageCard({
 
         <div className="card-footer">
 
-          {/* ✅ DUAL PRICE DISPLAY: Solo (double) + Seller Rate (markup) */}
+          {/* ✅ DUAL PRICE DISPLAY: Solo + Multiple Pax — from DB fields */}
           <div className="price-info">
 
-            {/* ── SOLO PRICE (2×) ── */}
-            <div className="price-block">
-              <span className="price-label">Solo</span>
-
-              {/* Strikethrough only shown while timer is active */}
-              {showDiscount && discountPercentage > 0 && (
-                <div className="price-original">
-                  {currencySymbol}{formatPrice(convertedOriginalPrice * 2)}
+            {/* ── SOLO PRICE ── */}
+            {hasSoloPaxPrice && (
+              <div className="price-block">
+                <span className="price-label">Solo</span>
+                <div className="price-amount">
+                  <span className="currency">{currencySymbol}</span>
+                  <span className="price-value">{formatPrice(convertedSoloPrice)}</span>
                 </div>
-              )}
-
-              <div className="price-amount">
-                <span className="currency">{currencySymbol}</span>
-                <span className="price-value">{formatPrice(convertedSoloPrice)}</span>
               </div>
-            </div>
+            )}
 
-            {/* ── DIVIDER ── */}
-            <div className="price-block-divider" />
+            {/* ── DIVIDER — only show if both prices exist ── */}
+            {hasSoloPaxPrice && hasMultiplePaxPrice && (
+              <div className="price-block-divider" />
+            )}
 
-            {/* ── SELLER RATE / MARKUP PRICE ── */}
-            <div className="price-block">
-              <span className="price-label">2 PAX ABOVE</span>
-
-              {/* Strikethrough only shown while timer is active */}
-              {showDiscount && discountPercentage > 0 && (
-                <div className="price-original">
-                  {currencySymbol}{formatPrice(convertedOriginalPrice)}
+            {/* ── MULTIPLE PAX PRICE ── */}
+            {hasMultiplePaxPrice && (
+              <div className="price-block">
+                <span className="price-label">2 PAX ABOVE</span>
+                <div className="price-amount">
+                  <span className="currency">{currencySymbol}</span>
+                  <span className="price-value seller-rate">
+                    {formatPrice(convertedMultiplePaxPrice)}
+                  </span>
                 </div>
-              )}
-
-              <div className="price-amount">
-                <span className="currency">{currencySymbol}</span>
-                <span className="price-value seller-rate">
-                  {formatPrice(convertedSellerRatePrice)}
-                </span>
               </div>
-            </div>
+            )}
+
+            {/* ── FALLBACK: show base price if neither pax price is set ── */}
+            {!hasSoloPaxPrice && !hasMultiplePaxPrice && (
+              <div className="price-block">
+                <span className="price-label">Price</span>
+                <div className="price-amount">
+                  <span className="currency">{currencySymbol}</span>
+                  <span className="price-value">{formatPrice(convertedPrice)}</span>
+                </div>
+              </div>
+            )}
 
           </div>
           

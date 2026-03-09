@@ -33,6 +33,16 @@ const getValidAdminId = (id) => {
     return null;
 };
 
+// HELPER: Safely parse a pax price value — returns null if blank/invalid
+const parsePaxPrice = (value) => {
+    if (value === null || value === undefined) return null;
+    const trimmed = String(value).trim();
+    if (trimmed === '') return null;
+    const num = Number(trimmed);
+    if (isNaN(num) || num < 0) return null;
+    return num;
+};
+
 // ============================================
 // ROUTES
 // ============================================
@@ -41,9 +51,11 @@ const getValidAdminId = (id) => {
 router.post('/add', upload.single('image'), async (req, res) => {
     try {
         const { 
-            title, destination, sellerPrice, markup, 
+            title, destination, sellerPrice, markup, markupType,
             duration, category, inclusions, itinerary,
             tourType, pax, minPax,
+            soloPaxPrice,       // ✅ Selling price for solo (1 person) booking
+            multiplePaxPrice,   // ✅ Selling price for multiple/group booking
             userEmail, adminId 
         } = req.body;
 
@@ -69,16 +81,22 @@ router.post('/add', upload.single('image'), async (req, res) => {
         const markupNum = Number(markup) || 0;
         const logUserId = getValidAdminId(adminId);
 
-        // ✅ Prepare package data with tourType, pax, and minPax
+        // ✅ Log received pax prices for verification
+        console.log('📦 Package /add — soloPaxPrice:', soloPaxPrice, '| multiplePaxPrice:', multiplePaxPrice);
+
+        // ✅ Prepare package data
         const packageData = {
             title,
             destination,
             sellerPrice: sellerPriceNum,
             markup: markupNum,
+            markupType: markupType || 'fixed',             // ✅ pass markupType so pre-save computes price correctly
             price: sellerPriceNum + markupNum,
             duration,
             category,
             tourType: tourType || 'private',
+            soloPaxPrice: parsePaxPrice(soloPaxPrice),         // ✅ null if blank
+            multiplePaxPrice: parsePaxPrice(multiplePaxPrice), // ✅ null if blank
             image: req.file.path,
             imagePublicId: req.file.filename,
             inclusions: inclusions ? JSON.parse(inclusions) : [],
@@ -127,15 +145,26 @@ router.post('/add', upload.single('image'), async (req, res) => {
 router.put('/edit/:id', upload.single('image'), async (req, res) => {
     try {
         const { 
-            title, destination, sellerPrice, markup, duration, 
+            title, destination, sellerPrice, markup, markupType, duration, 
             category, existingImage, existingImagePublicId, inclusions, itinerary,
             tourType, pax, minPax,
+            soloPaxPrice,       // ✅ Selling price for solo (1 person) booking
+            multiplePaxPrice,   // ✅ Selling price for multiple/group booking
             userEmail, adminId, changes
         } = req.body;
         
         const logUserId = getValidAdminId(adminId);
         const sellerPriceNum = Number(sellerPrice) || 0;
         const markupNum = Number(markup) || 0;
+
+        // ✅ Compute correct price here since findByIdAndUpdate does NOT trigger pre-save hooks
+        let computedPrice;
+        if (markupType === 'percentage') {
+            const markupAmount = (sellerPriceNum * markupNum) / 100;
+            computedPrice = sellerPriceNum + markupAmount;
+        } else {
+            computedPrice = sellerPriceNum + markupNum;
+        }
 
         // ✅ Validate tourType, pax, and minPax for Edit
         if (tourType === 'private' && (!pax || parseInt(pax) < 1)) {
@@ -151,10 +180,13 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             destination,
             sellerPrice: sellerPriceNum,
             markup: markupNum,
-            price: sellerPriceNum + markupNum,
+            markupType: markupType || 'fixed',
+            price: computedPrice,                          // ✅ uses correct price based on markupType
             duration,
             category,
-            tourType: tourType || 'private',  
+            tourType: tourType || 'private',
+            soloPaxPrice: parsePaxPrice(soloPaxPrice),         // ✅ null if blank
+            multiplePaxPrice: parsePaxPrice(multiplePaxPrice), // ✅ null if blank
             inclusions: inclusions ? JSON.parse(inclusions) : [],
             itinerary: itinerary ? JSON.parse(itinerary) : [],
         };
@@ -180,7 +212,13 @@ router.put('/edit/:id', upload.single('image'), async (req, res) => {
             updateData.imagePublicId = existingImagePublicId;
         }
 
-        const updatedPkg = await Package.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        // ✅ Use $set explicitly so null values for soloPaxPrice/multiplePaxPrice are written to DB
+        // Without $set, MongoDB may ignore null fields on update
+        const updatedPkg = await Package.findByIdAndUpdate(
+            req.params.id,
+            { $set: updateData },
+            { new: true, runValidators: false }
+        );
 
         if (!updatedPkg) {
             if (req.file?.filename) {
@@ -300,7 +338,7 @@ router.get('/all', async (req, res) => {
     }
 });
 
-// 5. FETCH ARCHIVED ✅ VERIFIED
+// 5. FETCH ARCHIVED
 router.get('/archived-list', async (req, res) => {
     try {
         const archived = await Package.find({ isArchive: 'Yes' }).sort({ _id: -1 });
