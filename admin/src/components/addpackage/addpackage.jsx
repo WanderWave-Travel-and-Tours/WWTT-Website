@@ -279,8 +279,9 @@ const AddPackage = () => {
 
     // --- PRICING ---
 
-    // ✅ Central price computation — applies pax multiplier based on paxMode
-    const computePrice = (supplierRateVal, markupVal, markupTypeVal, paxModeVal, tourTypeVal, paxVal, minPaxVal) => {
+    // ✅ Central price computation — supplierRate + markup only, NO pax multiplier
+    // The pax count shown in the breakdown is display-only and does not affect the stored price
+    const computePrice = (supplierRateVal, markupVal, markupTypeVal) => {
         const supplierRateNum = Number(supplierRateVal) || 0;
         const markupValueNum = Number(markupVal) || 0;
 
@@ -288,22 +289,14 @@ const AddPackage = () => {
             ? (supplierRateNum * markupValueNum) / 100
             : markupValueNum;
 
-        const basePerPax = supplierRateNum + markupInPeso;
-
-        // Solo = ×1 (price for 1 person, no doubling)
-        // Multiple = ×actual pax count from Basic Info
-        const multiplier = paxModeVal === 'solo'
-            ? 1
-            : (tourTypeVal === 'private' ? parseInt(paxVal) || 1 : parseInt(minPaxVal) || 1);
-
-        return Math.round(basePerPax * multiplier * 100) / 100;
+        return Math.round((supplierRateNum + markupInPeso) * 100) / 100;
     };
 
     const handleSupplierRateChange = (e) => {
         const value = e.target.value;
         if (value === "" || !isNaN(value)) {
             setSupplierRate(value);
-            const total = computePrice(value, markupValue, markupType, paxMode, tourType, pax, minPax);
+            const total = computePrice(value, markupValue, markupType);
             setPrice(total.toString());
         }
     };
@@ -323,17 +316,9 @@ const AddPackage = () => {
     };
 
     const updatePriceFromMarkup = (mValue, mType) => {
-        const total = computePrice(supplierRate, mValue, mType, paxMode, tourType, pax, minPax);
+        const total = computePrice(supplierRate, mValue, mType);
         setPrice(total.toString());
     };
-
-    // ✅ Recompute price whenever paxMode, tourType, pax, or minPax changes
-    useEffect(() => {
-        if (supplierRate) {
-            const total = computePrice(supplierRate, markupValue, markupType, paxMode, tourType, pax, minPax);
-            setPrice(total.toString());
-        }
-    }, [paxMode, tourType]); // ✅ Only recompute on pricing mode or tour type change — NOT on pax/minPax input
 
     // ✅ Solo Pax Price handler — accepts numbers only, updates soloPaxPrice state
     const handleSoloPaxPriceChange = (e) => {

@@ -50,9 +50,8 @@ const PricingCalculator = ({
     });
 
     // Compute current multiplier for display
-    // Solo = ×1 (base price for 1 person), Multiple = ×actual pax count from Basic Info
     const currentMultiplier = paxMode === 'solo'
-        ? 1
+        ? 2
         : (tourType === 'private' ? parseInt(pax) || 1 : parseInt(minPax) || 1);
 
     // Pax label for hint text
@@ -93,7 +92,7 @@ const PricingCalculator = ({
                     </div>
                     <span className="apkg-pax-hint">
                         {paxMode === 'solo'
-                            ? '💡 Solo rate — base price for a single person booking (×1)'
+                            ? '💡 Solo rate — supplier rate and markup are doubled (×2)'
                             : `📋 Based on ${paxLabel} from Basic Info`
                         }
                     </span>
@@ -152,10 +151,8 @@ const PricingCalculator = ({
 
                 {/* ✅ PAX PRICING SECTION — Solo and Multiple Pax selling price input fields only */}
                 <div className="apkg-pax-price-section">
-                    <div className="apkg-pax-price-header">
-                        <span className="apkg-pax-price-title">PAX PRICING</span>
-                        <span className="apkg-pax-price-subtitle">Set the selling price per booking type</span>
-                    </div>
+                    <h3 className="apkg-pax-price-title">PAX PRICING</h3>
+                    <p className="apkg-pax-price-subtitle">Set the selling price per booking type</p>
                     <div className="apkg-pax-price-inputs">
                         {/* ✅ Solo Pax Price — custom price for 1-person booking */}
                         <div className="apkg-field">
@@ -207,48 +204,6 @@ const PricingCalculator = ({
                                   })
                                 : "0.00"}
                         </div>
-
-                        {/* BREAKDOWN: Shows multiplier */}
-                        <div className="apkg-total-price-breakdown">
-                            {supplierRate && markupValue ? (
-                                <>
-                                    <span>
-                                        (₱{Number(supplierRate).toLocaleString()}
-                                    </span>
-                                    <span className="apkg-plus">+</span>
-                                    <span>
-                                        {markupType === "percentage"
-                                            ? `${markupValue}% / ₱${formattedMarkupInPeso})`
-                                            : `₱${Number(markupValue).toLocaleString()})`}
-                                    </span>
-                                    <span className="apkg-plus">×</span>
-                                    <span className="apkg-multiplier-badge">
-                                        {currentMultiplier} {paxMode === 'solo' ? 'solo' : 'pax'}
-                                    </span>
-                                </>
-                            ) : supplierRate ? (
-                                <>
-                                    <span>
-                                        ₱{Number(supplierRate).toLocaleString()}
-                                    </span>
-                                    <span className="apkg-plus">×</span>
-                                    <span className="apkg-multiplier-badge">
-                                        {currentMultiplier} {paxMode === 'solo' ? 'solo' : 'pax'}
-                                    </span>
-                                </>
-                            ) : (
-                                <span className="apkg-breakdown-empty">
-                                    Enter supplier rate and markup to calculate
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Per-pax note */}
-                        {supplierRate && perPaxAmount > 0 && (
-                            <div className="apkg-per-pax-note">
-                                ₱{perPaxAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} base rate × {currentMultiplier} {paxMode === 'solo' ? '(solo ×1)' : `pax`}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

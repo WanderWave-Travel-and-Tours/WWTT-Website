@@ -238,6 +238,71 @@
     border: 1px solid #e2e8f0;
 }
 
+/* ================== PAX PRICING SECTION ================== */
+
+.apkg-pax-price-section {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.apkg-pax-price-title {
+    font-family: 'Arial Black', 'Helvetica Bold', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    color: #001F3F;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.apkg-pax-price-title::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: linear-gradient(180deg, #FF8C42 0%, #ff6b1a 100%);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.apkg-pax-price-subtitle {
+    font-size: 12px;
+    color: #64748b;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin-bottom: 20px;
+    padding-left: 12px;
+}
+
+.apkg-pax-price-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.apkg-pax-price-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.apkg-pax-price-icon {
+    font-size: 14px;
+}
+
+@media (max-width: 640px) {
+    .apkg-pax-price-inputs {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ================== TOTAL PRICE BOX ================== */
 .apkg-total-price-box {
     background: linear-gradient(135deg, #001F3F 0%, #003d7a 100%);
