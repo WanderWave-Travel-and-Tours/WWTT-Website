@@ -21,12 +21,17 @@ const PricingCalculator = ({
     markupType, 
     toggleMarkupType, 
     price,
-    // ✅ NEW: Pax Mode Props
+    // Pax Mode Props
     paxMode,
     onPaxModeChange,
     tourType,
     pax,
-    minPax
+    minPax,
+    // ✅ Solo and Multiple Pax Price Props
+    soloPaxPrice,
+    handleSoloPaxPriceChange,
+    multiplePaxPrice,
+    handleMultiplePaxPriceChange,
 }) => {
     
     const supplierRateNum = parseFloat(supplierRate) || 0;
@@ -44,17 +49,17 @@ const PricingCalculator = ({
         maximumFractionDigits: 2,
     });
 
-    // ✅ Compute current multiplier for display
+    // Compute current multiplier for display
     const currentMultiplier = paxMode === 'solo'
         ? 2
         : (tourType === 'private' ? parseInt(pax) || 1 : parseInt(minPax) || 1);
 
-    // ✅ Pax label for hint text
+    // Pax label for hint text
     const paxLabel = tourType === 'private'
         ? (pax ? `${pax} pax (Private)` : '— pax (set in Basic Info)')
         : (minPax ? `${minPax} min pax (Joiners)` : '— pax (set in Basic Info)');
 
-    // ✅ Per-pax base amount for breakdown display
+    // Per-pax base amount for breakdown display
     const perPaxAmount = supplierRateNum + markupInPeso;
 
     return (
@@ -62,7 +67,7 @@ const PricingCalculator = ({
             <h2 className="apkg-section-title">PRICING</h2>
             <div className="apkg-pricing-layout">
 
-                {/* ✅ PAX MODE TOGGLE */}
+                {/* PAX MODE TOGGLE */}
                 <div className="apkg-field">
                     <label className="apkg-pax-mode-label">
                         Pricing Mode
@@ -144,6 +149,48 @@ const PricingCalculator = ({
                     </div>
                 </div>
 
+                {/* ✅ PAX PRICING SECTION — Solo and Multiple Pax selling price input fields only */}
+                <div className="apkg-pax-price-section">
+                    <div className="apkg-pax-price-header">
+                        <span className="apkg-pax-price-title">PAX PRICING</span>
+                        <span className="apkg-pax-price-subtitle">Set the selling price per booking type</span>
+                    </div>
+                    <div className="apkg-pax-price-inputs">
+                        {/* ✅ Solo Pax Price — custom price for 1-person booking */}
+                        <div className="apkg-field">
+                            <label className="apkg-pax-price-label">
+                                <span className="apkg-pax-price-icon">👤</span>
+                                Solo Pax Price (PHP)
+                            </label>
+                            <input
+                                type="number"
+                                placeholder="Price for 1 person"
+                                value={soloPaxPrice}
+                                onChange={handleSoloPaxPriceChange}
+                                onWheel={(e) => e.target.blur()}
+                                step="0.01"
+                                min="0"
+                            />
+                        </div>
+                        {/* ✅ Multiple Pax Price — custom price for group/multi-person booking */}
+                        <div className="apkg-field">
+                            <label className="apkg-pax-price-label">
+                                <span className="apkg-pax-price-icon">👥</span>
+                                Multiple Pax Price (PHP)
+                            </label>
+                            <input
+                                type="number"
+                                placeholder="Price for group booking"
+                                value={multiplePaxPrice}
+                                onChange={handleMultiplePaxPriceChange}
+                                onWheel={(e) => e.target.blur()}
+                                step="0.01"
+                                min="0"
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 <div className="apkg-total-price-box">
                     <div className="apkg-total-price-content">
                         <div className="apkg-total-price-label">
@@ -160,7 +207,7 @@ const PricingCalculator = ({
                                 : "0.00"}
                         </div>
 
-                        {/* ✅ UPDATED BREAKDOWN: Shows multiplier */}
+                        {/* BREAKDOWN: Shows multiplier */}
                         <div className="apkg-total-price-breakdown">
                             {supplierRate && markupValue ? (
                                 <>
@@ -195,7 +242,7 @@ const PricingCalculator = ({
                             )}
                         </div>
 
-                        {/* ✅ Per-pax note */}
+                        {/* Per-pax note */}
                         {supplierRate && perPaxAmount > 0 && (
                             <div className="apkg-per-pax-note">
                                 ₱{perPaxAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} base rate × {currentMultiplier} {paxMode === 'solo' ? '(solo ×2)' : `pax`}
