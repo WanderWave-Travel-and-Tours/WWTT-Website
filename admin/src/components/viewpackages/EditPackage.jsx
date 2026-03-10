@@ -45,7 +45,10 @@ const EditPackage = () => {
     duration: "",
     category: "Local",
     existingImage: "",
-    existingImagePublicId: "" 
+    existingImagePublicId: "",
+    // ✅ Pax Pricing fields
+    soloPaxPrice: "",
+    multiplePaxPrice: ""
   });
 
   // ✅ Store original data to track changes for Activity Logs
@@ -123,7 +126,9 @@ const EditPackage = () => {
         itinerary,
         image: imageBase64, 
         imageMeta: imageMeta,
-        originalId: packageId 
+        originalId: packageId,
+        soloPaxPrice: formData.soloPaxPrice,       // ✅ included in draft
+        multiplePaxPrice: formData.multiplePaxPrice // ✅ included in draft
       });
     };
 
@@ -155,7 +160,10 @@ const EditPackage = () => {
       duration: data.duration || "",
       category: data.category || "Local",
       existingImage: data.existingImage || "",
-      existingImagePublicId: data.existingImagePublicId || ""
+      existingImagePublicId: data.existingImagePublicId || "",
+      // ✅ Restore pax pricing fields
+      soloPaxPrice: data.soloPaxPrice ?? "",
+      multiplePaxPrice: data.multiplePaxPrice ?? ""
     });
 
     if (data.inclusions) setInclusions(data.inclusions);
@@ -250,7 +258,10 @@ const EditPackage = () => {
             duration: pkg.duration || "",
             category: pkg.category || "Local",
             inclusions: currentInclusions,
-            itinerary: currentItinerary
+            itinerary: currentItinerary,
+            // ✅ Capture original pax pricing
+            soloPaxPrice: pkg.soloPaxPrice ?? "",
+            multiplePaxPrice: pkg.multiplePaxPrice ?? ""
           });
 
           setFormData({
@@ -266,7 +277,10 @@ const EditPackage = () => {
             duration: pkg.duration || "",
             category: pkg.category || "Local",
             existingImage: pkg.image || "",
-            existingImagePublicId: pkg.imagePublicId || ""
+            existingImagePublicId: pkg.imagePublicId || "",
+            // ✅ Load pax pricing fields
+            soloPaxPrice: pkg.soloPaxPrice ?? "",
+            multiplePaxPrice: pkg.multiplePaxPrice ?? ""
           });
 
           setInclusions(currentInclusions);
@@ -478,6 +492,10 @@ const EditPackage = () => {
       // ✅ NEW: Send markupType to backend
       formDataToSend.append("markupType", formData.markupType);
 
+      // ✅ Send pax pricing fields (send empty string if blank so backend parsePaxPrice returns null)
+      formDataToSend.append("soloPaxPrice", formData.soloPaxPrice ?? "");
+      formDataToSend.append("multiplePaxPrice", formData.multiplePaxPrice ?? "");
+
       formDataToSend.append("duration", formData.duration);
       formDataToSend.append("category", formData.category);
       formDataToSend.append("existingImage", formData.existingImage);
@@ -529,6 +547,9 @@ const EditPackage = () => {
           trackChange("Markup", originalData.markup, formData.markup);
           // ✅ NEW: Track markupType change
           trackChange("Markup Type", originalData.markupType, formData.markupType);
+          // ✅ Track pax pricing changes
+          trackChange("Solo Pax Price", originalData.soloPaxPrice, formData.soloPaxPrice);
+          trackChange("Multiple Pax Price", originalData.multiplePaxPrice, formData.multiplePaxPrice);
           
           trackChange("Duration", originalData.duration, formData.duration);
           trackChange("Category", originalData.category, formData.category);
@@ -822,6 +843,42 @@ const EditPackage = () => {
                     value={`₱${calculatedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     className="epa-input epa-input--readonly"
                     readOnly
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Pax Pricing */}
+            <div className="epa-section">
+              <h2 className="epa-section-title">Pax Pricing</h2>
+              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px', marginTop: '-12px' }}>
+                Set the selling price per booking type
+              </p>
+              <div className="epa-form-grid">
+                <div className="epa-form-group">
+                  <label className="epa-label">👤 Solo Pax Price (PHP)</label>
+                  <input
+                    type="number"
+                    name="soloPaxPrice"
+                    value={formData.soloPaxPrice}
+                    onChange={handleInputChange}
+                    className="epa-input"
+                    placeholder="Price for 1 person"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+                <div className="epa-form-group">
+                  <label className="epa-label">👥 Multiple Pax Price (PHP)</label>
+                  <input
+                    type="number"
+                    name="multiplePaxPrice"
+                    value={formData.multiplePaxPrice}
+                    onChange={handleInputChange}
+                    className="epa-input"
+                    placeholder="Price for group booking"
+                    step="0.01"
+                    min="0"
                   />
                 </div>
               </div>

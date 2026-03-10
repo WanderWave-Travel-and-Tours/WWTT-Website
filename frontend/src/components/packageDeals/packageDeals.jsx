@@ -458,14 +458,14 @@ function PackageDeals() {
       name: 'Hong Kong Disneyland', 
       subtitle: 'Hong Kong',
       scope: 'international',
-      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911aacfc3a1eaf00b1f3a06.jpg'
+      image: 'https://assets.cdn.filesafe.space/yTzQYPFRZAWXGWiXtIt2/media/69118686c3a1eafb4f245065.jpg'
     },
     { 
       id: 'singapore', 
       name: 'Singapore', 
       subtitle: 'Singapore',
       scope: 'international',
-      image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911aec1d1ba95f893f41f5c.jpg'
+      image: 'https://assets.cdn.filesafe.space/yTzQYPFRZAWXGWiXtIt2/media/69118551d4d7797a4f8ddd64.jpg'
     },
     { 
       id: 'tokyo', 

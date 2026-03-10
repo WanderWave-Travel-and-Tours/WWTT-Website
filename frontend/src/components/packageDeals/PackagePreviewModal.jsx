@@ -16,6 +16,14 @@ const PackagePreviewModal = ({
   pkg,
   currency = 'PHP',
   exchangeRate = 58,
+  // ✅ Pre-computed prices from BookingRightForm (pax, room, promo, customization all included)
+  computedPackageTotal = null,
+  computedOriginalPrice = null,
+  computedFinalPackageTotal = null,
+  computedDiscountAmount = null,
+  appliedPromo = null,
+  paxCount = null,
+  timerExpired: timerExpiredProp = null,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedDay, setExpandedDay] = useState(null);
@@ -84,16 +92,37 @@ const PackagePreviewModal = ({
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice = (p) => currency === 'PHP' ? p : (p / exchangeRate) * 1.30;
 
+  // ✅ Use timerExpired from prop (passed from BookingRightForm) if available, fallback to local state
+  const resolvedTimerExpired = timerExpiredProp !== null ? timerExpiredProp : timerExpired;
+
+  // ✅ If computed prices are passed in from BookingRightForm, use them directly.
+  //    Otherwise fall back to simple per-pax calculation (e.g. modal opened standalone).
   const basePrice = pkg.price || 0;
   const markupPrice = Math.round(basePrice * 1.10);
-  const displayPrice = timerExpired ? markupPrice : basePrice;
-  const originalPrice = timerExpired ? null : markupPrice;
-  const discountPct = !timerExpired
-    ? Math.round(((markupPrice - basePrice) / markupPrice) * 100)
-    : 0;
 
-  const convertedDisplay = convertPrice(displayPrice);
-  const convertedOriginal = originalPrice ? convertPrice(originalPrice) : null;
+  let convertedDisplay, convertedOriginal, discountPct, convertedDiscount;
+
+  if (computedFinalPackageTotal !== null) {
+    // ─── Use pre-computed values (reflect pax, room upgrade, promo, customization) ───
+    convertedDisplay   = computedFinalPackageTotal;
+    convertedOriginal  = (computedOriginalPrice && computedOriginalPrice > computedFinalPackageTotal)
+                           ? computedOriginalPrice
+                           : null;
+    convertedDiscount  = computedDiscountAmount || 0;
+    discountPct        = (!resolvedTimerExpired && computedOriginalPrice && computedOriginalPrice > computedFinalPackageTotal)
+                           ? Math.round(((computedOriginalPrice - computedFinalPackageTotal) / computedOriginalPrice) * 100)
+                           : 0;
+  } else {
+    // ─── Fallback: simple single-pax calculation ───
+    const displayPrice  = resolvedTimerExpired ? markupPrice : basePrice;
+    const originalPrice = resolvedTimerExpired ? null : markupPrice;
+    convertedDisplay    = convertPrice(displayPrice);
+    convertedOriginal   = originalPrice ? convertPrice(originalPrice) : null;
+    convertedDiscount   = 0;
+    discountPct         = !resolvedTimerExpired
+                           ? Math.round(((markupPrice - basePrice) / markupPrice) * 100)
+                           : 0;
+  }
 
   const formatPrice = (p) => p.toLocaleString(undefined, {
     minimumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -149,7 +178,7 @@ const PackagePreviewModal = ({
 
           {/* Badges */}
           <div className="ppm-hero-badges">
-            {!timerExpired && discountPct > 0 && (
+            {!resolvedTimerExpired && discountPct > 0 && (
               <div className="ppm-badge ppm-badge--discount">
                 <Zap size={13} />
                 <span>Limited Offer · {discountPct}% OFF</span>
@@ -347,22 +376,29 @@ const PackagePreviewModal = ({
         {/* ─── STICKY FOOTER ─── */}
         <div className="ppm-footer">
           <div className="ppm-footer-price">
-            <span className="ppm-price-label">Starting from</span>
+            <span className="ppm-price-label">
+              {paxCount ? `Total for ${paxCount} pax` : 'Starting from'}
+            </span>
             <div className="ppm-price-row">
               {convertedOriginal && (
                 <span className="ppm-price-original">
                   {currencySymbol}{formatPrice(convertedOriginal)}
                 </span>
               )}
-              <span className={`ppm-price-main ${!timerExpired ? 'discounted' : ''}`}>
+              <span className={`ppm-price-main ${!resolvedTimerExpired ? 'discounted' : ''}`}>
                 {currencySymbol}{formatPrice(convertedDisplay)}
               </span>
-              {!timerExpired && discountPct > 0 && (
+              {!resolvedTimerExpired && discountPct > 0 && (
                 <span className="ppm-price-save">Save {discountPct}%</span>
               )}
             </div>
+            {appliedPromo && convertedDiscount > 0 && (
+              <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, marginTop: '2px' }}>
+                🎟 Promo "{appliedPromo.code}" applied · -{currencySymbol}{formatPrice(convertedDiscount)}
+              </span>
+            )}
             <span className="ppm-price-note">
-              <Users size={12} /> per pax · Taxes may apply
+              <Users size={12} /> {paxCount ? `${paxCount} pax · Taxes may apply` : 'per pax · Taxes may apply'}
             </span>
           </div>
 

@@ -6,15 +6,15 @@ import './packageCard.css';
 
 // ✅ Unique accent color per duration — WanderWave branded
 const DURATION_COLORS = {
-  '2D1N':  { top: '#334155', text: '#334155' },  // dark slate
-  '3D2N':  { top: '#f97316', text: '#ea580c' },  // orange
+  '2D1N':  { top: '#d97706', text: '#d97706' },  // yellow orange
+  '3D2N':  { top: '#14532d', text: '#14532d' },  // dark green
   '4D3N':  { top: '#1d4ed8', text: '#1d4ed8' },  // blue
   '5D4N':  { top: '#dc2626', text: '#dc2626' },  // red
-  '6D5N':  { top: '#0f766e', text: '#0f766e' },  // dark teal
-  '7D6N':  { top: '#065f46', text: '#065f46' },  // dark green
-  '8D7N':  { top: '#6d28d9', text: '#5b21b6' },  // violet
-  '9D8N':  { top: '#0369a1', text: '#075985' },  // deep sky blue
-  '10D9N': { top: '#9f1239', text: '#881337' },  // dark rose
+  '6D5N':  { top: '#7c3aed', text: '#7c3aed' },  // purple
+  '7D6N':  { top: '#b45309', text: '#b45309' },  // amber
+  '8D7N':  { top: '#9f1239', text: '#9f1239' },  // dark rose
+  '9D8N':  { top: '#15803d', text: '#15803d' },  // green
+  '10D9N': { top: '#1e40af', text: '#1e40af' },  // dark blue
 };
 const DEFAULT_DURATION_COLOR = { top: '#ea580c', text: '#ea580c' };
 
