@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } fro
 import { Menu, X, Globe, AlertCircle, Heart } from 'lucide-react';
 import axios from 'axios';
 import './App.css'; 
+import torightGif from '../../backend/assets/toright.gif';
 
 // --- TOAST IMPORTS ---
 import { ToastProvider } from './components/toast/ToastManager'; 
@@ -524,11 +525,18 @@ function MainLayout() {
           <nav className="navbar">
             <div className="navbar-content">
               <div className="brand" onClick={() => handleNavigation('packages')}>
-                <img 
-                  src={logoNav}
-                  alt="Wanderwave" 
-                  className="brand-logo brand-logo-desktop"
-                />
+                <div className="brand-logo-wrapper">
+                  <img 
+                    src={logoNav}
+                    alt="Wanderwave" 
+                    className="brand-logo brand-logo-desktop"
+                  />
+                  <img
+                    src={torightGif}
+                    alt=""
+                    className="brand-toright-gif"
+                  />
+                </div>
                 <img 
                   src={logoNav} 
                   alt="Wanderwave" 

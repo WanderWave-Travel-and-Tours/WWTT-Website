@@ -903,3 +903,32 @@ body.translated-rtl {
     height: 14px;
   }
 }
+/* toright.gif beside brand logo */
+.brand-logo-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.brand-toright-gif {
+  position: absolute;
+  left: -34px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 60px;
+  width: auto;
+  pointer-events: none;
+}
+
+@media (max-width: 1200px) {
+  .brand-toright-gif {
+    height: 65px;
+    left: -26px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .brand-toright-gif {
+    display: none;
+  }
+}

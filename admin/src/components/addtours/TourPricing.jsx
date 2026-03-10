@@ -36,6 +36,7 @@ const TourPricing = ({ supp, onSupp, mark, onMark, type, onToggle, price }) => {
                             placeholder="0.00"
                             value={supp}
                             onChange={(e) => onSupp(e.target.value)}
+                            onWheel={(e) => e.target.blur()}
                             required
                             step="0.01"
                             min="0"
@@ -54,6 +55,7 @@ const TourPricing = ({ supp, onSupp, mark, onMark, type, onToggle, price }) => {
                                 placeholder={type === "percentage" ? "Enter %" : "Enter peso amount"}
                                 value={mark}
                                 onChange={(e) => onMark(e.target.value)}
+                                onWheel={(e) => e.target.blur()}
                                 required
                                 step="0.01"
                                 min="0"

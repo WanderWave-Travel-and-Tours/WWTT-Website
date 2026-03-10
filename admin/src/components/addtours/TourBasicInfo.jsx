@@ -86,6 +86,7 @@ const TourBasicInfo = ({
               placeholder="Enter minimum number of joiners (e.g. 4)"
               value={minPax}
               onChange={(e) => setMinPax(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               required
               min="1"
               max="50"

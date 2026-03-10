@@ -637,6 +637,7 @@ const AddPromo = () => {
                                             placeholder={promoDetails.discountType === 'Percentage' ? 'Enter %' : 'Enter amount'}
                                             min="1"
                                             max={promoDetails.discountType === 'Percentage' ? '100' : undefined}
+                                            onWheel={(e) => e.target.blur()}
                                         />
                                     </div>
 
@@ -649,6 +650,7 @@ const AddPromo = () => {
                                             onChange={handleChange}
                                             placeholder="Leave empty for unlimited"
                                             min="1"
+                                            onWheel={(e) => e.target.blur()}
                                         />
                                         <small style={{fontSize: '11px', color: '#64748b', marginTop: '4px'}}>
                                             Maximum number of users who can avail this promo
