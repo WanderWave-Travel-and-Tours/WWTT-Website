@@ -1683,6 +1683,14 @@ const handleNextPassenger = async (e) => {
         pkg={pkg}
         currency={currency}
         exchangeRate={exchangeRate}
+        // ✅ Pass computed prices from BookingRightForm so modal reflects exact same totals
+        computedPackageTotal={convertedPackageTotal}
+        computedOriginalPrice={convertedOriginalPriceWithMarkup}
+        computedFinalPackageTotal={convertedFinalPackageTotal}
+        computedDiscountAmount={convertedDiscountAmount}
+        appliedPromo={appliedPromo}
+        paxCount={totalPassengers}
+        timerExpired={timerExpired}
       />
 
       <BookingFormModal 
