@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./flightSearch.css";
+import MascotGif from "../MascotGif/MascotGif";
 import FlightSearchForm from "./FlightSearchForm";
 import FlightSearchResults from "./FlightSearchResults";
 import { ChevronLeft } from 'lucide-react';
@@ -505,6 +506,7 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
         searchParams={searchParams}
         onFlightSelect={isFromBooking ? handleFlightSelectFromBooking : onFlightSelect}
       />
+      <MascotGif />
     </div>
   );
 }

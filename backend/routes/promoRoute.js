@@ -584,6 +584,40 @@ router.get('/validate/:code', async (req, res) => {
             console.log('ℹ️ Promo has no target packages - valid for all packages');
         }
 
+        // ✅ NEW: Validate promo pricing type matches the package type (local vs international)
+        // This runs for ALL promos regardless of whether they have target packages
+        if (packageId) {
+            const targetPkg = await Package.findById(packageId).select('category');
+            if (targetPkg) {
+                const pkgCategory = (targetPkg.category || '').toLowerCase();
+                const isInternationalPackage = pkgCategory === 'international';
+
+                const promoHasLocal = promo.pricing && promo.pricing.local > 0;
+                const promoHasInternational = promo.pricing && promo.pricing.international > 0;
+
+                console.log('📦 Package category:', targetPkg.category, '| Is international:', isInternationalPackage);
+                console.log('🏷️ Promo pricing — local:', promo.pricing?.local, '| international:', promo.pricing?.international);
+
+                if (isInternationalPackage && promoHasLocal && !promoHasInternational) {
+                    console.log('❌ International package but promo is local-only');
+                    return res.status(400).json({
+                        valid: false,
+                        message: 'This promo code is for local (Philippines) packages only and cannot be applied to international packages.'
+                    });
+                }
+
+                if (!isInternationalPackage && promoHasInternational && !promoHasLocal) {
+                    console.log('❌ Local/domestic package but promo is international-only');
+                    return res.status(400).json({
+                        valid: false,
+                        message: 'This promo code is for international packages only and cannot be applied to local (Philippines) packages.'
+                    });
+                }
+
+                console.log('✅ Package type vs promo pricing type validation passed!');
+            }
+        }
+
         console.log('✅ ============ VALIDATION SUCCESS ============');
         
         res.status(200).json({ 
