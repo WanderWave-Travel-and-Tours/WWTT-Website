@@ -23,6 +23,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import "./otherservices.css";
+import MascotGif from "../MascotGif/MascotGif";
 import VisaTable from "./VisaTable";
 import PSATable from "./PsaTable";
 import CenomarTable from "./CenomarTable";
@@ -864,6 +865,7 @@ const OtherServices = ({ setAuthPage }) => {
           </div>
         </div>
       )}
+      <MascotGif />
     </div>
   );
 };

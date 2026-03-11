@@ -3,12 +3,97 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/LOGO-3D.png" />
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WanderWave Travel & Tours</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Chat Widget Position & Z-Index Override -->
+    <style>
+      chat-widget {
+        position: fixed !important;
+        bottom: -40px !important;
+        right: -20px !important;
+        z-index: 2147483647 !important;
+      }
+    </style>
+
+    <!-- GHL / LeadConnector Chat Widget -->
+    <script 
+  src="https://beta.leadconnectorhq.com/loader.js"  
+  data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js" 
+ data-widget-id="690c1313fbca0477c893e2b0"   > 
+ </script>
+
+    <!--
+      Strategy:
+      - Do NOT hide the entire chat-widget element (that kills the conversation panel too)
+      - Instead, poll every 100ms until the shadow DOM launcher button is found
+      - Hide ONLY that button via inline style
+      - Expose window.openGHLChat() which re-enables pointer-events, clicks the button, then re-hides it
+      - mascot GIF in packageDeals.jsx calls window.openGHLChat()
+    -->
+    <script>
+      (function () {
+        var _launcherBtn = null;
+
+        function hideLauncherBtn(btn) {
+          btn.style.setProperty('opacity', '0', 'important');
+          btn.style.setProperty('pointer-events', 'none', 'important');
+          btn.style.setProperty('position', 'fixed', 'important');
+          btn.style.setProperty('bottom', '-9999px', 'important');
+          btn.style.setProperty('right', '-9999px', 'important');
+        }
+
+        function findLauncherBtn(root) {
+          var shadow = root.shadowRoot;
+          var search = shadow || root;
+          var candidates = search.querySelectorAll('button');
+          for (var i = 0; i < candidates.length; i++) {
+            var btn = candidates[i];
+            var rect = btn.getBoundingClientRect();
+            if (rect.width > 30 && rect.height > 30) return btn;
+          }
+          return null;
+        }
+
+        window.openGHLChat = function () {
+          if (_launcherBtn) {
+            _launcherBtn.style.setProperty('pointer-events', 'auto', 'important');
+            _launcherBtn.click();
+            setTimeout(function () {
+              if (_launcherBtn) hideLauncherBtn(_launcherBtn);
+            }, 50);
+            return;
+          }
+          if (window.LeadConnector && window.LeadConnector.openChat) { window.LeadConnector.openChat(); return; }
+          if (window.ChatWidget && window.ChatWidget.open) { window.ChatWidget.open(); return; }
+        };
+
+        var attempts = 0;
+        var interval = setInterval(function () {
+          attempts++;
+          var chatEl = document.querySelector('chat-widget');
+          if (chatEl) {
+            // Force z-index and position on the host element
+            chatEl.style.setProperty('position', 'fixed', 'important');
+            chatEl.style.setProperty('z-index', '2147483647', 'important');
+            chatEl.style.setProperty('bottom', '-40px', 'important');
+            chatEl.style.setProperty('right', '-20px', 'important');
+
+            var btn = findLauncherBtn(chatEl);
+            if (btn) {
+              _launcherBtn = btn;
+              hideLauncherBtn(btn);
+              clearInterval(interval);
+              return;
+            }
+          }
+          if (attempts > 100) clearInterval(interval);
+        }, 100);
+      })();
+    </script>
   </body>
 </html>

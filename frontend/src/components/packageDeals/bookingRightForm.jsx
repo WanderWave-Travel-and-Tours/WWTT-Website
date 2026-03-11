@@ -558,6 +558,31 @@ const handleApplyPromo = async () => {
         const promo = data.promo;
         const currentPax = quantities.adult || 1;
 
+        // ✅ PROMO TYPE vs PACKAGE TYPE VALIDATION (frontend guard)
+        // Prevents local-only promos on international packages and vice versa
+        const pkgCategory = (pkg.category || '').toLowerCase();
+        const isInternationalPackage = pkgCategory === 'international';
+        const promoHasLocal = promo.pricing && promo.pricing.local > 0;
+        const promoHasInternational = promo.pricing && promo.pricing.international > 0;
+
+        if (isInternationalPackage && promoHasLocal && !promoHasInternational) {
+          const errMsg = 'This promo code is for local (Philippines) packages only and cannot be applied to international packages.';
+          setPromoError(errMsg);
+          setAppliedPromo(null);
+          toast.error(errMsg, { duration: 4000 });
+          setIsCheckingPromo(false);
+          return;
+        }
+
+        if (!isInternationalPackage && promoHasInternational && !promoHasLocal) {
+          const errMsg = 'This promo code is for international packages only and cannot be applied to local (Philippines) packages.';
+          setPromoError(errMsg);
+          setAppliedPromo(null);
+          toast.error(errMsg, { duration: 4000 });
+          setIsCheckingPromo(false);
+          return;
+        }
+
         // ✅ USAGE LIMIT VALIDATION
         const hasUsageLimit = promo.usageLimit && promo.usageLimit > 0;
         const usedCount = promo.usedCount || 0;
@@ -770,7 +795,9 @@ const handleApplyPromo = async () => {
   };
 
   const handleContactSales = () => {
-    window.open('https://www.facebook.com/wanderwaveph', '_blank');
+    if (typeof window.openGHLChat === 'function') {
+      window.openGHLChat();
+    }
   };
 
   const handlePassengerChange = (index, field, value) => {

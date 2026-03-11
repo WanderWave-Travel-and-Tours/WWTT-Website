@@ -8,7 +8,7 @@ import './packageDeals.css';
 import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
 import toast, { Toaster } from 'react-hot-toast';
-import sampleGif from '../../../../backend/assets/sample.gif';
+import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 
 const LoginNoticeModal = ({ isOpen, onClose, onLogin }) => {
@@ -824,6 +824,18 @@ function PackageDeals() {
     }
   };
 
+  // ============================================================
+  // OPEN GHL CHAT WIDGET — triggered by mascot GIF click
+  // window.openGHLChat is defined in index.html's inline script,
+  // which polls the shadow DOM for the launcher button, hides it,
+  // and on call: re-enables pointer-events → clicks → re-hides.
+  // ============================================================
+  const openGHLChat = () => {
+    if (typeof window.openGHLChat === 'function') {
+      window.openGHLChat();
+    }
+  };
+
   const scrollToPackages = () => {
     if (packagesRef.current) {
       packagesRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -885,12 +897,7 @@ function PackageDeals() {
         </div>
       </section>
 
-      <img
-        src={sampleGif}
-        alt="mascot"
-        className="mascot-gif"
-        onClick={() => setFeedbackTrigger(prev => prev + 1)}
-      />
+      <MascotGif onClick={openGHLChat} />
 
       <FeedbackWidget triggerOpen={feedbackTrigger} />
 
