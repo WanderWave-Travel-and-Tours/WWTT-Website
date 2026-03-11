@@ -20,7 +20,7 @@
     width: 100%; 
     border-collapse: collapse; 
     /* ✅ FIXED MIN-WIDTH: Critical for preserving button layout */
-    min-width: 1400px; 
+    min-width: 1200px; 
 }
 
 /* HEADER STYLES */
@@ -87,6 +87,31 @@
 .prt-icon { color: #94a3b8; flex-shrink: 0; }
 
 .prt-discount-value { font-weight: 700; color: #FF8C42; }
+
+/* Stacked price rows inside single cell */
+.prt-price-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.prt-price-stack .prt-discount-value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.4;
+}
+
+.prt-price-type {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    background: #f1f5f9;
+    border-radius: 4px;
+    padding: 1px 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
 
 /* Status Badges */
 .prt-badge { 

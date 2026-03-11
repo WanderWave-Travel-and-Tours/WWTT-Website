@@ -66,48 +66,108 @@ router.get('/search-packages', async (req, res) => {
 // 1. ADD PROMO (WITH CLOUDINARY & LOGGING & TARGET PACKAGES)
 router.post('/add', upload.single('image'), async (req, res) => {
     try {
-        const { userEmail, adminId, targetPackages } = req.body;
+        const {
+            userEmail, adminId,
+            code, description, category, discountType,
+            durationType, startDate, validUntil, usageLimit,
+            localPrice, internationalPrice,
+            targetPackages
+        } = req.body;
         const logUserId = getValidAdminId(adminId);
 
-        const promoData = {
-            ...req.body,
-            isArchive: "No",
-            image: req.file ? req.file.path : "",
-            imagePublicId: req.file ? req.file.filename : "",
-            // ✅ Parse targetPackages if sent as JSON string
-            targetPackages: targetPackages ? JSON.parse(targetPackages) : []
-        };
+        const hasLocal = localPrice && Number(localPrice) > 0;
+        const hasInternational = internationalPrice && Number(internationalPrice) > 0;
+        const parsedTargetPackages = targetPackages ? JSON.parse(targetPackages) : [];
+        const imageUrl = req.file ? req.file.path : "";
+        const imagePublicId = req.file ? req.file.filename : "";
 
-        const newPromo = new Promo(promoData);
-        const savedPromo = await newPromo.save();
+        // ✅ Build promo entries based on which prices were provided
+        const promoEntries = [];
 
-        // Activity Logging
-        try {
-            let description = `Created new promo code: ${savedPromo.code}`;
-            if (savedPromo.targetPackages && savedPromo.targetPackages.length > 0) {
-                description += ` (${savedPromo.targetPackages.length} package${savedPromo.targetPackages.length > 1 ? 's' : ''} targeted)`;
-            }
-            
-            await ActivityLog.create({
-                action: 'CREATE',
-                module: 'Promos',
-                user: userEmail || 'System Admin',
-                userId: logUserId,
-                severity: 'SUCCESS',
-                description: description,
-                details: {
-                    recordTitle: savedPromo.code,
-                    recordId: savedPromo._id,
-                    method: 'POST',
-                    endpoint: '/api/promos/add'
-                }
+        if (hasLocal) {
+            promoEntries.push({
+                code: `${code.toUpperCase()}LOCAL`,
+                description,
+                category,
+                discountType,
+                durationType,
+                startDate,
+                validUntil,
+                usageLimit,
+                isArchive: "No",
+                image: imageUrl,
+                imagePublicId: imagePublicId,
+                pricing: {
+                    local: Number(localPrice),
+                    international: 0
+                },
+                targetPackages: parsedTargetPackages
             });
-            console.log('✅ Activity Log recorded for New Promo');
-        } catch (logError) {
-            console.error('❌ Error logging activity:', logError);
         }
 
-        res.status(200).json({ status: "ok", data: savedPromo });
+        if (hasInternational) {
+            promoEntries.push({
+                code: `${code.toUpperCase()}INL`,
+                description,
+                category,
+                discountType,
+                durationType,
+                startDate,
+                validUntil,
+                usageLimit,
+                isArchive: "No",
+                image: imageUrl,
+                imagePublicId: imagePublicId,
+                pricing: {
+                    local: 0,
+                    international: Number(internationalPrice)
+                },
+                targetPackages: parsedTargetPackages
+            });
+        }
+
+        if (promoEntries.length === 0) {
+            // ✅ Cleanup Cloudinary if no valid promo entries
+            if (req.file?.filename) {
+                await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
+            }
+            return res.status(400).json({ status: "error", message: "At least one price (local or international) is required." });
+        }
+
+        // ✅ Save all promo entries
+        const savedPromos = [];
+        for (const promoData of promoEntries) {
+            const newPromo = new Promo(promoData);
+            const saved = await newPromo.save();
+            savedPromos.push(saved);
+
+            // Activity Logging per promo
+            try {
+                let logDesc = `Created new promo code: ${saved.code}`;
+                if (saved.targetPackages && saved.targetPackages.length > 0) {
+                    logDesc += ` (${saved.targetPackages.length} package${saved.targetPackages.length > 1 ? 's' : ''} targeted)`;
+                }
+                await ActivityLog.create({
+                    action: 'CREATE',
+                    module: 'Promos',
+                    user: userEmail || 'System Admin',
+                    userId: logUserId,
+                    severity: 'SUCCESS',
+                    description: logDesc,
+                    details: {
+                        recordTitle: saved.code,
+                        recordId: saved._id,
+                        method: 'POST',
+                        endpoint: '/api/promos/add'
+                    }
+                });
+                console.log(`✅ Activity Log recorded for New Promo: ${saved.code}`);
+            } catch (logError) {
+                console.error('❌ Error logging activity:', logError);
+            }
+        }
+
+        res.status(200).json({ status: "ok", promos: savedPromos, data: savedPromos[0] });
     } catch (err) {
         console.error('❌ Error adding promo:', err);
         
@@ -161,16 +221,35 @@ router.get('/:id', async (req, res) => {
 // 5. UPDATE PROMO (WITH CLOUDINARY & DETAILED LOGGING & TARGET PACKAGES)
 router.put('/:id', upload.single('image'), async (req, res) => {
     try {
-        // ✅ EXTRACT EXTRA FIELDS: changes, userEmail, adminId, targetPackages
-        const { userEmail, adminId, existingImagePublicId, changes, targetPackages } = req.body;
+        const {
+            userEmail, adminId, existingImagePublicId, changes,
+            code, description, category, discountType,
+            durationType, startDate, validUntil, usageLimit, isActive,
+            localPrice, internationalPrice,
+            targetPackages
+        } = req.body;
         const logUserId = getValidAdminId(adminId);
 
-        let updateData = { ...req.body };
-
-        // ✅ Parse targetPackages if sent as JSON string
-        if (targetPackages) {
-            updateData.targetPackages = JSON.parse(targetPackages);
-        }
+        // ✅ FIXED: Explicitly build updateData — no ...req.body spread to avoid
+        //    ghost fields like discountValue being passed into Mongoose
+        let updateData = {
+            code,
+            description,
+            category,
+            discountType,
+            durationType,
+            startDate,
+            validUntil,
+            usageLimit,
+            ...(isActive !== undefined && { isActive }),
+            // ✅ Build pricing sub-document
+            pricing: {
+                local: Number(localPrice) || 0,
+                international: Number(internationalPrice) || 0
+            },
+            // ✅ Parse targetPackages if sent as JSON string
+            targetPackages: targetPackages ? JSON.parse(targetPackages) : []
+        };
 
         // If new image is uploaded
         if (req.file) {
@@ -330,7 +409,6 @@ router.post('/claim/:id', async (req, res) => {
 });
 
 // 8. VALIDATE PROMO CODE (✅ UPDATED: Check if promo applies to specific package)
-// 8. VALIDATE PROMO CODE (✅ UPDATED: Check if promo applies to specific package)
 router.get('/validate/:code', async (req, res) => {
     try {
         const { code } = req.params;
@@ -374,7 +452,7 @@ router.get('/validate/:code', async (req, res) => {
             });
         }
 
-        // ✅ NEW: Check if promo applies to the specific package
+        // ✅ Check if promo applies to the specific package
         if (packageId && promo.targetPackages && promo.targetPackages.length > 0) {
             console.log('🔍 Validating promo for package:', packageId);
             console.log('🎯 Target packages:', promo.targetPackages.map(p => p._id.toString()));
@@ -400,7 +478,8 @@ router.get('/validate/:code', async (req, res) => {
                 code: promo.code,
                 description: promo.description,
                 discountType: promo.discountType,
-                discountValue: promo.discountValue,
+                // ✅ UPDATED: Return pricing object instead of discountValue
+                pricing: promo.pricing,
                 usageLimit: promo.usageLimit,
                 usedCount: promo.usedCount,
                 targetPackages: promo.targetPackages
@@ -514,7 +593,8 @@ router.get('/validate/:code', async (req, res) => {
                 code: promo.code,
                 description: promo.description,
                 discountType: promo.discountType,
-                discountValue: promo.discountValue,
+                // ✅ UPDATED: Return pricing object instead of discountValue
+                pricing: promo.pricing,
                 usageLimit: promo.usageLimit,
                 usedCount: promo.usedCount,
                 targetPackages: promo.targetPackages

@@ -1,5 +1,21 @@
 const mongoose = require('mongoose');
 
+// ✅ NEW SCHEMA: Pricing breakdown for Local and International
+const PromoPriceSchema = new mongoose.Schema({
+    local: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
+    },
+    international: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
+    }
+}, { _id: false });
+
 const PromoSchema = new mongoose.Schema({
     code: {
         type: String,
@@ -11,7 +27,11 @@ const PromoSchema = new mongoose.Schema({
     description: { type: String, required: true },
     category: { type: String, required: true },
     discountType: { type: String, required: true },
-    discountValue: { type: Number, required: true },
+    // ✅ REPLACED: discountValue → pricing (local + international)
+    pricing: {
+        type: PromoPriceSchema,
+        required: true
+    },
     startDate: { 
         type: Date, 
         required: true 
@@ -50,7 +70,7 @@ const PromoSchema = new mongoose.Schema({
         enum: ['No', 'Yes'], 
         default: 'No' 
     },
-    // ✅ NEW FIELD: Target Packages
+    // ✅ Target Packages
     targetPackages: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'packages'

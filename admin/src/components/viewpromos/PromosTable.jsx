@@ -24,6 +24,12 @@ const PromosTable = ({
         });
     };
 
+    // ✅ Resolves price from either flat field or nested pricing sub-document
+    const getLocalPrice = (promo) =>
+        promo.pricing?.local ?? promo.localPrice ?? null;
+    const getIntlPrice = (promo) =>
+        promo.pricing?.international ?? promo.internationalPrice ?? null;
+
     return (
         <div className="prt-table-wrapper">
             <div className="prt-table-container">
@@ -32,7 +38,7 @@ const PromosTable = ({
                         <tr>
                             <th className="prt-col-code">CODE</th>
                             <th className="prt-col-category">CATEGORY</th>
-                            <th className="prt-col-discount">DISCOUNT</th>
+                            <th className="prt-col-discount">PRICE</th>
                             <th className="prt-col-date">VALID UNTIL</th>
                             <th className="prt-col-status">STATUS</th>
                             <th className="prt-col-desc">DESCRIPTION</th>
@@ -61,16 +67,27 @@ const PromosTable = ({
                                         </div>
                                     </td>
 
-                                    {/* DISCOUNT */}
+                                    {/* PRICE — shows whichever field has data */}
                                     <td>
                                         <div className="prt-discount-cell">
-                                            <Percent size={14} className="prt-icon" />
-                                            <span className="prt-discount-value">
-                                                {promo.discountType === 'Percentage' 
-                                                    ? `${promo.discountValue}%` 
-                                                    : `₱${promo.discountValue.toLocaleString()}`
-                                                }
-                                            </span>
+                                            <span className="prt-peso-icon prt-icon">₱</span>
+                                            <div className="prt-price-stack">
+                                                {Number(getLocalPrice(promo)) > 0 && (
+                                                    <span className="prt-discount-value">
+                                                        ₱{Number(getLocalPrice(promo)).toLocaleString()}
+                                                        <span className="prt-price-type">Local</span>
+                                                    </span>
+                                                )}
+                                                {Number(getIntlPrice(promo)) > 0 && (
+                                                    <span className="prt-discount-value">
+                                                        ₱{Number(getIntlPrice(promo)).toLocaleString()}
+                                                        <span className="prt-price-type">Intl.</span>
+                                                    </span>
+                                                )}
+                                                {!(Number(getLocalPrice(promo)) > 0) && !(Number(getIntlPrice(promo)) > 0) && (
+                                                    <span className="prt-discount-value">N/A</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
 

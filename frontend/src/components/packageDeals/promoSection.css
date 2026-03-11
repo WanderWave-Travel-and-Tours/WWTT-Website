@@ -755,3 +755,125 @@
     width: 42px; 
   }
 }
+/* ================================================= */
+/* PRICING DISPLAY — LOCAL / INTERNATIONAL TOGGLE    */
+/* ================================================= */
+
+.pricing-display-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.price-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.price-toggle-btn {
+  background: transparent;
+  border: none;
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+
+.price-toggle-btn.active {
+  background: linear-gradient(135deg, #FF8C00 0%, #FFB347 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.4);
+}
+
+.price-toggle-btn:not(.active):hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Responsive adjustments for toggle */
+@media (max-width: 480px) {
+  .pricing-display-group {
+    gap: 5px;
+  }
+
+  .price-toggle-btn {
+    font-size: 0.55rem;
+    padding: 3px 8px;
+  }
+
+  .promo-type-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* ================================================= */
+/* PHP / USD CURRENCY SWITCH (inside promo card)     */
+/* ================================================= */
+
+.code-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.code-label-row .code-label {
+  margin-bottom: 0;
+}
+
+.currency-switch {
+  display: flex;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.currency-switch-btn {
+  background: transparent;
+  border: none;
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+
+.currency-switch-btn.active {
+  background: linear-gradient(135deg, #FF8C00 0%, #FFB347 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.4);
+}
+
+.currency-switch-btn:not(.active):hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 480px) {
+  .code-label-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .currency-switch-btn {
+    font-size: 0.55rem;
+    padding: 3px 8px;
+  }
+}

@@ -20,6 +20,10 @@ const PromoDetailModal = ({
 
     if (!showModal || !selectedPromo) return null;
 
+    // ✅ Resolves price from either flat field or nested pricing sub-document
+    const localPrice  = selectedPromo.pricing?.local         ?? selectedPromo.localPrice         ?? null;
+    const intlPrice   = selectedPromo.pricing?.international ?? selectedPromo.internationalPrice ?? null;
+
     const closeModal = () => setShowModal(false);
 
     const getStatus = (validUntil) => {
@@ -127,20 +131,25 @@ const PromoDetailModal = ({
                             </div>
                             <div className="prdm-info-box">
                                 <div className="prdm-box-icon green">
-                                    {selectedPromo.discountType === 'Percentage' ? (
-                                        <Percent size={18} />
-                                    ) : (
-                                        <span className="prdm-peso-icon">₱</span>
-                                    )}
+                                    <span className="prdm-peso-icon">₱</span>
                                 </div>
                                 <div className="prdm-box-content">
-                                    <label>DISCOUNT VALUE</label>
-                                    <p className="prdm-amount-text">
-                                        {selectedPromo.discountType === 'Percentage' 
-                                            ? `${selectedPromo.discountValue}%` 
-                                            : `₱${selectedPromo.discountValue.toLocaleString()}`
-                                        }
-                                    </p>
+                                    <label>PRICE</label>
+                                    {Number(localPrice) > 0 && (
+                                        <p className="prdm-amount-text">
+                                            ₱{Number(localPrice).toLocaleString()}
+                                            <span style={{fontSize:'11px', fontWeight:700, color:'#94a3b8', marginLeft:'6px', background:'#f1f5f9', borderRadius:'4px', padding:'1px 5px'}}>LOCAL</span>
+                                        </p>
+                                    )}
+                                    {Number(intlPrice) > 0 && (
+                                        <p className="prdm-amount-text">
+                                            ₱{Number(intlPrice).toLocaleString()}
+                                            <span style={{fontSize:'11px', fontWeight:700, color:'#94a3b8', marginLeft:'6px', background:'#f1f5f9', borderRadius:'4px', padding:'1px 5px'}}>INTL.</span>
+                                        </p>
+                                    )}
+                                    {!(Number(localPrice) > 0) && !(Number(intlPrice) > 0) && (
+                                        <p className="prdm-amount-text">N/A</p>
+                                    )}
                                 </div>
                             </div>
                             <div className="prdm-info-box">

@@ -51,7 +51,9 @@ const AddPromo = () => {
         description: '',
         category: '',
         discountType: 'Fixed Amount (Peso)',
-        discountValue: '',
+        // ✅ UPDATED: Replaced discountValue with localPrice and internationalPrice
+        localPrice: '',
+        internationalPrice: '',
         durationType: 'Weekly',
         startDate: '',
         usageLimit: ''
@@ -158,11 +160,13 @@ const AddPromo = () => {
 
     useEffect(() => {
         const updateDraft = async () => {
+            // ✅ UPDATED: Check localPrice and internationalPrice instead of discountValue
             const isFormEmpty = 
                 !promoDetails.code &&
                 !promoDetails.description &&
                 !promoDetails.category &&
-                !promoDetails.discountValue &&
+                !promoDetails.localPrice &&
+                !promoDetails.internationalPrice &&
                 !promoDetails.startDate &&
                 !promoDetails.usageLimit &&
                 promoDetails.durationType === 'Weekly' && 
@@ -207,6 +211,7 @@ const AddPromo = () => {
     const restoreDraftData = async (data) => {
         if (!data) return;
 
+        // ✅ UPDATED: Restore localPrice and internationalPrice from draft
         setPromoDetails({
             code: data.code || '',
             discount: data.discount || '',
@@ -214,7 +219,8 @@ const AddPromo = () => {
             description: data.description || '',
             category: data.category || '',
             discountType: data.discountType || 'Fixed Amount (Peso)',
-            discountValue: data.discountValue || '',
+            localPrice: data.localPrice || '',
+            internationalPrice: data.internationalPrice || '',
             durationType: data.durationType || 'Weekly',
             startDate: data.startDate || '',
             usageLimit: data.usageLimit || ''
@@ -294,7 +300,8 @@ const AddPromo = () => {
             }
         }
 
-        if (name === 'discountValue') {
+        // ✅ UPDATED: Validate localPrice and internationalPrice for Percentage cap
+        if (name === 'localPrice' || name === 'internationalPrice') {
             const numValue = Number(value);
             if (promoDetails.discountType === 'Percentage' && numValue > 100) {
                 return;
@@ -355,8 +362,19 @@ const AddPromo = () => {
             return;
         }
 
-        if (!promoDetails.discountValue || promoDetails.discountValue <= 0) {
-            toast.error('Discount value must be greater than 0');
+        // ✅ UPDATED: At least one of localPrice or internationalPrice is required
+        if (!promoDetails.localPrice && !promoDetails.internationalPrice) {
+            toast.error('At least one price (Local or International) is required');
+            return;
+        }
+
+        if (promoDetails.localPrice && Number(promoDetails.localPrice) <= 0) {
+            toast.error('Local price must be greater than 0');
+            return;
+        }
+
+        if (promoDetails.internationalPrice && Number(promoDetails.internationalPrice) <= 0) {
+            toast.error('International price must be greater than 0');
             return;
         }
 
@@ -383,7 +401,9 @@ const AddPromo = () => {
             formData.append('description', promoDetails.description);
             formData.append('category', promoDetails.category);
             formData.append('discountType', promoDetails.discountType);
-            formData.append('discountValue', promoDetails.discountValue);
+            // ✅ UPDATED: Append localPrice and internationalPrice instead of discountValue
+            formData.append('localPrice', promoDetails.localPrice || '');
+            formData.append('internationalPrice', promoDetails.internationalPrice || '');
             formData.append('durationType', promoDetails.durationType);
             formData.append('startDate', promoDetails.startDate);
             formData.append('validUntil', promoDetails.validUntil);
@@ -408,7 +428,12 @@ const AddPromo = () => {
 
             if (response.ok && data.status === 'ok') {
                 clearDraft();
-                toast.success('Promo created successfully!');
+                // ✅ UPDATED: Handle single or dual promo creation success message
+                if (data.promos && data.promos.length > 1) {
+                    toast.success(`2 promos created: ${data.promos.map(p => p.code).join(' & ')}`);
+                } else {
+                    toast.success('Promo created successfully!');
+                }
                 setTimeout(() => {
                     window.location.href = '/add-promo';
                 }, 1500);
@@ -459,39 +484,46 @@ const AddPromo = () => {
                         <div className="promo-left">
                                     <div className="promo-field promo-field--full">
                                         <label>Promo Image (Optional)</label>
-                                        <div style={{ border: '2px dashed #e2e8f0', borderRadius: '8px', padding: '20px', textAlign: 'center', background: '#f8fafc' }}>
-                                            {imagePreview ? (
-                                                <div style={{ position: 'relative', display: 'inline-block' }}>
-                                                    <img src={imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
-                                                    <button 
-                                                        onClick={removeImage}
-                                                        type="button"
-                                                        style={{
-                                                            position: 'absolute', top: '-10px', right: '-10px',
-                                                            background: 'red', color: 'white', border: 'none',
-                                                            borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer',
-                                                            zIndex: 10
-                                                        }}
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
+                                        <input 
+                                            type="file" 
+                                            accept="image/jpeg,image/png,image/webp" 
+                                            onChange={handleImageChange}
+                                            id="promo-image-upload"
+                                            style={{ display: 'none' }}
+                                        />
+                                        {imagePreview ? (
+                                            <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                                                <img 
+                                                    src={imagePreview} 
+                                                    alt="Preview" 
+                                                    style={{ 
+                                                        width: '100%', maxHeight: '220px', objectFit: 'cover',
+                                                        borderRadius: '10px', border: '2px solid #e2e8f0', display: 'block'
+                                                    }} 
+                                                />
+                                                <button 
+                                                    onClick={removeImage}
+                                                    type="button"
+                                                    style={{
+                                                        position: 'absolute', top: '10px', right: '10px',
+                                                        background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none',
+                                                        borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer',
+                                                        zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        backdropFilter: 'blur(4px)'
+                                                    }}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label htmlFor="promo-image-upload" className="promo-upload-area">
+                                                <div className="promo-upload-icon-wrap">
+                                                    <Upload size={26} />
                                                 </div>
-                                            ) : (
-                                                <>
-                                                    <input 
-                                                        type="file" 
-                                                        accept="image/*" 
-                                                        onChange={handleImageChange}
-                                                        id="promo-image-upload"
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    <label htmlFor="promo-image-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#64748b', pointerEvents: 'auto' }}>
-                                                        <Upload size={24} />
-                                                        <span>Click to Upload Image</span>
-                                                    </label>
-                                                </>
-                                            )}
-                                        </div>
+                                                <p className="promo-upload-title">Click to upload poster</p>
+                                                <p className="promo-upload-sub">JPG, PNG or WebP (Max 5MB)</p>
+                                            </label>
+                                        )}
                                     </div>
 
                             <section className="promo-section">
@@ -510,7 +542,7 @@ const AddPromo = () => {
                                         />
                                     </div>
 
-                                    {/* ✅ NEW: Target Packages Field */}
+                                    {/* ✅ Target Packages Field */}
                                     <div className="promo-field promo-field--full">
                                         <label>Target Packages (Optional)</label>
                                         <div className="package-search-container">
@@ -627,18 +659,39 @@ const AddPromo = () => {
                                         </select>
                                     </div>
 
+                                    {/* ✅ UPDATED: Replaced Discount Value with Local Price and International Price */}
                                     <div className="promo-field">
-                                        <label>Discount Value</label>
+                                        <label>Local Price</label>
                                         <input
                                             type="number"
-                                            name="discountValue"
-                                            value={promoDetails.discountValue}
+                                            name="localPrice"
+                                            value={promoDetails.localPrice}
                                             onChange={handleChange}
-                                            placeholder={promoDetails.discountType === 'Percentage' ? 'Enter %' : 'Enter amount'}
+                                            placeholder={promoDetails.discountType === 'Percentage' ? 'Enter % for local' : 'Enter local amount'}
                                             min="1"
                                             max={promoDetails.discountType === 'Percentage' ? '100' : undefined}
                                             onWheel={(e) => e.target.blur()}
                                         />
+                                        <small style={{fontSize: '11px', color: '#64748b', marginTop: '4px'}}>
+                                            Discount for local customers
+                                        </small>
+                                    </div>
+
+                                    <div className="promo-field">
+                                        <label>International Price</label>
+                                        <input
+                                            type="number"
+                                            name="internationalPrice"
+                                            value={promoDetails.internationalPrice}
+                                            onChange={handleChange}
+                                            placeholder={promoDetails.discountType === 'Percentage' ? 'Enter % for international' : 'Enter international amount'}
+                                            min="1"
+                                            max={promoDetails.discountType === 'Percentage' ? '100' : undefined}
+                                            onWheel={(e) => e.target.blur()}
+                                        />
+                                        <small style={{fontSize: '11px', color: '#64748b', marginTop: '4px'}}>
+                                            Discount for international customers
+                                        </small>
                                     </div>
 
                                     <div className="promo-field">
@@ -711,17 +764,28 @@ const AddPromo = () => {
                                                 <line x1="7" y1="7" x2="7.01" y2="7" strokeLinecap="round"/>
                                             </svg>
                                         </div>
+                                        {/* ✅ UPDATED: Preview shows local price as primary display */}
                                         <span className="promo-card-discount">
-                                            {promoDetails.discountValue ? (
+                                            {promoDetails.localPrice ? (
                                                 promoDetails.discountType === 'Percentage' 
-                                                    ? `${promoDetails.discountValue}%` 
-                                                    : `₱${promoDetails.discountValue}`
+                                                    ? `${promoDetails.localPrice}%` 
+                                                    : `₱${promoDetails.localPrice}`
                                             ) : '--'}
                                         </span>
                                     </div>
                                     <div className="promo-card-body">
                                         <span className="promo-card-code">
-                                            {promoDetails.code || 'PROMOCODE'}
+                                            {promoDetails.code ? (
+                                                promoDetails.localPrice && promoDetails.internationalPrice ? (
+                                                    <>{promoDetails.code}LOCAL <span style={{opacity:0.5}}>/</span> {promoDetails.code}INL</>
+                                                ) : promoDetails.localPrice ? (
+                                                    `${promoDetails.code}LOCAL`
+                                                ) : promoDetails.internationalPrice ? (
+                                                    `${promoDetails.code}INL`
+                                                ) : (
+                                                    promoDetails.code
+                                                )
+                                            ) : 'PROMOCODE'}
                                         </span>
                                         {promoDetails.category && (
                                             <div className="promo-card-category">
@@ -731,6 +795,40 @@ const AddPromo = () => {
                                         <p className="promo-card-desc">
                                             {promoDetails.description || 'Promo description will appear here'}
                                         </p>
+
+                                        {/* ✅ Pricing breakdown pills */}
+                                        <div className="promo-pricing-preview">
+                                            <div className={`promo-pricing-pill ${promoDetails.localPrice ? 'promo-pricing-pill--active' : ''}`}>
+                                                <div className="promo-pricing-pill-label">
+                                                    <span className="promo-pricing-pill-flag">🇵🇭</span>
+                                                    <span>PH Local</span>
+                                                </div>
+                                                {promoDetails.localPrice ? (
+                                                    <div className="promo-pricing-pill-value">
+                                                        {promoDetails.discountType === 'Percentage'
+                                                            ? `${promoDetails.localPrice}%`
+                                                            : `₱${Number(promoDetails.localPrice).toLocaleString()}`}
+                                                    </div>
+                                                ) : (
+                                                    <div className="promo-pricing-pill-empty">--</div>
+                                                )}
+                                            </div>
+                                            <div className={`promo-pricing-pill ${promoDetails.internationalPrice ? 'promo-pricing-pill--active' : ''}`}>
+                                                <div className="promo-pricing-pill-label">
+                                                    <span className="promo-pricing-pill-flag">🌐</span>
+                                                    <span>Intl.</span>
+                                                </div>
+                                                {promoDetails.internationalPrice ? (
+                                                    <div className="promo-pricing-pill-value">
+                                                        {promoDetails.discountType === 'Percentage'
+                                                            ? `${promoDetails.internationalPrice}%`
+                                                            : `₱${Number(promoDetails.internationalPrice).toLocaleString()}`}
+                                                    </div>
+                                                ) : (
+                                                    <div className="promo-pricing-pill-empty">--</div>
+                                                )}
+                                            </div>
+                                        </div>
                                         
                                         {/* ✅ Show targeted packages count in preview */}
                                         {selectedPackages.length > 0 && (
