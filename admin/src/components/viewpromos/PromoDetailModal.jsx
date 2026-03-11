@@ -127,19 +127,27 @@ const PromoDetailModal = ({
                             </div>
                             <div className="prdm-info-box">
                                 <div className="prdm-box-icon green">
-                                    {selectedPromo.discountType === 'Percentage' ? (
-                                        <Percent size={18} />
-                                    ) : (
-                                        <span className="prdm-peso-icon">₱</span>
-                                    )}
+                                    <span className="prdm-peso-icon">₱</span>
                                 </div>
                                 <div className="prdm-box-content">
-                                    <label>DISCOUNT VALUE</label>
+                                    <label>INTERNATIONAL PRICE</label>
                                     <p className="prdm-amount-text">
-                                        {selectedPromo.discountType === 'Percentage' 
-                                            ? `${selectedPromo.discountValue}%` 
-                                            : `₱${selectedPromo.discountValue.toLocaleString()}`
-                                        }
+                                        {selectedPromo.internationalPrice != null
+                                            ? `₱${Number(selectedPromo.internationalPrice).toLocaleString()}`
+                                            : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="prdm-info-box">
+                                <div className="prdm-box-icon orange">
+                                    <span className="prdm-peso-icon">₱</span>
+                                </div>
+                                <div className="prdm-box-content">
+                                    <label>LOCAL PRICE</label>
+                                    <p className="prdm-amount-text">
+                                        {selectedPromo.localPrice != null
+                                            ? `₱${Number(selectedPromo.localPrice).toLocaleString()}`
+                                            : 'N/A'}
                                     </p>
                                 </div>
                             </div>

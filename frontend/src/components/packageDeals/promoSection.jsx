@@ -8,6 +8,43 @@ function PromoSection({ onBookNow }) {
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(null);
 
+  // ✅ PHP → USD fixed rate
+  const PHP_TO_USD_RATE = 56;
+
+  // ✅ Read currency from localStorage — tries common keys used by parent currency toggles
+  const readCurrencyFromStorage = () => {
+    return (
+      localStorage.getItem('currency') ||
+      localStorage.getItem('selectedCurrency') ||
+      localStorage.getItem('currencyPreference') ||
+      'PHP'
+    );
+  };
+
+  const [currency, setCurrencyState] = useState(readCurrencyFromStorage);
+
+  // ✅ Listen for localStorage changes (when parent toggle updates it)
+  useEffect(() => {
+    const handleStorage = () => {
+      setCurrencyState(readCurrencyFromStorage());
+    };
+
+    // Native storage event (cross-tab)
+    window.addEventListener('storage', handleStorage);
+
+    // ✅ Also poll every 300ms to catch same-tab localStorage updates
+    // (storage event only fires across tabs, not within the same tab)
+    const poll = setInterval(() => {
+      const current = readCurrencyFromStorage();
+      setCurrencyState(prev => prev !== current ? current : prev);
+    }, 300);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(poll);
+    };
+  }, []);
+
   // Fallback images if no image uploaded
   const getPromoFallbackImage = (type) => {
     switch(type) {
@@ -55,9 +92,9 @@ function PromoSection({ onBookNow }) {
               id: p._id,
               type: p.durationType,
               code: p.code,
-              discount: p.discountType === 'Percentage' 
-                ? `${p.discountValue}%` 
-                : `₱${p.discountValue}`,
+              // ✅ UPDATED: Use pricing.local and pricing.international instead of discountValue
+              localPrice: p.pricing?.local ?? null,
+              internationalPrice: p.pricing?.international ?? null,
               discountType: p.discountType,
               description: p.description,
               validUntil: new Date(p.validUntil),
@@ -76,6 +113,26 @@ function PromoSection({ onBookNow }) {
 
     fetchPromos();
   }, []);
+
+  // ✅ Format a price number based on discountType and active currency — always rounded
+  const formatPrice = (value, discountType) => {
+    if (value === null || value === undefined) return null;
+    if (discountType === 'Percentage') return `${Math.round(value)}%`;
+    if (currency === 'USD') {
+      const usd = Math.round(value / PHP_TO_USD_RATE);
+      return `$${usd.toLocaleString()}`;
+    }
+    return `₱${Math.round(value).toLocaleString()}`;
+  };
+
+  // ✅ UPDATED: Each promo has only one price (local OR international), derive it directly
+  const getPromoPrice = (promo) => {
+    const hasLocal = promo.localPrice !== null && promo.localPrice !== undefined && promo.localPrice > 0;
+    const hasIntl  = promo.internationalPrice !== null && promo.internationalPrice !== undefined && promo.internationalPrice > 0;
+    if (hasLocal)  return { price: formatPrice(promo.localPrice, promo.discountType), type: 'local' };
+    if (hasIntl)   return { price: formatPrice(promo.internationalPrice, promo.discountType), type: 'international' };
+    return null;
+  };
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % promos.length);
@@ -164,11 +221,24 @@ function PromoSection({ onBookNow }) {
                           <span>{promo.type.toUpperCase()} DEAL</span>
                         </div>
                         
-                        <div className="discount-badge">
-                          <span className="discount-text">SAVE</span>
-                          <span>{promo.discount}</span>
-                          <span className="discount-text">OFF</span>
-                        </div>
+                        {/* ✅ UPDATED: Pricing display — each promo is either LOCAL or INTL, no toggle needed */}
+                        {(() => {
+                          const promoPrice = getPromoPrice(promo);
+                          if (!promoPrice) return null;
+                          const { price, type } = promoPrice;
+
+                          return (
+                            <div className="discount-badge">
+                              <span className="discount-text">
+                                {type === 'local'
+                                  ? (currency === 'USD' ? 'PH' : '🇵🇭 LOCAL')
+                                  : (currency === 'USD' ? 'INTL.' : '🌐 INTL.')}
+                              </span>
+                              <span>{price}</span>
+                              <span className="discount-text">OFF</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Percent, DollarSign, Upload, X } from 'lucide-react';
+import { Save, ArrowLeft, Upload, X } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar'; 
 import './EditPromo.css'; 
 
@@ -34,7 +34,9 @@ const EditPromo = () => {
         code: '',
         category: '',
         discountType: 'Percentage',
-        discountValue: '',
+        // ✅ UPDATED: Replaced discountValue with localPrice and internationalPrice
+        localPrice: '',
+        internationalPrice: '',
         startDate: '',
         validUntil: '',
         description: '',
@@ -78,7 +80,7 @@ const EditPromo = () => {
 
         setIsSearching(true);
         try {
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/search-packages?search=${encodeURIComponent(searchTerm)}`);
+            const response = await fetch(`http://localhost:5000/api/promos/search-packages?search=${encodeURIComponent(searchTerm)}`);
             if (response.ok) {
                 const data = await response.json();
                 // Filter out already selected packages
@@ -160,10 +162,12 @@ const EditPromo = () => {
                 return;
             }
 
+            // ✅ UPDATED: Check localPrice and internationalPrice instead of discountValue
             const isFormEmpty = 
                 !formData.code && 
                 !formData.category && 
-                !formData.discountValue && 
+                !formData.localPrice && 
+                !formData.internationalPrice && 
                 !formData.startDate && 
                 !formData.validUntil && 
                 !formData.description && 
@@ -213,11 +217,13 @@ const EditPromo = () => {
             return;
         }
 
+        // ✅ UPDATED: Restore localPrice and internationalPrice from draft
         setFormData({
             code: data.code || '',
             category: data.category || '',
             discountType: data.discountType || 'Percentage',
-            discountValue: data.discountValue || '',
+            localPrice: data.localPrice || '',
+            internationalPrice: data.internationalPrice || '',
             startDate: data.startDate || '',
             validUntil: data.validUntil || '',
             description: data.description || '',
@@ -264,15 +270,25 @@ const EditPromo = () => {
     const fetchPromoData = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/${id}`);
+            const response = await fetch(`http://localhost:5000/api/promos/${id}`);
             if (response.ok) {
                 const data = await response.json();
                 
+                // ✅ FIXED: Correctly map nested pricing sub-document from backend
+                // Backend stores: { pricing: { local: Number, international: Number } }
+                const localPrice = data.pricing?.local !== undefined && data.pricing?.local !== null
+                    ? data.pricing.local
+                    : (data.localPrice ?? '');
+                const internationalPrice = data.pricing?.international !== undefined && data.pricing?.international !== null
+                    ? data.pricing.international
+                    : (data.internationalPrice ?? '');
+
                 const formattedData = {
                     code: data.code || '',
                     category: data.category || '',
                     discountType: data.discountType || 'Percentage',
-                    discountValue: data.discountValue || '',
+                    localPrice: String(localPrice),
+                    internationalPrice: String(internationalPrice),
                     startDate: formatDateForInput(data.startDate),
                     validUntil: formatDateForInput(data.validUntil),
                     description: data.description || '',
@@ -305,6 +321,15 @@ const EditPromo = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
+        // ✅ Validate localPrice and internationalPrice for Percentage cap
+        if (name === 'localPrice' || name === 'internationalPrice') {
+            const numValue = Number(value);
+            if (formData.discountType === 'Percentage' && numValue > 100) {
+                return;
+            }
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -325,8 +350,24 @@ const EditPromo = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!formData.code || !formData.category || !formData.discountValue) {
-            alert('Please fill in all required fields');
+        // ✅ UPDATED: At least one of localPrice or internationalPrice is required (not both)
+        if (!formData.code || !formData.category) {
+            alert('Please fill in all required fields (Code, Category)');
+            return;
+        }
+
+        if (!formData.localPrice && !formData.internationalPrice) {
+            alert('Please enter at least one price — Local Price or International Price.');
+            return;
+        }
+
+        if (formData.localPrice && Number(formData.localPrice) <= 0) {
+            alert('Local price must be greater than 0');
+            return;
+        }
+
+        if (formData.internationalPrice && Number(formData.internationalPrice) <= 0) {
+            alert('International price must be greater than 0');
             return;
         }
 
@@ -387,7 +428,7 @@ const EditPromo = () => {
                 formDataToSend.append('adminId', adminId);
             }
 
-            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/${id}`, {
+            const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
                 method: 'PUT',
                 body: formDataToSend
             });
@@ -407,6 +448,19 @@ const EditPromo = () => {
             setSubmitting(false);
         }
     };
+
+    // ✅ NEW: Derived visibility flags for price fields based on fetched data.
+    // If only one price type has data, hide the other field entirely.
+    // If neither has data (both empty/zero), show both so admin can still fill them in.
+    const _hasLocalData = originalData
+        ? (originalData.localPrice !== '' && originalData.localPrice !== null && originalData.localPrice !== undefined && Number(originalData.localPrice) > 0)
+        : true;
+    const _hasIntlData = originalData
+        ? (originalData.internationalPrice !== '' && originalData.internationalPrice !== null && originalData.internationalPrice !== undefined && Number(originalData.internationalPrice) > 0)
+        : true;
+    const _neitherHasData = !_hasLocalData && !_hasIntlData;
+    const showLocalField  = _hasLocalData  || _neitherHasData;
+    const showIntlField   = _hasIntlData   || _neitherHasData;
 
     if (isLoading) {
         return (
@@ -454,55 +508,49 @@ const EditPromo = () => {
                         {/* Image Section */}
                         <div className="epr-section">
                             <h2 className="epr-section-title">Promo Image</h2>
-                            <div className="epr-form-group">
-                                <label className="epr-label">Upload New Image (Replaces current)</label>
-                                <div style={{ border: '2px dashed #e2e8f0', borderRadius: '10px', padding: '20px', textAlign: 'center', background: '#f8fafc' }}>
-                                    {imagePreview ? (
-                                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                                            <p style={{fontSize: '12px', color:'#64748b', marginBottom: '8px'}}>New Image Selected:</p>
-                                            <img src={imagePreview} alt="New Preview" style={{ maxWidth: '100%', maxHeight: '250px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
-                                            <button 
-                                                type="button"
-                                                onClick={removeImage}
-                                                style={{
-                                                    position: 'absolute', top: '20px', right: '-10px',
-                                                    background: 'red', color: 'white', border: 'none',
-                                                    borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                }}
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px'}}>
-                                            {currentImage && (
-                                                <div style={{marginBottom: '10px'}}>
-                                                     <p style={{fontSize: '12px', color:'#64748b', marginBottom: '8px'}}>Current Image:</p>
-                                                    <img 
-                                                        src={currentImage} // Assuming Cloudinary URL is stored as full path
-                                                        alt="Current" 
-                                                        style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid #e2e8f0' }} 
-                                                        onError={(e) => e.target.style.display = 'none'}
-                                                    />
-                                                </div>
-                                            )}
-                                            
-                                            <input 
-                                                type="file" 
-                                                accept="image/*" 
-                                                onChange={handleImageChange}
-                                                id="edit-promo-image"
-                                                style={{ display: 'none' }}
-                                            />
-                                            <label htmlFor="edit-promo-image" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: '#475569' }}>
-                                                <Upload size={18} />
-                                                {currentImage ? 'Change Image' : 'Upload Image'}
-                                            </label>
-                                        </div>
+
+                            <input 
+                                type="file" 
+                                accept="image/jpeg,image/png,image/webp" 
+                                onChange={handleImageChange}
+                                id="edit-promo-image"
+                                style={{ display: 'none' }}
+                            />
+
+                            {(imagePreview || currentImage) ? (
+                                /* ── Has image: full-width banner with hover overlay ── */
+                                <label htmlFor="edit-promo-image" className="epr-img-banner">
+                                    <img
+                                        src={imagePreview || currentImage}
+                                        alt="Promo"
+                                        className="epr-img-banner-img"
+                                        onError={(e) => e.target.style.display = 'none'}
+                                    />
+                                    <div className="epr-img-banner-overlay">
+                                        <Upload size={22} />
+                                        <span>Click to change image</span>
+                                    </div>
+                                    {imagePreview && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.preventDefault(); removeImage(); }}
+                                            className="epr-img-banner-remove"
+                                            title="Remove image"
+                                        >
+                                            <X size={14} />
+                                        </button>
                                     )}
-                                </div>
-                            </div>
+                                </label>
+                            ) : (
+                                /* ── No image: upload zone ── */
+                                <label htmlFor="edit-promo-image" className="epr-img-upload-zone">
+                                    <div className="epr-img-upload-icon-ring">
+                                        <Upload size={26} />
+                                    </div>
+                                    <span className="epr-img-upload-title">Click to Upload Poster</span>
+                                    <span className="epr-img-upload-sub">JPG, PNG or WEBP &nbsp;·&nbsp; Max 5MB</span>
+                                </label>
+                            )}
                         </div>
 
                         {/* Basic Info */}
@@ -550,9 +598,9 @@ const EditPromo = () => {
                             </div>
                         </div>
 
-                        {/* Value & Discount */}
+                        {/* ✅ UPDATED: Value & Pricing Section (replaces Value & Discount) */}
                         <div className="epr-section">
-                            <h2 className="epr-section-title">Value & Discount</h2>
+                            <h2 className="epr-section-title">Value & Pricing</h2>
                             <div className="epr-form-grid">
                                 <div className="epr-form-group">
                                     <label className="epr-label">Discount Type</label>
@@ -565,7 +613,7 @@ const EditPromo = () => {
                                                 checked={formData.discountType === 'Percentage'}
                                                 onChange={handleChange}
                                             />
-                                            <Percent size={16} /> Percentage (%)
+                                            Percentage (%)
                                         </label>
                                         <label className={`epr-radio-label ${formData.discountType === 'Fixed Amount (Peso)' || formData.discountType === 'Fixed Amount' ? 'active' : ''}`}>
                                             <input 
@@ -575,23 +623,42 @@ const EditPromo = () => {
                                                 checked={formData.discountType === 'Fixed Amount (Peso)' || formData.discountType === 'Fixed Amount'}
                                                 onChange={handleChange}
                                             />
-                                            <DollarSign size={16} /> Fixed Amount (₱)
+                                            Fixed Amount (₱)
                                         </label>
                                     </div>
                                 </div>
 
+                                {/* ✅ UPDATED: Local Price field — optional if international is filled */}
+                                {showLocalField && (
                                 <div className="epr-form-group">
-                                    <label className="epr-label">Discount Value *</label>
+                                    <label className="epr-label">🇵🇭 Local Price <span style={{fontWeight:400, color:'#94a3b8'}}>(optional if intl. is filled)</span></label>
                                     <input 
                                         type="number" 
-                                        name="discountValue"
-                                        value={formData.discountValue}
+                                        name="localPrice"
+                                        value={formData.localPrice}
                                         onChange={handleChange}
-                                        required
                                         min="0"
                                         className="epr-input"
+                                        placeholder={formData.discountType === 'Percentage' ? 'e.g. 10 (max 100)' : 'e.g. 500'}
                                     />
                                 </div>
+                                )}
+
+                                {/* ✅ UPDATED: International Price field — optional if local is filled */}
+                                {showIntlField && (
+                                <div className="epr-form-group">
+                                    <label className="epr-label">🌐 International Price <span style={{fontWeight:400, color:'#94a3b8'}}>(optional if local is filled)</span></label>
+                                    <input 
+                                        type="number" 
+                                        name="internationalPrice"
+                                        value={formData.internationalPrice}
+                                        onChange={handleChange}
+                                        min="0"
+                                        className="epr-input"
+                                        placeholder={formData.discountType === 'Percentage' ? 'e.g. 15 (max 100)' : 'e.g. 800'}
+                                    />
+                                </div>
+                                )}
                             </div>
                         </div>
 

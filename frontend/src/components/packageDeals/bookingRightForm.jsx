@@ -433,10 +433,23 @@ if (savedState.formData.appliedPromo) {
       maxPaxCovered = Math.min(maxPaxCovered, appliedPromo.maxUsesPerBooking);
     }
 
+    // ✅ Resolve discount value: supports new pricing schema and old discountValue fallback
+    const resolvePromoValue = () => {
+      const p = appliedPromo.pricing;
+      if (p) {
+        // New schema: use currency-appropriate value, fallback to whichever is non-zero
+        if (currency === 'PHP') return p.local > 0 ? p.local : (p.international ?? 0);
+        return p.international > 0 ? p.international : (p.local ?? 0);
+      }
+      // Backward compat: old promos with discountValue
+      return appliedPromo.discountValue ?? 0;
+    };
+    const promoDiscountValue = resolvePromoValue();
+
     if (appliedPromo.discountType === 'Percentage') {
-      return (effectivePerPaxPrice * appliedPromo.discountValue / 100) * maxPaxCovered;
+      return (effectivePerPaxPrice * promoDiscountValue / 100) * maxPaxCovered;
     } else {
-      return appliedPromo.discountValue * maxPaxCovered;
+      return promoDiscountValue * maxPaxCovered;
     }
   };
 
@@ -577,7 +590,7 @@ const handleApplyPromo = async () => {
         const appliedPromoData = {
           code: promo.code,
           discountType: promo.discountType,
-          discountValue: promo.discountValue,
+          pricing: promo.pricing,  // ✅ UPDATED: store pricing (local + international) instead of discountValue
           promoId: promo._id,
           packageId: packageId,
           maxUsesPerBooking: promo.maxUsesPerBooking || null,
@@ -1392,9 +1405,16 @@ const handleNextPassenger = async (e) => {
                 const isLimitedByBooking = appliedPromo.maxUsesPerBooking &&
                   appliedPromo.maxUsesPerBooking < basePax;
 
+                const promoDisplayValue = (() => {
+                  const p = appliedPromo.pricing;
+                  if (p) return (currency === 'PHP')
+                    ? (p.local > 0 ? p.local : (p.international ?? 0))
+                    : (p.international > 0 ? p.international : (p.local ?? 0));
+                  return appliedPromo.discountValue ?? 0;
+                })();
                 const perPaxDiscount = appliedPromo.discountType === 'Percentage'
-                  ? `${appliedPromo.discountValue}% per pax`
-                  : `${currencySymbol}${convertPrice(appliedPromo.discountValue).toLocaleString(undefined, {
+                  ? `${promoDisplayValue}% per pax`
+                  : `${currencySymbol}${convertPrice(promoDisplayValue).toLocaleString(undefined, {
                       minimumFractionDigits: currency === 'USD' ? 2 : 0,
                       maximumFractionDigits: currency === 'USD' ? 2 : 0
                     })} per pax`;
@@ -1516,13 +1536,21 @@ const handleNextPassenger = async (e) => {
               <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span>- Promo Discount ({appliedPromo.code})</span>
                 <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>
-                  {appliedPromo.discountType === 'Percentage'
-                    ? `${appliedPromo.discountValue}% × ${coveredPax} pax`
-                    : `${currencySymbol}${convertPrice(appliedPromo.discountValue).toLocaleString(undefined, {
-                        minimumFractionDigits: currency === 'USD' ? 2 : 0,
-                        maximumFractionDigits: currency === 'USD' ? 2 : 0
-                      })} × ${coveredPax} pax`
-                  }
+                  {(() => {
+                    const promoDisplayVal = (() => {
+                      const p = appliedPromo.pricing;
+                      if (p) return (currency === 'PHP')
+                        ? (p.local > 0 ? p.local : (p.international ?? 0))
+                        : (p.international > 0 ? p.international : (p.local ?? 0));
+                      return appliedPromo.discountValue ?? 0;
+                    })();
+                    return appliedPromo.discountType === 'Percentage'
+                      ? `${promoDisplayVal}% × ${coveredPax} pax`
+                      : `${currencySymbol}${convertPrice(promoDisplayVal).toLocaleString(undefined, {
+                          minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                          maximumFractionDigits: currency === 'USD' ? 2 : 0
+                        })} × ${coveredPax} pax`;
+                  })()}
                   {isPartial && (
                     <span style={{ color: '#d97706', marginLeft: '4px' }}>
                       ({coveredPax}/{basePax} pax)

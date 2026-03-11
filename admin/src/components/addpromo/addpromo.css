@@ -696,3 +696,126 @@
         max-width: 100px;
     }
 }
+/* ================================================= */
+/* UPLOAD AREA (Redesigned)                          */
+/* ================================================= */
+
+.promo-upload-area {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 40px 24px;
+    text-align: center;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 180px;
+}
+
+.promo-upload-area:hover {
+    border-color: #FF8C42;
+    background: #fff8f4;
+}
+
+.promo-upload-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    transition: all 0.2s ease;
+}
+
+.promo-upload-area:hover .promo-upload-icon-wrap {
+    border-color: #FF8C42;
+    box-shadow: 0 4px 14px rgba(255, 140, 66, 0.15);
+}
+
+.promo-upload-icon-wrap svg {
+    width: 26px;
+    height: 26px;
+    color: #64748b;
+    transition: color 0.2s ease;
+}
+
+.promo-upload-area:hover .promo-upload-icon-wrap svg {
+    color: #FF8C42;
+}
+
+.promo-upload-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.promo-upload-sub {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* ================================================= */
+/* PRICING PREVIEW PILLS (Local / International)     */
+/* ================================================= */
+
+.promo-pricing-preview {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.promo-pricing-pill {
+    flex: 1;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+
+.promo-pricing-pill--active {
+    border-color: rgba(255, 140, 66, 0.35);
+    background: #fff8f4;
+}
+
+.promo-pricing-pill-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.promo-pricing-pill-flag {
+    font-size: 13px;
+    line-height: 1;
+}
+
+.promo-pricing-pill-value {
+    font-size: 16px;
+    font-weight: 900;
+    color: #FF8C42;
+    font-family: 'Arial Black', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.promo-pricing-pill-empty {
+    font-size: 14px;
+    font-weight: 700;
+    color: #cbd5e1;
+}

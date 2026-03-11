@@ -32,7 +32,8 @@ const PromosTable = ({
                         <tr>
                             <th className="prt-col-code">CODE</th>
                             <th className="prt-col-category">CATEGORY</th>
-                            <th className="prt-col-discount">DISCOUNT</th>
+                            <th className="prt-col-discount">INTERNATIONAL PRICE</th>
+                            <th className="prt-col-discount">LOCAL PRICE</th>
                             <th className="prt-col-date">VALID UNTIL</th>
                             <th className="prt-col-status">STATUS</th>
                             <th className="prt-col-desc">DESCRIPTION</th>
@@ -61,15 +62,26 @@ const PromosTable = ({
                                         </div>
                                     </td>
 
-                                    {/* DISCOUNT */}
+                                    {/* INTERNATIONAL PRICE */}
                                     <td>
                                         <div className="prt-discount-cell">
-                                            <Percent size={14} className="prt-icon" />
+                                            <span className="prt-peso-icon prt-icon">₱</span>
                                             <span className="prt-discount-value">
-                                                {promo.discountType === 'Percentage' 
-                                                    ? `${promo.discountValue}%` 
-                                                    : `₱${promo.discountValue.toLocaleString()}`
-                                                }
+                                                {promo.internationalPrice != null
+                                                    ? `₱${Number(promo.internationalPrice).toLocaleString()}`
+                                                    : 'N/A'}
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    {/* LOCAL PRICE */}
+                                    <td>
+                                        <div className="prt-discount-cell">
+                                            <span className="prt-peso-icon prt-icon">₱</span>
+                                            <span className="prt-discount-value">
+                                                {promo.localPrice != null
+                                                    ? `₱${Number(promo.localPrice).toLocaleString()}`
+                                                    : 'N/A'}
                                             </span>
                                         </div>
                                     </td>
@@ -130,7 +142,7 @@ const PromosTable = ({
                         {/* Empty State */}
                         {promos.length === 0 && (
                             <tr>
-                                <td colSpan="7" className="prt-empty-cell">
+                                <td colSpan="8" className="prt-empty-cell">
                                     No promo codes found.
                                 </td>
                             </tr>

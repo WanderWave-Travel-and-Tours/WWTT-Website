@@ -316,6 +316,129 @@
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* ================================================= */
+/* IMAGE BANNER PREVIEW                              */
+/* ================================================= */
+
+/* Full-width clickable banner */
+.epr-img-banner {
+    position: relative;
+    display: block;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1.5px solid #e2e8f0;
+}
+
+/* The image fills the banner naturally */
+.epr-img-banner-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 320px;
+    object-fit: cover;
+    transition: filter 0.25s ease;
+}
+
+/* Hover overlay — dark scrim + text */
+.epr-img-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 31, 63, 0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.epr-img-banner:hover .epr-img-banner-overlay {
+    opacity: 1;
+}
+
+/* Red remove button — top right corner */
+.epr-img-banner-remove {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    border: 2px solid #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    transition: transform 0.15s, background 0.15s;
+    z-index: 5;
+}
+
+.epr-img-banner-remove:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+/* Empty upload zone */
+.epr-img-upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 52px 28px;
+    border: 2px dashed #fbd0b0;
+    border-radius: 12px;
+    background: #fff7ed;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.epr-img-upload-zone:hover {
+    background: #fff0e0;
+    border-color: #FF8C42;
+}
+
+.epr-img-upload-icon-ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid #FF8C42;
+    color: #FF8C42;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,140,66,0.07);
+    transition: transform 0.2s;
+}
+
+.epr-img-upload-zone:hover .epr-img-upload-icon-ring {
+    transform: translateY(-3px);
+}
+
+.epr-img-upload-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.epr-img-upload-sub {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* ================================================= */
 /* RESPONSIVENESS - MATCHING TESTIMONIAL PAGE EXACTLY */
 /* ================================================= */
 
