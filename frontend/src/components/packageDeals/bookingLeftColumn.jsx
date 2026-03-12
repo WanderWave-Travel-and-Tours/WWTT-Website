@@ -106,7 +106,8 @@ const BookingLeftColumn = ({
   onCustomizationChange,
   timerExpired = false,
   onGoBack,         // ✅ ADDED: receive onGoBack from PackageBooking → PackageDeals
-  paxCount = 1      // ✅ Lifted from right form — price multiplies directly per pax
+  paxCount = 1,     // ✅ Lifted from right form — price multiplies directly per pax
+  hotelUpgradeCost = 0  // ✅ Hotel accommodation total passed from parent (nights × rate × rooms)
 }) => {
   // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
@@ -172,11 +173,12 @@ const BookingLeftColumn = ({
   const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
 
   // ✅ Price multiplies directly per pax — 1 pax = 1×price, 2 pax = 2×price, etc.
-  const displayPrice = Math.round(adjustedActivePrice * paxCount);
+  // ✅ Hotel upgrade cost (per-night × nights × rooms) is added on top
+  const displayPrice = Math.round(adjustedActivePrice * paxCount) + hotelUpgradeCost;
   const convertedDisplayPrice = convertPrice(displayPrice);
 
-  // ✅ Original (strikethrough) price — same straight multiplication
-  const adjustedOriginalPrice = Math.round((originalPriceWithMarkup + customizationAdjustment) * paxCount);
+  // ✅ Original (strikethrough) price — same straight multiplication + hotel cost
+  const adjustedOriginalPrice = Math.round((originalPriceWithMarkup + customizationAdjustment) * paxCount) + hotelUpgradeCost;
   const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
 
   const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
@@ -233,6 +235,22 @@ const BookingLeftColumn = ({
                 })}
               </span>
               <span className="blc-price-pax">/{paxCount} pax</span>
+              {hotelUpgradeCost > 0 && (
+                <span style={{
+                  fontSize: '0.78rem',
+                  color: '#0284c7',
+                  background: '#e0f2fe',
+                  border: '1px solid #bae6fd',
+                  borderRadius: '5px',
+                  padding: '2px 8px',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  🏨 +{currencySymbol}{convertPrice(hotelUpgradeCost).toLocaleString()} hotel
+                </span>
+              )}
               {isCustomized && (
                 <span className="blc-customized-badge">
                   <Settings size={14} /> Customized
