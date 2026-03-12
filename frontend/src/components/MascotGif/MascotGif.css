@@ -1,13 +1,13 @@
 /* src/components/MascotGif/MascotGif.css */
 
 /* ============================================================ */
-/* MASCOT GIF — FIXED BOTTOM RIGHT                              */
+/* MASCOT GIF — FIXED BOTTOM LEFT                               */
 /* ============================================================ */
 .mascot-gif {
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 280px;
+  width: 300px;
   height: auto;
   z-index: 999;
   pointer-events: all;
@@ -16,8 +16,9 @@
 
 @media (max-width: 768px) {
   .mascot-gif {
-    width: 240px;
+    width: 220px;
     bottom: 0;
+    left: 0;
   }
 }
 
@@ -25,5 +26,6 @@
   .mascot-gif {
     width: 180px;
     bottom: 0;
+    left: 0;
   }
 }

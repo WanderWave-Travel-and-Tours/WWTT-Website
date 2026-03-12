@@ -80,7 +80,7 @@ const EditPromo = () => {
 
         setIsSearching(true);
         try {
-            const response = await fetch(`http://localhost:5000/api/promos/search-packages?search=${encodeURIComponent(searchTerm)}`);
+            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/search-packages?search=${encodeURIComponent(searchTerm)}`);
             if (response.ok) {
                 const data = await response.json();
                 // Filter out already selected packages
@@ -270,7 +270,7 @@ const EditPromo = () => {
     const fetchPromoData = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch(`http://localhost:5000/api/promos/${id}`);
+            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/${id}`);
             if (response.ok) {
                 const data = await response.json();
                 
@@ -428,7 +428,7 @@ const EditPromo = () => {
                 formDataToSend.append('adminId', adminId);
             }
 
-            const response = await fetch(`http://localhost:5000/api/promos/${id}`, {
+            const response = await fetch(`https://wanderwaveph.onrender.com/api/promos/${id}`, {
                 method: 'PUT',
                 body: formDataToSend
             });

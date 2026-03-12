@@ -398,23 +398,43 @@ if (savedState.formData.appliedPromo) {
   if (!selectedRoomType) return basePackagePrice;
 
   const roomType = selectedRoomType.type?.toUpperCase() || '';
-  
-  let upgradePrice = 0;
-  
-  if (roomType.includes('STANDARD')) {
-    upgradePrice = 900;
-  } else if (roomType.includes('4 STAR')) {
-    upgradePrice = 1150;
-  } else if (roomType.includes('5 STAR')) {
-    upgradePrice = 1400;
-  }
-  
-  const baseRoomCapacity = 4;
-  const pricePerPerson = upgradePrice / baseRoomCapacity;
-  const upgradeTotal = pricePerPerson * basePax;
+  const roomCapacity = selectedRoomType.capacity || 4;
+  const rooms = Math.ceil(basePax / roomCapacity);
 
-  return basePackagePrice + upgradeTotal;
+  // ✅ Per-night rates based on hotel tier
+  let pricePerNight = 0;
+  if (roomType.includes('BUDGET') || roomType.includes('STANDARD')) {
+    pricePerNight = 800;
+  } else if (roomType.includes('4')) {
+    pricePerNight = 1660;
+  } else if (roomType.includes('5')) {
+    pricePerNight = 2500;
+  }
+
+  // ✅ Hotel total = rate × nights (from package title/duration) × rooms needed
+  const hotelTotal = pricePerNight * durationNights * rooms;
+
+  return basePackagePrice + hotelTotal;
 };
+
+  // ✅ Separate helper: hotel accommodation cost for display as line item
+  const calculateHotelTotal = () => {
+    if (!selectedRoomType) return 0;
+    const roomType = selectedRoomType.type?.toUpperCase() || '';
+    const roomCapacity = selectedRoomType.capacity || 4;
+    const rooms = Math.ceil((quantities.adult || 1) / roomCapacity);
+
+    let pricePerNight = 0;
+    if (roomType.includes('BUDGET') || roomType.includes('STANDARD')) {
+      pricePerNight = 800;
+    } else if (roomType.includes('4')) {
+      pricePerNight = 1660;
+    } else if (roomType.includes('5')) {
+      pricePerNight = 2500;
+    }
+
+    return pricePerNight * durationNights * rooms;
+  };
 
   const calculateDiscount = () => {
     if (!appliedPromo) return 0;
@@ -520,6 +540,7 @@ if (savedState.formData.appliedPromo) {
   const totalAmount = packageTotal + airfareTotal;
   const partialAmount = calculatePartialAmount();
   const numberOfRooms = calculateRoomsNeeded();
+  const hotelAccommodationTotal = calculateHotelTotal();
   
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
@@ -1546,6 +1567,33 @@ const handleNextPassenger = async (e) => {
             </span>
           </div>
         </div>
+
+        {/* ✅ Hotel accommodation breakdown line */}
+        {selectedRoomType && hotelAccommodationTotal > 0 && (
+          <div className="brf-total-row" style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '4px' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              🏨 Hotel
+              <span style={{
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                borderRadius: '5px',
+                padding: '1px 7px',
+                fontSize: '0.78rem',
+                color: '#475569',
+                fontWeight: '600'
+              }}>
+                {selectedRoomType.type}
+              </span>
+              · {durationNights} night{durationNights !== 1 ? 's' : ''} × {numberOfRooms} room{numberOfRooms !== 1 ? 's' : ''}
+            </span>
+            <span style={{ fontWeight: '600', color: '#475569' }}>
+              {currencySymbol}{convertPrice(hotelAccommodationTotal).toLocaleString(undefined, {
+                minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                maximumFractionDigits: currency === 'USD' ? 2 : 0
+              })} <span style={{ fontWeight: '400', fontSize: '0.75rem' }}>incl.</span>
+            </span>
+          </div>
+        )}
 
         {appliedPromo && (() => {
           // Mirror same coverage logic as calculateDiscount

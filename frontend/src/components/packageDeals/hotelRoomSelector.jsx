@@ -275,7 +275,7 @@ const HotelLightbox = ({ isOpen, onClose, categoryName, images, priceRange, room
   );
 };
 
-const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) => {
+const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, durationNights = 1, numberOfPax = 1 }) => {
   const [lightboxState, setLightboxState] = useState({
     isOpen: false,
     categoryName: '',
@@ -286,6 +286,25 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
   });
 
   const hasAutoSelectedRef = useRef(false);
+
+  // ✅ Per-night rate lookup based on hotel tier
+  const getPerNightRate = (roomType) => {
+    const t = (roomType || '').toUpperCase();
+    if (t.includes('5')) return 2500;
+    if (t.includes('4')) return 1660;
+    return 800; // Standard / Budget
+  };
+
+  // ✅ Read actual capacity from DB (first hotel in group), fallback to 2
+  const getRoomsNeeded = (group) => {
+    const capacity = group.hotels[0]?.capacity || 2;
+    return Math.ceil(numberOfPax / capacity);
+  };
+
+  // ✅ Total hotel cost for a category: rate × nights × rooms
+  const getCategoryHotelTotal = (roomType, group) => {
+    return getPerNightRate(roomType) * durationNights * getRoomsNeeded(group);
+  };
 
   // ✅ Auto-select Standard (merged Budget+Standard) on initial load
   useEffect(() => {
@@ -433,6 +452,42 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange }) =>
 
                 </div>
                 <div className="hrs-category-right">
+                  {/* ✅ Only show max capacity from DB */}
+                  {(() => {
+                    const roomsNeeded = getRoomsNeeded(group);
+                    const capacity = group.hotels[0]?.capacity || 2;
+                    return (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: roomsNeeded > 1 ? '#fff7ed' : '#f0fdf4',
+                        border: `1px solid ${roomsNeeded > 1 ? '#fed7aa' : '#86efac'}`,
+                        borderRadius: '6px',
+                        padding: '5px 10px',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}>
+                        <span style={{ fontSize: '0.85rem' }}>🛏</span>
+                        <span style={{
+                          fontSize: '0.8rem',
+                          fontWeight: '700',
+                          color: roomsNeeded > 1 ? '#c2410c' : '#15803d',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {roomsNeeded} room{roomsNeeded !== 1 ? 's' : ''}
+                        </span>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: '500',
+                          color: '#6b7280',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          ({capacity} max/room)
+                        </span>
+                      </div>
+                    );
+                  })()}
                   {isSelected && <div className="hrs-badge-selected">✓ SELECTED</div>}
                 </div>
               </div>

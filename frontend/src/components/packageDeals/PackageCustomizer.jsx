@@ -69,6 +69,27 @@ const PackageCustomizer = ({
     'return flight', 'return ticket', 'plane ticket'
   ];
 
+  // ✅ All supported destinations — used to strip them from inclusion text before matching.
+  // Longest-first so "puerto princesa" is removed before "princesa" could partially match.
+  const KNOWN_DESTINATIONS = [
+    'puerto princesa', 'el nido', 'coron palawan', 'siargao island',
+    'siargao', 'siquijor', 'bohol', 'cebu', 'coron', 'palawan',
+  ];
+
+  // ✅ Pax-type label patterns — removed from inclusions before activity comparison.
+  // We extract the pax type FIRST (see extractPaxType), then strip the label.
+  const PAX_TYPE_PATTERNS = [
+    /\(\s*solo\s*\)/gi,
+    /\(\s*group\s*\)/gi,
+    /\(\s*\d+\s*pax\s*\)/gi,
+    /\(\s*\d+\s*person[s]?\s*\)/gi,
+    /\(\s*per\s*pax\s*\)/gi,
+    /\(\s*per\s*person\s*\)/gi,
+    /\bsolo\b/gi,
+    /\bgroup\b/gi,
+    /\b\d+\s*pax\b/gi,
+  ];
+
   const getSynonyms = (word) => {
     const lower = word.toLowerCase();
     const syns = SYNONYM_MAP[lower] || [];
@@ -80,6 +101,157 @@ const PackageCustomizer = ({
     return CROSS_DESTINATION_KEYWORDS.some(keyword => 
       normalized.includes(keyword)
     );
+  };
+
+  // ✅ Extract nights count from any text containing a duration code or night mention.
+  //
+  // Priority order:
+  //   1. XDxN pattern  — "4D3N" → 3, "3D2N" → 2, "10D9N" → 9  (most reliable)
+  //   2. "X nights"    — "3 nights" → 3, "2 night" → 2
+  //   3. Standalone XN — "3N" → 3  (least specific, used as fallback)
+  //
+  // Returns null if no night count found.
+  const extractNights = (text) => {
+    if (!text) return null;
+    const lower = String(text).toLowerCase();
+
+    // 1. XDxN pattern
+    const durationMatch = lower.match(/\b(\d+)d(\d+)n\b/i);
+    if (durationMatch) return parseInt(durationMatch[2]);
+
+    // 2. "X nights" or "X night"
+    const nightsMatch = lower.match(/\b(\d+)\s*night[s]?\b/i);
+    if (nightsMatch) return parseInt(nightsMatch[1]);
+
+    // 3. Standalone XN (only if surrounded by word boundaries and not part of other text)
+    const shortNightMatch = lower.match(/\b(\d+)n\b/i);
+    if (shortNightMatch) return parseInt(shortNightMatch[1]);
+
+    return null;
+  };
+
+  // ✅ Extract pax type signal from an inclusion string.
+  // Returns 'solo', 'group', or null.
+  // Used to prefer the rate whose pax field matches the inclusion's pax context.
+  const extractPaxType = (text) => {
+    if (!text) return null;
+    const lower = text.toLowerCase();
+    if (/\bsolo\b/.test(lower)) return 'solo';
+    if (/\bgroup\b/.test(lower)) return 'group';
+    // Multiple-pax patterns like "2 pax", "4 pax" → treat as group
+    if (/\b[2-9]\d*\s*pax\b/.test(lower)) return 'group';
+    if (/\bmultiple\b/.test(lower)) return 'group';
+    return null;
+  };
+
+  // ✅ Score how well a seller rate matches the context (nights + pax type) of an inclusion.
+  //
+  // This is the key fix for accommodation:
+  //   - "4D3N Hotel Accommodation" needs 3 nights → rate with pax "3 nights" scores +100
+  //   - A rate with pax "2 nights" scores -50 (wrong nights)
+  //   - A rate with no nights info scores 0 (neutral — keeps it as a valid fallback)
+  //
+  // Scoring:
+  //   +100  exact nights match  (e.g., inclusion nights=3, rate pax="3 nights")
+  //   - 50  nights mismatch    (e.g., inclusion nights=3, rate pax="2 nights")
+  //   + 50  pax type match     (solo↔solo or group↔group)
+  //   - 30  pax type conflict  (solo inclusion vs group rate or vice versa)
+  //     0   no context in rate  (generic rate, compatible with anything)
+  const rateContextScore = (rate, inclusionNights, inclusionPaxType) => {
+    let score = 0;
+
+    // Combine all rate fields that might contain nights or pax context
+    const rateText = [rate.pax, rate.notes, rate.activity, rate.inclusions]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    // Nights scoring
+    if (inclusionNights !== null) {
+      const rateNights = extractNights(rateText);
+      if (rateNights !== null) {
+        if (rateNights === inclusionNights) {
+          score += 100; // exact match — strong positive signal
+        } else {
+          score -= 50;  // wrong night count — penalize
+        }
+      }
+      // rateNights === null means no night info in rate → neutral (0), still valid
+    }
+
+    // Pax type scoring
+    if (inclusionPaxType) {
+      const rateHasSolo   = /\bsolo\b/.test(rateText);
+      const rateHasGroup  = /\b(group|multiple|multi|shared)\b/.test(rateText);
+
+      if (inclusionPaxType === 'solo'  && rateHasSolo)  score += 50;
+      if (inclusionPaxType === 'group' && rateHasGroup) score += 50;
+      if (inclusionPaxType === 'solo'  && rateHasGroup) score -= 30; // conflict
+      if (inclusionPaxType === 'group' && rateHasSolo)  score -= 30; // conflict
+    }
+
+    return score;
+  };
+
+  // ✅ Strip package-level metadata from an inclusion string so only the actual
+  // activity label remains for text comparison against seller rate activities.
+  //
+  // IMPORTANT: We extract nights and pax type BEFORE calling this function so
+  // that the context signals are preserved. This function only removes the text.
+  //
+  // Removes:
+  //   1. Duration codes — "4D3N", "3D2N", "10D9N"
+  //   2. Pax-type labels — "(Solo)", "(Group)", "2 pax", "per person"
+  //   3. Known destination names — "Puerto Princesa", "El Nido", etc.
+  //   4. Dynamic package destination words
+  //   5. Separators — dashes, pipes, colons
+  //
+  // Examples:
+  //   "Puerto Princesa 4D3N (Solo) Roundtrip Airfare"  → "roundtrip airfare"
+  //   "Puerto Princesa 4D3N Hotel Accommodation"        → "hotel accommodation"
+  //   "Siargao Island – Surf Lesson"                    → "surf lesson"
+  //   "Coron 3D2N Island Hopping Tour"                  → "island hopping tour"
+  const stripInclusionMetadata = (text, destination = '') => {
+    if (!text) return '';
+
+    let stripped = text.toLowerCase();
+
+    // 1. Duration codes
+    stripped = stripped.replace(/\b\d+d\d+n\b/gi, '');
+
+    // 2. Pax-type labels
+    PAX_TYPE_PATTERNS.forEach(pattern => {
+      stripped = stripped.replace(pattern, '');
+    });
+
+    // 3. Known destination names (longest first)
+    KNOWN_DESTINATIONS.forEach(dest => {
+      const escaped = dest.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      stripped = stripped.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), '');
+    });
+
+    // 4. Dynamic package destination words (catches unlisted destination variants)
+    if (destination) {
+      const destWords = destination
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter(w => w.length >= 4);
+
+      destWords.forEach(word => {
+        const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        stripped = stripped.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), '');
+      });
+    }
+
+    // 5. Separators and normalize
+    stripped = stripped
+      .replace(/[-–—|:,\/\\]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return stripped;
   };
 
   const extractLocationKeywords = (destination) => {
@@ -277,35 +449,107 @@ const PackageCustomizer = ({
     return similarity;
   };
 
-  const activitiesMatch = (inclusion, activity) => {
+  // ✅ Word-by-word keyword coverage check.
+  //
+  // Core idea: the seller rate activity is the "source of truth" label (short, clean).
+  // We check how many of ITS keywords (+ synonyms + stems) appear in the inclusion text.
+  // High coverage → inclusion is describing that activity.
+  //
+  // Examples:
+  //   rateActivity  = "Roundtrip Airfare"
+  //   inclusionText = "roundtrip airfare"   (after strip)
+  //   coverage      = 2/2 = 1.0  ✅ match
+  //
+  //   rateActivity  = "Hotel Accommodation"
+  //   inclusionText = "hotel stay 2 nights"
+  //   "hotel" found ✅  "accommodation" → synonym "hotel" found ✅  → 2/2 = 1.0  ✅ match
+  const keywordCoverageCheck = (rateActivityText, inclusionText) => {
+    const rateKeywords = extractKeywords(normalizeActivity(rateActivityText));
+    if (rateKeywords.length === 0) return 0;
+
+    const inclusionNorm = normalizeActivity(inclusionText);
+
+    let hitCount = 0;
+    rateKeywords.forEach(kw => {
+      if (inclusionNorm.includes(kw.word)) {
+        hitCount++;
+        return;
+      }
+      const synHit = kw.synonyms.some(syn => inclusionNorm.includes(syn));
+      if (synHit) {
+        hitCount++;
+        return;
+      }
+      if (kw.word.length >= 6) {
+        const stem = kw.word.slice(0, kw.word.length - 2);
+        if (inclusionNorm.includes(stem)) {
+          hitCount += 0.6;
+        }
+      }
+    });
+
+    return hitCount / rateKeywords.length;
+  };
+
+  // ✅ activitiesMatch — 6-layer matching pipeline.
+  //
+  //   Layer 1 — Exact normalized equality
+  //   Layer 2 — Cross-destination flight keyword shortcut
+  //   Layer 3 — Similarity score on STRIPPED inclusion vs rate (lower threshold, cleaner text)
+  //   Layer 4 — Keyword coverage: % of rate keywords found in stripped inclusion
+  //   Layer 5 — Similarity score on ORIGINAL inclusion (unchanged fallback)
+  //   Layer 6 — Category guard: reject obvious category mismatches
+  //
+  // NOTE: This function only determines IF two texts are describing the same activity.
+  // It does NOT pick the best rate when multiple rates match — that is handled in
+  // matchInclusionsWithPrices via rateContextScore (nights + pax type scoring).
+  const activitiesMatch = (inclusion, activity, destination = '') => {
     const norm1 = normalizeActivity(inclusion);
     const norm2 = normalizeActivity(activity);
-    
-    if (norm1 === norm2) {
-      return true;
-    }
-    
+
+    // Layer 1: Exact match
+    if (norm1 === norm2) return true;
+
     const isCrossDest1 = isCrossDestinationActivity(inclusion);
     const isCrossDest2 = isCrossDestinationActivity(activity);
-    
+
+    // Layer 2: Both are flight/roundtrip → always match
     if (isCrossDest1 || isCrossDest2) {
-      
-      const flightKeywords = ['roundtrip', 'round trip', 'flight', 'airfare', 'air', 'ticket', 'rt'];
-      const hasFlightTerm1 = flightKeywords.some(k => norm1.includes(k));
-      const hasFlightTerm2 = flightKeywords.some(k => norm2.includes(k));
-      
-      if (hasFlightTerm1 && hasFlightTerm2) {
-        return true;
+      const flightKws = ['roundtrip', 'round trip', 'flight', 'airfare', 'air', 'ticket', 'rt'];
+      const hasFlight1 = flightKws.some(k => norm1.includes(k));
+      const hasFlight2 = flightKws.some(k => norm2.includes(k));
+      if (hasFlight1 && hasFlight2) return true;
+    }
+
+    // Strip metadata from inclusion for Layers 3 & 4
+    const strippedInclusion = stripInclusionMetadata(inclusion, destination);
+
+    // Layer 3: Similarity on stripped inclusion vs rate activity
+    if (strippedInclusion.length >= 3) {
+      const strippedSimilarity = calculateSimilarity(strippedInclusion, norm2);
+      const strippedThreshold = (isCrossDest1 || isCrossDest2) ? 0.40 : 0.50;
+      if (strippedSimilarity >= strippedThreshold) return true;
+    }
+
+    // Layer 4: Keyword coverage — rate keywords found in stripped inclusion
+    if (strippedInclusion.length >= 3) {
+      const coverage = keywordCoverageCheck(activity, strippedInclusion);
+      if (coverage >= 0.75) return true;
+
+      // Reversed coverage (trusted only for short stripped texts ≤4 meaningful words)
+      const meaningfulWords = strippedInclusion.split(' ').filter(w => w.length >= 3).length;
+      if (meaningfulWords <= 4) {
+        const reverseCoverage = keywordCoverageCheck(strippedInclusion, activity);
+        if (reverseCoverage >= 0.75) return true;
       }
     }
-    
+
+    // Layer 5: Similarity on original inclusion text (unchanged fallback)
     const similarity = calculateSimilarity(norm1, norm2);
     const threshold = (isCrossDest1 || isCrossDest2) ? 0.50 : 0.60;
-    
-    if (similarity >= threshold) {
-      return true;
-    }
-    
+    if (similarity >= threshold) return true;
+
+    // Layer 6: Category guard — reject if they belong to completely different categories
     const keywords1 = extractKeywords(norm1);
     const keywords2 = extractKeywords(norm2);
     
@@ -334,14 +578,30 @@ const PackageCustomizer = ({
     
     if (cats1.size > 0 && cats2.size > 0) {
       const hasCommonCategory = [...cats1].some(cat => cats2.has(cat));
-      if (!hasCommonCategory) {
-        return false;
-      }
+      if (!hasCommonCategory) return false;
     }
     
     return false;
   };
 
+  // ✅ UPDATED matchInclusionsWithPrices:
+  //
+  // Key change: instead of .find() (first match wins), we now:
+  //   1. Find ALL activity-matching rates for the inclusion
+  //   2. Extract nights + pax type context from the inclusion text
+  //   3. Score each candidate rate via rateContextScore(nights, paxType)
+  //   4. Pick the highest-scoring rate
+  //
+  // This fixes the accommodation problem:
+  //   "Puerto Princesa 4D3N Hotel Accommodation" → nights=3, paxType=null
+  //   Rate A: pax="3 nights" → score +100  ← WINS
+  //   Rate B: pax="2 nights" → score -50
+  //   Rate C: pax=""         → score 0     (neutral fallback if no others match)
+  //
+  // Also fixes solo vs group for same activity:
+  //   "4D3N (Solo) RT Transfer" → nights=3, paxType='solo'
+  //   Rate A: pax="solo"  → score +50  ← WINS
+  //   Rate B: pax="group" → score -30
   const matchInclusionsWithPrices = useCallback((inclusions, sellerRates, destination) => {
     
     let matchCount = 0;
@@ -354,31 +614,61 @@ const PackageCustomizer = ({
       if (isCrossDest) {
         destinationMatchedRates = sellerRates.filter(rate => {
           const activityMatches = isCrossDestinationActivity(rate.activity);
-          
           if (activityMatches) {
             return destinationsMatch(rate.destination, destination, rate.activity);
           }
-          
           return false;
         });
-        
-        
       } else {
         destinationMatchedRates = sellerRates.filter(rate => 
           destinationsMatch(rate.destination, destination)
         );
-        
       }
-      
+
       if (destinationMatchedRates.length > 0) {
         destinationMatchedRates.forEach((rate, i) => {
         });
       }
-      
-      const matchedRate = destinationMatchedRates.find(rate => {
-        const actMatch = activitiesMatch(inclusion, rate.activity);
-        return actMatch;
-      });
+
+      // ✅ Find ALL rates whose activity label matches this inclusion
+      const activityCandidates = destinationMatchedRates.filter(rate =>
+        activitiesMatch(inclusion, rate.activity, destination)
+      );
+
+      let matchedRate = null;
+
+      if (activityCandidates.length === 1) {
+        // Only one match — use it directly, no need to score
+        matchedRate = activityCandidates[0];
+      } else if (activityCandidates.length > 1) {
+        // ✅ Multiple candidates — extract context from inclusion and pick best-scoring rate
+        const inclusionNights  = extractNights(inclusion);
+        const inclusionPaxType = extractPaxType(inclusion);
+
+        const scored = activityCandidates.map(rate => ({
+          rate,
+          score: rateContextScore(rate, inclusionNights, inclusionPaxType)
+        }));
+
+        // Sort descending by score; on tie, prefer lowest selling price
+        scored.sort((a, b) =>
+          b.score !== a.score
+            ? b.score - a.score
+            : (a.rate.sellingPrice || 0) - (b.rate.sellingPrice || 0)
+        );
+
+        // Only use the top-scoring rate if its score is non-negative (no active conflict).
+        // If the winner has a negative score it means ALL candidates conflict with the
+        // inclusion context — fall back to neutral (lowest-price) instead.
+        if (scored[0].score >= 0) {
+          matchedRate = scored[0].rate;
+        } else {
+          // All candidates have contextual conflicts — pick the one closest to 0 (least wrong)
+          matchedRate = scored[scored.length - 1].score >= scored[0].score
+            ? scored[scored.length - 1].rate
+            : scored[0].rate;
+        }
+      }
       
       if (matchedRate) {
         matchCount++;
@@ -415,7 +705,6 @@ const PackageCustomizer = ({
       }
     });
     
-    
     setMatchedInclusionCount(matchCount);
     return matchedInclusions;
   }, []);
@@ -432,7 +721,7 @@ const PackageCustomizer = ({
     
     try {
       
-    // ✅ Pass destination as query param → backend filters, less data transfer
+      // ✅ Pass destination as query param → backend filters, less data transfer
       const encodedDest = encodeURIComponent(destination);
       const response = await fetch(
         `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}`
@@ -446,15 +735,24 @@ const PackageCustomizer = ({
         destinationsMatch(rate.destination, destination)
       );
 
-      // ✅ DEDUPLICATE BY ACTIVITY NAME
-      // If multiple suppliers offer the same activity for this destination,
-      // keep only the one with the lowest sellingPrice (best deal for user).
-      // This prevents duplicate "Island Hopping", "RT Transfer" etc. in the list.
+      // ✅ UPDATED DEDUPLICATION — use "activity + pax" as composite key.
+      //
+      // Previous bug: deduplicating by activity name alone collapsed rates that
+      // share the same activity label but differ by pax/nights, e.g.:
+      //   "Hotel Accommodation" pax="3 nights" ← was being dropped
+      //   "Hotel Accommodation" pax="2 nights" ← only this survived (cheapest)
+      //
+      // Fix: keep both entries because they serve different package inclusions.
+      // The "Add More" list shows them separately; matchInclusionsWithPrices will
+      // pick the correct one per inclusion via rateContextScore.
       const deduplicatedRates = Object.values(
         matchingRates.reduce((acc, rate) => {
-          const key = rate.activity.trim().toLowerCase();
-          if (!acc[key] || rate.sellingPrice < acc[key].sellingPrice) {
-            acc[key] = rate;
+          // Normalize pax for key: trim, lowercase, collapse whitespace
+          const paxKey = (rate.pax || '').trim().toLowerCase().replace(/\s+/g, ' ');
+          const compositeKey = `${rate.activity.trim().toLowerCase()}||${paxKey}`;
+
+          if (!acc[compositeKey] || rate.sellingPrice < acc[compositeKey].sellingPrice) {
+            acc[compositeKey] = rate;
           }
           return acc;
         }, {})
