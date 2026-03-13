@@ -10,19 +10,18 @@ import './BookingLeftColumn.css';
 
 // ✅ Unique accent color per duration — WanderWave branded
 const DURATION_COLORS = {
-  '2D1N':  { top: '#d97706', text: '#d97706' },  // yellow orange
-  '3D2N':  { top: '#14532d', text: '#14532d' },  // dark green
-  '4D3N':  { top: '#1d4ed8', text: '#1d4ed8' },  // blue
-  '5D4N':  { top: '#dc2626', text: '#dc2626' },  // red
-  '6D5N':  { top: '#7c3aed', text: '#7c3aed' },  // purple
-  '7D6N':  { top: '#b45309', text: '#b45309' },  // amber
-  '8D7N':  { top: '#9f1239', text: '#9f1239' },  // dark rose
-  '9D8N':  { top: '#15803d', text: '#15803d' },  // green
-  '10D9N': { top: '#1e40af', text: '#1e40af' },  // dark blue
+  '2D1N':  { top: '#d97706', text: '#d97706' },
+  '3D2N':  { top: '#14532d', text: '#14532d' },
+  '4D3N':  { top: '#1d4ed8', text: '#1d4ed8' },
+  '5D4N':  { top: '#dc2626', text: '#dc2626' },
+  '6D5N':  { top: '#7c3aed', text: '#7c3aed' },
+  '7D6N':  { top: '#b45309', text: '#b45309' },
+  '8D7N':  { top: '#9f1239', text: '#9f1239' },
+  '9D8N':  { top: '#15803d', text: '#15803d' },
+  '10D9N': { top: '#1e40af', text: '#1e40af' },
 };
 const DEFAULT_DURATION_COLOR = { top: '#ea580c', text: '#ea580c' };
 
-// ✅ Calendar icon badge — matches packageCard design
 const CalendarDurationBadge = ({ duration }) => {
   const colors = DURATION_COLORS[duration] || DEFAULT_DURATION_COLOR;
   const fontSize = duration.length >= 5 ? "11" : "12.5";
@@ -50,26 +49,16 @@ const CalendarDurationBadge = ({ duration }) => {
             <stop offset="100%" stopColor="#94a3b8" />
           </linearGradient>
         </defs>
-
-        {/* Outer shadow */}
         <rect x="3" y="9" width="48" height="43" rx="8" ry="8" fill="rgba(0,0,0,0.12)" />
-        {/* White/gray body */}
         <rect x="2" y="8" width="48" height="43" rx="8" ry="8" fill={`url(#${bodyGradId})`} />
-        {/* Colored top header */}
         <rect x="2" y="8" width="48" height="13" rx="8" ry="8" fill={colors.top} />
-        {/* Square off bottom of header */}
         <rect x="2" y="14" width="48" height="7" fill={colors.top} />
-        {/* Shine on header */}
         <rect x="2" y="8" width="48" height="13" rx="8" ry="8" fill={`url(#${gradId})`} />
-        {/* Separator line */}
         <rect x="2" y="21" width="48" height="1" fill="rgba(0,0,0,0.08)" />
-        {/* LEFT ring */}
         <rect x="9" y="1" width="8" height="14" rx="4" ry="4" fill="#64748b" />
         <rect x="10" y="1.5" width="6" height="12" rx="3" ry="3" fill={`url(#${ringGradId})`} />
-        {/* RIGHT ring */}
         <rect x="37" y="1" width="8" height="14" rx="4" ry="4" fill="#64748b" />
         <rect x="38" y="1.5" width="6" height="12" rx="3" ry="3" fill={`url(#${ringGradId})`} />
-        {/* Duration text */}
         <text
           x="26"
           y="38"
@@ -88,7 +77,6 @@ const CalendarDurationBadge = ({ duration }) => {
   );
 };
 
-// ✅ Extracts duration code and rest of title
 const parseTitleDuration = (title) => {
   if (!title) return { duration: null, restOfTitle: title };
   const durationRegex = /(\d+D\d+N)/i;
@@ -104,12 +92,10 @@ const BookingLeftColumn = ({
   currency = 'PHP',
   exchangeRate = 58,
   onCustomizationChange,
-  timerExpired = false,
-  onGoBack,         // ✅ ADDED: receive onGoBack from PackageBooking → PackageDeals
-  paxCount = 1,     // ✅ Lifted from right form — price multiplies directly per pax
-  hotelUpgradeCost = 0  // ✅ Hotel accommodation total passed from parent (nights × rate × rooms)
+  onGoBack,
+  paxCount = 1,
+  hotelUpgradeCost = 0
 }) => {
-  // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
   const { code } = useParams();
   const [isItineraryExpanded, setIsItineraryExpanded] = useState(false);
@@ -119,8 +105,6 @@ const BookingLeftColumn = ({
   const [isCustomized, setIsCustomized] = useState(false);
   const [customizationData, setCustomizationData] = useState(null);
 
-  // ✅ FIXED: Use onGoBack prop if available (same-page view switch),
-  //           fallback to navigate only if rendered standalone
   const handleBackClick = () => {
     if (onGoBack) {
       onGoBack();
@@ -144,7 +128,7 @@ const BookingLeftColumn = ({
   const handleCustomizationChange = (customizationDataFromChild) => {
     setCustomizationData(customizationDataFromChild);
     setIsCustomized(
-      customizationDataFromChild.additionalPrice !== 0 || 
+      customizationDataFromChild.additionalPrice !== 0 ||
       customizationDataFromChild.deductions > 0 ||
       customizationDataFromChild.additions > 0
     );
@@ -155,7 +139,7 @@ const BookingLeftColumn = ({
 
   const CUSTOMIZABLE_DESTINATIONS = [
     'siargao', 'siquijor', 'bohol', 'cebu',
-    'el nido', 'coron', 'palawan', 'puerto princesa',
+    'el nido', 'coron', 'puerto princesa',
   ];
   const dest = (pkg.destination || pkg.location || '').toLowerCase().trim();
   const isCustomizableDestination = CUSTOMIZABLE_DESTINATIONS.some(d => dest.includes(d));
@@ -168,20 +152,18 @@ const BookingLeftColumn = ({
 
   const basePrice = pkg.price || 0;
   const originalPriceWithMarkup = Math.round(basePrice * 1.10);
-  const activeBasePrice = timerExpired ? originalPriceWithMarkup : basePrice;
   const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
-  const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
 
-  // ✅ Price multiplies directly per pax — 1 pax = 1×price, 2 pax = 2×price, etc.
-  // ✅ Hotel upgrade cost (per-night × nights × rooms) is added on top
+  // Always use basePrice (discounted) — no timer logic
+  const adjustedActivePrice = Math.max(0, basePrice + customizationAdjustment);
   const displayPrice = Math.round(adjustedActivePrice * paxCount) + hotelUpgradeCost;
   const convertedDisplayPrice = convertPrice(displayPrice);
 
-  // ✅ Original (strikethrough) price — same straight multiplication + hotel cost
+  // Strikethrough original price (markup)
   const adjustedOriginalPrice = Math.round((originalPriceWithMarkup + customizationAdjustment) * paxCount) + hotelUpgradeCost;
   const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
 
-  const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
+  const discountPercentage = displayPrice < adjustedOriginalPrice
     ? Math.round(((adjustedOriginalPrice - displayPrice) / adjustedOriginalPrice) * 100)
     : 0;
 
@@ -189,8 +171,8 @@ const BookingLeftColumn = ({
 
   return (
     <div className="blc-container">
-      <button 
-        className="blc-back-btn" 
+      <button
+        className="blc-back-btn"
         onClick={handleBackClick}
         type="button"
       >
@@ -204,7 +186,7 @@ const BookingLeftColumn = ({
           alt={pkg.name}
           className="blc-main-image"
         />
-        {!timerExpired && discountPercentage > 0 && (
+        {discountPercentage > 0 && (
           <div className="blc-offer-badge-overlay">
             <Clock size={16} />
             <span>Limited Time Offer - Save {discountPercentage}%</span>
@@ -213,14 +195,12 @@ const BookingLeftColumn = ({
       </div>
 
       <div className="blc-header-section">
-
-        {/* ✅ Badge left | Title + Price stacked right */}
         <div className="blc-title-badge-row">
           {duration && <CalendarDurationBadge duration={duration} />}
           <div className="blc-badge-right-col">
             <h1 className="blc-title">{restOfTitle || pkg.name}</h1>
             <div className="blc-price-section">
-              {!timerExpired && convertedOriginalPrice > convertedDisplayPrice && (
+              {convertedOriginalPrice > convertedDisplayPrice && (
                 <span className="blc-price-original">
                   {currencySymbol}{convertedOriginalPrice.toLocaleString(undefined, {
                     minimumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -228,7 +208,7 @@ const BookingLeftColumn = ({
                   })}
                 </span>
               )}
-              <span className="blc-price" style={{ color: !timerExpired ? '#f97316' : '#64748b' }}>
+              <span className="blc-price" style={{ color: '#f97316' }}>
                 {currencySymbol}{convertedDisplayPrice.toLocaleString(undefined, {
                   minimumFractionDigits: currency === 'USD' ? 2 : 0,
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
@@ -288,8 +268,7 @@ const BookingLeftColumn = ({
               currency={currency}
               exchangeRate={exchangeRate}
               onCustomizationChange={handleCustomizationChange}
-              timerExpired={timerExpired}
-              activeBasePrice={activeBasePrice}
+              activeBasePrice={basePrice}
             />
           )}
         </div>
