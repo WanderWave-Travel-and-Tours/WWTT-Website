@@ -48,6 +48,16 @@ const Dashboard = () => {
   
   const [rawBookings, setRawBookings] = useState([]);
   const [rawInquiries, setRawInquiries] = useState([]);
+  const [pageViewStats, setPageViewStats] = useState({
+    totalViews: 0,
+    packagesPageViews: 0,
+    bookingPageViews: 0,
+    flightsPageViews: 0,
+    servicesPageViews: 0,
+    topViewedPackages: [],
+    recentViews: [],
+    dailyViewsData: [],
+  });
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [revenueViewMode, setRevenueViewMode] = useState("weekly");
   
@@ -130,6 +140,50 @@ const Dashboard = () => {
       if (inquiriesRes.ok) {
         const inquiriesData = await inquiriesRes.json();
         inquiries = inquiriesData.data || inquiriesData || [];
+      }
+
+      // ============================================================
+      // FETCH PAGE VIEWS
+      // ============================================================
+      try {
+        const pageViewsRes = await fetch("https://wanderwaveph.onrender.com/api/page-views/stats");
+        if (pageViewsRes.ok) {
+          const pvData = await pageViewsRes.json();
+          const pvStats = pvData.data || pvData || {};
+
+          // Build daily views chart data (last 7 days)
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const allViews = pvStats.recentViews || [];
+          const dailyViewsData = [];
+          for (let i = 6; i >= 0; i--) {
+            const day = new Date(today);
+            day.setDate(day.getDate() - i);
+            const dayEnd = new Date(day);
+            dayEnd.setHours(23, 59, 59, 999);
+            const count = allViews.filter(v => {
+              const d = new Date(v.createdAt);
+              return d >= day && d <= dayEnd;
+            }).length;
+            dailyViewsData.push({
+              date: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              views: count,
+            });
+          }
+
+          setPageViewStats({
+            totalViews: pvStats.totalViews || 0,
+            packagesPageViews: pvStats.packagesPageViews || 0,
+            bookingPageViews: pvStats.bookingPageViews || 0,
+            flightsPageViews: pvStats.flightsPageViews || 0,
+            servicesPageViews: pvStats.servicesPageViews || 0,
+            topViewedPackages: pvStats.topViewedPackages || [],
+            recentViews: allViews,
+            dailyViewsData,
+          });
+        }
+      } catch (pvErr) {
+        console.warn('⚠️ Page views fetch failed:', pvErr);
       }
       
       setRawBookings(bookings);
@@ -647,6 +701,7 @@ const Dashboard = () => {
               customData={customAnalyticsData}
               dailyData={dailyAnalyticsData}
               weeklyData={weeklyAnalyticsData}
+              pageViewStats={pageViewStats}
             />
           )}
 

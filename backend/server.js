@@ -86,6 +86,7 @@ const activityLogsRoutes = require('./routes/activityLogRoute');
 const favoriteRoute = require('./routes/favoriteRoute');
 const feedbackRoutes = require('./routes/feedbackRoutes'); 
 const ipRoutes = require('./routes/ipRoute');
+const pageViewRoutes = require('./routes/pageViewRoute');
 
 
 // ===================================================================
@@ -365,6 +366,7 @@ app.use('/api/activity-logs', activityLogRoute);
 app.use('/api/favorites', favoriteRoute);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/ip', ipRoutes);
+app.use('/api/page-views', pageViewRoutes);
 
 
 // ===================================================================
