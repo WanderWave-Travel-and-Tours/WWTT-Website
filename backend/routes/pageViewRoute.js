@@ -87,10 +87,10 @@ router.get('/stats', async (req, res) => {
       },
     ]);
 
-    // ── Recent 500 views (used by dashboard to build daily chart) ───
+    // ── Recent 5000 views (used by dashboard to filter by date range) ──
     const recentViews = await PageView.find()
       .sort({ createdAt: -1 })
-      .limit(500)
+      .limit(5000)
       .select('page path label packageName createdAt')
       .lean();
 

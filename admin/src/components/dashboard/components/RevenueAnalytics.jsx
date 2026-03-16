@@ -212,6 +212,145 @@ const RevenueAnalytics = ({
     }
   };
 
+  // ============================================================
+  // FILTERED PAGE VIEW STATS — reacts to selected viewMode
+  // Filters recentViews by the same date window as revenue data
+  // ============================================================
+  const filteredPageViewStats = useMemo(() => {
+    const allViews = pageViewStats.recentViews || [];
+
+    // Helper: build date window from viewMode
+    const getDateWindow = () => {
+      const now = new Date();
+
+      if (viewMode === 'daily') {
+        // Selected single day
+        const start = new Date(selectedDailyDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(selectedDailyDate);
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+      }
+
+      if (viewMode === 'weekly') {
+        // Current week (last 7 days)
+        const start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+      }
+
+      if (viewMode === 'specificMonth') {
+        const [year, month] = selectedMonth.split('-');
+        const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+        const end = new Date(year, month, 0, 23, 59, 59, 999);
+        return { start, end };
+      }
+
+      if (viewMode === 'monthly') {
+        // Last 6 months
+        const start = new Date(now.getFullYear(), now.getMonth() - 5, 1, 0, 0, 0, 0);
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+      }
+
+      if (viewMode === 'custom' && dateInputs.start && dateInputs.end) {
+        const start = new Date(dateInputs.start);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(dateInputs.end);
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+      }
+
+      // Default fallback — all time
+      return { start: new Date(0), end: new Date() };
+    };
+
+    const { start, end } = getDateWindow();
+
+    const filtered = allViews.filter(v => {
+      const d = new Date(v.createdAt);
+      return d >= start && d <= end;
+    });
+
+    // Per-page counts from filtered views
+    const totalViews        = filtered.length;
+    const packagesPageViews = filtered.filter(v => v.page === 'packages').length;
+    const bookingPageViews  = filtered.filter(v => v.page === 'booking').length;
+    const flightsPageViews  = filtered.filter(v => v.page === 'flights').length;
+    const servicesPageViews = filtered.filter(v => v.page === 'services').length;
+
+    // Top viewed packages — from booking views in filtered window
+    const pkgCounts = {};
+    filtered
+      .filter(v => v.page === 'booking' && v.packageName)
+      .forEach(v => {
+        pkgCounts[v.packageName] = (pkgCounts[v.packageName] || 0) + 1;
+      });
+    const topViewedPackages = Object.entries(pkgCounts)
+      .map(([packageName, views]) => ({ packageName, views }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+
+    // Build daily views chart for the selected window
+    // For daily → just 1 bar; weekly → 7 bars; monthly/6mo/custom → group by day (max 30)
+    const dayMap = {};
+    filtered.forEach(v => {
+      const d = new Date(v.createdAt);
+      const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dayMap[key] = (dayMap[key] || 0) + 1;
+    });
+
+    // Build ordered array within the window
+    const dailyViewsData = [];
+    const cursor = new Date(start);
+    cursor.setHours(0, 0, 0, 0);
+    const windowEnd = new Date(end);
+    windowEnd.setHours(0, 0, 0, 0);
+
+    // Cap at 31 data points to keep chart readable
+    let iterations = 0;
+    while (cursor <= windowEnd && iterations < 31) {
+      const key = cursor.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dailyViewsData.push({ date: key, views: dayMap[key] || 0 });
+      cursor.setDate(cursor.getDate() + 1);
+      iterations++;
+    }
+
+    // For 6-month trend, group into months instead of days
+    let chartData = dailyViewsData;
+    if (viewMode === 'monthly') {
+      const monthMap = {};
+      filtered.forEach(v => {
+        const d = new Date(v.createdAt);
+        const key = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        monthMap[key] = (monthMap[key] || 0) + 1;
+      });
+      chartData = Object.entries(monthMap)
+        .map(([date, views]) => ({ date, views }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    return {
+      totalViews,
+      packagesPageViews,
+      bookingPageViews,
+      flightsPageViews,
+      servicesPageViews,
+      topViewedPackages,
+      dailyViewsData: chartData,
+    };
+  }, [
+    viewMode,
+    selectedDailyDate,
+    selectedMonth,
+    dateInputs,
+    pageViewStats.recentViews,
+  ]);
+
   return (
     <div className="rev-widget">
       {/* Header */}
@@ -505,7 +644,10 @@ const RevenueAnalytics = ({
         <div className="rev-pageviews-header">
           <div className="rev-pageviews-title-wrap">
             <Eye size={18} className="rev-pageviews-icon" />
-            <h3 className="rev-pageviews-title">Page View Analytics</h3>
+            <h3 className="rev-pageviews-title">
+              Page View Analytics
+              <span className="rev-pageviews-period">— {getViewModeLabel()}</span>
+            </h3>
           </div>
           <span className="rev-pageviews-badge">Live Tracking</span>
         </div>
@@ -518,7 +660,7 @@ const RevenueAnalytics = ({
             </div>
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Total Page Views</span>
-              <span className="rev-pv-card-value">{(pageViewStats.totalViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-value">{(filteredPageViewStats.totalViews || 0).toLocaleString()}</span>
               <span className="rev-pv-card-sub">All pages combined</span>
             </div>
           </div>
@@ -529,7 +671,7 @@ const RevenueAnalytics = ({
             </div>
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Package Deals Page</span>
-              <span className="rev-pv-card-value">{(pageViewStats.packagesPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-value">{(filteredPageViewStats.packagesPageViews || 0).toLocaleString()}</span>
               <span className="rev-pv-card-sub">/packages visits</span>
             </div>
           </div>
@@ -540,7 +682,7 @@ const RevenueAnalytics = ({
             </div>
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Booking Page</span>
-              <span className="rev-pv-card-value">{(pageViewStats.bookingPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-value">{(filteredPageViewStats.bookingPageViews || 0).toLocaleString()}</span>
               <span className="rev-pv-card-sub">Package booking views</span>
             </div>
           </div>
@@ -551,7 +693,7 @@ const RevenueAnalytics = ({
             </div>
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Flight Search</span>
-              <span className="rev-pv-card-value">{(pageViewStats.flightsPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-value">{(filteredPageViewStats.flightsPageViews || 0).toLocaleString()}</span>
               <span className="rev-pv-card-sub">/flights visits</span>
             </div>
           </div>
@@ -562,7 +704,7 @@ const RevenueAnalytics = ({
             </div>
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Other Services</span>
-              <span className="rev-pv-card-value">{(pageViewStats.servicesPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-value">{(filteredPageViewStats.servicesPageViews || 0).toLocaleString()}</span>
               <span className="rev-pv-card-sub">/services visits</span>
             </div>
           </div>
@@ -574,8 +716,8 @@ const RevenueAnalytics = ({
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">View-to-Book Rate</span>
               <span className="rev-pv-card-value">
-                {pageViewStats.packagesPageViews > 0
-                  ? ((pageViewStats.bookingPageViews / pageViewStats.packagesPageViews) * 100).toFixed(1)
+                {filteredPageViewStats.packagesPageViews > 0
+                  ? ((filteredPageViewStats.bookingPageViews / filteredPageViewStats.packagesPageViews) * 100).toFixed(1)
                   : '0.0'}%
               </span>
               <span className="rev-pv-card-sub">Booking / Packages views</span>
@@ -584,14 +726,14 @@ const RevenueAnalytics = ({
         </div>
 
         {/* Top Viewed Packages */}
-        {pageViewStats.topViewedPackages && pageViewStats.topViewedPackages.length > 0 && (
+        {filteredPageViewStats.topViewedPackages && filteredPageViewStats.topViewedPackages.length > 0 && (
           <div className="rev-pv-top-packages">
             <h4 className="rev-pv-sub-title">
               <Eye size={14} /> Most Viewed Packages
             </h4>
             <div className="rev-pv-pkg-list">
-              {pageViewStats.topViewedPackages.slice(0, 5).map((pkg, idx) => {
-                const maxViews = pageViewStats.topViewedPackages[0]?.views || 1;
+              {filteredPageViewStats.topViewedPackages.slice(0, 5).map((pkg, idx) => {
+                const maxViews = filteredPageViewStats.topViewedPackages[0]?.views || 1;
                 const barWidth = Math.max(8, Math.round((pkg.views / maxViews) * 100));
                 return (
                   <div key={idx} className="rev-pv-pkg-row">
@@ -606,34 +748,6 @@ const RevenueAnalytics = ({
                       </div>
                     </div>
                     <span className="rev-pv-pkg-count">{(pkg.views || 0).toLocaleString()} views</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Daily Views Sparkline */}
-        {pageViewStats.dailyViewsData && pageViewStats.dailyViewsData.length > 0 && (
-          <div className="rev-pv-daily">
-            <h4 className="rev-pv-sub-title">
-              <Calendar size={14} /> Views — Last 7 Days
-            </h4>
-            <div className="rev-pv-daily-bars">
-              {pageViewStats.dailyViewsData.map((day, idx) => {
-                const maxVal = Math.max(...pageViewStats.dailyViewsData.map(d => d.views), 1);
-                const heightPct = Math.max(6, Math.round((day.views / maxVal) * 100));
-                return (
-                  <div key={idx} className="rev-pv-daily-col">
-                    <div className="rev-pv-daily-bar-wrap">
-                      <div
-                        className="rev-pv-daily-bar"
-                        style={{ height: `${heightPct}%` }}
-                        title={`${day.date}: ${day.views} views`}
-                      />
-                    </div>
-                    <span className="rev-pv-daily-label">{day.date}</span>
-                    <span className="rev-pv-daily-count">{day.views}</span>
                   </div>
                 );
               })}
