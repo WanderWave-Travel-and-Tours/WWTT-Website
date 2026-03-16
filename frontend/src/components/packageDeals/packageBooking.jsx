@@ -29,6 +29,34 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
 
   if (!pkg) return null;
 
+  // ============================================================
+  // PAGE VIEW TRACKER — fires once per package booking page view
+  // ============================================================
+  useEffect(() => {
+    if (!pkg) return;
+    const packageId = pkg._id || pkg.id;
+    const packageName = pkg.name || pkg.title || 'Unknown Package';
+
+    const trackPageView = async () => {
+      try {
+        await fetch('https://wanderwaveph.onrender.com/api/page-views', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page: 'booking',
+            path: `/booking/${packageId}`,
+            label: `Booking Page: ${packageName}`,
+            packageId,
+            packageName,
+          }),
+        });
+      } catch (err) {
+        console.warn('⚠️ Booking page view tracking failed:', err);
+      }
+    };
+    trackPageView();
+  }, [pkg?.id, pkg?._id]);
+
   // ============================================
   // PREVENT BACK NAVIGATION FROM BOOKING PAGE
   // ============================================

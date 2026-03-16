@@ -143,6 +143,29 @@ function PackageDeals() {
   const exchangeRate = 58;
   const [feedbackTrigger, setFeedbackTrigger] = useState(0);
 
+  // ============================================================
+  // PAGE VIEW TRACKER — fires once on mount for /packages page
+  // ============================================================
+  useEffect(() => {
+    const trackPageView = async () => {
+      try {
+        await fetch('https://wanderwaveph.onrender.com/api/page-views', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page: 'packages',
+            path: '/packages',
+            label: 'Package Deals Page',
+          }),
+        });
+      } catch (err) {
+        // Silent fail — never block UX for analytics
+        console.warn('⚠️ Page view tracking failed:', err);
+      }
+    };
+    trackPageView();
+  }, []);
+
   // 2705 Holds raw URL destination param until packages are loaded
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);
   const [shouldScrollToPackages, setShouldScrollToPackages] = useState(false);

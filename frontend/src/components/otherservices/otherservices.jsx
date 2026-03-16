@@ -162,6 +162,28 @@ const OtherServices = ({ setAuthPage }) => {
     fetchServices();
   }, []);
 
+  // ============================================================
+  // PAGE VIEW TRACKER — fires once on mount for /services page
+  // ============================================================
+  useEffect(() => {
+    const trackPageView = async () => {
+      try {
+        await fetch('https://wanderwaveph.onrender.com/api/page-views', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page: 'services',
+            path: '/services',
+            label: 'Other Services Page',
+          }),
+        });
+      } catch (err) {
+        console.warn('⚠️ Services page view tracking failed:', err);
+      }
+    };
+    trackPageView();
+  }, []);
+
   const fetchServices = async () => {
     try {
       const response = await fetch('https://wanderwaveph.onrender.com/api/services');

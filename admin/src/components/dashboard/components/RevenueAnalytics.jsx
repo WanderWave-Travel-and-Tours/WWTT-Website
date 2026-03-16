@@ -17,7 +17,11 @@ import {
   Filter,
   ChevronDown,
   Clock,
-  CalendarDays
+  CalendarDays,
+  Eye,
+  ShoppingBag,
+  BarChart2,
+  Package
 } from "lucide-react";
 import "./RevenueAnalytics.css";
 
@@ -30,7 +34,17 @@ const RevenueAnalytics = ({
   onDailyDateChange, 
   dailyData,
   onMonthChange, 
-  monthlyData    
+  monthlyData,
+  pageViewStats = {
+    totalViews: 0,
+    packagesPageViews: 0,
+    bookingPageViews: 0,
+    flightsPageViews: 0,
+    servicesPageViews: 0,
+    topViewedPackages: [],
+    recentViews: [],
+    dailyViewsData: [],
+  }
 }) => {
   const [viewMode, setViewMode] = useState("weekly"); 
   const [dateInputs, setDateInputs] = useState({ start: "", end: "" });
@@ -484,6 +498,148 @@ const RevenueAnalytics = ({
             {totalSalesInView > 0 ? ((filteredRevenueData.inquiriesRevenue / totalSalesInView) * 100).toFixed(1) : 0}%
           </span>
         </div>
+      </div>
+
+      {/* ─── PAGE VIEWS ANALYTICS SECTION ─── */}
+      <div className="rev-pageviews-section">
+        <div className="rev-pageviews-header">
+          <div className="rev-pageviews-title-wrap">
+            <Eye size={18} className="rev-pageviews-icon" />
+            <h3 className="rev-pageviews-title">Page View Analytics</h3>
+          </div>
+          <span className="rev-pageviews-badge">Live Tracking</span>
+        </div>
+
+        {/* Summary row */}
+        <div className="rev-pageviews-summary">
+          <div className="rev-pv-card rev-pv-card--total">
+            <div className="rev-pv-card-icon">
+              <BarChart2 size={22} />
+            </div>
+            <div className="rev-pv-card-body">
+              <span className="rev-pv-card-label">Total Page Views</span>
+              <span className="rev-pv-card-value">{(pageViewStats.totalViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-sub">All pages combined</span>
+            </div>
+          </div>
+
+          <div className="rev-pv-card rev-pv-card--packages">
+            <div className="rev-pv-card-icon">
+              <ShoppingBag size={22} />
+            </div>
+            <div className="rev-pv-card-body">
+              <span className="rev-pv-card-label">Package Deals Page</span>
+              <span className="rev-pv-card-value">{(pageViewStats.packagesPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-sub">/packages visits</span>
+            </div>
+          </div>
+
+          <div className="rev-pv-card rev-pv-card--booking">
+            <div className="rev-pv-card-icon">
+              <Package size={22} />
+            </div>
+            <div className="rev-pv-card-body">
+              <span className="rev-pv-card-label">Booking Page</span>
+              <span className="rev-pv-card-value">{(pageViewStats.bookingPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-sub">Package booking views</span>
+            </div>
+          </div>
+
+          <div className="rev-pv-card rev-pv-card--flights">
+            <div className="rev-pv-card-icon">
+              <Eye size={22} />
+            </div>
+            <div className="rev-pv-card-body">
+              <span className="rev-pv-card-label">Flight Search</span>
+              <span className="rev-pv-card-value">{(pageViewStats.flightsPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-sub">/flights visits</span>
+            </div>
+          </div>
+
+          <div className="rev-pv-card rev-pv-card--services">
+            <div className="rev-pv-card-icon">
+              <Activity size={22} />
+            </div>
+            <div className="rev-pv-card-body">
+              <span className="rev-pv-card-label">Other Services</span>
+              <span className="rev-pv-card-value">{(pageViewStats.servicesPageViews || 0).toLocaleString()}</span>
+              <span className="rev-pv-card-sub">/services visits</span>
+            </div>
+          </div>
+
+          <div className="rev-pv-card rev-pv-card--rate">
+            <div className="rev-pv-card-icon">
+              <TrendingUp size={22} />
+            </div>
+            <div className="rev-pv-card-body">
+              <span className="rev-pv-card-label">View-to-Book Rate</span>
+              <span className="rev-pv-card-value">
+                {pageViewStats.packagesPageViews > 0
+                  ? ((pageViewStats.bookingPageViews / pageViewStats.packagesPageViews) * 100).toFixed(1)
+                  : '0.0'}%
+              </span>
+              <span className="rev-pv-card-sub">Booking / Packages views</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Viewed Packages */}
+        {pageViewStats.topViewedPackages && pageViewStats.topViewedPackages.length > 0 && (
+          <div className="rev-pv-top-packages">
+            <h4 className="rev-pv-sub-title">
+              <Eye size={14} /> Most Viewed Packages
+            </h4>
+            <div className="rev-pv-pkg-list">
+              {pageViewStats.topViewedPackages.slice(0, 5).map((pkg, idx) => {
+                const maxViews = pageViewStats.topViewedPackages[0]?.views || 1;
+                const barWidth = Math.max(8, Math.round((pkg.views / maxViews) * 100));
+                return (
+                  <div key={idx} className="rev-pv-pkg-row">
+                    <span className="rev-pv-pkg-rank">#{idx + 1}</span>
+                    <div className="rev-pv-pkg-info">
+                      <span className="rev-pv-pkg-name">{pkg.packageName || pkg.label || 'Unknown'}</span>
+                      <div className="rev-pv-pkg-bar-wrap">
+                        <div
+                          className="rev-pv-pkg-bar"
+                          style={{ width: `${barWidth}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="rev-pv-pkg-count">{(pkg.views || 0).toLocaleString()} views</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Daily Views Sparkline */}
+        {pageViewStats.dailyViewsData && pageViewStats.dailyViewsData.length > 0 && (
+          <div className="rev-pv-daily">
+            <h4 className="rev-pv-sub-title">
+              <Calendar size={14} /> Views — Last 7 Days
+            </h4>
+            <div className="rev-pv-daily-bars">
+              {pageViewStats.dailyViewsData.map((day, idx) => {
+                const maxVal = Math.max(...pageViewStats.dailyViewsData.map(d => d.views), 1);
+                const heightPct = Math.max(6, Math.round((day.views / maxVal) * 100));
+                return (
+                  <div key={idx} className="rev-pv-daily-col">
+                    <div className="rev-pv-daily-bar-wrap">
+                      <div
+                        className="rev-pv-daily-bar"
+                        style={{ height: `${heightPct}%` }}
+                        title={`${day.date}: ${day.views} views`}
+                      />
+                    </div>
+                    <span className="rev-pv-daily-label">{day.date}</span>
+                    <span className="rev-pv-daily-count">{day.views}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

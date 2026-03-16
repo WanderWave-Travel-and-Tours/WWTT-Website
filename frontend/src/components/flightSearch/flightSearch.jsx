@@ -22,6 +22,28 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     }
   }, [isFromBooking, packageData]);
 
+  // ============================================================
+  // PAGE VIEW TRACKER — fires once on mount for /flights page
+  // ============================================================
+  useEffect(() => {
+    const trackPageView = async () => {
+      try {
+        await fetch('https://wanderwaveph.onrender.com/api/page-views', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page: 'flights',
+            path: '/flights',
+            label: 'Flight Search Page',
+          }),
+        });
+      } catch (err) {
+        console.warn('⚠️ Flight page view tracking failed:', err);
+      }
+    };
+    trackPageView();
+  }, []);
+
   const shouldShowBackButton = context && context.returnTo && (isFromBooking || packageData);
 
   const [searchParams, setSearchParams] = useState({

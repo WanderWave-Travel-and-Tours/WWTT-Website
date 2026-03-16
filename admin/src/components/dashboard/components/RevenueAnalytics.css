@@ -842,3 +842,352 @@
 .rev-chevron.open {
   transform: rotate(180deg);
 }
+/* ========================================
+   PAGE VIEWS ANALYTICS SECTION
+   ======================================== */
+
+.rev-pageviews-section {
+  margin-top: 32px;
+  padding: 28px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  border: 1px solid #bae6fd;
+}
+
+.rev-pageviews-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rev-pageviews-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rev-pageviews-icon {
+  color: #0284c7;
+}
+
+.rev-pageviews-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rev-pageviews-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0284c7;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rev-pageviews-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  animation: pv-pulse 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pv-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* Summary Cards */
+.rev-pageviews-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.rev-pv-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 16px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rev-pv-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.1);
+}
+
+.rev-pv-card--total   .rev-pv-card-icon { background: #eff6ff; color: #3b82f6; }
+.rev-pv-card--packages .rev-pv-card-icon { background: #fef9c3; color: #ca8a04; }
+.rev-pv-card--booking  .rev-pv-card-icon { background: #f0fdf4; color: #16a34a; }
+.rev-pv-card--flights  .rev-pv-card-icon { background: #fff7ed; color: #ea580c; }
+.rev-pv-card--services .rev-pv-card-icon { background: #fdf4ff; color: #a21caf; }
+.rev-pv-card--rate     .rev-pv-card-icon { background: #fdf2f8; color: #9333ea; }
+
+.rev-pv-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.rev-pv-card:hover .rev-pv-card-icon {
+  transform: scale(1.1);
+}
+
+.rev-pv-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rev-pv-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
+}
+
+.rev-pv-card-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.rev-pv-card-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+/* Top Viewed Packages */
+.rev-pv-top-packages {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.rev-pv-sub-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 16px 0;
+}
+
+.rev-pv-pkg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rev-pv-pkg-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rev-pv-pkg-rank {
+  font-size: 12px;
+  font-weight: 800;
+  color: #94a3b8;
+  width: 26px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rev-pv-pkg-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rev-pv-pkg-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+}
+
+.rev-pv-pkg-bar-wrap {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rev-pv-pkg-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rev-pv-pkg-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0284c7;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 70px;
+  text-align: right;
+}
+
+/* Daily Sparkline */
+.rev-pv-daily {
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.rev-pv-daily-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.rev-pv-daily-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rev-pv-daily-bar-wrap {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.rev-pv-daily-bar {
+  width: 100%;
+  background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 100%);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 4px;
+}
+
+.rev-pv-daily-label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.rev-pv-daily-count {
+  font-size: 11px;
+  color: #0284c7;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ========================================
+   PAGE VIEWS RESPONSIVE
+   ======================================== */
+
+/* 3-col stays until 1024px, then 2-col, then 1-col on small mobile */
+@media (max-width: 1024px) {
+  .rev-pageviews-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .rev-pageviews-section {
+    padding: 20px;
+  }
+  .rev-pv-daily-bars {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 768px) {
+  .rev-pageviews-section {
+    padding: 18px;
+  }
+  .rev-pageviews-summary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .rev-pv-card {
+    padding: 14px 12px;
+    gap: 10px;
+  }
+  .rev-pv-card-value {
+    font-size: 18px;
+  }
+  .rev-pv-daily-bars {
+    gap: 4px;
+  }
+  .rev-pv-daily-label {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 640px) {
+  .rev-pageviews-summary {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .rev-pv-card {
+    padding: 12px 10px;
+    gap: 8px;
+  }
+  .rev-pv-card-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .rev-pv-card-value {
+    font-size: 16px;
+  }
+  .rev-pv-card-label {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rev-pageviews-summary {
+    grid-template-columns: 1fr;
+  }
+}

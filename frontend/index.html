@@ -32,12 +32,14 @@
       - Do NOT hide the entire chat-widget element (that kills the conversation panel too)
       - Instead, poll every 100ms until the shadow DOM launcher button is found
       - Hide ONLY that button via inline style
+      - Also hide the tooltip/speech bubble siblings next to the launcher button
       - Expose window.openGHLChat() which re-enables pointer-events, clicks the button, then re-hides it
       - mascot GIF in packageDeals.jsx calls window.openGHLChat()
     -->
     <script>
       (function () {
         var _launcherBtn = null;
+        var _hiddenSiblings = [];
 
         function hideLauncherBtn(btn) {
           btn.style.setProperty('opacity', '0', 'important');
@@ -45,6 +47,41 @@
           btn.style.setProperty('position', 'fixed', 'important');
           btn.style.setProperty('bottom', '-9999px', 'important');
           btn.style.setProperty('right', '-9999px', 'important');
+        }
+
+        function hideTooltipSiblings(btn) {
+          // Hide the speech bubble / tooltip elements next to the launcher button
+          var parent = btn.parentElement;
+          if (!parent) return;
+
+          // Hide direct siblings of the button
+          var siblings = parent.children;
+          for (var i = 0; i < siblings.length; i++) {
+            if (siblings[i] !== btn) {
+              siblings[i].style.setProperty('display', 'none', 'important');
+              siblings[i].style.setProperty('visibility', 'hidden', 'important');
+              siblings[i].style.setProperty('opacity', '0', 'important');
+              _hiddenSiblings.push(siblings[i]);
+            }
+          }
+
+          // Also check grandparent level for tooltip wrappers
+          var grandParent = parent.parentElement;
+          if (grandParent) {
+            var uncles = grandParent.children;
+            for (var j = 0; j < uncles.length; j++) {
+              if (uncles[j] !== parent) {
+                var rect = uncles[j].getBoundingClientRect();
+                // Only hide small floating elements (tooltips/bubbles), not the main chat panel
+                if (rect.width > 0 && rect.width < 500 && rect.height > 0 && rect.height < 200) {
+                  uncles[j].style.setProperty('display', 'none', 'important');
+                  uncles[j].style.setProperty('visibility', 'hidden', 'important');
+                  uncles[j].style.setProperty('opacity', '0', 'important');
+                  _hiddenSiblings.push(uncles[j]);
+                }
+              }
+            }
+          }
         }
 
         function findLauncherBtn(root) {
@@ -87,6 +124,7 @@
             if (btn) {
               _launcherBtn = btn;
               hideLauncherBtn(btn);
+              hideTooltipSiblings(btn);
               clearInterval(interval);
               return;
             }
