@@ -591,21 +591,21 @@ const Dashboard = () => {
         
         if (revenueViewMode === "daily") {
             console.log('Exporting DAILY with allPackages length:', allPackages?.length);
-            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages);
+            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages, pageViewStats);
         } else if (revenueViewMode === "weekly") {
             console.log('Exporting WEEKLY with allPackages length:', allPackages?.length);
-            exportWeeklyToPDF(statsWithRawData, weeklyAnalyticsData, pdfTopPackages, weeklyDate, allPackages);
+            exportWeeklyToPDF(statsWithRawData, weeklyAnalyticsData, pdfTopPackages, weeklyDate, allPackages, pageViewStats);
         } else if (revenueViewMode === "specificMonth") {
             console.log('Exporting SPECIFIC MONTH with allPackages length:', allPackages?.length);
             console.log('Selected Month:', selectedMonth);
             console.log('Monthly Data:', specificMonthAnalyticsData);
-            exportMonthlyToPDF(statsWithRawData, specificMonthAnalyticsData, pdfTopPackages, selectedMonth, allPackages);
+            exportMonthlyToPDF(statsWithRawData, specificMonthAnalyticsData, pdfTopPackages, selectedMonth, allPackages, pageViewStats);
         } else if (revenueViewMode === "custom") {
             console.log('Exporting CUSTOM with allPackages length:', allPackages?.length);
-            exportCustomToPDF(statsWithRawData, customAnalyticsData, pdfTopPackages, customRange, allPackages);
+            exportCustomToPDF(statsWithRawData, customAnalyticsData, pdfTopPackages, customRange, allPackages, pageViewStats);
         } else {
             console.log('Exporting MONTHLY TREND with allPackages length:', allPackages?.length);
-            exportToPDF(statsWithRawData, trendData, pdfTopPackages, allPackages);
+            exportToPDF(statsWithRawData, trendData, pdfTopPackages, allPackages, pageViewStats);
         }
         
         toast.success("Dashboard report has been exported successfully.", "Export Success");

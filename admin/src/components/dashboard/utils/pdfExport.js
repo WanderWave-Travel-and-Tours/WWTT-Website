@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 // Import logo as module
 import logo from '../../../assets/Logo.png';
 
-export const exportToPDF = (stats, trendData, topPackages) => {
+export const exportToPDF = (stats, trendData, topPackages, allPackages = [], pageViewStats = {}) => {
     try {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
@@ -319,6 +319,113 @@ export const exportToPDF = (stats, trendData, topPackages) => {
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(100, 100, 100);
         doc.text('Legend: B = Bookings Revenue | S = Services Revenue | T = Total Combined Revenue', 14, yPos);
+
+        // --- 6. PAGE VIEW ANALYTICS ---
+        yPos += 12;
+        if (yPos > pageHeight - 80) {
+            doc.addPage();
+            
+            // Re-add watermark on new page
+            try {
+                const size = 120;
+                const x = (pageWidth - size) / 2;
+                const y = (pageHeight - size) / 2;
+                doc.saveGraphicsState();
+                doc.setGState(new doc.GState({ opacity: 0.1 }));
+                doc.addImage(logo, 'PNG', x, y, size, size);
+                doc.restoreGraphicsState();
+            } catch (e) {}
+
+            yPos = 20;
+        }
+
+        doc.setFillColor(245, 247, 250);
+        doc.rect(14, yPos, pageWidth - 28, 8, 'F');
+        doc.setFillColor(255, 140, 66);
+        doc.rect(14, yPos, 3, 8, 'F');
+        doc.setTextColor(0, 31, 63);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('6. PAGE VIEW ANALYTICS', 20, yPos + 5.5);
+        yPos += 12;
+
+        const pv = pageViewStats || {};
+        const pvTotal    = pv.totalViews        || 0;
+        const pvPackages = pv.packagesPageViews  || 0;
+        const pvBooking  = pv.bookingPageViews   || 0;
+        const pvFlights  = pv.flightsPageViews   || 0;
+        const pvServices = pv.servicesPageViews  || 0;
+        const pvRate     = pvPackages > 0 ? ((pvBooking / pvPackages) * 100).toFixed(1) : '0.0';
+        const pvTop      = pv.topViewedPackages  || [];
+
+        autoTable(doc, {
+            startY: yPos,
+            head: [['Page', 'Views', 'Share of Total']],
+            body: [
+                ['Package Deals (/packages)', String(pvPackages), pvTotal > 0 ? ((pvPackages / pvTotal) * 100).toFixed(1) + '%' : '0%'],
+                ['Booking Page (/booking)',   String(pvBooking),  pvTotal > 0 ? ((pvBooking  / pvTotal) * 100).toFixed(1) + '%' : '0%'],
+                ['Flight Search (/flights)',  String(pvFlights),  pvTotal > 0 ? ((pvFlights  / pvTotal) * 100).toFixed(1) + '%' : '0%'],
+                ['Other Services (/services)',String(pvServices), pvTotal > 0 ? ((pvServices / pvTotal) * 100).toFixed(1) + '%' : '0%'],
+                ['TOTAL ALL PAGES',           String(pvTotal),    '100%'],
+            ],
+            theme: 'plain',
+            margin: { left: 14, right: 14 },
+            headStyles: { fillColor: [0, 31, 63], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+            bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
+            alternateRowStyles: { fillColor: [250, 250, 250] },
+            columnStyles: {
+                0: { cellWidth: 'auto' },
+                1: { halign: 'center', cellWidth: 30, fontStyle: 'bold' },
+                2: { halign: 'center', cellWidth: 35 },
+            },
+            didParseCell: function(data) {
+                if (data.row.index === 4 && data.section === 'body') {
+                    data.cell.styles.fillColor = [245, 247, 250];
+                    data.cell.styles.fontStyle = 'bold';
+                    if (data.column.index === 1) data.cell.styles.textColor = [139, 92, 246];
+                }
+            }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 8;
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text('View-to-Book Rate (Booking views / Package views):', 14, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(139, 92, 246);
+        doc.text(pvRate + '%', 120, yPos);
+        yPos += 10;
+
+        if (pvTop.length > 0) {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(30, 41, 59);
+            doc.text('Most Viewed Packages (Booking Page)', 14, yPos);
+            yPos += 4;
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [['Rank', 'Package Name', 'Views']],
+                body: pvTop.slice(0, 10).map((p, i) => [
+                    '#' + (i + 1),
+                    p.packageName || 'Unknown',
+                    String(p.views || 0),
+                ]),
+                theme: 'plain',
+                margin: { left: 14, right: 14 },
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
+                bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
+                alternateRowStyles: { fillColor: [240, 249, 255] },
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center', fontStyle: 'bold', textColor: [100, 100, 100] },
+                    1: { cellWidth: 'auto' },
+                    2: { cellWidth: 25, halign: 'center', fontStyle: 'bold', textColor: [14, 165, 233] },
+                },
+            });
+            yPos = doc.lastAutoTable.finalY + 8;
+        }
         
         const fy = pageHeight - 15;
         doc.setFontSize(8);

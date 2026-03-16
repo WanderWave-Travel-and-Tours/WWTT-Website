@@ -1191,3 +1191,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Period label next to section title */
+.rev-pageviews-period {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  margin-left: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+}
