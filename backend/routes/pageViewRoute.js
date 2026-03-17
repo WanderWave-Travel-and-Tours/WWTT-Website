@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const PageView = require('../models/PageView');
+const { PageView, BookingCount } = require('../models/PageView');
 
 // ===================================================================
 // POST /api/page-views
@@ -54,18 +54,19 @@ router.post('/', async (req, res) => {
 
 // ===================================================================
 // GET /api/page-views/stats
-// Returns aggregated stats used by the dashboard RevenueAnalytics widget
+// Returns aggregated page view + booking count stats for the dashboard.
+// Both datasets are returned in one response to avoid a second fetch.
 // ===================================================================
 router.get('/stats', async (req, res) => {
   try {
-    // ── Totals per page ─────────────────────────────────────────────
-    const totalViews         = await PageView.countDocuments();
-    const packagesPageViews  = await PageView.countDocuments({ page: 'packages' });
-    const bookingPageViews   = await PageView.countDocuments({ page: 'booking' });
-    const flightsPageViews   = await PageView.countDocuments({ page: 'flights' });
-    const servicesPageViews  = await PageView.countDocuments({ page: 'services' });
+    // ── Page view totals per page ────────────────────────────────────
+    const totalViews        = await PageView.countDocuments();
+    const packagesPageViews = await PageView.countDocuments({ page: 'packages' });
+    const bookingPageViews  = await PageView.countDocuments({ page: 'booking' });
+    const flightsPageViews  = await PageView.countDocuments({ page: 'flights' });
+    const servicesPageViews = await PageView.countDocuments({ page: 'services' });
 
-    // ── Top viewed packages (booking page only) ──────────────────────
+    // ── Top viewed packages (booking page views only) ────────────────
     const topViewedPackages = await PageView.aggregate([
       { $match: { page: 'booking', packageName: { $ne: null } } },
       {
@@ -87,14 +88,14 @@ router.get('/stats', async (req, res) => {
       },
     ]);
 
-    // ── Recent 5000 views (used by dashboard to filter by date range) ──
+    // ── Recent 5000 page views (dashboard date-range filtering) ──────
     const recentViews = await PageView.find()
       .sort({ createdAt: -1 })
       .limit(5000)
       .select('page path label packageName createdAt')
       .lean();
 
-    // ── Daily breakdown — last 30 days ──────────────────────────────
+    // ── Daily page view breakdown — last 30 days ─────────────────────
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -113,9 +114,44 @@ router.get('/stats', async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
     ]);
 
+    // ── Booking count totals ─────────────────────────────────────────
+    const totalBookingCounts = await BookingCount.countDocuments();
+
+    // ── Top booked packages ──────────────────────────────────────────
+    const topBookedPackages = await BookingCount.aggregate([
+      { $match: { packageName: { $ne: null } } },
+      {
+        $group: {
+          _id: '$packageName',
+          bookingCounts: { $sum: 1 },
+          packageId:    { $first: '$packageId' },
+          totalRevenue: { $sum: '$totalAmount' },
+        },
+      },
+      { $sort: { bookingCounts: -1 } },
+      { $limit: 10 },
+      {
+        $project: {
+          _id: 0,
+          packageName:   '$_id',
+          packageId:     1,
+          bookingCounts: 1,
+          totalRevenue:  1,
+        },
+      },
+    ]);
+
+    // ── Recent 5000 booking counts (dashboard date-range filtering) ──
+    const recentBookingCounts = await BookingCount.find()
+      .sort({ createdAt: -1 })
+      .limit(5000)
+      .select('packageName packageId paxCount paymentType totalAmount createdAt')
+      .lean();
+
     return res.status(200).json({
       status: 'ok',
       data: {
+        // Page view fields
         totalViews,
         packagesPageViews,
         bookingPageViews,
@@ -124,6 +160,10 @@ router.get('/stats', async (req, res) => {
         topViewedPackages,
         recentViews,
         dailyBreakdown,
+        // Booking count fields (same response, no extra fetch needed)
+        totalBookingCounts,
+        topBookedPackages,
+        recentBookingCounts,
       },
     });
   } catch (err) {
@@ -160,6 +200,71 @@ router.get('/', async (req, res) => {
     return res.status(500).json({
       status: 'error',
       message: 'Failed to fetch page views',
+      error: err.message,
+    });
+  }
+});
+
+// ===================================================================
+// POST /api/page-views/booking-count
+// Records a confirmed booking from BookingFormModal.
+// Merged here so no separate route file or extra deploy is needed.
+// Body: { packageId?, packageName?, paxCount?, paymentType?, totalAmount? }
+// ===================================================================
+router.post('/booking-count', async (req, res) => {
+  try {
+    const { packageId, packageName, paxCount, paymentType, totalAmount } = req.body;
+
+    const count = new BookingCount({
+      packageId:   packageId   || null,
+      packageName: packageName || null,
+      paxCount:    paxCount    || 1,
+      paymentType: paymentType || 'unknown',
+      totalAmount: totalAmount || 0,
+    });
+
+    await count.save();
+
+    console.log(`📋 Booking count recorded: ${packageName} (${paymentType})`);
+
+    return res.status(201).json({
+      status: 'ok',
+      message: 'Booking count recorded',
+    });
+  } catch (err) {
+    console.error('❌ Error recording booking count:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to record booking count',
+      error: err.message,
+    });
+  }
+});
+
+// ===================================================================
+// GET /api/page-views/booking-counts
+// Raw booking count list — optional ?packageName=xxx&limit=100
+// ===================================================================
+router.get('/booking-counts', async (req, res) => {
+  try {
+    const { packageName, limit = 100 } = req.query;
+    const filter = packageName ? { packageName } : {};
+
+    const counts = await BookingCount.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .lean();
+
+    return res.status(200).json({
+      status: 'ok',
+      count: counts.length,
+      data: counts,
+    });
+  } catch (err) {
+    console.error('❌ Error fetching booking counts:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch booking counts',
       error: err.message,
     });
   }

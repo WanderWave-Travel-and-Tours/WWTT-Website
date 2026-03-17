@@ -607,13 +607,15 @@
 
   /* Adjust Card on mobile */
   .hrs-card-header {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: nowrap;
     gap: 8px;
   }
   
   .hrs-card-title-group {
-    width: 100%;
-    justify-content: space-between;
+    flex-wrap: nowrap;
+    align-items: flex-start;
   }
   
   .hrs-badge-selected {

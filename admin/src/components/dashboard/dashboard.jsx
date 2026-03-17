@@ -58,6 +58,12 @@ const Dashboard = () => {
     recentViews: [],
     dailyViewsData: [],
   });
+
+  const [bookingCountStats, setBookingCountStats] = useState({
+    totalBookingCounts: 0,
+    topBookedPackages: [],
+    recentBookingCounts: [],
+  });
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [revenueViewMode, setRevenueViewMode] = useState("weekly");
   
@@ -143,7 +149,7 @@ const Dashboard = () => {
       }
 
       // ============================================================
-      // FETCH PAGE VIEWS
+      // FETCH PAGE VIEWS + BOOKING COUNTS (single endpoint)
       // ============================================================
       try {
         const pageViewsRes = await fetch("https://wanderwaveph.onrender.com/api/page-views/stats");
@@ -172,18 +178,25 @@ const Dashboard = () => {
           }
 
           setPageViewStats({
-            totalViews: pvStats.totalViews || 0,
+            totalViews:        pvStats.totalViews        || 0,
             packagesPageViews: pvStats.packagesPageViews || 0,
-            bookingPageViews: pvStats.bookingPageViews || 0,
-            flightsPageViews: pvStats.flightsPageViews || 0,
+            bookingPageViews:  pvStats.bookingPageViews  || 0,
+            flightsPageViews:  pvStats.flightsPageViews  || 0,
             servicesPageViews: pvStats.servicesPageViews || 0,
             topViewedPackages: pvStats.topViewedPackages || [],
-            recentViews: allViews,
+            recentViews:       allViews,
             dailyViewsData,
+          });
+
+          // Booking counts come from the same /stats response
+          setBookingCountStats({
+            totalBookingCounts:  pvStats.totalBookingCounts  || 0,
+            topBookedPackages:   pvStats.topBookedPackages   || [],
+            recentBookingCounts: pvStats.recentBookingCounts || [],
           });
         }
       } catch (pvErr) {
-        console.warn('⚠️ Page views fetch failed:', pvErr);
+        console.warn('⚠️ Page views / booking counts fetch failed:', pvErr);
       }
       
       setRawBookings(bookings);
@@ -591,21 +604,21 @@ const Dashboard = () => {
         
         if (revenueViewMode === "daily") {
             console.log('Exporting DAILY with allPackages length:', allPackages?.length);
-            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages, pageViewStats);
+            exportDailyToPDF(statsWithRawData, dailyAnalyticsData, pdfTopPackages, dailyDate, allPackages, pageViewStats, bookingCountStats);
         } else if (revenueViewMode === "weekly") {
             console.log('Exporting WEEKLY with allPackages length:', allPackages?.length);
-            exportWeeklyToPDF(statsWithRawData, weeklyAnalyticsData, pdfTopPackages, weeklyDate, allPackages, pageViewStats);
+            exportWeeklyToPDF(statsWithRawData, weeklyAnalyticsData, pdfTopPackages, weeklyDate, allPackages, pageViewStats, bookingCountStats);
         } else if (revenueViewMode === "specificMonth") {
             console.log('Exporting SPECIFIC MONTH with allPackages length:', allPackages?.length);
             console.log('Selected Month:', selectedMonth);
             console.log('Monthly Data:', specificMonthAnalyticsData);
-            exportMonthlyToPDF(statsWithRawData, specificMonthAnalyticsData, pdfTopPackages, selectedMonth, allPackages, pageViewStats);
+            exportMonthlyToPDF(statsWithRawData, specificMonthAnalyticsData, pdfTopPackages, selectedMonth, allPackages, pageViewStats, bookingCountStats);
         } else if (revenueViewMode === "custom") {
             console.log('Exporting CUSTOM with allPackages length:', allPackages?.length);
-            exportCustomToPDF(statsWithRawData, customAnalyticsData, pdfTopPackages, customRange, allPackages, pageViewStats);
+            exportCustomToPDF(statsWithRawData, customAnalyticsData, pdfTopPackages, customRange, allPackages, pageViewStats, bookingCountStats);
         } else {
             console.log('Exporting MONTHLY TREND with allPackages length:', allPackages?.length);
-            exportToPDF(statsWithRawData, trendData, pdfTopPackages, allPackages, pageViewStats);
+            exportToPDF(statsWithRawData, trendData, pdfTopPackages, allPackages, pageViewStats, bookingCountStats);
         }
         
         toast.success("Dashboard report has been exported successfully.", "Export Success");
@@ -702,6 +715,7 @@ const Dashboard = () => {
               dailyData={dailyAnalyticsData}
               weeklyData={weeklyAnalyticsData}
               pageViewStats={pageViewStats}
+              bookingCountStats={bookingCountStats}
             />
           )}
 

@@ -402,14 +402,15 @@ if (savedState.formData.appliedPromo) {
   const rooms = Math.ceil(basePax / roomCapacity);
 
   // ✅ Per-night rates based on hotel tier
+  // Only 4-star and 5-star hotels add to the total price.
+  // Standard / Budget hotels are included in the base package price — no extra charge.
   let pricePerNight = 0;
-  if (roomType.includes('BUDGET') || roomType.includes('STANDARD')) {
-    pricePerNight = 800;
-  } else if (roomType.includes('4')) {
+  if (roomType.includes('4')) {
     pricePerNight = 1660;
   } else if (roomType.includes('5')) {
     pricePerNight = 2500;
   }
+  // Standard / Budget: pricePerNight stays 0 — no additional cost added
 
   // ✅ Hotel total = rate × nights (from package title/duration) × rooms needed
   const hotelTotal = pricePerNight * durationNights * rooms;
@@ -424,10 +425,10 @@ if (savedState.formData.appliedPromo) {
     const roomCapacity = selectedRoomType.capacity || 4;
     const rooms = Math.ceil((quantities.adult || 1) / roomCapacity);
 
+    // Only 4-star and 5-star hotels add accommodation cost.
+    // Standard / Budget hotels: no additional charge.
     let pricePerNight = 0;
-    if (roomType.includes('BUDGET') || roomType.includes('STANDARD')) {
-      pricePerNight = 800;
-    } else if (roomType.includes('4')) {
+    if (roomType.includes('4')) {
       pricePerNight = 1660;
     } else if (roomType.includes('5')) {
       pricePerNight = 2500;

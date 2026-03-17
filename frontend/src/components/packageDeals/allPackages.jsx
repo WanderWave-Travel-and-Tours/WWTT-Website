@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import PackageCard from './packageCard';
 import CurrencyModal from './CurrencyModal';
 import PromoSection from './promoSection';
-import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, LogIn } from 'lucide-react';
+import { Search, Heart, Sparkles, MapPin, Globe, Filter, XCircle, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info, LogIn, ArrowUpNarrowWide, ArrowDownNarrowWide } from 'lucide-react';
 import './allPackages.css';
 
 function AllPackages({
@@ -36,6 +36,7 @@ function AllPackages({
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState(''); // '' | 'price-asc' | 'price-desc'
   
   const itemsPerPage = 6; 
 
@@ -72,10 +73,17 @@ function AllPackages({
     setPriceError('');
   }, [packages, scopeFilter, searchQuery, priceRange, selectedDuration, selectedDestinations]);
 
+  // Sort packages based on sortOrder
+  const sortedPackages = [...packages].sort((a, b) => {
+    if (sortOrder === 'price-asc') return (a.price || 0) - (b.price || 0);
+    if (sortOrder === 'price-desc') return (b.price || 0) - (a.price || 0);
+    return 0;
+  });
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentPackages = packages.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(packages.length / itemsPerPage);
+  const currentPackages = sortedPackages.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedPackages.length / itemsPerPage);
 
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -205,11 +213,15 @@ function AllPackages({
         </div>
       )}
 
-      {/* ============================================================ */}
-      {/* LAYOUT with mascot hanging at the sidebar/content border      */}
-      {/* ============================================================ */}
+      {/* ============================================================
+          LAYOUT — 2-column grid with explicit row placement:
+          Col 1: sidebar  → spans row 1 AND row 2
+          Col 2, Row 1:   → filter bar  (level with sidebar header)
+          Col 2, Row 2:   → main content (cards + pagination)
+      ============================================================ */}
       <div className="all-packages-layout" style={{ position: 'relative' }}>
 
+        {/* ── SIDEBAR — col 1, spans both rows ── */}
         <aside className={`side-filter ${isMobileFilterOpen ? 'mobile-open' : ''}`}>
           <button
             className={`mobile-filter-toggle ${isMobileFilterOpen ? 'active' : ''}`}
@@ -318,48 +330,70 @@ function AllPackages({
           </div>
         </aside>
 
-        <div className="main-content">
+        {/* ── FILTER BAR — col 2, row 1 — naturally level with sidebar header ── */}
+        <div className="packages-filter-bar-container">
+          <div className="packages-scope-filter-container">
+            <button
+              className={`packages-scope-filter-btn ${scopeFilter === 'all' ? 'active' : ''}`}
+              onClick={() => onScopeChange('all')}
+            >
+              All
+            </button>
+            <button
+              className={`packages-scope-filter-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
+              onClick={() => onScopeChange('best-deals')}
+            >
+              <Sparkles size={16} />
+              <span>Best Deals</span>
+            </button>
+            <button
+              className={`packages-scope-filter-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
+              onClick={() => onScopeChange('favorites')}
+            >
+              <Heart size={16} fill={scopeFilter === 'favorites' ? 'currentColor' : 'none'} />
+              <span>Favorites</span>
+              {favorites.length > 0 && <span className="fav-count">({favorites.length})</span>}
+            </button>
+            <button
+              className={`packages-scope-filter-btn ${scopeFilter === 'local' ? 'active' : ''}`}
+              onClick={() => onScopeChange('local')}
+            >
+              <MapPin size={16} />
+              <span>Local</span>
+            </button>
+            <button
+              className={`packages-scope-filter-btn ${scopeFilter === 'international' ? 'active' : ''}`}
+              onClick={() => onScopeChange('international')}
+            >
+              <Globe size={16} />
+              <span>International</span>
+            </button>
 
-          <div className="packages-filter-bar-container">
-            <div className="packages-scope-filter-container">
-              <button
-                className={`packages-scope-filter-btn ${scopeFilter === 'all' ? 'active' : ''}`}
-                onClick={() => onScopeChange('all')}
-              >
-                All
-              </button>
-              <button
-                className={`packages-scope-filter-btn ${scopeFilter === 'best-deals' ? 'active' : ''}`}
-                onClick={() => onScopeChange('best-deals')}
-              >
-                <Sparkles size={16} />
-                <span>Best Deals</span>
-              </button>
-              <button
-                className={`packages-scope-filter-btn fav-filter-btn ${scopeFilter === 'favorites' ? 'active' : ''}`}
-                onClick={() => onScopeChange('favorites')}
-              >
-                <Heart size={16} fill={scopeFilter === 'favorites' ? 'currentColor' : 'none'} />
-                <span>Favorites</span>
-                {favorites.length > 0 && <span className="fav-count">({favorites.length})</span>}
-              </button>
-              <button
-                className={`packages-scope-filter-btn ${scopeFilter === 'local' ? 'active' : ''}`}
-                onClick={() => onScopeChange('local')}
-              >
-                <MapPin size={16} />
-                <span>Local</span>
-              </button>
-              <button
-                className={`packages-scope-filter-btn ${scopeFilter === 'international' ? 'active' : ''}`}
-                onClick={() => onScopeChange('international')}
-              >
-                <Globe size={16} />
-                <span>International</span>
-              </button>
-            </div>
+            {/* Divider separating scope filters from sort filters */}
+            <div className="scope-filter-divider" />
+
+            {/* Sort: Price Low to High */}
+            <button
+              className={`packages-scope-filter-btn sort-btn ${sortOrder === 'price-asc' ? 'active' : ''}`}
+              onClick={() => setSortOrder(prev => prev === 'price-asc' ? '' : 'price-asc')}
+            >
+              <ArrowUpNarrowWide size={16} />
+              <span>Price: Low–High</span>
+            </button>
+
+            {/* Sort: Price High to Low */}
+            <button
+              className={`packages-scope-filter-btn sort-btn ${sortOrder === 'price-desc' ? 'active' : ''}`}
+              onClick={() => setSortOrder(prev => prev === 'price-desc' ? '' : 'price-desc')}
+            >
+              <ArrowDownNarrowWide size={16} />
+              <span>Price: High–Low</span>
+            </button>
           </div>
+        </div>
 
+        {/* ── MAIN CONTENT — col 2, row 2 ── */}
+        <div className="main-content">
           <div className="packages-grid">
             {/* ============================================================ */}
             {/* SHOW LOGIN PROMPT IF NOT LOGGED IN AND FAVORITES TAB SELECTED */}
