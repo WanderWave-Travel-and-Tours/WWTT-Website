@@ -165,10 +165,10 @@ export const DESTINATION_CAPABILITIES = {
   // ✅ FIX: Siargao DOES have RT (PUDO) rates (airport/ferry van transfers).
   //   Setting rt: false was incorrect — it caused all RT inclusions to return
   //   price=0 even when valid "RT (PUDO)" seller rates exist for the destination.
-  'siargao island':  { accommodation: true,  rt: true  },
+  
   'siargao':         { accommodation: true,  rt: true  },
   'siquijor':        { accommodation: true,  rt: true  },
-  'cebu':            { accommodation: true,  rt: true  },
+  'CEBU':            { accommodation: true,  rt: true  },
   'coron':           { accommodation: true,  rt: true  },
   // Bohol: accommodation and RT seller rates are not in the DB.
   //   General activity rates (tours, transfers, meals) DO exist — see
@@ -198,10 +198,6 @@ export const DESTINATION_CAPABILITIES = {
 // under sub-location names rather than the top-level destination name.
 // ─────────────────────────────────────────────────────────────
 export const DESTINATION_SUBDEST_MAP = {
-  'bohol': [
-    'tagbilaran', 'panglao', 'loboc', 'carmen',
-    'anda', 'tarsier', 'chocolate hills', 'corella', 'baclayon',
-  ],
   'siargao': [
     'general luna', 'cloud 9', 'cloud9', 'dapa', 'pacifico',
     'pilar', 'del carmen', 'burgos',
@@ -542,63 +538,55 @@ export const keywordCoverageCheck = (rateActivityText, inclusionText) => {
  */
 export const destinationsMatch = (rateDestination, packageDestination) => {
   if (!rateDestination || !packageDestination) return false;
-
   const rateLower = rateDestination.toLowerCase();
   const pkgLower  = packageDestination.toLowerCase();
 
-  // Guard 1: Palawan sub-destination conflict
-  const pkgSubDest  = PALAWAN_SUBDESTS.find(s => pkgLower.includes(s));
-  const rateSubDest = PALAWAN_SUBDESTS.find(s => rateLower.includes(s));
+  const toWordBoundaryRegex = (word) => {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escaped}\\b`);
+  };
+
+  // Guard 1: Palawan sub-destination conflict (now strict)
+  const pkgSubDest  = PALAWAN_SUBDESTS.find(s => toWordBoundaryRegex(s).test(pkgLower));
+  const rateSubDest = PALAWAN_SUBDESTS.find(s => toWordBoundaryRegex(s).test(rateLower));
   if (pkgSubDest && rateSubDest && pkgSubDest !== rateSubDest) return false;
 
-  // KNOWN_DESTINATIONS precise loop
-  for (const dest of KNOWN_DESTINATIONS) {
-    if (pkgLower.includes(dest) && rateLower.includes(dest)) return true;
+  // NEW CROSS-DESTINATION GUARD – blocks any rate that contains a different known destination
+  const pkgMainDest = KNOWN_DESTINATIONS.find(d => toWordBoundaryRegex(d).test(pkgLower));
+  if (pkgMainDest) {
+    const rateHasForeignDest = KNOWN_DESTINATIONS.some(d => 
+      d !== pkgMainDest && toWordBoundaryRegex(d).test(rateLower)
+    );
+    if (rateHasForeignDest) return false;
   }
 
-  // ── Sub-location expansion check ─────────────────────────────────────────
-  // Handles Bohol / Siargao rates stored under sub-location names in the DB
-  // (e.g. rate.destination = "Tagbilaran 4D3N" for a Bohol package).
-  //
-  // IMPORTANT — uses longest-match-wins to prevent false positives caused by
-  // sub-location names that are substrings of each other across destinations:
-  //
-  //   DESTINATION_SUBDEST_MAP['bohol']   contains 'carmen'   (6 chars)
-  //   DESTINATION_SUBDEST_MAP['siargao'] contains 'del carmen' (9 chars)
-  //
-  //   A Siargao rate stored as "Del Carmen 4D3N" has no "siargao" keyword.
-  //   Flat .includes('carmen') returns TRUE → Siargao rate bleeds into Bohol pool.
-  //
-  //   Fix: resolveTopDestination() finds the LONGEST matching sub-location across
-  //   ALL destinations. 'del carmen' (9 chars) wins over 'carmen' (6 chars),
-  //   so "Del Carmen 4D3N" resolves to 'siargao', not 'bohol'.
-  //
-  // Strategy: collect ALL (topDest, subDest/topDest) pairs sorted longest-first,
-  // pick the first one that matches each side, compare the resolved top-dests.
-  const resolveTopDestination = (lower) => {
-    // Build a flat list of { topDest, token } for every token (top-name + sub-locs),
-    // sorted by token length descending so the longest / most specific wins.
+  // KNOWN_DESTINATIONS loop – now word-boundary
+  for (const dest of KNOWN_DESTINATIONS) {
+    if (toWordBoundaryRegex(dest).test(pkgLower) && toWordBoundaryRegex(dest).test(rateLower)) 
+      return true;
+  }
+
+  // Sub-location expansion – now word-boundary
+  const _resolveTopDestination = (lower) => {
     const pairs = [];
     for (const [top, subs] of Object.entries(DESTINATION_SUBDEST_MAP)) {
       pairs.push({ topDest: top, token: top });
       for (const sub of subs) pairs.push({ topDest: top, token: sub });
     }
     pairs.sort((a, b) => b.token.length - a.token.length);
-    const found = pairs.find(({ token }) => lower.includes(token));
+    const found = pairs.find(({ token }) => toWordBoundaryRegex(token).test(lower));
     return found ? found.topDest : null;
   };
 
-  const pkgTop  = resolveTopDestination(pkgLower);
-  const rateTop = resolveTopDestination(rateLower);
+  const pkgTop  = _resolveTopDestination(pkgLower);
+  const rateTop = _resolveTopDestination(rateLower);
   if (pkgTop !== null && rateTop !== null) return pkgTop === rateTop;
-  // ─────────────────────────────────────────────────────────────────────────
 
-  // Guard 2: pkgWords fallback — filter out generic geographic words so they
-  // cannot leak cross-destination rates into the pool.
+  // pkgWords fallback – now word-boundary
   const pkgWords = pkgLower
     .split(/\s+/)
     .filter(w => w.length >= 4 && !GENERIC_DESTINATION_WORDS.has(w));
-  return pkgWords.some(w => rateLower.includes(w));
+  return pkgWords.some(w => toWordBoundaryRegex(w).test(rateLower));
 };
 
 

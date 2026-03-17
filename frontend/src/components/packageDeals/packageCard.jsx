@@ -1,6 +1,6 @@
 // src/components/PackageDeals/packageCard.jsx - WITH AUTOMATIC TIMER-BASED PRICING
 import React from 'react';
-import { Heart, Star, MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
+import { Heart, Star, MapPin, Calendar, Users, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageHelper';
 import './packageCard.css';
 
@@ -110,6 +110,38 @@ const renderTitleWithDuration = (title) => {
       <CalendarDurationBadge duration={duration} />
       <span className="title-text">{restOfTitle}</span>
     </span>
+  );
+};
+
+// ✅ Strips emojis from a string before display
+const stripEmojis = (str) =>
+  str.replace(
+    /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]|[\u{2B00}-\u{2BFF}]|[\u{FE00}-\u{FEFF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|\u200d|\uFE0F/gu,
+    ''
+  ).trim();
+
+// ✅ Renders the inclusions list — plain, no container box
+const InclusionsList = ({ inclusions }) => {
+  if (!inclusions || inclusions.length === 0) return null;
+
+  const MAX_VISIBLE = 3;
+  const visible = inclusions.slice(0, MAX_VISIBLE);
+  const remaining = inclusions.length - MAX_VISIBLE;
+
+  return (
+    <div className="inclusions-section">
+      <ul className="inclusions-list">
+        {visible.map((item, idx) => (
+          <li key={idx} className="inclusion-item">
+            <CheckCircle2 className="inclusion-icon" size={13} />
+            <span className="inclusion-text">{stripEmojis(item)}</span>
+          </li>
+        ))}
+      </ul>
+      {remaining > 0 && (
+        <span className="inclusions-more">+{remaining} more</span>
+      )}
+    </div>
   );
 };
 
@@ -263,19 +295,22 @@ function PackageCard({
         <div>
           <div className="card-header">
             <h3 className="card-title">{renderTitleWithDuration(pkg.name)}</h3>
-            <div className="rating-row">
-              <Star className="star-icon" size={16} fill="currentColor" />
-              <span className="rating-value">{pkg.rating}</span>
-              <span className="rating-count">({pkg.reviews})</span>
+            <div className="meta-row">
+              <div className="detail-row">
+                <MapPin className="detail-icon" />
+                <span className="detail-text">{pkg.location}</span>
+              </div>
+              <span className="meta-divider">·</span>
+              <div className="rating-row">
+                <Star className="star-icon" size={13} fill="currentColor" />
+                <span className="rating-value">{pkg.rating}</span>
+                <span className="rating-count">({pkg.reviews})</span>
+              </div>
             </div>
           </div>
 
-          <div className="card-details">
-            <div className="detail-row">
-              <MapPin className="detail-icon" />
-              <span className="detail-text">{pkg.location}</span>
-            </div>
-          </div>
+          {/* ✅ INCLUSIONS */}
+          <InclusionsList inclusions={pkg.inclusions} />
         </div>
 
         <div className="card-footer">
@@ -286,7 +321,6 @@ function PackageCard({
             {/* ── SOLO PRICE ── */}
             {hasSoloPaxPrice && (
               <div className="price-block">
-                <span className="price-label">Solo</span>
                 <div className="price-amount">
                   <span className="currency">{currencySymbol}</span>
                   <span className="price-value">{formatPrice(convertedSoloPrice)}</span>
@@ -315,7 +349,6 @@ function PackageCard({
             {/* ── FALLBACK: show base price if neither pax price is set ── */}
             {!hasSoloPaxPrice && !hasMultiplePaxPrice && (
               <div className="price-block">
-                <span className="price-label">Price</span>
                 <div className="price-amount">
                   <span className="currency">{currencySymbol}</span>
                   <span className="price-value">{formatPrice(convertedPrice)}</span>

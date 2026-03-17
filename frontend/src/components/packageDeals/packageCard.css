@@ -120,7 +120,7 @@
 }
 
 .card-header {
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 /* ================== TITLE + BADGE LAYOUT ================== */
@@ -173,12 +173,25 @@
   filter: drop-shadow(0 2px 5px rgba(0,0,0,0.22));
 }
 
-/* ================== RATING ================== */
+/* ================== RATING + LOCATION ROW ================== */
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.meta-divider {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+}
 
 .rating-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .star-icon {
@@ -186,43 +199,85 @@
 }
 
 .rating-value {
-  font-size: 0.875rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 500;
   color: #334155;
 }
 
 .rating-count {
-  font-size: 0.875rem;
+  font-size: 0.82rem;
+  font-weight: 500;
   color: #64748b;
-}
-
-.card-details {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 24px;
 }
 
 .detail-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 }
 
 .detail-icon {
   color: #ea580c;
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 13px;
+  height: 13px;
 }
 
 .detail-text {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   color: #475569;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ================== INCLUSIONS ================== */
+
+.inclusions-section {
+  margin-bottom: 20px;
+}
+
+.inclusions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.inclusion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.inclusion-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 13px;
+  height: 13px;
+}
+
+.inclusion-text {
+  font-size: 0.82rem;
+  color: #475569;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.inclusions-more {
+  display: inline-block;
+  margin-top: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: #ea580c;
+  border-radius: 20px;
+  padding: 2px 9px;
+  letter-spacing: 0.3px;
 }
 
 /* Footer & Price */
@@ -268,12 +323,36 @@
 }
 
 .price-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: #64748b;
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.6px;
   white-space: nowrap;
+}
+
+.price-amount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+
+.price-location {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.price-separator {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  font-weight: 300;
+  margin: 0 1px;
 }
 
 /* Strikethrough original price shown during active timer/discount */
@@ -283,13 +362,6 @@
   text-decoration: line-through;
   margin-top: 1px;
   white-space: nowrap;
-}
-
-.price-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-  white-space: nowrap; /* Keep price on one line */
 }
 
 .currency {
@@ -358,7 +430,7 @@
   .card-body { padding: 18px; }
   .card-title { font-size: 1.1rem; margin-bottom: 6px; }
   .rating-value, .rating-count { font-size: 0.8rem; }
-  .card-details { gap: 8px; margin-bottom: 16px; }
+  .card-details { gap: 8px; margin-bottom: 10px; }
   .detail-text { font-size: 0.85rem; }
   .price-value { font-size: 1.25rem; }
   .card-image { height: 180px; }

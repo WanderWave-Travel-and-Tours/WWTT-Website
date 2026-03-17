@@ -481,7 +481,8 @@ function PackageDeals() {
       name: 'Hong Kong Disneyland', 
       subtitle: 'Hong Kong',
       scope: 'international',
-      image: 'https://assets.cdn.filesafe.space/yTzQYPFRZAWXGWiXtIt2/media/69118686c3a1eafb4f245065.jpg'
+      image: 'https://assets.cdn.filesafe.space/yTzQYPFRZAWXGWiXtIt2/media/69118686c3a1eafb4f245065.jpg',
+      smallTitle: true
     },
     { 
       id: 'singapore', 
@@ -492,7 +493,7 @@ function PackageDeals() {
     },
     { 
       id: 'tokyo', 
-      name: 'Tokyo Disneyland', 
+      name: 'All Packages', 
       subtitle: 'Japan',
       scope: 'international',
       image: 'https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6917166d01e5bcc9cd11a103.jpg' 
