@@ -21,7 +21,7 @@
   flex-direction: column;
   align-items: center;
   padding-bottom: 60px;
-  padding-top: 20px;
+  padding-top: 130px;
 }
 
 .section-divider-orange {
@@ -99,4 +99,22 @@
     padding-top: 20px;
     padding-bottom: 20px;
   }
+}
+
+/* ============================================================
+   DESTINATION CARD TITLES — uniform smaller font
+   Scoped to .bottom-section-bg to avoid affecting other sections.
+   Covers the most common class name patterns from BrowseCategory.
+   ============================================================ */
+.bottom-section-bg .category-card .category-name,
+.bottom-section-bg .category-card .card-name,
+.bottom-section-bg .category-card .card-title,
+.bottom-section-bg .category-card h3,
+.bottom-section-bg .category-card h4,
+.bottom-section-bg .destination-card .destination-name,
+.bottom-section-bg .destination-card .card-title,
+.bottom-section-bg .destination-card h3,
+.bottom-section-bg .destination-card h4 {
+  font-size: clamp(0.75rem, 1.8vw, 1rem);
+  line-height: 1.25;
 }

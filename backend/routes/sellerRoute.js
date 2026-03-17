@@ -36,8 +36,11 @@ router.get('/', async (req, res) => {
       isArchive: { $ne: 'Yes' }
     };
     
-    if (destination) {
-      filter.destination = { $regex: destination, $options: 'i' };
+        if (destination) {
+      // STRICT WORD-BOUNDARY FILTER — this is the main fix for Bohol leak
+      // Only matches whole word "Bohol" (or "El Nido", etc.). Prevents any cross-destination rates.
+      const escaped = destination.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.destination = { $regex: `\\b${escaped}\\b`, $options: 'i' };
     }
     if (activity) {
       filter.activity = { $regex: activity, $options: 'i' };

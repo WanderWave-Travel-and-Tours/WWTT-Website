@@ -53,26 +53,14 @@ const PackageCustomizer = ({
       source: 'package',
     }));
     setCustomizedInclusions(skeletonInclusions);
-    setIsPricingLoading(true);
-    setIsLoading(true);
-    setError('');
+      setIsPricingLoading(true);
+      setIsLoading(true);
+      setError('');
 
     try {
-      // ── API fetch strategy ────────────────────────────────────────────────
-      // For most destinations the backend destination-filter is sufficient:
-      //   it returns only rates whose destination field contains the keyword.
-      //
-      // For Bohol and Siargao, seller rates may be stored in the DB under
-      // sub-location names ("Tagbilaran", "Panglao", "Cloud 9", etc.) that
-      // do NOT contain the top-level destination keyword.  The backend regex
-      // would return 0 matching rates in those cases, causing every inclusion
-      // to return price=0.
-      //
-      // FIX: For these destinations, skip the backend destination filter and
-      // fetch all active rates.  The client-side destinationsMatch (which uses
-      // DESTINATION_SUBDEST_MAP) will correctly scope them.
-      // ─────────────────────────────────────────────────────────────────────
-      const BROAD_FETCH_DESTINATIONS = ['bohol', 'siargao'];
+           // Bohol data is now properly stored in the DB with the keyword "Bohol"
+      // (just like every other destination). We no longer need the broad-fetch hack.
+      const BROAD_FETCH_DESTINATIONS = ['siargao'];   // only Siargao still needs it (if any)
       const destLower = (destination || '').toLowerCase();
       const useBroadFetch = BROAD_FETCH_DESTINATIONS.some(d => destLower.includes(d));
 
@@ -110,13 +98,15 @@ const PackageCustomizer = ({
       setAvailableActivities(deduplicatedRates);
       setFilteredActivities(deduplicatedRates);
 
-      // Match each package inclusion to its best seller rate.
-      // Pass the full allRates (not deduped) so the matcher sees every candidate.
-      // tourType and minPax are the explicit DB fields that determine which
-      // qualifier tier (Solo / min. of N pax) to use in Stage 4.
+            // Match each package inclusion to its best seller rate.
+      // Pass ONLY the pre-filtered matchingRates (already passed destinationsMatch).
+      // This completely eliminates any possibility of foreign-destination prices.
+      // (We no longer need the full allRates because Bohol DB is normalized.)
+            // Match each package inclusion to its best seller rate.
+      // Pass ONLY the filtered Bohol rates (no more foreign prices possible).
       const { matched, matchCount } = matchInclusionsWithPrices(
         pkg.inclusions || [],
-        allRates,
+        matchingRates,          // ← THIS IS THE FIX
         destination,
         pkg.tourType    || 'private',
         pkg.minPax      || null,

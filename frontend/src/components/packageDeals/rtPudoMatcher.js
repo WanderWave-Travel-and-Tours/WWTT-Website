@@ -74,6 +74,7 @@ export const RT_PUDO_INCLUSION_KEYWORDS = [
 // (e.g. "Resort Room", "airport transfer", "portrait session").
 export const RT_PUDO_ACTIVITY_EXACT = [
   'rt (pudo)', 'rt(pudo)', 'rt pudo',
+  'rt transfer', 'rttransfer'   // ← add this for Bohol
 ];
 
 
@@ -121,10 +122,6 @@ const _PALAWAN_SUBDESTS = ['el nido', 'puerto princesa', 'coron'];
 // the top-level destination name.  Must be kept in sync with the exported
 // DESTINATION_SUBDEST_MAP in inclusionMatcher.js.
 const _DESTINATION_SUBDEST_MAP = {
-  'bohol': [
-    'tagbilaran', 'panglao', 'loboc', 'carmen',
-    'anda', 'tarsier', 'chocolate hills', 'corella', 'baclayon',
-  ],
   'siargao': [
     'general luna', 'cloud 9', 'cloud9', 'dapa', 'pacifico',
     'pilar', 'del carmen', 'burgos',
@@ -158,21 +155,32 @@ const _destinationsMatch = (rateDestination, packageDestination) => {
   const rateLower = rateDestination.toLowerCase();
   const pkgLower  = packageDestination.toLowerCase();
 
-  // Guard 1: Palawan sub-destination conflict — prevent El Nido / Coron /
-  // Puerto Princesa packages from cross-matching each other's rates via 'palawan'.
-  const pkgSubDest  = _PALAWAN_SUBDESTS.find(s => pkgLower.includes(s));
-  const rateSubDest = _PALAWAN_SUBDESTS.find(s => rateLower.includes(s));
+  const toWordBoundaryRegex = (word) => {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escaped}\\b`);
+  };
+
+  // Guard 1: Palawan sub-destination conflict
+  const pkgSubDest  = _PALAWAN_SUBDESTS.find(s => toWordBoundaryRegex(s).test(pkgLower));
+  const rateSubDest = _PALAWAN_SUBDESTS.find(s => toWordBoundaryRegex(s).test(rateLower));
   if (pkgSubDest && rateSubDest && pkgSubDest !== rateSubDest) return false;
 
-  // KNOWN_DESTINATIONS precise loop
-  for (const dest of _KNOWN_DESTINATIONS) {
-    if (pkgLower.includes(dest) && rateLower.includes(dest)) return true;
+  // NEW CROSS-DESTINATION GUARD
+  const pkgMainDest = _KNOWN_DESTINATIONS.find(d => toWordBoundaryRegex(d).test(pkgLower));
+  if (pkgMainDest) {
+    const rateHasForeignDest = _KNOWN_DESTINATIONS.some(d => 
+      d !== pkgMainDest && toWordBoundaryRegex(d).test(rateLower)
+    );
+    if (rateHasForeignDest) return false;
   }
 
-  // ── Sub-location expansion (mirrors inclusionMatcher.js logic) ───────────
-  // Uses longest-match-wins so that 'del carmen' (siargao, 9 chars) always
-  // beats 'carmen' (bohol, 6 chars) when the rate destination contains "Del Carmen".
-  // See the detailed comment in destinationsMatch (inclusionMatcher.js).
+  // KNOWN_DESTINATIONS precise loop – word-boundary
+  for (const dest of _KNOWN_DESTINATIONS) {
+    if (toWordBoundaryRegex(dest).test(pkgLower) && toWordBoundaryRegex(dest).test(rateLower)) 
+      return true;
+  }
+
+  // Sub-location expansion – word-boundary
   const _resolveTopDestination = (lower) => {
     const pairs = [];
     for (const [top, subs] of Object.entries(_DESTINATION_SUBDEST_MAP)) {
@@ -180,23 +188,19 @@ const _destinationsMatch = (rateDestination, packageDestination) => {
       for (const sub of subs) pairs.push({ topDest: top, token: sub });
     }
     pairs.sort((a, b) => b.token.length - a.token.length);
-    const found = pairs.find(({ token }) => lower.includes(token));
+    const found = pairs.find(({ token }) => toWordBoundaryRegex(token).test(lower));
     return found ? found.topDest : null;
   };
 
   const pkgTop  = _resolveTopDestination(pkgLower);
   const rateTop = _resolveTopDestination(rateLower);
   if (pkgTop !== null && rateTop !== null) return pkgTop === rateTop;
-  // ─────────────────────────────────────────────────────────────────────────
 
-  // Guard 2: pkgWords fallback — filter generic geographic words so they cannot
-  // leak cross-destination rates. e.g. 'island' from 'Siargao Island' must NOT
-  // match 'El Nido Island Hopping 4D3N', which would inject El Nido RT rates
-  // into Siargao's candidate pool and return wrong prices.
+  // pkgWords fallback – word-boundary
   const pkgWords = pkgLower
     .split(/\s+/)
     .filter(w => w.length >= 4 && !_GENERIC_DESTINATION_WORDS.has(w));
-  return pkgWords.some(w => rateLower.includes(w));
+  return pkgWords.some(w => toWordBoundaryRegex(w).test(rateLower));
 };
 
 // Scores a candidate rate against the package's Stage 1 signals.

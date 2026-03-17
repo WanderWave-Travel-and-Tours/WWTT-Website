@@ -41,7 +41,7 @@
   position: sticky;
   top: 100px;
   margin-top: 0;
-  z-index: 20;
+  z-index: 999;
   transition: all 0.3s ease;
   width: 100%; /* Ensures it fills the grid cell */
 }
@@ -486,7 +486,7 @@
     order: 2;
     position: static;
     margin-top: 0;
-    z-index: 10;
+    z-index: 100;
     border-radius: 12px;
     box-shadow: none;
     border: none;
