@@ -288,11 +288,13 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
   const hasAutoSelectedRef = useRef(false);
 
   // ✅ Per-night rate lookup based on hotel tier
+  // Only 4-star and 5-star hotels carry an additional nightly cost.
+  // Standard / Budget hotels are covered by the base package price.
   const getPerNightRate = (roomType) => {
     const t = (roomType || '').toUpperCase();
     if (t.includes('5')) return 2500;
     if (t.includes('4')) return 1660;
-    return 800; // Standard / Budget
+    return 0; // Standard / Budget — no additional charge
   };
 
   // ✅ Read actual capacity from DB (first hotel in group), fallback to 2
@@ -334,11 +336,6 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
   };
 
   const getRoomTypeIcon = (type) => {
-    if (!type) return '🏨';
-    const t = type.toLowerCase();
-    if (t.includes('standard')) return '🏨';
-    if (t.includes('4')) return '⭐⭐⭐⭐';
-    if (t.includes('5')) return '⭐⭐⭐⭐⭐';
     return '🏨';
   };
 
@@ -346,9 +343,9 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
   const getCategoryDisplayName = (roomType) => {
     if (!roomType) return 'Hotels';
     const type = roomType.toLowerCase();
-    if (type.includes('standard')) return 'Standard Hotels';
-    if (type.includes('4')) return '4-Star Hotels';
-    if (type.includes('5')) return '5-Star Hotels';
+    if (type.includes('standard')) return 'Budget Accommodations';
+    if (type.includes('4')) return 'Mid Range Hotels';
+    if (type.includes('5')) return 'Premium Hotels';
     return `${roomType} Hotels`;
   };
 
@@ -440,8 +437,8 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
                 </div>
               )}
 
-              <div className="hrs-card-header" style={{marginBottom: 0}}>
-                <div className="hrs-card-title-group">
+              <div className="hrs-card-header" style={{marginBottom: 0, flexDirection: 'row', alignItems: 'flex-start', flexWrap: 'nowrap'}}>
+                <div className="hrs-card-title-group" style={{flexWrap: 'nowrap', alignItems: 'flex-start'}}>
                   <span className="hrs-icon">{getRoomTypeIcon(roomType)}</span>
                   <div>
                     <h4>{categoryName}</h4>
@@ -451,7 +448,7 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
                   </div>
 
                 </div>
-                <div className="hrs-category-right">
+                <div className="hrs-category-right" style={{flexDirection: 'column', alignItems: 'flex-end'}}>
                   {/* ✅ Only show max capacity from DB */}
                   {(() => {
                     const roomsNeeded = getRoomsNeeded(group);

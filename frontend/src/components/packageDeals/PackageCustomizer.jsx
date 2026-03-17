@@ -58,11 +58,30 @@ const PackageCustomizer = ({
     setError('');
 
     try {
-      // Pass destination as query param so the backend can pre-filter
+      // ── API fetch strategy ────────────────────────────────────────────────
+      // For most destinations the backend destination-filter is sufficient:
+      //   it returns only rates whose destination field contains the keyword.
+      //
+      // For Bohol and Siargao, seller rates may be stored in the DB under
+      // sub-location names ("Tagbilaran", "Panglao", "Cloud 9", etc.) that
+      // do NOT contain the top-level destination keyword.  The backend regex
+      // would return 0 matching rates in those cases, causing every inclusion
+      // to return price=0.
+      //
+      // FIX: For these destinations, skip the backend destination filter and
+      // fetch all active rates.  The client-side destinationsMatch (which uses
+      // DESTINATION_SUBDEST_MAP) will correctly scope them.
+      // ─────────────────────────────────────────────────────────────────────
+      const BROAD_FETCH_DESTINATIONS = ['bohol', 'siargao'];
+      const destLower = (destination || '').toLowerCase();
+      const useBroadFetch = BROAD_FETCH_DESTINATIONS.some(d => destLower.includes(d));
+
       const encodedDest = encodeURIComponent(destination);
-      const response = await fetch(
-        `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}`
-      );
+      const fetchUrl = useBroadFetch
+        ? `https://wanderwaveph.onrender.com/api/seller-rates`
+        : `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}`;
+
+      const response = await fetch(fetchUrl);
       if (!response.ok) throw new Error('Failed to fetch seller rates');
 
       const allRates = await response.json();

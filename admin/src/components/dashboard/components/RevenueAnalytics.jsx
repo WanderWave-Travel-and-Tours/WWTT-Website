@@ -44,6 +44,11 @@ const RevenueAnalytics = ({
     topViewedPackages: [],
     recentViews: [],
     dailyViewsData: [],
+  },
+  bookingCountStats = {
+    totalBookingCounts: 0,
+    topBookedPackages: [],
+    recentBookingCounts: [],
   }
 }) => {
   const [viewMode, setViewMode] = useState("weekly"); 
@@ -213,77 +218,61 @@ const RevenueAnalytics = ({
   };
 
   // ============================================================
-  // FILTERED PAGE VIEW STATS — reacts to selected viewMode
-  // Filters recentViews by the same date window as revenue data
+  // SHARED DATE WINDOW — single source of truth used by BOTH
+  // filteredPageViewStats and filteredBookingCounts so the
+  // numerator (confirmed bookings) and denominator (booking page
+  // views) of View-to-Book rate always cover the exact same period
+  // ============================================================
+  const analyticsDateWindow = useMemo(() => {
+    const now = new Date();
+    if (viewMode === 'daily') {
+      const start = new Date(selectedDailyDate); start.setHours(0, 0, 0, 0);
+      const end   = new Date(selectedDailyDate); end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (viewMode === 'weekly') {
+      const start = new Date(now); start.setDate(start.getDate() - 6); start.setHours(0, 0, 0, 0);
+      const end   = new Date(now); end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (viewMode === 'specificMonth') {
+      const [year, month] = selectedMonth.split('-');
+      const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+      const end   = new Date(year, month,     0, 23, 59, 59, 999);
+      return { start, end };
+    }
+    if (viewMode === 'monthly') {
+      const start = new Date(now.getFullYear(), now.getMonth() - 5, 1, 0, 0, 0, 0);
+      const end   = new Date(now); end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (viewMode === 'custom' && dateInputs.start && dateInputs.end) {
+      const start = new Date(dateInputs.start); start.setHours(0, 0, 0, 0);
+      const end   = new Date(dateInputs.end);   end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    return { start: new Date(0), end: new Date() };
+  }, [viewMode, selectedDailyDate, selectedMonth, dateInputs]);
+
+  // ============================================================
+  // FILTERED PAGE VIEW STATS — filtered using shared date window
   // ============================================================
   const filteredPageViewStats = useMemo(() => {
     const allViews = pageViewStats.recentViews || [];
-
-    // Helper: build date window from viewMode
-    const getDateWindow = () => {
-      const now = new Date();
-
-      if (viewMode === 'daily') {
-        // Selected single day
-        const start = new Date(selectedDailyDate);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(selectedDailyDate);
-        end.setHours(23, 59, 59, 999);
-        return { start, end };
-      }
-
-      if (viewMode === 'weekly') {
-        // Current week (last 7 days)
-        const start = new Date(now);
-        start.setDate(start.getDate() - 6);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(now);
-        end.setHours(23, 59, 59, 999);
-        return { start, end };
-      }
-
-      if (viewMode === 'specificMonth') {
-        const [year, month] = selectedMonth.split('-');
-        const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
-        const end = new Date(year, month, 0, 23, 59, 59, 999);
-        return { start, end };
-      }
-
-      if (viewMode === 'monthly') {
-        // Last 6 months
-        const start = new Date(now.getFullYear(), now.getMonth() - 5, 1, 0, 0, 0, 0);
-        const end = new Date(now);
-        end.setHours(23, 59, 59, 999);
-        return { start, end };
-      }
-
-      if (viewMode === 'custom' && dateInputs.start && dateInputs.end) {
-        const start = new Date(dateInputs.start);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(dateInputs.end);
-        end.setHours(23, 59, 59, 999);
-        return { start, end };
-      }
-
-      // Default fallback — all time
-      return { start: new Date(0), end: new Date() };
-    };
-
-    const { start, end } = getDateWindow();
+    const { start, end } = analyticsDateWindow;
 
     const filtered = allViews.filter(v => {
       const d = new Date(v.createdAt);
       return d >= start && d <= end;
     });
 
-    // Per-page counts from filtered views
     const totalViews        = filtered.length;
     const packagesPageViews = filtered.filter(v => v.page === 'packages').length;
     const bookingPageViews  = filtered.filter(v => v.page === 'booking').length;
     const flightsPageViews  = filtered.filter(v => v.page === 'flights').length;
     const servicesPageViews = filtered.filter(v => v.page === 'services').length;
 
-    // Top viewed packages — from booking views in filtered window
+    // Top viewed packages from booking views in this window
     const pkgCounts = {};
     filtered
       .filter(v => v.page === 'booking' && v.packageName)
@@ -295,8 +284,7 @@ const RevenueAnalytics = ({
       .sort((a, b) => b.views - a.views)
       .slice(0, 10);
 
-    // Build daily views chart for the selected window
-    // For daily → just 1 bar; weekly → 7 bars; monthly/6mo/custom → group by day (max 30)
+    // Build daily chart data within the window (max 31 bars)
     const dayMap = {};
     filtered.forEach(v => {
       const d = new Date(v.createdAt);
@@ -304,14 +292,9 @@ const RevenueAnalytics = ({
       dayMap[key] = (dayMap[key] || 0) + 1;
     });
 
-    // Build ordered array within the window
     const dailyViewsData = [];
-    const cursor = new Date(start);
-    cursor.setHours(0, 0, 0, 0);
-    const windowEnd = new Date(end);
-    windowEnd.setHours(0, 0, 0, 0);
-
-    // Cap at 31 data points to keep chart readable
+    const cursor = new Date(start); cursor.setHours(0, 0, 0, 0);
+    const windowEnd = new Date(end); windowEnd.setHours(0, 0, 0, 0);
     let iterations = 0;
     while (cursor <= windowEnd && iterations < 31) {
       const key = cursor.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -320,7 +303,7 @@ const RevenueAnalytics = ({
       iterations++;
     }
 
-    // For 6-month trend, group into months instead of days
+    // For 6-month trend, group into months
     let chartData = dailyViewsData;
     if (viewMode === 'monthly') {
       const monthMap = {};
@@ -343,13 +326,36 @@ const RevenueAnalytics = ({
       topViewedPackages,
       dailyViewsData: chartData,
     };
-  }, [
-    viewMode,
-    selectedDailyDate,
-    selectedMonth,
-    dateInputs,
-    pageViewStats.recentViews,
-  ]);
+  }, [analyticsDateWindow, pageViewStats.recentViews, viewMode]);
+
+  // ============================================================
+  // FILTERED BOOKING COUNTS — uses the SAME shared date window
+  // This guarantees the View-to-Book rate is:
+  //   confirmed bookings in period / booking page views in period
+  // ============================================================
+  const filteredBookingCounts = useMemo(() => {
+    const allCounts = bookingCountStats.recentBookingCounts || [];
+    const { start, end } = analyticsDateWindow;
+
+    const filtered = allCounts.filter(c => {
+      const d = new Date(c.createdAt);
+      return d >= start && d <= end;
+    });
+
+    const totalConfirmedBookings = filtered.length;
+
+    const pkgCounts = {};
+    filtered.forEach(c => {
+      if (!c.packageName) return;
+      pkgCounts[c.packageName] = (pkgCounts[c.packageName] || 0) + 1;
+    });
+    const topConfirmedPackages = Object.entries(pkgCounts)
+      .map(([packageName, bookingCounts]) => ({ packageName, bookingCounts }))
+      .sort((a, b) => b.bookingCounts - a.bookingCounts)
+      .slice(0, 10);
+
+    return { totalConfirmedBookings, topConfirmedPackages };
+  }, [analyticsDateWindow, bookingCountStats.recentBookingCounts]);
 
   return (
     <div className="rev-widget">
@@ -672,7 +678,7 @@ const RevenueAnalytics = ({
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Package Deals Page</span>
               <span className="rev-pv-card-value">{(filteredPageViewStats.packagesPageViews || 0).toLocaleString()}</span>
-              <span className="rev-pv-card-sub">/packages visits</span>
+              <span className="rev-pv-card-sub">Packages Visits</span>
             </div>
           </div>
 
@@ -683,7 +689,7 @@ const RevenueAnalytics = ({
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Booking Page</span>
               <span className="rev-pv-card-value">{(filteredPageViewStats.bookingPageViews || 0).toLocaleString()}</span>
-              <span className="rev-pv-card-sub">Package booking views</span>
+              <span className="rev-pv-card-sub">Package Booking Views</span>
             </div>
           </div>
 
@@ -694,7 +700,7 @@ const RevenueAnalytics = ({
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Flight Search</span>
               <span className="rev-pv-card-value">{(filteredPageViewStats.flightsPageViews || 0).toLocaleString()}</span>
-              <span className="rev-pv-card-sub">/flights visits</span>
+              <span className="rev-pv-card-sub">Flights Visits</span>
             </div>
           </div>
 
@@ -705,7 +711,7 @@ const RevenueAnalytics = ({
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">Other Services</span>
               <span className="rev-pv-card-value">{(filteredPageViewStats.servicesPageViews || 0).toLocaleString()}</span>
-              <span className="rev-pv-card-sub">/services visits</span>
+              <span className="rev-pv-card-sub">Other Services Visits</span>
             </div>
           </div>
 
@@ -716,11 +722,13 @@ const RevenueAnalytics = ({
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">View-to-Book Rate</span>
               <span className="rev-pv-card-value">
-                {filteredPageViewStats.packagesPageViews > 0
-                  ? ((filteredPageViewStats.bookingPageViews / filteredPageViewStats.packagesPageViews) * 100).toFixed(1)
+                {filteredPageViewStats.bookingPageViews > 0
+                  ? ((filteredBookingCounts.totalConfirmedBookings / filteredPageViewStats.bookingPageViews) * 100).toFixed(1)
                   : '0.0'}%
               </span>
-              <span className="rev-pv-card-sub">Booking / Packages views</span>
+              <span className="rev-pv-card-sub">
+                {filteredBookingCounts.totalConfirmedBookings} Booked out of {filteredPageViewStats.bookingPageViews} Booking Page Views
+              </span>
             </div>
           </div>
         </div>

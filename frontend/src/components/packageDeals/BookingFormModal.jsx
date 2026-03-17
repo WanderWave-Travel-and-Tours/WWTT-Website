@@ -389,6 +389,30 @@ const BookingFormModal = ({
       handleNextPassenger(pendingSubmit);
       // Show booking completed modal after confirming
       setShowBookingCompletedModal(true);
+
+      // ============================================================
+      // BOOKING COUNT TRACKER — fires once when booking is confirmed
+      // Records the actual conversion from page view to confirmed book
+      // ============================================================
+      const trackBookingCount = async () => {
+        try {
+          await fetch('https://wanderwaveph.onrender.com/api/page-views/booking-count', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              packageId:   pkg?.id   || pkg?._id  || null,
+              packageName: pkg?.name || pkg?.title || null,
+              paxCount:    totalPassengers || 1,
+              paymentType: paymentType || 'unknown',
+              totalAmount: finalAmount || 0,
+            }),
+          });
+        } catch (err) {
+          // Silent fail — never block UX for analytics
+          console.warn('⚠️ Booking count tracking failed:', err);
+        }
+      };
+      trackBookingCount();
     }
     setPendingSubmit(null);
   };

@@ -115,6 +115,22 @@ const _GENERIC_DESTINATION_WORDS = new Set([
 // when 'palawan' appears in both pkg and rate destination strings.
 const _PALAWAN_SUBDESTS = ['el nido', 'puerto princesa', 'coron'];
 
+// ── Private mirror of DESTINATION_SUBDEST_MAP in inclusionMatcher.js ────────
+// Resolves Bohol / Siargao seller rates that are stored in the DB under a
+// sub-location name (e.g. "Tagbilaran", "Panglao", "Cloud 9") rather than
+// the top-level destination name.  Must be kept in sync with the exported
+// DESTINATION_SUBDEST_MAP in inclusionMatcher.js.
+const _DESTINATION_SUBDEST_MAP = {
+  'bohol': [
+    'tagbilaran', 'panglao', 'loboc', 'carmen',
+    'anda', 'tarsier', 'chocolate hills', 'corella', 'baclayon',
+  ],
+  'siargao': [
+    'general luna', 'cloud 9', 'cloud9', 'dapa', 'pacifico',
+    'pilar', 'del carmen', 'burgos',
+  ],
+};
+
 const _extractDurationCode = (text) => {
   if (!text) return null;
   const match = String(text).match(/\b(\d+D\d+N)\b/i);
@@ -152,6 +168,26 @@ const _destinationsMatch = (rateDestination, packageDestination) => {
   for (const dest of _KNOWN_DESTINATIONS) {
     if (pkgLower.includes(dest) && rateLower.includes(dest)) return true;
   }
+
+  // ── Sub-location expansion (mirrors inclusionMatcher.js logic) ───────────
+  // Uses longest-match-wins so that 'del carmen' (siargao, 9 chars) always
+  // beats 'carmen' (bohol, 6 chars) when the rate destination contains "Del Carmen".
+  // See the detailed comment in destinationsMatch (inclusionMatcher.js).
+  const _resolveTopDestination = (lower) => {
+    const pairs = [];
+    for (const [top, subs] of Object.entries(_DESTINATION_SUBDEST_MAP)) {
+      pairs.push({ topDest: top, token: top });
+      for (const sub of subs) pairs.push({ topDest: top, token: sub });
+    }
+    pairs.sort((a, b) => b.token.length - a.token.length);
+    const found = pairs.find(({ token }) => lower.includes(token));
+    return found ? found.topDest : null;
+  };
+
+  const pkgTop  = _resolveTopDestination(pkgLower);
+  const rateTop = _resolveTopDestination(rateLower);
+  if (pkgTop !== null && rateTop !== null) return pkgTop === rateTop;
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Guard 2: pkgWords fallback — filter generic geographic words so they cannot
   // leak cross-destination rates. e.g. 'island' from 'Siargao Island' must NOT

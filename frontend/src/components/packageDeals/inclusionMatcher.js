@@ -162,12 +162,50 @@ export const DESTINATION_CAPABILITIES = {
   'puerto princesa': { accommodation: true,  rt: true  },
   'coron palawan':   { accommodation: true,  rt: true  },
   'el nido':         { accommodation: true,  rt: true  },
-  'siargao island':  { accommodation: true,  rt: false },
-  'siargao':         { accommodation: true,  rt: false },
+  // ✅ FIX: Siargao DOES have RT (PUDO) rates (airport/ferry van transfers).
+  //   Setting rt: false was incorrect — it caused all RT inclusions to return
+  //   price=0 even when valid "RT (PUDO)" seller rates exist for the destination.
+  'siargao island':  { accommodation: true,  rt: true  },
+  'siargao':         { accommodation: true,  rt: true  },
   'siquijor':        { accommodation: true,  rt: true  },
   'cebu':            { accommodation: true,  rt: true  },
   'coron':           { accommodation: true,  rt: true  },
-  'bohol':           { accommodation: false, rt: false },
+  // Bohol: accommodation and RT seller rates are not in the DB.
+  //   General activity rates (tours, transfers, meals) DO exist — see
+  //   DESTINATION_SUBDEST_MAP below for how sub-location names are resolved.
+  'bohol':           { accommodation: true, rt: true },
+};
+
+// ─────────────────────────────────────────────────────────────
+// DESTINATION SUB-LOCATION MAP  (NEW)
+//
+// Seller rates for Bohol and Siargao are sometimes stored in the DB
+// under specific sub-location names (e.g. "Tagbilaran", "Panglao",
+// "Loboc River", "Cloud 9") rather than the top-level destination name.
+//
+// Without this map, destinationsMatch would fail to include those rates
+// in the destinationPool because KNOWN_DESTINATIONS only checks for the
+// top-level name ("bohol", "siargao") — and the pkgWords fallback would
+// also miss them since sub-location words do not appear in the package
+// destination field.
+//
+// The map is used in destinationsMatch as a secondary check AFTER the
+// KNOWN_DESTINATIONS loop. If the rate destination contains any known
+// sub-location for the package's top-level destination, it is accepted
+// into the pool — preventing a "no rates found → all prices 0" situation.
+//
+// Add entries here whenever a destination's rates are entered in the DB
+// under sub-location names rather than the top-level destination name.
+// ─────────────────────────────────────────────────────────────
+export const DESTINATION_SUBDEST_MAP = {
+  'bohol': [
+    'tagbilaran', 'panglao', 'loboc', 'carmen',
+    'anda', 'tarsier', 'chocolate hills', 'corella', 'baclayon',
+  ],
+  'siargao': [
+    'general luna', 'cloud 9', 'cloud9', 'dapa', 'pacifico',
+    'pilar', 'del carmen', 'burgos',
+  ],
 };
 
 /**
@@ -435,7 +473,11 @@ export const calculateSimilarity = (text1, text2) => {
   kw1.forEach(k1 => {
     const w = Math.min(k1.length / 4, 3);
     kw2.forEach(k2 => {
-      if (k1.length >= 5 && k2.length >= 5) {
+      // ✅ FIX: was `>= 5` — raised to allow 4-char activity roots such as
+      //   "surf" (→ "surfing"), "boat" (→ "boating"), "trek" (→ "trekking"),
+      //   "dive" (→ "diving").  The shorter/longer >= 0.7 ratio guard below
+      //   already prevents false positives on truly dissimilar short words.
+      if (k1.length >= 4 && k2.length >= 4) {
         if (k1.word.includes(k2.word) || k2.word.includes(k1.word)) {
           const shorter = Math.min(k1.word.length, k2.word.length);
           const longer  = Math.max(k1.word.length, k2.word.length);
@@ -513,6 +555,43 @@ export const destinationsMatch = (rateDestination, packageDestination) => {
   for (const dest of KNOWN_DESTINATIONS) {
     if (pkgLower.includes(dest) && rateLower.includes(dest)) return true;
   }
+
+  // ── Sub-location expansion check ─────────────────────────────────────────
+  // Handles Bohol / Siargao rates stored under sub-location names in the DB
+  // (e.g. rate.destination = "Tagbilaran 4D3N" for a Bohol package).
+  //
+  // IMPORTANT — uses longest-match-wins to prevent false positives caused by
+  // sub-location names that are substrings of each other across destinations:
+  //
+  //   DESTINATION_SUBDEST_MAP['bohol']   contains 'carmen'   (6 chars)
+  //   DESTINATION_SUBDEST_MAP['siargao'] contains 'del carmen' (9 chars)
+  //
+  //   A Siargao rate stored as "Del Carmen 4D3N" has no "siargao" keyword.
+  //   Flat .includes('carmen') returns TRUE → Siargao rate bleeds into Bohol pool.
+  //
+  //   Fix: resolveTopDestination() finds the LONGEST matching sub-location across
+  //   ALL destinations. 'del carmen' (9 chars) wins over 'carmen' (6 chars),
+  //   so "Del Carmen 4D3N" resolves to 'siargao', not 'bohol'.
+  //
+  // Strategy: collect ALL (topDest, subDest/topDest) pairs sorted longest-first,
+  // pick the first one that matches each side, compare the resolved top-dests.
+  const resolveTopDestination = (lower) => {
+    // Build a flat list of { topDest, token } for every token (top-name + sub-locs),
+    // sorted by token length descending so the longest / most specific wins.
+    const pairs = [];
+    for (const [top, subs] of Object.entries(DESTINATION_SUBDEST_MAP)) {
+      pairs.push({ topDest: top, token: top });
+      for (const sub of subs) pairs.push({ topDest: top, token: sub });
+    }
+    pairs.sort((a, b) => b.token.length - a.token.length);
+    const found = pairs.find(({ token }) => lower.includes(token));
+    return found ? found.topDest : null;
+  };
+
+  const pkgTop  = resolveTopDestination(pkgLower);
+  const rateTop = resolveTopDestination(rateLower);
+  if (pkgTop !== null && rateTop !== null) return pkgTop === rateTop;
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Guard 2: pkgWords fallback — filter out generic geographic words so they
   // cannot leak cross-destination rates into the pool.
