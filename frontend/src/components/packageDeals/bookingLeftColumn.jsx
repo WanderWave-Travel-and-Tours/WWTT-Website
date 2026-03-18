@@ -166,19 +166,27 @@ const BookingLeftColumn = ({
     return (phpPrice / exchangeRate) * 1.30;
   };
 
+  // ✅ PAX RULES: same logic as BookingRightForm
+  const pkgMinPax = (() => {
+    if (pkg.tourType === 'private') return pkg.pax || 1;
+    if (pkg.tourType === 'joiners') return pkg.minPax || 1;
+    return 1;
+  })();
+  const isSoloPkg = pkgMinPax === 1;
+
   const basePrice = pkg.price || 0;
   const originalPriceWithMarkup = Math.round(basePrice * 1.10);
   const activeBasePrice = timerExpired ? originalPriceWithMarkup : basePrice;
   const customizationAdjustment = customizationData ? customizationData.additionalPrice : 0;
   const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
+  const adjustedOriginalActivePrice = Math.max(0, originalPriceWithMarkup + customizationAdjustment);
 
-  // ✅ Price multiplies directly per pax — 1 pax = 1×price, 2 pax = 2×price, etc.
-  // ✅ Hotel upgrade cost (per-night × nights × rooms) is added on top
+  // ✅ Straight per-pax multiplication: 1 pax = price, 2 pax = price×2, etc.
   const displayPrice = Math.round(adjustedActivePrice * paxCount) + hotelUpgradeCost;
   const convertedDisplayPrice = convertPrice(displayPrice);
 
-  // ✅ Original (strikethrough) price — same straight multiplication + hotel cost
-  const adjustedOriginalPrice = Math.round((originalPriceWithMarkup + customizationAdjustment) * paxCount) + hotelUpgradeCost;
+  // ✅ Original (strikethrough) price — same logic + hotel cost
+  const adjustedOriginalPrice = Math.round(adjustedOriginalActivePrice * paxCount) + hotelUpgradeCost;
   const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
 
   const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
@@ -199,11 +207,14 @@ const BookingLeftColumn = ({
       </button>
 
       <div className="blc-image-wrapper">
-        <img
-          src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'}
-          alt={pkg.name}
-          className="blc-main-image"
-        />
+        {/* Inner div clips the image with border-radius; outer wrapper stays overflow:visible so badges are never cut */}
+        <div className="blc-image-inner">
+          <img
+            src={pkg.image || 'https://placehold.co/800x600/CCCCCC/333333?text=No+Image'}
+            alt={pkg.name}
+            className="blc-main-image"
+          />
+        </div>
         {!timerExpired && discountPercentage > 0 && (
           <div className="blc-offer-badge-overlay">
             <Clock size={16} />

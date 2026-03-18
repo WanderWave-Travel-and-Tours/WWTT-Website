@@ -14,11 +14,9 @@ export const RT_PUDO_ACTIVITY_EXACT = [
 ];
 
 const _KNOWN_DESTINATIONS = [
-  'puerto princesa', 'el nido', 'coron palawan', 'siargao island',
+  'puerto princesa', 'el nido', 'coron palawan',
   'siargao', 'siquijor', 'bohol', 'cebu', 'coron',
-  'boracay',
-  'batanes',
-
+  'boracay', 'batanes',
 ];
 
 const _GENERIC_DESTINATION_WORDS = new Set([
@@ -148,9 +146,13 @@ const COMPLIMENTARY_RT_PATTERNS = [
 export const isRoundtripInclusion = (text) => {
   if (!text) return false;
   const lower = text.toLowerCase();
-  if (COMPLIMENTARY_RT_PATTERNS.some(p => lower.includes(p))) return false;
-  if (RT_PUDO_INCLUSION_KEYWORDS.some(kw => lower.includes(kw))) return true;
-  if (/\brt\b/.test(lower)) return true;
+  // Strip parenthetical content so fee descriptions like
+  // "Island Hopping (Van and Boat Fees, RT Transfer included)"
+  // don't accidentally trigger the roundtrip path.
+  const withoutParens = lower.replace(/\([^)]*\)/g, '').trim();
+  if (COMPLIMENTARY_RT_PATTERNS.some(p => withoutParens.includes(p))) return false;
+  if (RT_PUDO_INCLUSION_KEYWORDS.some(kw => withoutParens.includes(kw))) return true;
+  if (/\brt\b/.test(withoutParens)) return true;
   return false;
 };
 

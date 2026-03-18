@@ -124,7 +124,13 @@
 
 .rubber-stamp-svg {
   display: block;
+  transform: rotate(-15deg);
+  transition: transform 0.3s ease;
   filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.7));
+}
+
+.package-card:hover .rubber-stamp-svg {
+  transform: rotate(0deg);
 }
 
 /* Card Body */

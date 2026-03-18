@@ -144,13 +144,24 @@ const PackageCustomizer = ({
       // already cached. When the same destination is viewed again
       // (different package, same location), we skip the HTTP request.
       if (sellerRatesCacheRef.current[destKey]) {
-        // Rates already cached — reuse them, skip HTTP call
-        matchingRates = sellerRatesCacheRef.current[destKey];
-        setAvailableActivities(availActCacheRef.current[destKey] || []);
-        setFilteredActivities(availActCacheRef.current[destKey] || []);
-        setIsLoading(false);
+        // Rates already cached — but validate the cache is non-empty before reusing.
+        // An empty cache entry means a previous fetch returned no active rates for this
+        // destination (e.g. before the status=active fix was deployed). Bust it so we
+        // re-fetch and populate correctly.
+        const cachedRates = sellerRatesCacheRef.current[destKey];
+        if (cachedRates.length > 0) {
+          matchingRates = cachedRates;
+          setAvailableActivities(availActCacheRef.current[destKey] || []);
+          setFilteredActivities(availActCacheRef.current[destKey] || []);
+          setIsLoading(false);
+        } else {
+          // Cache is empty — treat as a cache miss so we re-fetch below
+          delete sellerRatesCacheRef.current[destKey];
+          delete availActCacheRef.current[destKey];
+        }
+      }
 
-      } else {
+      if (!matchingRates) {
         // Fresh fetch from API
         setIsLoading(true);
 
@@ -163,19 +174,19 @@ const PackageCustomizer = ({
 
         const encodedDest = encodeURIComponent(apiDest);
         const fetchUrl = useBroadFetch
-          ? `https://wanderwaveph.onrender.com/api/seller-rates`
-          : `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}`;
+          ? `https://wanderwaveph.onrender.com/api/seller-rates?status=active`
+          : `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}&status=active`;
 
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error('Failed to fetch seller rates');
 
         const allRates = await response.json();
 
-        // Client-side filter: keep only rates matching the package destination.
-        // destinationsMatch handles qualifier/duration stripping internally.
-        // We pass `destination` (the original pkg field) so destinationsMatch
-        // can use the KNOWN_DESTINATIONS token extraction on both sides.
-        matchingRates = allRates.filter(rate =>
+        // Client-side filter: keep only active rates matching the package destination.
+        // The status === 'active' check is a defensive double-check alongside the
+        // server-side ?status=active param — ensures inactive rates never reach the matcher.
+        matchingRates = (Array.isArray(allRates) ? allRates : []).filter(rate =>
+          rate.status === 'active' &&
           destinationsMatch(rate.destination, destination)
         );
 

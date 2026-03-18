@@ -5,11 +5,9 @@ import {
 } from './rtPudoMatcher.js';
 
 export const KNOWN_DESTINATIONS = [
-  'puerto princesa', 'el nido', 'coron palawan', 'siargao island',
+  'puerto princesa', 'el nido', 'coron palawan',
   'siargao', 'siquijor', 'bohol', 'cebu', 'coron',
-  'boracay',
-  'batanes',
-
+  'boracay', 'batanes',
 ];
 
 export const SYNONYM_MAP = {
@@ -118,7 +116,7 @@ export const PAX_TYPE_PATTERNS = [
 
 export const ACCOMMODATION_KEYWORDS = [
   'accommodation', 'accomodation',
-  'hotel', 'lodging', 'inn', 'resort', 'room', 'stay',
+  'hotel', 'lodging', 'hostel',
 ];
 
 export const ACTIVITY_ALIAS_MAP = {
@@ -204,7 +202,7 @@ export const NO_MATCH_INCLUSION_KEYWORDS = [
 
 export const isNoMatchInclusion = (text) => {
   if (!text) return false;
-  const lower = text.toLowerCase();
+  const lower = normalizeUnicode(text).toLowerCase();
 
   const withoutParens = lower.replace(/\([^)]*\)/g, '').trim();
   return NO_MATCH_INCLUSION_KEYWORDS.some(kw => withoutParens.includes(kw));
@@ -257,8 +255,12 @@ const PALAWAN_SUBDESTS = ['el nido', 'puerto princesa', 'coron'];
 
 export const isAccommodationInclusion = (text) => {
   if (!text) return false;
-  const lower = text.toLowerCase();
-  return ACCOMMODATION_KEYWORDS.some(kw => lower.includes(kw));
+  const lower = normalizeUnicode(text).toLowerCase();
+  // Strip parenthetical content before checking — prevents fee descriptions like
+  // "Island Hopping (Pickup and Drop Off to Accommodation w/in general luna, ...)"
+  // from falsely triggering the accommodation path due to "Accommodation" in parens.
+  const withoutParens = lower.replace(/\([^)]*\)/g, '').trim();
+  return ACCOMMODATION_KEYWORDS.some(kw => withoutParens.includes(kw));
 };
 
 export const getSynonyms = (word) => {
@@ -319,9 +321,49 @@ export const extractPaxQualifierType = (text) => {
   return { type: 'generic' };
 };
 
+const normalizeUnicode = (text) => {
+  if (!text) return text;
+  let result = '';
+  for (const char of text) {
+    const cp = char.codePointAt(0);
+    if (cp >= 0x1D400 && cp <= 0x1D419) { result += String.fromCharCode(cp - 0x1D400 + 65); continue; }
+    if (cp >= 0x1D41A && cp <= 0x1D433) { result += String.fromCharCode(cp - 0x1D41A + 97); continue; }
+    if (cp >= 0x1D434 && cp <= 0x1D44D) { result += String.fromCharCode(cp - 0x1D434 + 65); continue; }
+    if (cp >= 0x1D44E && cp <= 0x1D467) { result += String.fromCharCode(cp - 0x1D44E + 97); continue; }
+    if (cp >= 0x1D468 && cp <= 0x1D481) { result += String.fromCharCode(cp - 0x1D468 + 65); continue; }
+    if (cp >= 0x1D482 && cp <= 0x1D49B) { result += String.fromCharCode(cp - 0x1D482 + 97); continue; }
+    if (cp >= 0x1D49C && cp <= 0x1D4B5) { result += String.fromCharCode(cp - 0x1D49C + 65); continue; }
+    if (cp >= 0x1D4D0 && cp <= 0x1D4E9) { result += String.fromCharCode(cp - 0x1D4D0 + 65); continue; }
+    if (cp >= 0x1D4EA && cp <= 0x1D503) { result += String.fromCharCode(cp - 0x1D4EA + 97); continue; }
+    if (cp >= 0x1D504 && cp <= 0x1D51D) { result += String.fromCharCode(cp - 0x1D504 + 65); continue; }
+    if (cp >= 0x1D51E && cp <= 0x1D537) { result += String.fromCharCode(cp - 0x1D51E + 97); continue; }
+    if (cp >= 0x1D538 && cp <= 0x1D551) { result += String.fromCharCode(cp - 0x1D538 + 65); continue; }
+    if (cp >= 0x1D552 && cp <= 0x1D56B) { result += String.fromCharCode(cp - 0x1D552 + 97); continue; }
+    if (cp >= 0x1D56C && cp <= 0x1D585) { result += String.fromCharCode(cp - 0x1D56C + 65); continue; }
+    if (cp >= 0x1D586 && cp <= 0x1D59F) { result += String.fromCharCode(cp - 0x1D586 + 97); continue; }
+    if (cp >= 0x1D5A0 && cp <= 0x1D5B9) { result += String.fromCharCode(cp - 0x1D5A0 + 65); continue; }
+    if (cp >= 0x1D5BA && cp <= 0x1D5D3) { result += String.fromCharCode(cp - 0x1D5BA + 97); continue; }
+    if (cp >= 0x1D5D4 && cp <= 0x1D5ED) { result += String.fromCharCode(cp - 0x1D5D4 + 65); continue; }
+    if (cp >= 0x1D5EE && cp <= 0x1D607) { result += String.fromCharCode(cp - 0x1D5EE + 97); continue; }
+    if (cp >= 0x1D608 && cp <= 0x1D621) { result += String.fromCharCode(cp - 0x1D608 + 65); continue; }
+    if (cp >= 0x1D622 && cp <= 0x1D63B) { result += String.fromCharCode(cp - 0x1D622 + 97); continue; }
+    if (cp >= 0x1D63C && cp <= 0x1D655) { result += String.fromCharCode(cp - 0x1D63C + 65); continue; }
+    if (cp >= 0x1D656 && cp <= 0x1D66F) { result += String.fromCharCode(cp - 0x1D656 + 97); continue; }
+    if (cp >= 0x1D670 && cp <= 0x1D689) { result += String.fromCharCode(cp - 0x1D670 + 65); continue; }
+    if (cp >= 0x1D68A && cp <= 0x1D6A3) { result += String.fromCharCode(cp - 0x1D68A + 97); continue; }
+    if (cp >= 0x1D7CE && cp <= 0x1D7D7) { result += String.fromCharCode(cp - 0x1D7CE + 48); continue; }
+    if (cp >= 0x1D7D8 && cp <= 0x1D7E1) { result += String.fromCharCode(cp - 0x1D7D8 + 48); continue; }
+    if (cp >= 0x1D7E2 && cp <= 0x1D7EB) { result += String.fromCharCode(cp - 0x1D7E2 + 48); continue; }
+    if (cp >= 0x1D7EC && cp <= 0x1D7F5) { result += String.fromCharCode(cp - 0x1D7EC + 48); continue; }
+    if (cp >= 0x1D7F6 && cp <= 0x1D7FF) { result += String.fromCharCode(cp - 0x1D7F6 + 48); continue; }
+    result += char;
+  }
+  return result;
+};
+
 export const normalizeActivity = (text) => {
   if (!text) return '';
-  return text
+  return normalizeUnicode(text)
     .toLowerCase()
 
     .replace(/\s*&\s*/g, ' and ')
@@ -859,7 +901,10 @@ const buildRateFirstAssignments = (strictPool, destinationPool, inclusions, sign
   let generalRates = generalFilter(strictPool);
   const usedDestPool = generalRates.length === 0;
   if (usedDestPool) generalRates = generalFilter(destinationPool);
-  if (generalRates.length === 0) return new Map();
+  if (generalRates.length === 0) {
+    console.warn('[matcher] ⚠ No general rates found in pool — activity inclusions will not be priced');
+    return new Map();
+  }
 
   const rateByActivity = new Map();
   for (const rate of generalRates) {
@@ -879,7 +924,10 @@ const buildRateFirstAssignments = (strictPool, destinationPool, inclusions, sign
       !isRoundtripInclusion(inc)
     );
 
-  if (eligible.length === 0) return new Map();
+  if (eligible.length === 0) {
+    console.warn('[matcher] ⚠ No eligible general inclusions (all are meta/accommodation/RT)');
+    return new Map();
+  }
 
   const allPairs = [];
   for (const rate of dedupedRates) {
@@ -954,9 +1002,29 @@ export const matchInclusionsWithPrices = (
   );
   const { strictPool, destinationPool } = buildStage1Pool(sellerRates, signals);
 
+  // ── Diagnostics (all destinations) ───────────────────────────────────────
+  console.group(`[matcher] ${destination} — "${pkgTitle}"`);
+  console.log('signals     :', JSON.stringify(signals));
+  console.log('sellerRates :', sellerRates.length, '| destPool:', destinationPool.length, '| strictPool:', strictPool.length);
+  if (strictPool.length > 0) {
+    console.log('strictPool  :', strictPool.map(r => `${r.activity} (${r.destination})`).join(' | '));
+  } else {
+    console.warn('⚠ strictPool is EMPTY — check destination spelling, duration, or qualifier');
+  }
+  console.log('inclusions  :', inclusions);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const rateFirstMap = buildRateFirstAssignments(
     strictPool, destinationPool, inclusions, signals,
   );
+
+  // Single-use guards for RT and Accommodation paths.
+  // Prevents multiple inclusions from all being assigned the same rate
+  // (e.g. a package with 3 inclusions that pass isAccommodationInclusion
+  // should only get ONE accommodation price, not 3 copies of the same rate).
+  // The general path already has this via buildRateFirstAssignments greedy logic.
+  let rtRateUsed   = false;
+  let accomRateUsed = false;
 
   const buildResult = (idx, inclusion, rate) => ({
     id:                 `original-${idx}`,
@@ -990,31 +1058,68 @@ export const matchInclusionsWithPrices = (
 
   const matched = inclusions.map((inclusion, idx) => {
 
-    if (destinationPool.length === 0) return noMatch(idx, inclusion);
+    if (destinationPool.length === 0) {
+      console.warn(`  [${idx}] NO MATCH — destinationPool empty:`, inclusion);
+      return noMatch(idx, inclusion);
+    }
 
-    if (isNoMatchInclusion(inclusion)) return noMatch(idx, inclusion);
+    if (isNoMatchInclusion(inclusion)) {
+      console.log(`  [${idx}] blacklisted (meta):`, inclusion);
+      return noMatch(idx, inclusion);
+    }
 
     if (isRoundtripInclusion(inclusion)) {
-      if (!destinationSupports(signals.destination, 'rt')) return noMatch(idx, inclusion);
+      if (!destinationSupports(signals.destination, 'rt')) {
+        console.log(`  [${idx}] RT not supported for dest:`, inclusion);
+        return noMatch(idx, inclusion);
+      }
+      if (rtRateUsed) {
+        console.log(`  [${idx}] RT already assigned to another inclusion — skipping:`, inclusion);
+        return noMatch(idx, inclusion);
+      }
       const rate = findRtPudoRate(strictPool, destinationPool, signals);
-      if (!rate) return noMatch(idx, inclusion);
+      if (!rate) {
+        console.warn(`  [${idx}] RT NO MATCH — no RT rate found:`, inclusion);
+        return noMatch(idx, inclusion);
+      }
+      rtRateUsed = true;
       matchCount++;
+      console.log(`  [${idx}] ✓ RT →`, rate.activity, rate.destination, '₱' + rate.sellingPrice);
       return buildResult(idx, inclusion, rate);
     }
 
     if (isAccommodationInclusion(inclusion)) {
-      if (!destinationSupports(signals.destination, 'accommodation')) return noMatch(idx, inclusion);
+      if (!destinationSupports(signals.destination, 'accommodation')) {
+        console.log(`  [${idx}] Accommodation not supported for dest:`, inclusion);
+        return noMatch(idx, inclusion);
+      }
+      if (accomRateUsed) {
+        console.log(`  [${idx}] Accommodation already assigned to another inclusion — skipping:`, inclusion);
+        return noMatch(idx, inclusion);
+      }
       const rate = findAccommodationRate(strictPool, destinationPool, signals, inclusion);
-      if (!rate) return noMatch(idx, inclusion);
+      if (!rate) {
+        console.warn(`  [${idx}] ACCOMMODATION NO MATCH — no rate found:`, inclusion);
+        return noMatch(idx, inclusion);
+      }
+      accomRateUsed = true;
       matchCount++;
+      console.log(`  [${idx}] ✓ Accommodation →`, rate.activity, rate.destination, '₱' + rate.sellingPrice);
       return buildResult(idx, inclusion, rate);
     }
 
     const assignedRate = rateFirstMap.get(idx);
-    if (!assignedRate) return noMatch(idx, inclusion);
+    if (!assignedRate) {
+      console.warn(`  [${idx}] GENERAL NO MATCH — scored below threshold:`, inclusion);
+      return noMatch(idx, inclusion);
+    }
     matchCount++;
+    console.log(`  [${idx}] ✓ General →`, assignedRate.activity, assignedRate.destination, '₱' + assignedRate.sellingPrice);
     return buildResult(idx, inclusion, assignedRate);
   });
+
+  console.log(`matched: ${matchCount} / ${inclusions.length}`);
+  console.groupEnd();
 
   return { matched, matchCount };
 };

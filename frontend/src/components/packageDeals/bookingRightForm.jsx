@@ -25,8 +25,16 @@ const BookingRightForm = ({
 }) => {
   const navigate = useNavigate();
   const { code } = useParams();
+  // ✅ PAX RULES:
+  // - "Solo" = private tourType with pax === 1 → locked at 1, hide selector
+  // - "Solo/Joiners" (joiners tourType) → free +/−, default 2, min 1
+  // - Everything else → free +/−, default 2, min 1
+  const isSoloPkg = pkg.tourType === 'private' && pkg.pax === 1;
+  const isSoloJoiners = pkg.tourType === 'joiners';
+  const defaultPax = isSoloPkg ? 1 : 2;
+
   const [selectedDate, setSelectedDate] = useState(null);
-  const [quantities, setQuantities] = useState({ adult: 2 });
+  const [quantities, setQuantities] = useState({ adult: defaultPax });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ Package preview before booking
@@ -132,7 +140,12 @@ const BookingRightForm = ({
       }
       
       if (savedState.formData.quantities) {
-        setQuantities(savedState.formData.quantities);
+        // ✅ For solo packages, always force pax to 1 regardless of saved state
+        if (isSoloPkg) {
+          setQuantities({ adult: 1 });
+        } else {
+          setQuantities(savedState.formData.quantities);
+        }
       }
       
       if (savedState.formData.currentMonth) {
@@ -343,7 +356,8 @@ if (savedState.formData.appliedPromo) {
 
   useEffect(() => {
     if (onPaxChange) {
-      onPaxChange(quantities.adult);
+      // ✅ Always send 1 for solo packages regardless of quantities state
+      onPaxChange(isSoloPkg ? 1 : quantities.adult);
     }
   }, []);// eslint-disable-line react-hooks/exhaustive-deps
 
@@ -372,7 +386,8 @@ if (savedState.formData.appliedPromo) {
   }, [quantities.adult]);
 
   const calculateBasePackageTotal = () => {
-  const basePax = quantities.adult || 1;
+  // ✅ Solo packages are always 1 pax regardless of quantities state
+  const basePax = isSoloPkg ? 1 : (quantities.adult || 1);
   
   // ✅ FIXED: Use customizationData.totalPrice which includes timer-aware pricing
   let effectivePrice;
@@ -387,7 +402,7 @@ if (savedState.formData.appliedPromo) {
     effectivePrice = timerExpired ? originalPriceWithMarkup : basePrice;
   }
   
-  // ✅ Price adds/subtracts directly per pax — 1 pax = 1×price, 2 pax = 2×price, etc.
+  // ✅ Straight per-pax multiplication: 1 pax = price, 2 pax = price×2, etc.
   let basePackagePrice = effectivePrice * basePax;
   
   // ✅ FIX: If package price is 0 or negative (all priced inclusions removed), return 0
@@ -1270,44 +1285,64 @@ const handleNextPassenger = async (e) => {
         </div>
       </div>
 
-      <div className="brf-quantity-section">
-        <div className="brf-quantity-item">
-          <div>
-            <div style={{display:'flex', alignItems:'center'}}>
-              <span className="brf-quantity-label">Standard Pax</span>
+      {/* ✅ PAX SELECTOR:
+           - Solo (private, pax=1): locked at 1, no controls shown
+           - Solo/Joiners & all others: free +/− from 1–20, default 2 */}
+      {isSoloPkg ? (
+        <div className="brf-quantity-section">
+          <div className="brf-quantity-item">
+            <div>
+              <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                <span className="brf-quantity-label">Standard Pax</span>
+                <span style={{
+                  background: '#f0fdf4', border: '1px solid #86efac',
+                  color: '#166534', fontSize: '0.75rem', fontWeight: '700',
+                  borderRadius: '999px', padding: '2px 10px'
+                }}>Solo Package</span>
+              </div>
+              <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>1 pax only · 3+ years old</div>
             </div>
-            <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
-          </div>
-          
-          <div className="brf-quantity-controls">
-            <button 
-              onClick={() => handleQuantity('adult', -1)} 
-              className="brf-quantity-btn"
-              type="button"
-            >
-              <Minus 
-                size={18} 
-                color="#000000" 
-                strokeWidth={3}
-                style={{minWidth: '18px', minHeight: '18px', stroke: '#000000'}}
-              />
-            </button>
-            <span className="brf-quantity-value">{quantities.adult}</span>
-            <button 
-              onClick={() => handleQuantity('adult', 1)} 
-              className="brf-quantity-btn"
-              type="button"
-            >
-              <Plus 
-                size={18} 
-                color="#000000" 
-                strokeWidth={3}
-                style={{minWidth: '18px', minHeight: '18px', stroke: '#000000'}}
-              />
-            </button>
+            <span style={{fontWeight:'800', fontSize:'1.1rem', color:'#1f2937', minWidth:'32px', textAlign:'center'}}>1</span>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="brf-quantity-section">
+          <div className="brf-quantity-item">
+            <div>
+              <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                <span className="brf-quantity-label">Standard Pax</span>
+                {isSoloJoiners && (
+                  <span style={{
+                    background: '#fff7ed', border: '1px solid #fed7aa',
+                    color: '#c2410c', fontSize: '0.75rem', fontWeight: '700',
+                    borderRadius: '999px', padding: '2px 10px'
+                  }}>Solo/Joiners</span>
+                )}
+              </div>
+              <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
+            </div>
+            <div className="brf-quantity-controls">
+              <button
+                onClick={() => handleQuantity('adult', -1)}
+                className="brf-quantity-btn"
+                type="button"
+              >
+                <Minus size={18} color="#000000" strokeWidth={3}
+                  style={{minWidth:'18px', minHeight:'18px', stroke:'#000000'}} />
+              </button>
+              <span className="brf-quantity-value">{quantities.adult}</span>
+              <button
+                onClick={() => handleQuantity('adult', 1)}
+                className="brf-quantity-btn"
+                type="button"
+              >
+                <Plus size={18} color="#000000" strokeWidth={3}
+                  style={{minWidth:'18px', minHeight:'18px', stroke:'#000000'}} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loadingHotelData && (
         <div style={{padding:'1rem', background:'#fef3c7', borderRadius:'8px', marginBottom:'1rem'}}>
