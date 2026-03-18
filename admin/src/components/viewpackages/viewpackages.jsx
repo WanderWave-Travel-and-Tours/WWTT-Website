@@ -142,8 +142,10 @@ const ViewPackages = () => {
     const categoryOptions = ['ALL', ...new Set(packages.map(p => p.category))];
 
     const filteredPackages = packages.filter(pkg => {
-        const matchesSearch = pkg.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            pkg.destination.toLowerCase().includes(searchTerm.toLowerCase());
+        // ✅ Null-safe search for both title and destination
+        const matchesSearch =
+            (pkg.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (pkg.destination?.toLowerCase() || '').includes(searchTerm.toLowerCase());
         const matchesCategory = filterCategory === 'ALL' || pkg.category === filterCategory;
         let matchesDate = true;
         if (dateStart) matchesDate = matchesDate && pkg.filterDate >= dateStart;
@@ -193,7 +195,7 @@ const ViewPackages = () => {
                                 getImageUrl={getImageUrl}
                                 handleImageError={handleImageError}
                                 onView={handleViewDetails}
-                                onArchive={handleArchiveClick} // Updated to use the modal trigger
+                                onArchive={handleArchiveClick}
                             />
                             
                             <PackagePagination
@@ -222,7 +224,7 @@ const ViewPackages = () => {
                     showModal={showDetailModal}
                     selectedPackage={selectedPackage}
                     setShowModal={setShowDetailModal}
-                    handleArchive={handleArchiveClick} // Updated to use the modal trigger
+                    handleArchive={handleArchiveClick}
                 />
             )}
         </div>
