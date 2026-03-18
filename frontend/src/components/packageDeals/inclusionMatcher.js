@@ -69,6 +69,8 @@ import {
 export const KNOWN_DESTINATIONS = [
   'puerto princesa', 'el nido', 'coron palawan', 'siargao island',
   'siargao', 'siquijor', 'bohol', 'cebu', 'coron',
+  'boracay',  // ← Island Hopping rates confirmed in seller rate list
+  'batanes',  // ← North & South / Complete Tour rates confirmed in seller rate list
   // 'bohol' IS included so Bohol packages can build a destinationPool and
   //   match general activity rates (tours, transfers, meals).
   //   Accommodation and RT inclusions are blocked for Bohol via the
@@ -87,7 +89,7 @@ export const SYNONYM_MAP = {
   'round':          ['roundtrip', 'return'],
   'trip':           ['journey', 'travel'],
   'oneway':         ['one way', 'single', 'ow'],
-  'accommodation':  ['hotel', 'lodging', 'stay', 'room', 'inn'],
+  'accommodation':  ['hotel', 'lodging', 'stay', 'room', 'inn', 'villa', 'hostel', 'guesthouse'],
   'hotel':          ['accommodation', 'lodging', 'inn', 'resort'],
   'resort':         ['hotel', 'accommodation', 'inn'],
   'room':           ['accommodation', 'hotel', 'lodging'],
@@ -95,25 +97,74 @@ export const SYNONYM_MAP = {
   'transfer':       ['transport', 'shuttle', 'pickup', 'dropoff', 'pudo'],
   'van':            ['vehicle', 'shuttle', 'transport'],
   'tricycle':       ['trike', 'vehicle'],
-  'boat':           ['ferry', 'vessel', 'ship'],
-  'meal':           ['food', 'dining', 'breakfast', 'lunch', 'dinner'],
-  'breakfast':      ['meal', 'food', 'morning'],
-  'lunch':          ['meal', 'food', 'midday', 'luncheon'],
+  'boat':           ['ferry', 'vessel', 'ship', 'bangka', 'banca'],
+  'bangka':         ['boat', 'banca', 'ferry', 'vessel'],
+  'meal':           ['food', 'dining', 'breakfast', 'lunch', 'dinner', 'buffet'],
+  'breakfast':      ['meal', 'food', 'morning', 'buffet'],
+  'lunch':          ['meal', 'food', 'midday', 'luncheon', 'buffet'],
   'dinner':         ['meal', 'food', 'evening', 'supper'],
-  'tour':           ['trip', 'excursion', 'visit', 'sightseeing', 'experience'],
+  'buffet':         ['meal', 'lunch', 'dinner', 'food', 'dining'],
+  'tour':           ['trip', 'excursion', 'visit', 'sightseeing', 'experience', 'adventure'],
   'island':         ['isle', 'islet'],
-  'hopping':        ['hop', 'jumping', 'tour'],
-  'snorkel':        ['snorkeling', 'diving', 'underwater', 'swim'],
+  'hopping':        ['hop', 'jumping', 'tour', 'island'],
+  'snorkel':        ['snorkeling', 'diving', 'underwater', 'swim', 'swimming'],
+  'snorkeling':     ['snorkel', 'diving', 'underwater', 'swim'],
+  'swimming':       ['swim', 'snorkel', 'snorkeling'],
   'dive':           ['diving', 'snorkel', 'underwater'],
+  'diving':         ['dive', 'snorkel', 'snorkeling', 'underwater'],
   'trek':           ['trekking', 'hike', 'hiking', 'walking'],
+  'trekking':       ['trek', 'hike', 'hiking', 'walking'],
+  'hiking':         ['hike', 'trek', 'trekking', 'walking'],
   'climb':          ['climbing', 'ascent', 'hike'],
-  'beach':          ['shore', 'coast', 'seaside'],
+  'beach':          ['shore', 'coast', 'seaside', 'sand', 'cove'],
   'coastal':        ['coast', 'beach', 'shore', 'seaside'],
+  'cove':           ['beach', 'bay', 'inlet', 'lagoon'],
+  'lagoon':         ['cove', 'bay', 'lake', 'inlet'],
   'guide':          ['escort', 'leader', 'companion'],
-  'entrance':       ['admission', 'entry', 'fee', 'ticket'],
-  'museum':         ['gallery', 'exhibit'],
+  'entrance':       ['admission', 'entry', 'fee', 'ticket', 'pass'],
+  'museum':         ['gallery', 'exhibit', 'heritage', 'historical'],
   'pudo':           ['pickup', 'dropoff', 'transfer', 'transport', 'rt'],
   'rt':             ['roundtrip', 'round trip', 'return', 'transfer', 'pudo'],
+  // Cebu-specific synonyms — connects verbose inclusion text to short rate activity names
+  'whale':          ['oslob', 'shark', 'whaleshark'],
+  'oslob':          ['whale', 'shark', 'whaleshark', 'swimming'],
+  'moalboal':       ['sardine', 'panagsama', 'snorkeling', 'canyoneering'],
+  'sardine':        ['moalboal', 'panagsama', 'snorkeling'],
+  'sumilon':        ['oslob', 'island', 'sandbar'],
+  // Bohol-specific synonyms
+  'countryside':    ['tarsier', 'chocolate', 'loboc', 'baclayon', 'bohol'],
+  'chocolate':      ['hills', 'countryside', 'bohol'],
+  'tarsier':        ['countryside', 'sanctuary', 'bohol'],
+  'loboc':          ['river', 'cruise', 'countryside', 'bohol'],
+  // El Nido / Palawan synonyms
+  'underground':    ['river', 'cave', 'subterranean', 'palawan', 'sabang'],
+  'subterranean':   ['underground', 'river', 'cave', 'palawan'],
+  'sabang':         ['underground', 'river', 'palawan'],
+  // Siargao synonyms
+  'sohoton':        ['jellyfish', 'lagoon', 'cave', 'siargao'],
+  'jellyfish':      ['sohoton', 'lagoon', 'sanctuary'],
+  'surf':           ['surfing', 'surfboard', 'wave', 'cloud9', 'siargao'],
+  'surfing':        ['surf', 'board', 'wave', 'lesson'],
+  // General activity terms
+  'land':           ['countryside', 'road', 'tour', 'trip'],
+  'city':           ['town', 'urban', 'local', 'heritage'],
+  'heritage':       ['historical', 'museum', 'church', 'heritage', 'culture'],
+  'church':         ['heritage', 'historical', 'cathedral', 'basilica'],
+  'waterfall':      ['falls', 'cascade', 'tumalog', 'kawasan'],
+  'falls':          ['waterfall', 'cascade', 'swimming'],
+  'kawasan':        ['falls', 'waterfall', 'moalboal', 'canyoneering'],
+  'canyoneering':   ['kawasan', 'moalboal', 'falls', 'adventure'],
+  'firefly':        ['mangrove', 'river', 'night', 'bohol', 'palawan'],
+  'mangrove':       ['firefly', 'river', 'kayak'],
+  'kayak':          ['kayaking', 'paddling', 'mangrove', 'river'],
+  // Batanes-specific synonyms
+  'north':          ['batanes', 'ivatan', 'sabtang'],
+  'south':          ['batanes', 'ivatan', 'sabtang'],
+  'complete':       ['batanes', 'full', 'comprehensive'],
+  // Puerto Princesa synonyms
+  'honda':          ['bay', 'island hopping', 'palawan'],
+  'underground':    ['river', 'cave', 'subterranean', 'palawan', 'sabang', 'puerto princesa'],
+  'half':           ['city tour', 'half day', 'halfday'],
 };
 
 export const CROSS_DESTINATION_KEYWORDS = [
@@ -136,8 +187,188 @@ export const PAX_TYPE_PATTERNS = [
 ];
 
 export const ACCOMMODATION_KEYWORDS = [
-  'accommodation', 'hotel', 'lodging', 'inn', 'resort', 'room', 'stay',
+  'accommodation', 'accomodation', // ← one-m typo present in Puerto Princesa 3D2N (min.2) seller rate
+  'hotel', 'lodging', 'inn', 'resort', 'room', 'stay',
 ];
+
+// ─────────────────────────────────────────────────────────────
+// ACTIVITY ALIAS MAP  (NEW)
+//
+// Hard-coded table mapping canonical activity name → all known variants
+// as they appear in rate.activity fields (per the seller rate PDF).
+//
+// WHY THIS EXISTS:
+//   Fuzzy matching can still fail for highly abbreviated or single-word
+//   rate names (e.g. "Oslob", "Complete", "Moalboal") when the package
+//   inclusion uses a completely different vocabulary ("Whale Shark Tour",
+//   "Batanes Full Tour", "Sardine Run"). The alias map provides an
+//   additional deterministic lookup path in scoreInclusionForRate BEFORE
+//   fuzzy scoring, guaranteeing a match even when all fuzzy layers miss.
+//
+// FORMAT:
+//   Each key is the canonical (normalized) activity name.
+//   The value is an array of normalized text fragments that, if found
+//   ANYWHERE in the stripped inclusion text, confirm this is the right rate.
+//   Fragments are checked via substring — no word-boundary needed.
+//
+// RULES:
+//   • All keys and values must be LOWERCASE, pre-normalized (no parens, no &).
+//   • Values should be SPECIFIC enough to not false-match other activities.
+//   • Add new entries here whenever a new destination's rates are added to the DB.
+// ─────────────────────────────────────────────────────────────
+export const ACTIVITY_ALIAS_MAP = {
+  // ── El Nido ────────────────────────────────────────────────
+  'tour a':               ['tour a', 'tour-a', 'elnido tour a'],
+  'tour c with picnic':   ['tour c', 'tour-c', 'picnic lunch'],
+
+  // ── Coron ──────────────────────────────────────────────────
+  'ultimate tour b with picnic lunch': ['ultimate tour', 'ultimate b'],
+  'ultimate tour b with picnic':       ['ultimate tour', 'ultimate b'],
+  'island tour b with picnic lunch':   ['island tour b', 'tour b'],
+  'island tour a with picnic lunch':   ['island tour a', 'tour a'],
+  'coron town tour':                   ['town tour', 'coron town'],
+
+  // ── Cebu ───────────────────────────────────────────────────
+  'oslob tour':    ['oslob', 'whale shark', 'whaleshark', 'sumilon'],
+  'oslob':         ['oslob', 'whale shark', 'whaleshark', 'sumilon'],
+  'moalboal':      ['moalboal', 'sardine', 'panagsama', 'canyoneering', 'kawasan'],
+  'city tour':     ['city tour', 'half day city', 'heritage tour', 'city heritage'],
+
+  // ── Bohol ──────────────────────────────────────────────────
+  'island hopping':    ['island hopping', 'balicasag', 'panglao'],
+  'bohol countryside': ['countryside', 'chocolate hills', 'tarsier', 'loboc river', 'baclayon'],
+
+  // ── Puerto Princesa ────────────────────────────────────────
+  'honda bay island hopping tour': ['honda bay', 'island hopping'],
+  'half day city tour':            ['city tour', 'half day', 'halfday', 'half-day'],
+  'underground river tour':        ['underground river', 'subterranean', 'sabang'],
+
+  // ── Siargao ────────────────────────────────────────────────
+  'sohoton tour':  ['sohoton', 'jellyfish', 'sugba lagoon'],
+  'land tour':     ['land tour', 'magpupungko', 'tayangban', 'daku island'],
+  // "island hopping" shared across destinations — no alias needed (keyword match suffices)
+
+  // ── Siquijor ───────────────────────────────────────────────
+  'mountain tour': ['mountain tour', 'mt bandila', 'cambugahay', 'lazi'],
+  'coastal tour':  ['coastal tour', 'san juan', 'salagdoong', 'paliton'],
+
+  // ── Batanes ────────────────────────────────────────────────
+  'north and south': ['north and south', 'north south', 'sabtang', 'ivatan', 'batan'],
+  'complete':        ['complete', 'full batanes', 'all sites'],
+  'complete tour':   ['complete tour', 'full batanes', 'all sites'],
+};
+
+/**
+ * aliasMatch
+ * Returns the alias-map score bonus for a (inclusion, rate) pair.
+ * Returns 800 if any alias fragment is found in the stripped inclusion text — 
+ * higher than the lead-keyword +500 but below exact-match 1000, so dedup
+ * and disambiguation can still override it.
+ * Returns 0 if no alias matches.
+ *
+ * @param {string} normStripped  — normalized stripped inclusion text
+ * @param {string} normActivity  — normalized rate activity name
+ * @returns {number} 0 or 800
+ */
+const aliasMatch = (normStripped, normActivity, norm1 = '') => {
+  const textToSearch = normStripped || norm1;
+  if (!textToSearch) return 0;
+
+  // Try exact key first
+  const aliases = ACTIVITY_ALIAS_MAP[normActivity];
+  if (aliases && aliases.some(frag => textToSearch.includes(frag))) return 800;
+
+  // Also check against the full normalized inclusion (before stripping destination)
+  // handles cases where stripInclusionMetadata removes a keyword the alias needs
+  if (norm1 && norm1 !== textToSearch) {
+    if (aliases && aliases.some(frag => norm1.includes(frag))) return 800;
+  }
+
+  // Try partial key match — handles "tour a" matching "tour a pick up only"
+  for (const [key, frags] of Object.entries(ACTIVITY_ALIAS_MAP)) {
+    if (normActivity.includes(key) || key.includes(normActivity)) {
+      if (frags.some(frag => textToSearch.includes(frag) || norm1.includes(frag))) return 800;
+    }
+  }
+  return 0;
+};
+
+
+//
+// Certain package inclusions are "meta" items — taxes, guide fees,
+// insurance — that are NEVER backed by a seller rate in the DB.
+// If these reach the fuzzy matcher, shared words like "tour" in
+// "Private Tour Guide" risk false-positive matches against real
+// activity rates (e.g. "Mountain Tour", "Island Hopping Tour").
+//
+// isNoMatchInclusion() returns true for any inclusion whose text
+// contains one of these phrases. matchInclusionsWithPrices returns
+// noMatch immediately for such inclusions, before any pool lookups.
+//
+// Pattern principles:
+//   • Use PHRASES (≥2 words) where possible — avoids false triggers
+//     (e.g. "taxes" alone might appear in a legitimate activity name,
+//      but "taxes and surcharges" never does).
+//   • Single words are only used when they are completely unambiguous
+//     and would never appear in a real seller rate activity name.
+// ─────────────────────────────────────────────────────────────
+export const NO_MATCH_INCLUSION_KEYWORDS = [
+  // Fees & government charges
+  'taxes and surcharges', 'taxes & surcharges',
+  'government tax', 'local government tax', 'local tax',
+  'municipal tax', 'terminal fee', 'environmental fee',
+  'airport tax', 'community tax', 'port tax',
+  // Insurance
+  'travel insurance', 'personal accident insurance',
+  // Guide services (these are human labor bundled in tour price, not separate rates)
+  'tour guide', 'private guide', 'licensed guide',
+  'tour escort', 'tour leader', 'tour manager',
+  'guide fee', 'guide service',
+  // Discretionary / logistics
+  'free and easy', 'leisure day', 'leisure time',
+  'tips and gratuities', 'tips & gratuities', 'driver tips', 'driver gratuity',
+  'coordination fee', 'service charge',
+  // Meals when listed as a standalone meta-inclusion (not part of a tour name)
+  // NOTE: only exact standalone phrases — "lunch" alone is too broad
+  // (e.g. "Loboc River Cruise with Lunch" is a real tour, not a meta-item)
+  'welcome dinner', 'farewell dinner', 'welcome lunch',
+  'complimentary breakfast', 'daily breakfast',
+  // Documentation / admin
+  'documentary fee', 'processing fee', 'admin fee', 'administrative fee',
+  // Use of facilities
+  'use of equipment', 'use of kayak', 'use of snorkel gear', 'use of snorkel equipment',
+];
+
+/**
+ * isNoMatchInclusion
+ * Returns true if the inclusion text is a "meta" package item that has no
+ * corresponding seller rate and should immediately return noMatch.
+ *
+ * Prevents false positives where shared words (e.g. "tour" in
+ * "Private Tour Guide") accidentally score against real activity rates.
+ *
+ * IMPORTANT — parenthetical stripping:
+ *   Package inclusions often embed a fee/services list in parentheses after
+ *   the activity name, e.g.:
+ *     "Joining City Tour (Entrance Fees, Tour Guide, Venue Fees)"
+ *     "Oslob Whale Shark Tour (Whale swimming fees, Entrance Fees, Guide)"
+ *   The parenthetical content must be STRIPPED before the keyword check so
+ *   that words like "Tour Guide" or "guide" appearing only inside the fees
+ *   list do NOT trigger the blacklist and discard a valid activity inclusion.
+ *   Without stripping, "Joining City Tour (..., Tour Guide, ...)" would
+ *   match the 'tour guide' keyword and return noMatch — blocking the entire
+ *   City Tour price lookup for the package.
+ *
+ * @param {string} text — raw inclusion string from the package
+ */
+export const isNoMatchInclusion = (text) => {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  // Strip all parenthetical content (fees lists, descriptions) before checking.
+  // "(Entrance Fees, Tour Guide, Venue Fees)" → ""
+  const withoutParens = lower.replace(/\([^)]*\)/g, '').trim();
+  return NO_MATCH_INCLUSION_KEYWORDS.some(kw => withoutParens.includes(kw));
+};
 
 // ─────────────────────────────────────────────────────────────
 // DESTINATION CAPABILITIES MAP
@@ -168,12 +399,19 @@ export const DESTINATION_CAPABILITIES = {
   
   'siargao':         { accommodation: true,  rt: true  },
   'siquijor':        { accommodation: true,  rt: true  },
-  'CEBU':            { accommodation: true,  rt: true  },
+  'cebu':            { accommodation: true,  rt: true  },  // ← was 'CEBU' (uppercase) — never matched destinationSupports lookup
   'coron':           { accommodation: true,  rt: true  },
   // Bohol: accommodation and RT seller rates are not in the DB.
   //   General activity rates (tours, transfers, meals) DO exist — see
   //   DESTINATION_SUBDEST_MAP below for how sub-location names are resolved.
   'bohol':           { accommodation: true, rt: true },
+  // Boracay: activity rates (Island Hopping) confirmed. Accommodation and RT
+  //   rates may exist but are excluded from the exported rate list —
+  //   set both true so the matcher attempts to find them if they exist in the DB.
+  'boracay':         { accommodation: true,  rt: true  },
+  // Batanes: activity rates confirmed (North & South, Complete Tour).
+  //   Accommodation and RT rates may exist — set both true so matcher will attempt.
+  'batanes':         { accommodation: true,  rt: true  },
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -367,20 +605,50 @@ export const normalizeActivity = (text) => {
   if (!text) return '';
   return text
     .toLowerCase()
+    // Normalize & → and BEFORE stripping non-alphanum characters
+    // because [^a-z0-9\s] removes & before the \b&\b pattern can match
+    // "North & South" → "North and South" → then lowercased → "north and south"
+    .replace(/\s*&\s*/g, ' and ')
+    // Strip parenthetical content — fee lists, descriptions in parens hurt matching
+    // e.g. "City Tour (Entrance Fees, Guide, Venue Fees)" → "City Tour"
+    // Done BEFORE other replacements so parens don't leave debris
+    .replace(/\([^)]*\)/g, ' ')
     .replace(/[^a-z0-9\s]/g, ' ')
+    // Strip "Joining" prefix used in Coron seller rate activity names
+    // e.g. "Joining Island Tour B with Picnic Lunch" → "island tour b with picnic lunch"
+    // Package inclusions never say "Joining" — the prefix is an internal admin label.
+    .replace(/^\s*joining\s+/, '')
+    // Strip "pick.?up only" / "drop.?off only" suffixes common in El Nido rate names
+    // e.g. "(Tour A) - pick up only" → "tour a"
+    .replace(/\bpick\s*up\s*only\b/g, '')
+    .replace(/\bdrop\s*off\s*only\b/g, '')
+    .replace(/\bpickup\s*only\b/g, '')
     .replace(/roundtrip/g, 'round trip')
     .replace(/twoway/g, 'two way')
     .replace(/oneway/g, 'one way')
+    // Normalize common shorthand / abbreviations
+    .replace(/\bw\/\b/g, 'with ')
     .replace(/\s+/g, ' ')
     .trim();
 };
 
 export const extractKeywords = (text) => {
   const normalized = normalizeActivity(text);
-  const noiseWords = ['the', 'and', 'or', 'with', 'for', 'in', 'on', 'at', 'to', 'from', 'a', 'an'];
-  return normalized
-    .split(' ')
-    .filter(w => w.length >= 3 && !noiseWords.includes(w))
+  const noiseWords = new Set([
+    'the', 'and', 'or', 'with', 'for', 'in', 'on', 'at', 'to', 'from', 'a', 'an',
+    'of', 'by', 'its', 'per', 'via', 'plus', 'only', 'also', 'all', 'any',
+  ]);
+  const words = normalized.split(' ');
+  return words
+    .filter(w => {
+      if (noiseWords.has(w)) return false;
+      // Always keep single-letter tour codes (a, b, c, d) when preceded by "tour"
+      // These are filtered in the pipeline via the tourCodePattern guard in activitiesMatch
+      // but we need them as keywords for scoring comparisons
+      if (w.length === 1) return false; // still filter isolated single chars
+      if (w.length === 2 && !/^\d+$/.test(w)) return false; // keep 2-digit numbers
+      return w.length >= 3;
+    })
     .map(word => ({ word, length: word.length, synonyms: getSynonyms(word) }));
 };
 
@@ -402,6 +670,11 @@ export const extractKeywords = (text) => {
 export const stripInclusionMetadata = (text, destination = '') => {
   if (!text) return '';
   let stripped = text.toLowerCase();
+
+  // Strip parenthetical content (fee lists, descriptions)
+  // e.g. "Oslob Tour (Whale swimming fees, Entrance Fees, Guide, Boat)" → "Oslob Tour"
+  // Must happen before punctuation replacement so parens are removed cleanly
+  stripped = stripped.replace(/\([^)]*\)/g, ' ');
 
   stripped = stripped.replace(/\b\d+d\d+n\b/gi, '');
   PAX_TYPE_PATTERNS.forEach(p => { stripped = stripped.replace(p, ''); });
@@ -425,6 +698,11 @@ export const stripInclusionMetadata = (text, destination = '') => {
   }
 
   return stripped
+    // "+" is used as a list separator in verbose inclusions like
+    // "Oslob Whale Shark + Sumilon Island + Oslob Cuartel"
+    // Replace with space so only the FIRST item (before the first "+") survives
+    // as meaningful lead words — the rest become noise after the split
+    .replace(/\+/g, ' ')
     .replace(/[-–—|:,/\\]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -597,6 +875,14 @@ export const destinationsMatch = (rateDestination, packageDestination) => {
 /**
  * activitiesMatch — 6-layer matching pipeline.
  *
+ *   Guard 0 — Tour letter-code check (NEW)
+ *             If both texts contain a "Tour [A-Z]" single-letter code pattern
+ *             (e.g. "Tour A", "Tour B", "Tour C"), the codes MUST match.
+ *             Single-letter codes are filtered out by extractKeywords (< 3 chars)
+ *             so without this guard, "Tour A" and "Tour B" would score identically
+ *             through layers 1-6 and produce wrong price assignments.
+ *             Context: El Nido has Tour A and Tour C; Coron has Tour A and Tour B.
+ *
  *   Layer 1 — Exact normalized equality
  *   Layer 2 — Flight/cross-destination keyword shortcut
  *   Layer 3 — Similarity on STRIPPED inclusion vs rate activity
@@ -608,6 +894,16 @@ export const destinationsMatch = (rateDestination, packageDestination) => {
  * Rate selection among multiple matches is handled by scoreRateForInclusion.
  */
 export const activitiesMatch = (inclusion, activity, destination = '') => {
+  // ── Guard 0: Tour letter-code hard gate ──────────────────────────────────
+  // Pattern: "Tour A", "Tour B", "Tour C" — single-letter suffix (case insensitive).
+  // If both sides have a tour code and they differ, reject immediately.
+  // This prevents "Tour A" inclusion from matching "Tour C with picnic Lunch" rate
+  // or "Island Tour B" rate from matching an "Island Tour A" inclusion.
+  const tourCodePattern = /\btour\s+([a-z])\b/i;
+  const code1 = (inclusion || '').match(tourCodePattern);
+  const code2 = (activity  || '').match(tourCodePattern);
+  if (code1 && code2 && code1[1].toLowerCase() !== code2[1].toLowerCase()) return false;
+
   const norm1 = normalizeActivity(inclusion);
   const norm2 = normalizeActivity(activity);
 
@@ -631,6 +927,44 @@ export const activitiesMatch = (inclusion, activity, destination = '') => {
 
     const meaningfulWords = stripped.split(' ').filter(w => w.length >= 3).length;
     if (meaningfulWords <= 4 && keywordCoverageCheck(stripped, activity) >= 0.75) return true;
+
+    // ── Layer 4b: Prominent-keyword lead match (NEW) ───────────────────────
+    // Handles seller rates with SHORT activity names (e.g. "Oslob Tour",
+    // "Moalboal", "City Tour") that map to LONG descriptive package inclusions
+    // (e.g. "Oslob Whale Shark + Sumilon Island + Oslob Cuartel + Oslob Church
+    //        + Simala Shrine + Carcar (Whale swimming fees, Entrance Fees, Guide, Boat)").
+    //
+    // Root cause of the failure:
+    //   Rate "Oslob Tour" → keywords: ["oslob", "tour"].
+    //   The word "tour" NEVER appears in the verbose inclusion text — the
+    //   inclusion describes what places are visited, not that it IS a tour.
+    //   keywordCoverageCheck (Layer 4) = 1/2 = 0.5 < 0.75 threshold → no match.
+    //   All other layers also fail because similarity is diluted by the many
+    //   extra words (whale shark, sumilon, cuartel, church, simala, carcar...).
+    //
+    // Fix: if any SPECIFIC (non-generic) keyword from the rate activity name
+    // appears within the first 4 words of the normalized stripped inclusion,
+    // it is a strong signal that the inclusion IS this activity.
+    //
+    //   "Oslob Tour"   ↔ first 4 of "oslob whale shark sumilon..." → "oslob" ✅
+    //   "City Tour"    ↔ first 4 of "city tour entrance fees..."   → "city"  ✅
+    //   "Moalboal"     ↔ first 4 of "moalboal panagsama snorkeling"→ "moalboal" ✅
+    //   "Mountain Tour"↔ first 4 of "underground river tour..."    → "mountain"? ✗ ✅
+    //
+    // GENERIC WORD GUARD: common activity words ("tour", "trip", "package", etc.)
+    // are excluded from this check. Without this guard, "tour" in "Mountain Tour"
+    // would match any inclusion starting with the word "tour".
+    const GENERIC_ACTIVITY_WORDS = new Set([
+      'tour', 'tours', 'trip', 'package', 'day', 'night', 'half', 'full',
+      'joining', 'private', 'group', 'shared',
+    ]);
+    const normStrippedLead = normalizeActivity(stripped).split(/\s+/).slice(0, 4).join(' ');
+    const rateKwsLead = extractKeywords(norm2);
+    if (rateKwsLead.some(kw =>
+      kw.word.length >= 4 &&
+      !GENERIC_ACTIVITY_WORDS.has(kw.word) &&
+      normStrippedLead.includes(kw.word)
+    )) return true;
   }
 
   const threshold = (isCross1 || isCross2) ? 0.50 : 0.60;
@@ -777,7 +1111,12 @@ export const buildStage1Pool = (sellerRates, signals) => {
     }
 
     if (qualifier.type === 'solo_joiners') {
-      return rq.type === 'solo_joiners';
+      // A package sold as "Solo/Joiners" accepts:
+      //   • exact (Solo/Joiners) rates → ideal
+      //   • (Solo) rates → acceptable fallback (solo price floor)
+      //   • generic (no qualifier) rates → already handled above
+      // REJECTS: (min. of N pax) only
+      return rq.type === 'solo_joiners' || rq.type === 'solo';
     }
 
     return true;
@@ -875,7 +1214,7 @@ export const verifyRateFinal = (rate, signals) => {
 
   if (qualifier.type === 'solo')         return rq.type === 'solo';
   if (qualifier.type === 'minpax')       return rq.type === 'minpax' && rq.count === qualifier.count;
-  if (qualifier.type === 'solo_joiners') return rq.type === 'solo_joiners';
+  if (qualifier.type === 'solo_joiners') return rq.type === 'solo_joiners' || rq.type === 'solo';
 
   return true;
 };
@@ -889,32 +1228,374 @@ export const verifyRateFinal = (rate, signals) => {
 /**
  * findAccommodationRate
  * Finds the best seller rate for an accommodation inclusion.
- * Searches ONLY rates whose activity is an accommodation keyword.
- * Never calls activitiesMatch — keyword match only.
- *
- * @returns matched rate object, or null if none found
+ * Keyword match only — never calls activitiesMatch.
  */
-export const findAccommodationRate = (strictPool, destinationPool, signals) => {
-  // Try strictPool (destination + duration + qualifier filtered) first
+export const findAccommodationRate = (strictPool, destinationPool, signals, inclusionText = '') => {
   let candidates = strictPool.filter(rate => isAccommodationInclusion(rate.activity));
-
-  // Fallback to destination-only pool
   if (candidates.length === 0) {
     candidates = destinationPool.filter(rate => isAccommodationInclusion(rate.activity));
   }
-
   if (candidates.length === 0) return null;
 
   const scored = candidates
-    .map(rate => ({ rate, score: scoreRateForInclusion(rate, signals.duration, signals.qualifier) }))
+    .map(rate => ({
+      rate,
+      score: scoreRateForInclusion(
+        rate, signals.duration, signals.qualifier, inclusionText, signals.destination,
+      ),
+    }))
     .sort((a, b) => b.score - a.score);
 
-  // Stage 3: walk and re-verify
   for (const { rate } of scored) {
     if (verifyRateFinal(rate, signals)) return rate;
   }
+  return scored[0].rate;
+};
 
-  // No candidate passed re-verification — return best-scored so price is always shown
+
+// ─────────────────────────────────────────────────────────────
+// RATE-FIRST MATCHING FOR GENERAL ACTIVITIES  (NEW)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * activityNameScore
+ * Signal 3 for scoreInclusionForRate / scoreRateForInclusion.
+ * Returns 0–150 bonus based on how closely the inclusion text matches
+ * the seller rate's activity name.
+ *
+ * Tiers:
+ *   150 — normalized activity name is a substring of the normalized inclusion
+ *          AND length ratio >= 0.7 (prevents very short activity names from
+ *          scoring full points against very long inclusions)
+ *   100 — inclusion contains the normalized activity name as a substring
+ *          (length ratio < 0.7, still a strong signal)
+ *    60 — activity name contains the normalized inclusion (reverse substring)
+ *         with length ratio >= 0.7 (inclusion is an abbreviation of the rate)
+ *   0–50— proportional similarity bonus (calculateSimilarity * 50)
+ *
+ * @param {string} inclusionText — raw inclusion string from the package
+ * @param {string} rateActivity  — rate.activity field value
+ * @param {string} destination   — package destination (for stripInclusionMetadata)
+ * @returns {number} 0–150
+ */
+const activityNameScore = (inclusionText, rateActivity, destination = '') => {
+  if (!inclusionText || !rateActivity) return 0;
+
+  const normInclusion = normalizeActivity(
+    stripInclusionMetadata(inclusionText, destination)
+  );
+  const normActivity  = normalizeActivity(rateActivity);
+
+  if (!normInclusion || !normActivity) return 0;
+
+  // Substring: activity name inside the inclusion (most common case)
+  if (normInclusion.includes(normActivity)) {
+    const ratio = normActivity.length / normInclusion.length;
+    return ratio >= 0.7 ? 150 : 100;
+  }
+
+  // Reverse substring: inclusion inside the activity name
+  if (normActivity.includes(normInclusion)) {
+    const ratio = normInclusion.length / normActivity.length;
+    if (ratio >= 0.7) return 60;
+  }
+
+  // Synonym-based coverage for SHORT activity names (≤3 keywords)
+  // e.g. "Oslob Tour" → keywords [oslob, tour] — "oslob" has synonyms [whale, shark, swimming]
+  // If the inclusion mentions "whale shark" it indirectly refers to Oslob
+  const actKws = extractKeywords(normActivity).filter(kw => !_GENERIC_RATE_WORDS.has(kw.word));
+  if (actKws.length > 0 && actKws.length <= 3) {
+    let synHits = 0;
+    actKws.forEach(kw => {
+      // Direct word match
+      if (normInclusion.includes(kw.word)) { synHits++; return; }
+      // Synonym match — any synonym of the rate keyword appears in the inclusion
+      if (kw.synonyms.some(s => normInclusion.includes(s))) { synHits++; return; }
+    });
+    const synCoverage = synHits / actKws.length;
+    if (synCoverage >= 1.0) return 90;   // all keywords matched via synonyms
+    if (synCoverage >= 0.5) return 40;   // partial synonym coverage
+  }
+
+  // Proportional similarity fallback
+  const sim = calculateSimilarity(normInclusion, normActivity);
+  return Math.round(sim * 50);
+};
+
+/**
+ * inclusionsFieldScore
+ * Signal 4 for scoreInclusionForRate / scoreRateForInclusion.
+ * Returns 0–80 bonus based on keyword overlap between the package inclusion
+ * text and the seller rate's `inclusions` field (e.g. "entrance fees, bangka
+ * ride, guide, lunch").
+ *
+ * Logic: extract keywords from each side, count how many rate inclusion
+ * keywords appear in the package inclusion text (or via synonyms), then
+ * return a proportional bonus capped at 80.
+ *
+ * @param {string} inclusionText    — raw inclusion string from the package
+ * @param {string} rateInclusionsText — rate.inclusions field value
+ * @returns {number} 0–80
+ */
+const inclusionsFieldScore = (inclusionText, rateInclusionsText) => {
+  if (!inclusionText || !rateInclusionsText) return 0;
+
+  const rateKws = extractKeywords(normalizeActivity(rateInclusionsText));
+  if (!rateKws.length) return 0;
+
+  const inclNorm = normalizeActivity(inclusionText);
+
+  let hits = 0;
+  rateKws.forEach(kw => {
+    if (inclNorm.includes(kw.word))                          { hits++; return; }
+    if (kw.synonyms.some(s => inclNorm.includes(s)))         { hits++; return; }
+  });
+
+  const coverage = hits / rateKws.length;
+  return Math.round(coverage * 80);
+};
+
+// Generic activity words — too broad to act as identification keywords.
+// e.g. "tour" in "Mountain Tour" would match any inclusion containing "tour".
+const _GENERIC_RATE_WORDS = new Set([
+  'tour', 'tours', 'trip', 'package', 'day', 'night',
+  'half', 'full', 'joining', 'private', 'group', 'shared',
+]);
+
+// A (rate, inclusion) pair must score at least this to be assigned.
+const _MIN_RATE_FIRST_SCORE = 50;
+
+/**
+ * scoreInclusionForRate
+ * Scores how well a package inclusion string describes a seller rate's activity.
+ * Direction: RATE → INCLUSION (inverse of scoreRateForInclusion).
+ *
+ * Tiers:
+ *   1000  exact normalized match
+ *    500  prominent-keyword lead: a specific rate keyword (≥4 chars, non-generic)
+ *         appears in the first 4 words of the stripped inclusion.
+ *         Fixes: "Oslob Tour" → "oslob" found in "oslob whale shark..." → +500
+ *                "City Tour"  → "city"  found in "city tour entrance..." → +500
+ *                "Moalboal"   → "moalboal" found in "moalboal panagsama..." → +500
+ *   0–150 activityNameScore (text closeness)
+ *   0–80  inclusionsFieldScore (rate.inclusions field overlap)
+ *   0–100 keyword coverage (rate keywords in stripped inclusion)
+ *   0–50  reverse coverage (stripped keywords in rate, short inclusions only)
+ */
+const scoreInclusionForRate = (inclusionText, rate, signals) => {
+  const norm2        = normalizeActivity(rate.activity);
+  const stripped     = stripInclusionMetadata(inclusionText, signals.destination);
+  const normStripped = normalizeActivity(stripped);
+  const norm1        = normalizeActivity(inclusionText);
+
+  // Tier 1: exact match
+  if (normStripped === norm2 || norm1 === norm2) return 1000;
+
+  // Tier 1.5: alias map lookup — deterministic, built directly from the PDF
+  // Fires before fuzzy scoring so specific activity names like "Oslob", "Moalboal",
+  // "Honda Bay Island Hopping Tour" always match even when fuzzy layers miss
+  const aliasBonus = aliasMatch(normStripped, norm2, norm1);
+  if (aliasBonus > 0) {
+    // Still accumulate lower tiers so disambiguation penalty can still override
+    // when two rates both alias-match (shouldn't happen, but defensive)
+    let score = aliasBonus;
+    score += activityNameScore(inclusionText, rate.activity, signals.destination);
+    if (rate.inclusions) score += inclusionsFieldScore(inclusionText, rate.inclusions);
+    return score;
+  }
+
+  let score = 0;
+
+  // Tier 2: prominent-keyword lead
+  // Look at first 6 words (widened from 4) so multi-word activity names like
+  // "Chocolate Hills Tour" can still match "Chocolate Hills and Tarsier Sanctuary"
+  const leadWords = normStripped.split(/\s+/).slice(0, 6).join(' ');
+  const rateKws   = extractKeywords(norm2);
+  const specificRateKws = rateKws.filter(kw =>
+    kw.word.length >= 4 && !_GENERIC_RATE_WORDS.has(kw.word)
+  );
+  const leadMatchCount = specificRateKws.filter(kw => leadWords.includes(kw.word)).length;
+
+  if (specificRateKws.length > 0) {
+    // Partial credit for lead matches — more specific keywords matched = higher bonus
+    const leadRatio = leadMatchCount / specificRateKws.length;
+    if (leadRatio >= 1.0) score += 500;       // all specific keywords in lead → full bonus
+    else if (leadRatio >= 0.5) score += 300;  // majority in lead → strong signal
+    else if (leadMatchCount >= 1) score += 150; // at least one specific keyword → weak signal
+  }
+
+  // Tier 3: text closeness
+  score += activityNameScore(inclusionText, rate.activity, signals.destination);
+
+  // Tier 4: rate inclusions field overlap
+  if (rate.inclusions) {
+    score += inclusionsFieldScore(inclusionText, rate.inclusions);
+  }
+
+  // Tier 5: keyword coverage (rate → inclusion direction)
+  const coverage = keywordCoverageCheck(rate.activity, normStripped);
+  score += Math.round(coverage * 100);
+
+  // Tier 6: reverse coverage (only for short inclusions ≤ 6 words)
+  const wordCount = normStripped.split(/\s+/).filter(w => w.length >= 3).length;
+  if (wordCount <= 6) {
+    score += Math.round(keywordCoverageCheck(inclusionText, norm2) * 50);
+  }
+
+  // Tier 7: DISAMBIGUATION PENALTY
+  // If the inclusion contains a specific keyword that belongs to a DIFFERENT
+  // known activity (and the rate does NOT contain it), penalize this pair.
+  // Prevents "Moalboal Snorkeling" from scoring well against "Oslob Tour".
+  // Only fires when both sides have specific keywords and they conflict.
+  if (specificRateKws.length > 0 && score > 0) {
+    const normInc = normStripped || norm1;
+    // Check if inclusion starts with a specific keyword that is NOT in this rate
+    const incLeadKws = extractKeywords(normInc.split(/\s+/).slice(0, 3).join(' '))
+      .filter(kw => kw.word.length >= 5 && !_GENERIC_RATE_WORDS.has(kw.word));
+    const conflictCount = incLeadKws.filter(kw =>
+      !norm2.includes(kw.word) &&
+      !rateKws.some(rk => rk.synonyms.includes(kw.word) || kw.synonyms.includes(rk.word))
+    ).length;
+    if (conflictCount > 0 && leadMatchCount === 0) {
+      // Inclusion clearly leads with a keyword this rate doesn't own → strong penalty
+      score -= Math.min(conflictCount * 200, 400);
+    }
+  }
+
+  return score;
+};
+
+/**
+ * buildRateFirstAssignments
+ *
+ * Implements the RATE-FIRST architecture for general activity matching.
+ *
+ * WHY RATE-FIRST:
+ *   The old inclusion-first approach iterated every package inclusion and asked
+ *   "does this inclusion match a rate?" — verbose inclusions like
+ *   "Oslob Whale Shark + Sumilon Island + Oslob Cuartel + Simala Shrine..."
+ *   failed fuzzy matching because the extra words diluted similarity below
+ *   every threshold. Result: only 3 of 24 inclusions got prices.
+ *
+ *   Rate-first inverts the question: "for each rate we know exists for this
+ *   destination+duration+qualifier, which inclusion best describes it?"
+ *   The strictPool already contains exactly the rates the admin has configured.
+ *   Each rate finds its best-scoring inclusion regardless of how verbose the
+ *   inclusion text is.
+ *
+ * ALGORITHM:
+ *   1. Collect all general (non-accommodation, non-RT) rates from strictPool.
+ *   2. Score every (rate, eligible-inclusion) pair with scoreInclusionForRate.
+ *   3. Sort pairs by score descending.
+ *   4. Greedy assign: highest score wins; each rate and inclusion used at most once.
+ *   5. Discard pairs below _MIN_RATE_FIRST_SCORE (prevents false assignments).
+ *
+ * NUMBER OF PRICED INCLUSIONS = NUMBER OF GENERAL RATES IN STRICTPOOL.
+ *   Cebu 5D4N (Solo) has 3 general rates → exactly 3 inclusions get prices.
+ *   Siargao 4D3N (Solo/Joiners) has 2 → exactly 2 get prices.
+ *
+ * @param {object[]} strictPool
+ * @param {object[]} destinationPool
+ * @param {string[]} inclusions
+ * @param {object}   signals
+ * @returns {Map<number, object>} inclusionIndex → seller rate
+ */
+const buildRateFirstAssignments = (strictPool, destinationPool, inclusions, signals) => {
+  const generalFilter = (pool) => pool.filter(r =>
+    !isAccommodationInclusion(r.activity) && !isRtPudoActivity(r.activity)
+  );
+
+  let generalRates = generalFilter(strictPool);
+  const usedDestPool = generalRates.length === 0;
+  if (usedDestPool) generalRates = generalFilter(destinationPool);
+  if (generalRates.length === 0) return new Map();
+
+  // Deduplicate rates by normalized activity name — when there are multiple supplier
+  // entries for the same activity (e.g. two suppliers for "Oslob Tour"), keep the
+  // one with the highest sellingPrice so only one inclusion slot is consumed.
+  const rateByActivity = new Map();
+  for (const rate of generalRates) {
+    const key = normalizeActivity(rate.activity);
+    const existing = rateByActivity.get(key);
+    if (!existing || (rate.sellingPrice || 0) > (existing.sellingPrice || 0)) {
+      rateByActivity.set(key, rate);
+    }
+  }
+  const dedupedRates = [...rateByActivity.values()];
+
+  // Eligible inclusion indices: skip meta-inclusions, accommodation, RT
+  const eligible = inclusions
+    .map((inc, i) => ({ inc, i }))
+    .filter(({ inc }) =>
+      !isNoMatchInclusion(inc) &&
+      !isAccommodationInclusion(inc) &&
+      !isRoundtripInclusion(inc)
+    );
+
+  if (eligible.length === 0) return new Map();
+
+  // Score all (rate, inclusionIdx) pairs
+  const allPairs = [];
+  for (const rate of dedupedRates) {
+    for (const { inc, i } of eligible) {
+      const score = scoreInclusionForRate(inc, rate, signals);
+      if (score >= _MIN_RATE_FIRST_SCORE) {
+        allPairs.push({ rate, idx: i, score });
+      }
+    }
+  }
+
+  // Sort by score descending
+  allPairs.sort((a, b) => b.score - a.score);
+
+  // Greedy assignment: each rate and each inclusion used at most once
+  const usedRates      = new Set();
+  const usedInclusions = new Set();
+  const assignment     = new Map();
+
+  for (const { rate, idx } of allPairs) {
+    const rateKey = normalizeActivity(rate.activity);
+    if (usedRates.has(rateKey) || usedInclusions.has(idx)) continue;
+    assignment.set(idx, rate);
+    usedRates.add(rateKey);
+    usedInclusions.add(idx);
+  }
+
+  return assignment;
+};
+
+/**
+ * findTourActivityRate
+ * Retained for backward compatibility / external use.
+ * matchInclusionsWithPrices now uses buildRateFirstAssignments for the general path.
+ */
+export const findTourActivityRate = (strictPool, destinationPool, signals, inclusionText) => {
+  const generalPool = (pool) => pool.filter(rate =>
+    !isAccommodationInclusion(rate.activity) && !isRtPudoActivity(rate.activity)
+  );
+
+  let candidates = generalPool(strictPool).filter(rate =>
+    activitiesMatch(inclusionText, rate.activity, signals.destination)
+  );
+  if (candidates.length === 0) {
+    candidates = generalPool(destinationPool).filter(rate =>
+      activitiesMatch(inclusionText, rate.activity, signals.destination)
+    );
+  }
+  if (candidates.length === 0) return null;
+
+  const scored = candidates
+    .map(rate => ({
+      rate,
+      score: scoreRateForInclusion(
+        rate, signals.duration, signals.qualifier, inclusionText, signals.destination,
+      ),
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  for (const { rate } of scored) {
+    if (verifyRateFinal(rate, signals)) return rate;
+  }
   return scored[0].rate;
 };
 
@@ -926,37 +1607,21 @@ export const findAccommodationRate = (strictPool, destinationPool, signals) => {
 /**
  * matchInclusionsWithPrices
  *
- * Per-inclusion pipeline — 3 stages:
+ * Rate-first architecture — 3 stages:
  *
- *   Stage 1 — Parse package title → extract destination, duration, qualifier.
- *             buildStage1Pool() filters all seller rates where rate.destination
- *             matches ALL THREE simultaneously.
- *             strictPool and destinationPool are computed ONCE and reused
- *             for every inclusion in the same package.
+ *   Stage 1 — Parse signals (dest, duration, qualifier) → build strictPool.
  *
- *   Stage 2 — Search strictPool for rates whose activity matches the inclusion:
- *               Accommodation → findAccommodationRate() — keyword match only
- *               RT (PUDO)     → findRtPudoRate() from rtPudoMatcher.js
- *                               — exact activity name match only, fully isolated
- *               Others        → 6-layer fuzzy match on rate.activity
- *             If strictPool yields no candidates for that inclusion →
- *             fall back to destinationPool (same activity-match logic).
- *             Score and sort survivors.
+ *   Stage 2 — Pre-compute rate-first assignments BEFORE the per-inclusion loop:
+ *             buildRateFirstAssignments() iterates every general (non-accom,
+ *             non-RT) rate in strictPool and assigns each rate to the package
+ *             inclusion that best matches it via greedy scoring.
+ *             Number of priced general inclusions = number of general rates.
  *
- *   Stage 3 — Walk the scored list top-to-bottom.
- *             Take the FIRST rate that passes verifyRateFinal
- *             (destination + duration + qualifier all re-confirmed).
- *             If none pass → use best-scored (price always shown, never 0).
- *
- * @param {string[]} inclusions   — raw inclusion strings from the package
- * @param {object[]} sellerRates  — full seller rate records from the API
- * @param {string}   destination  — package destination field (e.g. "El Nido")
- * @param {string}   tourType     — 'private' | 'joiners'
- * @param {number}   minPax       — only relevant when tourType='joiners'
- * @param {string}   pkgDuration  — package duration field (e.g. "4D3N"), fallback
- * @param {string}   pkgTitle     — full package title — PRIMARY source for all signals
- *
- * Returns: { matched: Array, matchCount: number }
+ *   Stage 3 — Per-inclusion result assembly (simple Map lookup for general path):
+ *               RT          → findRtPudoRate()       (exact activity name)
+ *               Accommodation → findAccommodationRate() (keyword match)
+ *               General     → rateFirstMap.get(idx)  (pre-computed above)
+ *               Meta/blocked → noMatch immediately
  */
 export const matchInclusionsWithPrices = (
   inclusions,
@@ -969,18 +1634,18 @@ export const matchInclusionsWithPrices = (
 ) => {
   let matchCount = 0;
 
-  // ── Stage 1: parse signals from title once, build pools once ──────────────
+  // ── Stage 1 ───────────────────────────────────────────────────────────────
   const signals = parsePkgTitleSignals(
-    pkgTitle,
-    destination,
-    pkgDuration,
-    tourType,
-    minPax,
+    pkgTitle, destination, pkgDuration, tourType, minPax,
   );
-
   const { strictPool, destinationPool } = buildStage1Pool(sellerRates, signals);
 
-  // ── Shared result builders ────────────────────────────────────────────────
+  // ── Stage 2: pre-compute rate-first general assignments ───────────────────
+  const rateFirstMap = buildRateFirstAssignments(
+    strictPool, destinationPool, inclusions, signals,
+  );
+
+  // ── Result builders ───────────────────────────────────────────────────────
   const buildResult = (idx, inclusion, rate) => ({
     id:                 `original-${idx}`,
     name:               inclusion,
@@ -1011,103 +1676,39 @@ export const matchInclusionsWithPrices = (
     source:             'package',
   });
 
-  // ── Per-inclusion matching ─────────────────────────────────────────────────
+  // ── Stage 3: per-inclusion result assembly ────────────────────────────────
   const matched = inclusions.map((inclusion, idx) => {
 
-    // Nothing at all for this destination → immediate noMatch
     if (destinationPool.length === 0) return noMatch(idx, inclusion);
 
-    // ── RT (PUDO) PATH ────────────────────────────────────────────────────────
-    // MUST come before the accommodation check.
-    // RT inclusion strings can contain accommodation-adjacent words
-    // (e.g. "Roundtrip to Resort", "Hotel Transfer (RT)", "RT from Resort Area").
-    // If accommodation were checked first, those inclusions would be misrouted to
-    // findAccommodationRate and return accommodation prices instead of RT prices.
-    //
-    // Capability guard: if this destination has no RT (PUDO) rates in the DB
-    // (e.g. Siargao, Bohol), return noMatch immediately — do NOT let the fuzzy
-    // path pick up an unrelated rate as a false positive.
-    //
-    // Delegates entirely to findRtPudoRate (rtPudoMatcher.js) —
-    // exact activity name match only, completely isolated from fuzzy matching.
+    // Meta-inclusions (taxes, insurance, guide fees, etc.)
+    if (isNoMatchInclusion(inclusion)) return noMatch(idx, inclusion);
+
+    // RT path — must come before accommodation
     if (isRoundtripInclusion(inclusion)) {
-      if (!destinationSupports(signals.destination, 'rt')) {
-        return noMatch(idx, inclusion);
-      }
+      if (!destinationSupports(signals.destination, 'rt')) return noMatch(idx, inclusion);
       const rate = findRtPudoRate(strictPool, destinationPool, signals);
       if (!rate) return noMatch(idx, inclusion);
       matchCount++;
       return buildResult(idx, inclusion, rate);
     }
 
-    // ── ACCOMMODATION PATH ─────────────────────────────────────────────────
-    // Only reached when isRoundtripInclusion() returned false above.
-    //
-    // Capability guard: if this destination has no accommodation rates in the DB
-    // (e.g. Bohol), return noMatch immediately — prevents the fuzzy path from
-    // accidentally scoring a tour/activity rate as an accommodation match.
-    //
-    // Delegates entirely to findAccommodationRate — keyword match only, never fuzzy.
+    // Accommodation path
     if (isAccommodationInclusion(inclusion)) {
-      if (!destinationSupports(signals.destination, 'accommodation')) {
-        return noMatch(idx, inclusion);
-      }
-      const rate = findAccommodationRate(strictPool, destinationPool, signals);
+      if (!destinationSupports(signals.destination, 'accommodation')) return noMatch(idx, inclusion);
+      const rate = findAccommodationRate(strictPool, destinationPool, signals, inclusion);
       if (!rate) return noMatch(idx, inclusion);
       matchCount++;
       return buildResult(idx, inclusion, rate);
     }
 
-    // ── GENERAL PATH ──────────────────────────────────────────────────────────
-    // Hard guard: accommodation and RT inclusions must NEVER reach this path.
-    // They have already been handled above with their dedicated finders.
-    if (isAccommodationInclusion(inclusion) || isRoundtripInclusion(inclusion)) {
-      return noMatch(idx, inclusion);
-    }
-
-    // Stage 2: 6-layer fuzzy activity match — try strictPool first.
-    // Exclude accommodation and RT (PUDO) rates from the pool so the fuzzy
-    // scorer can never accidentally score them as a match for other inclusions.
-    const generalPool = (pool) => pool.filter(rate =>
-      !isAccommodationInclusion(rate.activity) && !isRtPudoActivity(rate.activity)
-    );
-
-    let candidates = generalPool(strictPool).filter(rate =>
-      activitiesMatch(inclusion, rate.activity, destination)
-    );
-
-    // Stage 2 fallback: strictPool had no activity match → try destinationPool
-    if (candidates.length === 0) {
-      candidates = generalPool(destinationPool).filter(rate =>
-        activitiesMatch(inclusion, rate.activity, destination)
-      );
-    }
-
-    if (candidates.length === 0) return noMatch(idx, inclusion);
-
-    // Score and sort
-    const scored = candidates
-      .map(rate => ({
-        rate,
-        score: scoreRateForInclusion(rate, signals.duration, signals.qualifier),
-      }))
-      .sort((a, b) =>
-        b.score !== a.score
-          ? b.score - a.score
-          : (a.rate.sellingPrice || 0) - (b.rate.sellingPrice || 0)
-      );
-
-    // Stage 3: walk and re-verify — take first that passes all Stage 1 checks
-    for (const { rate } of scored) {
-      if (verifyRateFinal(rate, signals)) {
-        matchCount++;
-        return buildResult(idx, inclusion, rate);
-      }
-    }
-
-    // No candidate passed re-verification — use best-scored
+    // General path — O(1) lookup into pre-computed rate-first assignment Map.
+    // If this inclusion index has no assignment, it means no general rate in
+    // the strictPool scored above the minimum threshold for it → noMatch.
+    const assignedRate = rateFirstMap.get(idx);
+    if (!assignedRate) return noMatch(idx, inclusion);
     matchCount++;
-    return buildResult(idx, inclusion, scored[0].rate);
+    return buildResult(idx, inclusion, assignedRate);
   });
 
   return { matched, matchCount };

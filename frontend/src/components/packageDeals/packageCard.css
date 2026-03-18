@@ -94,7 +94,6 @@
   width: 100%;
   height: 220px;
   position: relative;
-  overflow: hidden;
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
   flex-shrink: 0; 
 }
@@ -104,10 +103,28 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.5s ease;
+  border-radius: 0;
+  display: block;
 }
 
 .package-card:hover .image-content {
   transform: scale(1.1);
+}
+
+/* ================== TITLE STAMP OVERLAY ================== */
+/* Shown on the image when title has NO duration pattern */
+
+.title-stamp-overlay {
+  position: absolute;
+  bottom: -47px;
+  right: 8px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.rubber-stamp-svg {
+  display: block;
+  filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.7));
 }
 
 /* Card Body */

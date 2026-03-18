@@ -31,102 +31,205 @@ const PackageCustomizer = ({
   const currentDestinationRef = useRef('');
 
   // ─────────────────────────────────────────────────────────────
+  // DESTINATION → API SEARCH TERM NORMALIZER
+  // ─────────────────────────────────────────────────────────────
+  //
+  // pkg.destination can be stored with extra qualifiers:
+  //   "Siargao Island"    → API must search "Siargao"
+  //   "Bohol Island"      → API must search "Bohol"
+  //   "El Nido, Palawan"  → API must search "El Nido"
+  //
+  // The server's word-boundary regex (\bSiargao Island\b) would NOT match
+  // seller rate destinations like "Siargao 5D4N (Solo/Joiners)" — it only
+  // contains "Siargao", not the full phrase "Siargao Island".
+  //
+  // Fix: extract the core KNOWN destination token from the package destination
+  // before building the API query URL. Longest-key-first so "puerto princesa"
+  // is checked before "princesa" never appears alone, and "coron palawan" before "coron".
+  //
+  // If no known token is found, fall back to the original destination string.
+  // ─────────────────────────────────────────────────────────────
+  const DEST_API_TOKENS = [
+    'puerto princesa', 'el nido', 'coron palawan',
+    'siargao', 'siquijor', 'bohol', 'cebu', 'coron',
+    'boracay', 'batanes',
+  ].sort((a, b) => b.length - a.length); // longest first
+
+  const extractApiSearchTerm = (destination) => {
+    const lower = (destination || '').toLowerCase();
+    const match = DEST_API_TOKENS.find(token => lower.includes(token));
+    if (!match) return destination;
+    // Preserve original casing from the matched token
+    const DISPLAY = {
+      'puerto princesa': 'Puerto Princesa',
+      'el nido':         'El Nido',
+      'coron palawan':   'Coron Palawan',
+      'siargao':         'Siargao',
+      'siquijor':        'Siquijor',
+      'bohol':           'Bohol',
+      'cebu':            'Cebu',
+      'coron':           'Coron',
+      'boracay':         'Boracay',
+      'batanes':         'Batanes',
+    };
+    return DISPLAY[match] || destination;
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // RATE + ACTIVITY CACHES (per destination)
+  //
+  // Separates the two concerns that were previously coupled:
+  //   sellerRatesCacheRef    — raw matching rates from the API, keyed by
+  //                            destination token (e.g. "bohol").
+  //                            Re-fetched only when the destination changes.
+  //   availActCacheRef       — deduplicated activity list for the Add More
+  //                            panel, also keyed by destination token.
+  //
+  // WHY a ref and not state:
+  //   These values should NOT trigger re-renders on their own. They are
+  //   written once per destination fetch and read in subsequent renders.
+  //   State updates for the visible UI (customizedInclusions, availableActivities)
+  //   are still done with the existing useState calls.
+  //
+  // ROOT CAUSE THIS FIXES:
+  //   The old code used hasFetchedRef + currentDestinationRef to gate the
+  //   ENTIRE fetchSellerRates function (fetch + match) as one unit.
+  //   When the user viewed a second package at the SAME destination
+  //   (e.g. two different Bohol packages), hasFetchedRef was still true and
+  //   the function returned early — leaving the second package's inclusions
+  //   matched against the FIRST package's matching results.
+  //   Symptom: "2 of 4 inclusions have pricing data" never changed between
+  //   packages for the same destination.
+  //
+  // NEW ARCHITECTURE:
+  //   Fetch  → guarded by cache (only when destination changes or cache is empty)
+  //   Match  → ALWAYS runs when any pkg field changes (via useCallback deps)
+  // ─────────────────────────────────────────────────────────────
+  const sellerRatesCacheRef = useRef({});   // destKey → matchingRates[]
+  const availActCacheRef    = useRef({});   // destKey → deduplicatedRates[]
+
+  // ─────────────────────────────────────────────────────────────
   // DATA FETCHING
   // ─────────────────────────────────────────────────────────────
 
   const fetchSellerRates = useCallback(async (destination) => {
-    const destinationKey = (destination || '').toLowerCase().trim();
+    // ── Destination normalization ────────────────────────────────
+    // Strip suffixes like "Island", "Province" before sending to API.
+    // "Siargao Island" → "Siargao",  "Bohol Island" → "Bohol".
+    const apiDest    = extractApiSearchTerm(destination);
+    const destKey    = (apiDest || '').toLowerCase().trim();
 
-    if (hasFetchedRef.current && currentDestinationRef.current === destinationKey) {
-      return;
-    }
-
-    // Show inclusions immediately (no prices yet) so screen is not blank during cold start
+    // ── Show skeleton inclusions immediately ─────────────────────
+    // Inclusions display without prices so the screen isn't blank
+    // while either the API call or the matching step runs.
     const skeletonInclusions = (pkg.inclusions || []).map((inc, idx) => ({
-      id: `original-${idx}`,
-      name: inc,
-      matchedActivity: null,
+      id:                 `original-${idx}`,
+      name:               inc,
+      matchedActivity:    null,
       matchedDestination: null,
-      price: 0,
-      isOriginal: true,
-      isChecked: true,
-      source: 'package',
+      price:              0,
+      isOriginal:         true,
+      isChecked:          true,
+      source:             'package',
     }));
     setCustomizedInclusions(skeletonInclusions);
-      setIsPricingLoading(true);
-      setIsLoading(true);
-      setError('');
+    setIsPricingLoading(true);
+    setError('');
 
     try {
-           // Bohol data is now properly stored in the DB with the keyword "Bohol"
-      // (just like every other destination). We no longer need the broad-fetch hack.
-      const BROAD_FETCH_DESTINATIONS = ['siargao'];   // only Siargao still needs it (if any)
-      const destLower = (destination || '').toLowerCase();
-      const useBroadFetch = BROAD_FETCH_DESTINATIONS.some(d => destLower.includes(d));
+      let matchingRates;
 
-      const encodedDest = encodeURIComponent(destination);
-      const fetchUrl = useBroadFetch
-        ? `https://wanderwaveph.onrender.com/api/seller-rates`
-        : `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}`;
+      // ── Step 1: Fetch seller rates (cached per destination) ──────
+      // API call is only made when rates for this destination aren't
+      // already cached. When the same destination is viewed again
+      // (different package, same location), we skip the HTTP request.
+      if (sellerRatesCacheRef.current[destKey]) {
+        // Rates already cached — reuse them, skip HTTP call
+        matchingRates = sellerRatesCacheRef.current[destKey];
+        setAvailableActivities(availActCacheRef.current[destKey] || []);
+        setFilteredActivities(availActCacheRef.current[destKey] || []);
+        setIsLoading(false);
 
-      const response = await fetch(fetchUrl);
-      if (!response.ok) throw new Error('Failed to fetch seller rates');
+      } else {
+        // Fresh fetch from API
+        setIsLoading(true);
 
-      const allRates = await response.json();
+        // Siargao stores rates under sub-location names (e.g. "General Luna")
+        // that don't contain "Siargao" — broad fetch required to capture all of them.
+        // All other destinations store rates under their own name so a targeted
+        // ?destination=X query is sufficient.
+        const BROAD_FETCH_DESTINATIONS = ['siargao'];
+        const useBroadFetch = BROAD_FETCH_DESTINATIONS.some(d => destKey.includes(d));
 
-      // Client-side filter: keep only rates matching the package destination.
-      // Note: rate.destination may look like "Puerto Princesa 4D3N (Solo)" —
-      // destinationsMatch handles the keyword extraction internally.
-      const matchingRates = allRates.filter(rate =>
-        destinationsMatch(rate.destination, destination)
-      );
+        const encodedDest = encodeURIComponent(apiDest);
+        const fetchUrl = useBroadFetch
+          ? `https://wanderwaveph.onrender.com/api/seller-rates`
+          : `https://wanderwaveph.onrender.com/api/seller-rates?destination=${encodedDest}`;
 
-      // Deduplication for the "Add More" panel.
-      // Key = activity name + pax field so that the same activity at different
-      // durations/pax levels stays as separate selectable options.
-      const deduplicatedRates = Object.values(
-        matchingRates.reduce((acc, rate) => {
-          const paxKey      = (rate.pax || '').trim().toLowerCase().replace(/\s+/g, ' ');
-          const compositeKey = `${rate.activity.trim().toLowerCase()}||${paxKey}`;
-          if (!acc[compositeKey] || rate.sellingPrice < acc[compositeKey].sellingPrice) {
-            acc[compositeKey] = rate;
-          }
-          return acc;
-        }, {})
-      );
+        const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error('Failed to fetch seller rates');
 
-      setAvailableActivities(deduplicatedRates);
-      setFilteredActivities(deduplicatedRates);
+        const allRates = await response.json();
 
-            // Match each package inclusion to its best seller rate.
-      // Pass ONLY the pre-filtered matchingRates (already passed destinationsMatch).
-      // This completely eliminates any possibility of foreign-destination prices.
-      // (We no longer need the full allRates because Bohol DB is normalized.)
-            // Match each package inclusion to its best seller rate.
-      // Pass ONLY the filtered Bohol rates (no more foreign prices possible).
+        // Client-side filter: keep only rates matching the package destination.
+        // destinationsMatch handles qualifier/duration stripping internally.
+        // We pass `destination` (the original pkg field) so destinationsMatch
+        // can use the KNOWN_DESTINATIONS token extraction on both sides.
+        matchingRates = allRates.filter(rate =>
+          destinationsMatch(rate.destination, destination)
+        );
+
+        // Deduplicate for the "Add More" panel.
+        // Key = activity name + pax so different durations stay as separate options.
+        const deduplicatedRates = Object.values(
+          matchingRates.reduce((acc, rate) => {
+            const paxKey       = (rate.pax || '').trim().toLowerCase().replace(/\s+/g, ' ');
+            const compositeKey = `${rate.activity.trim().toLowerCase()}||${paxKey}`;
+            if (!acc[compositeKey] || rate.sellingPrice < acc[compositeKey].sellingPrice) {
+              acc[compositeKey] = rate;
+            }
+            return acc;
+          }, {})
+        );
+
+        // Store in cache so subsequent packages at the same destination skip the fetch
+        sellerRatesCacheRef.current[destKey] = matchingRates;
+        availActCacheRef.current[destKey]    = deduplicatedRates;
+
+        setAvailableActivities(deduplicatedRates);
+        setFilteredActivities(deduplicatedRates);
+        setIsLoading(false);
+      }
+
+      // ── Step 2: Match inclusions (ALWAYS runs for every pkg change) ──
+      // This step is intentionally NOT cached. Every time the package
+      // changes (even to another package at the same destination), the
+      // matching reruns against the cached rates so the correct prices
+      // are shown for THIS package's specific inclusions, duration, and
+      // pax qualifier.
       const { matched, matchCount } = matchInclusionsWithPrices(
         pkg.inclusions || [],
-        matchingRates,          // ← THIS IS THE FIX
+        matchingRates,
         destination,
-        pkg.tourType    || 'private',
-        pkg.minPax      || null,
-        pkg.duration    || null,
-        pkg.title       || pkg.name || ''
+        pkg.tourType || 'private',
+        pkg.minPax   || null,
+        pkg.duration || null,
+        pkg.title    || pkg.name || ''
       );
 
       setCustomizedInclusions(matched);
       setMatchedInclusionCount(matchCount);
 
-      hasFetchedRef.current        = true;
-      currentDestinationRef.current = destinationKey;
+      // Keep legacy refs in sync for resetCustomization
+      hasFetchedRef.current         = true;
+      currentDestinationRef.current = destKey;
 
     } catch (err) {
       console.error('❌ Error fetching seller rates:', err);
       setError(err.message);
       setAvailableActivities([]);
       setFilteredActivities([]);
-
-      // Skeleton inclusions already shown above; just keep them with no prices
+      // Skeleton inclusions already shown; keep them with no prices
     } finally {
       setIsLoading(false);
       setIsPricingLoading(false);
@@ -245,9 +348,19 @@ const PackageCustomizer = ({
   };
 
   const resetCustomization = () => {
+    const packageDestination = pkg.destination || pkg.location || '';
+    const apiDest  = extractApiSearchTerm(packageDestination);
+    const destKey  = (apiDest || '').toLowerCase().trim();
+
+    // Clear cached rates for this destination so the next fetchSellerRates
+    // call re-fetches from the API and re-runs matching with fresh data.
+    delete sellerRatesCacheRef.current[destKey];
+    delete availActCacheRef.current[destKey];
+
+    // Reset legacy refs so any fallback guard also re-triggers
     hasFetchedRef.current         = false;
     currentDestinationRef.current = '';
-    const packageDestination = pkg.destination || pkg.location || '';
+
     fetchSellerRates(packageDestination);
     setSearchQuery('');
     setShowSearch(false);
