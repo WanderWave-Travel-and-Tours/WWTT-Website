@@ -65,6 +65,7 @@ export const RT_PUDO_INCLUSION_KEYWORDS = [
   'flight', 'airline', 'air ticket', 'plane ticket',
   'return flight', 'return ticket',
   'pudo', 'rt airfare', 'rt flight', 'rt ticket', 'rt transfer',
+  'rt transport',   // ← Siquijor (min. of 2 pax) uses "RT Transport" as inclusion text
 ];
 
 // Exact canonical names for the "RT (PUDO)" activity in seller rates.
@@ -74,7 +75,8 @@ export const RT_PUDO_INCLUSION_KEYWORDS = [
 // (e.g. "Resort Room", "airport transfer", "portrait session").
 export const RT_PUDO_ACTIVITY_EXACT = [
   'rt (pudo)', 'rt(pudo)', 'rt pudo',
-  'rt transfer', 'rttransfer'   // ← add this for Bohol
+  'rt transfer', 'rttransfer',   // ← Bohol
+  'rt transport',                // ← Siquijor (min. of 2 pax) seller rates use this exact name
 ];
 
 
@@ -87,6 +89,8 @@ export const RT_PUDO_ACTIVITY_EXACT = [
 const _KNOWN_DESTINATIONS = [
   'puerto princesa', 'el nido', 'coron palawan', 'siargao island',
   'siargao', 'siquijor', 'bohol', 'cebu', 'coron',
+  'boracay',  // ← Island Hopping rates confirmed in seller rate list
+  'batanes',  // ← North & South / Complete Tour rates confirmed in seller rate list
   // 'bohol' is included so destinationsMatch can build a destination pool for Bohol.
   //   findRtPudoRate is never actually called for Bohol — the capability guard in
   //   inclusionMatcher.js (destinationSupports) intercepts RT inclusions for Bohol
@@ -279,10 +283,14 @@ export const isRoundtripInclusion = (text) => {
  * because any looser match risks false positives on activity names whose
  * letters happen to contain "rt" (e.g. "Resort Room", "airport transfer").
  *
+ * Internal whitespace is collapsed to a single space before comparing so
+ * that data-entry variants like "RT  (PUDO)" (double space) still match.
+ *
  * Canonical values stored in seller rates DB:
  *   "RT (PUDO)"  →  lower === 'rt (pudo)'  ✅
  *   "RT(PUDO)"   →  lower === 'rt(pudo)'   ✅
  *   "RT PUDO"    →  lower === 'rt pudo'    ✅
+ *   "RT  (PUDO)" →  collapsed → 'rt (pudo)' ✅  (Coron double-space variant)
  *
  * Will NOT match:
  *   "Resort Room"   "airport transfer"   "Accommodation"   "Hotel"
@@ -290,7 +298,8 @@ export const isRoundtripInclusion = (text) => {
  */
 export const isRtPudoActivity = (text) => {
   if (!text) return false;
-  const lower = text.toLowerCase().trim();
+  // Normalize: lowercase, trim outer whitespace, collapse internal whitespace to single space
+  const lower = text.toLowerCase().trim().replace(/\s+/g, ' ');
   return RT_PUDO_ACTIVITY_EXACT.some(kw => lower === kw);
 };
 
