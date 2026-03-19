@@ -49,6 +49,12 @@ const PageView = mongoose.model('PageView', pageViewSchema);
 // ===================================================================
 const bookingCountSchema = new mongoose.Schema(
   {
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Booking',
+      default: null,
+      index: true,
+    },
     packageId: {
       type: String,
       default: null,

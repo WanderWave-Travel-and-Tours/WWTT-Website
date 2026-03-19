@@ -780,43 +780,7 @@ const BookingDetails = ({ booking, onUpdate }) => {
                 </div>
             )}
 
-            {/* Package Inclusions Section */}
-            {booking.customizedInclusions && booking.customizedInclusions.length > 0 && (
-                <div className="bd-card bd-inclusions-card">
-                    <div className="bd-inclusions-header">
-                        <h3 className="bd-card-title">Package Inclusions</h3>
-                        {booking.isCustomized && (
-                            <span className="bd-customized-badge">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                </svg>
-                                Customized
-                            </span>
-                        )}
-                    </div>
-                    
-                    <div className="bd-inclusions-grid">
-                        {booking.customizedInclusions
-                            .filter(inc => inc.isChecked)
-                            .map((inclusion, index) => (
-                                <div key={index} className="bd-inclusion-item">
-                                    <svg className="bd-check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <polyline points="20 6 9 17 4 12"/>
-                                    </svg>
-                                    <div>
-                                        <span className="bd-inclusion-name">{inclusion.name}</span>
-                                        {inclusion.price > 0 && !inclusion.isOriginal && (
-                                            <span className="bd-inclusion-price">
-                                                +₱{inclusion.price.toLocaleString()}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                    </div>
-                </div>
-            )}
+            {/* Package Inclusions Section — handled by BookingCustomizer below */}
 
             {/* Customize Your Booking - Inline Component */}
             <BookingCustomizer 

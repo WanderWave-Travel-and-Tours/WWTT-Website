@@ -235,19 +235,25 @@ const UserDashboard = ({ user, onLogout }) => {
     const handleBookingUpdate = async (updatedBooking) => {
         console.log('📝 Booking updated:', updatedBooking);
         
-        // Update the selected inquiry with new booking data
-        setSelectedInquiry(updatedBooking);
+    // ✅ FIXED: Preserve inquiryType and populated packageId.
+    // Without this, ApplicationDetails loses the BOOKING type after save,
+    // and BookingCustomizer loses destination data (returns null).
+    const mergedBooking = {
+        ...updatedBooking,
+        inquiryType: 'BOOKING',
+        serviceName: updatedBooking.packageName,
+        estimatedPrice: updatedBooking.totalAmount,
+        // If backend didn't populate packageId (returns raw ObjectId), fall back
+        // to the populated one already in selectedInquiry so destination stays intact.
+        packageId: (updatedBooking.packageId && typeof updatedBooking.packageId === 'object')
+            ? updatedBooking.packageId
+            : selectedInquiry?.packageId,
+    };
+    setSelectedInquiry(mergedBooking);
         
         // Also update in the inquiries list
         setInquiries(prev => prev.map(inq => 
-            inq._id === updatedBooking._id ? {
-                ...updatedBooking,
-                serviceName: updatedBooking.packageName,
-                inquiryType: 'BOOKING',
-                status: updatedBooking.status ? updatedBooking.status.toUpperCase() : 'PENDING',
-                estimatedPrice: updatedBooking.totalAmount,
-                message: updatedBooking.message || `Booking for ${updatedBooking.packageName}`
-            } : inq
+            inq._id === updatedBooking._id ? mergedBooking : inq
         ));
     };
 

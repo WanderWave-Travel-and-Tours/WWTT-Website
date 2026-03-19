@@ -48,6 +48,11 @@ const BookingCustomizer = ({
   const currentDestinationRef = useRef('');
   const currentPackageNameRef = useRef('');
   const hasFetchedPackageRef = useRef(false); // ✅ Track package fetch
+  // ✅ Track which booking ID has already been initialized so that
+  //    toggling a checkbox (which triggers a parent re-render and a new
+  //    booking object reference) does NOT re-run the init effect and
+  //    overwrite the user's in-progress changes.
+  const initializedBookingIdRef = useRef(null);
 
   // ─────────────────────────────────────────────────────────────
   // RATE + ACTIVITY CACHES (per destination)
@@ -313,6 +318,16 @@ const BookingCustomizer = ({
     }
 
     const initializeInclusions = async () => {
+      // ── Guard: skip re-initialization if this booking was already loaded ──
+      // Without this, every parent re-render (e.g. after toggling a checkbox
+      // which calls onUpdate → parent setState) creates a new booking object
+      // reference, fires this effect again, and resets the user's changes.
+      if (initializedBookingIdRef.current === booking._id) {
+        console.log('⏭️ Already initialized for booking:', booking._id, '— skipping');
+        return;
+      }
+      initializedBookingIdRef.current = booking._id;
+
       console.log('📦 Initializing BookingCustomizer for booking:', booking._id);
       console.log('   - customizedInclusions:', booking.customizedInclusions?.length || 0);
       console.log('   - originalInclusions:', booking.originalInclusions?.length || 0);
@@ -597,7 +612,12 @@ const BookingCustomizer = ({
       console.log('✅ Customization saved:', updatedBooking);
       
       if (onUpdate) {
-        onUpdate(updatedBooking.booking);
+        // ✅ Preserve the original populated packageId so the destination check
+        // (isDestinationSupported) continues to work. The /customization endpoint
+        // now populates packageId, but we merge anyway as a safety net.
+        const bookingData = updatedBooking.booking;
+        const isPopulated = bookingData?.packageId && typeof bookingData.packageId === 'object' && bookingData.packageId.destination;
+        onUpdate(isPopulated ? bookingData : { ...bookingData, packageId: booking.packageId });
       }
       setHasUnsavedChanges(false);
       
@@ -709,6 +729,8 @@ const BookingCustomizer = ({
     setCustomizedInclusions(resetInclusions);
     setMatchedInclusionCount(0);
     setHasUnsavedChanges(false);
+    // Allow re-initialization after reset so prices reload correctly
+    initializedBookingIdRef.current = null;
     
     await handleSaveCustomization();
   };
@@ -790,7 +812,12 @@ const BookingCustomizer = ({
       });
       if (!response.ok) throw new Error('Failed to save booking details');
       const data = await response.json();
-      if (onUpdate) onUpdate(data.booking || data);
+      if (onUpdate) {
+        // ✅ Preserve the original populated packageId as a safety net
+        const bookingData = data.booking || data;
+        const isPopulated = bookingData?.packageId && typeof bookingData.packageId === 'object' && bookingData.packageId.destination;
+        onUpdate(isPopulated ? bookingData : { ...bookingData, packageId: booking.packageId });
+      }
       setIsEditingBookingDetails(false);
     } catch (err) {
       console.error('❌ Error saving booking details:', err);
@@ -804,10 +831,12 @@ const BookingCustomizer = ({
   // DERIVED VALUES FOR RENDER
   // ─────────────────────────────────────────────────────────────
 
+  // Use packageId.destination first (most reliable), then fall back to
+  // booking.destination and packageName for UI display.
   const packageDestination =
-    booking?.packageName              ||
-    booking?.packageId?.destination   || 
+    booking?.packageId?.destination   ||
     booking?.destination              ||
+    booking?.packageName              ||
     'Unknown Destination';
 
   // ─────────────────────────────────────────────────────────────
@@ -815,8 +844,13 @@ const BookingCustomizer = ({
   //
   // BookingCustomizer is only available for Philippine domestic
   // destinations that have seller rates in the system.
-  // If the booking's destination does not match any of these,
-  // the component renders nothing so the UI stays clean.
+  //
+  // FIX: Check ALL available destination-related fields at once
+  // by joining them into one search string. This covers cases where:
+  //   - packageId is null (no populate) -> falls back to packageName
+  //   - destination stored in packageName title (e.g. "BOHOL 4D3N")
+  //   - destination stored in packageId.destination (e.g. "Bohol")
+  //   - any combination of the above
   // ─────────────────────────────────────────────────────────────
   const SUPPORTED_DESTINATIONS = [
     'siargao',
@@ -828,12 +862,17 @@ const BookingCustomizer = ({
     'puerto princesa',
   ];
 
-  const isDestinationSupported = SUPPORTED_DESTINATIONS.some(dest =>
-    packageDestination.toLowerCase().includes(dest)
-  );
+  // Build a single lowercase string from ALL possible destination sources
+  const destinationSearchString = [
+    booking?.packageId?.destination,
+    booking?.destination,
+    booking?.packageName,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  const isDestinationSupported = destinationSearchString.length > 0 &&
+    SUPPORTED_DESTINATIONS.some(dest => destinationSearchString.includes(dest));
 
   if (!isDestinationSupported) return null;
-
 
   // ─────────────────────────────────────────────────────────────
   // RENDER

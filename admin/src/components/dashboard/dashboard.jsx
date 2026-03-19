@@ -30,6 +30,7 @@ const Dashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedSection, setSelectedSection] = useState('all');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isResetRateModalOpen, setIsResetRateModalOpen] = useState(false);
 
   const [stats, setStats] = useState({
     totalBookings: 0, confirmedBookings: 0, pendingBookings: 0, cancelledBookings: 0,
@@ -227,25 +228,26 @@ const Dashboard = () => {
             dailyViewsData,
           });
 
-          // Booking counts come from the same /stats response
-          // Exclude archived bookings from recentBookingCounts so they don't
-          // inflate the numerator of the View-to-Book rate calculation.
-          // Cross-reference against the already-fetched `bookings` array:
-          // any booking with isArchive === 'Yes' is excluded.
-          const activeBookingIds = new Set(
-            bookings.filter(b => b.isArchive !== 'Yes').map(b => String(b._id))
-          );
-          const filteredRecentBookingCounts = (pvStats.recentBookingCounts || []).filter(c => {
-            const id = String(c.bookingId || c._id || '');
-            if (id && activeBookingIds.size > 0) return activeBookingIds.has(id);
-            // Fallback: check isArchive field directly on the record
-            return c.isArchive !== 'Yes';
-          });
+          // ── View-to-Book Rate numerator: total bookings where isArchive = "No" ──
+          // Directly filter the already-fetched bookings array.
+          // Archived bookings (isArchive = "Yes") are excluded so the rate
+          // goes down automatically whenever a booking is archived.
+          const nonArchivedBookings = bookings.filter(b => b.isArchive !== 'Yes');
+
+          const recentBookingCountsFromBookings = nonArchivedBookings.map(b => ({
+            bookingId:   String(b._id),
+            packageId:   b.packageId ? String(b.packageId) : null,
+            packageName: b.packageName || null,
+            paxCount:    (b.pax?.adult || 0) + (b.pax?.children || 0) + (b.pax?.infants || 0) || 1,
+            paymentType: b.paymentType || 'full',
+            totalAmount: b.totalAmount || 0,
+            createdAt:   b.createdAt,
+          }));
 
           setBookingCountStats({
-            totalBookingCounts:  pvStats.totalBookingCounts  || 0,
-            topBookedPackages:   pvStats.topBookedPackages   || [],
-            recentBookingCounts: filteredRecentBookingCounts,
+            totalBookingCounts:  recentBookingCountsFromBookings.length,
+            topBookedPackages:   pvStats.topBookedPackages || [],
+            recentBookingCounts: recentBookingCountsFromBookings,
           });
         }
       } catch (pvErr) {
@@ -630,6 +632,31 @@ const Dashboard = () => {
     return results;
   }, [customRange, rawBookings, rawInquiries]);
 
+  const handleResetViewToBookRate = async () => {
+    try {
+      const res = await fetch("https://wanderwaveph.onrender.com/api/page-views/booking-counts/reset", {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || "View-to-Book Rate has been reset.", "Reset Successful");
+        // Refresh stats so the rate card updates immediately
+        setBookingCountStats({
+          totalBookingCounts: 0,
+          topBookedPackages: [],
+          recentBookingCounts: [],
+        });
+      } else {
+        toast.error(data.message || "Failed to reset.", "Reset Failed");
+      }
+    } catch (err) {
+      console.error("❌ Reset View-to-Book Rate error:", err);
+      toast.error("Something went wrong. Please try again.", "Reset Failed");
+    } finally {
+      setIsResetRateModalOpen(false);
+    }
+  };
+
   const handleExportPDF = async () => {
     try {
         console.log('Starting PDF export...');
@@ -770,6 +797,7 @@ const Dashboard = () => {
               pageViewStats={pageViewStats}
               bookingCountStats={bookingCountStats}
               allPackages={allPackages}
+              onResetViewToBookRate={() => setIsResetRateModalOpen(true)}
             />
           )}
 
@@ -807,6 +835,15 @@ const Dashboard = () => {
         onConfirm={handleExportPDF}
         onCancel={() => setIsExportModalOpen(false)}
         type="primary"
+      />
+
+      <CustomConfirmModal
+        isOpen={isResetRateModalOpen}
+        title="Reset View-to-Book Rate"
+        message="This will permanently clear all booking count records. Page view stats will not be affected. Are you sure?"
+        onConfirm={handleResetViewToBookRate}
+        onCancel={() => setIsResetRateModalOpen(false)}
+        type="danger"
       />
     </div>
   );

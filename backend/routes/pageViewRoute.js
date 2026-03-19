@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { PageView, BookingCount } = require('../models/PageView');
+const Booking = require('../models/booking');
 
 // ===================================================================
 // POST /api/page-views
@@ -114,12 +115,22 @@ router.get('/stats', async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
     ]);
 
-    // ── Booking count totals ─────────────────────────────────────────
-    const totalBookingCounts = await BookingCount.countDocuments();
+    // ── Booking count totals (exclude archived bookings) ────────────
+    // Get IDs of all archived bookings so we can filter them out
+    const archivedBookingIds = await Booking.distinct('_id', { isArchive: 'Yes' });
 
-    // ── Top booked packages ──────────────────────────────────────────
+    const totalBookingCounts = await BookingCount.countDocuments({
+      bookingId: { $nin: archivedBookingIds },
+    });
+
+    // ── Top booked packages (exclude archived) ───────────────────────
     const topBookedPackages = await BookingCount.aggregate([
-      { $match: { packageName: { $ne: null } } },
+      {
+        $match: {
+          packageName: { $ne: null },
+          bookingId: { $nin: archivedBookingIds },
+        },
+      },
       {
         $group: {
           _id: '$packageName',
@@ -141,11 +152,13 @@ router.get('/stats', async (req, res) => {
       },
     ]);
 
-    // ── Recent 5000 booking counts (dashboard date-range filtering) ──
-    const recentBookingCounts = await BookingCount.find()
+    // ── Recent 5000 booking counts (exclude archived) ────────────────
+    const recentBookingCounts = await BookingCount.find({
+      bookingId: { $nin: archivedBookingIds },
+    })
       .sort({ createdAt: -1 })
       .limit(5000)
-      .select('packageName packageId paxCount paymentType totalAmount createdAt')
+      .select('packageName packageId paxCount paymentType totalAmount createdAt bookingId')
       .lean();
 
     return res.status(200).json({
@@ -213,9 +226,10 @@ router.get('/', async (req, res) => {
 // ===================================================================
 router.post('/booking-count', async (req, res) => {
   try {
-    const { packageId, packageName, paxCount, paymentType, totalAmount } = req.body;
+    const { packageId, packageName, paxCount, paymentType, totalAmount, bookingId } = req.body;
 
     const count = new BookingCount({
+      bookingId:   bookingId   ? bookingId : null,
       packageId:   packageId   || null,
       packageName: packageName || null,
       paxCount:    paxCount    || 1,
@@ -236,6 +250,32 @@ router.post('/booking-count', async (req, res) => {
     return res.status(500).json({
       status: 'error',
       message: 'Failed to record booking count',
+      error: err.message,
+    });
+  }
+});
+
+// ===================================================================
+// DELETE /api/page-views/booking-counts/reset
+// Resets the View-to-Book Rate by wiping ALL BookingCount records.
+// PageView records are NOT affected — page view stats stay intact.
+// ===================================================================
+router.delete('/booking-counts/reset', async (req, res) => {
+  try {
+    const result = await BookingCount.deleteMany({});
+
+    console.log(`🔄 View-to-Book Rate reset: ${result.deletedCount} booking count(s) deleted`);
+
+    return res.status(200).json({
+      status: 'ok',
+      message: `View-to-Book Rate reset. ${result.deletedCount} booking count record(s) cleared.`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    console.error('❌ Error resetting booking counts:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to reset booking counts',
       error: err.message,
     });
   }
@@ -265,40 +305,6 @@ router.get('/booking-counts', async (req, res) => {
     return res.status(500).json({
       status: 'error',
       message: 'Failed to fetch booking counts',
-      error: err.message,
-    });
-  }
-});
-
-// ===================================================================
-// DELETE /api/page-views/booking-counts/reset
-// Wipes ALL BookingCount records (use after clearing the bookings DB).
-// Also optionally wipes PageView records if ?includeViews=true is passed.
-// ===================================================================
-router.delete('/booking-counts/reset', async (req, res) => {
-  try {
-    const { includeViews } = req.query;
-
-    const bookingResult = await BookingCount.deleteMany({});
-    console.log(`🗑️ BookingCount reset: ${bookingResult.deletedCount} records deleted`);
-
-    let viewsResult = null;
-    if (includeViews === 'true') {
-      viewsResult = await PageView.deleteMany({});
-      console.log(`🗑️ PageView reset: ${viewsResult.deletedCount} records deleted`);
-    }
-
-    return res.status(200).json({
-      status: 'ok',
-      message: 'BookingCount records cleared successfully.',
-      bookingCountsDeleted: bookingResult.deletedCount,
-      pageViewsDeleted: viewsResult ? viewsResult.deletedCount : 0,
-    });
-  } catch (err) {
-    console.error('❌ Error resetting booking counts:', err);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Failed to reset booking counts',
       error: err.message,
     });
   }
