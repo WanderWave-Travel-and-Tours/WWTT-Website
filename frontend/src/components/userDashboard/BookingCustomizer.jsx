@@ -4,6 +4,10 @@ import {
   Package, RotateCcw, AlertCircle, DollarSign
 } from 'lucide-react';
 import './BookingCustomizer.css';
+import {
+  destinationsMatch,
+  matchInclusionsWithPrices,
+} from './inclusionMatcher';
 
 const BookingCustomizer = ({ 
   booking,      // ✅ booking object from parent
@@ -14,470 +18,223 @@ const BookingCustomizer = ({
   const [availableActivities, setAvailableActivities] = useState([]);
   const [filteredActivities, setFilteredActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPricingLoading, setIsPricingLoading] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [error, setError] = useState('');
   const [matchedInclusionCount, setMatchedInclusionCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [fetchedPackageData, setFetchedPackageData] = useState(null); // ✅ NEW: Store fetched package
-  
+  const [fetchedPackageData, setFetchedPackageData] = useState(null); // ✅ Store fetched package
+
   const hasFetchedRef = useRef(false);
   const currentDestinationRef = useRef('');
   const currentPackageNameRef = useRef('');
-  const hasFetchedPackageRef = useRef(false); // ✅ NEW: Track package fetch
-  
+  const hasFetchedPackageRef = useRef(false); // ✅ Track package fetch
+
+  // ─────────────────────────────────────────────────────────────
+  // RATE + ACTIVITY CACHES (per destination)
+  //
+  // Mirrors the same caching architecture as PackageCustomizer:
+  //   sellerRatesCacheRef  — raw matching rates from the API, keyed by
+  //                          destination token (e.g. "bohol").
+  //                          Re-fetched only when the destination changes.
+  //   availActCacheRef     — deduplicated activity list for the Add More
+  //                          panel, also keyed by destination token.
+  //
+  // WHY a ref and not state:
+  //   These values should NOT trigger re-renders on their own. They are
+  //   written once per destination fetch and read in subsequent renders.
+  // ─────────────────────────────────────────────────────────────
+  const sellerRatesCacheRef = useRef({});   // destKey → matchingRates[]
+  const availActCacheRef    = useRef({});   // destKey → deduplicatedRates[]
+
   // ✅ API Configuration
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com';
 
-  /**
-   * 🔧 ENHANCED SYNONYM MAPPING
-   */
-  const SYNONYM_MAP = {
-    'flight': ['airfare', 'air', 'plane', 'aviation', 'ticket', 'roundtrip', 'round trip', 'rt'],
-    'airfare': ['flight', 'air', 'plane', 'ticket', 'roundtrip', 'round trip'],
-    'roundtrip': ['round trip', 'return', 'twoway', 'two way', 'rt', 'flight', 'airfare', 'air'],
-    'round': ['roundtrip', 'return'],
-    'trip': ['journey', 'travel'],
-    'oneway': ['one way', 'single', 'ow'],
-    'accommodation': ['hotel', 'lodging', 'stay', 'room', 'inn'],
-    'hotel': ['accommodation', 'lodging', 'inn', 'resort'],
-    'resort': ['hotel', 'accommodation', 'inn'],
-    'room': ['accommodation', 'hotel', 'lodging'],
-    'transport': ['transfer', 'transportation', 'shuttle', 'vehicle', 'ride'],
-    'transfer': ['transport', 'shuttle', 'pickup', 'dropoff'],
-    'van': ['vehicle', 'shuttle', 'transport'],
-    'tricycle': ['trike', 'vehicle'],
-    'boat': ['ferry', 'vessel', 'ship'],
-    'meal': ['food', 'dining', 'breakfast', 'lunch', 'dinner'],
-    'breakfast': ['meal', 'food', 'morning'],
-    'lunch': ['meal', 'food', 'midday', 'luncheon'],
-    'dinner': ['meal', 'food', 'evening', 'supper'],
-    'tour': ['trip', 'excursion', 'visit', 'sightseeing', 'experience'],
-    'island': ['isle', 'islet'],
-    'hopping': ['hop', 'jumping', 'tour'],
-    'snorkel': ['snorkeling', 'diving', 'underwater', 'swim'],
-    'dive': ['diving', 'snorkel', 'underwater'],
-    'trek': ['trekking', 'hike', 'hiking', 'walking'],
-    'climb': ['climbing', 'ascent', 'hike'],
-    'beach': ['shore', 'coast', 'seaside'],
-    'coastal': ['coast', 'beach', 'shore', 'seaside'],
-    'guide': ['escort', 'leader', 'companion'],
-    'entrance': ['admission', 'entry', 'fee', 'ticket'],
-    'museum': ['gallery', 'exhibit'],
+  // ─────────────────────────────────────────────────────────────
+  // DESTINATION → API SEARCH TERM NORMALIZER
+  //
+  // Strips suffixes like "Island", "Province" before sending to API:
+  //   "Siargao Island"    → API must search "Siargao"
+  //   "Bohol Island"      → API must search "Bohol"
+  //   "El Nido, Palawan"  → API must search "El Nido"
+  //
+  // The server's word-boundary regex would NOT match seller rate
+  // destinations like "Siargao 5D4N (Solo/Joiners)" — it only contains
+  // "Siargao", not the full phrase "Siargao Island".
+  //
+  // Longest-key-first so "coron palawan" is checked before "coron".
+  // If no known token is found, falls back to the original string.
+  // ─────────────────────────────────────────────────────────────
+  const DEST_API_TOKENS = [
+    'puerto princesa', 'el nido', 'coron palawan',
+    'siargao', 'siquijor', 'bohol', 'cebu', 'coron',
+    'boracay', 'batanes',
+  ].sort((a, b) => b.length - a.length); // longest first
+
+  const extractApiSearchTerm = (destination) => {
+    const lower = (destination || '').toLowerCase();
+    const match = DEST_API_TOKENS.find(token => lower.includes(token));
+    if (!match) return destination;
+    const DISPLAY = {
+      'puerto princesa': 'Puerto Princesa',
+      'el nido':         'El Nido',
+      'coron palawan':   'Coron Palawan',
+      'siargao':         'Siargao',
+      'siquijor':        'Siquijor',
+      'bohol':           'Bohol',
+      'cebu':            'Cebu',
+      'coron':           'Coron',
+      'boracay':         'Boracay',
+      'batanes':         'Batanes',
+    };
+    return DISPLAY[match] || destination;
   };
 
-  const CROSS_DESTINATION_KEYWORDS = [
-    'roundtrip', 'round trip', 'rt', 'flight', 'airfare', 'air ticket',
-    'return flight', 'return ticket', 'plane ticket'
-  ];
-
-  const getSynonyms = (word) => {
-    const lower = word.toLowerCase();
-    const syns = SYNONYM_MAP[lower] || [];
-    return [lower, ...syns];
-  };
-
-  const isCrossDestinationActivity = (activityText) => {
-    const normalized = activityText.toLowerCase();
-    return CROSS_DESTINATION_KEYWORDS.some(keyword => 
-      normalized.includes(keyword)
-    );
-  };
-
-  // ✅ Extract main destination name only (remove package details)
+  // ✅ Extract main destination name for UI display only (not for API querying)
   const extractMainDestination = (destination) => {
     if (!destination) return '';
-    
     let clean = destination.split('(')[0].trim();
-    
     clean = clean
       .replace(/\d+D\d+N/gi, '')
       .replace(/\d+\s*(day|days|night|nights)/gi, '')
       .replace(/package/gi, '')
       .replace(/tour/gi, '')
       .trim();
-    
     return clean;
   };
 
-  // ✅ NEW: Extract package duration (e.g., "5D4N", "3D2N")
-  const extractPackageDuration = (packageName) => {
-    if (!packageName) return null;
-    
-    // Match patterns like 5D4N, 3D2N, etc.
-    const durationMatch = packageName.match(/(\d+)D(\d+)N/i);
-    
-    if (durationMatch) {
-      return {
-        days: parseInt(durationMatch[1]),
-        nights: parseInt(durationMatch[2]),
-        format: durationMatch[0].toUpperCase() // e.g., "5D4N"
-      };
-    }
-    
-    // Alternative: Match "5 days 4 nights" format
-    const altMatch = packageName.match(/(\d+)\s*(?:day|days)\s*(\d+)\s*(?:night|nights)/i);
-    if (altMatch) {
-      return {
-        days: parseInt(altMatch[1]),
-        nights: parseInt(altMatch[2]),
-        format: `${altMatch[1]}D${altMatch[2]}N`
-      };
-    }
-    
-    return null;
-  };
+  // ─────────────────────────────────────────────────────────────
+  // FETCH MATCHING RATES — shared internal helper
+  //
+  // Returns the raw matching seller rates for a destination, either
+  // from cache (if a previous fetch already ran for this destination)
+  // or from a fresh API call.
+  //
+  // Used by both:
+  //   fetchSellerRates   — populates the "Add More" panel
+  //   initializeInclusions — prices the current inclusions list
+  //
+  // WHY a separate helper:
+  //   The two callers above need the same rate data but do different
+  //   things with it. Centralising the fetch+cache logic here means
+  //   we never make two API calls for the same destination within one
+  //   booking session.
+  // ─────────────────────────────────────────────────────────────
+  const fetchMatchingRates = useCallback(async (destination) => {
+    const apiDest = extractApiSearchTerm(destination);
+    const destKey = (apiDest || '').toLowerCase().trim();
 
-  // ✅ FIXED: Check if activity matches package duration (checks both activity text AND destination field)
-  const activityMatchesPackageDuration = (activityText, destinationText, packageDuration) => {
-    if (!packageDuration) return true; // No duration filtering if not found
-    
-    // Helper function to check duration in text
-    const checkDurationInText = (text) => {
-      if (!text) return false;
-      
-      // Check if text contains the exact duration format (e.g., "5D4N")
-      const durationMatch = text.match(/(\d+)D(\d+)N/i);
-      
-      if (durationMatch) {
-        const days = parseInt(durationMatch[1]);
-        const nights = parseInt(durationMatch[2]);
-        
-        // Exact match
-        if (days === packageDuration.days && nights === packageDuration.nights) {
-          return true;
-        }
-      }
-      
-      // Also check alternative formats (e.g., "5 days 4 nights")
-      const altMatch = text.match(/(\d+)\s*(?:day|days)\s*(\d+)\s*(?:night|nights)/i);
-      if (altMatch) {
-        const days = parseInt(altMatch[1]);
-        const nights = parseInt(altMatch[2]);
-        
-        if (days === packageDuration.days && nights === packageDuration.nights) {
-          return true;
-        }
-      }
-      
-      return false;
-    };
-    
-    // Check activity text first
-    if (checkDurationInText(activityText)) {
-      return true;
-    }
-    
-    // ✅ CRITICAL: Check destination field (this is where duration is stored in your data)
-    // e.g., "Puerto Princesa 5D4N (Solo)", "Puerto Princesa 3D2N (min. of 2 pax)"
-    if (checkDurationInText(destinationText)) {
-      return true;
-    }
-    
-    return false;
-  };
-
-  // ✅ NEW: Extract package keywords for matching
-  const extractPackageKeywords = (packageName) => {
-    if (!packageName) return [];
-    
-    const normalized = packageName
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    
-    const noiseWords = ['the', 'and', 'or', 'with', 'for', 'in', 'on', 'at', 'to', 'from', 'a', 'an', 'package', 'tour', 'day', 'days', 'night', 'nights'];
-    
-    const words = normalized.split(' ')
-      .filter(w => w.length >= 3 && !noiseWords.includes(w));
-    
-    console.log(`📦 Package keywords extracted from "${packageName}":`, words);
-    return words;
-  };
-
-  // ✅ NEW: Check if activity matches package-specific keywords
-  const activityMatchesPackage = (activityText, packageKeywords) => {
-    if (!packageKeywords || packageKeywords.length === 0) {
-      return true;
+    // Return from cache if available and non-empty
+    if (sellerRatesCacheRef.current[destKey]?.length > 0) {
+      return sellerRatesCacheRef.current[destKey];
     }
 
-    const activityNormalized = activityText
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .replace(/\s+/g, ' ');
+    // Siargao stores rates under sub-location names (e.g. "General Luna")
+    // that don't contain "Siargao" — broad fetch required to capture all of them.
+    const BROAD_FETCH_DESTINATIONS = ['siargao'];
+    const useBroadFetch = BROAD_FETCH_DESTINATIONS.some(d => destKey.includes(d));
 
-    const matchCount = packageKeywords.filter(keyword => 
-      activityNormalized.includes(keyword)
-    ).length;
+    const encodedDest = encodeURIComponent(apiDest);
+    const fetchUrl = useBroadFetch
+      ? `${API_BASE_URL}/api/seller-rates?status=active`
+      : `${API_BASE_URL}/api/seller-rates?destination=${encodedDest}&status=active`;
 
-    return matchCount > 0;
-  };
+    const response = await fetch(fetchUrl);
+    if (!response.ok) throw new Error(`HTTP ${response.status}: Failed to fetch seller rates`);
 
-  // ✅ STRICT destination matching
-  const destinationsMatchStrict = (rateDestination, packageDestination) => {
-    if (!rateDestination || !packageDestination) return false;
-    
-    const rateMain = extractMainDestination(rateDestination).toLowerCase();
-    const packageMain = extractMainDestination(packageDestination).toLowerCase();
-    
-    if (rateMain === packageMain) {
-      return true;
-    }
-    
-    if (rateMain.includes(packageMain) && packageMain.length >= 5) {
-      return true;
-    }
-    
-    if (packageMain.includes(rateMain) && rateMain.length >= 5) {
-      return true;
-    }
-    
-    const rateWords = rateMain.split(/\s+/).filter(w => w.length >= 4);
-    const packageWords = packageMain.split(/\s+/).filter(w => w.length >= 4);
-    
-    if (rateWords.length > 0 && packageWords.length > 0) {
-      const rateFirst = rateWords[0];
-      const packageFirst = packageWords[0];
-      
-      if (rateFirst === packageFirst) {
-        return true;
-      }
-    }
-    
-    return false;
-  };
+    const allRates = await response.json();
 
-  const normalizeActivity = (activity) => {
-    if (!activity) return '';
-    
-    let normalized = activity
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    
-    normalized = normalized
-      .replace(/roundtrip/g, 'round trip')
-      .replace(/twoway/g, 'two way')
-      .replace(/oneway/g, 'one way');
-    
-    return normalized;
-  };
+    // Client-side filter: keep only active rates matching the destination.
+    // The status === 'active' check is a defensive double-check alongside the
+    // server-side ?status=active param — ensures inactive rates never reach the matcher.
+    const matchingRates = (Array.isArray(allRates) ? allRates : []).filter(rate =>
+      rate.status === 'active' &&
+      destinationsMatch(rate.destination, destination)
+    );
 
-  const extractKeywords = (text) => {
-    const normalized = normalizeActivity(text);
-    const words = normalized.split(' ');
-    
-    const noiseWords = ['the', 'and', 'or', 'with', 'for', 'in', 'on', 'at', 'to', 'from', 'a', 'an'];
-    
-    const keywords = words
-      .filter(w => w.length >= 3 && !noiseWords.includes(w))
-      .map(word => ({
-        word,
-        length: word.length,
-        synonyms: getSynonyms(word)
-      }));
-    
-    return keywords;
-  };
-
-  const calculateSimilarity = (text1, text2) => {
-    const keywords1 = extractKeywords(text1);
-    const keywords2 = extractKeywords(text2);
-    
-    if (keywords1.length === 0 || keywords2.length === 0) {
-      return 0;
-    }
-    
-    let matchScore = 0;
-    let totalPossibleScore = 0;
-    
-    const text1Lower = text1.toLowerCase();
-    const text2Lower = text2.toLowerCase();
-    
-    const flightKeywords = ['roundtrip', 'round trip', 'flight', 'airfare', 'air ticket', 'rt'];
-    const hasFlightTerm1 = flightKeywords.some(k => text1Lower.includes(k));
-    const hasFlightTerm2 = flightKeywords.some(k => text2Lower.includes(k));
-    
-    if (hasFlightTerm1 && hasFlightTerm2) {
-      matchScore += 10;
-      totalPossibleScore += 10;
-    }
-    
-    keywords1.forEach(kw1 => {
-      const weight = Math.min(kw1.length / 4, 3);
-      totalPossibleScore += weight * 3;
-      
-      keywords2.forEach(kw2 => {
-        if (kw1.word === kw2.word) {
-          matchScore += weight * 3;
-        }
-      });
-    });
-    
-    keywords1.forEach(kw1 => {
-      const weight = Math.min(kw1.length / 4, 3);
-      
-      keywords2.forEach(kw2 => {
-        const areSynonyms = kw1.synonyms.some(syn => kw2.synonyms.includes(syn));
-        if (areSynonyms && kw1.word !== kw2.word) {
-          matchScore += weight * 2;
-        }
-      });
-    });
-    
-    keywords1.forEach(kw1 => {
-      const weight = Math.min(kw1.length / 4, 3);
-      
-      keywords2.forEach(kw2 => {
-        if (kw1.length >= 5 && kw2.length >= 5) {
-          if (kw1.word.includes(kw2.word) || kw2.word.includes(kw1.word)) {
-            const shorter = kw1.word.length < kw2.word.length ? kw1.word : kw2.word;
-            const longer = kw1.word.length >= kw2.word.length ? kw1.word : kw2.word;
-            
-            if (shorter.length / longer.length >= 0.7) {
-              matchScore += weight * 1;
-            }
-          }
-        }
-      });
-    });
-    
-    const similarity = totalPossibleScore > 0 ? (matchScore / totalPossibleScore) : 0;
-    return similarity;
-  };
-
-  const activitiesMatch = (inclusion, activity) => {
-    const norm1 = normalizeActivity(inclusion);
-    const norm2 = normalizeActivity(activity);
-    
-    if (norm1 === norm2) {
-      return true;
-    }
-    
-    const isCrossDest1 = isCrossDestinationActivity(inclusion);
-    const isCrossDest2 = isCrossDestinationActivity(activity);
-    
-    if (isCrossDest1 || isCrossDest2) {
-      const flightKeywords = ['roundtrip', 'round trip', 'flight', 'airfare', 'air', 'ticket', 'rt'];
-      const hasFlightTerm1 = flightKeywords.some(k => norm1.includes(k));
-      const hasFlightTerm2 = flightKeywords.some(k => norm2.includes(k));
-      
-      if (hasFlightTerm1 && hasFlightTerm2) {
-        return true;
-      }
-    }
-    
-    const similarity = calculateSimilarity(norm1, norm2);
-    const threshold = (isCrossDest1 || isCrossDest2) ? 0.50 : 0.60;
-    
-    if (similarity >= threshold) {
-      return true;
-    }
-    
-    const keywords1 = extractKeywords(norm1);
-    const keywords2 = extractKeywords(norm2);
-    
-    const categories = {
-      flight: ['flight', 'airfare', 'air', 'plane', 'ticket', 'roundtrip', 'round', 'trip', 'return'],
-      accommodation: ['accommodation', 'hotel', 'lodging', 'room', 'resort', 'inn'],
-      transport: ['transport', 'transfer', 'van', 'vehicle', 'shuttle', 'tricycle', 'boat'],
-      meal: ['meal', 'breakfast', 'lunch', 'dinner', 'food'],
-      tour: ['tour', 'hopping', 'island', 'snorkel', 'trek', 'visit', 'coastal', 'beach']
-    };
-    
-    const getCategories = (keywords) => {
-      const cats = new Set();
-      keywords.forEach(kw => {
-        Object.entries(categories).forEach(([catName, catWords]) => {
-          if (catWords.some(cw => kw.synonyms.includes(cw) || kw.word === cw)) {
-            cats.add(catName);
-          }
-        });
-      });
-      return cats;
-    };
-    
-    const cats1 = getCategories(keywords1);
-    const cats2 = getCategories(keywords2);
-    
-    if (cats1.size > 0 && cats2.size > 0) {
-      const hasCommonCategory = [...cats1].some(cat => cats2.has(cat));
-      if (!hasCommonCategory) {
-        return false;
-      }
-    }
-    
-    return false;
-  };
-
-  const matchInclusionsWithPrices = useCallback((inclusions, sellerRates, destination) => {
-    let matchCount = 0;
-    
-    const matchedInclusions = inclusions.map((inclusion, idx) => {
-      const isCrossDest = isCrossDestinationActivity(inclusion);
-      
-      let destinationMatchedRates;
-      
-      if (isCrossDest) {
-        destinationMatchedRates = sellerRates.filter(rate => {
-          const activityMatches = isCrossDestinationActivity(rate.activity);
-          if (activityMatches) {
-            return destinationsMatchStrict(rate.destination, destination);
-          }
-          return false;
-        });
-      } else {
-        destinationMatchedRates = sellerRates.filter(rate => 
-          destinationsMatchStrict(rate.destination, destination)
-        );
-      }
-      
-      const matchedRate = destinationMatchedRates.find(rate => {
-        const actMatch = activitiesMatch(inclusion, rate.activity);
-        return actMatch;
-      });
-      
-      if (matchedRate) {
-        matchCount++;
-        
-        return {
-          id: `original-${idx}`,
-          name: inclusion,
-          matchedActivity: matchedRate.activity,
-          matchedDestination: matchedRate.destination,
-          price: matchedRate.sellingPrice || 0,
-          supplierRate: matchedRate.supplierRate,
-          markup: matchedRate.markup,
-          markupType: matchedRate.markupType,
-          supplier: matchedRate.supplierName,
-          destination: matchedRate.destination,
-          pax: matchedRate.pax,
-          notes: matchedRate.notes,
-          isOriginal: true,
-          isChecked: true,
-          source: 'seller-rate',
-          sellerRateId: matchedRate._id
-        };
-      } else {
-        return {
-          id: `original-${idx}`,
-          name: inclusion,
-          matchedActivity: null,
-          matchedDestination: null,
-          price: 0,
-          isOriginal: true,
-          isChecked: true,
-          source: 'package'
-        };
-      }
-    });
-    
-    setMatchedInclusionCount(matchCount);
-    return matchedInclusions;
+    // Store in cache so subsequent calls at the same destination skip the fetch
+    sellerRatesCacheRef.current[destKey] = matchingRates;
+    return matchingRates;
   }, []);
 
-  // ✅ NEW: Fetch package data by title when packageId is null
+
+  // ─────────────────────────────────────────────────────────────
+  // FETCH SELLER RATES — populates the "Add More" panel
+  //
+  // Uses the shared fetchMatchingRates helper (so the HTTP call is
+  // only made once per destination, even if both the inclusion-init
+  // effect and this function need rates for the same location).
+  //
+  // After getting raw rates, deduplicates them (activity + pax key)
+  // for a cleaner "Add More" list and caches the result in
+  // availActCacheRef so subsequent bookings at the same destination
+  // instantly populate the panel without another fetch.
+  // ─────────────────────────────────────────────────────────────
+  const fetchSellerRates = useCallback(async (destination) => {
+    if (!destination || destination === 'Unknown' || destination === 'Unknown Destination') {
+      console.log('⚠️ Invalid destination, skipping fetch');
+      return;
+    }
+
+    const apiDest = extractApiSearchTerm(destination);
+    const destKey = (apiDest || '').toLowerCase().trim();
+
+    // If "Add More" panel already has data for this destination, skip entirely
+    if (availActCacheRef.current[destKey]?.length > 0) {
+      setAvailableActivities(availActCacheRef.current[destKey]);
+      setFilteredActivities(availActCacheRef.current[destKey]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const matchingRates = await fetchMatchingRates(destination);
+
+      // Deduplicate for the "Add More" panel.
+      // Key = activity name + pax so different durations stay as separate options.
+      const deduplicatedRates = Object.values(
+        matchingRates.reduce((acc, rate) => {
+          const paxKey       = (rate.pax || '').trim().toLowerCase().replace(/\s+/g, ' ');
+          const compositeKey = `${rate.activity.trim().toLowerCase()}||${paxKey}`;
+          if (!acc[compositeKey] || rate.sellingPrice < acc[compositeKey].sellingPrice) {
+            acc[compositeKey] = rate;
+          }
+          return acc;
+        }, {})
+      );
+
+      // Cache the deduplicated list so this destination's panel loads instantly next time
+      availActCacheRef.current[destKey] = deduplicatedRates;
+
+      setAvailableActivities(deduplicatedRates);
+      setFilteredActivities(deduplicatedRates);
+
+      // Keep legacy refs in sync for the destination-change guard
+      hasFetchedRef.current         = true;
+      currentDestinationRef.current = destKey;
+
+    } catch (err) {
+      console.error('❌ Error fetching seller rates:', err);
+      setError(`Failed to load activities: ${err.message}`);
+      setAvailableActivities([]);
+      setFilteredActivities([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchMatchingRates]);
+
+
+  // ─────────────────────────────────────────────────────────────
+  // FETCH PACKAGE BY TITLE — PRIORITY 4 FALLBACK
+  //
+  // When booking.packageId is null and no inclusions are stored on the
+  // booking itself, we attempt to find the package in the /api/packages/all
+  // endpoint by matching the title. This lets us get inclusion strings
+  // that can then be priced via the seller-rates matcher.
+  // ─────────────────────────────────────────────────────────────
   const fetchPackageByTitle = async (packageTitle) => {
     if (!packageTitle || hasFetchedPackageRef.current) {
       return null;
@@ -490,7 +247,6 @@ const BookingCustomizer = ({
       const data = await response.json();
 
       if (data.status === 'ok' && data.data) {
-        // Find package with matching title
         const matchedPackage = data.data.find(pkg => 
           pkg.title.toLowerCase() === packageTitle.toLowerCase()
         );
@@ -513,96 +269,24 @@ const BookingCustomizer = ({
     }
   };
 
-  // ✅ ENHANCED: Fetch seller rates with package-specific filtering
-  const fetchSellerRates = async (destination, packageName) => {
-    if (!destination || destination === 'Unknown' || destination === 'Unknown Destination') {
-      console.log('⚠️ Invalid destination, skipping fetch');
-      return;
-    }
-    
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const mainDestination = extractMainDestination(destination);
-      console.log(`🔍 Fetching seller rates for: "${destination}"`);
-      console.log(`📍 Extracted main destination: "${mainDestination}"`);
-      console.log(`📦 Package name: "${packageName}"`);
-      
-      const response = await fetch(`${API_BASE_URL}/api/seller-rates`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log(`✅ Fetched ${data.length} total seller rates`);
-      
-      if (!Array.isArray(data)) {
-        throw new Error('Invalid response format');
-      }
-      
-      const destinationFiltered = data.filter(rate => {
-        const matches = destinationsMatchStrict(rate.destination, destination);
-        return matches;
-      });
-      
-      console.log(`📊 After destination filter: ${destinationFiltered.length} activities`);
-      
-      const packageKeywords = extractPackageKeywords(packageName);
-      const packageDuration = extractPackageDuration(packageName); // ✅ NEW: Extract duration
-      
-      console.log(`⏱️ Package duration:`, packageDuration);
-      
-      let finalFiltered = destinationFiltered;
-      
-      // ✅ FIXED: Filter by duration first if available (checks both activity and destination field)
-      if (packageDuration) {
-        finalFiltered = destinationFiltered.filter(rate => {
-          // Always include cross-destination activities (flights, etc)
-          if (isCrossDestinationActivity(rate.activity)) {
-            return true;
-          }
-          
-          // ✅ CRITICAL: Pass both activity and destination to check duration
-          // Duration is stored in the destination field (e.g., "Puerto Princesa 5D4N (Solo)")
-          return activityMatchesPackageDuration(rate.activity, rate.destination, packageDuration);
-        });
-        
-        console.log(`📊 After duration filter (${packageDuration.format}): ${finalFiltered.length} activities`);
-      }
-      
-      // Then apply package keyword filtering
-      if (packageKeywords.length > 0) {
-        finalFiltered = finalFiltered.filter(rate => {
-          if (isCrossDestinationActivity(rate.activity)) {
-            return true;
-          }
-          
-          const matches = activityMatchesPackage(rate.activity, packageKeywords);
-          return matches;
-        });
 
-        console.log(`📊 After package keyword filter: ${finalFiltered.length} activities`);
-      }
-      
-      const uniqueDestinations = [...new Set(finalFiltered.map(r => r.destination))];
-      console.log(`📍 Unique destinations matched:`, uniqueDestinations);
-      
-      setAvailableActivities(finalFiltered);
-      setFilteredActivities(finalFiltered);
-      
-    } catch (error) {
-      console.error('❌ Error fetching seller rates:', error);
-      setError(`Failed to load activities: ${error.message}`);
-      setAvailableActivities([]);
-      setFilteredActivities([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ─────────────────────────────────────────────────────────────
+  // EFFECTS
+  // ─────────────────────────────────────────────────────────────
 
   // ✅ CRITICAL FIX: Initialize inclusions with package fetch fallback
+  //
+  // Initialization priority order:
+  //   1. booking.customizedInclusions  — already-saved user customizations
+  //   2. booking.packageId.inclusions  — inclusions from populated package ref
+  //   3. booking.originalInclusions    — snapshot inclusions stored on booking
+  //   4. Fetch package by title        — last-resort API lookup
+  //   5. Empty state                   — nothing found anywhere
+  //
+  // For priorities 2, 3, 4: we attempt to price the inclusions by fetching
+  // seller rates (via the shared fetchMatchingRates helper) and running
+  // matchInclusionsWithPrices from inclusionMatcher.js. If the fetch fails,
+  // we fall back gracefully to un-priced (price = 0) inclusions.
   useEffect(() => {
     if (!booking) {
       console.log('⚠️ No booking provided to BookingCustomizer');
@@ -615,8 +299,72 @@ const BookingCustomizer = ({
       console.log('   - originalInclusions:', booking.originalInclusions?.length || 0);
       console.log('   - packageId:', booking.packageId || 'null');
       console.log('   - packageName:', booking.packageName || 'null');
-      
+
+      // ── Helper: extract matching params from the booking object ──────────
+      const getMatchingParams = (pkg = null) => ({
+        tourType:    booking.tourType     || booking.packageId?.tourType     || pkg?.tourType    || 'private',
+        minPax:      booking.minPax       || booking.packageId?.minPax       || pkg?.minPax      || null,
+        pkgDuration: booking.packageId?.duration || booking.duration         || pkg?.duration    || null,
+        pkgTitle:    booking.packageName  || booking.packageId?.title        || pkg?.title       || '',
+      });
+
+      // ── Helper: resolve destination for rate matching ────────────────────
+      const getMatchingDestination = (pkg = null) =>
+        (pkg?.destination)            ||
+        booking.packageId?.destination ||
+        booking.destination            ||
+        booking.packageName            ||
+        'Unknown';
+
+      // ── Helper: build skeleton inclusions (shown while prices load) ──────
+      const buildSkeleton = (inclusions) =>
+        inclusions.map((inc, idx) => ({
+          id:                 `original-${idx}`,
+          name:               inc,
+          matchedActivity:    null,
+          matchedDestination: null,
+          price:              0,
+          isOriginal:         true,
+          isChecked:          true,
+          source:             'package',
+        }));
+
+      // ── Helper: fetch rates + match inclusions with prices ───────────────
+      const matchWithPrices = async (inclusionStrings, destination, pkg = null) => {
+        const { tourType, minPax, pkgDuration, pkgTitle } = getMatchingParams(pkg);
+
+        setIsPricingLoading(true);
+
+        try {
+          const rates = await fetchMatchingRates(destination);
+          const activeRates = rates.filter(rate =>
+            rate.status === 'active' && rate.isArchive === 'No'
+          );
+
+          const { matched, matchCount } = matchInclusionsWithPrices(
+            inclusionStrings,
+            activeRates.length > 0 ? activeRates : rates,
+            destination,
+            tourType,
+            minPax,
+            pkgDuration,
+            pkgTitle,
+          );
+
+          setMatchedInclusionCount(matchCount);
+          return matched;
+        } catch (err) {
+          console.error('⚠️ Error matching inclusions with prices:', err);
+          return null; // signals caller to use skeleton fallback
+        } finally {
+          setIsPricingLoading(false);
+        }
+      };
+
+
+      // ══════════════════════════════════════════════════════════
       // PRIORITY 1: Existing customized inclusions
+      // ══════════════════════════════════════════════════════════
       if (booking.customizedInclusions && 
           Array.isArray(booking.customizedInclusions) && 
           booking.customizedInclusions.length > 0) {
@@ -624,22 +372,22 @@ const BookingCustomizer = ({
         console.log('✅ Found customizedInclusions:', booking.customizedInclusions.length, 'items');
         
         const clonedInclusions = booking.customizedInclusions.map((inc, index) => ({
-          id: inc.id || `inc-${index}-${Date.now()}`,
-          name: inc.name || '',
-          price: typeof inc.price === 'number' ? inc.price : (parseFloat(inc.price) || 0),
-          supplierRate: typeof inc.supplierRate === 'number' ? inc.supplierRate : (parseFloat(inc.supplierRate) || 0),
-          markup: typeof inc.markup === 'number' ? inc.markup : (parseFloat(inc.markup) || 0),
-          markupType: inc.markupType || 'fixed',
-          supplier: inc.supplier || 'N/A',
-          destination: inc.destination || '',
-          pax: inc.pax || '',
-          notes: inc.notes || '',
-          isOriginal: inc.isOriginal === true || inc.isOriginal === 'true',
-          isChecked: inc.isChecked === false || inc.isChecked === 'false' ? false : true,
-          source: inc.source || 'package',
-          sellerRateId: inc.sellerRateId || null,
-          matchedActivity: inc.matchedActivity || null,
-          matchedDestination: inc.matchedDestination || null
+          id:                 inc.id || `inc-${index}-${Date.now()}`,
+          name:               inc.name || '',
+          price:              typeof inc.price === 'number' ? inc.price : (parseFloat(inc.price) || 0),
+          supplierRate:       typeof inc.supplierRate === 'number' ? inc.supplierRate : (parseFloat(inc.supplierRate) || 0),
+          markup:             typeof inc.markup === 'number' ? inc.markup : (parseFloat(inc.markup) || 0),
+          markupType:         inc.markupType || 'fixed',
+          supplier:           inc.supplier || 'N/A',
+          destination:        inc.destination || '',
+          pax:                inc.pax || '',
+          notes:              inc.notes || '',
+          isOriginal:         inc.isOriginal === true || inc.isOriginal === 'true',
+          isChecked:          inc.isChecked === false || inc.isChecked === 'false' ? false : true,
+          source:             inc.source || 'package',
+          sellerRateId:       inc.sellerRateId || null,
+          matchedActivity:    inc.matchedActivity || null,
+          matchedDestination: inc.matchedDestination || null,
         }));
         
         setCustomizedInclusions(clonedInclusions);
@@ -649,224 +397,125 @@ const BookingCustomizer = ({
         return;
       } 
       
-      // PRIORITY 2: packageId.inclusions
+      // ══════════════════════════════════════════════════════════
+      // PRIORITY 2: booking.packageId.inclusions
+      // ══════════════════════════════════════════════════════════
       if (booking.packageId && 
           booking.packageId.inclusions && 
           Array.isArray(booking.packageId.inclusions) && 
           booking.packageId.inclusions.length > 0) {
         
         console.log('📋 Found packageId.inclusions:', booking.packageId.inclusions.length, 'items');
+
+        // Show skeleton immediately while prices load
+        setCustomizedInclusions(buildSkeleton(booking.packageId.inclusions));
+
+        const destination = getMatchingDestination();
+        const matched = await matchWithPrices(booking.packageId.inclusions, destination);
         
-        // ✅ Try to fetch seller rates and match prices
-        try {
-          // ✅ FIXED: Use destination from packageId, not packageName
-          const packageDestination = booking.packageId?.destination || 
-                                    booking.destination ||
-                                    booking.packageName ||
-                                    'Unknown';
-          
-          console.log('🎯 Using destination for matching:', packageDestination);
-          
-          const response = await fetch(`${API_BASE_URL}/api/seller-rates`);
-          const ratesData = await response.json();
-          
-          // ✅ FIXED: API returns direct array, not object with status/data
-          if (Array.isArray(ratesData)) {
-            const activeRates = ratesData.filter(rate => 
-              rate.status === 'active' && rate.isArchive === 'No'
-            );
-            
-            console.log(`🔍 Matching packageId.inclusions with ${activeRates.length} seller rates...`);
-            const matchedInclusions = matchInclusionsWithPrices(
-              booking.packageId.inclusions,
-              activeRates,
-              packageDestination
-            );
-            
-            setCustomizedInclusions(matchedInclusions);
-            console.log(`✅ Initialized ${matchedInclusions.length} inclusions from packageId with prices`);
-            return;
-          }
-        } catch (error) {
-          console.error('⚠️ Error fetching seller rates for packageId.inclusions:', error);
+        if (matched) {
+          setCustomizedInclusions(matched);
+          console.log(`✅ Initialized ${matched.length} inclusions from packageId with prices`);
+        } else {
+          // Keep skeleton (already set above)
+          setMatchedInclusionCount(0);
+          console.log(`✅ Initialized ${booking.packageId.inclusions.length} inclusions from packageId (no prices)`);
         }
-        
-        // Fallback: Initialize without prices if fetch fails
-        const packageInclusions = booking.packageId.inclusions.map((inc, idx) => ({
-          id: `original-${idx}`,
-          name: inc,
-          price: 0,
-          isOriginal: true,
-          isChecked: true,
-          source: 'package'
-        }));
-        
-        setCustomizedInclusions(packageInclusions);
-        setMatchedInclusionCount(0);
-        console.log(`✅ Initialized ${packageInclusions.length} inclusions from packageId (no prices)`);
         return;
       }
       
-      // PRIORITY 3: originalInclusions
+      // ══════════════════════════════════════════════════════════
+      // PRIORITY 3: booking.originalInclusions
+      // ══════════════════════════════════════════════════════════
       if (booking.originalInclusions && 
           Array.isArray(booking.originalInclusions) && 
           booking.originalInclusions.length > 0) {
         
         console.log('📋 Found originalInclusions:', booking.originalInclusions.length, 'items');
-        
-        // ✅ Try to fetch seller rates and match prices
-        try {
-          // ✅ FIXED: Use destination from packageId, not packageName
-          const packageDestination = booking.packageId?.destination || 
-                                    booking.destination ||
-                                    booking.packageName ||
-                                    'Unknown';
-          
-          console.log('🎯 Using destination for matching:', packageDestination);
-          
-          const response = await fetch(`${API_BASE_URL}/api/seller-rates`);
-          const ratesData = await response.json();
-          
-          // ✅ FIXED: API returns direct array, not object with status/data
-          if (Array.isArray(ratesData)) {
-            const activeRates = ratesData.filter(rate => 
-              rate.status === 'active' && rate.isArchive === 'No'
-            );
-            
-            console.log(`🔍 Matching originalInclusions with ${activeRates.length} seller rates...`);
-            const matchedInclusions = matchInclusionsWithPrices(
-              booking.originalInclusions,
-              activeRates,
-              packageDestination
-            );
-            
-            setCustomizedInclusions(matchedInclusions);
-            console.log(`✅ Initialized ${matchedInclusions.length} inclusions from originalInclusions with prices`);
-            return;
-          }
-        } catch (error) {
-          console.error('⚠️ Error fetching seller rates for originalInclusions:', error);
+
+        // Show skeleton immediately while prices load
+        setCustomizedInclusions(buildSkeleton(booking.originalInclusions));
+
+        const destination = getMatchingDestination();
+        const matched = await matchWithPrices(booking.originalInclusions, destination);
+
+        if (matched) {
+          setCustomizedInclusions(matched);
+          console.log(`✅ Initialized ${matched.length} inclusions from originalInclusions with prices`);
+        } else {
+          setMatchedInclusionCount(0);
+          console.log(`✅ Initialized ${booking.originalInclusions.length} inclusions from originalInclusions (no prices)`);
         }
-        
-        // Fallback: Initialize without prices if fetch fails
-        const fallbackInclusions = booking.originalInclusions.map((inc, idx) => ({
-          id: `original-${idx}`,
-          name: inc,
-          price: 0,
-          isOriginal: true,
-          isChecked: true,
-          source: 'package'
-        }));
-        
-        setCustomizedInclusions(fallbackInclusions);
-        setMatchedInclusionCount(0);
-        console.log(`✅ Initialized ${fallbackInclusions.length} inclusions from originalInclusions (no prices)`);
         return;
       }
       
-      // ✅ PRIORITY 4: FETCH PACKAGE BY TITLE (NEW FALLBACK!)
+      // ══════════════════════════════════════════════════════════
+      // PRIORITY 4: FETCH PACKAGE BY TITLE (last-resort fallback)
+      // ══════════════════════════════════════════════════════════
       if (booking.packageName) {
         console.log('🔍 Attempting to fetch package by title:', booking.packageName);
         const fetchedPackage = await fetchPackageByTitle(booking.packageName);
         
         if (fetchedPackage && fetchedPackage.inclusions && fetchedPackage.inclusions.length > 0) {
           console.log('✅ Using inclusions from fetched package');
-          
-          // ✅ Try to match with seller rates for accurate pricing
-          try {
-            // ✅ FIXED: Use destination from fetched package first
-            const packageDestination = fetchedPackage.destination ||
-                                      booking.packageId?.destination || 
-                                      booking.destination ||
-                                      'Unknown';
-            
-            console.log('🎯 Using destination for matching:', packageDestination);
-            
-            const response = await fetch(`${API_BASE_URL}/api/seller-rates`);
-            const ratesData = await response.json();
-            
-            // ✅ FIXED: API returns direct array, not object with status/data
-            if (Array.isArray(ratesData)) {
-              const activeRates = ratesData.filter(rate => 
-                rate.status === 'active' && rate.isArchive === 'No'
-              );
-              
-              console.log(`🔍 Matching fetched package inclusions with ${activeRates.length} seller rates...`);
-              const matchedInclusions = matchInclusionsWithPrices(
-                fetchedPackage.inclusions,
-                activeRates,
-                packageDestination
-              );
-              
-              setCustomizedInclusions(matchedInclusions);
-              console.log(`✅ Initialized ${matchedInclusions.length} inclusions from fetched package with prices`);
-              return;
-            }
-          } catch (error) {
-            console.error('⚠️ Error fetching seller rates for fetched package:', error);
+
+          // Show skeleton immediately while prices load
+          setCustomizedInclusions(buildSkeleton(fetchedPackage.inclusions));
+
+          const destination = getMatchingDestination(fetchedPackage);
+          const matched = await matchWithPrices(fetchedPackage.inclusions, destination, fetchedPackage);
+
+          if (matched) {
+            setCustomizedInclusions(matched);
+            console.log(`✅ Initialized ${matched.length} inclusions from fetched package with prices`);
+          } else {
+            setMatchedInclusionCount(0);
+            console.log(`✅ Initialized ${fetchedPackage.inclusions.length} inclusions from fetched package (no prices)`);
           }
-          
-          // Fallback: Initialize without prices if fetch fails
-          const packageInclusions = fetchedPackage.inclusions.map((inc, idx) => ({
-            id: `original-${idx}`,
-            name: inc,
-            price: 0,
-            isOriginal: true,
-            isChecked: true,
-            source: 'package'
-          }));
-          
-          setCustomizedInclusions(packageInclusions);
-          setMatchedInclusionCount(0);
-          console.log(`✅ Initialized ${packageInclusions.length} inclusions from fetched package (no prices)`);
           return;
         }
       }
       
+      // ══════════════════════════════════════════════════════════
       // PRIORITY 5: EMPTY STATE
+      // ══════════════════════════════════════════════════════════
       console.error('❌ No inclusions found in any source!');
       setCustomizedInclusions([]);
       setMatchedInclusionCount(0);
     };
 
     initializeInclusions();
-  }, [booking?._id]);
+  }, [booking?._id, fetchMatchingRates]);
 
-  // ✅ Fetch seller rates when booking changes
+  // ✅ Fetch seller rates for "Add More" panel when booking changes
   useEffect(() => {
     if (!booking) return;
     
-    const packageDestination = booking.packageName ||
-                              booking.packageId?.destination || 
-                              booking.destination ||
-                              'Unknown Destination';
+    const packageDestination =
+      booking.packageId?.destination ||
+      booking.destination            ||
+      booking.packageName            ||
+      'Unknown Destination';
     
     const packageName = booking.packageName || '';
                               
     console.log('🎯 Booking destination:', packageDestination);
     console.log('🎯 Package name:', packageName);
     
+    // Skip if same destination + package (guard against spurious re-renders)
     if (currentDestinationRef.current === packageDestination && 
         currentPackageNameRef.current === packageName) {
       console.log('⏭️ Same destination and package, skipping fetch');
       return;
     }
     
-    if (hasFetchedRef.current && 
-        currentDestinationRef.current === packageDestination &&
-        currentPackageNameRef.current === packageName) {
-      console.log('⏭️ Already fetched for this destination and package');
-      return;
-    }
-    
     currentDestinationRef.current = packageDestination;
     currentPackageNameRef.current = packageName;
-    hasFetchedRef.current = true;
     
-    fetchSellerRates(packageDestination, packageName);
-  }, [booking]);
+    fetchSellerRates(packageDestination);
+  }, [booking, fetchSellerRates]);
 
-  // ✅ Filter activities based on search query
+  // Filter "Add More" list whenever the search query changes
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredActivities(availableActivities);
@@ -874,16 +523,20 @@ const BookingCustomizer = ({
     }
     
     const query = searchQuery.toLowerCase();
-    const filtered = availableActivities.filter(activity => 
-      activity.activity.toLowerCase().includes(query) ||
-      activity.supplierName?.toLowerCase().includes(query) ||
-      activity.destination?.toLowerCase().includes(query)
+    setFilteredActivities(
+      availableActivities.filter(activity =>
+        activity.activity.toLowerCase().includes(query) ||
+        activity.supplierName?.toLowerCase().includes(query) ||
+        activity.destination?.toLowerCase().includes(query)
+      )
     );
-    
-    setFilteredActivities(filtered);
   }, [searchQuery, availableActivities]);
 
-  // ✅ Save customization to backend
+
+  // ─────────────────────────────────────────────────────────────
+  // SAVE CUSTOMIZATION TO BACKEND
+  // ─────────────────────────────────────────────────────────────
+
   const handleSaveCustomization = async () => {
     if (!booking || !booking._id) {
       console.error('❌ No booking ID available');
@@ -895,35 +548,31 @@ const BookingCustomizer = ({
     setError('');
     
     try {
-      const checkedInclusions = customizedInclusions.filter(inc => inc.isChecked);
-      const addedInclusions = checkedInclusions.filter(inc => !inc.isOriginal);
-      const removedOriginal = customizedInclusions.filter(inc => inc.isOriginal && !inc.isChecked);
+      const checkedInclusions  = customizedInclusions.filter(inc => inc.isChecked);
+      const addedInclusions    = checkedInclusions.filter(inc => !inc.isOriginal);
+      const removedOriginal    = customizedInclusions.filter(inc => inc.isOriginal && !inc.isChecked);
       
-      const additionalPrice = addedInclusions.reduce((sum, inc) => sum + (inc.price || 0), 0);
-      const deductions = removedOriginal.reduce((sum, inc) => sum + (inc.price || 0), 0);
+      const additionalPrice    = addedInclusions.reduce((sum, inc) => sum + (inc.price || 0), 0);
+      const deductions         = removedOriginal.reduce((sum, inc) => sum + (inc.price || 0), 0);
       const netAdditionalPrice = additionalPrice - deductions;
       
       console.log('💰 Customization pricing:', {
         additionalPrice,
         deductions,
         netAdditionalPrice,
-        checkedCount: checkedInclusions.length
+        checkedCount: checkedInclusions.length,
       });
       
       const response = await fetch(`${API_BASE_URL}/api/bookings/${booking._id}/customization`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customizedInclusions: customizedInclusions,
-          customizationAdditionalPrice: netAdditionalPrice
-        })
+          customizedInclusions:          customizedInclusions,
+          customizationAdditionalPrice:  netAdditionalPrice,
+        }),
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to save customization');
-      }
+      if (!response.ok) throw new Error('Failed to save customization');
       
       const updatedBooking = await response.json();
       console.log('✅ Customization saved:', updatedBooking);
@@ -940,13 +589,17 @@ const BookingCustomizer = ({
     }
   };
 
+
+  // ─────────────────────────────────────────────────────────────
+  // INCLUSION ACTIONS
+  // ─────────────────────────────────────────────────────────────
+
   const toggleInclusion = (id) => {
     setCustomizedInclusions(prev => {
       const inclusionToToggle = prev.find(inc => inc.id === id);
       
-      if (inclusionToToggle && inclusionToToggle.isChecked) {
+      if (inclusionToToggle?.isChecked) {
         const checkedCount = prev.filter(inc => inc.isChecked).length;
-        
         if (checkedCount === 1) {
           setError('⚠️ At least one inclusion must remain selected. You cannot remove all inclusions from your package.');
           setTimeout(() => setError(''), 4000);
@@ -955,35 +608,33 @@ const BookingCustomizer = ({
       }
       
       setError('');
-      
-      return prev.map(inc => 
-        inc.id === id ? { ...inc, isChecked: !inc.isChecked } : inc
-      );
+      return prev.map(inc => inc.id === id ? { ...inc, isChecked: !inc.isChecked } : inc);
     });
   };
 
   const addInclusion = (rate) => {
-    const newInclusion = {
-      id: `added-${Date.now()}`,
-      name: rate.activity,
-      matchedActivity: rate.activity,
-      matchedDestination: rate.destination,
-      price: rate.sellingPrice,
-      supplierRate: rate.supplierRate,
-      markup: rate.markup,
-      markupType: rate.markupType,
-      supplier: rate.supplierName,
-      destination: rate.destination,
-      pax: rate.pax,
-      inclusions: rate.inclusions,
-      notes: rate.notes,
-      isOriginal: false,
-      isChecked: true,
-      source: 'seller-rate',
-      sellerRateId: rate._id
-    };
-    
-    setCustomizedInclusions(prev => [...prev, newInclusion]);
+    setCustomizedInclusions(prev => [
+      ...prev,
+      {
+        id:                 `added-${Date.now()}`,
+        name:               rate.activity,
+        matchedActivity:    rate.activity,
+        matchedDestination: rate.destination,
+        price:              rate.sellingPrice,
+        supplierRate:       rate.supplierRate,
+        markup:             rate.markup,
+        markupType:         rate.markupType,
+        supplier:           rate.supplierName,
+        destination:        rate.destination,
+        pax:                rate.pax,
+        inclusions:         rate.inclusions,
+        notes:              rate.notes,
+        isOriginal:         false,
+        isChecked:          true,
+        source:             'seller-rate',
+        sellerRateId:       rate._id,
+      },
+    ]);
   };
 
   const removeInclusion = (id) => {
@@ -994,11 +645,29 @@ const BookingCustomizer = ({
     console.log('🔄 Resetting customization to original');
     
     if (!booking) return;
+
+    // Clear rate cache for this destination so the next fetchSellerRates
+    // call re-fetches from the API and re-runs matching with fresh data.
+    const packageDestination =
+      booking.packageId?.destination ||
+      booking.destination            ||
+      booking.packageName            ||
+      'Unknown Destination';
+    const apiDest = extractApiSearchTerm(packageDestination);
+    const destKey = (apiDest || '').toLowerCase().trim();
+    delete sellerRatesCacheRef.current[destKey];
+    delete availActCacheRef.current[destKey];
+
+    // Reset legacy refs so the useEffect guard re-triggers
+    hasFetchedRef.current         = false;
+    currentDestinationRef.current = '';
+    currentPackageNameRef.current = '';
     
-    const originalInclusions = booking.originalInclusions || 
-                             booking.packageId?.inclusions ||
-                             fetchedPackageData?.inclusions ||
-                             [];
+    const originalInclusions = 
+      booking.originalInclusions || 
+      booking.packageId?.inclusions ||
+      fetchedPackageData?.inclusions ||
+      [];
     
     if (originalInclusions.length === 0) {
       console.warn('⚠️ No original inclusions found');
@@ -1006,12 +675,12 @@ const BookingCustomizer = ({
     }
     
     const resetInclusions = originalInclusions.map((inc, idx) => ({
-      id: `original-${idx}`,
-      name: inc,
-      price: 0,
+      id:        `original-${idx}`,
+      name:      inc,
+      price:     0,
       isOriginal: true,
-      isChecked: true,
-      source: 'package'
+      isChecked:  true,
+      source:     'package',
     }));
     
     setCustomizedInclusions(resetInclusions);
@@ -1020,18 +689,58 @@ const BookingCustomizer = ({
     await handleSaveCustomization();
   };
 
+
+  // ─────────────────────────────────────────────────────────────
+  // FORMATTING
+  // ─────────────────────────────────────────────────────────────
+
   const formatPrice = (price) => {
     if (!price || isNaN(price)) return '₱0';
     return `₱${Number(price).toLocaleString('en-PH', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     })}`;
   };
 
-  const packageDestination = booking?.packageName ||
-                            booking?.packageId?.destination || 
-                            booking?.destination ||
-                            'Unknown Destination';
+
+  // ─────────────────────────────────────────────────────────────
+  // DERIVED VALUES FOR RENDER
+  // ─────────────────────────────────────────────────────────────
+
+  const packageDestination =
+    booking?.packageName              ||
+    booking?.packageId?.destination   || 
+    booking?.destination              ||
+    'Unknown Destination';
+
+  // ─────────────────────────────────────────────────────────────
+  // SUPPORTED DESTINATIONS GUARD
+  //
+  // BookingCustomizer is only available for Philippine domestic
+  // destinations that have seller rates in the system.
+  // If the booking's destination does not match any of these,
+  // the component renders nothing so the UI stays clean.
+  // ─────────────────────────────────────────────────────────────
+  const SUPPORTED_DESTINATIONS = [
+    'siargao',
+    'siquijor',
+    'bohol',
+    'cebu',
+    'el nido',
+    'coron',
+    'puerto princesa',
+  ];
+
+  const isDestinationSupported = SUPPORTED_DESTINATIONS.some(dest =>
+    packageDestination.toLowerCase().includes(dest)
+  );
+
+  if (!isDestinationSupported) return null;
+
+
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
 
   return (
     <div className="pc-container">
@@ -1056,7 +765,7 @@ const BookingCustomizer = ({
             border: '1px solid #93c5fd',
             borderRadius: '8px',
             fontSize: '0.85rem',
-            color: '#1e40af'
+            color: '#1e40af',
           }}>
             ✅ {matchedInclusionCount} of {customizedInclusions.length} inclusions have pricing data
           </div>
@@ -1074,26 +783,18 @@ const BookingCustomizer = ({
           background: error.includes('⚠️') ? '#fef3c7' : '#fee2e2',
           border: `2px solid ${error.includes('⚠️') ? '#f59e0b' : '#ef4444'}`,
           borderRadius: '12px',
-          color: error.includes('⚠️') ? '#92400e' : '#991b1b'
+          color: error.includes('⚠️') ? '#92400e' : '#991b1b',
         }}>
           <AlertCircle size={20} style={{ 
             marginTop: '2px',
             flexShrink: 0,
-            color: error.includes('⚠️') ? '#f59e0b' : '#ef4444'
+            color: error.includes('⚠️') ? '#f59e0b' : '#ef4444',
           }} />
           <div style={{ flex: 1 }}>
-            <strong style={{ 
-              display: 'block',
-              marginBottom: '4px',
-              fontSize: '0.95rem'
-            }}>
+            <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.95rem' }}>
               {error.includes('⚠️') ? 'Validation Warning' : 'Error'}
             </strong>
-            <p style={{ 
-              margin: 0,
-              fontSize: '0.9rem',
-              lineHeight: '1.5'
-            }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
               {error}
             </p>
           </div>
@@ -1103,7 +804,19 @@ const BookingCustomizer = ({
       {/* Current Inclusions */}
       <div className="pc-section">
         <div className="pc-section-header">
-          <h3 className="pc-section-title">Package Inclusions</h3>
+          <h3 className="pc-section-title">
+            Package Inclusions
+            {isPricingLoading && (
+              <span style={{ marginLeft: '8px', fontSize: '0.75rem', fontWeight: '400', color: '#f97316' }}>
+                <span style={{
+                  display: 'inline-block', width: '8px', height: '8px',
+                  borderRadius: '50%', background: '#f97316',
+                  animation: 'pc-pulse 1.2s ease-in-out infinite', marginRight: '4px',
+                }} />
+                Fetching prices…
+              </span>
+            )}
+          </h3>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button 
               className="pc-save-btn" 
@@ -1122,18 +835,17 @@ const BookingCustomizer = ({
                 alignItems: 'center',
                 gap: '6px',
                 opacity: isSaving ? 0.6 : 1,
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
               }}
             >
               {isSaving ? (
                 <>
                   <div style={{ 
-                    width: '14px', 
-                    height: '14px',
+                    width: '14px', height: '14px',
                     border: '2px solid rgba(255,255,255,0.3)',
                     borderTopColor: 'white',
                     borderRadius: '50%',
-                    animation: 'spin 0.6s linear infinite'
+                    animation: 'spin 0.6s linear infinite',
                   }}></div>
                   Saving...
                 </>
@@ -1159,7 +871,7 @@ const BookingCustomizer = ({
         {customizedInclusions.length > 0 ? (
           <div className="pc-inclusions-list">
             {customizedInclusions.map((inclusion) => {
-              const checkedCount = customizedInclusions.filter(inc => inc.isChecked).length;
+              const checkedCount    = customizedInclusions.filter(inc => inc.isChecked).length;
               const isLastRemaining = inclusion.isChecked && checkedCount === 1;
               
               return (
@@ -1184,12 +896,7 @@ const BookingCustomizer = ({
                         {isLastRemaining && (
                           <span 
                             className="pc-badge" 
-                            style={{ 
-                              background: '#fef3c7',
-                              color: '#92400e',
-                              fontSize: '0.75rem',
-                              padding: '2px 6px'
-                            }}
+                            style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', padding: '2px 6px' }}
                             title="At least one inclusion must remain in your package"
                           >
                             Required
@@ -1201,7 +908,7 @@ const BookingCustomizer = ({
                             className="pc-badge" 
                             style={{ 
                               background: inclusion.price > 0 ? '#dcfce7' : '#fee2e2',
-                              color: inclusion.price > 0 ? '#166534' : '#991b1b'
+                              color:      inclusion.price > 0 ? '#166534' : '#991b1b',
                             }}
                           >
                             {inclusion.price > 0 ? 'Priced' : 'No Rate'}
@@ -1224,7 +931,7 @@ const BookingCustomizer = ({
                         style={{ 
                           color: inclusion.isOriginal 
                             ? (!inclusion.isChecked ? '#dc2626' : '#64748b')
-                            : '#059669'
+                            : '#059669',
                         }}
                         title={
                           inclusion.isOriginal 
@@ -1257,7 +964,7 @@ const BookingCustomizer = ({
             color: '#64748b',
             background: '#f8fafc',
             borderRadius: '12px',
-            border: '2px dashed #cbd5e1'
+            border: '2px dashed #cbd5e1',
           }}>
             <Package size={48} style={{ margin: '0 auto 16px', color: '#cbd5e1' }} />
             <p style={{ margin: 0, fontSize: '1rem', fontWeight: '500' }}>
@@ -1370,6 +1077,7 @@ const BookingCustomizer = ({
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
+        @keyframes pc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
       `}</style>
     </div>
   );

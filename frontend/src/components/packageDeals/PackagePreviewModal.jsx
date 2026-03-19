@@ -37,9 +37,11 @@ const PackagePreviewModal = ({
   }, []);
 
   useEffect(() => {
-    if (!userIpAddress || !pkg?.id) return;
+    if (!userIpAddress || (!pkg?._id && !pkg?.id)) return;
+    // ✅ FIX: Use same key format as packageBooking.jsx (pkg._id || pkg.id)
+    const packageId = pkg._id || pkg.id;
     const checkTimer = () => {
-      const timerKey = `timer_${pkg.id}_${userIpAddress}`;
+      const timerKey = `timer_${packageId}_${userIpAddress}`;
       const stored = localStorage.getItem(timerKey);
       if (stored) {
         try {
@@ -50,13 +52,14 @@ const PackagePreviewModal = ({
           setTimerExpired(false);
         }
       } else {
+        // No timer yet = package not yet visited = discount still available
         setTimerExpired(false);
       }
     };
     checkTimer();
     const interval = setInterval(checkTimer, 1000);
     return () => clearInterval(interval);
-  }, [userIpAddress, pkg?.id]);
+  }, [userIpAddress, pkg?._id, pkg?.id]);
 
   useEffect(() => {
     if (isOpen) {

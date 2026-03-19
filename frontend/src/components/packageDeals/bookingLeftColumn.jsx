@@ -99,6 +99,75 @@ const parseTitleDuration = (title) => {
   return { duration, restOfTitle };
 };
 
+// ✅ SVG Rubber Stamp — circular badge style (for titles with no duration pattern)
+const RubberStamp = ({ text }) => {
+  const cleanText = text.replace(
+    /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]|[\u{2B00}-\u{2BFF}]|[\u{FE00}-\u{FEFF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|\u200d|\uFE0F/gu,
+    ''
+  ).trim().toUpperCase();
+
+  const words = cleanText.split(/[\s\/]+/).filter(Boolean);
+  let line1 = '';
+  let line2 = '';
+
+  if (words.length === 1) {
+    line1 = words[0];
+  } else {
+    const mid = Math.ceil(words.length / 2);
+    line1 = words.slice(0, mid).join(' ');
+    line2 = words.slice(mid).join(' ');
+  }
+
+  const R = 38;
+  const size = R * 2 + 16;
+  const cx = size / 2;
+  const cy = size / 2;
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="blc-rubber-stamp-svg"
+    >
+      {/* Circle fill */}
+      <circle cx={cx} cy={cy} r={R} fill="#ea580c"/>
+      {/* Outer dashed border */}
+      <circle cx={cx} cy={cy} r={R} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeDasharray="4 2"/>
+      {/* Inner solid border */}
+      <circle cx={cx} cy={cy} r={R - 5} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
+      {/* Text — 1 or 2 lines, always centered */}
+      {line2 ? (
+        <>
+          <text
+            x={cx} y={cy - 7}
+            textAnchor="middle" dominantBaseline="central"
+            fill="#ffffff" fontSize="10" fontWeight="900"
+            fontFamily="'Arial Black', Arial, sans-serif"
+            letterSpacing="1"
+          >{line1}</text>
+          <text
+            x={cx} y={cy + 8}
+            textAnchor="middle" dominantBaseline="central"
+            fill="#ffffff" fontSize="10" fontWeight="900"
+            fontFamily="'Arial Black', Arial, sans-serif"
+            letterSpacing="1"
+          >{line2}</text>
+        </>
+      ) : (
+        <text
+          x={cx} y={cy}
+          textAnchor="middle" dominantBaseline="central"
+          fill="#ffffff" fontSize="10" fontWeight="900"
+          fontFamily="'Arial Black', Arial, sans-serif"
+          letterSpacing="1"
+        >{line1}</text>
+      )}
+    </svg>
+  );
+};
+
 const BookingLeftColumn = ({
   pkg,
   currency = 'PHP',
@@ -236,6 +305,12 @@ const BookingLeftColumn = ({
             className="blc-main-image"
           />
         </div>
+        {/* ✅ STAMP OVERLAY — only shown when title has NO duration pattern */}
+        {!duration && (
+          <div className="blc-title-stamp-overlay">
+            <RubberStamp text={pkg.title || pkg.name} />
+          </div>
+        )}
         {!timerExpired && discountPercentage > 0 && (
           <div className="blc-offer-badge-overlay">
             <Clock size={16} />
