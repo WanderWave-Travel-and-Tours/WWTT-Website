@@ -177,13 +177,52 @@ const Dashboard = () => {
             });
           }
 
+          // Enrich topViewedPackages with full title, destination, duration from allPackages.
+          // Priority: match by packageId first (most reliable), then by exact title,
+          // then by title-contains for incomplete stored names like "Solo", "min. of 2 pax", "solo/ joiners"
+          const pkgLookupById   = packages.reduce((acc, pkg) => { if (pkg._id) acc[String(pkg._id)] = pkg; return acc; }, {});
+          const pkgLookupByName = packages.reduce((acc, pkg) => { if (pkg.title) acc[pkg.title] = pkg; return acc; }, {});
+
+          const findPkgMatch = (storedName, storedId) => {
+            if (storedId && pkgLookupById[String(storedId)]) return pkgLookupById[String(storedId)];
+            if (storedName && pkgLookupByName[storedName])   return pkgLookupByName[storedName];
+            // title-contains fallback: find package whose title includes the stored partial name
+            if (storedName) {
+              const lower = storedName.toLowerCase().trim();
+              return packages.find(p => p.title && p.title.toLowerCase().includes(lower)) || null;
+            }
+            return null;
+          };
+
+          const buildDisplayName = (storedName, match) => {
+            if (!match) return storedName;
+            // If the stored name already contains the duration or destination, it's already complete
+            const lower = storedName.toLowerCase();
+            const hasDuration    = match.duration    && lower.includes(match.duration.toLowerCase());
+            const hasDestination = match.destination && lower.includes(match.destination.toLowerCase());
+            if (hasDuration || hasDestination) return storedName;
+            // Reconstruct: Duration + Destination + stored partial name
+            const parts = [match.duration, match.destination, storedName].filter(Boolean);
+            return parts.join(' ');
+          };
+
+          const enrichedTopViewedPackages = (pvStats.topViewedPackages || []).map(pkg => {
+            const match = findPkgMatch(pkg.packageName, pkg.packageId);
+            return {
+              ...pkg,
+              displayName: buildDisplayName(pkg.packageName, match),
+              destination: match?.destination || null,
+              duration:    match?.duration    || null,
+            };
+          });
+
           setPageViewStats({
             totalViews:        pvStats.totalViews        || 0,
             packagesPageViews: pvStats.packagesPageViews || 0,
             bookingPageViews:  pvStats.bookingPageViews  || 0,
             flightsPageViews:  pvStats.flightsPageViews  || 0,
             servicesPageViews: pvStats.servicesPageViews || 0,
-            topViewedPackages: pvStats.topViewedPackages || [],
+            topViewedPackages: enrichedTopViewedPackages,
             recentViews:       allViews,
             dailyViewsData,
           });
@@ -716,6 +755,7 @@ const Dashboard = () => {
               weeklyData={weeklyAnalyticsData}
               pageViewStats={pageViewStats}
               bookingCountStats={bookingCountStats}
+              allPackages={allPackages}
             />
           )}
 

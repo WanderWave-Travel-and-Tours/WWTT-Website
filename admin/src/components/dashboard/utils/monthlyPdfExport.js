@@ -686,6 +686,10 @@ export const exportMonthlyToPDF = (stats, monthlyData = [], topPackages = [], se
         yPos += 10;
 
         if (pvTop.length > 0) {
+            doc.addPage();
+            addWatermark();
+            yPos = 20;
+
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(30, 41, 59);
@@ -697,7 +701,7 @@ export const exportMonthlyToPDF = (stats, monthlyData = [], topPackages = [], se
                 head: [['Rank', 'Package Name', 'Views']],
                 body: pvTop.slice(0, 10).map((p, i) => [
                     '#' + (i + 1),
-                    p.packageName || 'Unknown',
+                    p.displayName || p.packageName || 'Unknown',
                     String(p.views || 0),
                 ]),
                 theme: 'plain',

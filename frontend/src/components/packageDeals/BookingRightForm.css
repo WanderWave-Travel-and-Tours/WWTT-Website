@@ -189,18 +189,40 @@
   border-radius: 50%;
 }
 /* --- Quantity Section --- */
-.brf-quantity-section { margin-bottom: 1rem; }
+.brf-quantity-section {
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.brf-quantity-section::before {
+  content: '👥 Number of Passengers';
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #1e3a5f;
+  margin-bottom: 8px;
+}
+
 .brf-quantity-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #f9fafb;
-  padding: 16px;
-  border-radius: 12px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 2px solid #fc9c1b;
+  padding: 18px 20px;
+  border-radius: 14px;
   margin-bottom: 24px;
+  box-shadow: 0 4px 14px rgba(252, 156, 27, 0.15);
+  transition: box-shadow 0.2s ease;
 }
 
-.brf-quantity-label { font-weight: 700; color: #111827; }
+.brf-quantity-item:hover {
+  box-shadow: 0 6px 20px rgba(252, 156, 27, 0.25);
+}
+
+.brf-quantity-label { font-weight: 800; color: #1e3a5f; font-size: 1rem; }
 .brf-quantity-discount-badge { 
   font-size: 0.7rem; background: #dcfce7; color: #166534; 
   padding: 2px 8px; border-radius: 10px; margin-left: 8px; 
@@ -208,10 +230,17 @@
 
 .brf-quantity-controls { display: flex; align-items: center; gap: 12px; }
 .brf-quantity-btn {
-  width: 32px; height: 32px; border-radius: 8px; background: white;
-  border: 1px solid #e5e7eb; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 8px; background: white;
+  border: 2px solid #fc9c1b; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(252, 156, 27, 0.15);
 }
-.brf-quantity-value { font-weight: 700; width: 20px; text-align: center; }
+.brf-quantity-btn:hover {
+  background: #fc9c1b;
+  transform: scale(1.08);
+}
+.brf-quantity-btn:hover svg { stroke: white; }
+.brf-quantity-value { font-weight: 800; width: 24px; text-align: center; font-size: 1.1rem; color: #1e3a5f; }
 
 /* --- Footer Totals & Buttons --- */
 .brf-booking-footer {
@@ -1421,10 +1450,10 @@
     font-size: 0.85rem;
   }
   .brf-quantity-item {
-    padding: 12px;
+    padding: 14px 16px;
   }
   .brf-quantity-label {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
   .brf-total-label {
     font-size: 1rem;
@@ -1624,17 +1653,17 @@
     letter-spacing: 0.3px;
   }
   .brf-quantity-item {
-    padding: 10px;
-    flex-direction: column;
+    padding: 12px 14px;
+    flex-direction: row;
     gap: 8px;
-    align-items: flex-start;
+    align-items: center;
   }
   .brf-quantity-label {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
   .brf-quantity-btn {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
   }
   .brf-total-label {
     font-size: 0.9rem;

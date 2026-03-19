@@ -49,7 +49,8 @@ const RevenueAnalytics = ({
     totalBookingCounts: 0,
     topBookedPackages: [],
     recentBookingCounts: [],
-  }
+  },
+  allPackages = [],
 }) => {
   const [viewMode, setViewMode] = useState("weekly"); 
   const [dateInputs, setDateInputs] = useState({ start: "", end: "" });
@@ -272,15 +273,51 @@ const RevenueAnalytics = ({
     const flightsPageViews  = filtered.filter(v => v.page === 'flights').length;
     const servicesPageViews = filtered.filter(v => v.page === 'services').length;
 
+    // Build lookups from allPackages for enrichment
+    const pkgLookupById   = allPackages.reduce((acc, pkg) => { if (pkg._id) acc[String(pkg._id)] = pkg; return acc; }, {});
+    const pkgLookupByName = allPackages.reduce((acc, pkg) => { if (pkg.title) acc[pkg.title] = pkg; return acc; }, {});
+
+    const findPkgMatch = (storedName, storedId) => {
+      if (storedId && pkgLookupById[String(storedId)]) return pkgLookupById[String(storedId)];
+      if (storedName && pkgLookupByName[storedName])   return pkgLookupByName[storedName];
+      if (storedName) {
+        const lower = storedName.toLowerCase().trim();
+        return allPackages.find(p => p.title && p.title.toLowerCase().includes(lower)) || null;
+      }
+      return null;
+    };
+
     // Top viewed packages from booking views in this window
     const pkgCounts = {};
     filtered
       .filter(v => v.page === 'booking' && v.packageName)
       .forEach(v => {
-        pkgCounts[v.packageName] = (pkgCounts[v.packageName] || 0) + 1;
+        const key = v.packageName;
+        if (!pkgCounts[key]) pkgCounts[key] = { count: 0, packageId: v.packageId || null };
+        pkgCounts[key].count += 1;
       });
+
+    const buildDisplayName = (storedName, match) => {
+      if (!match) return storedName;
+      const lower = storedName.toLowerCase();
+      const hasDuration    = match.duration    && lower.includes(match.duration.toLowerCase());
+      const hasDestination = match.destination && lower.includes(match.destination.toLowerCase());
+      if (hasDuration || hasDestination) return storedName;
+      const parts = [match.duration, match.destination, storedName].filter(Boolean);
+      return parts.join(' ');
+    };
+
     const topViewedPackages = Object.entries(pkgCounts)
-      .map(([packageName, views]) => ({ packageName, views }))
+      .map(([packageName, data]) => {
+        const match = findPkgMatch(packageName, data.packageId);
+        return {
+          packageName,
+          views:       data.count,
+          displayName: buildDisplayName(packageName, match),
+          destination: match?.destination || null,
+          duration:    match?.duration    || null,
+        };
+      })
       .sort((a, b) => b.views - a.views)
       .slice(0, 10);
 
@@ -326,7 +363,7 @@ const RevenueAnalytics = ({
       topViewedPackages,
       dailyViewsData: chartData,
     };
-  }, [analyticsDateWindow, pageViewStats.recentViews, viewMode]);
+  }, [analyticsDateWindow, pageViewStats.recentViews, viewMode, allPackages]);
 
   // ============================================================
   // FILTERED BOOKING COUNTS — uses the SAME shared date window
@@ -747,7 +784,7 @@ const RevenueAnalytics = ({
                   <div key={idx} className="rev-pv-pkg-row">
                     <span className="rev-pv-pkg-rank">#{idx + 1}</span>
                     <div className="rev-pv-pkg-info">
-                      <span className="rev-pv-pkg-name">{pkg.packageName || pkg.label || 'Unknown'}</span>
+                      <span className="rev-pv-pkg-name">{pkg.displayName || pkg.packageName || pkg.label || 'Unknown'}</span>
                       <div className="rev-pv-pkg-bar-wrap">
                         <div
                           className="rev-pv-pkg-bar"
