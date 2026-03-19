@@ -355,7 +355,7 @@ export const exportToPDF = (stats, trendData, topPackages, allPackages = [], pag
         const pvBooking  = pv.bookingPageViews   || 0;
         const pvFlights  = pv.flightsPageViews   || 0;
         const pvServices = pv.servicesPageViews  || 0;
-        const pvRate     = pvPackages > 0 ? ((pvBooking / pvPackages) * 100).toFixed(1) : '0.0';
+        const pvRate     = '0.0'; // ⛔ HARDCODED — View-to-Book tracking disabled
         const pvTop      = pv.topViewedPackages  || [];
 
         autoTable(doc, {
