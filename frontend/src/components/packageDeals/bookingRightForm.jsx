@@ -25,16 +25,31 @@ const BookingRightForm = ({
 }) => {
   const navigate = useNavigate();
   const { code } = useParams();
-  // ✅ PAX RULES:
-  // - "Solo" = private tourType with pax === 1 → locked at 1, hide selector
-  // - "Solo/Joiners" (joiners tourType) → free +/−, default 2, min 1
-  // - Everything else → free +/−, default 2, min 1
-  const isSoloPkg = pkg.tourType === 'private' && pkg.pax === 1;
-  const isSoloJoiners = pkg.tourType === 'joiners';
-  const defaultPax = isSoloPkg ? 1 : 2;
+  // ✅ PAX RULES — checks BOTH DB fields AND package title (pkg.title is the DB field; pkg.name is the alias used in some places)
+  // Title-based detection handles packages where DB pax fields are missing/incomplete
+  const pkgNameLower = (pkg.title || pkg.name || '').toLowerCase();
+  // ✅ Use regex for solo/joiners to handle ALL spacing variants:
+  //    "solo/joiners", "solo/ joiners", "solo /joiners", "solo / joiners", "solo joiners"
+  const titleIsSoloJoiners = /solo\s*\/\s*joiners/i.test(pkgNameLower) || /\bsolo\s+joiners\b/i.test(pkgNameLower);
+  // ✅ "solo" must be an exact standalone word — not part of "solo/joiners"
+  const titleIsSolo       = !titleIsSoloJoiners && /\bsolo\b/i.test(pkgNameLower);
+  const titleIsMinTwo     = pkgNameLower.includes('min of 2') || pkgNameLower.includes('min. of 2') || pkgNameLower.includes('minimum 2') || pkgNameLower.includes('min 2 pax') || pkgNameLower.includes('min.of 2');
+
+  // isSoloPkg: locked at 1 pax — DB pax===1 OR title says Solo (not Solo/Joiners)
+  // ⚠️ titleIsSoloJoiners ALWAYS takes priority — a "solo/joiners" package must NEVER
+  //    be treated as solo even if pax===1 is stored in the DB for that record.
+  const isSoloPkg     = !titleIsSoloJoiners && ((pkg.pax === 1) || titleIsSolo);
+  // isSoloJoiners: free +/−, min 1 — joiners tourType or title says Solo/Joiners
+  const isSoloJoiners = (!isSoloPkg && pkg.tourType === 'joiners') || titleIsSoloJoiners;
+  // isMinTwoPkg: base price covers 2 pax; extra pax = price/2 — DB pax===2 OR title says min of 2
+  const isMinTwoPkg   = (!isSoloPkg && (pkg.tourType === 'private' && pkg.pax === 2)) || titleIsMinTwo;
+
+  // ✅ defaultPax: solo=1 (locked), min-2=2 (locked min), solo/joiners=1 (free, solo default), normal=2
+  const defaultPax = isSoloPkg ? 1 : isMinTwoPkg ? 2 : isSoloJoiners ? 1 : 2;
 
   const [selectedDate, setSelectedDate] = useState(null);
-  const [quantities, setQuantities] = useState({ adult: defaultPax });
+  // ✅ Clamp initial adult count to the correct minimum so min-2 never starts at 1
+  const [quantities, setQuantities] = useState({ adult: Math.max(defaultPax, isMinTwoPkg ? 2 : 1) });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ Package preview before booking
@@ -66,12 +81,14 @@ const BookingRightForm = ({
   const basePax = totalPassengers; // ✅ Component-level pax count for promo calculations
 
   // ✅ Component-level effective per-pax price (mirrors calculateBasePackageTotal logic)
+  // For min-2 packages, effective per-pax rate = base price / 2 (base covers 2 pax)
   const effectivePerPaxPrice = (() => {
-    if (customizationData && customizationData.totalPrice !== undefined) {
-      return customizationData.totalPrice;
-    }
     const bp = pkg.price || 0;
-    return timerExpired ? Math.round(bp * 1.10) : bp;
+    const timerPrice = timerExpired ? Math.round(bp * 1.10) : bp;
+    if (customizationData && customizationData.totalPrice !== undefined) {
+      return isMinTwoPkg ? customizationData.totalPrice / 2 : customizationData.totalPrice;
+    }
+    return isMinTwoPkg ? timerPrice / 2 : timerPrice;
   })();
 
   const isInternationalFlight = selectedFlight && 
@@ -141,8 +158,11 @@ const BookingRightForm = ({
       
       if (savedState.formData.quantities) {
         // ✅ For solo packages, always force pax to 1 regardless of saved state
+        // ✅ For min-2 packages, never restore below 2
         if (isSoloPkg) {
           setQuantities({ adult: 1 });
+        } else if (isMinTwoPkg) {
+          setQuantities({ adult: Math.max(2, savedState.formData.quantities.adult || 2) });
         } else {
           setQuantities(savedState.formData.quantities);
         }
@@ -403,7 +423,13 @@ if (savedState.formData.appliedPromo) {
   }
   
   // ✅ Straight per-pax multiplication: 1 pax = price, 2 pax = price×2, etc.
-  let basePackagePrice = effectivePrice * basePax;
+  // ✅ For min-2 packages: base price covers 2 pax; each extra pax = price/2
+  let basePackagePrice;
+  if (isMinTwoPkg) {
+    basePackagePrice = effectivePrice + Math.max(0, basePax - 2) * (effectivePrice / 2);
+  } else {
+    basePackagePrice = effectivePrice * basePax;
+  }
   
   // ✅ FIX: If package price is 0 or negative (all priced inclusions removed), return 0
   if (basePackagePrice <= 0) {
@@ -705,8 +731,14 @@ const handleApplyPromo = async () => {
   };
 
   const handleQuantity = (type, delta) => {
+    // ✅ Per-type minimum pax:
+    //   - Solo:        locked separately (not rendered with +/-)
+    //   - Min-2:       minimum 2 (base price covers 2 pax; extra pax = price/2)
+    //   - Solo/Joiners: minimum 1 (free range, solo default)
+    //   - Normal:      minimum 1
+    const minPaxCount = isMinTwoPkg ? 2 : 1;
     setQuantities(prev => {
-      const newVal = Math.max(1, Math.min(20, (prev[type] || 1) + delta));
+      const newVal = Math.max(minPaxCount, Math.min(20, (prev[type] || minPaxCount) + delta));
       const updated = { ...prev, [type]: newVal };
       if (type === 'adult' && onPaxChange) {
         onPaxChange(newVal);
@@ -1286,8 +1318,12 @@ const handleNextPassenger = async (e) => {
       </div>
 
       {/* ✅ PAX SELECTOR:
-           - Solo (private, pax=1): locked at 1, no controls shown
-           - Solo/Joiners & all others: free +/− from 1–20, default 2 */}
+           - Solo (pax===1 or title "Solo"):         locked at 1, no controls
+           - Min-2 (pax===2 private or title "min of 2"): min 2, half-rate for extras, minus disabled at 2
+           - Solo/Joiners (joiners tourType or title): free +/−, default 1, min 1
+           - All others (standard):                  free +/−, default 2, min 1
+           NOTE: Title-based incomplete data (Solo, Solo/Joiners, Min of 2 pax) are NOT affected
+                 differently — they use the same detection logic and same constraints. */}
       {isSoloPkg ? (
         <div className="brf-quantity-section">
           <div className="brf-quantity-item">
@@ -1309,23 +1345,50 @@ const handleNextPassenger = async (e) => {
         <div className="brf-quantity-section">
           <div className="brf-quantity-item">
             <div>
-              <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+              <div style={{display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap'}}>
                 <span className="brf-quantity-label">Standard Pax</span>
-                {isSoloJoiners && (
+                {isMinTwoPkg && (
                   <span style={{
-                    background: '#fff7ed', border: '1px solid #fed7aa',
-                    color: '#c2410c', fontSize: '0.75rem', fontWeight: '700',
+                    background: '#eff6ff', border: '1px solid #bfdbfe',
+                    color: '#1d4ed8', fontSize: '0.75rem', fontWeight: '700',
                     borderRadius: '999px', padding: '2px 10px'
-                  }}>Solo/Joiners</span>
+                  }}>min. 2 pax</span>
+                )}
+                {isSoloJoiners && !isMinTwoPkg && (
+                  <span style={{
+                    background: '#f0fdf4', border: '1px solid #86efac',
+                    color: '#166534', fontSize: '0.75rem', fontWeight: '700',
+                    borderRadius: '999px', padding: '2px 10px'
+                  }}>Solo / Group</span>
                 )}
               </div>
               <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
+              {isMinTwoPkg && (
+                <div style={{
+                  fontSize: '0.78rem', color: '#1d4ed8', marginTop: '6px',
+                  background: '#eff6ff', border: '1px solid #bfdbfe',
+                  borderRadius: '8px', padding: '5px 10px', lineHeight: '1.4'
+                }}>
+                  📌 Base price shown is for <strong>2 pax</strong>. Each additional pax is charged at <strong>½ the base rate</strong>.
+                </div>
+              )}
+              {isSoloJoiners && !isMinTwoPkg && (
+                <div style={{
+                  fontSize: '0.78rem', color: '#166534', marginTop: '6px',
+                  background: '#f0fdf4', border: '1px solid #86efac',
+                  borderRadius: '8px', padding: '5px 10px', lineHeight: '1.4'
+                }}>
+                  ℹ️ You can book solo (1 pax) or as a group. Price adjusts per pax added.
+                </div>
+              )}
             </div>
             <div className="brf-quantity-controls">
               <button
                 onClick={() => handleQuantity('adult', -1)}
                 className="brf-quantity-btn"
                 type="button"
+                disabled={isMinTwoPkg ? quantities.adult <= 2 : quantities.adult <= 1}
+                style={(isMinTwoPkg ? quantities.adult <= 2 : quantities.adult <= 1) ? {opacity: 0.4, cursor: 'not-allowed'} : {}}
               >
                 <Minus size={18} color="#000000" strokeWidth={3}
                   style={{minWidth:'18px', minHeight:'18px', stroke:'#000000'}} />
@@ -1603,6 +1666,47 @@ const handleNextPassenger = async (e) => {
             </span>
           </div>
         </div>
+
+        {/* ✅ Pax breakdown for min-2 packages */}
+        {isMinTwoPkg && (
+          <div style={{
+            background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px',
+            padding: '10px 14px', marginTop: '4px', marginBottom: '8px',
+            fontSize: '0.82rem', color: '#1e40af', lineHeight: '1.6'
+          }}>
+            {(() => {
+              // effectivePerPaxPrice = basePrice / 2 for min-2 packages
+              // so baseRate = effectivePerPaxPrice * 2 = basePrice (the original price covering 2 pax)
+              const baseRate = effectivePerPaxPrice * 2;
+              const extraPax = Math.max(0, totalPassengers - 2);
+              const extraCost = extraPax * effectivePerPaxPrice;
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Original price (covers 2 pax)</span>
+                    <span style={{ fontWeight: '700' }}>
+                      {currencySymbol}{convertPrice(baseRate).toLocaleString(undefined, {
+                        minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                        maximumFractionDigits: currency === 'USD' ? 2 : 0
+                      })}
+                    </span>
+                  </div>
+                  {extraPax > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>+{extraPax} extra pax × ½ rate</span>
+                      <span style={{ fontWeight: '700' }}>
+                        +{currencySymbol}{convertPrice(extraCost).toLocaleString(undefined, {
+                          minimumFractionDigits: currency === 'USD' ? 2 : 0,
+                          maximumFractionDigits: currency === 'USD' ? 2 : 0
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         {/* ✅ Hotel accommodation breakdown line */}
         {selectedRoomType && hotelAccommodationTotal > 0 && (

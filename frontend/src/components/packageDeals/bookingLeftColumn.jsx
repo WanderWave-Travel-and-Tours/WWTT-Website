@@ -166,13 +166,28 @@ const BookingLeftColumn = ({
     return (phpPrice / exchangeRate) * 1.30;
   };
 
-  // ✅ PAX RULES: same logic as BookingRightForm
-  const pkgMinPax = (() => {
-    if (pkg.tourType === 'private') return pkg.pax || 1;
-    if (pkg.tourType === 'joiners') return pkg.minPax || 1;
-    return 1;
-  })();
-  const isSoloPkg = pkgMinPax === 1;
+  // ✅ PAX RULES — checks BOTH DB fields AND title (pkg.title is the DB field; pkg.name is the alias)
+  const pkgNameLower = (pkg.title || pkg.name || '').toLowerCase();
+  // ✅ Use regex for solo/joiners to handle ALL spacing variants:
+  //    "solo/joiners", "solo/ joiners", "solo /joiners", "solo / joiners", "solo joiners"
+  const titleIsSoloJoiners = /solo\s*\/\s*joiners/i.test(pkgNameLower) || /\bsolo\s+joiners\b/i.test(pkgNameLower);
+  // ✅ "solo" must be an exact standalone word — not part of "solo/joiners"
+  const titleIsSolo       = !titleIsSoloJoiners && /\bsolo\b/i.test(pkgNameLower);
+  const titleIsMinTwo     = pkgNameLower.includes('min of 2') || pkgNameLower.includes('min. of 2') || pkgNameLower.includes('minimum 2') || pkgNameLower.includes('min 2 pax') || pkgNameLower.includes('min.of 2');
+
+  // ⚠️ titleIsSoloJoiners ALWAYS takes priority — a "solo/joiners" package must NEVER
+  //    be treated as solo even if pax===1 is stored in the DB for that record.
+  const isSoloPkg     = !titleIsSoloJoiners && ((pkg.pax === 1) || titleIsSolo);
+  const isMinOfTwoPkg = (!isSoloPkg && (pkg.tourType === 'private' && pkg.pax === 2)) || titleIsMinTwo;
+
+  // ✅ effectivePaxCount: For min-2 packages the base price covers 2 pax — guard against
+  // the parent initially sending paxCount=1 before onPaxChange fires on mount.
+  // Solo is locked at 1 regardless of what the parent passes.
+  const effectivePaxCount = isMinOfTwoPkg
+    ? Math.max(2, paxCount)
+    : isSoloPkg
+      ? 1
+      : Math.max(1, paxCount);
 
   const basePrice = pkg.price || 0;
   const originalPriceWithMarkup = Math.round(basePrice * 1.10);
@@ -181,19 +196,25 @@ const BookingLeftColumn = ({
   const adjustedActivePrice = Math.max(0, activeBasePrice + customizationAdjustment);
   const adjustedOriginalActivePrice = Math.max(0, originalPriceWithMarkup + customizationAdjustment);
 
-  // ✅ Straight per-pax multiplication: 1 pax = price, 2 pax = price×2, etc.
-  const displayPrice = Math.round(adjustedActivePrice * paxCount) + hotelUpgradeCost;
+  // ✅ For min-2 packages: base price covers 2 pax; extra pax = price/2 each.
+  //    Uses effectivePaxCount so min-2 always prices from 2 pax even if the prop
+  //    hasn't updated yet (e.g. first render before onPaxChange fires).
+  const displayPrice = isMinOfTwoPkg
+    ? Math.round(adjustedActivePrice + Math.max(0, effectivePaxCount - 2) * (adjustedActivePrice / 2)) + hotelUpgradeCost
+    : Math.round(adjustedActivePrice * effectivePaxCount) + hotelUpgradeCost;
   const convertedDisplayPrice = convertPrice(displayPrice);
 
   // ✅ Original (strikethrough) price — same logic + hotel cost
-  const adjustedOriginalPrice = Math.round(adjustedOriginalActivePrice * paxCount) + hotelUpgradeCost;
+  const adjustedOriginalPrice = isMinOfTwoPkg
+    ? Math.round(adjustedOriginalActivePrice + Math.max(0, effectivePaxCount - 2) * (adjustedOriginalActivePrice / 2)) + hotelUpgradeCost
+    : Math.round(adjustedOriginalActivePrice * effectivePaxCount) + hotelUpgradeCost;
   const convertedOriginalPrice = convertPrice(adjustedOriginalPrice);
 
   const discountPercentage = !timerExpired && displayPrice < adjustedOriginalPrice
     ? Math.round(((adjustedOriginalPrice - displayPrice) / adjustedOriginalPrice) * 100)
     : 0;
 
-  const { duration, restOfTitle } = parseTitleDuration(pkg.name);
+  const { duration, restOfTitle } = parseTitleDuration(pkg.title || pkg.name);
 
   return (
     <div className="blc-container">
@@ -245,7 +266,43 @@ const BookingLeftColumn = ({
                   maximumFractionDigits: currency === 'USD' ? 2 : 0
                 })}
               </span>
-              <span className="blc-price-pax">/{paxCount} pax</span>
+              <span className="blc-price-pax">
+                /{effectivePaxCount} pax{isMinOfTwoPkg && effectivePaxCount > 2 ? ` (base 2 + ${effectivePaxCount - 2} extra)` : ''}
+              </span>
+              {isMinOfTwoPkg && effectivePaxCount === 2 && (
+                <span style={{
+                  fontSize: '0.72rem',
+                  color: '#1d4ed8',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '5px',
+                  padding: '2px 8px',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  📌 Base price · 2 pax included
+                </span>
+              )}
+              {isMinOfTwoPkg && effectivePaxCount > 2 && (
+                <span style={{
+                  fontSize: '0.72rem',
+                  color: '#1d4ed8',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '5px',
+                  padding: '2px 8px',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  📌 Base (2 pax) + {effectivePaxCount - 2} extra @ ½ rate
+                </span>
+              )}
               {hotelUpgradeCost > 0 && (
                 <span style={{
                   fontSize: '0.78rem',

@@ -449,42 +449,6 @@ const HotelRoomSelector = ({ roomTypes, selectedRoomType, onRoomTypeChange, dura
 
                 </div>
                 <div className="hrs-category-right" style={{flexDirection: 'column', alignItems: 'flex-end'}}>
-                  {/* ✅ Only show max capacity from DB */}
-                  {(() => {
-                    const roomsNeeded = getRoomsNeeded(group);
-                    const capacity = group.hotels[0]?.capacity || 2;
-                    return (
-                      <div style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        background: roomsNeeded > 1 ? '#fff7ed' : '#f0fdf4',
-                        border: `1px solid ${roomsNeeded > 1 ? '#fed7aa' : '#86efac'}`,
-                        borderRadius: '6px',
-                        padding: '5px 10px',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0
-                      }}>
-                        <span style={{ fontSize: '0.85rem' }}>🛏</span>
-                        <span style={{
-                          fontSize: '0.8rem',
-                          fontWeight: '700',
-                          color: roomsNeeded > 1 ? '#c2410c' : '#15803d',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {roomsNeeded} room{roomsNeeded !== 1 ? 's' : ''}
-                        </span>
-                        <span style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '500',
-                          color: '#6b7280',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          ({capacity} max/room)
-                        </span>
-                      </div>
-                    );
-                  })()}
                   {isSelected && <div className="hrs-badge-selected">✓ SELECTED</div>}
                 </div>
               </div>

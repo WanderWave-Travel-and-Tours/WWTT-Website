@@ -92,7 +92,7 @@ router.get('/stats', async (req, res) => {
     const recentViews = await PageView.find()
       .sort({ createdAt: -1 })
       .limit(5000)
-      .select('page path label packageName createdAt')
+      .select('page path label packageName packageId createdAt')
       .lean();
 
     // ── Daily page view breakdown — last 30 days ─────────────────────
