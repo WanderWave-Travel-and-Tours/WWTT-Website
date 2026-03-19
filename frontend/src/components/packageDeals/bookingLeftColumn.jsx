@@ -248,6 +248,7 @@ const BookingLeftColumn = ({
   //    be treated as solo even if pax===1 is stored in the DB for that record.
   const isSoloPkg     = !titleIsSoloJoiners && ((pkg.pax === 1) || titleIsSolo);
   const isMinOfTwoPkg = (!isSoloPkg && (pkg.tourType === 'private' && pkg.pax === 2)) || titleIsMinTwo;
+  const isSoloJoiners = (!isSoloPkg && pkg.tourType === 'joiners') || titleIsSoloJoiners;
 
   // ✅ effectivePaxCount: For min-2 packages the base price covers 2 pax — guard against
   // the parent initially sending paxCount=1 before onPaxChange fires on mount.
@@ -311,7 +312,7 @@ const BookingLeftColumn = ({
             <RubberStamp text={pkg.title || pkg.name} />
           </div>
         )}
-        {!timerExpired && discountPercentage > 0 && (
+        {!timerExpired && discountPercentage > 0 && !(isSoloJoiners && effectivePaxCount === 1) && (
           <div className="blc-offer-badge-overlay">
             <Clock size={16} />
             <span>Limited Time Offer - Save {discountPercentage}%</span>
@@ -325,9 +326,9 @@ const BookingLeftColumn = ({
         <div className="blc-title-badge-row">
           {duration && <CalendarDurationBadge duration={duration} />}
           <div className="blc-badge-right-col">
-            <h1 className="blc-title">{restOfTitle || pkg.name}</h1>
+            {duration && <h1 className="blc-title">{restOfTitle || pkg.name}</h1>}
             <div className="blc-price-section">
-              {!timerExpired && convertedOriginalPrice > convertedDisplayPrice && (
+              {!timerExpired && convertedOriginalPrice > convertedDisplayPrice && !(isSoloJoiners && effectivePaxCount === 1) && (
                 <span className="blc-price-original">
                   {currencySymbol}{convertedOriginalPrice.toLocaleString(undefined, {
                     minimumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -344,40 +345,7 @@ const BookingLeftColumn = ({
               <span className="blc-price-pax">
                 /{effectivePaxCount} pax{isMinOfTwoPkg && effectivePaxCount > 2 ? ` (base 2 + ${effectivePaxCount - 2} extra)` : ''}
               </span>
-              {isMinOfTwoPkg && effectivePaxCount === 2 && (
-                <span style={{
-                  fontSize: '0.72rem',
-                  color: '#1d4ed8',
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                  borderRadius: '5px',
-                  padding: '2px 8px',
-                  fontWeight: '600',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  whiteSpace: 'nowrap'
-                }}>
-                  📌 Base price · 2 pax included
-                </span>
-              )}
-              {isMinOfTwoPkg && effectivePaxCount > 2 && (
-                <span style={{
-                  fontSize: '0.72rem',
-                  color: '#1d4ed8',
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                  borderRadius: '5px',
-                  padding: '2px 8px',
-                  fontWeight: '600',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  whiteSpace: 'nowrap'
-                }}>
-                  📌 Base (2 pax) + {effectivePaxCount - 2} extra @ ½ rate
-                </span>
-              )}
+
               {hotelUpgradeCost > 0 && (
                 <span style={{
                   fontSize: '0.78rem',

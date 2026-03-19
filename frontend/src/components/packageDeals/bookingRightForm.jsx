@@ -159,10 +159,13 @@ const BookingRightForm = ({
       if (savedState.formData.quantities) {
         // ✅ For solo packages, always force pax to 1 regardless of saved state
         // ✅ For min-2 packages, never restore below 2
+        // ✅ For solo/joiners, always force pax to 1 — default is solo (1 pax)
         if (isSoloPkg) {
           setQuantities({ adult: 1 });
         } else if (isMinTwoPkg) {
           setQuantities({ adult: Math.max(2, savedState.formData.quantities.adult || 2) });
+        } else if (isSoloJoiners) {
+          setQuantities({ adult: 1 });
         } else {
           setQuantities(savedState.formData.quantities);
         }
@@ -226,7 +229,8 @@ if (savedState.formData.appliedPromo) {
     if (selectedDate || quantities.adult > 1 || selectedFlight || appliedPromo) {
       const stateToSave = {
         selectedDate,
-        quantities,
+        // ✅ Never persist quantities for solo/joiners — always resets to default 1 on next visit
+        quantities: isSoloJoiners ? { adult: 1 } : quantities,
         currentMonth: currentMonth.toISOString(),
         selectedFlight,
         selectedRoomType,
@@ -1363,15 +1367,7 @@ const handleNextPassenger = async (e) => {
                 )}
               </div>
               <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
-              {isMinTwoPkg && (
-                <div style={{
-                  fontSize: '0.78rem', color: '#1d4ed8', marginTop: '6px',
-                  background: '#eff6ff', border: '1px solid #bfdbfe',
-                  borderRadius: '8px', padding: '5px 10px', lineHeight: '1.4'
-                }}>
-                  📌 Base price shown is for <strong>2 pax</strong>. Each additional pax is charged at <strong>½ the base rate</strong>.
-                </div>
-              )}
+
               {isSoloJoiners && !isMinTwoPkg && (
                 <div style={{
                   fontSize: '0.78rem', color: '#166534', marginTop: '6px',
@@ -1644,7 +1640,7 @@ const handleNextPassenger = async (e) => {
             Package Total
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {!timerExpired && (
+            {!timerExpired && !(isSoloJoiners && totalPassengers === 1) && (
               <span style={{
                 textDecoration: 'line-through',
                 color: '#9ca3af',

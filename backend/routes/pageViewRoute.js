@@ -270,4 +270,38 @@ router.get('/booking-counts', async (req, res) => {
   }
 });
 
+// ===================================================================
+// DELETE /api/page-views/booking-counts/reset
+// Wipes ALL BookingCount records (use after clearing the bookings DB).
+// Also optionally wipes PageView records if ?includeViews=true is passed.
+// ===================================================================
+router.delete('/booking-counts/reset', async (req, res) => {
+  try {
+    const { includeViews } = req.query;
+
+    const bookingResult = await BookingCount.deleteMany({});
+    console.log(`🗑️ BookingCount reset: ${bookingResult.deletedCount} records deleted`);
+
+    let viewsResult = null;
+    if (includeViews === 'true') {
+      viewsResult = await PageView.deleteMany({});
+      console.log(`🗑️ PageView reset: ${viewsResult.deletedCount} records deleted`);
+    }
+
+    return res.status(200).json({
+      status: 'ok',
+      message: 'BookingCount records cleared successfully.',
+      bookingCountsDeleted: bookingResult.deletedCount,
+      pageViewsDeleted: viewsResult ? viewsResult.deletedCount : 0,
+    });
+  } catch (err) {
+    console.error('❌ Error resetting booking counts:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to reset booking counts',
+      error: err.message,
+    });
+  }
+});
+
 module.exports = router;

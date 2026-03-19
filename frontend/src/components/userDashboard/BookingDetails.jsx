@@ -468,7 +468,6 @@ const BookingDetails = ({ booking, onUpdate }) => {
                 </div>
             </div>
 
-            {/* Passengers Section */}
             {booking.passengers && booking.passengers.length > 0 && (
                 <div className="bd-card bd-passengers-card">
                     <div className="bd-passengers-header">
@@ -477,17 +476,13 @@ const BookingDetails = ({ booking, onUpdate }) => {
                             className="bd-toggle-btn"
                             onClick={() => setShowPassengers(!showPassengers)}
                         >
-                            {showPassengers ? 'Hide' : 'Show'} Details
+                            {showPassengers ? 'Hide Details' : 'Show Details'}
                             <svg 
-                                width="16" 
-                                height="16" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                strokeWidth="2"
+                                width="16" height="16" viewBox="0 0 24 24" 
+                                fill="none" stroke="currentColor" strokeWidth="2.5"
                                 style={{ 
                                     transform: showPassengers ? 'rotate(180deg)' : 'rotate(0deg)',
-                                    transition: 'transform 0.2s'
+                                    transition: 'transform 0.25s'
                                 }}
                             >
                                 <polyline points="6 9 12 15 18 9"/>
@@ -497,104 +492,170 @@ const BookingDetails = ({ booking, onUpdate }) => {
                     
                     {showPassengers && (
                         <div className="bd-passengers-list">
-                            {booking.passengers.map((passenger) => (
+                            {booking.passengers.map((passenger) => {
+                                const initials = `${(passenger.firstName || '?')[0]}${(passenger.lastName || '?')[0]}`.toUpperCase();
+
+                                return (
                                 <div key={passenger.passengerNumber} className="bd-passenger-card">
+                                    <div className="bd-pcard-strip"></div>
+
                                     {editingPassenger === passenger.passengerNumber ? (
-                                        // Edit Form
+                                        /* ── EDIT FORM ── */
                                         <div className="bd-passenger-edit-form">
                                             <div className="bd-form-header">
                                                 <h4>Edit Passenger {passenger.passengerNumber}</h4>
+                                                <p className="bd-form-subtitle">Update traveller information below</p>
                                             </div>
 
-                                            <div className="bd-form-grid">
-                                                <div className="bd-form-group">
-                                                    <label>First Name *</label>
-                                                    <input
-                                                        type="text"
-                                                        value={passengerFormData?.firstName || ''}
-                                                        onChange={(e) => handlePassengerFormChange('firstName', e.target.value)}
-                                                        placeholder="First name"
-                                                        required
-                                                    />
-                                                </div>
+                                            <div className="bd-form-body">
+                                                <div className="bd-form-grid">
+                                                    {/* First Name */}
+                                                    <div className="bd-form-group">
+                                                        <label>First Name <span className="bd-required-star">*</span></label>
+                                                        <div className="bd-input-wrapper">
+                                                            <span className="bd-input-icon">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                                            </span>
+                                                            <input
+                                                                type="text"
+                                                                value={passengerFormData?.firstName || ''}
+                                                                onChange={(e) => handlePassengerFormChange('firstName', e.target.value)}
+                                                                placeholder="First name"
+                                                                required
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                                                <div className="bd-form-group">
-                                                    <label>Last Name *</label>
-                                                    <input
-                                                        type="text"
-                                                        value={passengerFormData?.lastName || ''}
-                                                        onChange={(e) => handlePassengerFormChange('lastName', e.target.value)}
-                                                        placeholder="Last name"
-                                                        required
-                                                    />
-                                                </div>
+                                                    {/* Last Name */}
+                                                    <div className="bd-form-group">
+                                                        <label>Last Name <span className="bd-required-star">*</span></label>
+                                                        <div className="bd-input-wrapper">
+                                                            <span className="bd-input-icon">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                                            </span>
+                                                            <input
+                                                                type="text"
+                                                                value={passengerFormData?.lastName || ''}
+                                                                onChange={(e) => handlePassengerFormChange('lastName', e.target.value)}
+                                                                placeholder="Last name"
+                                                                required
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                                                <div className="bd-form-group">
-                                                    <label>Email *</label>
-                                                    <input
-                                                        type="email"
-                                                        value={passengerFormData?.email || ''}
-                                                        onChange={(e) => handlePassengerFormChange('email', e.target.value)}
-                                                        placeholder="email@example.com"
-                                                        required
-                                                    />
-                                                </div>
+                                                    {/* Email */}
+                                                    <div className="bd-form-group">
+                                                        <label>Email <span className="bd-required-star">*</span></label>
+                                                        <div className="bd-input-wrapper">
+                                                            <span className="bd-input-icon">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                                            </span>
+                                                            <input
+                                                                type="email"
+                                                                value={passengerFormData?.email || ''}
+                                                                onChange={(e) => handlePassengerFormChange('email', e.target.value)}
+                                                                placeholder="email@example.com"
+                                                                required
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                                                <div className="bd-form-group">
-                                                    <label>Phone *</label>
-                                                    <input
-                                                        type="tel"
-                                                        value={passengerFormData?.phone || ''}
-                                                        onChange={(e) => handlePassengerFormChange('phone', e.target.value)}
-                                                        placeholder="09XXXXXXXXX"
-                                                        required
-                                                    />
-                                                </div>
+                                                    {/* Phone */}
+                                                    <div className="bd-form-group">
+                                                        <label>Phone <span className="bd-required-star">*</span></label>
+                                                        <div className="bd-input-wrapper">
+                                                            <span className="bd-input-icon">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.58 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l1.13-1.13a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                                            </span>
+                                                            <input
+                                                                type="tel"
+                                                                value={passengerFormData?.phone || ''}
+                                                                onChange={(e) => handlePassengerFormChange('phone', e.target.value)}
+                                                                placeholder="09XXXXXXXXX"
+                                                                required
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                                                <div className="bd-form-group">
-                                                    <label>Date of Birth</label>
-                                                    <input
-                                                        type="date"
-                                                        value={passengerFormData?.dateOfBirth || ''}
-                                                        onChange={(e) => handlePassengerFormChange('dateOfBirth', e.target.value)}
-                                                    />
-                                                </div>
+                                                    {/* Date of Birth */}
+                                                    <div className="bd-form-group">
+                                                        <label>Date of Birth</label>
+                                                        <div className="bd-input-wrapper">
+                                                            <span className="bd-input-icon">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                                            </span>
+                                                            <input
+                                                                type="date"
+                                                                value={passengerFormData?.dateOfBirth || ''}
+                                                                onChange={(e) => handlePassengerFormChange('dateOfBirth', e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                                                <div className="bd-form-group">
-                                                    <label>Gender</label>
-                                                    <select
-                                                        value={passengerFormData?.gender || ''}
-                                                        onChange={(e) => handlePassengerFormChange('gender', e.target.value)}
-                                                    >
-                                                        <option value="">Select Gender</option>
-                                                        <option value="Male">Male</option>
-                                                        <option value="Female">Female</option>
-                                                        <option value="Other">Other</option>
-                                                    </select>
-                                                </div>
+                                                    {/* Gender */}
+                                                    <div className="bd-form-group">
+                                                        <label>Gender</label>
+                                                        <div className="bd-input-wrapper">
+                                                            <span className="bd-input-icon">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v-4h4M16 4l-4 4M8 16v4H4M8 20l4-4"/></svg>
+                                                            </span>
+                                                            <select
+                                                                value={passengerFormData?.gender || ''}
+                                                                onChange={(e) => handlePassengerFormChange('gender', e.target.value)}
+                                                            >
+                                                                <option value="">Select Gender</option>
+                                                                <option value="Male">Male</option>
+                                                                <option value="Female">Female</option>
+                                                                <option value="Other">Other</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
 
-                                                <div className="bd-form-group">
-                                                    <label>Nationality</label>
-                                                    <input
-                                                        type="text"
-                                                        value={passengerFormData?.nationality || ''}
-                                                        onChange={(e) => handlePassengerFormChange('nationality', e.target.value)}
-                                                        placeholder="Nationality"
-                                                    />
-                                                </div>
+                                                    {/* Nationality */}
+                                                    <div className="bd-form-group">
+                                                        <label>Nationality</label>
+                                                        <div className="bd-input-wrapper">
+                                                            <span className="bd-input-icon">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                                            </span>
+                                                            <input
+                                                                type="text"
+                                                                value={passengerFormData?.nationality || ''}
+                                                                onChange={(e) => handlePassengerFormChange('nationality', e.target.value)}
+                                                                placeholder="e.g. Filipino"
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                                                <div className="bd-form-group bd-full-width">
-                                                    <label>Address</label>
-                                                    <input
-                                                        type="text"
-                                                        value={passengerFormData?.address || ''}
-                                                        onChange={(e) => handlePassengerFormChange('address', e.target.value)}
-                                                        placeholder="Complete address"
-                                                    />
+                                                    {/* Address */}
+                                                    <div className="bd-form-group bd-full-width">
+                                                        <label>Address</label>
+                                                        <div className="bd-input-wrapper">
+                                                            <span className="bd-input-icon">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                                            </span>
+                                                            <input
+                                                                type="text"
+                                                                value={passengerFormData?.address || ''}
+                                                                onChange={(e) => handlePassengerFormChange('address', e.target.value)}
+                                                                placeholder="Complete address"
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             <div className="bd-form-actions">
+                                                <button 
+                                                    className="bd-btn-cancel"
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isSavingPassenger}
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                    Cancel
+                                                </button>
                                                 <button 
                                                     className="bd-btn-save"
                                                     onClick={handleSavePassenger}
@@ -603,40 +664,35 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                                     {isSavingPassenger ? (
                                                         <>
                                                             <span className="bd-spinner-small"></span>
-                                                            Saving...
+                                                            Saving…
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                                 <polyline points="20 6 9 17 4 12"/>
                                                             </svg>
                                                             Save Changes
                                                         </>
                                                     )}
                                                 </button>
-                                                <button 
-                                                    className="bd-btn-cancel"
-                                                    onClick={handleCancelEdit}
-                                                    disabled={isSavingPassenger}
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                                    </svg>
-                                                    Cancel
-                                                </button>
                                             </div>
                                         </div>
                                     ) : (
-                                        // Display View
-                                        <>
-                                            <div className="bd-passenger-header">
-                                                <h4>Passenger {passenger.passengerNumber}</h4>
+                                        /* ── DISPLAY VIEW ── */
+                                        <div className="bd-pcard-body">
+                                            <div className="bd-pcard-head">
+                                                <div className="bd-pcard-avatar">{initials}</div>
+                                                <div className="bd-pcard-head-info">
+                                                    <p className="bd-pcard-label">Passenger {passenger.passengerNumber}</p>
+                                                    <h4 className="bd-pcard-name">
+                                                        {passenger.firstName} {passenger.lastName}
+                                                    </h4>
+                                                </div>
                                                 <button 
                                                     className="bd-edit-btn"
                                                     onClick={() => handleEditPassenger(passenger)}
                                                 >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                                     </svg>
@@ -645,49 +701,80 @@ const BookingDetails = ({ booking, onUpdate }) => {
                                             </div>
 
                                             <div className="bd-passenger-details">
+                                                {/* Email */}
                                                 <div className="bd-detail-row">
-                                                    <span className="bd-detail-label">Name:</span>
-                                                    <span className="bd-detail-value">
-                                                        {passenger.firstName} {passenger.lastName}
-                                                    </span>
+                                                    <div className="bd-detail-icon">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                                    </div>
+                                                    <div className="bd-detail-text">
+                                                        <span className="bd-detail-label">Email</span>
+                                                        <span className="bd-detail-value">{passenger.email || '—'}</span>
+                                                    </div>
                                                 </div>
 
+                                                {/* Phone */}
                                                 <div className="bd-detail-row">
-                                                    <span className="bd-detail-label">Email:</span>
-                                                    <span className="bd-detail-value">{passenger.email}</span>
+                                                    <div className="bd-detail-icon">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.58 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l1.13-1.13a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                                    </div>
+                                                    <div className="bd-detail-text">
+                                                        <span className="bd-detail-label">Phone</span>
+                                                        <span className="bd-detail-value">{passenger.phone || '—'}</span>
+                                                    </div>
                                                 </div>
 
+                                                {/* Date of Birth */}
                                                 <div className="bd-detail-row">
-                                                    <span className="bd-detail-label">Phone:</span>
-                                                    <span className="bd-detail-value">{passenger.phone}</span>
+                                                    <div className="bd-detail-icon">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                                    </div>
+                                                    <div className="bd-detail-text">
+                                                        <span className="bd-detail-label">Date of Birth</span>
+                                                        <span className="bd-detail-value">
+                                                            {formatDate(passenger.dateOfBirth)}
+                                                            {passenger.age ? ` · ${passenger.age} yrs` : ''}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
+                                                {/* Gender */}
                                                 <div className="bd-detail-row">
-                                                    <span className="bd-detail-label">Date of Birth:</span>
-                                                    <span className="bd-detail-value">
-                                                        {formatDate(passenger.dateOfBirth)} ({passenger.age} years old)
-                                                    </span>
+                                                    <div className="bd-detail-icon">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v-4h4M16 4l-4 4M8 16v4H4M8 20l4-4"/></svg>
+                                                    </div>
+                                                    <div className="bd-detail-text">
+                                                        <span className="bd-detail-label">Gender</span>
+                                                        <span className="bd-detail-value">{passenger.gender || '—'}</span>
+                                                    </div>
                                                 </div>
 
+                                                {/* Nationality */}
                                                 <div className="bd-detail-row">
-                                                    <span className="bd-detail-label">Gender:</span>
-                                                    <span className="bd-detail-value">{passenger.gender}</span>
+                                                    <div className="bd-detail-icon">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                                    </div>
+                                                    <div className="bd-detail-text">
+                                                        <span className="bd-detail-label">Nationality</span>
+                                                        <span className="bd-detail-value">{passenger.nationality || '—'}</span>
+                                                    </div>
                                                 </div>
 
+                                                {/* Address */}
                                                 <div className="bd-detail-row">
-                                                    <span className="bd-detail-label">Nationality:</span>
-                                                    <span className="bd-detail-value">{passenger.nationality}</span>
-                                                </div>
-
-                                                <div className="bd-detail-row">
-                                                    <span className="bd-detail-label">Address:</span>
-                                                    <span className="bd-detail-value">{passenger.address}</span>
+                                                    <div className="bd-detail-icon">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                                    </div>
+                                                    <div className="bd-detail-text">
+                                                        <span className="bd-detail-label">Address</span>
+                                                        <span className="bd-detail-value">{passenger.address || '—'}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </>
+                                        </div>
                                     )}
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

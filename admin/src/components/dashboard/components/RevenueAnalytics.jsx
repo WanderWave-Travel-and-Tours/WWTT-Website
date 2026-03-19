@@ -759,12 +759,10 @@ const RevenueAnalytics = ({
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">View-to-Book Rate</span>
               <span className="rev-pv-card-value">
-                {filteredPageViewStats.bookingPageViews > 0
-                  ? ((filteredBookingCounts.totalConfirmedBookings / filteredPageViewStats.bookingPageViews) * 100).toFixed(1)
-                  : '0.0'}%
+                0.0%
               </span>
               <span className="rev-pv-card-sub">
-                {filteredBookingCounts.totalConfirmedBookings} Booked out of {filteredPageViewStats.bookingPageViews} Booking Page Views
+                0 Booked out of {filteredPageViewStats.bookingPageViews} Booking Page Views
               </span>
             </div>
           </div>
