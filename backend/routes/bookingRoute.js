@@ -1263,4 +1263,116 @@ router.post('/:id/cancel', async (req, res) => {
   }
 });
 
+// ============================================
+// PATCH /:id/details — UPDATE BOOKING DETAILS
+// Called by BookingCustomizer when admin edits
+// Package Name, Duration, Travel Dates, or Pax
+// ============================================
+router.patch('/:id/details', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      packageName,
+      duration,
+      startDate,
+      endDate,
+      pax,
+      userEmail,
+      adminId,
+    } = req.body;
+
+    // 1. Find the existing booking
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ status: 'error', error: 'Booking not found' });
+    }
+
+    // 2. Build update object — only include fields that were actually sent
+    const updateData = {};
+    const changedFields = [];
+
+    if (packageName !== undefined && packageName !== booking.packageName) {
+      updateData.packageName = packageName.trim();
+      changedFields.push(`Package Name: "${booking.packageName}" → "${packageName.trim()}"`);
+    }
+
+    if (duration !== undefined && duration !== booking.duration) {
+      updateData.duration = duration.trim();
+      changedFields.push(`Duration: "${booking.duration}" → "${duration.trim()}"`);
+    }
+
+    if (startDate !== undefined) {
+      updateData.startDate = startDate ? new Date(startDate) : null;
+      changedFields.push('Start Date updated');
+    }
+
+    if (endDate !== undefined) {
+      updateData.endDate = endDate ? new Date(endDate) : null;
+      changedFields.push('End Date updated');
+    }
+
+    if (pax !== undefined && typeof pax === 'object') {
+      updateData.pax = {
+        adult:    Number(pax.adult)    || 0,
+        children: Number(pax.children) || 0,
+        infants:  Number(pax.infants)  || 0,
+      };
+      changedFields.push('Pax updated');
+    }
+
+    // 3. Nothing to update
+    if (Object.keys(updateData).length === 0) {
+      return res.status(200).json({
+        status: 'ok',
+        message: 'No changes detected',
+        booking,
+      });
+    }
+
+    // 4. Apply update (runValidators: false to avoid triggering unrelated validators)
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: false }
+    );
+
+    // 5. Activity log (non-fatal)
+    try {
+      if (userEmail) {
+        await ActivityLog.create({
+          action: 'UPDATE',
+          module: 'Bookings',
+          user: userEmail,
+          userId: adminId || null,
+          severity: 'SUCCESS',
+          description: `Updated booking details for: ${updatedBooking.packageName} (${updatedBooking.fullName})${
+            changedFields.length ? '. Changes: ' + changedFields.join(', ') : ''
+          }`,
+          details: {
+            recordTitle: `${updatedBooking.packageName} - ${updatedBooking.fullName}`,
+            recordId: updatedBooking._id.toString(),
+            method: 'PATCH',
+            endpoint: `/api/bookings/${id}/details`,
+          },
+        });
+        console.log('✅ Activity Log saved for Update Booking Details');
+      }
+    } catch (logError) {
+      console.error('⚠️ Failed to save activity log:', logError.message);
+    }
+
+    console.log(`✅ Booking details updated: ${id} — ${changedFields.join(', ') || 'no changes'}`);
+
+    return res.status(200).json({
+      status: 'ok',
+      message: 'Booking details updated successfully',
+      booking: updatedBooking,
+    });
+
+  } catch (err) {
+    console.error('❌ Error updating booking details:', err);
+    return res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
 module.exports = router;

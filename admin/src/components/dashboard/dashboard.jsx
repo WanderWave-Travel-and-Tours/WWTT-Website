@@ -228,10 +228,24 @@ const Dashboard = () => {
           });
 
           // Booking counts come from the same /stats response
+          // Exclude archived bookings from recentBookingCounts so they don't
+          // inflate the numerator of the View-to-Book rate calculation.
+          // Cross-reference against the already-fetched `bookings` array:
+          // any booking with isArchive === 'Yes' is excluded.
+          const activeBookingIds = new Set(
+            bookings.filter(b => b.isArchive !== 'Yes').map(b => String(b._id))
+          );
+          const filteredRecentBookingCounts = (pvStats.recentBookingCounts || []).filter(c => {
+            const id = String(c.bookingId || c._id || '');
+            if (id && activeBookingIds.size > 0) return activeBookingIds.has(id);
+            // Fallback: check isArchive field directly on the record
+            return c.isArchive !== 'Yes';
+          });
+
           setBookingCountStats({
             totalBookingCounts:  pvStats.totalBookingCounts  || 0,
             topBookedPackages:   pvStats.topBookedPackages   || [],
-            recentBookingCounts: pvStats.recentBookingCounts || [],
+            recentBookingCounts: filteredRecentBookingCounts,
           });
         }
       } catch (pvErr) {

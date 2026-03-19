@@ -16,12 +16,23 @@ const PackagePreviewModal = ({
   pkg,
   currency = 'PHP',
   exchangeRate = 58,
+  // ✅ Computed prices passed from BookingRightForm — use these instead of recalculating
+  computedPackageTotal = null,
+  computedOriginalPrice = null,
+  computedFinalPackageTotal = null,
+  computedDiscountAmount = null,
+  appliedPromo = null,
+  paxCount = null,
+  timerExpired: timerExpiredProp = null,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedDay, setExpandedDay] = useState(null);
-  const [timerExpired, setTimerExpired] = useState(false);
+  const [timerExpiredLocal, setTimerExpiredLocal] = useState(false);
   const [userIpAddress, setUserIpAddress] = useState(null);
   const modalRef = useRef(null);
+
+  // ✅ Use prop if provided, otherwise fall back to local timer state
+  const timerExpired = timerExpiredProp !== null ? timerExpiredProp : timerExpiredLocal;
 
   useEffect(() => {
     const fetchIp = async () => {
@@ -47,13 +58,13 @@ const PackagePreviewModal = ({
         try {
           const { startTime } = JSON.parse(stored);
           const remaining = Math.max(0, 900000 - (Date.now() - startTime));
-          setTimerExpired(remaining === 0);
+          setTimerExpiredLocal(remaining === 0);
         } catch {
-          setTimerExpired(false);
+          setTimerExpiredLocal(false);
         }
       } else {
         // No timer yet = package not yet visited = discount still available
-        setTimerExpired(false);
+        setTimerExpiredLocal(false);
       }
     };
     checkTimer();
@@ -87,16 +98,37 @@ const PackagePreviewModal = ({
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
   const convertPrice = (p) => currency === 'PHP' ? p : (p / exchangeRate) * 1.30;
 
+  // ✅ Use computed prices from BookingRightForm if available (reflects pax, hotel, promos, timer)
+  // Fall back to simple per-pkg calculation only if props not provided
   const basePrice = pkg.price || 0;
   const markupPrice = Math.round(basePrice * 1.10);
-  const displayPrice = timerExpired ? markupPrice : basePrice;
-  const originalPrice = timerExpired ? null : markupPrice;
-  const discountPct = !timerExpired
-    ? Math.round(((markupPrice - basePrice) / markupPrice) * 100)
-    : 0;
 
-  const convertedDisplay = convertPrice(displayPrice);
-  const convertedOriginal = originalPrice ? convertPrice(originalPrice) : null;
+  let displayPrice, originalPrice, discountPct, discountAmount;
+
+  if (computedFinalPackageTotal !== null) {
+    // ✅ PRIMARY: use exact values passed from BookingRightForm
+    displayPrice = computedFinalPackageTotal;
+    originalPrice = (computedOriginalPrice && computedOriginalPrice > computedFinalPackageTotal)
+      ? computedOriginalPrice
+      : null;
+    discountAmount = computedDiscountAmount || 0;
+    discountPct = (appliedPromo && appliedPromo.discountType === 'Percentage')
+      ? appliedPromo.discountValue || appliedPromo.pricing?.local || 0
+      : (!timerExpired && computedOriginalPrice && computedOriginalPrice > computedFinalPackageTotal
+          ? Math.round(((computedOriginalPrice - computedFinalPackageTotal) / computedOriginalPrice) * 100)
+          : 0);
+  } else {
+    // Fallback: simple single-pax calculation
+    displayPrice = timerExpired ? markupPrice : basePrice;
+    originalPrice = timerExpired ? null : markupPrice;
+    discountPct = !timerExpired
+      ? Math.round(((markupPrice - basePrice) / markupPrice) * 100)
+      : 0;
+    discountAmount = 0;
+  }
+
+  const convertedDisplay = displayPrice;    // already converted by parent
+  const convertedOriginal = originalPrice;  // already converted by parent
 
   const formatPrice = (p) => p.toLocaleString(undefined, {
     minimumFractionDigits: currency === 'USD' ? 2 : 0,
@@ -365,7 +397,22 @@ const PackagePreviewModal = ({
               )}
             </div>
             <span className="ppm-price-note">
-              <Users size={12} /> per pax · Taxes may apply
+              <Users size={12} />
+              {paxCount ? `${paxCount} pax` : 'per pax'} · Taxes may apply
+              {discountAmount > 0 && appliedPromo && (
+                <span style={{
+                  marginLeft: '6px',
+                  background: '#ecfdf5',
+                  color: '#059669',
+                  border: '1px solid #a7f3d0',
+                  borderRadius: '20px',
+                  padding: '1px 7px',
+                  fontWeight: '700',
+                  fontSize: '0.7rem'
+                }}>
+                  🏷️ Promo applied
+                </span>
+              )}
             </span>
           </div>
 

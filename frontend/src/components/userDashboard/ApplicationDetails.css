@@ -497,6 +497,49 @@
     transform: translateY(0);
 }
 
+/* ── ad-price-row: used in the Package Inclusions/Pricing breakdown ── */
+.ad-price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed #e2e8f0;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ad-price-row:last-child {
+    border-bottom: none;
+}
+
+.ad-total-row {
+    border-top: 2px solid #e2e8f0;
+    border-bottom: none;
+    margin-top: 8px;
+    padding-top: 14px;
+    font-weight: 800;
+}
+
+.ad-discount-row .ad-value {
+    color: #dc2626;
+}
+
+.ad-payment-info {
+    background: #f8fafc;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    margin-top: 4px;
+}
+
+.ad-pricing-breakdown {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
 /* --- RESPONSIVE --- */
 
 @media (max-width: 992px) {
@@ -511,17 +554,112 @@
     }
 }
 
-@media (max-width: 480px) {
-    .ad-title { font-size: 1.5rem; }
-    
-    .ad-row { 
-        flex-direction: column; 
-        align-items: flex-start; 
-        gap: 6px; 
+@media (max-width: 768px) {
+    .ad-container {
+        padding: 16px;
     }
-    
-    .ad-value { text-align: left; }
-    
+
+    /* Header: title + buttons stack cleanly */
+    .ad-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 20px 18px;
+        gap: 14px;
+    }
+
+    .ad-header > div:last-child {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .ad-title {
+        font-size: 1.35rem;
+        word-break: break-word;
+    }
+
+    /* Cancel booking button — full width on mobile so it doesn't get cut */
+    .ad-cancel-booking-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 11px 16px !important;
+        font-size: 0.82rem !important;
+    }
+
+    .ad-status-pill {
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    /* Card title — smaller on mobile, allow wrapping */
+    .ad-card-title {
+        font-size: 0.92rem;
+        letter-spacing: 0.2px;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* Inclusions card */
+    .ad-inclusions-card {
+        padding: 18px !important;
+    }
+
+    /* Package summary rows */
+    .ad-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .ad-value {
+        text-align: left;
+    }
+
+    /* Pricing rows */
+    .ad-price-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .ad-price-row .ad-value {
+        text-align: left;
+        font-size: 1rem;
+    }
+
+    .ad-total-row .ad-value {
+        font-size: 1.1rem;
+        color: #f97316;
+    }
+}
+
+@media (max-width: 480px) {
+    .ad-container {
+        padding: 12px;
+    }
+
+    .ad-header {
+        padding: 16px 14px;
+        border-radius: 14px;
+    }
+
+    .ad-title {
+        font-size: 1.15rem;
+    }
+
+    .ad-card {
+        padding: 16px !important;
+        border-radius: 14px;
+    }
+
+    .ad-card-title {
+        font-size: 0.85rem;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+    }
+
     .ad-price-box { 
         flex-direction: column; 
         align-items: flex-start; 
@@ -540,6 +678,20 @@
         width: 100%; 
         text-align: center; 
         margin-top: 10px; 
+    }
+
+    .ad-pricing-breakdown {
+        padding: 14px;
+    }
+
+    .ad-customization-total {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .ad-customization-total-amount {
+        font-size: 1.1rem;
     }
 }
 

@@ -24,6 +24,25 @@ const BookingCustomizer = ({
   const [matchedInclusionCount, setMatchedInclusionCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [fetchedPackageData, setFetchedPackageData] = useState(null); // ✅ Store fetched package
+  const [showAllInclusions, setShowAllInclusions] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const INCLUSIONS_PREVIEW_COUNT = 5;
+
+  // ─────────────────────────────────────────────────────────────
+  // BOOKING DETAILS EDIT STATE
+  // ─────────────────────────────────────────────────────────────
+  const [isEditingBookingDetails, setIsEditingBookingDetails] = useState(false);
+  const [isSavingBookingDetails, setIsSavingBookingDetails] = useState(false);
+  const [bookingDetailsForm, setBookingDetailsForm] = useState({
+    packageName: '',
+    duration: '',
+    startDate: '',
+    endDate: '',
+    paxAdult: 1,
+    paxChildren: 0,
+    paxInfants: 0,
+  });
+  const bookingDetailsSnapshotRef = useRef({});
 
   const hasFetchedRef = useRef(false);
   const currentDestinationRef = useRef('');
@@ -580,6 +599,7 @@ const BookingCustomizer = ({
       if (onUpdate) {
         onUpdate(updatedBooking.booking);
       }
+      setHasUnsavedChanges(false);
       
     } catch (error) {
       console.error('❌ Error saving customization:', error);
@@ -608,6 +628,7 @@ const BookingCustomizer = ({
       }
       
       setError('');
+      setHasUnsavedChanges(true);
       return prev.map(inc => inc.id === id ? { ...inc, isChecked: !inc.isChecked } : inc);
     });
   };
@@ -635,10 +656,12 @@ const BookingCustomizer = ({
         sellerRateId:       rate._id,
       },
     ]);
+    setHasUnsavedChanges(true);
   };
 
   const removeInclusion = (id) => {
     setCustomizedInclusions(prev => prev.filter(inc => inc.id !== id));
+    setHasUnsavedChanges(true);
   };
 
   const resetCustomization = async () => {
@@ -685,6 +708,7 @@ const BookingCustomizer = ({
     
     setCustomizedInclusions(resetInclusions);
     setMatchedInclusionCount(0);
+    setHasUnsavedChanges(false);
     
     await handleSaveCustomization();
   };
@@ -702,6 +726,79 @@ const BookingCustomizer = ({
     })}`;
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const getPaxLabel = () => {
+    if (!booking?.pax) return 'N/A';
+    const parts = [];
+    if (booking.pax.adult > 0) parts.push(`${booking.pax.adult} Adult${booking.pax.adult > 1 ? 's' : ''}`);
+    if (booking.pax.children > 0) parts.push(`${booking.pax.children} Child${booking.pax.children > 1 ? 'ren' : ''}`);
+    if (booking.pax.infants > 0) parts.push(`${booking.pax.infants} Infant${booking.pax.infants > 1 ? 's' : ''}`);
+    return parts.join(', ') || 'N/A';
+  };
+
+
+  // ─────────────────────────────────────────────────────────────
+  // BOOKING DETAILS EDIT HELPERS
+  // ─────────────────────────────────────────────────────────────
+
+  const handleStartEditingBookingDetails = () => {
+    const snap = {
+      packageName: booking?.packageName || '',
+      duration: booking?.duration || '',
+      startDate: booking?.startDate ? new Date(booking.startDate).toISOString().split('T')[0] : '',
+      endDate: booking?.endDate ? new Date(booking.endDate).toISOString().split('T')[0] : '',
+      paxAdult: booking?.pax?.adult ?? 1,
+      paxChildren: booking?.pax?.children ?? 0,
+      paxInfants: booking?.pax?.infants ?? 0,
+    };
+    bookingDetailsSnapshotRef.current = snap;
+    setBookingDetailsForm(snap);
+    setIsEditingBookingDetails(true);
+  };
+
+  const handleCancelEditingBookingDetails = () => {
+    setBookingDetailsForm(bookingDetailsSnapshotRef.current);
+    setIsEditingBookingDetails(false);
+  };
+
+  const handleSaveBookingDetails = async () => {
+    if (!booking?._id) return;
+    setIsSavingBookingDetails(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/bookings/${booking._id}/details`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          packageName: bookingDetailsForm.packageName,
+          duration: bookingDetailsForm.duration,
+          startDate: bookingDetailsForm.startDate,
+          endDate: bookingDetailsForm.endDate,
+          pax: {
+            adult: Number(bookingDetailsForm.paxAdult) || 0,
+            children: Number(bookingDetailsForm.paxChildren) || 0,
+            infants: Number(bookingDetailsForm.paxInfants) || 0,
+          },
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to save booking details');
+      const data = await response.json();
+      if (onUpdate) onUpdate(data.booking || data);
+      setIsEditingBookingDetails(false);
+    } catch (err) {
+      console.error('❌ Error saving booking details:', err);
+      setError(`Failed to save booking details: ${err.message}`);
+    } finally {
+      setIsSavingBookingDetails(false);
+    }
+  };
 
   // ─────────────────────────────────────────────────────────────
   // DERIVED VALUES FOR RENDER
@@ -744,17 +841,192 @@ const BookingCustomizer = ({
 
   return (
     <div className="pc-container">
+
+      {/* ══════════════════════════════════════════════════════════
+          BOOKING DETAILS SECTION
+          Shows Package Name, Duration, Travel Dates, Pax — editable
+          ══════════════════════════════════════════════════════════ */}
+      <div className="bc-booking-details-card">
+        <div className="bc-booking-details-header">
+          <span className="bc-booking-details-accent" />
+          <h3 className="bc-booking-details-title">PACKAGE INCLUSIONS &amp; PRICING</h3>
+          <div style={{ marginLeft: 'auto' }}>
+            {!isEditingBookingDetails ? (
+              <button
+                className="bc-edit-btn"
+                onClick={handleStartEditingBookingDetails}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  className="pc-save-btn"
+                  onClick={handleSaveBookingDetails}
+                  disabled={isSavingBookingDetails}
+                  style={{ padding: '6px 14px', fontSize: '0.85rem' }}
+                >
+                  {isSavingBookingDetails ? (
+                    <><div className="pc-spinner" style={{ width: '12px', height: '12px' }} /> Saving...</>
+                  ) : (
+                    <><CheckCircle size={13} /> Save</>
+                  )}
+                </button>
+                <button
+                  className="bc-cancel-btn"
+                  onClick={handleCancelEditingBookingDetails}
+                  disabled={isSavingBookingDetails}
+                  style={{ padding: '6px 14px', fontSize: '0.85rem' }}
+                >
+                  <XCircle size={13} /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {isEditingBookingDetails && (
+          <div className="bc-edit-mode-banner" style={{ margin: '0 16px 4px', borderRadius: '8px' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            You are editing booking details. Click <strong>Save</strong> to apply changes.
+          </div>
+        )}
+
+        <div className="bc-booking-details-grid">
+          {/* Package Name */}
+          <div className="bc-booking-detail-row">
+            <span className="bc-booking-detail-label">Package Name</span>
+            {isEditingBookingDetails ? (
+              <input
+                className="bc-detail-input"
+                type="text"
+                value={bookingDetailsForm.packageName}
+                onChange={(e) => setBookingDetailsForm(f => ({ ...f, packageName: e.target.value }))}
+                placeholder="Package name"
+              />
+            ) : (
+              <span className="bc-booking-detail-value">{booking?.packageName || 'N/A'}</span>
+            )}
+          </div>
+
+          {/* Duration */}
+          <div className="bc-booking-detail-row">
+            <span className="bc-booking-detail-label">Duration</span>
+            {isEditingBookingDetails ? (
+              <input
+                className="bc-detail-input"
+                type="text"
+                value={bookingDetailsForm.duration}
+                onChange={(e) => setBookingDetailsForm(f => ({ ...f, duration: e.target.value }))}
+                placeholder="e.g. 5D4N"
+              />
+            ) : (
+              <span className="bc-booking-detail-value">{booking?.duration || 'N/A'}</span>
+            )}
+          </div>
+
+          {/* Travel Dates */}
+          <div className="bc-booking-detail-row">
+            <span className="bc-booking-detail-label">Travel Dates</span>
+            {isEditingBookingDetails ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <input
+                  className="bc-detail-input"
+                  type="date"
+                  value={bookingDetailsForm.startDate}
+                  onChange={(e) => setBookingDetailsForm(f => ({ ...f, startDate: e.target.value }))}
+                />
+                <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>to</span>
+                <input
+                  className="bc-detail-input"
+                  type="date"
+                  value={bookingDetailsForm.endDate}
+                  onChange={(e) => setBookingDetailsForm(f => ({ ...f, endDate: e.target.value }))}
+                />
+              </div>
+            ) : (
+              <span className="bc-booking-detail-value">
+                {booking?.startDate && booking?.endDate
+                  ? `${formatDate(booking.startDate)} - ${formatDate(booking.endDate)}`
+                  : 'N/A'}
+              </span>
+            )}
+          </div>
+
+          {/* Pax */}
+          <div className="bc-booking-detail-row">
+            <span className="bc-booking-detail-label">Pax</span>
+            {isEditingBookingDetails ? (
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <label className="bc-pax-label">
+                  <span>Adults</span>
+                  <input
+                    className="bc-detail-input bc-pax-input"
+                    type="number"
+                    min="0"
+                    value={bookingDetailsForm.paxAdult}
+                    onChange={(e) => setBookingDetailsForm(f => ({ ...f, paxAdult: e.target.value }))}
+                  />
+                </label>
+                <label className="bc-pax-label">
+                  <span>Children</span>
+                  <input
+                    className="bc-detail-input bc-pax-input"
+                    type="number"
+                    min="0"
+                    value={bookingDetailsForm.paxChildren}
+                    onChange={(e) => setBookingDetailsForm(f => ({ ...f, paxChildren: e.target.value }))}
+                  />
+                </label>
+                <label className="bc-pax-label">
+                  <span>Infants</span>
+                  <input
+                    className="bc-detail-input bc-pax-input"
+                    type="number"
+                    min="0"
+                    value={bookingDetailsForm.paxInfants}
+                    onChange={(e) => setBookingDetailsForm(f => ({ ...f, paxInfants: e.target.value }))}
+                  />
+                </label>
+              </div>
+            ) : (
+              <span className="bc-booking-detail-value">{getPaxLabel()}</span>
+            )}
+          </div>
+
+          {booking?.selectedRoomType && (
+            <div className="bc-booking-detail-row">
+              <span className="bc-booking-detail-label">Room Type</span>
+              <span className="bc-booking-detail-value">{booking.selectedRoomType}</span>
+            </div>
+          )}
+
+          {booking?.hotelName && (
+            <div className="bc-booking-detail-row">
+              <span className="bc-booking-detail-label">Hotel</span>
+              <span className="bc-booking-detail-value">{booking.hotelName}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Header */}
       <div className="pc-header">
         <div className="pc-title-row">
           <Package size={24} color="#f97316" />
-          <h2 className="pc-title">Customize Your Booking</h2>
+          <h2 className="pc-title">Customize Your Package</h2>
         </div>
         <p className="pc-subtitle">
           Personalize your tour by selecting or deselecting inclusions
         </p>
         <div className="pc-destination-badge">
-          📍 {booking?.packageName ? `${booking.packageName} in ${extractMainDestination(packageDestination)}` : extractMainDestination(packageDestination)}
+          📍 {extractMainDestination(packageDestination)}
         </div>
         
         {customizedInclusions.length > 0 && matchedInclusionCount > 0 && (
@@ -817,146 +1089,152 @@ const BookingCustomizer = ({
               </span>
             )}
           </h3>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button 
-              className="pc-save-btn" 
-              onClick={handleSaveCustomization}
-              disabled={isSaving}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: '600',
-                fontSize: '0.9rem',
-                cursor: isSaving ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                opacity: isSaving ? 0.6 : 1,
-                transition: 'all 0.2s',
-              }}
-            >
-              {isSaving ? (
-                <>
-                  <div style={{ 
-                    width: '14px', height: '14px',
-                    border: '2px solid rgba(255,255,255,0.3)',
-                    borderTopColor: 'white',
-                    borderRadius: '50%',
-                    animation: 'spin 0.6s linear infinite',
-                  }}></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <CheckCircle size={14} />
-                  Save Changes
-                </>
-              )}
-            </button>
-            
-            <button 
-              className="pc-reset-btn" 
-              onClick={resetCustomization}
-              title="Reset to original package"
-            >
-              <RotateCcw size={14} /> Reset
-            </button>
-          </div>
+
+          <button
+            className="pc-reset-btn"
+            onClick={resetCustomization}
+            title="Reset to original package inclusions"
+            disabled={isSaving}
+          >
+            <RotateCcw size={14} /> Reset
+          </button>
         </div>
 
         {/* INCLUSIONS LIST */}
         {customizedInclusions.length > 0 ? (
-          <div className="pc-inclusions-list">
-            {customizedInclusions.map((inclusion) => {
-              const checkedCount    = customizedInclusions.filter(inc => inc.isChecked).length;
-              const isLastRemaining = inclusion.isChecked && checkedCount === 1;
-              
-              return (
-                <div 
-                  key={inclusion.id}
-                  className={`pc-inclusion-item ${inclusion.isChecked ? 'checked' : 'unchecked'} ${isLastRemaining ? 'last-remaining' : ''}`}
-                >
-                  <div className="pc-inclusion-main">
-                    <input
-                      type="checkbox"
-                      className="pc-checkbox"
-                      checked={inclusion.isChecked}
-                      onChange={() => toggleInclusion(inclusion.id)}
-                      disabled={isLastRemaining}
-                      title={isLastRemaining ? "This is the last remaining inclusion and cannot be removed" : ""}
-                    />
-                    
-                    <div className="pc-inclusion-info">
-                      <div className="pc-inclusion-name">
-                        {inclusion.name}
-                        
-                        {isLastRemaining && (
-                          <span 
-                            className="pc-badge" 
-                            style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', padding: '2px 6px' }}
-                            title="At least one inclusion must remain in your package"
-                          >
-                            Required
-                          </span>
-                        )}
-                        
-                        {inclusion.isOriginal && !isLastRemaining && (
-                          <span 
-                            className="pc-badge" 
-                            style={{ 
-                              background: inclusion.price > 0 ? '#dcfce7' : '#fee2e2',
-                              color:      inclusion.price > 0 ? '#166534' : '#991b1b',
-                            }}
-                          >
-                            {inclusion.price > 0 ? 'Priced' : 'No Rate'}
-                          </span>
-                        )}
-                        
-                        {!inclusion.isOriginal && (
-                          <span className="pc-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
-                            Added
-                          </span>
+          <>
+            <div className="pc-inclusions-list">
+              {(showAllInclusions
+                ? customizedInclusions
+                : customizedInclusions.slice(0, INCLUSIONS_PREVIEW_COUNT)
+              ).map((inclusion) => {
+                const checkedCount    = customizedInclusions.filter(inc => inc.isChecked).length;
+                const isLastRemaining = inclusion.isChecked && checkedCount === 1;
+
+                return (
+                  <div
+                    key={inclusion.id}
+                    className={`pc-inclusion-item ${inclusion.isChecked ? 'checked' : 'unchecked'} ${isLastRemaining ? 'last-remaining' : ''}`}
+                  >
+                    <div className="pc-inclusion-main">
+                      <input
+                        type="checkbox"
+                        className="pc-checkbox"
+                        checked={inclusion.isChecked}
+                        onChange={() => toggleInclusion(inclusion.id)}
+                        disabled={isLastRemaining}
+                        title={isLastRemaining ? 'This is the last remaining inclusion and cannot be removed' : ''}
+                        style={{ cursor: isLastRemaining ? 'not-allowed' : 'pointer' }}
+                      />
+
+                      <div className="pc-inclusion-info">
+                        <div className="pc-inclusion-name">
+                          {inclusion.name}
+
+                          {isLastRemaining && (
+                            <span
+                              className="pc-badge"
+                              style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', padding: '2px 6px' }}
+                              title="At least one inclusion must remain in your package"
+                            >
+                              Required
+                            </span>
+                          )}
+
+                          {!inclusion.isOriginal && (
+                            <span className="pc-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
+                              Added
+                            </span>
+                          )}
+
+                          {!inclusion.isChecked && (
+                            <span className="pc-badge" style={{ background: '#fee2e2', color: '#991b1b' }}>
+                              Deselected
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Meta info row: Supplier, Destination, Pax */}
+                        {(inclusion.supplier || inclusion.destination || inclusion.pax) && (
+                          <div className="pc-inclusion-meta">
+                            {inclusion.supplier && (
+                              <span className="pc-meta-item">
+                                Supplier: <strong>{inclusion.supplier}</strong>
+                              </span>
+                            )}
+                            {inclusion.destination && (
+                              <span className="pc-meta-item">
+                                Destination: <strong>{inclusion.destination}</strong>
+                              </span>
+                            )}
+                            {inclusion.pax && (
+                              <span className="pc-meta-item">
+                                Pax: <strong>{inclusion.pax}</strong>
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pc-inclusion-actions">
-                    {inclusion.price > 0 && (
-                      <span 
-                        className="pc-inclusion-price"
-                        style={{ 
-                          color: inclusion.isOriginal 
-                            ? (!inclusion.isChecked ? '#dc2626' : '#64748b')
-                            : '#059669',
-                        }}
-                        title={
-                          inclusion.isOriginal 
-                            ? (!inclusion.isChecked ? 'Will be deducted from package price' : 'Included in package')
-                            : 'Will be added to package price'
-                        }
-                      >
-                        {formatPrice(inclusion.price)}
-                      </span>
-                    )}
-                    
-                    {!inclusion.isOriginal && (
-                      <button
-                        className="pc-remove-btn"
-                        onClick={() => removeInclusion(inclusion.id)}
-                        title="Remove inclusion"
-                      >
-                        <XCircle size={18} />
-                      </button>
-                    )}
+                    <div className="pc-inclusion-actions">
+                      {inclusion.price > 0 && (
+                        <span
+                          className="pc-inclusion-price"
+                          style={{
+                            color: inclusion.isOriginal
+                              ? (!inclusion.isChecked ? '#dc2626' : '#64748b')
+                              : '#059669',
+                          }}
+                          title={
+                            inclusion.isOriginal
+                              ? (!inclusion.isChecked ? 'Will be deducted from package price' : 'Included in package')
+                              : 'Will be added to package price'
+                          }
+                        >
+                          {formatPrice(inclusion.price)}
+                        </span>
+                      )}
+
+                      {!inclusion.isOriginal && (
+                        <button
+                          className="pc-remove-btn"
+                          onClick={() => removeInclusion(inclusion.id)}
+                          title="Remove inclusion"
+                        >
+                          <XCircle size={18} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* See All / Show Less */}
+            {customizedInclusions.length > INCLUSIONS_PREVIEW_COUNT && (
+              <button
+                onClick={() => setShowAllInclusions(prev => !prev)}
+                className="pc-see-all-btn"
+              >
+                {showAllInclusions ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                    See All {customizedInclusions.length} Inclusions
+                  </>
+                )}
+              </button>
+            )}
+          </>
         ) : (
           <div style={{
             padding: '40px 20px',
@@ -1072,6 +1350,60 @@ const BookingCustomizer = ({
           </div>
         )}
       </div>
+
+      {/* ── SAVE CHANGES BAR — appears whenever there are unsaved changes ── */}
+      {hasUnsavedChanges && (
+        <div className="bc-save-bar">
+          <p className="bc-save-bar-note">
+            You have unsaved changes to the inclusions.
+          </p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              className="bc-cancel-btn"
+              onClick={() => {
+                // Restore from original booking customizedInclusions
+                const original = booking?.customizedInclusions;
+                if (original && original.length > 0) {
+                  setCustomizedInclusions(original.map((inc, i) => ({
+                    id: inc.id || `inc-${i}`,
+                    name: inc.name || '',
+                    price: typeof inc.price === 'number' ? inc.price : (parseFloat(inc.price) || 0),
+                    supplierRate: inc.supplierRate || 0,
+                    markup: inc.markup || 0,
+                    markupType: inc.markupType || 'fixed',
+                    supplier: inc.supplier || 'N/A',
+                    destination: inc.destination || '',
+                    pax: inc.pax || '',
+                    notes: inc.notes || '',
+                    isOriginal: inc.isOriginal === true || inc.isOriginal === 'true',
+                    isChecked: inc.isChecked === false || inc.isChecked === 'false' ? false : true,
+                    source: inc.source || 'package',
+                    sellerRateId: inc.sellerRateId || null,
+                    matchedActivity: inc.matchedActivity || null,
+                    matchedDestination: inc.matchedDestination || null,
+                  })));
+                }
+                setHasUnsavedChanges(false);
+                setError('');
+              }}
+              disabled={isSaving}
+            >
+              <XCircle size={14} /> Discard
+            </button>
+            <button
+              className="pc-save-btn"
+              onClick={handleSaveCustomization}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <><div className="pc-spinner" /> Saving...</>
+              ) : (
+                <><CheckCircle size={14} /> Save Changes</>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin {
