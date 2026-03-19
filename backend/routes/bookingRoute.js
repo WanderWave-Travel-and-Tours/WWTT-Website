@@ -7,7 +7,8 @@ const Booking = require('../models/booking');
 const User = require('../models/user');
 const Promo = require('../models/promo');
 const Package = require('../models/package');
-const ActivityLog = require('../models/ActivityLog'); 
+const ActivityLog = require('../models/ActivityLog');
+const { BookingCount } = require('../models/PageView');
 const { sendNewUserToGHL, sendBookingConfirmationToGHL } = require('../utils/ghlService');
  
 const storage = multer.diskStorage({
@@ -168,6 +169,36 @@ router.post('/:id/archive', async (req, res) => {
         const newStatus = booking.isArchive === 'Yes' ? 'No' : 'Yes';
         booking.isArchive = newStatus;
         await booking.save();
+
+        // ── Sync View-to-Book Rate ────────────────────────────────────
+        // Archiving → remove its BookingCount so the rate goes down
+        // Restoring → re-create it so the rate reflects reality again
+        try {
+            if (newStatus === 'Yes') {
+                // Delete the BookingCount tied to this booking
+                const deleted = await BookingCount.deleteOne({ bookingId: booking._id });
+                console.log(`📊 BookingCount removed on archive (deleted: ${deleted.deletedCount})`);
+            } else {
+                // Re-create the BookingCount on restore (avoid duplicates)
+                const exists = await BookingCount.findOne({ bookingId: booking._id });
+                if (!exists) {
+                    const totalPax = (booking.pax?.adult || 0) + (booking.pax?.children || 0) + (booking.pax?.infants || 0);
+                    await BookingCount.create({
+                        bookingId:   booking._id,
+                        packageId:   booking.packageId   || null,
+                        packageName: booking.packageName || null,
+                        paxCount:    totalPax || 1,
+                        paymentType: booking.paymentType || 'unknown',
+                        totalAmount: booking.totalAmount || 0,
+                    });
+                    console.log(`📊 BookingCount restored for booking: ${booking.packageName}`);
+                }
+            }
+        } catch (syncErr) {
+            // Non-fatal — archive still succeeds even if BookingCount sync fails
+            console.error('⚠️ BookingCount sync failed (non-fatal):', syncErr.message);
+        }
+        // ─────────────────────────────────────────────────────────────
 
         // 👇👇👇 ACTIVITY LOG START (ARCHIVE/RESTORE) 👇👇👇
         try {
@@ -1162,6 +1193,8 @@ router.patch('/:id/customization', async (req, res) => {
     booking.isCustomized = true;
 
     await booking.save();
+    // ✅ Populate packageId so the frontend keeps destination data intact
+    await booking.populate('packageId');
 
     res.json({
       message: 'Booking customization updated successfully',
@@ -1334,7 +1367,7 @@ router.patch('/:id/details', async (req, res) => {
       id,
       { $set: updateData },
       { new: true, runValidators: false }
-    );
+    ).populate('packageId'); // ✅ Keep packageId populated so frontend destination check works
 
     // 5. Activity log (non-fatal)
     try {

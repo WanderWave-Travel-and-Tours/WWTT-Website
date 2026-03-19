@@ -825,7 +825,7 @@ const handleApplyPromo = async () => {
 
     const bookingData = {
       packageId: pkg._id || pkg.id,
-      packageName: pkg.name,
+      packageName: pkg.title || pkg.name,
       packageData: pkg, 
       sellerPrice: pkg.sellerPrice || 0,
       markup: pkg.markup || 0,
@@ -847,7 +847,7 @@ const handleApplyPromo = async () => {
         fromBooking: true,
         packageData: {
           packageId: pkg._id || pkg.id,
-          packageName: pkg.name,
+          packageName: pkg.title || pkg.name,
           departureDate: departureDateStr, 
           returnDate: returnDateStr,
           destination: pkg.location || pkg.destination,
@@ -982,7 +982,7 @@ const handleNextPassenger = async (e) => {
 
     const baseBookingData = {
       packageId: pkg._id,
-      packageName: pkg.name,
+      packageName: pkg.title || pkg.name,
       packagePrice: correctPrice, // ✅ FIXED - Uses timer-aware price
       startDate: startDateFormatted,
       endDate: endDateFormatted,
@@ -1093,7 +1093,23 @@ const handleNextPassenger = async (e) => {
 
     if (bookingResponse.data.success) {
       const bookingId = bookingResponse.data.bookingId;
-      
+
+      // ── Record booking count for View-to-Book Rate tracking ──────
+      // Fire-and-forget: non-blocking, failure won't affect booking flow
+      fetch('https://wanderwaveph.onrender.com/api/page-views/booking-count', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId:   bookingId ? bookingId.toString() : null,
+          packageId:   (pkg._id || pkg.id || null)?.toString() || null,
+          packageName: pkg.title || pkg.name || null,
+          paxCount:    quantities.adult || 1,
+          paymentType: paymentType || 'full',
+          totalAmount: finalTotalAmount || 0,
+        }),
+      }).catch(err => console.warn('⚠️ BookingCount record failed (non-fatal):', err));
+      // ─────────────────────────────────────────────────────────────
+
       toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
       
       const paymentResponse = await axios.post('https://wanderwaveph.onrender.com/api/payment/create-intent', {
@@ -1368,15 +1384,7 @@ const handleNextPassenger = async (e) => {
               </div>
               <div style={{fontSize:'0.8rem', color:'#6b7280', marginTop:'4px'}}>3+ years old</div>
 
-              {isSoloJoiners && !isMinTwoPkg && (
-                <div style={{
-                  fontSize: '0.78rem', color: '#166534', marginTop: '6px',
-                  background: '#f0fdf4', border: '1px solid #86efac',
-                  borderRadius: '8px', padding: '5px 10px', lineHeight: '1.4'
-                }}>
-                  ℹ️ You can book solo (1 pax) or as a group. Price adjusts per pax added.
-                </div>
-              )}
+
             </div>
             <div className="brf-quantity-controls">
               <button

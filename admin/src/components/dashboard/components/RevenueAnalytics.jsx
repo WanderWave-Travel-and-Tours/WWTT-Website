@@ -35,6 +35,7 @@ const RevenueAnalytics = ({
   dailyData,
   onMonthChange, 
   monthlyData,
+  onResetViewToBookRate,
   pageViewStats = {
     totalViews: 0,
     packagesPageViews: 0,
@@ -366,23 +367,18 @@ const RevenueAnalytics = ({
   }, [analyticsDateWindow, pageViewStats.recentViews, viewMode, allPackages]);
 
   // ============================================================
-  // FILTERED BOOKING COUNTS — uses the SAME shared date window
-  // This guarantees the View-to-Book rate is:
-  //   confirmed bookings in period / booking page views in period
+  // BOOKING COUNTS for View-to-Book Rate
+  // Numerator = ALL non-archived bookings (no date filter).
+  // isArchive = "Yes" bookings are already excluded in dashboard.jsx
+  // before being passed in via bookingCountStats.recentBookingCounts.
   // ============================================================
   const filteredBookingCounts = useMemo(() => {
     const allCounts = bookingCountStats.recentBookingCounts || [];
-    const { start, end } = analyticsDateWindow;
 
-    const filtered = allCounts.filter(c => {
-      const d = new Date(c.createdAt);
-      return d >= start && d <= end;
-    });
-
-    const totalConfirmedBookings = filtered.length;
+    const totalConfirmedBookings = allCounts.length;
 
     const pkgCounts = {};
-    filtered.forEach(c => {
+    allCounts.forEach(c => {
       if (!c.packageName) return;
       pkgCounts[c.packageName] = (pkgCounts[c.packageName] || 0) + 1;
     });
@@ -392,7 +388,7 @@ const RevenueAnalytics = ({
       .slice(0, 10);
 
     return { totalConfirmedBookings, topConfirmedPackages };
-  }, [analyticsDateWindow, bookingCountStats.recentBookingCounts]);
+  }, [bookingCountStats.recentBookingCounts]);
 
   return (
     <div className="rev-widget">
@@ -759,11 +755,22 @@ const RevenueAnalytics = ({
             <div className="rev-pv-card-body">
               <span className="rev-pv-card-label">View-to-Book Rate</span>
               <span className="rev-pv-card-value">
-                0.0%
+                {filteredPageViewStats.bookingPageViews > 0
+                  ? ((filteredBookingCounts.totalConfirmedBookings / filteredPageViewStats.bookingPageViews) * 100).toFixed(1)
+                  : '0.0'}%
               </span>
               <span className="rev-pv-card-sub">
-                0 Booked out of {filteredPageViewStats.bookingPageViews} Booking Page Views
+                {filteredBookingCounts.totalConfirmedBookings} Booked out of {filteredPageViewStats.bookingPageViews} Booking Page Views
               </span>
+              {onResetViewToBookRate && (
+                <button
+                  className="rev-pv-reset-btn"
+                  onClick={onResetViewToBookRate}
+                  title="Reset View-to-Book Rate"
+                >
+                  Reset Rate
+                </button>
+              )}
             </div>
           </div>
         </div>
