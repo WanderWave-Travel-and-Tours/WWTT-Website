@@ -177,6 +177,10 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
       }
     };
 
+    // ✅ FIX: Define lastResetKey here so it can be used in both branches
+    const lastResetKey = `lastReset_${packageId}_${userIpAddress}`;
+    const today = new Date().toDateString();
+
     // Calculate Time
     if (storedTimer) {
       const timerData = JSON.parse(storedTimer);
@@ -200,6 +204,9 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
       // Start new timer for new user/day
       const startTime = Date.now();
       localStorage.setItem(timerKey, JSON.stringify({ startTime }));
+      // ✅ FIX: Always stamp today so the daily-reset check never fires prematurely
+      //    on the same day the timer was first created.
+      localStorage.setItem(lastResetKey, today);
       if (isMounted.current) {
         setTimeRemaining(900000); // 15 minutes
         setTimerExpired(false);
@@ -246,18 +253,30 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
       const today = new Date().toDateString();
 
       if (lastReset !== today) {
-        localStorage.removeItem(timerKey);
+        // ✅ FIX: Only restart discount if the timer was already expired.
+        //    If the timer is still running (timerExpired=false, timeRemaining>0),
+        //    just update the date stamp without blowing away the active session.
+        const storedTimer = localStorage.getItem(timerKey);
+        const wasExpired = !storedTimer || (() => {
+          try {
+            const { startTime } = JSON.parse(storedTimer);
+            return (Date.now() - startTime) >= 900000;
+          } catch { return true; }
+        })();
+
         localStorage.setItem(lastResetKey, today);
         sessionStorage.removeItem(`seenModal_${packageId}_${userIpAddress}`);
-        
-        // ✅ FIXED: Reset state instead of reloading page
-        if (isMounted.current) {
-          setTimeRemaining(900000); // Reset to 15 minutes
+
+        if (wasExpired && isMounted.current) {
+          // Timer was expired — give a fresh 15-min discount for the new day
+          localStorage.removeItem(timerKey);
+          setTimeRemaining(900000);
           setTimerExpired(false);
           setShowAnimation(true);
           setShowOfferModal(false);
           setHasOfferClosed(false);
         }
+        // If timer was still running, do nothing to the running timer state
       }
     };
 

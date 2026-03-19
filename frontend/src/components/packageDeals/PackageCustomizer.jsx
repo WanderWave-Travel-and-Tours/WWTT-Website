@@ -50,9 +50,8 @@ const PackageCustomizer = ({
   // If no known token is found, fall back to the original destination string.
   // ─────────────────────────────────────────────────────────────
   const DEST_API_TOKENS = [
-    'puerto princesa', 'el nido', 'coron palawan',
-    'siargao', 'siquijor', 'bohol', 'cebu', 'coron',
-    'boracay', 'batanes',
+    'siargao', 'siquijor', 'bohol', 'cebu',
+    'el nido', 'coron', 'puerto princesa',
   ].sort((a, b) => b.length - a.length); // longest first
 
   const extractApiSearchTerm = (destination) => {
