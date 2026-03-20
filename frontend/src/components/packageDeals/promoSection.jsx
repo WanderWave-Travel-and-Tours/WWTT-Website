@@ -1,145 +1,160 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Ticket, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, Ticket, Copy, Check, Clock } from 'lucide-react';
 import './promoSection.css';
 
-function PromoSection({ onBookNow }) {
-  const [promos, setPromos] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [copiedCode, setCopiedCode] = useState(null);
+const COMING_SOON_PROMO = {
+  id: 'coming-soon',
+  isComingSoon: true,
+  type: 'Coming Soon',
+  code: null, localPrice: null, internationalPrice: null,
+  discountType: null, description: null, image: null,
+};
 
-  // ✅ PHP → USD fixed rate
+function PromoSection({ onBookNow }) {
+  const [promos, setPromos]             = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [prevIndex, setPrevIndex]       = useState(null);
+  const [animDir, setAnimDir]           = useState(null); // 'next' | 'prev'
+  const [isAnimating, setIsAnimating]   = useState(false);
+  const [loading, setLoading]           = useState(true);
+  const [copiedCode, setCopiedCode]     = useState(null);
+  const [overlayOpen, setOverlayOpen]   = useState(false);
+  const [overlayClosing, setOverlayClosing] = useState(false);
+  const autoRef                         = useRef(null);
+  const animRef                         = useRef(null);
+
   const PHP_TO_USD_RATE = 56;
 
-  // ✅ Read currency from localStorage — tries common keys used by parent currency toggles
-  const readCurrencyFromStorage = () => {
-    return (
-      localStorage.getItem('currency') ||
-      localStorage.getItem('selectedCurrency') ||
-      localStorage.getItem('currencyPreference') ||
-      'PHP'
-    );
-  };
+  const readCurrency = () =>
+    localStorage.getItem('currency') ||
+    localStorage.getItem('selectedCurrency') ||
+    localStorage.getItem('currencyPreference') ||
+    'PHP';
 
-  const [currency, setCurrencyState] = useState(readCurrencyFromStorage);
+  const [currency, setCurrency] = useState(readCurrency);
 
-  // ✅ Listen for localStorage changes (when parent toggle updates it)
   useEffect(() => {
-    const handleStorage = () => {
-      setCurrencyState(readCurrencyFromStorage());
-    };
-
-    // Native storage event (cross-tab)
-    window.addEventListener('storage', handleStorage);
-
-    // ✅ Also poll every 300ms to catch same-tab localStorage updates
-    // (storage event only fires across tabs, not within the same tab)
+    const onStorage = () => setCurrency(readCurrency());
+    window.addEventListener('storage', onStorage);
     const poll = setInterval(() => {
-      const current = readCurrencyFromStorage();
-      setCurrencyState(prev => prev !== current ? current : prev);
+      const c = readCurrency();
+      setCurrency(p => p !== c ? c : p);
     }, 300);
-
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      clearInterval(poll);
-    };
+    return () => { window.removeEventListener('storage', onStorage); clearInterval(poll); };
   }, []);
 
-  // Fallback images if no image uploaded
-  const getPromoFallbackImage = (type) => {
-    switch(type) {
-      case 'Weekly':
-        return "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=80";
-      case 'Monthly':
-        return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80";
-      case 'Yearly':
-        return "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80";
-      default:
-        return "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=1200&q=80";
-    }
+  const fallbackImg = (type) => {
+    const map = {
+      Weekly:  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=80',
+      Monthly: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80',
+      Yearly:  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80',
+    };
+    return map[type] || 'https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=1200&q=80';
   };
 
   useEffect(() => {
-    const fetchPromos = async () => {
+    (async () => {
       try {
-        const response = await fetch('https://wanderwaveph.onrender.com/api/promos');
-        const data = await response.json();
-
+        const res  = await fetch('https://wanderwaveph.onrender.com/api/promos');
+        const data = await res.json();
         if (Array.isArray(data)) {
-          const today = new Date();
-          const activePromos = data.filter(promo => {
-            const expiryDate = new Date(promo.validUntil);
-            return expiryDate >= today;
-          });
-
-          const formattedPromos = activePromos.map(p => {
-            // ✅ CHECK IF ALREADY A FULL URL (Cloudinary)
-            let imageUrl;
-            if (p.image) {
-              // If image starts with http/https, use it directly (Cloudinary URL)
-              if (p.image.startsWith('http://') || p.image.startsWith('https://')) {
-                imageUrl = p.image;
-              } else {
-                // Otherwise, it's a local filename
-                imageUrl = `https://wanderwaveph.onrender.com/uploads/${p.image}`;
-              }
-            } else {
-              // No image, use fallback
-              imageUrl = getPromoFallbackImage(p.durationType);
-            }
-
-            return {
-              id: p._id,
-              type: p.durationType,
-              code: p.code,
-              // ✅ UPDATED: Use pricing.local and pricing.international instead of discountValue
-              localPrice: p.pricing?.local ?? null,
-              internationalPrice: p.pricing?.international ?? null,
-              discountType: p.discountType,
-              description: p.description,
-              validUntil: new Date(p.validUntil),
-              image: imageUrl
-            };
-          });
-
-          setPromos(formattedPromos);
+          const today  = new Date();
+          const active = data.filter(p => new Date(p.validUntil) >= today);
+          const mapped = active.map(p => ({
+            id: p._id, isComingSoon: false,
+            type: p.durationType, code: p.code,
+            localPrice: p.pricing?.local ?? null,
+            internationalPrice: p.pricing?.international ?? null,
+            discountType: p.discountType,
+            description: p.description,
+            validUntil: new Date(p.validUntil),
+            image: p.image
+              ? (p.image.startsWith('http') ? p.image : `https://wanderwaveph.onrender.com/uploads/${p.image}`)
+              : fallbackImg(p.durationType),
+          }));
+          setPromos([...mapped, COMING_SOON_PROMO]);
         }
-      } catch (error) {
-        console.error("Error fetching promos:", error);
+      } catch {
+        setPromos([COMING_SOON_PROMO]);
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchPromos();
+    })();
   }, []);
 
-  // ✅ Format a price number based on discountType and active currency — always rounded
-  const formatPrice = (value, discountType) => {
-    if (value === null || value === undefined) return null;
-    if (discountType === 'Percentage') return `${Math.round(value)}%`;
-    if (currency === 'USD') {
-      const usd = Math.round(value / PHP_TO_USD_RATE);
-      return `$${usd.toLocaleString()}`;
-    }
-    return `₱${Math.round(value).toLocaleString()}`;
+  const fmtPrice = (val, type) => {
+    if (val == null) return null;
+    if (type === 'Percentage') return `${Math.round(val)}%`;
+    return currency === 'USD'
+      ? `$${Math.round(val / PHP_TO_USD_RATE).toLocaleString()}`
+      : `₱${Math.round(val).toLocaleString()}`;
   };
 
-  // ✅ UPDATED: Each promo has only one price (local OR international), derive it directly
-  const getPromoPrice = (promo) => {
-    const hasLocal = promo.localPrice !== null && promo.localPrice !== undefined && promo.localPrice > 0;
-    const hasIntl  = promo.internationalPrice !== null && promo.internationalPrice !== undefined && promo.internationalPrice > 0;
-    if (hasLocal)  return { price: formatPrice(promo.localPrice, promo.discountType), type: 'local' };
-    if (hasIntl)   return { price: formatPrice(promo.internationalPrice, promo.discountType), type: 'international' };
+  const getPrice = (p) => {
+    if (p.localPrice > 0)         return { price: fmtPrice(p.localPrice, p.discountType),         type: 'local' };
+    if (p.internationalPrice > 0) return { price: fmtPrice(p.internationalPrice, p.discountType), type: 'international' };
     return null;
   };
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % promos.length);
+  // ── Navigate with animation ──
+  const navigate = useCallback((dir) => {
+    if (isAnimating || promos.length <= 1) return;
+    setIsAnimating(true);
+    setAnimDir(dir);
+    setPrevIndex(currentIndex);
+    setCurrentIndex(p =>
+      dir === 'next'
+        ? (p + 1) % promos.length
+        : (p - 1 + promos.length) % promos.length
+    );
+    // Clear animation state after transition completes
+    clearTimeout(animRef.current);
+    animRef.current = setTimeout(() => {
+      setIsAnimating(false);
+      setAnimDir(null);
+      setPrevIndex(null);
+    }, 580);
+  }, [isAnimating, promos.length, currentIndex]);
+
+  // ── Auto-advance ──
+  const startAuto = useCallback(() => {
+    clearInterval(autoRef.current);
+    autoRef.current = setInterval(() => navigate('next'), 5000);
+  }, [navigate]);
+
+  useEffect(() => {
+    if (promos.length > 1) startAuto();
+    return () => clearInterval(autoRef.current);
+  }, [promos.length, startAuto]);
+
+  const goNext = () => { setOverlayOpen(false); navigate('next'); startAuto(); };
+  const goPrev = () => { setOverlayOpen(false); navigate('prev'); startAuto(); };
+  const goTo   = (i) => {
+    if (i === currentIndex) return;
+    const dir = i > currentIndex ? 'next' : 'prev';
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setAnimDir(dir);
+    setPrevIndex(currentIndex);
+    setCurrentIndex(i);
+    clearTimeout(animRef.current);
+    animRef.current = setTimeout(() => {
+      setIsAnimating(false);
+      setAnimDir(null);
+      setPrevIndex(null);
+    }, 580);
+    startAuto();
   };
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + promos.length) % promos.length);
+  // ── Touch ──
+  const [tx, setTx] = useState(null);
+  const onTStart = (e) => setTx(e.targetTouches[0].clientX);
+  const onTEnd   = (e) => {
+    if (tx === null) return;
+    const d = tx - e.changedTouches[0].clientX;
+    if (d >  50) goNext();
+    if (d < -50) goPrev();
+    setTx(null);
   };
 
   const copyCode = (code) => {
@@ -148,137 +163,258 @@ function PromoSection({ onBookNow }) {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  useEffect(() => {
-    if (promos.length > 1) {
-      const interval = setInterval(handleNext, 5000);
-      return () => clearInterval(interval);
+  const openOverlay = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setOverlayClosing(false);
+    setOverlayOpen(true);
+  };
+
+  const closeOverlay = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setOverlayClosing(true);
+    setTimeout(() => {
+      setOverlayOpen(false);
+      setOverlayClosing(false);
+    }, 280);
+  };
+
+  if (loading || promos.length === 0) return null;
+
+  const n = promos.length;
+
+  // Build the 3 visible slots + the outgoing card during animation
+  const activePromo = promos[currentIndex];
+  const prevPromo   = promos[(currentIndex - 1 + n) % n];
+  const nextPromo   = promos[(currentIndex + 1) % n];
+  const outPromo    = prevIndex !== null ? promos[prevIndex] : null;
+
+  // ── Determine CSS classes per slot based on animation state ──
+  // During animation we show 4 cards:
+  //   outgoing card exits (was active → slides out)
+  //   incoming card enters (was peek → slides to active)
+  //   new prev/next peek cards
+
+  // KEY INSIGHT: Use promo.id as React key so the same card DOM element persists
+  // when it moves between positions. CSS transition then animates the position change.
+  // 
+  // During animation we render 4 cards:
+  //   - outPromo:    was active, now animating to peek position (exit anim)
+  //   - activePromo: was peek, now animating to active (enter anim)
+  //   - prevPromo:   left-peek (static or entering from far left if brand new)
+  //   - nextPromo:   right-peek (static or entering from far right if brand new)
+
+  const newNextPromo = promos[(currentIndex + 1) % n];
+  const newPrevPromo = promos[(currentIndex - 1 + n) % n];
+
+  let slots;
+  if (isAnimating && animDir && outPromo) {
+    if (animDir === 'next') {
+      // outPromo was active → exits to left-peek   (exitToLeft anim)
+      // activePromo was right-peek → enters center  (enterFromRight anim)
+      // prevPromo is the OLD left-peek → it's being "pushed further left" → exits off-screen
+      // newNextPromo is brand new → enters from far right into right-peek
+      slots = [
+        { promo: outPromo,     cls: 'promo-slide--exit-left',                       key: 'anim-exit-left',   position: 'exit'   },
+        { promo: activePromo,  cls: 'promo-slide--active promo-slide--enter-right', key: 'anim-active',      position: 'active' },
+        { promo: newNextPromo, cls: 'promo-slide--next-enter',                      key: 'anim-next-enter',  position: 'next'   },
+        { promo: prevPromo,    cls: 'promo-slide--prev-exit',                       key: 'anim-prev-exit',   position: 'prev'   },
+      ];
+    } else {
+      slots = [
+        { promo: outPromo,     cls: 'promo-slide--exit-right',                      key: 'anim-exit-right',  position: 'exit'   },
+        { promo: activePromo,  cls: 'promo-slide--active promo-slide--enter-left',  key: 'anim-active',      position: 'active' },
+        { promo: newPrevPromo, cls: 'promo-slide--prev-enter',                      key: 'anim-prev-enter',  position: 'prev'   },
+        { promo: nextPromo,    cls: 'promo-slide--next-exit',                       key: 'anim-next-exit',   position: 'next'   },
+      ];
     }
-  }, [currentIndex, promos.length]);
+  } else {
+    slots = [
+      { promo: prevPromo,   cls: 'promo-slide--prev',   key: 'slot-prev',   position: 'prev'   },
+      { promo: activePromo, cls: 'promo-slide--active', key: 'slot-active', position: 'active' },
+      { promo: nextPromo,   cls: 'promo-slide--next',   key: 'slot-next',   position: 'next'   },
+    ];
+  }
 
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
+  // Shared details layout (desktop + mobile overlay)
+  // Order: title → description → badges → validity strip → promo code
+  const renderDetailsContent = (promo, pp) => (
+    <>
+      {/* Row 1: title + description */}
+      <div className="promo-content">
+        <h3 className="promo-title">All Tours & Packages</h3>
+        <p className="promo-description">{promo.description}</p>
+      </div>
 
-  const onTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+      {/* Row 2: badges side by side — below description */}
+      <div className="promo-badges-row">
+        <div className="deal-type-badge">
+          <Ticket size={12}/><span>{promo.type.toUpperCase()} DEAL</span>
+        </div>
+        {pp && (
+          <div className="discount-badge">
+            <span className="discount-text">
+              {pp.type === 'local'
+                ? (currency === 'USD' ? 'PH' : '🇵🇭 LOCAL')
+                : (currency === 'USD' ? 'INTL.' : '🌐 INTL.')}
+            </span>
+            <span>{pp.price}</span>
+            <span className="discount-text">OFF</span>
+          </div>
+        )}
+      </div>
+
+      {/* Row 3: perks strip */}
+      <div className="promo-perks-row">
+        <div className="promo-perk"><span>🏷️</span><span>All Packages</span></div>
+        <div className="promo-perk"><span>👥</span><span>Per Person</span></div>
+        <div className="promo-perk"><span>📅</span><span>
+          {promo.validUntil ? `Until ${promo.validUntil.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}` : 'Limited Time'}
+        </span></div>
+      </div>
+
+      {/* Row 4: validity strip */}
+      <div className="promo-validity-strip">
+        <span className="validity-icon">🎫</span>
+        <span className="validity-text">Valid for all tours & packages</span>
+        {promo.validUntil && (
+          <span className="validity-date">
+            Until {promo.validUntil.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        )}
+      </div>
+
+      {/* Row 4: promo code */}
+      <div className="promo-code-box">
+        <span className="code-label">PROMO CODE</span>
+        <div className="code-input-container">
+          <div className="code-display">
+            <span className="code-value">{promo.code}</span>
+          </div>
+          <button className="copy-btn" onClick={() => copyCode(promo.code)}>
+            {copiedCode === promo.code ? <Check size={18}/> : <Copy size={18}/>}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
+
+
+  const renderCard = (promo, isActive) => {
+    if (promo.isComingSoon) return (
+      <div className="promo-voucher-card coming-soon-card">
+        {/* Desktop: clock icon side */}
+        <div className="coming-soon-image-side">
+          <div className="coming-soon-icon-wrap">
+            <Clock size={64} strokeWidth={1.2}/>
+            <div className="cs-pulse-ring"/>
+            <div className="cs-pulse-ring cs-pulse-ring--delay"/>
+          </div>
+        </div>
+        {/* Desktop: details side */}
+        <div className="card-details-side coming-soon-details">
+          <div className="promo-badges-row">
+            <div className="deal-type-badge coming-soon-badge">
+              <Clock size={12}/><span>UPCOMING PROMO</span>
+            </div>
+          </div>
+          <div className="promo-content">
+            <h3 className="promo-title coming-soon-title">Something Big Is Coming!</h3>
+            <p className="promo-description coming-soon-desc">
+              Our next exclusive promo is almost here. Stay tuned for unbeatable deals on local and international tours & packages. Follow us on social media to be the first to know!
+            </p>
+          </div>
+          {/* Decorative feature list */}
+          <div className="cs-features">
+            <div className="cs-feature-item"><span className="cs-feature-icon">✈️</span><span>Domestic & International Tours</span></div>
+            <div className="cs-feature-item"><span className="cs-feature-icon">🏖️</span><span>Exclusive Package Deals</span></div>
+            <div className="cs-feature-item"><span className="cs-feature-icon">🔔</span><span>Follow us to get notified first</span></div>
+          </div>
+          <div className="coming-soon-footer">
+            <div className="coming-soon-dots-anim"><span/><span/><span/></div>
+            <span className="coming-soon-label">Launching Soon</span>
+          </div>
+        </div>
+        {/* Mobile: content shown directly over the background — NO See Details btn */}
+        <div className="coming-soon-mobile-overlay">
+          <div className="csm-icon">
+            <Clock size={40} strokeWidth={1.2}/>
+            <div className="cs-pulse-ring cs-pulse-ring--sm"/>
+          </div>
+          <div className="csm-content">
+            <div className="deal-type-badge coming-soon-badge csm-badge">
+              <Clock size={11}/><span>UPCOMING PROMO</span>
+            </div>
+            <h3 className="promo-title coming-soon-title csm-title">Something Big Is Coming!</h3>
+            <p className="promo-description coming-soon-desc csm-desc">
+              Stay tuned for unbeatable deals on tours & packages!
+            </p>
+            <div className="coming-soon-footer csm-footer">
+              <div className="coming-soon-dots-anim"><span/><span/><span/></div>
+              <span className="coming-soon-label">Launching Soon</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const pp = getPrice(promo);
+    return (
+      <div className="promo-voucher-card">
+        <div className="card-image-side">
+          <img src={promo.image} alt="Promo" className="destination-bg-image"/>
+          <div className="image-overlay"/>
+        </div>
+        {/* Desktop: inline details */}
+        <div className="card-details-side">
+          {renderDetailsContent(promo, pp)}
+        </div>
+        {/* Mobile: See Details button over image */}
+        {isActive && (
+          <button className="mobile-see-details-btn" onClick={openOverlay}>
+            See Details
+          </button>
+        )}
+        {/* Mobile: Details overlay slides up */}
+        {isActive && overlayOpen && (
+          <div className={`mobile-details-overlay${overlayClosing ? ' closing' : ''}`}>
+            <button
+                className="mobile-overlay-close"
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); setOverlayClosing(true); setTimeout(() => { setOverlayOpen(false); setOverlayClosing(false); }, 280); }}
+              >✕</button>
+            <div className="card-details-side">
+              {renderDetailsContent(promo, pp)}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
-
-  const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const minSwipeDistance = 50;
-    if (distance > minSwipeDistance) handleNext();
-    if (distance < -minSwipeDistance) handlePrev();
-  };
-
-  if (loading) return null;
-  if (promos.length === 0) return null;
 
   return (
     <section className="promo-destination-section">
       <div className="promo-carousel-wrapper">
-        {promos.length > 1 && (
-          <>
-            <button className="external-arrow arrow-left" onClick={handlePrev}>
-              <ChevronLeft size={26} />
-            </button>
-            <button className="external-arrow arrow-right" onClick={handleNext}>
-              <ChevronRight size={26} />
-            </button>
-          </>
-        )}
+        {n > 1 && <>
+          <button className="external-arrow arrow-left"  onClick={goPrev}><ChevronLeft  size={22}/></button>
+          <button className="external-arrow arrow-right" onClick={goNext}><ChevronRight size={22}/></button>
+        </>}
 
         <div className="promo-carousel-container">
-          <div 
-            className="promo-track"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-          >
-            {promos.map((promo, index) => (
-              <div
-                key={promo.id}
-                className={`promo-slide ${index === currentIndex ? 'active' : ''}`}
-                style={{
-                  transform: `translateX(${(index - currentIndex) * 100}%)`
-                }}
-              >
-                <div className="promo-voucher-card">
-                  <div className="card-image-side">
-                    <img src={promo.image} alt="Destination" className="destination-bg-image" />
-                    <div className="image-overlay"></div>
-                  </div>
-
-                  <div className="card-details-side">
-                    <div className="promo-header">
-                      <div className="promo-type-row">
-                        <div className="deal-type-badge">
-                          <Ticket size={14} />
-                          <span>{promo.type.toUpperCase()} DEAL</span>
-                        </div>
-                        
-                        {/* ✅ UPDATED: Pricing display — each promo is either LOCAL or INTL, no toggle needed */}
-                        {(() => {
-                          const promoPrice = getPromoPrice(promo);
-                          if (!promoPrice) return null;
-                          const { price, type } = promoPrice;
-
-                          return (
-                            <div className="discount-badge">
-                              <span className="discount-text">
-                                {type === 'local'
-                                  ? (currency === 'USD' ? 'PH' : '🇵🇭 LOCAL')
-                                  : (currency === 'USD' ? 'INTL.' : '🌐 INTL.')}
-                              </span>
-                              <span>{price}</span>
-                              <span className="discount-text">OFF</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
-
-                    <div className="promo-content">
-                      <h3 className="promo-title">All Tours & Packages</h3>
-                      <p className="promo-description">{promo.description}</p>
-                    </div>
-
-                    <div className="promo-code-box">
-                      <span className="code-label">PROMO CODE</span>
-                      <div className="code-input-container">
-                        <div className="code-display">
-                          <span className="code-value">{promo.code}</span>
-                        </div>
-                        <button 
-                          className="copy-btn"
-                          onClick={() => copyCode(promo.code)}
-                        >
-                          {copiedCode === promo.code ? (
-                            <Check size={18} />
-                          ) : (
-                            <Copy size={18} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          <div className="promo-track" onTouchStart={onTStart} onTouchEnd={onTEnd}>
+            {slots.map(({ promo, cls, key, position }) => (
+              <div key={key} className={`promo-slide ${cls}`}>
+                {renderCard(promo, position === 'active' || cls === 'promo-slide--active')}
               </div>
             ))}
           </div>
 
-          {promos.length > 1 && (
+          {n > 1 && (
             <div className="carousel-dots">
-              {promos.map((_, index) => (
-                <button
-                  key={index}
-                  className={`dot ${index === currentIndex ? 'active' : ''}`}
-                  onClick={() => setCurrentIndex(index)}
-                />
+              {promos.map((_, i) => (
+                <button key={i} className={`dot ${i === currentIndex ? 'active' : ''}`}
+                  onClick={() => goTo(i)}/>
               ))}
             </div>
           )}
