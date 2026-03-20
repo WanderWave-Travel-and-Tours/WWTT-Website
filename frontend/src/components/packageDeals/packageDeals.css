@@ -20,17 +20,86 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 60px;
+  padding-bottom: 0;
   padding-top: 130px;
 }
 
+/* ── Wrapper that holds the navy bar ── */
 .section-divider-orange {
   width: 100%;
-  height: 60px; 
-  background-color: #FF8C00;
-  box-shadow: inset 0 4px 6px rgba(0,0,0,0.1); 
+  background: none;
+  background-color: transparent;
   position: relative;
   z-index: 5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Dark navy scrolling bar (matching GHL style) ── */
+.divider-locations-bar {
+  width: 100%;
+  background-color: #0d233e;
+  padding: 16px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  z-index: 5;
+}
+
+/* Airplane positioned absolutely above the navy bar, no extra space */
+.divider-airplane-container {
+  position: absolute;
+  top: 0;
+  left: -280px;
+  transform: translateY(-75%);
+  z-index: 10;
+  pointer-events: none;
+  animation: dividerFlyAcross 14s linear infinite;
+  animation-delay: 2s;
+}
+
+.divider-airplane {
+  display: block;
+  width: 300px;
+  height: auto;
+}
+
+@keyframes dividerFlyAcross {
+  from { left: -280px; }
+  to   { left: calc(100vw + 280px); }
+}
+
+.divider-locations-wrapper {
+  display: inline-flex;
+  width: max-content;
+  animation: dividerScrollLocations 40s linear infinite;
+  will-change: transform;
+}
+
+.divider-locations-group {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 15px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.divider-locations-group span {
+  margin: 0 8px;
+}
+
+.divider-label {
+  color: #fc9c1b !important;
+  margin-right: 10px !important;
+}
+
+@keyframes dividerScrollLocations {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 .bottom-section-bg {
@@ -53,8 +122,7 @@
   width: 100%;
   max-width: 1480px; 
   margin: 0 auto;
-  /* Reduced padding to 16px to prevent "compressed" feel on small screens */
-  padding: 0 16px; 
+  padding: 0 16px 60px; 
   box-sizing: border-box;
 }
 
@@ -70,12 +138,16 @@
 }
 
 @media (max-width: 768px) {
-  .section-divider-orange {
-    height: 40px; 
+  .divider-locations-bar {
+    padding: 12px 0;
+  }
+
+  .divider-locations-group {
+    font-size: 11px;
   }
   
   .top-section-bg {
-    padding-bottom: 40px;
+    padding-bottom: 0;
     padding-top: 120px;
   }
   
@@ -88,11 +160,15 @@
 @media (max-width: 480px) {
   .top-section-bg {
     padding-top: 100px;
-    padding-bottom: 30px;
+    padding-bottom: 0;
   }
   
-  .section-divider-orange {
-    height: 30px;
+  .divider-locations-bar {
+    padding: 10px 0;
+  }
+
+  .divider-locations-group {
+    font-size: 10px;
   }
   
   .bottom-section-bg {

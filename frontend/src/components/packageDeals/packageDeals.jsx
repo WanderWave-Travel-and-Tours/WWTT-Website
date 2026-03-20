@@ -925,7 +925,50 @@ function PackageDeals() {
 
       <FeedbackWidget triggerOpen={feedbackTrigger} />
 
-      <div className="section-divider-orange"></div>
+      <div className="section-divider-orange">
+        {/* Airplane — absolutely positioned above the navy bar, no extra height */}
+        <div className="divider-airplane-container">
+          <img
+            src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/696e04c1439b6b5ce06f5f51.webp"
+            alt="Animated Airplane"
+            className="divider-airplane"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+
+        {/* Dark navy scrolling destinations bar */}
+        <div className="divider-locations-bar">
+          <div className="divider-locations-wrapper">
+            <div className="divider-locations-group">
+              <span className="divider-label">TOP DESTINATIONS IN THE PHILIPPINES:</span>
+              <span>Siargao</span> • <span>Boracay</span> • <span>El Nido</span> •{' '}
+              <span>Coron</span> • <span>Cebu</span> • <span>Bohol</span> •{' '}
+              <span>Puerto Princesa</span> • <span>Ilocos</span> • <span>Sagada</span> •{' '}
+              <span>Baguio</span> • <span>Siquijor</span> • <span>Batanes</span>
+            </div>
+            <div className="divider-locations-group" aria-hidden="true">
+              <span className="divider-label">INTERNATIONAL:</span>
+              <span>Thailand</span> • <span>Vietnam</span> • <span>Singapore</span> •{' '}
+              <span>Kuala Lumpur</span> • <span>Hong Kong</span> • <span>Macau</span> •{' '}
+              <span>Bali, Indonesia</span> • <span>China</span>
+            </div>
+            <div className="divider-locations-group" aria-hidden="true">
+              <span className="divider-label">TOP DESTINATIONS IN THE PHILIPPINES:</span>
+              <span>Siargao</span> • <span>Boracay</span> • <span>El Nido</span> •{' '}
+              <span>Coron</span> • <span>Cebu</span> • <span>Bohol</span> •{' '}
+              <span>Puerto Princesa</span> • <span>Ilocos</span> • <span>Sagada</span> •{' '}
+              <span>Baguio</span> • <span>Siquijor</span> • <span>Batanes</span>
+            </div>
+            <div className="divider-locations-group" aria-hidden="true">
+              <span className="divider-label">INTERNATIONAL:</span>
+              <span>Thailand</span> • <span>Vietnam</span> • <span>Singapore</span> •{' '}
+              <span>Kuala Lumpur</span> • <span>Hong Kong</span> • <span>Macau</span> •{' '}
+              <span>Bali, Indonesia</span> • <span>China</span>
+            </div>
+          </div>
+        </div>
+      </div>
       <section className="bottom-section-bg">
         <div className="content-container">
           <BrowseCategory 
