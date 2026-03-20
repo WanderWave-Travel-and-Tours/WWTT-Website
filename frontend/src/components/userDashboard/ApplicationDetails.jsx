@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import BookingDetails from './BookingDetails';
-import BookingCustomizer from './BookingCustomizer';
 import DocumentsSection from './DocumentsSection';
 import UploadedDocumentsView from './UploadedDocumentsView';
 import './ApplicationDetails.css';
@@ -73,7 +72,6 @@ const ApplicationDetails = ({
                 if (onBookingUpdate) {
                     onBookingUpdate(data.booking);
                 }
-                // Optionally refresh the page or update the inquiry state
                 window.location.reload();
             } else {
                 alert(data.message || 'Failed to cancel booking');
@@ -263,157 +261,78 @@ const ApplicationDetails = ({
                 </div>
             </header>
 
-            {/* ✅ NEW: Render BookingDetails for booking-type inquiries */}
+            {/* ✅ Render BookingDetails for booking-type inquiries.
+                BookingDetails already renders BookingCustomizer internally —
+                no need to render it again here. */}
             {isBooking && (
                 <>
                     <BookingDetails 
                         booking={inquiry} 
                         onUpdate={onBookingUpdate}
                     />
-                    
-                    {/* ✅ Package Inclusions Display */}
-                    <div className="ad-card ad-inclusions-card">
-                        <h3 className="ad-card-title">Package Inclusions & Pricing</h3>
-                        
-                        {/* Package Base Details */}
-                        <div className="ad-package-summary">
-                            <div className="ad-row">
-                                <span className="ad-label">Package Name</span>
-                                <span className="ad-value">{inquiry.packageName}</span>
-                            </div>
-                            <div className="ad-row">
-                                <span className="ad-label">Duration</span>
-                                <span className="ad-value">{inquiry.duration}</span>
-                            </div>
-                            <div className="ad-row">
-                                <span className="ad-label">Travel Dates</span>
-                                <span className="ad-value">
-                                    {formatDate(inquiry.startDate)} - {formatDate(inquiry.endDate)}
-                                </span>
-                            </div>
-                            <div className="ad-row">
-                                <span className="ad-label">Pax</span>
-                                <span className="ad-value">
-                                    {inquiry.pax?.adult || 0} Adult{(inquiry.pax?.adult || 0) > 1 ? 's' : ''}
-                                    {(inquiry.pax?.children || 0) > 0 && `, ${inquiry.pax.children} Child${inquiry.pax.children > 1 ? 'ren' : ''}`}
-                                    {(inquiry.pax?.infants || 0) > 0 && `, ${inquiry.pax.infants} Infant${inquiry.pax.infants > 1 ? 's' : ''}`}
-                                </span>
-                            </div>
-                        </div>
 
-                        {/* Inclusions List */}
-                        <div className="ad-inclusions-section">
-                            <h4 className="ad-section-subtitle">
-                                {inquiry.isCustomized ? 'Customized Inclusions' : 'Package Inclusions'}
-                            </h4>
-                            
-                            {inquiry.isCustomized ? (
-                                // Customized Inclusions - Show checked items with prices
-                                <div className="ad-inclusions-list-enhanced">
-                                    {inquiry.customizedInclusions
-                                        ?.filter(inc => inc.isChecked)
-                                        .map((inclusion, idx) => (
-                                            <div key={idx} className="ad-inclusion-card">
-                                                <div className="ad-inclusion-header">
-                                                    <div className="ad-inclusion-title-row">
-                                                        <span className="ad-inclusion-check">✓</span>
-                                                        <span className="ad-inclusion-name-enhanced">{inclusion.name}</span>
-                                                    </div>
-                                                    {inclusion.price > 0 && (
-                                                        <span className="ad-inclusion-price-badge">
-                                                            ₱{(inclusion.price || 0).toLocaleString()}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                
-                                                {/* Metadata in a clean grid */}
-                                                {(inclusion.supplier || inclusion.destination || inclusion.pax || inclusion.notes) && (
-                                                    <div className="ad-inclusion-metadata">
-                                                        {inclusion.supplier && (
-                                                            <div className="ad-meta-item">
-                                                                <span className="ad-meta-label">Supplier:</span>
-                                                                <span className="ad-meta-value">{inclusion.supplier}</span>
-                                                            </div>
-                                                        )}
-                                                        {inclusion.destination && (
-                                                            <div className="ad-meta-item">
-                                                                <span className="ad-meta-label">Destination:</span>
-                                                                <span className="ad-meta-value">{inclusion.destination}</span>
-                                                            </div>
-                                                        )}
-                                                        {inclusion.pax && (
-                                                            <div className="ad-meta-item">
-                                                                <span className="ad-meta-label">Pax:</span>
-                                                                <span className="ad-meta-value">{inclusion.pax}</span>
-                                                            </div>
-                                                        )}
-                                                        {inclusion.notes && (
-                                                            <div className="ad-meta-item ad-meta-notes">
-                                                                <span className="ad-meta-label">Notes:</span>
-                                                                <span className="ad-meta-value">{inclusion.notes}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))
-                                    }
-                                    
-                                    {/* Customization Summary */}
-                                    {inquiry.customizationAdditionalPrice > 0 && (
-                                        <div className="ad-customization-summary">
-                                            <div className="ad-customization-total">
-                                                <span className="ad-customization-total-label">
-                                                    <span>💰</span>
-                                                    <span>Additional Customization Cost</span>
-                                                </span>
-                                                <span className="ad-customization-total-amount">
-                                                    ₱{(inquiry.customizationAdditionalPrice || 0).toLocaleString()}
-                                                </span>
-                                            </div>
+                    {/* ── Pricing Breakdown — always shown for bookings ── */}
+                    <div className="ad-card ad-pricing-card" style={{ marginBottom: '32px' }}>
+                        <h3 className="ad-card-title">Pricing Breakdown</h3>
+
+                        <div className="ad-pricing-breakdown" style={{ marginTop: 0 }}>
+                            <div className="ad-price-row">
+                                <span className="ad-label">Package Total</span>
+                                <span className="ad-value">₱{(inquiry.packageTotal || 0).toLocaleString()}</span>
+                            </div>
+
+                            {inquiry.isCustomized && inquiry.customizationAdditionalPrice > 0 && (
+                                <div className="ad-price-row">
+                                    <span className="ad-label">Customization Additional</span>
+                                    <span className="ad-value">₱{inquiry.customizationAdditionalPrice.toLocaleString()}</span>
+                                </div>
+                            )}
+
+                            {inquiry.includesAirfare && inquiry.airfareTotal > 0 && (
+                                <div className="ad-price-row">
+                                    <span className="ad-label">Airfare Total</span>
+                                    <span className="ad-value">₱{inquiry.airfareTotal.toLocaleString()}</span>
+                                </div>
+                            )}
+
+                            {inquiry.discountAmount > 0 && (
+                                <div className="ad-price-row ad-discount-row">
+                                    <span className="ad-label">
+                                        Discount {inquiry.promoCode && `(${inquiry.promoCode})`}
+                                    </span>
+                                    <span className="ad-value">-₱{inquiry.discountAmount.toLocaleString()}</span>
+                                </div>
+                            )}
+
+                            <div className="ad-price-row ad-total-row">
+                                <span className="ad-label">Total Amount</span>
+                                <span className="ad-value">₱{(inquiry.totalAmount || 0).toLocaleString()}</span>
+                            </div>
+
+                            {inquiry.paymentType === 'partial' && (
+                                <>
+                                    <div className="ad-price-row ad-payment-info">
+                                        <span className="ad-label">Initial Payment</span>
+                                        <span className="ad-value">₱{(inquiry.initialPaymentAmount || 0).toLocaleString()}</span>
+                                    </div>
+                                    <div className="ad-price-row ad-payment-info">
+                                        <span className="ad-label">Remaining Balance</span>
+                                        <span className="ad-value">₱{(inquiry.remainingBalance || 0).toLocaleString()}</span>
+                                    </div>
+                                    {inquiry.balancePaidAmount > 0 && (
+                                        <div className="ad-price-row ad-payment-info">
+                                            <span className="ad-label">Balance Paid</span>
+                                            <span className="ad-value">₱{inquiry.balancePaidAmount.toLocaleString()}</span>
                                         </div>
                                     )}
-                                </div>
-                            ) : (
-                                // Non-Customized - Show original package inclusions
-                                <div className="ad-inclusions-list">
-                                    {inquiry.originalInclusions?.map((inclusion, idx) => (
-                                        <div key={idx} className="ad-inclusion-item">
-                                            <div className="ad-inclusion-info">
-                                                <span className="ad-inclusion-icon">✓</span>
-                                                <span className="ad-inclusion-name">{inclusion}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                </>
                             )}
                         </div>
 
-                        {/* Accommodation Details */}
-                        {inquiry.selectedRoomType && (
-                            <div className="ad-accommodation-section">
-                                <h4 className="ad-section-subtitle">Accommodation</h4>
-                                <div className="ad-row">
-                                    <span className="ad-label">Hotel</span>
-                                    <span className="ad-value">{inquiry.hotelName || 'N/A'}</span>
-                                </div>
-                                <div className="ad-row">
-                                    <span className="ad-label">Room Type</span>
-                                    <span className="ad-value">{inquiry.selectedRoomType}</span>
-                                </div>
-                                {inquiry.numberOfRooms && (
-                                    <div className="ad-row">
-                                        <span className="ad-label">Number of Rooms</span>
-                                        <span className="ad-value">{inquiry.numberOfRooms}</span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
                         {/* Flight Details */}
                         {inquiry.includesAirfare && inquiry.flightDetails && (
-                            <div className="ad-flight-section">
-                                <h4 className="ad-section-subtitle">Flight Details</h4>
+                            <div className="ad-flight-section" style={{ marginTop: '24px' }}>
+                                <h4 className="ad-section-subtitle">✈️ Flight Details</h4>
                                 <div className="ad-row">
                                     <span className="ad-label">Airline</span>
                                     <span className="ad-value">{inquiry.flightDetails.airline || 'N/A'}</span>
@@ -436,64 +355,6 @@ const ApplicationDetails = ({
                                 </div>
                             </div>
                         )}
-
-                        {/* Pricing Breakdown */}
-                        <div className="ad-pricing-breakdown">
-                            <h4 className="ad-section-subtitle">Pricing Breakdown</h4>
-                            
-                            <div className="ad-price-row">
-                                <span className="ad-label">Package Total</span>
-                                <span className="ad-value">₱{(inquiry.packageTotal || 0).toLocaleString()}</span>
-                            </div>
-                            
-                            {inquiry.isCustomized && inquiry.customizationAdditionalPrice > 0 && (
-                                <div className="ad-price-row">
-                                    <span className="ad-label">Customization Additional</span>
-                                    <span className="ad-value">₱{inquiry.customizationAdditionalPrice.toLocaleString()}</span>
-                                </div>
-                            )}
-                            
-                            {inquiry.includesAirfare && inquiry.airfareTotal > 0 && (
-                                <div className="ad-price-row">
-                                    <span className="ad-label">Airfare Total</span>
-                                    <span className="ad-value">₱{inquiry.airfareTotal.toLocaleString()}</span>
-                                </div>
-                            )}
-                            
-                            {inquiry.discountAmount > 0 && (
-                                <div className="ad-price-row ad-discount-row">
-                                    <span className="ad-label">
-                                        Discount {inquiry.promoCode && `(${inquiry.promoCode})`}
-                                    </span>
-                                    <span className="ad-value">-₱{inquiry.discountAmount.toLocaleString()}</span>
-                                </div>
-                            )}
-                            
-                            <div className="ad-price-row ad-total-row">
-                                <span className="ad-label">Total Amount</span>
-                                <span className="ad-value">₱{(inquiry.totalAmount || 0).toLocaleString()}</span>
-                            </div>
-
-                            {/* Payment Information */}
-                            {inquiry.paymentType === 'partial' && (
-                                <>
-                                    <div className="ad-price-row ad-payment-info">
-                                        <span className="ad-label">Initial Payment</span>
-                                        <span className="ad-value">₱{(inquiry.initialPaymentAmount || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div className="ad-price-row ad-payment-info">
-                                        <span className="ad-label">Remaining Balance</span>
-                                        <span className="ad-value">₱{(inquiry.remainingBalance || 0).toLocaleString()}</span>
-                                    </div>
-                                    {inquiry.balancePaidAmount > 0 && (
-                                        <div className="ad-price-row ad-payment-info">
-                                            <span className="ad-label">Balance Paid</span>
-                                            <span className="ad-value">₱{inquiry.balancePaidAmount.toLocaleString()}</span>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
                     </div>
                 </>
             )}
