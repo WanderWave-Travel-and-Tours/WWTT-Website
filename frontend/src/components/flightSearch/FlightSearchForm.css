@@ -24,7 +24,7 @@
   align-items: center;
   justify-content: center;
   background: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600') center/cover no-repeat fixed;
-  padding: 40px 20px;
+  padding: 120px 20px 40px;
   font-family: 'Inter', sans-serif;
 }
 
@@ -92,7 +92,7 @@
   max-width: 1250px;
   padding: 0;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: center;
   margin: 0 auto 15px auto;
 }
 
