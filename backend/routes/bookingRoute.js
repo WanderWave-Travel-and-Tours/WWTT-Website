@@ -1183,22 +1183,109 @@ router.patch('/:id/customization', async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // Recalculate total amount with new customization
-    const baseAmount = booking.totalAmount - booking.customizationAdditionalPrice;
-    const newTotalAmount = baseAmount + customizationAdditionalPrice;
+    // ── Snapshot before update (for activity log) ──────────────────────────
+    const prevTotalAmount   = booking.totalAmount;
+    const prevRemaining     = booking.remainingBalance;
+    const prevCustomization = booking.customizationAdditionalPrice;
 
-    booking.customizedInclusions = customizedInclusions;
-    booking.customizationAdditionalPrice = customizationAdditionalPrice;
-    booking.totalAmount = newTotalAmount;
-    booking.isCustomized = true;
+    // ── Derive the clean base amount ────────────────────────────────────────
+    // "Base" = totalAmount before any previous customization adjustment.
+    // We strip out the OLD customizationAdditionalPrice so we always compute
+    // from a clean starting point regardless of prior saves.
+    //
+    // Also account for any discount that was applied at booking time.
+    const oldCustomization = booking.customizationAdditionalPrice || 0;
+    const baseAmount       = booking.totalAmount - oldCustomization;
+
+    // ── New amounts ─────────────────────────────────────────────────────────
+    const newCustomizationPrice = Number(customizationAdditionalPrice) || 0;
+    const newTotalAmount        = baseAmount + newCustomizationPrice;
+
+    // ── Recalculate remaining balance ───────────────────────────────────────
+    // totalAlreadyPaid = initial payment made + any balance payments made
+    // For partial bookings this is the amount the client has actually paid so far.
+    // For full-payment bookings remainingBalance stays 0 (nothing owed).
+    let newRemainingBalance = booking.remainingBalance; // default: unchanged
+
+    if (booking.paymentType === 'partial') {
+      const totalAlreadyPaid =
+        (booking.initialPaymentAmount || 0) +
+        (booking.balancePaidAmount    || 0);
+
+      // Remaining = what they still owe on the NEW total
+      newRemainingBalance = Math.max(0, newTotalAmount - totalAlreadyPaid);
+    }
+
+    // ── Apply all updates ───────────────────────────────────────────────────
+    booking.customizedInclusions          = customizedInclusions;
+    booking.customizationAdditionalPrice  = newCustomizationPrice;
+    booking.isCustomized                  = true;
+    booking.totalAmount                   = newTotalAmount;
+    booking.finalPackageTotal             = newTotalAmount;   // keep in sync
+    booking.packageTotal                  = (booking.packageTotal || 0) +
+                                            (newCustomizationPrice - oldCustomization);
+    booking.remainingBalance              = newRemainingBalance;
+    booking.updatedAt                     = new Date();
 
     await booking.save();
-    // ✅ Populate packageId so the frontend keeps destination data intact
     await booking.populate('packageId');
+
+    // ── Activity log (non-fatal) ────────────────────────────────────────────
+    try {
+      const priceDelta = newTotalAmount - prevTotalAmount;
+      const sign       = priceDelta >= 0 ? '+' : '';
+
+      await ActivityLog.create({
+        action:   'UPDATE',
+        module:   'Bookings',
+        severity: 'SUCCESS',
+        user:     booking.email || 'User',
+        description: `Package inclusions customized for booking: ${booking.packageName} (${booking.fullName}). ` +
+          `Total changed from ₱${prevTotalAmount.toLocaleString()} → ₱${newTotalAmount.toLocaleString()} (${sign}₱${Math.abs(priceDelta).toLocaleString()}). ` +
+          (booking.paymentType === 'partial'
+            ? `Remaining balance updated: ₱${prevRemaining.toLocaleString()} → ₱${newRemainingBalance.toLocaleString()}.`
+            : ''),
+        details: {
+          recordTitle:              `${booking.packageName} - ${booking.fullName}`,
+          recordId:                 booking._id.toString(),
+          method:                   'PATCH',
+          endpoint:                 `/api/bookings/${booking._id}/customization`,
+          prevTotalAmount,
+          newTotalAmount,
+          prevRemainingBalance:     prevRemaining,
+          newRemainingBalance,
+          prevCustomizationPrice:   prevCustomization,
+          newCustomizationPrice,
+          paymentType:              booking.paymentType,
+          initialPaymentAmount:     booking.initialPaymentAmount,
+          balancePaidAmount:        booking.balancePaidAmount || 0,
+        },
+      });
+      console.log('✅ Activity log saved for customization update');
+    } catch (logErr) {
+      console.error('⚠️ Failed to log customization activity:', logErr.message);
+    }
+
+    console.log(
+      `✅ Customization saved — booking ${booking._id}` +
+      ` | total: ₱${prevTotalAmount} → ₱${newTotalAmount}` +
+      (booking.paymentType === 'partial'
+        ? ` | balance: ₱${prevRemaining} → ₱${newRemainingBalance}`
+        : '')
+    );
 
     res.json({
       message: 'Booking customization updated successfully',
-      booking
+      booking,
+      // Surface the key computed values so the frontend can update its display
+      // without needing a full page refresh
+      summary: {
+        prevTotalAmount,
+        newTotalAmount,
+        customizationAdditionalPrice: newCustomizationPrice,
+        remainingBalance:             newRemainingBalance,
+        paymentType:                  booking.paymentType,
+      },
     });
 
   } catch (error) {

@@ -14,16 +14,52 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
     if (!booking) return null;
 
-    // ✅ FIX: Extract destination from packageName
+    // ✅ FIXED: Extract destination from all available sources.
+    // Priority: populated packageId.destination → parse from packageName pattern → fallback
+    const QUALIFIER_ONLY_PATTERN = /^(solo\s*\/?\s*joiners?|solo|joiners?|min\.?\s*of\s*\d+\s*pax|private|group)$/i;
+
     const getDestination = () => {
+        // Best case: packageId was populated and has a destination field
         if (booking.packageId?.destination) {
             return booking.packageId.destination;
         }
-        if (booking.packageName) {
-            // Extract destination from packageName (e.g., "BORACAY 4D3N (solo)" -> "BORACAY")
-            return booking.packageName.split(/\d+D\d+N/i)[0].trim();
+        // If packageName follows the "Duration + Destination + Title" pattern
+        // e.g. "5D4N Puerto Princesa Solo" or "BOHOL 4D3N (solo)" — extract the middle part
+        if (booking.packageName && !QUALIFIER_ONLY_PATTERN.test(booking.packageName.trim())) {
+            const withoutDuration = booking.packageName
+                .replace(/\b\d+D\d+N\b/gi, '')
+                .replace(/\b(solo|joiners?|joiner|min\.?\s*of\s*\d+\s*pax|private|group)\b/gi, '')
+                .replace(/[()]/g, '')
+                .trim();
+            if (withoutDuration.length > 0) {
+                return withoutDuration;
+            }
         }
-        return booking.destination || 'N/A';
+        return booking.destination || booking.packageName || 'N/A';
+    };
+
+    // ✅ NEW: Format a user-friendly package display name.
+    // When packageName is just a qualifier (e.g. "Solo", "Joiners", "Min of 2 Pax"),
+    // the title alone is meaningless. Build a full title using the format:
+    //   Duration · Destination · Title
+    // Example: packageName="Solo", dest="Puerto Princesa", duration="5D4N"
+    //       → "5D4N · Puerto Princesa · Solo"
+    const getFormattedPackageName = () => {
+        const name     = booking.packageName || '';
+        const dest     = booking.packageId?.destination || '';
+        const duration = booking.duration || '';
+
+        // If the packageName is a meaningful title (not just a qualifier), use as-is
+        if (!QUALIFIER_ONLY_PATTERN.test(name.trim())) {
+            return name || 'N/A';
+        }
+
+        // packageName is just a qualifier — build a richer title from available parts
+        const parts = [];
+        if (duration) parts.push(duration);
+        if (dest)     parts.push(dest);
+        if (name)     parts.push(name);
+        return parts.length > 1 ? parts.join(' · ') : name || 'N/A';
     };
 
     // Toast notification functions
@@ -331,6 +367,10 @@ const BookingDetails = ({ booking, onUpdate }) => {
                         <div className="bd-row">
                             <span className="bd-label">Destination</span>
                             <span className="bd-value">{getDestination()}</span>
+                        </div>
+                        <div className="bd-row">
+                            <span className="bd-label">Package</span>
+                            <span className="bd-value">{getFormattedPackageName()}</span>
                         </div>
 
                         <div className="bd-row">

@@ -1,0 +1,310 @@
+/* ══════════════════════════════════════════════════════════════
+   HotelCustomizer.css
+   Styles for the hotel selection panel inside BookingCustomizer
+   ══════════════════════════════════════════════════════════════ */
+
+/* Container — fills the bc-right-panel */
+.hc-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.hc-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: white;
+  flex-shrink: 0;
+}
+
+.hc-header-accent {
+  display: inline-block;
+  width: 4px;
+  height: 26px;
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 2px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.hc-header-title {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #1e293b;
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.hc-current-badge {
+  font-size: 0.72rem;
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid #bfdbfe;
+}
+
+/* ── Location tag ────────────────────────────────────────────── */
+.hc-location-tag {
+  padding: 8px 20px;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* ── Loading ─────────────────────────────────────────────────── */
+.hc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 14px;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.hc-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: hc-spin 0.7s linear infinite;
+}
+
+@keyframes hc-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Error ───────────────────────────────────────────────────── */
+.hc-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 20px 0;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: #78350f;
+}
+
+.hc-error span {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.hc-error p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Hotel selector wrap — remove default HotelRoomSelector margin ── */
+.hc-selector-wrap {
+  padding: 16px 16px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Override hrs-container spacing inside the right panel */
+.hc-selector-wrap .hrs-container {
+  gap: 12px;
+}
+
+.hc-selector-wrap .hrs-header h3 {
+  font-size: 0.95rem;
+}
+
+.hc-selector-wrap .hrs-subtitle {
+  font-size: 0.8rem;
+}
+
+/* ── Selection summary ───────────────────────────────────────── */
+.hc-selection-summary {
+  margin: 12px 16px 0;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+}
+
+.hc-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 0.85rem;
+  border-bottom: 1px dashed #bfdbfe;
+}
+
+.hc-summary-row:last-child {
+  border-bottom: none;
+}
+
+.hc-summary-label {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.hc-summary-value {
+  color: #1e3a8a;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ── Save / Discard bar ─────────────────────────────────────── */
+.hc-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 16px 16px;
+  padding: 14px 16px;
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.hc-save-bar-note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #92400e;
+  font-weight: 600;
+  flex: 1;
+  min-width: 120px;
+}
+
+.hc-discard-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: white;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  color: #374151;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.hc-discard-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.hc-discard-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hc-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.hc-save-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.hc-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.hc-spinner-sm {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: hc-spin 0.6s linear infinite;
+  display: inline-block;
+}
+
+/* ── Success bar ─────────────────────────────────────────────── */
+.hc-success-bar {
+  margin: 0 16px 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #6ee7b7;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #065f46;
+  text-align: center;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.hc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 12px;
+  color: #94a3b8;
+}
+
+.hc-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.hc-empty-hint {
+  font-size: 0.8rem !important;
+  color: #94a3b8 !important;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .hc-save-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hc-discard-btn,
+  .hc-save-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hc-selector-wrap {
+    padding: 12px 12px 0;
+  }
+}

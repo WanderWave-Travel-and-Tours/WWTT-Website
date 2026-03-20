@@ -8,6 +8,7 @@ import {
   destinationsMatch,
   matchInclusionsWithPrices,
 } from './inclusionMatcher';
+import HotelCustomizer from './HotelCustomizer';
 
 const BookingCustomizer = ({ 
   booking,      // ✅ booking object from parent
@@ -47,11 +48,16 @@ const BookingCustomizer = ({
   const hasFetchedRef = useRef(false);
   const currentDestinationRef = useRef('');
   const currentPackageNameRef = useRef('');
-  const hasFetchedPackageRef = useRef(false); // ✅ Track package fetch
+  // ✅ FIX: Use a Set keyed by bookingId instead of a flat boolean.
+  //    A flat boolean (hasFetchedPackageRef = true) was permanently blocking
+  //    re-fetches after onUpdate caused a re-render, leaving inclusions empty.
+  const hasFetchedPackageRef = useRef(new Set());
   // ✅ Track which booking ID has already been initialized so that
   //    toggling a checkbox (which triggers a parent re-render and a new
   //    booking object reference) does NOT re-run the init effect and
   //    overwrite the user's in-progress changes.
+  //    NOTE: This is intentionally cleared after a successful save so that
+  //    the freshly-saved customizedInclusions from the API are loaded in.
   const initializedBookingIdRef = useRef(null);
 
   // ─────────────────────────────────────────────────────────────
@@ -260,7 +266,15 @@ const BookingCustomizer = ({
   // that can then be priced via the seller-rates matcher.
   // ─────────────────────────────────────────────────────────────
   const fetchPackageByTitle = async (packageTitle) => {
-    if (!packageTitle || hasFetchedPackageRef.current) {
+    if (!packageTitle) return null;
+
+    // ✅ FIX: Guard per booking._id (not a flat global boolean).
+    //    Previously hasFetchedPackageRef.current was a flat true/false, so
+    //    after the first fetch it permanently blocked all subsequent bookings
+    //    from ever fetching their package — leaving inclusions empty after
+    //    onUpdate triggered a re-render for a new booking selection.
+    const bookingId = booking?._id || '';
+    if (bookingId && hasFetchedPackageRef.current.has(bookingId)) {
       return null;
     }
 
@@ -278,7 +292,7 @@ const BookingCustomizer = ({
         if (matchedPackage) {
           console.log('✅ Found matching package:', matchedPackage.title);
           console.log('   - Inclusions:', matchedPackage.inclusions);
-          hasFetchedPackageRef.current = true;
+          if (bookingId) hasFetchedPackageRef.current.add(bookingId);
           setFetchedPackageData(matchedPackage);
           return matchedPackage;
         } else {
@@ -521,33 +535,44 @@ const BookingCustomizer = ({
     initializeInclusions();
   }, [booking?._id, fetchMatchingRates]);
 
-  // ✅ Fetch seller rates for "Add More" panel when booking changes
+  // ✅ FIX: Derive stable primitive dep values so this effect does NOT fire on every
+  //    parent re-render. Previously [booking, fetchSellerRates] was used — booking is
+  //    a new object reference each time the parent calls setSelectedInquiry (e.g. after
+  //    onUpdate), which caused the effect to fire endlessly and created an infinite loop.
+  //    Now we only re-run when the actual destination / packageName strings change.
+  //    fetchedPackageData?.destination is included so that when packageId is null and
+  //    the package title lookup resolves, the "Add More" panel also loads correctly.
+  const _effectDestination =
+    booking?.packageId?.destination ||
+    fetchedPackageData?.destination  ||
+    booking?.destination            ||
+    booking?.packageName            ||
+    '';
+  const _effectPackageName = booking?.packageName || '';
+
+  // Fetch seller rates for "Add More" panel when booking destination changes
   useEffect(() => {
     if (!booking) return;
-    
-    const packageDestination =
-      booking.packageId?.destination ||
-      booking.destination            ||
-      booking.packageName            ||
-      'Unknown Destination';
-    
-    const packageName = booking.packageName || '';
-                              
+
+    const packageDestination = _effectDestination || 'Unknown Destination';
+    const packageName        = _effectPackageName;
+
     console.log('🎯 Booking destination:', packageDestination);
     console.log('🎯 Package name:', packageName);
-    
+
     // Skip if same destination + package (guard against spurious re-renders)
-    if (currentDestinationRef.current === packageDestination && 
+    if (currentDestinationRef.current === packageDestination &&
         currentPackageNameRef.current === packageName) {
       console.log('⏭️ Same destination and package, skipping fetch');
       return;
     }
-    
+
     currentDestinationRef.current = packageDestination;
     currentPackageNameRef.current = packageName;
-    
+
     fetchSellerRates(packageDestination);
-  }, [booking, fetchSellerRates]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_effectDestination, _effectPackageName, fetchSellerRates]);
 
   // Filter "Add More" list whenever the search query changes
   useEffect(() => {
@@ -617,7 +642,18 @@ const BookingCustomizer = ({
         // now populates packageId, but we merge anyway as a safety net.
         const bookingData = updatedBooking.booking;
         const isPopulated = bookingData?.packageId && typeof bookingData.packageId === 'object' && bookingData.packageId.destination;
-        onUpdate(isPopulated ? bookingData : { ...bookingData, packageId: booking.packageId });
+        const merged = isPopulated ? bookingData : { ...bookingData, packageId: booking.packageId };
+
+        // ✅ FIX: Allow the init effect to re-run ONCE after save so the newly-saved
+        //    customizedInclusions from the API response are loaded into local state.
+        //    Without this, initializedBookingIdRef still matches the booking _id and
+        //    the init effect skips — leaving the component showing stale/empty inclusions.
+        //    We only clear the flag AFTER we have a valid saved payload to prevent
+        //    the infinite-loop scenario where clearing it on every onUpdate call causes
+        //    an endless re-init cycle.
+        initializedBookingIdRef.current = null;
+
+        onUpdate(merged);
       }
       setHasUnsavedChanges(false);
       
@@ -729,8 +765,12 @@ const BookingCustomizer = ({
     setCustomizedInclusions(resetInclusions);
     setMatchedInclusionCount(0);
     setHasUnsavedChanges(false);
-    // Allow re-initialization after reset so prices reload correctly
-    initializedBookingIdRef.current = null;
+    // ✅ FIX: Do NOT clear initializedBookingIdRef here before saving.
+    //    handleSaveCustomization already clears it after a successful save,
+    //    which is the correct moment to allow a single re-init with the
+    //    fresh API response. Clearing it here (before save) caused an
+    //    extra unwanted re-init cycle triggered by the setCustomizedInclusions
+    //    call above re-rendering the component.
     
     await handleSaveCustomization();
   };
@@ -831,26 +871,20 @@ const BookingCustomizer = ({
   // DERIVED VALUES FOR RENDER
   // ─────────────────────────────────────────────────────────────
 
-  // Use packageId.destination first (most reliable), then fall back to
-  // booking.destination and packageName for UI display.
-  const packageDestination =
-    booking?.packageId?.destination   ||
-    booking?.destination              ||
-    booking?.packageName              ||
-    'Unknown Destination';
-
   // ─────────────────────────────────────────────────────────────
   // SUPPORTED DESTINATIONS GUARD
   //
   // BookingCustomizer is only available for Philippine domestic
   // destinations that have seller rates in the system.
   //
-  // FIX: Check ALL available destination-related fields at once
-  // by joining them into one search string. This covers cases where:
-  //   - packageId is null (no populate) -> falls back to packageName
-  //   - destination stored in packageName title (e.g. "BOHOL 4D3N")
-  //   - destination stored in packageId.destination (e.g. "Bohol")
-  //   - any combination of the above
+  // IMPORTANT: When booking.packageId is null (no populate), the destination
+  // is not known until fetchPackageByTitle resolves and sets fetchedPackageData.
+  // So we MUST include fetchedPackageData?.destination in both the search string
+  // AND the packageDestination display value — otherwise the guard returns null
+  // before the async fetch completes, and the component never renders.
+  //
+  // Because fetchedPackageData is React state, once it's set the component
+  // re-renders and the guard re-evaluates with the correct destination. ✅
   // ─────────────────────────────────────────────────────────────
   const SUPPORTED_DESTINATIONS = [
     'siargao',
@@ -862,16 +896,38 @@ const BookingCustomizer = ({
     'puerto princesa',
   ];
 
-  // Build a single lowercase string from ALL possible destination sources
+  // Use packageId.destination first (most reliable), then fetched package
+  // destination (async — only available after title lookup resolves),
+  // then booking.destination, then packageName as last resort.
+  const packageDestination =
+    booking?.packageId?.destination   ||
+    fetchedPackageData?.destination   ||
+    booking?.destination              ||
+    booking?.packageName              ||
+    'Unknown Destination';
+
+  // Build a single lowercase string from ALL possible destination sources.
+  // fetchedPackageData?.destination is included so bookings where packageId
+  // is null (e.g. packageName = "Solo") still pass the guard once the
+  // async package title fetch resolves and sets fetchedPackageData.
   const destinationSearchString = [
     booking?.packageId?.destination,
+    fetchedPackageData?.destination,
     booking?.destination,
     booking?.packageName,
   ].filter(Boolean).join(' ').toLowerCase();
 
+  // If fetchedPackageData has not loaded yet AND no other destination source
+  // is available, show a loading placeholder instead of returning null — this
+  // prevents the component from disappearing permanently when packageId is null.
   const isDestinationSupported = destinationSearchString.length > 0 &&
     SUPPORTED_DESTINATIONS.some(dest => destinationSearchString.includes(dest));
 
+  // While fetchedPackageData is still loading (packageId null, no other destination
+  // source known), isDestinationSupported will be false. Once setFetchedPackageData
+  // fires (it's React state), the component re-renders and this guard re-evaluates
+  // with the real destination now included in destinationSearchString — so the
+  // component correctly appears for supported destinations after the async fetch.
   if (!isDestinationSupported) return null;
 
   // ─────────────────────────────────────────────────────────────
@@ -880,6 +936,9 @@ const BookingCustomizer = ({
 
   return (
     <div className="pc-container">
+      <div className="bc-two-col-layout">
+        {/* LEFT — Package Inclusions */}
+        <div className="bc-left-panel">
 
       {/* ══════════════════════════════════════════════════════════
           BOOKING DETAILS SECTION
@@ -1055,10 +1114,14 @@ const BookingCustomizer = ({
         </div>
       </div>
 
+      {/* Padded content area below the flush header */}
+      <div className="bc-left-content">
+
       {/* Header */}
       <div className="pc-header">
         <div className="pc-title-row">
-          <Package size={24} color="#f97316" />
+          <span className="pc-title-accent" />
+          <Package size={22} color="#f97316" style={{ flexShrink: 0 }} />
           <h2 className="pc-title">Customize Your Package</h2>
         </div>
         <p className="pc-subtitle">
@@ -1116,6 +1179,7 @@ const BookingCustomizer = ({
       <div className="pc-section">
         <div className="pc-section-header">
           <h3 className="pc-section-title">
+            <span className="pc-section-accent" />
             Package Inclusions
             {isPricingLoading && (
               <span style={{ marginLeft: '8px', fontSize: '0.75rem', fontWeight: '400', color: '#f97316' }}>
@@ -1450,6 +1514,130 @@ const BookingCustomizer = ({
         }
         @keyframes pc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
       `}</style>
+
+      </div>{/* end bc-left-content */}
+        </div>{/* end bc-left-panel */}
+
+        {/* RIGHT — Hotel Selection + Price Summary */}
+        <div className="bc-right-panel">
+          <HotelCustomizer
+            booking={booking}
+            onUpdate={onUpdate}
+            packageDestination={packageDestination}
+          />
+
+          {/* ── LIVE PRICE SUMMARY ── below hotel selector ── */}
+          {customizedInclusions.length > 0 && (() => {
+            const savedCustomization = booking?.customizationAdditionalPrice || 0;
+            const basePrice = (booking?.totalAmount || 0) - savedCustomization;
+
+            const deductions = customizedInclusions
+              .filter(inc => inc.isOriginal && !inc.isChecked && inc.price > 0)
+              .reduce((sum, inc) => sum + inc.price, 0);
+            const additions = customizedInclusions
+              .filter(inc => !inc.isOriginal && inc.isChecked && inc.price > 0)
+              .reduce((sum, inc) => sum + inc.price, 0);
+            const netChange    = additions - deductions;
+            const newTotal     = Math.max(0, basePrice + netChange);
+            const hasChanges   = deductions > 0 || additions > 0;
+
+            const isPartial      = booking?.paymentType === 'partial';
+            const alreadyPaid    = (booking?.initialPaymentAmount || 0) + (booking?.balancePaidAmount || 0);
+            const newBalance     = isPartial ? Math.max(0, newTotal - alreadyPaid) : null;
+            const currentBalance = booking?.remainingBalance || 0;
+
+            return (
+              <div className="bc-price-summary bc-price-summary-right">
+                <div className="bc-price-summary-header">
+                  <DollarSign size={15} />
+                  <span>Price Summary</span>
+                  {hasChanges && <span className="bc-unsaved-pill">UNSAVED</span>}
+                </div>
+
+                <div className="bc-price-row">
+                  <span>Base Package Price</span>
+                  <span style={{ fontWeight: 700 }}>₱{basePrice.toLocaleString()}</span>
+                </div>
+
+                {deductions > 0 && (
+                  <div className="bc-price-row bc-discount">
+                    <span>
+                      Removed inclusions
+                      <span className="bc-price-count">
+                        ({customizedInclusions.filter(i => i.isOriginal && !i.isChecked && i.price > 0).length})
+                      </span>
+                    </span>
+                    <span className="bc-price-discount">−₱{deductions.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {additions > 0 && (
+                  <div className="bc-price-row highlight">
+                    <span>
+                      Added inclusions
+                      <span className="bc-price-count">
+                        ({customizedInclusions.filter(i => !i.isOriginal && i.isChecked && i.price > 0).length})
+                      </span>
+                    </span>
+                    <span className="bc-price-added">+₱{additions.toLocaleString()}</span>
+                  </div>
+                )}
+
+                <div className="bc-price-row total">
+                  <span>Updated Total</span>
+                  <span className="bc-price-total" style={{
+                    color: netChange > 0 ? '#b45309' : netChange < 0 ? '#059669' : '#047857'
+                  }}>
+                    ₱{newTotal.toLocaleString()}
+                    {netChange !== 0 && (
+                      <span className="bc-price-delta" style={{
+                        color: netChange > 0 ? '#b45309' : '#059669'
+                      }}>
+                        {netChange > 0 ? '+' : ''}₱{netChange.toLocaleString()}
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                {isPartial && (
+                  <>
+                    <div className="bc-price-row bc-payment-row">
+                      <span>Already Paid</span>
+                      <span style={{ fontWeight: 700, color: '#059669' }}>₱{alreadyPaid.toLocaleString()}</span>
+                    </div>
+                    <div className="bc-price-row bc-balance-row">
+                      <span style={{ fontWeight: 800 }}>Remaining Balance</span>
+                      <span style={{
+                        fontWeight: 900,
+                        fontSize: '1rem',
+                        color: newBalance < currentBalance ? '#059669' : newBalance > currentBalance ? '#dc2626' : '#1e293b'
+                      }}>
+                        ₱{(newBalance ?? currentBalance).toLocaleString()}
+                        {hasChanges && newBalance !== null && newBalance !== currentBalance && (
+                          <span className="bc-price-delta" style={{
+                            color: newBalance < currentBalance ? '#059669' : '#dc2626',
+                            fontSize: '0.76rem',
+                            marginLeft: '6px'
+                          }}>
+                            (was ₱{currentBalance.toLocaleString()})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {!hasChanges && (
+                  <p className="bc-price-hint">
+                    Select or deselect inclusions on the left to preview price changes.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+
+      </div>{/* end bc-two-col-layout */}
     </div>
   );
 };
