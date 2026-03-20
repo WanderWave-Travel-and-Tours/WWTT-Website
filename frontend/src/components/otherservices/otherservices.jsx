@@ -99,6 +99,7 @@ const UniversalInquiryForm = ({
 
 const OtherServices = ({ setAuthPage }) => {
   const sliderRef = useRef(null);
+  const wrapperRef = useRef(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -221,14 +222,12 @@ const OtherServices = ({ setAuthPage }) => {
   };
 
   const scroll = (direction) => {
-    if (sliderRef.current) {
-      const { current } = sliderRef;
+    if (wrapperRef.current) {
       const scrollAmount = 350;
-
       if (direction === "left") {
-        current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+        wrapperRef.current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
       } else {
-        current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+        wrapperRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
       }
     }
   };
@@ -579,7 +578,7 @@ const OtherServices = ({ setAuthPage }) => {
           <p className="os-subtitle">Your One-Stop Travel & Documentation Solution</p>
         </div>
 
-        <div className="os-carousel-wrapper">
+        <div className="os-carousel-wrapper" ref={wrapperRef}>
           <button
             className="os-nav-btn os-prev"
             onClick={() => scroll("left")}

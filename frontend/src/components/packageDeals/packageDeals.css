@@ -145,6 +145,14 @@
   .divider-locations-group {
     font-size: 11px;
   }
+
+  .divider-airplane-container {
+    transform: translateY(-80%);
+  }
+
+  .divider-airplane {
+    width: 180px;
+  }
   
   .top-section-bg {
     padding-bottom: 0;
@@ -169,6 +177,14 @@
 
   .divider-locations-group {
     font-size: 10px;
+  }
+
+  .divider-airplane-container {
+    transform: translateY(-80%);
+  }
+
+  .divider-airplane {
+    width: 150px;
   }
   
   .bottom-section-bg {

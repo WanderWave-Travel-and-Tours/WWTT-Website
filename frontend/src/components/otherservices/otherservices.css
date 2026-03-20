@@ -36,7 +36,7 @@ html, body {
   align-items: center;     
   justify-content: center;
   overflow: hidden;
-  padding: 0;
+  padding: var(--header-height-desktop) 0 0 0;
   font-family: 'Inter', sans-serif;
   margin: 0;
 }
@@ -98,22 +98,30 @@ html, body {
   justify-content: center;
   margin: 0;
   padding: 0;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 /* --- OS-SLIDER AND OS-CARD STYLES (REQUIRED FOR DISPLAY) --- */
 .os-slider {
   display: flex;
   gap: 2rem;
-  overflow-x: auto;
+  overflow-x: visible;
   overflow-y: visible;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   padding: 1rem 2rem 2rem 2rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  margin: 0 auto;
+  flex-shrink: 0;
 }
 
 .os-slider::-webkit-scrollbar {
+  display: none;
+}
+
+.os-carousel-wrapper::-webkit-scrollbar {
   display: none;
 }
 
@@ -1055,7 +1063,7 @@ html, body {
 @media (max-width: 768px) {
   .os-section {
     min-height: calc(100vh - var(--header-height-mobile));
-    padding: 0;
+    padding: var(--header-height-mobile) 0 0 0;
   }
 
   .os-title {
