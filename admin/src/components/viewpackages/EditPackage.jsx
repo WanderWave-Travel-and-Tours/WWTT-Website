@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Upload, X, Plus, Trash2, Save } from "lucide-react"; 
+import { ArrowLeft, Upload, X, Plus, Trash2, Save } from "lucide-react";
 import Sidebar from "../sidebar/sidebar";
 import "./editpackage.css";
 
-// ✅ Imports for Draft Functionality
+// Imports for Draft Functionality
 import useAutoDraft from '../../hooks/useAutoDraft';
 import RestoreDraftModal from '../../components/RestoreDraftModal/RestoreDraftModal';
 
-// 🔥 HELPER FUNCTION - GET ADMIN DATA (Activity Logs) 🔥
+// Toast Import
+import { useToast } from '../toast/ToastManager';
+
+// HELPER FUNCTION - GET ADMIN DATA (Activity Logs)
 const getAdminData = () => {
     try {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -17,15 +20,17 @@ const getAdminData = () => {
             adminId: adminData._id || adminData.id || null
         };
     } catch (error) {
-        console.error('❌ Error getting admin data:', error);
+        console.error('Error getting admin data:', error);
         return { userEmail: 'Unknown Admin', adminId: null };
     }
 };
 
 const EditPackage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get ID from URL params
+  const { id } = useParams();
   const packageId = id;
+
+  const toast = useToast();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -35,23 +40,21 @@ const EditPackage = () => {
   const [formData, setFormData] = useState({
     title: "",
     destination: "",
-    tourType: "private",  
-    pax: "",             
-    minPax: "",          
+    tourType: "private",
+    pax: "",
+    minPax: "",
     sellerPrice: "",
     markup: "",
-    // ✅ NEW: Markup Type added
-    markupType: "flat", 
+    markupType: "flat",
     duration: "",
     category: "Local",
     existingImage: "",
     existingImagePublicId: "",
-    // ✅ Pax Pricing fields
     soloPaxPrice: "",
     multiplePaxPrice: ""
   });
 
-  // ✅ Store original data to track changes for Activity Logs
+  // Store original data to track changes for Activity Logs
   const [originalData, setOriginalData] = useState(null);
 
   const [imageFile, setImageFile] = useState(null);
@@ -66,7 +69,7 @@ const EditPackage = () => {
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   // =========================================================
-  // ✅ AUTO-DRAFT LOGIC START
+  // AUTO-DRAFT LOGIC START
   // =========================================================
 
   const fileToBase64 = (file) => {
@@ -93,12 +96,12 @@ const EditPackage = () => {
         return;
       }
 
-      const isFormEmpty = 
-        !formData.title && 
-        !formData.destination && 
-        !formData.sellerPrice && 
-        !formData.markup && 
-        !formData.duration && 
+      const isFormEmpty =
+        !formData.title &&
+        !formData.destination &&
+        !formData.sellerPrice &&
+        !formData.markup &&
+        !formData.duration &&
         !imageFile;
 
       if (isFormEmpty) {
@@ -111,7 +114,7 @@ const EditPackage = () => {
 
       if (imageFile) {
         try {
-          if (imageFile.size < 3 * 1024 * 1024) { 
+          if (imageFile.size < 3 * 1024 * 1024) {
             imageBase64 = await fileToBase64(imageFile);
             imageMeta = { name: imageFile.name, type: imageFile.type };
           }
@@ -124,24 +127,24 @@ const EditPackage = () => {
         ...formData,
         inclusions,
         itinerary,
-        image: imageBase64, 
+        image: imageBase64,
         imageMeta: imageMeta,
         originalId: packageId,
-        soloPaxPrice: formData.soloPaxPrice,       // ✅ included in draft
-        multiplePaxPrice: formData.multiplePaxPrice // ✅ included in draft
+        soloPaxPrice: formData.soloPaxPrice,
+        multiplePaxPrice: formData.multiplePaxPrice
       });
     };
 
     const timeoutId = setTimeout(() => {
       updateDraft();
-    }, 500); 
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [formData, inclusions, itinerary, imageFile, loading, packageId]);
 
   const restoreDraftData = async (data) => {
     if (!data) return;
-    
+
     if (data.originalId && data.originalId !== packageId) {
       console.warn("Draft found but belongs to a different package ID. Ignoring.");
       return;
@@ -155,13 +158,11 @@ const EditPackage = () => {
       minPax: data.minPax || "",
       sellerPrice: data.sellerPrice || "",
       markup: data.markup || "",
-      // ✅ NEW: Restore markupType
       markupType: data.markupType || "flat",
       duration: data.duration || "",
       category: data.category || "Local",
       existingImage: data.existingImage || "",
       existingImagePublicId: data.existingImagePublicId || "",
-      // ✅ Restore pax pricing fields
       soloPaxPrice: data.soloPaxPrice ?? "",
       multiplePaxPrice: data.multiplePaxPrice ?? ""
     });
@@ -180,18 +181,18 @@ const EditPackage = () => {
     }
   };
 
-  const { 
-    clearDraft, 
-    hasDraft, 
-    restoreDraft, 
+  const {
+    clearDraft,
+    hasDraft,
+    restoreDraft,
     discardDraft,
-    draftInfo 
+    draftInfo
   } = useAutoDraft({
-    module: `edit-package-${packageId}`, 
+    module: `edit-package-${packageId}`,
     formData: draftPayload,
     setFormData: restoreDraftData,
-    imagePreview: imagePreview, 
-    autoRestore: false 
+    imagePreview: imagePreview,
+    autoRestore: false
   });
 
   const [showRestoreModal, setShowRestoreModal] = useState(false);
@@ -208,12 +209,12 @@ const EditPackage = () => {
   };
 
   const handleDiscardDraft = async () => {
-    await discardDraft(); 
+    await discardDraft();
     setShowRestoreModal(false);
   };
 
   // =========================================================
-  // ✅ AUTO-DRAFT LOGIC END
+  // AUTO-DRAFT LOGIC END
   // =========================================================
 
   useEffect(() => {
@@ -230,10 +231,10 @@ const EditPackage = () => {
 
         if (result.status === "ok") {
           const pkg = result.data;
-          
+
           let sellerPriceValue = 0;
           let markupValue = 0;
-          
+
           if (pkg.sellerPrice !== undefined && pkg.sellerPrice !== null) {
             sellerPriceValue = pkg.sellerPrice;
             markupValue = pkg.markup !== undefined && pkg.markup !== null ? pkg.markup : 0;
@@ -244,7 +245,7 @@ const EditPackage = () => {
 
           const currentInclusions = pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [""];
           const currentItinerary = pkg.itinerary && pkg.itinerary.length > 0 ? pkg.itinerary : [{ day: 1, title: "", activities: [""] }];
-          
+
           setOriginalData({
             title: pkg.title || "",
             destination: pkg.destination || "",
@@ -253,13 +254,11 @@ const EditPackage = () => {
             minPax: pkg.minPax || "",
             sellerPrice: sellerPriceValue,
             markup: markupValue,
-            // ✅ NEW: Capture original markupType
             markupType: pkg.markupType || "flat",
             duration: pkg.duration || "",
             category: pkg.category || "Local",
             inclusions: currentInclusions,
             itinerary: currentItinerary,
-            // ✅ Capture original pax pricing
             soloPaxPrice: pkg.soloPaxPrice ?? "",
             multiplePaxPrice: pkg.multiplePaxPrice ?? ""
           });
@@ -272,13 +271,11 @@ const EditPackage = () => {
             minPax: pkg.minPax || "",
             sellerPrice: sellerPriceValue,
             markup: markupValue,
-            // ✅ NEW: Set markupType
             markupType: pkg.markupType || "flat",
             duration: pkg.duration || "",
             category: pkg.category || "Local",
             existingImage: pkg.image || "",
             existingImagePublicId: pkg.imagePublicId || "",
-            // ✅ Load pax pricing fields
             soloPaxPrice: pkg.soloPaxPrice ?? "",
             multiplePaxPrice: pkg.multiplePaxPrice ?? ""
           });
@@ -292,12 +289,12 @@ const EditPackage = () => {
           }
         } else {
           console.error("Error in response:", result.error);
-          alert("Failed to load package data: " + result.error);
+          toast.error("Failed to load package data: " + result.error, "Load Error");
           navigate("/view-packages");
         }
       } catch (err) {
         console.error("Error fetching package:", err);
-        alert("Failed to load package data. Please try again.");
+        toast.error("Failed to load package data. Please try again.", "Connection Error");
         navigate("/view-packages");
       } finally {
         setLoading(false);
@@ -312,11 +309,11 @@ const EditPackage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ NEW: Dynamic Price Calculation (same logic as EditTour)
+  // Dynamic Price Calculation
   const calculatedPrice = useMemo(() => {
     const price = parseFloat(formData.sellerPrice) || 0;
     const markupVal = parseFloat(formData.markup) || 0;
-    
+
     if (formData.markupType === 'percentage') {
       return price + (price * (markupVal / 100));
     }
@@ -327,11 +324,11 @@ const EditPackage = () => {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
-        alert("Please select a valid image file");
+        toast.error("Please select a valid image file.", "Invalid File");
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB");
+        toast.error("File size must be less than 5MB.", "File Too Large");
         return;
       }
       setImageFile(file);
@@ -457,17 +454,17 @@ const EditPackage = () => {
       !formData.sellerPrice ||
       !formData.duration
     ) {
-      alert("Please fill in all required fields");
+      toast.warning("Please fill in all required fields.", "Missing Fields");
       return;
     }
 
     if (formData.tourType === 'private' && (!formData.pax || parseInt(formData.pax) < 1)) {
-      alert("Pax is required for private tours and must be at least 1");
+      toast.warning("Pax is required for private tours and must be at least 1.", "Invalid Pax");
       return;
     }
 
     if (formData.tourType === 'joiners' && (!formData.minPax || parseInt(formData.minPax) < 1)) {
-      alert("Minimum pax is required for joiner tours and must be at least 1");
+      toast.warning("Minimum pax is required for joiner tours and must be at least 1.", "Invalid Pax");
       return;
     }
 
@@ -479,7 +476,7 @@ const EditPackage = () => {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
       formDataToSend.append("destination", formData.destination);
-      
+
       formDataToSend.append("tourType", formData.tourType);
       if (formData.tourType === 'private') {
         formDataToSend.append("pax", formData.pax);
@@ -489,10 +486,8 @@ const EditPackage = () => {
 
       formDataToSend.append("sellerPrice", formData.sellerPrice);
       formDataToSend.append("markup", formData.markup || 0);
-      // ✅ NEW: Send markupType to backend
       formDataToSend.append("markupType", formData.markupType);
 
-      // ✅ Send pax pricing fields (send empty string if blank so backend parsePaxPrice returns null)
       formDataToSend.append("soloPaxPrice", formData.soloPaxPrice ?? "");
       formDataToSend.append("multiplePaxPrice", formData.multiplePaxPrice ?? "");
 
@@ -500,7 +495,7 @@ const EditPackage = () => {
       formDataToSend.append("category", formData.category);
       formDataToSend.append("existingImage", formData.existingImage);
       if (formData.existingImagePublicId) {
-          formDataToSend.append("existingImagePublicId", formData.existingImagePublicId);
+        formDataToSend.append("existingImagePublicId", formData.existingImagePublicId);
       }
 
       const filteredInclusions = inclusions.filter((inc) => inc.trim() !== "");
@@ -523,52 +518,49 @@ const EditPackage = () => {
       formDataToSend.append("adminId", adminId);
 
       let changes = [];
-            
+
       const trackChange = (label, oldVal, newVal) => {
-          const cleanOld = String(oldVal || "").trim();
-          const cleanNew = String(newVal || "").trim();
-          if (cleanOld !== cleanNew) {
-              changes.push(`${label} changed from "${cleanOld}" to "${cleanNew}"`);
-          }
+        const cleanOld = String(oldVal || "").trim();
+        const cleanNew = String(newVal || "").trim();
+        if (cleanOld !== cleanNew) {
+          changes.push(`${label} changed from "${cleanOld}" to "${cleanNew}"`);
+        }
       };
 
       if (originalData) {
-          trackChange("Title", originalData.title, formData.title);
-          trackChange("Destination", originalData.destination, formData.destination);
-          trackChange("Tour Type", originalData.tourType, formData.tourType);
-          
-          if (formData.tourType === 'private') {
-            trackChange("Pax", originalData.pax, formData.pax);
-          } else if (formData.tourType === 'joiners') {
-            trackChange("Minimum Pax", originalData.minPax, formData.minPax);
-          }
+        trackChange("Title", originalData.title, formData.title);
+        trackChange("Destination", originalData.destination, formData.destination);
+        trackChange("Tour Type", originalData.tourType, formData.tourType);
 
-          trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
-          trackChange("Markup", originalData.markup, formData.markup);
-          // ✅ NEW: Track markupType change
-          trackChange("Markup Type", originalData.markupType, formData.markupType);
-          // ✅ Track pax pricing changes
-          trackChange("Solo Pax Price", originalData.soloPaxPrice, formData.soloPaxPrice);
-          trackChange("Multiple Pax Price", originalData.multiplePaxPrice, formData.multiplePaxPrice);
-          
-          trackChange("Duration", originalData.duration, formData.duration);
-          trackChange("Category", originalData.category, formData.category);
+        if (formData.tourType === 'private') {
+          trackChange("Pax", originalData.pax, formData.pax);
+        } else if (formData.tourType === 'joiners') {
+          trackChange("Minimum Pax", originalData.minPax, formData.minPax);
+        }
 
-          if (JSON.stringify(originalData.inclusions) !== JSON.stringify(filteredInclusions)) {
-             changes.push("Package inclusions were updated.");
-          }
+        trackChange("Seller Price", originalData.sellerPrice, formData.sellerPrice);
+        trackChange("Markup", originalData.markup, formData.markup);
+        trackChange("Markup Type", originalData.markupType, formData.markupType);
+        trackChange("Solo Pax Price", originalData.soloPaxPrice, formData.soloPaxPrice);
+        trackChange("Multiple Pax Price", originalData.multiplePaxPrice, formData.multiplePaxPrice);
+        trackChange("Duration", originalData.duration, formData.duration);
+        trackChange("Category", originalData.category, formData.category);
 
-          if (JSON.stringify(originalData.itinerary) !== JSON.stringify(filteredItinerary)) {
-             changes.push("Package itinerary was updated.");
-          }
+        if (JSON.stringify(originalData.inclusions) !== JSON.stringify(filteredInclusions)) {
+          changes.push("Package inclusions were updated.");
+        }
 
-          if (imageFile) {
-              changes.push("Package image was replaced.");
-          }
+        if (JSON.stringify(originalData.itinerary) !== JSON.stringify(filteredItinerary)) {
+          changes.push("Package itinerary was updated.");
+        }
+
+        if (imageFile) {
+          changes.push("Package image was replaced.");
+        }
       }
 
       if (changes.length > 0) {
-          formDataToSend.append('changes', JSON.stringify(changes));
+        formDataToSend.append('changes', JSON.stringify(changes));
       }
 
       const response = await fetch(`${API_BASE_URL}/edit/${packageId}`, {
@@ -579,15 +571,15 @@ const EditPackage = () => {
       const result = await response.json();
 
       if (result.status === "ok") {
-        alert("Package updated successfully!");
+        toast.success("Package updated successfully.", "Success");
         await clearDraft();
         navigate("/view-packages");
       } else {
-        alert("Failed to update package: " + (result.error || "Unknown error"));
+        toast.error("Failed to update package: " + (result.error || "Unknown error"), "Update Failed");
       }
     } catch (err) {
       console.error("Error updating package:", err);
-      alert("Error updating package. Please try again.");
+      toast.error("Error updating package. Please try again.", "Server Error");
     } finally {
       setSubmitting(false);
     }
@@ -616,7 +608,7 @@ const EditPackage = () => {
 
   return (
     <div className="epa-page">
-      
+
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -676,7 +668,7 @@ const EditPackage = () => {
                 </label>
               </div>
             </div>
-            
+
             {/* Basic Information */}
             <div className="epa-section">
               <h2 className="epa-section-title">Basic Information</h2>
@@ -792,9 +784,9 @@ const EditPackage = () => {
             <div className="epa-section">
               <h2 className="epa-section-title">Pricing</h2>
               <div className="epa-form-grid">
-                
+
                 <div className="epa-form-group">
-                  <label className="epa-label">Seller Price (₱) *</label>
+                  <label className="epa-label">Seller Price (PHP) *</label>
                   <input
                     type="number"
                     name="sellerPrice"
@@ -807,7 +799,7 @@ const EditPackage = () => {
                   />
                 </div>
 
-                {/* ✅ NEW: Markup Type Dropdown */}
+                {/* Markup Type Dropdown */}
                 <div className="epa-form-group">
                   <label className="epa-label">Markup Type</label>
                   <select
@@ -816,14 +808,14 @@ const EditPackage = () => {
                     onChange={handleInputChange}
                     className="epa-input"
                   >
-                    <option value="flat">Flat Amount (₱)</option>
+                    <option value="flat">Flat Amount (PHP)</option>
                     <option value="percentage">Percentage (%)</option>
                   </select>
                 </div>
 
                 <div className="epa-form-group">
                   <label className="epa-label">
-                     Markup {formData.markupType === 'percentage' ? '(%)' : '(₱)'}
+                    Markup {formData.markupType === 'percentage' ? '(%)' : '(PHP)'}
                   </label>
                   <input
                     type="number"
@@ -837,10 +829,10 @@ const EditPackage = () => {
                 </div>
 
                 <div className="epa-form-group">
-                  <label className="epa-label">Final Price (₱)</label>
+                  <label className="epa-label">Final Price (PHP)</label>
                   <input
                     type="text"
-                    value={`₱${calculatedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    value={`${calculatedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     className="epa-input epa-input--readonly"
                     readOnly
                   />
@@ -856,7 +848,7 @@ const EditPackage = () => {
               </p>
               <div className="epa-form-grid">
                 <div className="epa-form-group">
-                  <label className="epa-label">👤 Solo Pax Price (PHP)</label>
+                  <label className="epa-label">Solo Pax Price (PHP)</label>
                   <input
                     type="number"
                     name="soloPaxPrice"
@@ -869,7 +861,7 @@ const EditPackage = () => {
                   />
                 </div>
                 <div className="epa-form-group">
-                  <label className="epa-label">👥 Multiple Pax Price (PHP)</label>
+                  <label className="epa-label">Multiple Pax Price (PHP)</label>
                   <input
                     type="number"
                     name="multiplePaxPrice"
@@ -1016,8 +1008,8 @@ const EditPackage = () => {
                 type="button"
                 className="epa-btn epa-btn--cancel"
                 onClick={async () => {
-                    await clearDraft(); 
-                    navigate("/view-packages");
+                  await clearDraft();
+                  navigate("/view-packages");
                 }}
                 disabled={submitting}
               >
@@ -1029,11 +1021,11 @@ const EditPackage = () => {
                 disabled={submitting}
               >
                 {submitting ? (
-                    'UPDATING...' 
+                  'UPDATING...'
                 ) : (
-                    <>
-                        <Save size={18} /> UPDATE PACKAGE
-                    </>
+                  <>
+                    <Save size={18} /> UPDATE PACKAGE
+                  </>
                 )}
               </button>
             </div>

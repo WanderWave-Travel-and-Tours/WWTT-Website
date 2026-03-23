@@ -9,6 +9,7 @@ import {
   matchInclusionsWithPrices,
 } from './inclusionMatcher';
 import HotelCustomizer from './HotelCustomizer';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
 const BookingCustomizer = ({ 
   booking,      // ✅ booking object from parent
@@ -28,6 +29,38 @@ const BookingCustomizer = ({
   const [showAllInclusions, setShowAllInclusions] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const INCLUSIONS_PREVIEW_COUNT = 5;
+
+  // ── Hotel price info — lifted from HotelCustomizer so the price summary
+  //    can reflect pending hotel tier changes before they are saved ──────
+  const [hotelPriceInfo, setHotelPriceInfo] = useState(null);
+  // hotelPriceInfo shape:
+  //   { pricePerNight, numberOfRooms, durationNights,
+  //     totalHotelCost, selectedRoomType, savedRoomType, isUnsaved }
+
+  // ── Hotel unsaved state — lifted from HotelCustomizer ─────────
+  // true when user picked a new hotel tier but hasn't saved yet
+  const [hotelHasUnsaved, setHotelHasUnsaved] = useState(false);
+
+  // ── Refs to call HotelCustomizer save/discard imperatively ────
+  const hotelSaveRef    = useRef(null);
+  const hotelDiscardRef = useRef(null);
+
+  // ── Unified confirm modal ──────────────────────────────────────
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen:    false,
+    title:     '',
+    message:   '',
+    type:      'primary',
+    onConfirm: null,
+  });
+
+  const showConfirm = ({ title, message, type = 'primary', onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, type, onConfirm });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null }));
+  };
 
   // ─────────────────────────────────────────────────────────────
   // BOOKING DETAILS EDIT STATE
@@ -258,25 +291,59 @@ const BookingCustomizer = ({
 
 
   // ─────────────────────────────────────────────────────────────
-  // FETCH PACKAGE BY TITLE — PRIORITY 4 FALLBACK
+  // FETCH POPULATED BOOKING — PRIORITY 4 FALLBACK
   //
-  // When booking.packageId is null and no inclusions are stored on the
-  // booking itself, we attempt to find the package in the /api/packages/all
-  // endpoint by matching the title. This lets us get inclusion strings
-  // that can then be priced via the seller-rates matcher.
+  // When booking.packageId is null (or a raw ObjectId without destination),
+  // we fetch the booking by ID from the server which populates packageId.
+  // This gives us the real destination even when the prop doesn't have it.
+  //
+  // After that, if packageId is still null, we fall back to matching all
+  // packages by title (fuzzy match so "solo/ joiners" can still find a
+  // package if one exists with that name or if the packageName is a qualifier
+  // like "solo" and we need to use packageId from the populated booking).
   // ─────────────────────────────────────────────────────────────
   const fetchPackageByTitle = async (packageTitle) => {
-    if (!packageTitle) return null;
-
-    // ✅ FIX: Guard per booking._id (not a flat global boolean).
-    //    Previously hasFetchedPackageRef.current was a flat true/false, so
-    //    after the first fetch it permanently blocked all subsequent bookings
-    //    from ever fetching their package — leaving inclusions empty after
-    //    onUpdate triggered a re-render for a new booking selection.
     const bookingId = booking?._id || '';
     if (bookingId && hasFetchedPackageRef.current.has(bookingId)) {
       return null;
     }
+
+    // ── STEP 1: Try fetching the booking itself with populate ────────────
+    // The GET /api/bookings/:id endpoint populates packageId.
+    // If packageId is stored in DB but wasn't populated when the booking
+    // was fetched via /api/bookings/user/:email, this will give us the
+    // real destination without needing a title match.
+    if (bookingId) {
+      try {
+        console.log(`🔍 Fetching populated booking: ${bookingId}`);
+        const res  = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`);
+        const data = await res.json();
+
+        if (data?.packageId && typeof data.packageId === 'object' && data.packageId.destination) {
+          console.log('✅ Got destination from populated booking:', data.packageId.destination);
+          // Build a synthetic package-like object from the populated data
+          const syntheticPkg = {
+            _id:         data.packageId._id,
+            title:       data.packageId.title || packageTitle,
+            destination: data.packageId.destination,
+            inclusions:  data.packageId.inclusions || [],
+            tourType:    data.packageId.tourType,
+            minPax:      data.packageId.minPax,
+            duration:    data.packageId.duration,
+          };
+          if (bookingId) hasFetchedPackageRef.current.add(bookingId);
+          setFetchedPackageData(syntheticPkg);
+          return syntheticPkg;
+        }
+      } catch (err) {
+        console.warn('⚠️ Could not fetch populated booking:', err.message);
+      }
+    }
+
+    // ── STEP 2: Fallback — search all packages by title (fuzzy match) ───
+    // packageTitle might be a qualifier like "solo/ joiners" which won't
+    // match exactly. We try exact match first, then partial match.
+    if (!packageTitle) return null;
 
     try {
       console.log(`🔍 Fetching package by title: "${packageTitle}"`);
@@ -285,9 +352,20 @@ const BookingCustomizer = ({
       const data = await response.json();
 
       if (data.status === 'ok' && data.data) {
-        const matchedPackage = data.data.find(pkg => 
-          pkg.title.toLowerCase() === packageTitle.toLowerCase()
+        const titleLower = packageTitle.toLowerCase().trim();
+
+        // Exact match first
+        let matchedPackage = data.data.find(pkg => 
+          pkg.title.toLowerCase().trim() === titleLower
         );
+
+        // Fuzzy: title contains the search term or vice-versa
+        if (!matchedPackage) {
+          matchedPackage = data.data.find(pkg => {
+            const pkgLower = pkg.title.toLowerCase();
+            return pkgLower.includes(titleLower) || titleLower.includes(pkgLower);
+          });
+        }
 
         if (matchedPackage) {
           console.log('✅ Found matching package:', matchedPackage.title);
@@ -297,6 +375,8 @@ const BookingCustomizer = ({
           return matchedPackage;
         } else {
           console.log('⚠️ No matching package found for:', packageTitle);
+          // Mark as attempted so we don't keep re-trying on every re-render
+          if (bookingId) hasFetchedPackageRef.current.add(bookingId);
         }
       }
 
@@ -534,6 +614,100 @@ const BookingCustomizer = ({
 
     initializeInclusions();
   }, [booking?._id, fetchMatchingRates]);
+
+  // ─────────────────────────────────────────────────────────────
+  // DESTINATION RESOLUTION EFFECT
+  //
+  // This runs INDEPENDENTLY of the inclusions-init effect above.
+  // Problem: when a booking already has customizedInclusions (Priority 1),
+  // initializeInclusions() returns early — fetchPackageByTitle is never
+  // called — so fetchedPackageData stays null — so isDestinationSupported
+  // stays false — so the entire component returns null even though the
+  // booking has valid inclusions AND a valid destination on the server.
+  //
+  // Fix: always attempt to resolve destination via GET /api/bookings/:id
+  // whenever packageId is null (or not an object with a destination).
+  // This is a lightweight single fetch that only fires when needed, and is
+  // completely separate from the inclusions logic.
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!booking?._id) return;
+
+    // If we already have a destination from any source, no need to fetch
+    const alreadyHasDestination =
+      (booking.packageId && typeof booking.packageId === 'object' && booking.packageId.destination) ||
+      booking.destination ||
+      fetchedPackageData?.destination;
+
+    if (alreadyHasDestination) return;
+
+    // Destination is unknown — fetch the populated booking to resolve it
+    const resolveDestination = async () => {
+      const bookingId = booking._id;
+
+      // Guard: only fetch once per booking ID
+      if (hasFetchedPackageRef.current.has(bookingId)) return;
+
+      console.log('🌍 Resolving destination for booking:', bookingId, '(packageId is null)');
+
+      try {
+        const res  = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`);
+        const data = await res.json();
+
+        if (data?.packageId && typeof data.packageId === 'object' && data.packageId.destination) {
+          console.log('✅ Destination resolved from server:', data.packageId.destination);
+          const syntheticPkg = {
+            _id:         data.packageId._id,
+            title:       data.packageId.title || booking.packageName,
+            destination: data.packageId.destination,
+            inclusions:  data.packageId.inclusions || [],
+            tourType:    data.packageId.tourType,
+            minPax:      data.packageId.minPax,
+            duration:    data.packageId.duration,
+          };
+          hasFetchedPackageRef.current.add(bookingId);
+          setFetchedPackageData(syntheticPkg);
+          return;
+        }
+
+        // Server also returned no destination — try package title lookup
+        if (booking.packageName) {
+          console.log('🔍 Trying package title lookup:', booking.packageName);
+          const pkgRes  = await fetch(`${API_BASE_URL}/api/packages/all`);
+          const pkgData = await pkgRes.json();
+
+          if (pkgData.status === 'ok' && Array.isArray(pkgData.data)) {
+            const titleLower = booking.packageName.toLowerCase().trim();
+            let match = pkgData.data.find(p => p.title.toLowerCase().trim() === titleLower);
+            if (!match) {
+              match = pkgData.data.find(p => {
+                const t = p.title.toLowerCase();
+                return t.includes(titleLower) || titleLower.includes(t);
+              });
+            }
+            if (match) {
+              console.log('✅ Destination resolved from package lookup:', match.destination);
+              hasFetchedPackageRef.current.add(bookingId);
+              setFetchedPackageData(match);
+              return;
+            }
+          }
+        }
+
+        // Nothing found — mark as attempted so we do not retry endlessly
+        hasFetchedPackageRef.current.add(bookingId);
+        console.warn('⚠️ Could not resolve destination for booking:', bookingId);
+
+      } catch (err) {
+        hasFetchedPackageRef.current.add(bookingId);
+        console.warn('⚠️ Destination resolution failed:', err.message);
+      }
+    };
+
+    resolveDestination();
+  // Re-run only when booking ID changes or if fetchedPackageData becomes available
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?._id, fetchedPackageData?.destination]);
 
   // ✅ FIX: Derive stable primitive dep values so this effect does NOT fire on every
   //    parent re-render. Previously [booking, fetchSellerRates] was used — booking is
@@ -936,6 +1110,16 @@ const BookingCustomizer = ({
 
   return (
     <div className="pc-container">
+      {/* ── Unified Confirm Modal ── */}
+      <CustomConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirm}
+      />
+
       <div className="bc-two-col-layout">
         {/* LEFT — Package Inclusions */}
         <div className="bc-left-panel">
@@ -1454,54 +1638,101 @@ const BookingCustomizer = ({
         )}
       </div>
 
-      {/* ── SAVE CHANGES BAR — appears whenever there are unsaved changes ── */}
-      {hasUnsavedChanges && (
+      {/* ── UNIFIED SAVE ALL CHANGES BAR ─────────────────────────────
+           Appears when inclusions OR hotel tier has unsaved changes.
+           One confirm modal guards both saves — no duplicate dialogs.
+           ──────────────────────────────────────────────────────── */}
+      {(hasUnsavedChanges || hotelHasUnsaved) && (
         <div className="bc-save-bar">
           <p className="bc-save-bar-note">
-            You have unsaved changes to the inclusions.
+            {hasUnsavedChanges && hotelHasUnsaved
+              ? 'You have unsaved changes to inclusions and hotel selection.'
+              : hasUnsavedChanges
+              ? 'You have unsaved changes to the inclusions.'
+              : 'You have an unsaved hotel tier selection.'}
           </p>
           <div style={{ display: 'flex', gap: '10px' }}>
+            {/* ── Discard All ── */}
             <button
               className="bc-cancel-btn"
               onClick={() => {
-                // Restore from original booking customizedInclusions
-                const original = booking?.customizedInclusions;
-                if (original && original.length > 0) {
-                  setCustomizedInclusions(original.map((inc, i) => ({
-                    id: inc.id || `inc-${i}`,
-                    name: inc.name || '',
-                    price: typeof inc.price === 'number' ? inc.price : (parseFloat(inc.price) || 0),
-                    supplierRate: inc.supplierRate || 0,
-                    markup: inc.markup || 0,
-                    markupType: inc.markupType || 'fixed',
-                    supplier: inc.supplier || 'N/A',
-                    destination: inc.destination || '',
-                    pax: inc.pax || '',
-                    notes: inc.notes || '',
-                    isOriginal: inc.isOriginal === true || inc.isOriginal === 'true',
-                    isChecked: inc.isChecked === false || inc.isChecked === 'false' ? false : true,
-                    source: inc.source || 'package',
-                    sellerRateId: inc.sellerRateId || null,
-                    matchedActivity: inc.matchedActivity || null,
-                    matchedDestination: inc.matchedDestination || null,
-                  })));
-                }
-                setHasUnsavedChanges(false);
-                setError('');
+                showConfirm({
+                  title:   'Discard Changes',
+                  message: 'Are you sure you want to discard all unsaved changes?',
+                  type:    'danger',
+                  onConfirm: () => {
+                    closeConfirm();
+                    // Discard inclusions
+                    if (hasUnsavedChanges) {
+                      const original = booking?.customizedInclusions;
+                      if (original && original.length > 0) {
+                        setCustomizedInclusions(original.map((inc, i) => ({
+                          id: inc.id || `inc-${i}`,
+                          name: inc.name || '',
+                          price: typeof inc.price === 'number' ? inc.price : (parseFloat(inc.price) || 0),
+                          supplierRate: inc.supplierRate || 0,
+                          markup: inc.markup || 0,
+                          markupType: inc.markupType || 'fixed',
+                          supplier: inc.supplier || 'N/A',
+                          destination: inc.destination || '',
+                          pax: inc.pax || '',
+                          notes: inc.notes || '',
+                          isOriginal: inc.isOriginal === true || inc.isOriginal === 'true',
+                          isChecked: inc.isChecked === false || inc.isChecked === 'false' ? false : true,
+                          source: inc.source || 'package',
+                          sellerRateId: inc.sellerRateId || null,
+                          matchedActivity: inc.matchedActivity || null,
+                          matchedDestination: inc.matchedDestination || null,
+                        })));
+                      }
+                      setHasUnsavedChanges(false);
+                      setError('');
+                    }
+                    // Discard hotel
+                    if (hotelHasUnsaved && hotelDiscardRef.current) {
+                      hotelDiscardRef.current();
+                    }
+                  },
+                });
               }}
               disabled={isSaving}
             >
-              <XCircle size={14} /> Discard
+              <XCircle size={14} /> Discard All
             </button>
+
+            {/* ── Save All Changes ── */}
             <button
               className="pc-save-btn"
-              onClick={handleSaveCustomization}
+              onClick={() => {
+                // Build a summary of what will be saved for the confirm message
+                const parts = [];
+                if (hasUnsavedChanges) parts.push('package inclusions');
+                if (hotelHasUnsaved)   parts.push('hotel tier selection');
+                const what = parts.join(' and ');
+
+                showConfirm({
+                  title:   'Save All Changes',
+                  message: `Are you sure you want to save changes to your ${what}? This will update your booking.`,
+                  type:    'primary',
+                  onConfirm: async () => {
+                    closeConfirm();
+                    // Save inclusions first (if any)
+                    if (hasUnsavedChanges) {
+                      await handleSaveCustomization();
+                    }
+                    // Then save hotel (if any)
+                    if (hotelHasUnsaved && hotelSaveRef.current) {
+                      await hotelSaveRef.current();
+                    }
+                  },
+                });
+              }}
               disabled={isSaving}
             >
               {isSaving ? (
                 <><div className="pc-spinner" /> Saving...</>
               ) : (
-                <><CheckCircle size={14} /> Save Changes</>
+                <><CheckCircle size={14} /> Save All Changes</>
               )}
             </button>
           </div>
@@ -1524,6 +1755,10 @@ const BookingCustomizer = ({
             booking={booking}
             onUpdate={onUpdate}
             packageDestination={packageDestination}
+            onHotelPriceChange={setHotelPriceInfo}
+            onHasUnsavedChanges={setHotelHasUnsaved}
+            saveRef={hotelSaveRef}
+            discardRef={hotelDiscardRef}
           />
 
           {/* ── LIVE PRICE SUMMARY ── below hotel selector ── */}
@@ -1531,15 +1766,49 @@ const BookingCustomizer = ({
             const savedCustomization = booking?.customizationAdditionalPrice || 0;
             const basePrice = (booking?.totalAmount || 0) - savedCustomization;
 
+            // ── Inclusion changes ────────────────────────────────────
             const deductions = customizedInclusions
               .filter(inc => inc.isOriginal && !inc.isChecked && inc.price > 0)
               .reduce((sum, inc) => sum + inc.price, 0);
             const additions = customizedInclusions
               .filter(inc => !inc.isOriginal && inc.isChecked && inc.price > 0)
               .reduce((sum, inc) => sum + inc.price, 0);
-            const netChange    = additions - deductions;
+            const netInclusionChange = additions - deductions;
+
+            // ── Hotel cost delta ─────────────────────────────────────
+            // Compare the PENDING hotel cost (from hotelPriceInfo) against
+            // the SAVED hotel cost that is already baked into booking.totalAmount.
+            // We use the raw per-night × rooms × nights formula on both sides so
+            // the delta is always computed consistently.
+            //
+            // savedHotelCost: cost already included in booking.totalAmount.
+            //   We cannot know this precisely without storing it, so we set it to 0
+            //   and only show a hotel delta when the user actively switches tiers.
+            //   If hotelPriceInfo.isUnsaved is false it means no pending change.
+            const hotelDelta = (() => {
+              if (!hotelPriceInfo) return 0;
+              if (!hotelPriceInfo.isUnsaved) return 0;
+              // Pending cost of newly selected tier
+              const pendingCost = hotelPriceInfo.totalHotelCost || 0;
+              // Cost of previously saved tier (0 if nothing was saved before)
+              const savedCost   = (() => {
+                const savedType = hotelPriceInfo.savedRoomType;
+                if (!savedType) return 0;
+                // If savedRoomType === selectedRoomType we wouldn't reach here (isUnsaved false)
+                // We cannot recover the old price directly, so we express the delta vs 0
+                // unless the booking already had a hotel price recorded.
+                // booking.hotelTotalCost is not a field we store, so treat saved as 0
+                // to keep the display simple (shows full pending cost as addition).
+                return 0;
+              })();
+              return pendingCost - savedCost;
+            })();
+
+            const netChange    = netInclusionChange + hotelDelta;
             const newTotal     = Math.max(0, basePrice + netChange);
-            const hasChanges   = deductions > 0 || additions > 0;
+            const hasInclusionChanges = deductions > 0 || additions > 0;
+            const hasHotelChange      = hotelPriceInfo?.isUnsaved && hotelDelta !== 0;
+            const hasChanges          = hasInclusionChanges || hasHotelChange;
 
             const isPartial      = booking?.paymentType === 'partial';
             const alreadyPaid    = (booking?.initialPaymentAmount || 0) + (booking?.balancePaidAmount || 0);
@@ -1580,6 +1849,19 @@ const BookingCustomizer = ({
                       </span>
                     </span>
                     <span className="bc-price-added">+₱{additions.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* ── Hotel tier change row ── */}
+                {hasHotelChange && hotelPriceInfo && (
+                  <div className="bc-price-row highlight">
+                    <span>
+                      Hotel upgrade
+                      <span className="bc-price-count" style={{ marginLeft: 6 }}>
+                        ({hotelPriceInfo.selectedRoomType?.type} · {hotelPriceInfo.numberOfRooms} rm × {hotelPriceInfo.durationNights} nights)
+                      </span>
+                    </span>
+                    <span className="bc-price-added">+₱{(hotelPriceInfo.totalHotelCost || 0).toLocaleString()}</span>
                   </div>
                 )}
 
@@ -1629,7 +1911,7 @@ const BookingCustomizer = ({
 
                 {!hasChanges && (
                   <p className="bc-price-hint">
-                    Select or deselect inclusions on the left to preview price changes.
+                    Select or deselect inclusions on the left, or change hotel tier above, to preview price changes.
                   </p>
                 )}
               </div>

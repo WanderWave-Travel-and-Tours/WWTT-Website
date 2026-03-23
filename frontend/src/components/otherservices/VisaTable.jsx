@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import { ChevronRight, ChevronDown, FileText, Download, ClipboardList } from "lucide-react";
 import "./VisaTable.css";
+import { useToast } from "../toast/ToastManager";
 
 const VisaTable = ({ onSelectVisa }) => {
   const [visas, setVisas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedVisas, setExpandedVisas] = useState({});
   const [accordionStates, setAccordionStates] = useState({});
+  const toast = useToast();
 
   useEffect(() => {
     const fetchVisas = async () => {
@@ -62,7 +64,7 @@ const VisaTable = ({ onSelectVisa }) => {
     if (onSelectVisa) {
       onSelectVisa(visa);
     } else {
-      alert(`Inquiry for ${visa.country} sent!`);
+      toast.info(`Inquiry for ${visa.country} has been noted. Please fill in the form.`, "Inquiry");
     }
   };
 

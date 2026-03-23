@@ -285,7 +285,15 @@ function PromoSection({ onBookNow }) {
         )}
       </div>
 
-      {/* Row 4: promo code */}
+      {/* Row 4b: min pax notice */}
+      <div className="promo-min-pax-notice">
+        <span className="promo-min-pax-icon">👥</span>
+        <span className="promo-min-pax-text">
+          Minimum of <strong>4 passengers</strong> required to apply this promo code.
+        </span>
+      </div>
+
+      {/* Row 5: promo code */}
       <div className="promo-code-box">
         <span className="code-label">PROMO CODE</span>
         <div className="code-input-container">

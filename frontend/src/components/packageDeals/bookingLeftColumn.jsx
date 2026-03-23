@@ -6,6 +6,8 @@ import {
   CheckSquare, CalendarDays, ChevronLeft, Settings, Clock
 } from 'lucide-react';
 import PackageCustomizer from './PackageCustomizer';
+import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import './BookingLeftColumn.css';
 
 // ✅ Unique accent color per duration — WanderWave branded
@@ -181,6 +183,18 @@ const BookingLeftColumn = ({
   // --- NAVIGATION SETUP ---
   const navigate = useNavigate();
   const { code } = useParams();
+  const toast = useToast();
+
+  // ✅ Confirm Modal state — replaces bare navigate('/packages') with a confirmation step
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+  });
+  const closeConfirmModal = () =>
+    setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+
   const [isItineraryExpanded, setIsItineraryExpanded] = useState(false);
   const [expandedDayIndices, setExpandedDayIndices] = useState({});
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
@@ -194,7 +208,15 @@ const BookingLeftColumn = ({
     if (onGoBack) {
       onGoBack();
     } else {
-      navigate('/packages');
+      setConfirmModal({
+        isOpen: true,
+        title: 'Leave This Page?',
+        message: 'Are you sure you want to go back to packages? Any unsaved changes will be lost.',
+        onConfirm: () => {
+          closeConfirmModal();
+          navigate('/packages');
+        },
+      });
     }
   };
 
@@ -481,6 +503,15 @@ const BookingLeftColumn = ({
           </div>
         )}
       </div>
+
+      {/* ✅ Custom Confirm Modal — replaces bare navigate('/packages') */}
+      <CustomConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+      />
     </div>
   );
 };

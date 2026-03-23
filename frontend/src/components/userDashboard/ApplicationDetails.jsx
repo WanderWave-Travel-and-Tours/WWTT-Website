@@ -3,6 +3,8 @@ import BookingDetails from './BookingDetails';
 import DocumentsSection from './DocumentsSection';
 import UploadedDocumentsView from './UploadedDocumentsView';
 import './ApplicationDetails.css';
+import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com';
 
@@ -22,8 +24,26 @@ const ApplicationDetails = ({
     isLoadingDocuments,
     onBookingUpdate  // ✅ Handler for booking updates
 }) => {
+    const toast = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
-    
+
+    // ── Confirm Modal State ──────────────────────────────────────
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen:    false,
+        title:     '',
+        message:   '',
+        type:      'primary',
+        onConfirm: null,
+    });
+
+    const showConfirm = ({ title, message, type = 'primary', onConfirm }) => {
+        setConfirmModal({ isOpen: true, title, message, type, onConfirm });
+    };
+
+    const closeConfirm = () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null }));
+    };
+
     if (!inquiry) return null;
 
     // Check if this is a booking-type inquiry
@@ -48,40 +68,44 @@ const ApplicationDetails = ({
         return map[status?.toUpperCase()] || 'status-default';
     };
 
-    const handleCancelBooking = async () => {
-        if (!window.confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
-            return;
-        }
+    const handleCancelBooking = () => {
+        showConfirm({
+            title:   'Cancel Booking',
+            message: 'Are you sure you want to cancel this booking? This action cannot be undone.',
+            type:    'danger',
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    setIsCancelling(true);
+                    const response = await fetch(`${API_BASE_URL}/api/bookings/${inquiry._id}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            userEmail: inquiry.email
+                        })
+                    });
 
-        try {
-            setIsCancelling(true);
-            const response = await fetch(`${API_BASE_URL}/api/bookings/${inquiry._id}/cancel`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    userEmail: inquiry.email
-                })
-            });
+                    const data = await response.json();
 
-            const data = await response.json();
-
-            if (data.success) {
-                alert('Booking cancelled successfully');
-                if (onBookingUpdate) {
-                    onBookingUpdate(data.booking);
+                    if (data.success) {
+                        toast.success('Your booking has been cancelled successfully.', 'Booking Cancelled');
+                        if (onBookingUpdate) {
+                            onBookingUpdate(data.booking);
+                        }
+                        window.location.reload();
+                    } else {
+                        toast.error(data.message || 'Failed to cancel booking.', 'Cancellation Failed');
+                    }
+                } catch (error) {
+                    console.error('Error cancelling booking:', error);
+                    toast.error('Failed to cancel booking. Please try again.', 'Error');
+                } finally {
+                    setIsCancelling(false);
                 }
-                window.location.reload();
-            } else {
-                alert(data.message || 'Failed to cancel booking');
-            }
-        } catch (error) {
-            console.error('Error cancelling booking:', error);
-            alert('Failed to cancel booking. Please try again.');
-        } finally {
-            setIsCancelling(false);
-        }
+            },
+        });
     };
 
     const renderStatusContent = () => {
@@ -186,6 +210,15 @@ const ApplicationDetails = ({
 
     return (
         <div className="ad-container">
+            {/* ── Custom Confirm Modal ── */}
+            <CustomConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={closeConfirm}
+            />
             <header className="ad-header">
                 <div>
                     <h1 className="ad-title">{inquiry.serviceName}</h1>

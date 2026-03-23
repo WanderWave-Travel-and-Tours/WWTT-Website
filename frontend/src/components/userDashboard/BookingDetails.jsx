@@ -1,16 +1,36 @@
 import React, { useState } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
 import BookingCustomizer from './BookingCustomizer';
 import './BookingDetails.css';
+import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wanderwaveph.onrender.com';
 
 const BookingDetails = ({ booking, onUpdate }) => {
+    const toast = useToast();
+
     const [showPassengers, setShowPassengers] = useState(false);
     const [isPayingBalance, setIsPayingBalance] = useState(false);
     const [editingPassenger, setEditingPassenger] = useState(null);
     const [passengerFormData, setPassengerFormData] = useState(null);
     const [isSavingPassenger, setIsSavingPassenger] = useState(false);
+
+    // ── Confirm Modal State ──────────────────────────────────────
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen:    false,
+        title:     '',
+        message:   '',
+        type:      'primary',
+        onConfirm: null,
+    });
+
+    const showConfirm = ({ title, message, type = 'primary', onConfirm }) => {
+        setConfirmModal({ isOpen: true, title, message, type, onConfirm });
+    };
+
+    const closeConfirm = () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null }));
+    };
 
     if (!booking) return null;
 
@@ -62,36 +82,9 @@ const BookingDetails = ({ booking, onUpdate }) => {
         return parts.length > 1 ? parts.join(' · ') : name || 'N/A';
     };
 
-    // Toast notification functions
-    const showSuccessToast = (message) => {
-        toast.success(message, {
-            position: 'top-center',
-            style: { 
-                border: '1px solid #10b981',
-                color: '#10b981',
-                backgroundColor: '#d1fae5', 
-            },
-            iconTheme: { 
-                primary: '#10b981', 
-                secondary: '#fff' 
-            },
-        });
-    };
-
-    const showErrorToast = (message) => {
-        toast.error(message, {
-            position: 'top-center', 
-            style: { 
-                border: '1px solid #ef4444', 
-                color: '#ef4444',
-                backgroundColor: '#fee2e2', 
-            },
-            iconTheme: { 
-                primary: '#ef4444', 
-                secondary: '#fff' 
-            },
-        });
-    };
+    // Toast helpers — delegates to ToastManager useToast()
+    const showSuccessToast = (message) => toast.success(message);
+    const showErrorToast   = (message) => toast.error(message);
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
@@ -114,34 +107,42 @@ const BookingDetails = ({ booking, onUpdate }) => {
         return map[status?.toLowerCase()] || 'status-default';
     };
 
-    const handlePayBalance = async () => {
+    const handlePayBalance = () => {
         if (!booking.remainingBalance || booking.remainingBalance <= 0) {
             showErrorToast('No balance remaining to pay.');
             return;
         }
 
-        try {
-            setIsPayingBalance(true);
-            const response = await fetch(`${API_BASE_URL}/api/bookings/${booking._id}/create-balance-payment`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+        showConfirm({
+            title:   'Pay Remaining Balance',
+            message: `Proceed to pay the remaining balance of ₱${booking.remainingBalance.toLocaleString()}?`,
+            type:    'primary',
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    setIsPayingBalance(true);
+                    const response = await fetch(`${API_BASE_URL}/api/bookings/${booking._id}/create-balance-payment`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.checkoutUrl) {
+                        window.location.href = data.checkoutUrl;
+                    } else {
+                        showErrorToast('Failed to create payment link. Please try again.');
+                        setIsPayingBalance(false);
+                    }
+                } catch (error) {
+                    console.error('Error creating balance payment:', error);
+                    showErrorToast('Failed to process payment. Please try again.');
+                    setIsPayingBalance(false);
                 }
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.checkoutUrl) {
-                window.location.href = data.checkoutUrl;
-            } else {
-                showErrorToast('Failed to create payment link. Please try again.');
-                setIsPayingBalance(false);
-            }
-        } catch (error) {
-            console.error('Error creating balance payment:', error);
-            showErrorToast('Failed to process payment. Please try again.');
-            setIsPayingBalance(false);
-        }
+            },
+        });
     };
 
     const handleCustomizerUpdate = (updatedBooking) => {
@@ -356,7 +357,15 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
     return (
         <div className="bd-container">
-            <Toaster />
+            {/* ── Custom Confirm Modal ── */}
+            <CustomConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={closeConfirm}
+            />
 
             {/* Main Grid */}
             <div className="bd-grid">

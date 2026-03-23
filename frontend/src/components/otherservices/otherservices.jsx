@@ -31,6 +31,8 @@ import PassportTable from "./PassportTable";
 import PassportWizard from "./PassportWizard";
 // Import the Toast Manager hook
 import { useToast } from "../toast/ToastManager";
+// Import the Custom Confirm Modal
+import CustomConfirmModal from "../confirmationModal/CustomConfirmModal";
 
 const UniversalInquiryForm = ({
   pkgTitle,
@@ -98,8 +100,11 @@ const UniversalInquiryForm = ({
 };
 
 const OtherServices = ({ setAuthPage }) => {
+  // ── Refs ────────────────────────────────────────────────────────────────────
   const sliderRef = useRef(null);
-  const wrapperRef = useRef(null);
+  const wrapperRef = useRef(null); // ref for the SCROLLABLE carousel wrapper only
+
+  // ── State ───────────────────────────────────────────────────────────────────
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -112,9 +117,18 @@ const OtherServices = ({ setAuthPage }) => {
   const [isCENOMARService, setIsCENOMARService] = useState(false);
   const [showPassportService, setShowPassportService] = useState(false);
   const [isPassportService, setIsPassportService] = useState(false);
-  
-  // Initialize the toast hook
-  const toast = useToast(); 
+
+  // ── CustomConfirmModal state ─────────────────────────────────────────────────
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "primary",
+    onConfirm: null,
+  });
+
+  // ── Toast hook ───────────────────────────────────────────────────────────────
+  const toast = useToast();
 
   const [selectedPackage, setSelectedPackage] = useState({
     title: "",
@@ -189,11 +203,11 @@ const OtherServices = ({ setAuthPage }) => {
     try {
       const response = await fetch('https://wanderwaveph.onrender.com/api/services');
       const data = await response.json();
-      
+
       if (data.success) {
         const transformedServices = data.data.map(service => {
           return {
-            _id: service._id, 
+            _id: service._id,
             icon: iconMap[service.icon] || <Globe size={24} />,
             title: service.title,
             desc: service.description,
@@ -209,7 +223,7 @@ const OtherServices = ({ setAuthPage }) => {
           if (a.isComingSoon !== b.isComingSoon) {
             return a.isComingSoon ? 1 : -1;
           }
-          return (a.order || 999) - (b.order || 999); 
+          return (a.order || 999) - (b.order || 999);
         });
 
         setServices(transformedServices);
@@ -221,6 +235,7 @@ const OtherServices = ({ setAuthPage }) => {
     }
   };
 
+  // ── FIX: scroll wrapperRef (the overflow-x:auto element, now separate from buttons) ──
   const scroll = (direction) => {
     if (wrapperRef.current) {
       const scrollAmount = 350;
@@ -232,10 +247,27 @@ const OtherServices = ({ setAuthPage }) => {
     }
   };
 
+  // ── Helper: open confirm modal ────────────────────────────────────────────────
+  const openConfirm = ({ title, message, type = "primary", onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, type, onConfirm });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null }));
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmModal.onConfirm) confirmModal.onConfirm();
+    closeConfirm();
+  };
+
+  // ── Service card click handler ────────────────────────────────────────────────
   const handleInquireClick = (item) => {
     if (item.isComingSoon) {
-      // Using global toast.info or error
-      toast.info(`The service "${item.title}" is coming soon! We will announce the launch date shortly.`, "Coming Soon");
+      toast.info(
+        `The service "${item.title}" is coming soon! We will announce the launch date shortly.`,
+        "Coming Soon"
+      );
       return;
     }
 
@@ -252,13 +284,9 @@ const OtherServices = ({ setAuthPage }) => {
         visaCountry: null,
         psaDocument: null,
         cenomarDocument: null,
-        serviceId: item._id, 
+        serviceId: item._id,
       });
-      setFormData({
-        fullName: "",
-        email: "",
-        message: "",
-      });
+      setFormData({ fullName: "", email: "", message: "" });
       setShowModal(false);
       setShowVisaCountries(true);
       return;
@@ -279,11 +307,7 @@ const OtherServices = ({ setAuthPage }) => {
         cenomarDocument: null,
         serviceId: item._id,
       });
-      setFormData({
-        fullName: "",
-        email: "",
-        message: "",
-      });
+      setFormData({ fullName: "", email: "", message: "" });
       setShowModal(false);
       setShowPSADocuments(true);
       return;
@@ -304,11 +328,7 @@ const OtherServices = ({ setAuthPage }) => {
         cenomarDocument: null,
         serviceId: item._id,
       });
-      setFormData({
-        fullName: "",
-        email: "",
-        message: "",
-      });
+      setFormData({ fullName: "", email: "", message: "" });
       setShowModal(false);
       setShowCENOMARDocuments(true);
       return;
@@ -329,11 +349,7 @@ const OtherServices = ({ setAuthPage }) => {
         cenomarDocument: null,
         serviceId: item._id,
       });
-      setFormData({
-        fullName: "",
-        email: "",
-        message: "",
-      });
+      setFormData({ fullName: "", email: "", message: "" });
       setShowModal(false);
       setShowPassportService(true);
       return;
@@ -353,11 +369,7 @@ const OtherServices = ({ setAuthPage }) => {
       cenomarDocument: null,
       serviceId: item._id,
     });
-    setFormData({
-      fullName: "",
-      email: "",
-      message: "",
-    });
+    setFormData({ fullName: "", email: "", message: "" });
     setShowModal(true);
   };
 
@@ -430,8 +442,6 @@ const OtherServices = ({ setAuthPage }) => {
 
   const handlePassportWizardSubmit = async (wizardData) => {
     try {
-      // ✅ REMOVED EMAIL CHECK - Backend will auto-create user if needed
-      
       let appType = 'NEW';
       const selectedType = selectedPackage.serviceType ? selectedPackage.serviceType.toUpperCase() : 'NEW';
 
@@ -444,19 +454,19 @@ const OtherServices = ({ setAuthPage }) => {
         serviceId: selectedPackage.serviceId,
         serviceName: selectedPackage.title,
         fullName: `${wizardData.applicants[0].firstName} ${wizardData.applicants[0].lastName}`,
-        email: wizardData.applicants[0].email, 
+        email: wizardData.applicants[0].email,
         message: `Passport Booking (${appType}) for ${wizardData.paxCount} pax. Type: ${wizardData.bookingType}.`,
         estimatedPrice: selectedPackage.price * wizardData.paxCount,
         inquiryType: 'PASSPORT',
         status: 'PENDING',
         passportDetails: {
-           applicationType: appType, 
-           processingType: 'REGULAR',
-           dfaLocation: 'To be discussed', 
-           appointmentDate: 'TBD',
-           isGroup: wizardData.bookingType === 'GROUP',
-           groupSize: wizardData.paxCount,
-           applicants: wizardData.applicants 
+          applicationType: appType,
+          processingType: 'REGULAR',
+          dfaLocation: 'To be discussed',
+          appointmentDate: 'TBD',
+          isGroup: wizardData.bookingType === 'GROUP',
+          groupSize: wizardData.paxCount,
+          applicants: wizardData.applicants
         }
       };
 
@@ -469,9 +479,8 @@ const OtherServices = ({ setAuthPage }) => {
       const result = await response.json();
 
       if (result.success) {
-        // ✅ Enhanced success message for new users
         toast.success(
-          `Passport Applications Received! Ref: ${result.data._id}. If you're a new user, check your email for login credentials.`, 
+          `Passport Applications Received! Ref: ${result.data._id}. If you're a new user, check your email for login credentials.`,
           "Success"
         );
         setShowModal(false);
@@ -492,83 +501,83 @@ const OtherServices = ({ setAuthPage }) => {
 
   const handleInquirySubmit = async (e) => {
     e.preventDefault();
-    
-    try {
-      // ✅ REMOVED EMAIL CHECK - Backend will auto-create user if needed
-      
-      const inquiryData = {
-        serviceId: selectedPackage.serviceId,
-        serviceName: selectedPackage.title,
-        fullName: formData.fullName,
-        email: formData.email,
-        message: formData.message,
-        estimatedPrice: selectedPackage.price,
-        inquiryType: isVisaService ? 'VISA' 
-          : isPSAService ? 'PSA' 
-          : isCENOMARService ? 'CENOMAR' 
-          : isPassportService ? 'PASSPORT'
-          : 'OTHER',
-        visaCountry: selectedPackage.visaCountry,
-        psaDocument: selectedPackage.psaDocument,
-        cenomarDocument: selectedPackage.cenomarDocument,
-        status: 'PENDING'
-      };
 
-      if (isPassportService) {
-        inquiryData.passportDetails = {
-           applicationType: 'NEW', 
-           processingType: 'REGULAR',
-           dfaLocation: 'To be discussed',
-           appointmentDate: 'TBD'
-        };
-      }
+    // Use CustomConfirmModal to confirm before sending
+    openConfirm({
+      title: "Send Inquiry?",
+      message: `Are you sure you want to submit your inquiry for "${selectedPackage.title}"? We will contact you within 24 hours.`,
+      type: "primary",
+      onConfirm: async () => {
+        try {
+          const inquiryData = {
+            serviceId: selectedPackage.serviceId,
+            serviceName: selectedPackage.title,
+            fullName: formData.fullName,
+            email: formData.email,
+            message: formData.message,
+            estimatedPrice: selectedPackage.price,
+            inquiryType: isVisaService ? 'VISA'
+              : isPSAService ? 'PSA'
+              : isCENOMARService ? 'CENOMAR'
+              : isPassportService ? 'PASSPORT'
+              : 'OTHER',
+            visaCountry: selectedPackage.visaCountry,
+            psaDocument: selectedPackage.psaDocument,
+            cenomarDocument: selectedPackage.cenomarDocument,
+            status: 'PENDING'
+          };
 
-      const response = await fetch('https://wanderwaveph.onrender.com/api/inquiries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(inquiryData)
-      });
+          if (isPassportService) {
+            inquiryData.passportDetails = {
+              applicationType: 'NEW',
+              processingType: 'REGULAR',
+              dfaLocation: 'To be discussed',
+              appointmentDate: 'TBD'
+            };
+          }
 
-      const result = await response.json();
+          const response = await fetch('https://wanderwaveph.onrender.com/api/inquiries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(inquiryData)
+          });
 
-      if (result.success) {
-        // ✅ Enhanced success message for new users
-        toast.success(
-          `Your inquiry for "${selectedPackage.title}" has been submitted successfully! If you're a new user, check your email for login credentials.`, 
-          "Inquiry Sent"
-        );
-        
-        setShowModal(false);
-        setIsVisaService(false);
-        setIsPSAService(false);
-        setIsCENOMARService(false);
-        setIsPassportService(false);
-        setFormData({
-          fullName: "",
-          email: "",
-          message: "",
-        });
-        setSelectedPackage({
-          title: "",
-          desc: "",
-          requirements: [],
-          price: 3599.99,
-          visaCountry: null,
-          psaDocument: null,
-          cenomarDocument: null,
-          serviceId: null,
-        });
-      } else {
-        throw new Error(result.message || 'Failed to submit inquiry');
-      }
-    } catch (error) {
-      console.error('Error submitting inquiry:', error);
-      toast.error(`Error: ${error.message || 'Failed to submit inquiry'}. Please try again.`, "Error");
-    }
+          const result = await response.json();
+
+          if (result.success) {
+            toast.success(
+              `Your inquiry for "${selectedPackage.title}" has been submitted successfully! If you're a new user, check your email for login credentials.`,
+              "Inquiry Sent"
+            );
+
+            setShowModal(false);
+            setIsVisaService(false);
+            setIsPSAService(false);
+            setIsCENOMARService(false);
+            setIsPassportService(false);
+            setFormData({ fullName: "", email: "", message: "" });
+            setSelectedPackage({
+              title: "",
+              desc: "",
+              requirements: [],
+              price: 3599.99,
+              visaCountry: null,
+              psaDocument: null,
+              cenomarDocument: null,
+              serviceId: null,
+            });
+          } else {
+            throw new Error(result.message || 'Failed to submit inquiry');
+          }
+        } catch (error) {
+          console.error('Error submitting inquiry:', error);
+          toast.error(`Error: ${error.message || 'Failed to submit inquiry'}. Please try again.`, "Error");
+        }
+      },
+    });
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="os-section" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <div className="os-overlay"></div>
@@ -578,7 +587,8 @@ const OtherServices = ({ setAuthPage }) => {
           <p className="os-subtitle">Your One-Stop Travel & Documentation Solution</p>
         </div>
 
-        <div className="os-carousel-wrapper" ref={wrapperRef}>
+        {/* ── FIX: Buttons are now SIBLINGS of the scrollable wrapper, not children ── */}
+        <div className="os-carousel-outer">
           <button
             className="os-nav-btn os-prev"
             onClick={() => scroll("left")}
@@ -587,41 +597,44 @@ const OtherServices = ({ setAuthPage }) => {
             <ChevronLeft size={28} />
           </button>
 
-          <div className="os-slider" ref={sliderRef}>
-            {loading ? (
-              <div style={{ color: 'white', textAlign: 'center', width: '100%', padding: '2rem' }}>
-                Loading services...
-              </div>
-            ) : (
-              services.map((item, index) => (
-              <div 
-                className={`os-card ${item.isComingSoon ? 'os-card--coming-soon' : ''}`}
-                key={index}
-              >
-                <div
-                  className="os-card-img"
-                  style={{ backgroundImage: `url(${item.img})` }}
-                >
-                  <div className="os-card-overlay"></div>
-                  {item.isComingSoon && <span className="os-card-soon-tag">Coming Soon</span>}
-                  <div className="os-card-icon-wrapper">
-                    <div className="os-card-icon">{item.icon}</div>
-                  </div>
+          {/* wrapperRef is on the SCROLLABLE element only */}
+          <div className="os-carousel-wrapper" ref={wrapperRef}>
+            <div className="os-slider" ref={sliderRef}>
+              {loading ? (
+                <div style={{ color: 'white', textAlign: 'center', width: '100%', padding: '2rem' }}>
+                  Loading services...
                 </div>
-                <div className="os-card-content">
-                  <h3 className="os-card-title">{item.title}</h3>
-                  <p className="os-card-description">{item.desc}</p>
-                  <button
-                    className={`os-card-btn ${item.isComingSoon ? 'os-card-btn--disabled' : ''}`}
-                    onClick={() => handleInquireClick(item)}
-                    disabled={item.isComingSoon}
+              ) : (
+                services.map((item, index) => (
+                  <div
+                    className={`os-card ${item.isComingSoon ? 'os-card--coming-soon' : ''}`}
+                    key={index}
                   >
-                    {item.isComingSoon ? 'Check Back Soon' : 'Inquire Now'} <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-              ))
-            )}
+                    <div
+                      className="os-card-img"
+                      style={{ backgroundImage: `url(${item.img})` }}
+                    >
+                      <div className="os-card-overlay"></div>
+                      {item.isComingSoon && <span className="os-card-soon-tag">Coming Soon</span>}
+                      <div className="os-card-icon-wrapper">
+                        <div className="os-card-icon">{item.icon}</div>
+                      </div>
+                    </div>
+                    <div className="os-card-content">
+                      <h3 className="os-card-title">{item.title}</h3>
+                      <p className="os-card-description">{item.desc}</p>
+                      <button
+                        className={`os-card-btn ${item.isComingSoon ? 'os-card-btn--disabled' : ''}`}
+                        onClick={() => handleInquireClick(item)}
+                        disabled={item.isComingSoon}
+                      >
+                        {item.isComingSoon ? 'Check Back Soon' : 'Inquire Now'} <ArrowRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           <button
@@ -636,111 +649,117 @@ const OtherServices = ({ setAuthPage }) => {
         <div className="os-swipe-hint">Swipe to explore services</div>
       </div>
 
+      {/* ── Main Inquiry Modal ─────────────────────────────────────────────── */}
       {showModal && (
         <div className="modal-overlay">
           {isPassportService ? (
             <div className="modal-card" style={{ maxWidth: '900px', height: '90vh', padding: '0', overflow: 'hidden' }}>
-                <button className="modal-close-btn" onClick={() => { setShowModal(false); setIsPassportService(false); }} style={{zIndex: 999}}>
-                  <X size={24} />
-                </button>
-                <PassportWizard 
-                  onClose={() => setShowModal(false)}
-                  onSubmit={handlePassportWizardSubmit}
-                />
-            </div>
-          ) : (
-          <div className="modal-card modal-two-column">
-            <button
-              className="modal-close-btn"
-              onClick={() => {
-                setShowModal(false);
-                setIsVisaService(false);
-                setIsPSAService(false);
-                setIsCENOMARService(false);
-                setIsPassportService(false);
-              }}
-              aria-label="Close Modal"
-            >
-              <X size={44} strokeWidth={3} />
-            </button>
-
-            <div className="modal-requirements-col">
-              <div className="modal-requirements-content">
-                <div
-                  className="modal-header-image"
-                  style={{
-                    backgroundImage: `url(${
-                      services.find((s) => s.title === selectedPackage.title)?.img ||
-                      "https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=600&auto=format&fit=crop&q=60"
-                    })`,
-                  }}
-                >
-                  <div className="header-image-overlay">
-                    <h2 className="header-title-overlay">WanderWave Services</h2>
-                  </div>
-                </div>
-
-                <div className="modal-header-small">
-                  <img
-                    src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
-                    alt="Wanderwave Logo"
-                    className="modal-logo"
-                  />
-                  <h2 className="modal-title">
-                    Inquire about {selectedPackage.title}
-                  </h2>
-                  <p className="modal-subtitle">
-                    Please review the necessary documents/information below.
-                  </p>
-                </div>
-
-                <div className="modal-trip-summary">
-                  <div className="summary-item">
-                    <span className="summary-label">Estimated Price</span>
-                    <strong className="summary-value price">
-                      ₱{(selectedPackage.price || 3599.99).toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </strong>
-                  </div>
-                  <div className="summary-divider"></div>
-                  <div className="summary-item">
-                    <span className="summary-label">Process Started</span>
-                    <strong className="summary-value">
-                      {monthNames[currentMonth.getMonth()]} {selectedDate},{" "}
-                      {currentMonth.getFullYear()}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="requirements-button-container">
-                  <button
-                    className="view-requirements-btn"
-                    onClick={handleViewRequirements}
-                  >
-                    <CheckCircle size={20} /> View Requirements
-                  </button>
-                </div>
-              </div>
-
-              <p className="modal-contact-note">
-                We will contact you via email within 24 hours.
-              </p>
-            </div>
-
-            <div className="modal-form-col">
-              <UniversalInquiryForm
-                pkgTitle={selectedPackage.title}
-                formData={formData}
-                handleInputChange={handleInputChange}
-                handleSubmit={handleInquirySubmit}
+              <button
+                className="modal-close-btn"
+                onClick={() => { setShowModal(false); setIsPassportService(false); }}
+                style={{ zIndex: 999 }}
+              >
+                <X size={24} />
+              </button>
+              <PassportWizard
+                onClose={() => setShowModal(false)}
+                onSubmit={handlePassportWizardSubmit}
               />
             </div>
-          </div>
+          ) : (
+            <div className="modal-card modal-two-column">
+              <button
+                className="modal-close-btn"
+                onClick={() => {
+                  setShowModal(false);
+                  setIsVisaService(false);
+                  setIsPSAService(false);
+                  setIsCENOMARService(false);
+                  setIsPassportService(false);
+                }}
+                aria-label="Close Modal"
+              >
+                <X size={44} strokeWidth={3} />
+              </button>
+
+              <div className="modal-requirements-col">
+                <div className="modal-requirements-content">
+                  <div
+                    className="modal-header-image"
+                    style={{
+                      backgroundImage: `url(${
+                        services.find((s) => s.title === selectedPackage.title)?.img ||
+                        "https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=600&auto=format&fit=crop&q=60"
+                      })`,
+                    }}
+                  >
+                    <div className="header-image-overlay">
+                      <h2 className="header-title-overlay">WanderWave Services</h2>
+                    </div>
+                  </div>
+
+                  <div className="modal-header-small">
+                    <img
+                      src="https://storage.googleapis.com/msgsndr/yTzQYPFRZAWXGWiXtIt2/media/6911894edaa4e3fb6cfb8afe.png"
+                      alt="Wanderwave Logo"
+                      className="modal-logo"
+                    />
+                    <h2 className="modal-title">
+                      Inquire about {selectedPackage.title}
+                    </h2>
+                    <p className="modal-subtitle">
+                      Please review the necessary documents/information below.
+                    </p>
+                  </div>
+
+                  <div className="modal-trip-summary">
+                    <div className="summary-item">
+                      <span className="summary-label">Estimated Price</span>
+                      <strong className="summary-value price">
+                        ₱{(selectedPackage.price || 3599.99).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </strong>
+                    </div>
+                    <div className="summary-divider"></div>
+                    <div className="summary-item">
+                      <span className="summary-label">Process Started</span>
+                      <strong className="summary-value">
+                        {monthNames[currentMonth.getMonth()]} {selectedDate},{" "}
+                        {currentMonth.getFullYear()}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="requirements-button-container">
+                    <button
+                      className="view-requirements-btn"
+                      onClick={handleViewRequirements}
+                    >
+                      <CheckCircle size={20} /> View Requirements
+                    </button>
+                  </div>
+                </div>
+
+                <p className="modal-contact-note">
+                  We will contact you via email within 24 hours.
+                </p>
+              </div>
+
+              <div className="modal-form-col">
+                <UniversalInquiryForm
+                  pkgTitle={selectedPackage.title}
+                  formData={formData}
+                  handleInputChange={handleInputChange}
+                  handleSubmit={handleInquirySubmit}
+                />
+              </div>
+            </div>
           )}
         </div>
       )}
 
+      {/* ── Requirements Modal (non-visa/psa/cenomar) ─────────────────────── */}
       {showRequirementsModal && !isVisaService && !isPSAService && !isCENOMARService && !isPassportService && (
         <div
           className="modal-overlay"
@@ -777,7 +796,7 @@ const OtherServices = ({ setAuthPage }) => {
                 ))
               ) : (
                 <li className="requirement-modal-item">
-                    <span className="req-text">No specific requirements listed.</span>
+                  <span className="req-text">No specific requirements listed.</span>
                 </li>
               )}
             </ul>
@@ -785,12 +804,11 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
+      {/* ── Visa Countries Modal ───────────────────────────────────────────── */}
       {showVisaCountries && (
         <div
           className="modal-overlay"
-          onClick={() => {
-            setShowVisaCountries(false);
-          }}
+          onClick={() => setShowVisaCountries(false)}
         >
           <div
             className="visa-countries-modal"
@@ -798,9 +816,7 @@ const OtherServices = ({ setAuthPage }) => {
           >
             <button
               className="modal-close-btn"
-              onClick={() => {
-                setShowVisaCountries(false);
-              }}
+              onClick={() => setShowVisaCountries(false)}
               aria-label="Close Visa Countries"
             >
               <X size={32} strokeWidth={3} />
@@ -809,13 +825,12 @@ const OtherServices = ({ setAuthPage }) => {
           </div>
         </div>
       )}
-      
+
+      {/* ── PSA Documents Modal ────────────────────────────────────────────── */}
       {showPSADocuments && (
         <div
           className="modal-overlay"
-          onClick={() => {
-            setShowPSADocuments(false);
-          }}
+          onClick={() => setShowPSADocuments(false)}
         >
           <div
             className="psa-documents-modal"
@@ -823,14 +838,12 @@ const OtherServices = ({ setAuthPage }) => {
           >
             <button
               className="modal-close-btn"
-              onClick={() => {
-                setShowPSADocuments(false);
-              }}
+              onClick={() => setShowPSADocuments(false)}
               aria-label="Close PSA Documents"
             >
               <X size={32} strokeWidth={3} />
             </button>
-            <PSATable 
+            <PSATable
               onSelectPSA={handleSelectPSA}
               onClose={() => setShowPSADocuments(false)}
             />
@@ -838,12 +851,11 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
+      {/* ── CENOMAR Documents Modal ────────────────────────────────────────── */}
       {showCENOMARDocuments && (
         <div
           className="modal-overlay"
-          onClick={() => {
-            setShowCENOMARDocuments(false);
-          }}
+          onClick={() => setShowCENOMARDocuments(false)}
         >
           <div
             className="cenomar-documents-modal"
@@ -851,14 +863,12 @@ const OtherServices = ({ setAuthPage }) => {
           >
             <button
               className="modal-close-btn"
-              onClick={() => {
-                setShowCENOMARDocuments(false);
-              }}
+              onClick={() => setShowCENOMARDocuments(false)}
               aria-label="Close CENOMAR Documents"
             >
               <X size={32} strokeWidth={3} />
             </button>
-            <CenomarTable 
+            <CenomarTable
               onSelectCENOMAR={handleSelectCENOMAR}
               onClose={() => setShowCENOMARDocuments(false)}
             />
@@ -866,17 +876,18 @@ const OtherServices = ({ setAuthPage }) => {
         </div>
       )}
 
+      {/* ── Passport Service Modal ─────────────────────────────────────────── */}
       {showPassportService && (
-        <div 
+        <div
           className="modal-overlay"
           onClick={() => setShowPassportService(false)}
         >
-          <div 
-            className="passport-service-modal" 
+          <div
+            className="passport-service-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <button 
-              className="modal-close-btn" 
+            <button
+              className="modal-close-btn"
               onClick={() => setShowPassportService(false)}
               aria-label="Close Passport Service"
             >
@@ -886,6 +897,17 @@ const OtherServices = ({ setAuthPage }) => {
           </div>
         </div>
       )}
+
+      {/* ── CustomConfirmModal ─────────────────────────────────────────────── */}
+      <CustomConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        onConfirm={handleConfirmAction}
+        onCancel={closeConfirm}
+      />
+
       <MascotGif />
     </div>
   );

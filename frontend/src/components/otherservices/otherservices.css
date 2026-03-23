@@ -90,16 +90,28 @@ html, body {
   letter-spacing: 0.5px;
 }
 
-.os-carousel-wrapper {
+/* ── FIX: Outer shell holds the nav buttons as flex siblings ── */
+.os-carousel-outer {
   position: relative;
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 0;
+  gap: 0;
+  padding: 0 0.5rem;
+}
+
+/* ── The actual scrollable track — no longer contains the buttons ── */
+.os-carousel-wrapper {
+  flex: 1;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: visible;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.os-carousel-wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 /* --- OS-SLIDER AND OS-CARD STYLES (REQUIRED FOR DISPLAY) --- */
@@ -302,9 +314,7 @@ html, body {
 /* --- END COMING SOON STYLES --- */
 
 .os-nav-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: white;
@@ -329,12 +339,13 @@ html, body {
 .os-nav-btn:hover {
   background: var(--os-accent);
   border-color: var(--os-accent);
-  transform: translateY(-50%) scale(1.1);
+  transform: scale(1.1);
   box-shadow: 0 0 20px rgba(252, 156, 27, 0.5);
 }
 
-.os-prev { left: 1rem; }
-.os-next { right: 1rem; }
+/* os-prev / os-next no longer need left/right positioning */
+.os-prev { margin-right: 0.5rem; }
+.os-next { margin-left: 0.5rem; }
 
 .os-swipe-hint {
   display: none;

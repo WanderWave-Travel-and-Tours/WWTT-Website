@@ -109,7 +109,7 @@ const Booking = () => {
       console.error('Fetch error:', err);
       toast.error(
         'Failed to load bookings. Please check if the server is running.',
-        "❌ Load Failed",
+        "Load Failed",
         5000
       );
     } finally {
@@ -204,14 +204,14 @@ const Booking = () => {
       await fetchBookings();
       toast.success(
         `Booking ${booking.id} for ${booking.customerName} confirmed!`,
-        "✅ Booking Confirmed",
+        "Booking Confirmed",
         4000
       );
       
     } catch (err) {
       toast.error(
         'Failed to confirm booking. Please try again.',
-        "❌ Confirmation Failed",
+        "Confirmation Failed",
         4000
       );
     } finally {
@@ -241,14 +241,14 @@ const Booking = () => {
       await fetchBookings();
       toast.warning(
         `Booking ${booking.id} has been cancelled`,
-        "⚠️ Booking Cancelled",
+        "Booking Cancelled",
         4000
       );
       
     } catch (err) {
       toast.error(
         'Failed to cancel booking. Please try again.',
-        "❌ Cancellation Failed",
+        "Cancellation Failed",
         4000
       );
     } finally {
@@ -279,7 +279,7 @@ const Booking = () => {
         await fetchBookings();
         toast.success(
           `Booking ${booking.id} ${action}d successfully`,
-          `✅ ${action === 'archive' ? 'Archived' : 'Unarchived'}`,
+          `${action === 'archive' ? 'Archived' : 'Unarchived'}`,
           3000
         );
       } else {
@@ -288,7 +288,7 @@ const Booking = () => {
     } catch (err) {
       toast.error(
         `Failed to ${action} booking. Please try again.`,
-        "❌ Archive Failed",
+        "Archive Failed",
         4000
       );
     } finally {
