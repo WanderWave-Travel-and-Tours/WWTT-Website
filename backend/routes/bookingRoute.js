@@ -129,11 +129,40 @@ router.get('/init-archive', async (req, res) => {
 
 router.get('/active', async (req, res) => {
     try {
-        const bookings = await Booking.find({ isArchive: 'No' }).sort({ createdAt: -1 });
+        const bookings = await Booking.find({ isArchive: 'No' })
+            .populate('packageId', 'destination title')
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // Collect packageNames that still have no destination (packageId was null/missing)
+        const missingNames = [...new Set(
+            bookings
+                .filter(b => !b.packageId?.destination && b.packageName)
+                .map(b => b.packageName)
+        )];
+
+        // Fallback: look up packages by title to fill in destination
+        let fallbackMap = {};
+        if (missingNames.length > 0) {
+            const fallbackPkgs = await Package.find(
+                { title: { $in: missingNames } },
+                'title destination'
+            ).lean();
+            fallbackPkgs.forEach(p => { fallbackMap[p.title] = p.destination; });
+        }
+
+        // Attach destination to each booking
+        const enriched = bookings.map(b => ({
+            ...b,
+            destination: b.packageId?.destination
+                || fallbackMap[b.packageName]
+                || null
+        }));
+
         res.json({
             success: true,
-            count: bookings.length,
-            bookings: bookings
+            count: enriched.length,
+            bookings: enriched
         });
     } catch (error) {
         console.error('Error fetching active bookings:', error);
@@ -1491,6 +1520,50 @@ router.patch('/:id/details', async (req, res) => {
 
   } catch (err) {
     console.error('❌ Error updating booking details:', err);
+    return res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// PATCH /:id/hotel — UPDATE HOTEL SELECTION FROM USER DASHBOARD
+// Called by HotelCustomizer when the user picks a room tier and saves.
+// Updates selectedRoomType, hotelName, numberOfRooms on the booking.
+// ─────────────────────────────────────────────────────────────
+router.patch('/:id/hotel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { selectedRoomType, hotelName, numberOfRooms } = req.body;
+
+    if (!selectedRoomType) {
+      return res.status(400).json({ status: 'error', error: 'selectedRoomType is required' });
+    }
+
+    const updateData = {
+      selectedRoomType,
+      ...(hotelName     !== undefined && { hotelName }),
+      ...(numberOfRooms !== undefined && { numberOfRooms }),
+    };
+
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: false }
+    ).populate('packageId');
+
+    if (!updatedBooking) {
+      return res.status(404).json({ status: 'error', error: 'Booking not found' });
+    }
+
+    console.log(`✅ Hotel selection updated — booking ${id}: ${selectedRoomType} @ ${hotelName || 'N/A'}`);
+
+    return res.status(200).json({
+      status: 'ok',
+      message: 'Hotel selection updated successfully',
+      booking: updatedBooking,
+    });
+
+  } catch (err) {
+    console.error('❌ Error updating hotel selection:', err);
     return res.status(500).json({ status: 'error', error: err.message });
   }
 });

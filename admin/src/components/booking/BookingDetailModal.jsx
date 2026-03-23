@@ -402,7 +402,10 @@ export const BookingDetailModal = ({
                             </div>
                             <div className="cnm-message-box">
                                 <h4 style={{margin:'0 0 10px 0', fontSize:'16px'}}>{selectedBooking.packageName}</h4>
-                                <p style={{margin:0, color:'#475569'}}>Duration: {selectedBooking.duration}</p>
+                                {selectedBooking.destination && selectedBooking.destination !== 'N/A' && (
+                                    <p style={{margin:'0 0 4px 0', color:'#475569'}}>Destination: {selectedBooking.destination}</p>
+                                )}
+                                <p style={{margin:'0 0 4px 0', color:'#475569'}}>Duration: {selectedBooking.duration}</p>
                                 <p style={{margin:0, color:'#475569'}}>Reference No: {selectedBooking.referenceNumber}</p>
                             </div>
                         </div>
