@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import { ChevronRight, ChevronDown, FileText, Download, ClipboardList, FileCheck, X } from "lucide-react";
 import "./PsaTable.css";
+import { useToast } from "../toast/ToastManager";
 
 const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
   const [psaDocs, setPsaDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedPSA, setExpandedPSA] = useState({});
   const [accordionStates, setAccordionStates] = useState({});
+  const toast = useToast();
 
   useEffect(() => {
     const fetchPSADocuments = async () => {
@@ -61,7 +63,7 @@ const PSATable = ({ onSelectPSA, onClose }) => { // Added onClose prop
     if (onSelectPSA) {
       onSelectPSA(psa);
     } else {
-      alert(`Inquiry for ${psa.documentType} sent!`);
+      toast.info(`Inquiry for ${psa.documentType} has been noted. Please fill in the form.`, "Inquiry");
     }
   };
 

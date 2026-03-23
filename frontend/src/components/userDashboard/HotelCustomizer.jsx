@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { CheckCircle, Building2, RotateCcw } from 'lucide-react';
+import { CheckCircle, Building2 } from 'lucide-react';
 import HotelRoomSelector from '../packageDeals/hotelRoomSelector';
 import './HotelCustomizer.css';
 
@@ -26,52 +26,181 @@ const DEST_HOTEL_MAP = {
 const resolveHotelLocation = (destination) => {
   if (!destination) return null;
   const lower = destination.toLowerCase();
-  // Longest-first match so "puerto princesa" beats "princesa"
   const keys = Object.keys(DEST_HOTEL_MAP).sort((a, b) => b.length - a.length);
   const match = keys.find(k => lower.includes(k));
   return match ? DEST_HOTEL_MAP[match] : null;
 };
 
 // ─────────────────────────────────────────────────────────────
+// TIER PRICE LOGIC — mirrors bookingRightForm.jsx exactly
+//
+// Budget / Standard → ₱0 extra (included in base package price)
+// 4-star            → ₱1,660 per room per night additional
+// 5-star            → ₱2,500 per room per night additional
+//
+// This must stay in sync with calculateBasePackageTotal() and
+// calculateHotelTotal() in bookingRightForm.jsx.
+// ─────────────────────────────────────────────────────────────
+const getPerNightRate = (roomType) => {
+  const t = (roomType || '').toUpperCase();
+  if (t.includes('5')) return 2500;
+  if (t.includes('4')) return 1660;
+  return 0; // Budget / Standard — no additional charge
+};
+
+// ─────────────────────────────────────────────────────────────
+// NORMALIZE TYPE — HotelRoomSelector merges "Budget" into
+// "Standard" for display purposes. We must resolve the saved
+// booking.selectedRoomType (e.g. "Budget") to the grouped key
+// (e.g. "Standard") so the isSelected highlight works correctly.
+// ─────────────────────────────────────────────────────────────
+const normalizeRoomTypeKey = (type) => {
+  if (!type) return '';
+  if (type.toLowerCase().includes('budget')) return 'Standard';
+  return type;
+};
+
+// ─────────────────────────────────────────────────────────────
 // HotelCustomizer
 //
 // Props:
-//   booking            — the full booking object from parent
-//   onUpdate           — callback(updatedBooking) after save
-//   packageDestination — resolved destination string from BookingCustomizer
+//   booking              — full booking object from parent
+//   onUpdate             — callback(updatedBooking) after save
+//   packageDestination   — resolved destination string from BookingCustomizer
+//   onHotelPriceChange   — callback(info) so BookingCustomizer price
+//                          summary reflects pending hotel tier changes
 // ─────────────────────────────────────────────────────────────
-const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
-  const [roomTypes, setRoomTypes]           = useState([]);
+const HotelCustomizer = ({
+  booking,
+  onUpdate,
+  packageDestination,
+  onHotelPriceChange,
+  // ── Unified save bar props ─────────────────────────────────
+  // onHasUnsavedChanges(bool) — tells BookingCustomizer when hotel
+  //   has pending changes so the unified save bar can appear/hide
+  // saveRef — ref whose .current is set to handleSave so the parent
+  //   can trigger the hotel save after confirm without prop drilling
+  // discardRef — ref whose .current is set to handleDiscard so the
+  //   parent can revert the hotel selection on unified Discard
+  onHasUnsavedChanges,
+  saveRef,
+  discardRef,
+}) => {
+  const [roomTypes, setRoomTypes]               = useState([]);
   const [selectedRoomType, setSelectedRoomType] = useState(null);
-  const [isLoading, setIsLoading]           = useState(false);
-  const [isSaving, setIsSaving]             = useState(false);
-  const [error, setError]                   = useState('');
+  const [isLoading, setIsLoading]               = useState(false);
+  const [isSaving, setIsSaving]                 = useState(false);
+  const [error, setError]                       = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [saveSuccess, setSaveSuccess]       = useState(false);
+  const [saveSuccess, setSaveSuccess]           = useState(false);
 
   const fetchedLocationRef = useRef('');
-  const initialRoomTypeRef = useRef(null); // snapshot for discard
+  const initialRoomTypeRef = useRef(null); // snapshot used for Discard
 
   // ── Resolve hotel location from package destination ──────────
   const hotelLocation = resolveHotelLocation(packageDestination);
 
-  // ── Derive pax count for room calculation ─────────────────────
+  // ── Pax count for rooms calculation ───────────────────────────
   const numberOfPax =
     (booking?.pax?.adult || 1) +
     (booking?.pax?.children || 0);
 
-  // ── Derive duration nights from booking.duration (e.g. "3D2N" → 2) ──
+  // ── Duration nights from booking.duration (e.g. "3D2N" → 2) ──
   const durationNights = (() => {
     const match = (booking?.duration || '').match(/(\d+)N/i);
     return match ? parseInt(match[1]) : 1;
   })();
 
   // ─────────────────────────────────────────────────────────────
+  // EMIT PRICE INFO to parent BookingCustomizer
+  //
+  // Uses the same tier-rate logic as bookingRightForm.jsx so the
+  // price summary stays consistent with what the booking form shows.
+  // ─────────────────────────────────────────────────────────────
+  const emitPriceChange = useCallback((roomType, isUnsaved) => {
+    if (!onHotelPriceChange) return;
+
+    const normalizedType = normalizeRoomTypeKey(roomType?.type || '');
+    const pricePerNight  = getPerNightRate(normalizedType);
+    const rooms          = roomType
+      ? Math.ceil(numberOfPax / (roomType.capacity || 2))
+      : 0;
+    const totalHotelCost = pricePerNight * rooms * durationNights;
+
+    onHotelPriceChange({
+      pricePerNight,
+      numberOfRooms:    rooms,
+      durationNights,
+      totalHotelCost,
+      selectedRoomType: roomType,
+      savedRoomType:    booking?.selectedRoomType || '',
+      isUnsaved,
+    });
+  }, [numberOfPax, durationNights, onHotelPriceChange, booking?.selectedRoomType]);
+
+  // ─────────────────────────────────────────────────────────────
+  // AUTO-SELECT: resolve booking.selectedRoomType against the
+  // loaded roomTypes array.
+  //
+  // KEY FIX: HotelRoomSelector groups "Budget" rooms under the
+  // "Standard" display key. The saved booking.selectedRoomType
+  // may be "Budget", so a direct .type match fails — the card
+  // never highlights. We find the correct room by:
+  //   1. Exact type match (e.g. "Standard" === "Standard")
+  //   2. Normalized match (Budget → Standard group)
+  //   3. Fallback to first Budget/Standard room in the list
+  // ─────────────────────────────────────────────────────────────
+  const tryAutoSelect = useCallback((rooms, savedRoomType) => {
+    if (!rooms.length) return;
+
+    let match = null;
+
+    if (savedRoomType) {
+      const savedLower     = savedRoomType.toLowerCase();
+      const savedNormalized = normalizeRoomTypeKey(savedRoomType).toLowerCase();
+
+      // 1. Exact match
+      match = rooms.find(r => r.type?.toLowerCase() === savedLower);
+
+      // 2. Normalized match (e.g. saved "Budget" → find first "Standard" room)
+      if (!match) {
+        match = rooms.find(r =>
+          normalizeRoomTypeKey(r.type).toLowerCase() === savedNormalized
+        );
+      }
+    }
+
+    // 3. Default: prefer Budget tier, then Standard, then cheapest
+    if (!match) {
+      match =
+        rooms.find(r => r.type?.toLowerCase().includes('budget')) ||
+        rooms.find(r => r.type?.toLowerCase().includes('standard')) ||
+        [...rooms].sort((a, b) => a.price - b.price)[0];
+    }
+
+    if (match) {
+      // ✅ KEY FIX: HotelRoomSelector groups "Budget" rooms under the "Standard"
+      // display key and checks isSelected via selectedRoomType?.type === groupKey.
+      // If we pass the raw { type: "Budget" } object, the card never highlights
+      // because "Budget" !== "Standard". We normalize the type to the grouped key
+      // so the selector's isSelected check passes correctly.
+      const normalizedMatch = {
+        ...match,
+        type: normalizeRoomTypeKey(match.type),
+      };
+      setSelectedRoomType(normalizedMatch);
+      initialRoomTypeRef.current = normalizedMatch;
+      // Emit saved cost (isUnsaved=false) so price summary is correct on load
+      emitPriceChange(normalizedMatch, false);
+    }
+  }, [emitPriceChange]);
+
+  // ─────────────────────────────────────────────────────────────
   // FETCH HOTEL ROOM TYPES for the resolved location
   // ─────────────────────────────────────────────────────────────
   const fetchHotelRooms = useCallback(async (location) => {
     if (!location) return;
-    if (fetchedLocationRef.current === location) return; // already fetched
+    if (fetchedLocationRef.current === location) return;
 
     setIsLoading(true);
     setError('');
@@ -83,17 +212,7 @@ const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
 
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
         setRoomTypes(data.data);
-
-        // Pre-select the room type currently saved on the booking (if any)
-        if (booking?.selectedRoomType) {
-          const match = data.data.find(r =>
-            r.type?.toLowerCase() === booking.selectedRoomType.toLowerCase()
-          );
-          if (match) {
-            setSelectedRoomType(match);
-            initialRoomTypeRef.current = match;
-          }
-        }
+        tryAutoSelect(data.data, booking?.selectedRoomType);
       } else {
         setRoomTypes([]);
         setError(`No hotels found for ${location}.`);
@@ -101,11 +220,11 @@ const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
     } catch (err) {
       console.error('❌ Error fetching hotel rooms:', err);
       setError('Failed to load hotel options. Please try again.');
-      fetchedLocationRef.current = ''; // allow retry
+      fetchedLocationRef.current = '';
     } finally {
       setIsLoading(false);
     }
-  }, [booking?.selectedRoomType]);
+  }, [booking?.selectedRoomType, tryAutoSelect]);
 
   useEffect(() => {
     if (hotelLocation) {
@@ -114,16 +233,33 @@ const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
   }, [hotelLocation, fetchHotelRooms]);
 
   // ─────────────────────────────────────────────────────────────
-  // HANDLE ROOM TYPE SELECTION
+  // RE-APPLY AUTO-SELECT when booking.selectedRoomType changes
+  // (e.g. after onUpdate fires and the booking prop refreshes).
+  // Rooms are already loaded — just re-match against the list.
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (roomTypes.length > 0 && booking?.selectedRoomType) {
+      tryAutoSelect(roomTypes, booking.selectedRoomType);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?.selectedRoomType]);
+
+  // ─────────────────────────────────────────────────────────────
+  // HANDLE ROOM TYPE SELECTION (user clicks a card)
   // ─────────────────────────────────────────────────────────────
   const handleRoomTypeChange = (roomType) => {
     setSelectedRoomType(roomType);
     setSaveSuccess(false);
 
-    // Mark unsaved only if it's actually different from what's saved on booking
-    const currentSaved = booking?.selectedRoomType || '';
-    const newType      = roomType?.type || '';
-    setHasUnsavedChanges(newType !== currentSaved);
+    // Compare normalized types so Budget vs Standard doesn't produce
+    // a false "unsaved" when the saved value is effectively the same tier
+    const savedNormalized   = normalizeRoomTypeKey(booking?.selectedRoomType || '');
+    const selectedNormalized = normalizeRoomTypeKey(roomType?.type || '');
+    const isUnsaved         = selectedNormalized !== savedNormalized;
+    setHasUnsavedChanges(isUnsaved);
+    if (onHasUnsavedChanges) onHasUnsavedChanges(isUnsaved);
+
+    emitPriceChange(roomType, isUnsaved);
   };
 
   // ─────────────────────────────────────────────────────────────
@@ -153,14 +289,17 @@ const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
 
       setSaveSuccess(true);
       setHasUnsavedChanges(false);
+      if (onHasUnsavedChanges) onHasUnsavedChanges(false);
       initialRoomTypeRef.current = selectedRoomType;
+
+      // After save the hotel is no longer unsaved
+      emitPriceChange(selectedRoomType, false);
 
       if (onUpdate) {
         const bookingData = data.booking || data;
         onUpdate(bookingData);
       }
 
-      // Clear success indicator after 3s
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('❌ Error saving hotel selection:', err);
@@ -171,20 +310,28 @@ const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
   };
 
   // ─────────────────────────────────────────────────────────────
-  // DISCARD
+  // DISCARD — revert to last saved selection
   // ─────────────────────────────────────────────────────────────
   const handleDiscard = () => {
-    setSelectedRoomType(initialRoomTypeRef.current);
+    const reverted = initialRoomTypeRef.current;
+    setSelectedRoomType(reverted);
     setHasUnsavedChanges(false);
+    if (onHasUnsavedChanges) onHasUnsavedChanges(false);
     setError('');
     setSaveSuccess(false);
+    emitPriceChange(reverted, false);
   };
+
+  // ── Expose save/discard to parent via refs ────────────────────
+  // Called on every render so refs always point to the latest closures
+  useEffect(() => {
+    if (saveRef)    saveRef.current    = handleSave;
+    if (discardRef) discardRef.current = handleDiscard;
+  });
 
   // ─────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────
-
-  // If no resolved hotel location, show nothing (destination not supported)
   if (!hotelLocation) {
     return (
       <div className="hc-container">
@@ -234,11 +381,23 @@ const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
         </div>
       ) : roomTypes.length > 0 ? (
         <>
-          {/* ── HotelRoomSelector (existing component) ── */}
+          {/* ── HotelRoomSelector ── */}
+          {/* ✅ KEY FIX: HotelRoomSelector groups "Budget" rooms under the
+               "Standard" display key and checks isSelected via
+               selectedRoomType?.type === groupKey ("Standard").
+               We must normalize the type we pass in so that a booking
+               with selectedRoomType.type === "Budget" correctly highlights
+               the Budget Accommodations card. We only normalize the prop
+               passed to the child — the real selectedRoomType state in
+               HotelCustomizer keeps the raw type for accurate DB saves. */}
           <div className="hc-selector-wrap">
             <HotelRoomSelector
               roomTypes={roomTypes}
-              selectedRoomType={selectedRoomType}
+              selectedRoomType={
+                selectedRoomType
+                  ? { ...selectedRoomType, type: normalizeRoomTypeKey(selectedRoomType.type) }
+                  : null
+              }
               onRoomTypeChange={handleRoomTypeChange}
               durationNights={durationNights}
               numberOfPax={numberOfPax}
@@ -250,7 +409,10 @@ const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
             <div className="hc-selection-summary">
               <div className="hc-summary-row">
                 <span className="hc-summary-label">Selected Tier</span>
-                <span className="hc-summary-value">{selectedRoomType.type}</span>
+                <span className="hc-summary-value">
+                  {/* Show normalized display name matching HotelRoomSelector */}
+                  {normalizeRoomTypeKey(selectedRoomType.type)}
+                </span>
               </div>
               {selectedRoomType.hotelName && (
                 <div className="hc-summary-row">
@@ -261,38 +423,39 @@ const HotelCustomizer = ({ booking, onUpdate, packageDestination }) => {
               <div className="hc-summary-row">
                 <span className="hc-summary-label">Rooms Needed</span>
                 <span className="hc-summary-value">
-                  {Math.ceil(numberOfPax / (selectedRoomType.capacity || 2))} room{Math.ceil(numberOfPax / (selectedRoomType.capacity || 2)) > 1 ? 's' : ''}
+                  {Math.ceil(numberOfPax / (selectedRoomType.capacity || 2))} room
+                  {Math.ceil(numberOfPax / (selectedRoomType.capacity || 2)) > 1 ? 's' : ''}
                 </span>
               </div>
+              {/* Show additional cost only when tier carries a surcharge */}
+              {getPerNightRate(normalizeRoomTypeKey(selectedRoomType.type)) > 0 && (
+                <div className="hc-summary-row">
+                  <span className="hc-summary-label">Hotel Surcharge</span>
+                  <span className="hc-summary-value" style={{ color: '#b45309' }}>
+                    +₱{(
+                      getPerNightRate(normalizeRoomTypeKey(selectedRoomType.type)) *
+                      Math.ceil(numberOfPax / (selectedRoomType.capacity || 2)) *
+                      durationNights
+                    ).toLocaleString()}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── Save / Discard bar ── */}
+          {/* ── Pending indicator (no own save bar — handled by unified bar in BookingCustomizer) ── */}
           {hasUnsavedChanges && (
-            <div className="hc-save-bar">
-              <p className="hc-save-bar-note">
-                You have an unsaved hotel selection.
-              </p>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  className="hc-discard-btn"
-                  onClick={handleDiscard}
-                  disabled={isSaving}
-                >
-                  <span>✕</span> Discard
-                </button>
-                <button
-                  className="hc-save-btn"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <><div className="hc-spinner-sm" /> Saving...</>
-                  ) : (
-                    <><CheckCircle size={14} /> Save Hotel</>
-                  )}
-                </button>
-              </div>
+            <div style={{
+              margin: '8px 16px 0',
+              padding: '8px 14px',
+              background: '#fffbeb',
+              border: '1.5px solid #fde68a',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              color: '#92400e',
+              fontWeight: 600,
+            }}>
+              ⚠️ Hotel tier change pending — save below to confirm.
             </div>
           )}
 

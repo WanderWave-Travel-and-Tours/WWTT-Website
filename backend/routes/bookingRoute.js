@@ -64,12 +64,54 @@ router.get('/user/:email', async (req, res) => {
     const { email } = req.params;
     const bookings = await Booking.find({ email: email })
       .populate('packageId')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // ── Destination fallback (mirrors /active route) ──────────────────────
+    // For bookings where packageId is null or has no destination (e.g. the
+    // package existed at booking time but packageId wasn't stored, or was
+    // later deleted), we do a secondary lookup by packageName title so the
+    // frontend always has a destination to work with.
+    const missingNames = [...new Set(
+      bookings
+        .filter(b => !b.packageId?.destination && b.packageName)
+        .map(b => b.packageName)
+    )];
+
+    let fallbackMap = {};
+    if (missingNames.length > 0) {
+      const fallbackPkgs = await Package.find(
+        { title: { $in: missingNames } },
+        'title destination inclusions tourType minPax duration'
+      ).lean();
+      fallbackPkgs.forEach(p => { fallbackMap[p.title] = p; });
+    }
+
+    // Attach destination + package data to each booking that needs it
+    const enriched = bookings.map(b => {
+      if (b.packageId?.destination) return b; // already populated — no change
+      const fallbackPkg = fallbackMap[b.packageName];
+      if (!fallbackPkg) return b;
+      return {
+        ...b,
+        // Inject a synthetic populated packageId so the frontend
+        // can read .packageId.destination without any special casing
+        packageId: {
+          _id:         fallbackPkg._id,
+          title:       fallbackPkg.title,
+          destination: fallbackPkg.destination,
+          inclusions:  fallbackPkg.inclusions || [],
+          tourType:    fallbackPkg.tourType,
+          minPax:      fallbackPkg.minPax,
+          duration:    fallbackPkg.duration,
+        },
+      };
+    });
 
     res.json({
       success: true,
-      count: bookings.length,
-      data: bookings
+      count: enriched.length,
+      data: enriched
     });
   } catch (error) {
     console.error('❌ Error fetching user bookings:', error);
@@ -1259,6 +1301,36 @@ router.patch('/:id/customization', async (req, res) => {
     await booking.save();
     await booking.populate('packageId');
 
+    // ── Destination fallback ─────────────────────────────────────────────
+    // If packageId is null in the DB (stored as null or never set), populate
+    // returns nothing. Do a secondary title-based lookup so the frontend
+    // always receives a synthetic populated packageId with destination intact.
+    let responseBooking = booking.toObject ? booking.toObject() : booking;
+    if (!responseBooking.packageId?.destination && responseBooking.packageName) {
+      try {
+        const fallbackPkg = await Package.findOne(
+          { title: responseBooking.packageName },
+          'title destination inclusions tourType minPax duration'
+        ).lean();
+        if (fallbackPkg?.destination) {
+          responseBooking = {
+            ...responseBooking,
+            packageId: {
+              _id:         fallbackPkg._id,
+              title:       fallbackPkg.title,
+              destination: fallbackPkg.destination,
+              inclusions:  fallbackPkg.inclusions || [],
+              tourType:    fallbackPkg.tourType,
+              minPax:      fallbackPkg.minPax,
+              duration:    fallbackPkg.duration,
+            },
+          };
+        }
+      } catch (pkgErr) {
+        console.warn('⚠️ Package fallback lookup failed (non-fatal):', pkgErr.message);
+      }
+    }
+
     // ── Activity log (non-fatal) ────────────────────────────────────────────
     try {
       const priceDelta = newTotalAmount - prevTotalAmount;
@@ -1305,7 +1377,7 @@ router.patch('/:id/customization', async (req, res) => {
 
     res.json({
       message: 'Booking customization updated successfully',
-      booking,
+      booking: responseBooking,
       // Surface the key computed values so the frontend can update its display
       // without needing a full page refresh
       summary: {
@@ -1485,6 +1557,33 @@ router.patch('/:id/details', async (req, res) => {
       { new: true, runValidators: false }
     ).populate('packageId'); // ✅ Keep packageId populated so frontend destination check works
 
+    // ── Destination fallback ─────────────────────────────────────────────
+    let responseBookingDetails = updatedBooking.toObject ? updatedBooking.toObject() : updatedBooking;
+    if (!responseBookingDetails.packageId?.destination && responseBookingDetails.packageName) {
+      try {
+        const fallbackPkg = await Package.findOne(
+          { title: responseBookingDetails.packageName },
+          'title destination inclusions tourType minPax duration'
+        ).lean();
+        if (fallbackPkg?.destination) {
+          responseBookingDetails = {
+            ...responseBookingDetails,
+            packageId: {
+              _id:         fallbackPkg._id,
+              title:       fallbackPkg.title,
+              destination: fallbackPkg.destination,
+              inclusions:  fallbackPkg.inclusions || [],
+              tourType:    fallbackPkg.tourType,
+              minPax:      fallbackPkg.minPax,
+              duration:    fallbackPkg.duration,
+            },
+          };
+        }
+      } catch (pkgErr) {
+        console.warn('⚠️ Package fallback lookup failed (non-fatal):', pkgErr.message);
+      }
+    }
+
     // 5. Activity log (non-fatal)
     try {
       if (userEmail) {
@@ -1515,7 +1614,7 @@ router.patch('/:id/details', async (req, res) => {
     return res.status(200).json({
       status: 'ok',
       message: 'Booking details updated successfully',
-      booking: updatedBooking,
+      booking: responseBookingDetails,
     });
 
   } catch (err) {
@@ -1554,12 +1653,39 @@ router.patch('/:id/hotel', async (req, res) => {
       return res.status(404).json({ status: 'error', error: 'Booking not found' });
     }
 
+    // ── Destination fallback ─────────────────────────────────────────────
+    let responseBookingHotel = updatedBooking.toObject ? updatedBooking.toObject() : updatedBooking;
+    if (!responseBookingHotel.packageId?.destination && responseBookingHotel.packageName) {
+      try {
+        const fallbackPkg = await Package.findOne(
+          { title: responseBookingHotel.packageName },
+          'title destination inclusions tourType minPax duration'
+        ).lean();
+        if (fallbackPkg?.destination) {
+          responseBookingHotel = {
+            ...responseBookingHotel,
+            packageId: {
+              _id:         fallbackPkg._id,
+              title:       fallbackPkg.title,
+              destination: fallbackPkg.destination,
+              inclusions:  fallbackPkg.inclusions || [],
+              tourType:    fallbackPkg.tourType,
+              minPax:      fallbackPkg.minPax,
+              duration:    fallbackPkg.duration,
+            },
+          };
+        }
+      } catch (pkgErr) {
+        console.warn('⚠️ Package fallback lookup failed (non-fatal):', pkgErr.message);
+      }
+    }
+
     console.log(`✅ Hotel selection updated — booking ${id}: ${selectedRoomType} @ ${hotelName || 'N/A'}`);
 
     return res.status(200).json({
       status: 'ok',
       message: 'Hotel selection updated successfully',
-      booking: updatedBooking,
+      booking: responseBookingHotel,
     });
 
   } catch (err) {

@@ -4,7 +4,8 @@ import { useParams } from 'react-router-dom';
 import { 
   ChevronLeft, ChevronRight, Minus, Plus, MessageCircle, Plane, Ticket, UserCheck, Clock  
 } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
+import { useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import axios from 'axios';
 import HotelRoomSelector from './hotelRoomSelector';
 import BookingFormModal from './BookingFormModal';
@@ -25,6 +26,17 @@ const BookingRightForm = ({
 }) => {
   const navigate = useNavigate();
   const { code } = useParams();
+  const toast = useToast();
+
+  // ✅ Confirm Modal state — replaces window.location.href redirects
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+  });
+  const closeConfirmModal = () =>
+    setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
   // ✅ PAX RULES — checks BOTH DB fields AND package title (pkg.title is the DB field; pkg.name is the alias used in some places)
   // Title-based detection handles packages where DB pax fields are missing/incomplete
   const pkgNameLower = (pkg.title || pkg.name || '').toLowerCase();
@@ -326,7 +338,7 @@ if (savedState.formData.appliedPromo) {
         setCurrentMonth(new Date(data.currentMonth));
         sessionStorage.removeItem('pendingBookingData');
         
-        toast.success(`✈️ Flight Added! ${data.selectedFlight.airline.name}`, { duration: 3000 });
+        toast.success(`✈️ Flight Added! ${data.selectedFlight.airline.name}`);
         
         setTimeout(() => {
           setPassengerStep(1);
@@ -609,6 +621,12 @@ const handleApplyPromo = async () => {
       return;
     }
 
+    // ✅ MIN 4 PAX GUARD: promo codes only work for 4 or more passengers
+    if ((quantities.adult || 1) < 4) {
+      setPromoError('Promo codes are only valid for bookings with a minimum of 4 passengers. Please increase your passenger count to at least 4 pax.');
+      return;
+    }
+
     setIsCheckingPromo(true);
     setPromoError('');
 
@@ -636,7 +654,7 @@ const handleApplyPromo = async () => {
           const errMsg = 'This promo code is for local (Philippines) packages only and cannot be applied to international packages.';
           setPromoError(errMsg);
           setAppliedPromo(null);
-          toast.error(errMsg, { duration: 4000 });
+          toast.error(errMsg);
           setIsCheckingPromo(false);
           return;
         }
@@ -645,7 +663,7 @@ const handleApplyPromo = async () => {
           const errMsg = 'This promo code is for international packages only and cannot be applied to local (Philippines) packages.';
           setPromoError(errMsg);
           setAppliedPromo(null);
-          toast.error(errMsg, { duration: 4000 });
+          toast.error(errMsg);
           setIsCheckingPromo(false);
           return;
         }
@@ -695,14 +713,12 @@ const handleApplyPromo = async () => {
         setAppliedPromo(appliedPromoData);
 
         if (hasUsageLimit && remainingUses < currentPax) {
-          toast(
-            `⚠️ Promo "${promo.code}" applied with limited coverage: ${remainingUses} of ${currentPax} pax.`,
-            { duration: 5000, icon: '⚠️' }
+          toast.warning(
+            `⚠️ Promo "${promo.code}" applied with limited coverage: ${remainingUses} of ${currentPax} pax.`
           );
         } else {
           toast.success(
-            `✅ Promo "${promo.code}" applied to ${currentPax} pax.`,
-            { duration: 3000 }
+            `✅ Promo "${promo.code}" applied to ${currentPax} pax.`
           );
         }
       } else {
@@ -710,7 +726,7 @@ const handleApplyPromo = async () => {
         const errorMsg = data.message || 'Invalid or expired promo code';
         setPromoError(errorMsg);
         setAppliedPromo(null);
-        toast.error(errorMsg, { duration: 3000 });
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error('❌ ============ ERROR CAUGHT ============');
@@ -720,7 +736,7 @@ const handleApplyPromo = async () => {
       
       setPromoError('Failed to validate promo code');
       setAppliedPromo(null);
-      toast.error('Failed to validate promo code', { duration: 3000 });
+      toast.error('Failed to validate promo code');
     } finally {
       setIsCheckingPromo(false);
     }
@@ -731,7 +747,7 @@ const handleApplyPromo = async () => {
     setPromoCode('');
     setPromoError('');
     setPromoWarning('');
-    toast.success('Promo code removed', { duration: 2000 });
+    toast.success('Promo code removed');
   };
 
   const handleQuantity = (type, delta) => {
@@ -740,12 +756,21 @@ const handleApplyPromo = async () => {
     //   - Min-2:       minimum 2 (base price covers 2 pax; extra pax = price/2)
     //   - Solo/Joiners: minimum 1 (free range, solo default)
     //   - Normal:      minimum 1
-    const minPaxCount = isMinTwoPkg ? 2 : 1;
+    // ✅ Promo applied: minimum is always 4 (promo codes require min 4 pax)
+    const minPaxCount = appliedPromo ? Math.max(4, isMinTwoPkg ? 2 : 1) : (isMinTwoPkg ? 2 : 1);
     setQuantities(prev => {
       const newVal = Math.max(minPaxCount, Math.min(20, (prev[type] || minPaxCount) + delta));
       const updated = { ...prev, [type]: newVal };
       if (type === 'adult' && onPaxChange) {
         onPaxChange(newVal);
+      }
+      // ✅ Safety: if a promo is applied and new pax somehow drops below 4, strip the promo
+      if (type === 'adult' && appliedPromo && newVal < 4) {
+        setAppliedPromo(null);
+        setPromoCode('');
+        setPromoError('');
+        setPromoWarning('');
+        toast.warning('Promo removed — minimum 4 passengers required.');
       }
       return updated;
     });
@@ -758,16 +783,13 @@ const handleApplyPromo = async () => {
 
   const handleRoomTypeChange = (roomType) => {
     setSelectedRoomType(roomType);
-    toast.success(`Selected: ${roomType.type} at ${roomType.hotelName}`, { duration: 2000 });
+    toast.success(`Selected: ${roomType.type} at ${roomType.hotelName}`);
   };
 
   // ✅ Step 1: Show package preview before booking
   const handleBookClick = () => {
     if (!selectedDate) {
-      toast.error("Please select a travel date first!", {
-        style: { border: '1px solid #ef4444', color: '#ef4444' },
-        iconTheme: { primary: '#ef4444', secondary: '#fff' },
-      });
+      toast.error('Please select a travel date first!');
       return;
     }
     setShowPreviewModal(true);
@@ -783,10 +805,7 @@ const handleApplyPromo = async () => {
 
   const handleWalkInClick = () => {
     if (!selectedDate) {
-      toast.error("Please select a travel date first!", {
-        style: { border: '1px solid #ef4444', color: '#ef4444' },
-        iconTheme: { primary: '#ef4444', secondary: '#fff' },
-      });
+      toast.error('Please select a travel date first!');
       return;
     }
     setShowAppointmentModal(true);
@@ -794,10 +813,7 @@ const handleApplyPromo = async () => {
 
   const handleBookWithAirfare = () => {
     if (!selectedDate) {
-      toast.error("Please select a travel date first!", {
-        style: { border: '1px solid #ef4444', color: '#ef4444' },
-        iconTheme: { primary: '#ef4444', secondary: '#fff' },
-      });
+      toast.error('Please select a travel date first!');
       return;
     }
 
@@ -864,7 +880,7 @@ const handleApplyPromo = async () => {
   const handleRemoveFlight = () => {
     setSelectedFlight(null);
     setBookingWithAirfare(false);
-    toast.success('Flight removed from package', { duration: 2000 });
+    toast.success('Flight removed from package');
   };
 
   const handleContactSales = () => {
@@ -1110,7 +1126,7 @@ const handleNextPassenger = async (e) => {
       }).catch(err => console.warn('⚠️ BookingCount record failed (non-fatal):', err));
       // ─────────────────────────────────────────────────────────────
 
-      toast.success('Booking saved! Preparing payment link...', { duration: 3000 });
+      toast.success('Booking saved! Preparing payment link...');
       
       const paymentResponse = await axios.post('https://wanderwaveph.onrender.com/api/payment/create-intent', {
         bookingId: bookingId,
@@ -1120,14 +1136,20 @@ const handleNextPassenger = async (e) => {
       
       if (paymentResponse.data.success && paymentResponse.data.checkoutUrl) {
         const checkoutUrl = paymentResponse.data.checkoutUrl;
-        toast.success('💰 Redirecting to PayMongo...', { duration: 1500 });
         setShowModal(false);
-        
-        window.location.href = checkoutUrl; 
+        setConfirmModal({
+          isOpen: true,
+          title: 'Proceed to Payment',
+          message: 'Your booking has been saved. You will now be redirected to PayMongo to complete your payment. Do you want to continue?',
+          onConfirm: () => {
+            closeConfirmModal();
+            window.location.href = checkoutUrl;
+          },
+        });
         return;
         
       } else {
-        toast.error('Payment link failed. Please pay manually on your dashboard.', { duration: 4000 });
+        toast.error('Payment link failed. Please pay manually on your dashboard.');
         setTimeout(() => {
           navigate('/dashboard');
         }, 1500);
@@ -1157,7 +1179,6 @@ const handleNextPassenger = async (e) => {
 
   return (
     <div className="brf-container">
-      <Toaster position="top-center" />
       
       <div className="brf-header">
         <h2>Book Your Journey</h2>
@@ -1391,8 +1412,22 @@ const handleNextPassenger = async (e) => {
                 onClick={() => handleQuantity('adult', -1)}
                 className="brf-quantity-btn"
                 type="button"
-                disabled={isMinTwoPkg ? quantities.adult <= 2 : quantities.adult <= 1}
-                style={(isMinTwoPkg ? quantities.adult <= 2 : quantities.adult <= 1) ? {opacity: 0.4, cursor: 'not-allowed'} : {}}
+                disabled={
+                  appliedPromo
+                    ? quantities.adult <= 4
+                    : isMinTwoPkg
+                      ? quantities.adult <= 2
+                      : quantities.adult <= 1
+                }
+                style={
+                  (appliedPromo
+                    ? quantities.adult <= 4
+                    : isMinTwoPkg
+                      ? quantities.adult <= 2
+                      : quantities.adult <= 1)
+                    ? { opacity: 0.4, cursor: 'not-allowed' }
+                    : {}
+                }
               >
                 <Minus size={18} color="#000000" strokeWidth={3}
                   style={{minWidth:'18px', minHeight:'18px', stroke:'#000000'}} />
@@ -2016,6 +2051,15 @@ const handleNextPassenger = async (e) => {
           50% { opacity: 0.9; }
         }
       `}</style>
+
+      {/* ✅ Custom Confirm Modal — replaces window.location.href direct redirect */}
+      <CustomConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+      />
     </div>
   );
 };

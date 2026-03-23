@@ -266,6 +266,35 @@
   margin-bottom: 14px;
 }
 
+/* ── PROMO MIN PAX NOTICE ── */
+.promo-min-pax-notice {
+  position: relative; z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 200, 0, 0.08);
+  border: 1px solid rgba(255, 200, 0, 0.28);
+  border-radius: 10px;
+  padding: 7px 12px;
+}
+
+.promo-min-pax-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.promo-min-pax-text {
+  font-size: 0.70rem;
+  font-weight: 600;
+  color: rgba(255, 230, 100, 0.88);
+  line-height: 1.4;
+}
+
+.promo-min-pax-text strong {
+  color: #FFD700;
+  font-weight: 800;
+}
+
 /* ── PROMO CODE ── */
 .promo-code-box {
   position: relative; z-index: 2;
@@ -439,28 +468,64 @@
 /* ═══════════════════════════════
    RESPONSIVE
 ═══════════════════════════════ */
-@media (max-width: 900px) {
-  .promo-slide--active { width: 80%; }
-  .promo-slide--prev, .promo-slide--next { width: 80%; left: 10%; }
+
+/* ── LARGE DESKTOP (1400px+) ── */
+@media (min-width: 1400px) {
+  .promo-slide--active { width: 68%; }
+  .promo-slide--prev, .promo-slide--next { width: 68%; left: 16%; }
+  .promo-slide--prev { transform: translateX(-79%) translateY(8px) scale(0.88); }
+  .promo-slide--next { transform: translateX(79%)  translateY(8px) scale(0.88); }
+  .promo-voucher-card { height: 380px; }
+  .card-image-side, .coming-soon-image-side { flex: 0 0 310px; width: 310px; }
+  .promo-title { font-size: 1.45rem; }
+  .card-details-side { padding: 22px 28px; gap: 12px; }
+}
+
+/* ── MEDIUM-LARGE (1100–1400px) ── */
+@media (max-width: 1400px) and (min-width: 1101px) {
+  .promo-slide--active { width: 70%; }
+  .promo-slide--prev, .promo-slide--next { width: 70%; left: 15%; }
+}
+
+/* ── TABLET LANDSCAPE (901–1100px) ── */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .promo-slide--active { width: 78%; }
+  .promo-slide--prev, .promo-slide--next { width: 78%; left: 11%; }
+  .promo-voucher-card { height: 335px; }
+  .card-image-side, .coming-soon-image-side { flex: 0 0 250px; width: 250px; }
+  .promo-title { font-size: 1.25rem; }
+  .card-details-side { padding: 16px 18px; gap: 9px; }
+}
+
+/* ── TABLET (768–900px) ── */
+@media (max-width: 900px) and (min-width: 769px) {
+  .promo-slide--active { width: 82%; }
+  .promo-slide--prev, .promo-slide--next { width: 82%; left: 9%; }
   .promo-slide--prev { transform: translateX(-76%) translateY(8px) scale(0.87); }
   .promo-slide--next { transform: translateX(76%)  translateY(8px) scale(0.87); }
-  .promo-voucher-card { height: 340px; }
-  .card-image-side, .coming-soon-image-side { flex: 0 0 260px; width: 260px; }
+  .promo-voucher-card { height: 320px; }
+  .card-image-side, .coming-soon-image-side { flex: 0 0 240px; width: 240px; }
+  .promo-title { font-size: 1.18rem; }
+  .promo-description { font-size: 0.8rem; }
+  .card-details-side { padding: 14px 16px; gap: 8px; }
+  .promo-min-pax-text { font-size: 0.65rem; }
 }
 
 /* ── MOBILE ── */
 @media (max-width: 768px) {
   .external-arrow { display: none; }
-  .promo-slide--active { width: 86%; }
-  .promo-slide--prev, .promo-slide--next { width: 86%; left: 7%; }
+  .promo-slide--active { width: 88%; }
+  .promo-slide--prev, .promo-slide--next { width: 88%; left: 6%; }
   .promo-slide--prev { transform: translateX(-74%) translateY(6px) scale(0.86); }
   .promo-slide--next { transform: translateX(74%)  translateY(6px) scale(0.86); }
+  .promo-track { padding: 16px 0 22px; }
 
   /* Fixed aspect-ratio card — exactly fits 967×1200 image */
   .promo-voucher-card, .coming-soon-card {
     flex-direction: column;
     height: auto;
     aspect-ratio: 967 / 1200;
+    max-height: 72vh; /* never taller than viewport */
     position: relative;
     overflow: hidden;
   }
@@ -489,13 +554,51 @@
   .mobile-see-details-btn  { display: flex !important; }
   .mobile-details-overlay  { display: flex !important; }
   .carousel-dots { bottom: -42px; }
+
+  /* Min pax notice in mobile overlay */
+  .mobile-details-overlay .promo-min-pax-notice {
+    padding: 6px 10px;
+  }
+  .mobile-details-overlay .promo-min-pax-text { font-size: 0.65rem; }
 }
 
+/* ── MOBILE SMALL (481–600px) ── */
+@media (max-width: 600px) and (min-width: 481px) {
+  .promo-voucher-card, .coming-soon-card {
+    aspect-ratio: 4 / 4.5;
+    max-height: 68vh;
+  }
+}
+
+/* ── MOBILE XS (≤480px) ── */
 @media (max-width: 480px) {
-  .promo-slide--active { width: 90%; }
-  .promo-slide--prev, .promo-slide--next { width: 90%; left: 5%; }
+  .promo-slide--active { width: 92%; }
+  .promo-slide--prev, .promo-slide--next { width: 92%; left: 4%; }
   .promo-slide--prev { transform: translateX(-72%) translateY(5px) scale(0.85); }
   .promo-slide--next { transform: translateX(72%)  translateY(5px) scale(0.85); }
+  .promo-voucher-card, .coming-soon-card {
+    aspect-ratio: 4 / 5;
+    max-height: 65vh;
+  }
+  .mobile-see-details-btn {
+    padding: 9px 22px;
+    font-size: 0.78rem;
+  }
+}
+
+/* ── LANDSCAPE PHONE (≤768px, landscape) ── */
+@media (max-width: 768px) and (orientation: landscape) {
+  .promo-voucher-card, .coming-soon-card {
+    aspect-ratio: 16 / 9;
+    max-height: 80vw;
+    min-height: 180px;
+  }
+  .mobile-see-details-btn { bottom: 12px; padding: 8px 20px; font-size: 0.75rem; }
+  .mobile-details-overlay .card-details-side { padding: 14px 16px 14px; gap: 7px; }
+  .mobile-details-overlay .promo-title { font-size: 1rem; }
+  .mobile-details-overlay .promo-description { -webkit-line-clamp: 2; font-size: 0.75rem; }
+  .mobile-details-overlay .promo-min-pax-text { font-size: 0.62rem; }
+  .mobile-details-overlay .code-value { font-size: 0.92rem; letter-spacing: 2px; }
 }
 
 /* ── SEE DETAILS BTN ── */
@@ -590,6 +693,8 @@
   padding: 6px 10px;
 }
 .mobile-details-overlay .validity-text { font-size: 0.68rem; }
+.mobile-details-overlay .promo-min-pax-notice { padding: 6px 10px; }
+.mobile-details-overlay .promo-min-pax-text { font-size: 0.65rem; }
 
 /* ═══════════════════════════════
    SLIDE ANIMATIONS

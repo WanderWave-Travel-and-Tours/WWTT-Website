@@ -6,8 +6,15 @@ import Sidebar from './Sidebar';
 import ApplicationDetails from './ApplicationDetails';
 import AccountSettings from './AccountSettings'; 
 import * as Icons from './Icons'; 
+import { ToastProvider, useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 
-const UserDashboard = ({ user, onLogout }) => {
+// ─────────────────────────────────────────────────────────────
+// Inner component — must be inside ToastProvider to use useToast
+// ─────────────────────────────────────────────────────────────
+const UserDashboardInner = ({ user, onLogout }) => {
+    const toast = useToast();
+
     // --- State ---
     const [inquiries, setInquiries] = useState([]);
     const [selectedInquiry, setSelectedInquiry] = useState(null);
@@ -25,6 +32,23 @@ const UserDashboard = ({ user, onLogout }) => {
     const [uploadedFiles, setUploadedFiles] = useState({});
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+
+    // ── Confirm Modal State ──────────────────────────────────────
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen:   false,
+        title:    '',
+        message:  '',
+        type:     'primary',
+        onConfirm: null,
+    });
+
+    const showConfirm = ({ title, message, type = 'primary', onConfirm }) => {
+        setConfirmModal({ isOpen: true, title, message, type, onConfirm });
+    };
+
+    const closeConfirm = () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null }));
+    };
 
     // Load User & Viewed History
     useEffect(() => {
@@ -151,7 +175,7 @@ const UserDashboard = ({ user, onLogout }) => {
                 try {
                     setIsLoading(true);
                     await axios.put(`https://wanderwaveph.onrender.com/api/inquiries/${inquiryId}/pay`);
-                    alert('Payment successful! Status updated.');
+                    toast.success('Your payment has been received and your status has been updated.', 'Payment Successful!');
                     window.history.replaceState({}, document.title, window.location.pathname);
                     await fetchUserData();
                 } catch (error) {
@@ -211,24 +235,35 @@ const UserDashboard = ({ user, onLogout }) => {
 
     const handlePayment = async () => {
         if (!selectedInquiry) return;
-        try {
-            setIsLoading(true);
-            const response = await fetch('https://wanderwaveph.onrender.com/api/payment/create-inquiry-checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ inquiryId: selectedInquiry._id })
-            });
-            const data = await response.json();
-            if (data.success && data.checkoutUrl) {
-                window.location.href = data.checkoutUrl;
-            } else {
-                alert('Failed to initiate payment.');
-                setIsLoading(false);
-            }
-        } catch (error) {
-            console.error('Payment error:', error);
-            setIsLoading(false);
-        }
+
+        // Replace window.confirm with CustomConfirmModal
+        showConfirm({
+            title:   'Confirm Payment',
+            message: `Proceed to payment for ₱${(selectedInquiry.estimatedPrice || 0).toLocaleString()}?`,
+            type:    'primary',
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    setIsLoading(true);
+                    const response = await fetch('https://wanderwaveph.onrender.com/api/payment/create-inquiry-checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ inquiryId: selectedInquiry._id })
+                    });
+                    const data = await response.json();
+                    if (data.success && data.checkoutUrl) {
+                        window.location.href = data.checkoutUrl;
+                    } else {
+                        toast.error('Unable to initiate payment. Please try again.', 'Payment Failed');
+                        setIsLoading(false);
+                    }
+                } catch (error) {
+                    console.error('Payment error:', error);
+                    toast.error('Something went wrong. Please try again later.', 'Payment Error');
+                    setIsLoading(false);
+                }
+            },
+        });
     };
 
     // ✅ NEW: Handler for booking updates (passenger edits, customizations)
@@ -283,9 +318,15 @@ const UserDashboard = ({ user, onLogout }) => {
     };
 
     const submitDocuments = async () => {
-        if (!selectedInquiry) return alert('Please select an inquiry');
+        if (!selectedInquiry) {
+            toast.warning('Please select an inquiry first.', 'No Inquiry Selected');
+            return;
+        }
         const allFiles = Object.values(uploadedFiles).flat();
-        if (allFiles.length === 0) return alert('Please upload at least one document');
+        if (allFiles.length === 0) {
+            toast.warning('Please upload at least one document before submitting.', 'No Documents');
+            return;
+        }
 
         const formData = new FormData();
         formData.append('inquiryId', selectedInquiry._id);
@@ -297,7 +338,7 @@ const UserDashboard = ({ user, onLogout }) => {
 
         try {
             await fetch('https://wanderwaveph.onrender.com/api/documents/upload', { method: 'POST', body: formData });
-            alert('Documents submitted successfully!');
+            toast.success('Your documents have been submitted successfully.', 'Documents Submitted');
             setUploadedFiles({});
             
             // NEW: Refresh uploaded documents after submission
@@ -305,7 +346,7 @@ const UserDashboard = ({ user, onLogout }) => {
             await fetchUserData(); 
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Failed to submit documents.');
+            toast.error('Failed to submit documents. Please try again.', 'Upload Failed');
         }
     };
 
@@ -315,6 +356,16 @@ const UserDashboard = ({ user, onLogout }) => {
 
     return (
         <div className="ud-wrapper">
+            {/* ── Custom Confirm Modal ── */}
+            <CustomConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={closeConfirm}
+            />
+
             <TopNavbar 
                 user={user} 
                 onLogout={handleLogout}
@@ -375,6 +426,18 @@ const UserDashboard = ({ user, onLogout }) => {
                 </main>
             </div>
         </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Outer wrapper — provides ToastProvider context so useToast
+// works inside UserDashboardInner and all its children
+// ─────────────────────────────────────────────────────────────
+const UserDashboard = ({ user, onLogout }) => {
+    return (
+        <ToastProvider>
+            <UserDashboardInner user={user} onLogout={onLogout} />
+        </ToastProvider>
     );
 };
 

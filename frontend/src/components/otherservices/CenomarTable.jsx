@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import { ChevronRight, ChevronDown, FileText, Download, ClipboardList, FileCheck, X } from "lucide-react";
 import "./CenomarTable.css";
+import { useToast } from "../toast/ToastManager";
 
 const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
   const [cenomarDocs, setCenomarDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedCENOMAR, setExpandedCENOMAR] = useState({});
   const [accordionStates, setAccordionStates] = useState({});
+  const toast = useToast();
 
   useEffect(() => {
     const fetchCENOMARDocuments = async () => {
@@ -61,7 +63,7 @@ const CenomarTable = ({ onSelectCENOMAR, onClose }) => {
     if (onSelectCENOMAR) {
       onSelectCENOMAR(cenomar);
     } else {
-      alert(`Inquiry for ${cenomar.documentType} sent!`);
+      toast.info(`Inquiry for ${cenomar.documentType} has been noted. Please fill in the form.`, "Inquiry");
     }
   };
 
