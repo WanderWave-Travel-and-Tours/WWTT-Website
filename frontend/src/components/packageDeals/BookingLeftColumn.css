@@ -39,7 +39,8 @@
 /* --- Image Section --- */
 .blc-image-wrapper {
   border-radius: 16px;
-  overflow: hidden;
+  /* ✅ overflow:visible so absolute-positioned badges (stamp, offer) are never clipped */
+  overflow: visible;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   margin-bottom: 24px;
   width: 100%;
@@ -47,6 +48,15 @@
   aspect-ratio: 16 / 9;
   height: auto;
   background-color: #e2e8f0;
+}
+
+/* ✅ Inner div handles image clipping — keeps border-radius on the photo */
+.blc-image-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
 }
 
 .blc-main-image {

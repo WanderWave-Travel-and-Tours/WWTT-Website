@@ -443,22 +443,6 @@ const HotelCustomizer = ({
             </div>
           )}
 
-          {/* ── Pending indicator (no own save bar — handled by unified bar in BookingCustomizer) ── */}
-          {hasUnsavedChanges && (
-            <div style={{
-              margin: '8px 16px 0',
-              padding: '8px 14px',
-              background: '#fffbeb',
-              border: '1.5px solid #fde68a',
-              borderRadius: '8px',
-              fontSize: '0.8rem',
-              color: '#92400e',
-              fontWeight: 600,
-            }}>
-              ⚠️ Hotel tier change pending — save below to confirm.
-            </div>
-          )}
-
           {/* ── Success message ── */}
           {saveSuccess && (
             <div className="hc-success-bar">

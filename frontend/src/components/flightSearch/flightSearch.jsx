@@ -22,9 +22,6 @@ function FlightSearch({ onFlightSelect, prefilledDepartureDate, prefilledDestina
     }
   }, [isFromBooking, packageData]);
 
-  // ============================================================
-  // PAGE VIEW TRACKER — fires once on mount for /flights page
-  // ============================================================
   useEffect(() => {
     const trackPageView = async () => {
       try {

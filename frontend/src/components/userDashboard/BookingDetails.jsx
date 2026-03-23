@@ -369,152 +369,102 @@ const BookingDetails = ({ booking, onUpdate }) => {
 
             {/* Main Grid */}
             <div className="bd-grid">
-                {/* Left Column - Booking Info */}
-                <div className="bd-card">
-                    <h3 className="bd-card-title">Booking Information</h3>
-                    <div className="bd-info-section">
-                        <div className="bd-row">
-                            <span className="bd-label">Destination</span>
-                            <span className="bd-value">{getDestination()}</span>
-                        </div>
-                        <div className="bd-row">
-                            <span className="bd-label">Package</span>
-                            <span className="bd-value">{getFormattedPackageName()}</span>
-                        </div>
+            {/* ── BOOKING INFORMATION — PREMIUM REDESIGN ── */}
+            <div className="bd-card bd-info-premium-card">
+              <div className="bd-info-premium-header">
+                <div className="bd-info-premium-accent" />
+                <div className="bd-info-premium-title-wrap">
+                  <h3 className="bd-info-premium-title">Booking Information</h3>
+                </div>
+              </div>
 
-                        <div className="bd-row">
-                            <span className="bd-label">Travel Dates</span>
-                            <span className="bd-value">
-                                {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
-                            </span>
-                        </div>
-
-                        <div className="bd-row">
-                            <span className="bd-label">Number of Travelers</span>
-                            <span className="bd-value">
-                                {getTotalPax()} person{getTotalPax() > 1 ? 's' : ''}
-                                {booking.pax && (
-                                    <span className="bd-pax-breakdown">
-                                        ({booking.pax.adult} Adult{booking.pax.adult > 1 ? 's' : ''}
-                                        {booking.pax.children > 0 && `, ${booking.pax.children} Child${booking.pax.children > 1 ? 'ren' : ''}`}
-                                        {booking.pax.infants > 0 && `, ${booking.pax.infants} Infant${booking.pax.infants > 1 ? 's' : ''}`})
-                                    </span>
-                                )}
-                            </span>
-                        </div>
-
-                        {booking.flightDetails && (
-                            <div className="bd-flight-section">
-                                <div className="bd-flight-header">
-                                    <span className="bd-flight-icon">✈️</span>
-                                    <h4>Flight Details</h4>
-                                </div>
-                                <div className="bd-flight-info">
-                                    <p><strong>Airline:</strong> {booking.flightDetails.airline || 'N/A'}</p>
-                                    <p><strong>Flight Number:</strong> {booking.flightDetails.flightNumber || 'N/A'}</p>
-                                    <p><strong>Route:</strong> {booking.flightDetails.route || 'N/A'}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="bd-booking-date">
-                            Booked on {formatDate(booking.createdAt)}
-                        </div>
-                    </div>
+              <div className="bd-info-rows">
+                {/* Destination */}
+                <div className="bd-info-row">
+                  <div className="bd-info-row-icon bd-info-icon-dest">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </div>
+                  <div className="bd-info-row-text">
+                    <span className="bd-info-row-label">Destination</span>
+                    <span className="bd-info-row-value bd-info-dest-value">{getDestination()}</span>
+                  </div>
                 </div>
 
-                {/* Right Column - Payment Info */}
-                <div className="bd-card">
-                    <h3 className="bd-card-title">Payment Details</h3>
-                    <div className="bd-payment-breakdown">
-                        <div className="bd-price-row">
-                            <span>Base Price</span>
-                            <span>₱{(booking.finalPackageTotal || booking.packageTotal || 0).toLocaleString()}</span>
-                        </div>
-
-                        {booking.customizationAdditionalPrice > 0 && (
-                            <div className="bd-price-row bd-highlight">
-                                <span>Customization</span>
-                                <span className="bd-price-added">+₱{booking.customizationAdditionalPrice.toLocaleString()}</span>
-                            </div>
-                        )}
-
-                        {booking.airfareTotal > 0 && (
-                            <div className="bd-price-row bd-highlight">
-                                <span>Airfare</span>
-                                <span className="bd-price-added">+₱{booking.airfareTotal.toLocaleString()}</span>
-                            </div>
-                        )}
-
-                        {booking.discountAmount > 0 && (
-                            <div className="bd-price-row bd-discount">
-                                <span>Discount {booking.promoCode && `(${booking.promoCode})`}</span>
-                                <span className="bd-price-discount">-₱{booking.discountAmount.toLocaleString()}</span>
-                            </div>
-                        )}
-
-                        <div className="bd-divider"></div>
-
-                        <div className="bd-price-row bd-total">
-                            <span>Total Amount</span>
-                            <span className="bd-price-total">₱{(booking.totalAmount || 0).toLocaleString()}</span>
-                        </div>
-
-                        {booking.paymentType === 'partial' && (
-                            <>
-                                <div className="bd-divider" style={{ margin: '8px 0' }}></div>
-                                
-                                <div className="bd-price-row">
-                                    <span>Initial Payment</span>
-                                    <span>₱{(booking.initialPaymentAmount || 0).toLocaleString()}</span>
-                                </div>
-
-                                {booking.balancePaidAmount > 0 && (
-                                    <div className="bd-price-row">
-                                        <span>Balance Paid</span>
-                                        <span>₱{booking.balancePaidAmount.toLocaleString()}</span>
-                                    </div>
-                                )}
-
-                                {booking.remainingBalance > 0 && (
-                                    <div className="bd-price-row">
-                                        <span>Remaining Balance</span>
-                                        <span className="bd-remaining">₱{booking.remainingBalance.toLocaleString()}</span>
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        {booking.remainingBalance > 0 && (
-                            <button 
-                                onClick={handlePayBalance}
-                                className="bd-pay-balance-btn"
-                                disabled={isPayingBalance}
-                            >
-                                {isPayingBalance ? 'Processing...' : `Pay Balance (₱${booking.remainingBalance.toLocaleString()})`}
-                            </button>
-                        )}
-
-                        <div className={`bd-payment-status ${
-                            booking.status === 'confirmed' || booking.status === 'fully_paid' ? 'bd-payment-success' :
-                            booking.status === 'partial_paid' ? 'bd-payment-partial' :
-                            booking.status === 'cancelled' ? 'bd-payment-cancelled' :
-                            'bd-payment-pending'
-                        }`}>
-                            <span className="bd-status-icon">
-                                {booking.status === 'confirmed' || booking.status === 'fully_paid' ? '✅' :
-                                 booking.status === 'partial_paid' ? '⏳' :
-                                 booking.status === 'cancelled' ? '❌' : '⏱️'}
-                            </span>
-                            <span>
-                                {booking.status === 'confirmed' || booking.status === 'fully_paid' ? 'Confirmed' :
-                                 booking.status === 'partial_paid' ? 'Partially Paid' :
-                                 booking.status === 'cancelled' ? 'Cancelled' :
-                                 'Payment Pending'}
-                            </span>
-                        </div>
-                    </div>
+                {/* Package */}
+                <div className="bd-info-row">
+                  <div className="bd-info-row-icon bd-info-icon-pkg">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    </svg>
+                  </div>
+                  <div className="bd-info-row-text">
+                    <span className="bd-info-row-label">Package</span>
+                    <span className="bd-info-row-value">{getFormattedPackageName()}</span>
+                  </div>
                 </div>
+
+                {/* Travel Dates */}
+                <div className="bd-info-row">
+                  <div className="bd-info-row-icon bd-info-icon-date">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
+                  <div className="bd-info-row-text">
+                    <span className="bd-info-row-label">Travel Dates</span>
+                    <span className="bd-info-row-value">{formatDate(booking.startDate)} – {formatDate(booking.endDate)}</span>
+                  </div>
+                </div>
+
+                {/* Travelers */}
+                <div className="bd-info-row">
+                  <div className="bd-info-row-icon bd-info-icon-pax">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  </div>
+                  <div className="bd-info-row-text">
+                    <span className="bd-info-row-label">Number of Travelers</span>
+                    <div>
+                      <span className="bd-info-row-value">
+                        {getTotalPax()} person{getTotalPax() > 1 ? 's' : ''}
+                      </span>
+                      {booking.pax && (
+                        <span className="bd-info-pax-chip">
+                          {booking.pax.adult} Adult{booking.pax.adult > 1 ? 's' : ''}
+                          {booking.pax.children > 0 && ` · ${booking.pax.children} Child${booking.pax.children > 1 ? 'ren' : ''}`}
+                          {booking.pax.infants > 0 && ` · ${booking.pax.infants} Infant${booking.pax.infants > 1 ? 's' : ''}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {booking.flightDetails && (
+                <div className="bd-flight-section">
+                  <div className="bd-flight-header">
+                    <span className="bd-flight-icon">✈️</span>
+                    <h4>Flight Details</h4>
+                  </div>
+                  <div className="bd-flight-info">
+                    <p><strong>Airline:</strong> {booking.flightDetails.airline || 'N/A'}</p>
+                    <p><strong>Flight Number:</strong> {booking.flightDetails.flightNumber || 'N/A'}</p>
+                    <p><strong>Route:</strong> {booking.flightDetails.route || 'N/A'}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="bd-info-footer">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Booked on {formatDate(booking.createdAt)}
+              </div>
+            </div>
+
             </div>
 
             {booking.passengers && booking.passengers.length > 0 && (

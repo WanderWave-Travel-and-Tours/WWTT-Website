@@ -171,9 +171,11 @@ function PackageBooking({ pkg, onGoBack, currency = 'PHP', exchangeRate = 58 }) 
           }
         }, 2000);
       } else if (isMounted.current) {
+        // Timer still running but user already saw the modal this session
+        // (e.g. navigated from wishlist back to this page).
+        // Just hide the animation — the floating widget stays hidden unless
+        // the user explicitly closes the modal on this visit.
         setShowAnimation(false);
-        // If timer is still running but they reloaded, show floating widget, not modal
-        setHasOfferClosed(true); 
       }
     };
 

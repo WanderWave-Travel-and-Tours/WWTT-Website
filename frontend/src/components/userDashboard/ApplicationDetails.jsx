@@ -234,25 +234,25 @@ const ApplicationDetails = ({
                             disabled={isCancelling}
                             className="ad-cancel-booking-btn"
                             style={{
-                                padding: '10px 20px',
-                                fontSize: '0.85rem',
+                                padding: '5px 12px',
+                                fontSize: '0.72rem',
                                 background: isCancelling 
                                     ? 'linear-gradient(135deg, #fca5a5 0%, #f87171 100%)' 
                                     : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                                 color: 'white',
-                                border: '2px solid #fca5a5',
-                                borderRadius: '100px',
+                                border: '1.5px solid #fca5a5',
+                                borderRadius: '8px',
                                 cursor: isCancelling ? 'not-allowed' : 'pointer',
                                 opacity: isCancelling ? 0.7 : 1,
-                                transition: 'all 0.3s ease',
-                                fontWeight: '800',
+                                transition: 'all 0.2s ease',
+                                fontWeight: '700',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '8px',
+                                gap: '5px',
                                 whiteSpace: 'nowrap',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px',
-                                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                letterSpacing: '0.3px',
+                                boxShadow: '0 2px 6px rgba(239, 68, 68, 0.2)'
                             }}
                             onMouseEnter={(e) => {
                                 if (!isCancelling) {
@@ -298,98 +298,10 @@ const ApplicationDetails = ({
                 BookingDetails already renders BookingCustomizer internally —
                 no need to render it again here. */}
             {isBooking && (
-                <>
-                    <BookingDetails 
-                        booking={inquiry} 
-                        onUpdate={onBookingUpdate}
-                    />
-
-                    {/* ── Pricing Breakdown — always shown for bookings ── */}
-                    <div className="ad-card ad-pricing-card" style={{ marginBottom: '32px' }}>
-                        <h3 className="ad-card-title">Pricing Breakdown</h3>
-
-                        <div className="ad-pricing-breakdown" style={{ marginTop: 0 }}>
-                            <div className="ad-price-row">
-                                <span className="ad-label">Package Total</span>
-                                <span className="ad-value">₱{(inquiry.packageTotal || 0).toLocaleString()}</span>
-                            </div>
-
-                            {inquiry.isCustomized && inquiry.customizationAdditionalPrice > 0 && (
-                                <div className="ad-price-row">
-                                    <span className="ad-label">Customization Additional</span>
-                                    <span className="ad-value">₱{inquiry.customizationAdditionalPrice.toLocaleString()}</span>
-                                </div>
-                            )}
-
-                            {inquiry.includesAirfare && inquiry.airfareTotal > 0 && (
-                                <div className="ad-price-row">
-                                    <span className="ad-label">Airfare Total</span>
-                                    <span className="ad-value">₱{inquiry.airfareTotal.toLocaleString()}</span>
-                                </div>
-                            )}
-
-                            {inquiry.discountAmount > 0 && (
-                                <div className="ad-price-row ad-discount-row">
-                                    <span className="ad-label">
-                                        Discount {inquiry.promoCode && `(${inquiry.promoCode})`}
-                                    </span>
-                                    <span className="ad-value">-₱{inquiry.discountAmount.toLocaleString()}</span>
-                                </div>
-                            )}
-
-                            <div className="ad-price-row ad-total-row">
-                                <span className="ad-label">Total Amount</span>
-                                <span className="ad-value">₱{(inquiry.totalAmount || 0).toLocaleString()}</span>
-                            </div>
-
-                            {inquiry.paymentType === 'partial' && (
-                                <>
-                                    <div className="ad-price-row ad-payment-info">
-                                        <span className="ad-label">Initial Payment</span>
-                                        <span className="ad-value">₱{(inquiry.initialPaymentAmount || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div className="ad-price-row ad-payment-info">
-                                        <span className="ad-label">Remaining Balance</span>
-                                        <span className="ad-value">₱{(inquiry.remainingBalance || 0).toLocaleString()}</span>
-                                    </div>
-                                    {inquiry.balancePaidAmount > 0 && (
-                                        <div className="ad-price-row ad-payment-info">
-                                            <span className="ad-label">Balance Paid</span>
-                                            <span className="ad-value">₱{inquiry.balancePaidAmount.toLocaleString()}</span>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-
-                        {/* Flight Details */}
-                        {inquiry.includesAirfare && inquiry.flightDetails && (
-                            <div className="ad-flight-section" style={{ marginTop: '24px' }}>
-                                <h4 className="ad-section-subtitle">✈️ Flight Details</h4>
-                                <div className="ad-row">
-                                    <span className="ad-label">Airline</span>
-                                    <span className="ad-value">{inquiry.flightDetails.airline || 'N/A'}</span>
-                                </div>
-                                <div className="ad-row">
-                                    <span className="ad-label">Flight Number</span>
-                                    <span className="ad-value">{inquiry.flightDetails.flightNumber || 'N/A'}</span>
-                                </div>
-                                <div className="ad-row">
-                                    <span className="ad-label">Route</span>
-                                    <span className="ad-value">{inquiry.flightDetails.route || 'N/A'}</span>
-                                </div>
-                                <div className="ad-row">
-                                    <span className="ad-label">Departure</span>
-                                    <span className="ad-value">{inquiry.flightDetails.departureTime || 'N/A'}</span>
-                                </div>
-                                <div className="ad-row">
-                                    <span className="ad-label">Arrival</span>
-                                    <span className="ad-value">{inquiry.flightDetails.arrivalTime || 'N/A'}</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </>
+                <BookingDetails 
+                    booking={inquiry} 
+                    onUpdate={onBookingUpdate}
+                />
             )}
 
             {/* Original Application Details Grid - Only show for non-bookings */}

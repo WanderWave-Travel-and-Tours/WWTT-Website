@@ -1132,8 +1132,8 @@ const BookingCustomizer = ({
         <div className="bc-booking-details-header">
           <span className="bc-booking-details-accent" />
           <h3 className="bc-booking-details-title">PACKAGE INCLUSIONS &amp; PRICING</h3>
-          <div style={{ marginLeft: 'auto' }}>
-            {!isEditingBookingDetails ? (
+          {!isEditingBookingDetails && (
+            <div style={{ marginLeft: 'auto' }}>
               <button
                 className="bc-edit-btn"
                 onClick={handleStartEditingBookingDetails}
@@ -1144,41 +1144,9 @@ const BookingCustomizer = ({
                 </svg>
                 Edit
               </button>
-            ) : (
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  className="pc-save-btn"
-                  onClick={handleSaveBookingDetails}
-                  disabled={isSavingBookingDetails}
-                  style={{ padding: '6px 14px', fontSize: '0.85rem' }}
-                >
-                  {isSavingBookingDetails ? (
-                    <><div className="pc-spinner" style={{ width: '12px', height: '12px' }} /> Saving...</>
-                  ) : (
-                    <><CheckCircle size={13} /> Save</>
-                  )}
-                </button>
-                <button
-                  className="bc-cancel-btn"
-                  onClick={handleCancelEditingBookingDetails}
-                  disabled={isSavingBookingDetails}
-                  style={{ padding: '6px 14px', fontSize: '0.85rem' }}
-                >
-                  <XCircle size={13} /> Cancel
-                </button>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-
-        {isEditingBookingDetails && (
-          <div className="bc-edit-mode-banner" style={{ margin: '0 16px 4px', borderRadius: '8px' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            You are editing booking details. Click <strong>Save</strong> to apply changes.
-          </div>
-        )}
 
         <div className="bc-booking-details-grid">
           {/* Package Name */}
@@ -1296,6 +1264,37 @@ const BookingCustomizer = ({
             </div>
           )}
         </div>
+
+        {isEditingBookingDetails && (
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            justifyContent: 'flex-end',
+            padding: '10px 16px 14px',
+            borderTop: '1px solid #f1f5f9',
+          }}>
+            <button
+              className="bc-cancel-btn"
+              onClick={handleCancelEditingBookingDetails}
+              disabled={isSavingBookingDetails}
+              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+            >
+              <XCircle size={13} /> Cancel
+            </button>
+            <button
+              className="pc-save-btn"
+              onClick={handleSaveBookingDetails}
+              disabled={isSavingBookingDetails}
+              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+            >
+              {isSavingBookingDetails ? (
+                <><div className="pc-spinner" style={{ width: '12px', height: '12px' }} /> Saving...</>
+              ) : (
+                <><CheckCircle size={13} /> Save</>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Padded content area below the flush header */}
@@ -1638,107 +1637,6 @@ const BookingCustomizer = ({
         )}
       </div>
 
-      {/* ── UNIFIED SAVE ALL CHANGES BAR ─────────────────────────────
-           Appears when inclusions OR hotel tier has unsaved changes.
-           One confirm modal guards both saves — no duplicate dialogs.
-           ──────────────────────────────────────────────────────── */}
-      {(hasUnsavedChanges || hotelHasUnsaved) && (
-        <div className="bc-save-bar">
-          <p className="bc-save-bar-note">
-            {hasUnsavedChanges && hotelHasUnsaved
-              ? 'You have unsaved changes to inclusions and hotel selection.'
-              : hasUnsavedChanges
-              ? 'You have unsaved changes to the inclusions.'
-              : 'You have an unsaved hotel tier selection.'}
-          </p>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {/* ── Discard All ── */}
-            <button
-              className="bc-cancel-btn"
-              onClick={() => {
-                showConfirm({
-                  title:   'Discard Changes',
-                  message: 'Are you sure you want to discard all unsaved changes?',
-                  type:    'danger',
-                  onConfirm: () => {
-                    closeConfirm();
-                    // Discard inclusions
-                    if (hasUnsavedChanges) {
-                      const original = booking?.customizedInclusions;
-                      if (original && original.length > 0) {
-                        setCustomizedInclusions(original.map((inc, i) => ({
-                          id: inc.id || `inc-${i}`,
-                          name: inc.name || '',
-                          price: typeof inc.price === 'number' ? inc.price : (parseFloat(inc.price) || 0),
-                          supplierRate: inc.supplierRate || 0,
-                          markup: inc.markup || 0,
-                          markupType: inc.markupType || 'fixed',
-                          supplier: inc.supplier || 'N/A',
-                          destination: inc.destination || '',
-                          pax: inc.pax || '',
-                          notes: inc.notes || '',
-                          isOriginal: inc.isOriginal === true || inc.isOriginal === 'true',
-                          isChecked: inc.isChecked === false || inc.isChecked === 'false' ? false : true,
-                          source: inc.source || 'package',
-                          sellerRateId: inc.sellerRateId || null,
-                          matchedActivity: inc.matchedActivity || null,
-                          matchedDestination: inc.matchedDestination || null,
-                        })));
-                      }
-                      setHasUnsavedChanges(false);
-                      setError('');
-                    }
-                    // Discard hotel
-                    if (hotelHasUnsaved && hotelDiscardRef.current) {
-                      hotelDiscardRef.current();
-                    }
-                  },
-                });
-              }}
-              disabled={isSaving}
-            >
-              <XCircle size={14} /> Discard All
-            </button>
-
-            {/* ── Save All Changes ── */}
-            <button
-              className="pc-save-btn"
-              onClick={() => {
-                // Build a summary of what will be saved for the confirm message
-                const parts = [];
-                if (hasUnsavedChanges) parts.push('package inclusions');
-                if (hotelHasUnsaved)   parts.push('hotel tier selection');
-                const what = parts.join(' and ');
-
-                showConfirm({
-                  title:   'Save All Changes',
-                  message: `Are you sure you want to save changes to your ${what}? This will update your booking.`,
-                  type:    'primary',
-                  onConfirm: async () => {
-                    closeConfirm();
-                    // Save inclusions first (if any)
-                    if (hasUnsavedChanges) {
-                      await handleSaveCustomization();
-                    }
-                    // Then save hotel (if any)
-                    if (hotelHasUnsaved && hotelSaveRef.current) {
-                      await hotelSaveRef.current();
-                    }
-                  },
-                });
-              }}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <><div className="pc-spinner" /> Saving...</>
-              ) : (
-                <><CheckCircle size={14} /> Save All Changes</>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
@@ -1917,7 +1815,97 @@ const BookingCustomizer = ({
               </div>
             );
           })()}
-        </div>
+
+          {/* ── UNIFIED SAVE ALL CHANGES BAR ────────────────────────────
+               Always at the very bottom of the right panel — below the
+               hotel customizer and price summary — so saving is the last
+               deliberate action after reviewing all changes.
+               ─────────────────────────────────────────────────────── */}
+          {(hasUnsavedChanges || hotelHasUnsaved) && (
+            <div className="bc-save-bar bc-save-bar-bottom">
+              <p className="bc-save-bar-note">
+                {hasUnsavedChanges && hotelHasUnsaved
+                  ? 'You have unsaved changes to inclusions and hotel selection.'
+                  : hasUnsavedChanges
+                  ? 'You have unsaved changes to the inclusions.'
+                  : 'You have an unsaved hotel tier selection.'}
+              </p>
+              <div className="bc-save-bar-btns">
+                <button
+                  className="bc-cancel-btn"
+                  onClick={() => {
+                    showConfirm({
+                      title:   'Discard Changes',
+                      message: 'Are you sure you want to discard all unsaved changes?',
+                      type:    'danger',
+                      onConfirm: () => {
+                        closeConfirm();
+                        if (hasUnsavedChanges) {
+                          const original = booking?.customizedInclusions;
+                          if (original && original.length > 0) {
+                            setCustomizedInclusions(original.map((inc, i) => ({
+                              id: inc.id || `inc-${i}`,
+                              name: inc.name || '',
+                              price: typeof inc.price === 'number' ? inc.price : (parseFloat(inc.price) || 0),
+                              supplierRate: inc.supplierRate || 0,
+                              markup: inc.markup || 0,
+                              markupType: inc.markupType || 'fixed',
+                              supplier: inc.supplier || 'N/A',
+                              destination: inc.destination || '',
+                              pax: inc.pax || '',
+                              notes: inc.notes || '',
+                              isOriginal: inc.isOriginal === true || inc.isOriginal === 'true',
+                              isChecked: inc.isChecked === false || inc.isChecked === 'false' ? false : true,
+                              source: inc.source || 'package',
+                              sellerRateId: inc.sellerRateId || null,
+                              matchedActivity: inc.matchedActivity || null,
+                              matchedDestination: inc.matchedDestination || null,
+                            })));
+                          }
+                          setHasUnsavedChanges(false);
+                          setError('');
+                        }
+                        if (hotelHasUnsaved && hotelDiscardRef.current) {
+                          hotelDiscardRef.current();
+                        }
+                      },
+                    });
+                  }}
+                  disabled={isSaving}
+                >
+                  <XCircle size={14} /> Discard All
+                </button>
+
+                <button
+                  className="pc-save-btn"
+                  onClick={() => {
+                    const parts = [];
+                    if (hasUnsavedChanges) parts.push('package inclusions');
+                    if (hotelHasUnsaved)   parts.push('hotel tier selection');
+                    const what = parts.join(' and ');
+                    showConfirm({
+                      title:   'Save All Changes',
+                      message: `Are you sure you want to save changes to your ${what}? This will update your booking.`,
+                      type:    'primary',
+                      onConfirm: async () => {
+                        closeConfirm();
+                        if (hasUnsavedChanges) await handleSaveCustomization();
+                        if (hotelHasUnsaved && hotelSaveRef.current) await hotelSaveRef.current();
+                      },
+                    });
+                  }}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <><div className="pc-spinner" /> Saving...</>
+                  ) : (
+                    <><CheckCircle size={14} /> Save All Changes</>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>{/* end bc-right-panel */}
 
       </div>{/* end bc-two-col-layout */}
     </div>
