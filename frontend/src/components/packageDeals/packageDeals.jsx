@@ -7,115 +7,17 @@ import PackageBooking from './packageBooking';
 import './packageDeals.css';
 import PromoSection from './promoSection';
 import CurrencyModal from './CurrencyModal';
-import toast, { Toaster } from 'react-hot-toast';
+import { ToastProvider, useToast } from '../toast/ToastManager';
+import CustomConfirmModal from '../confirmationModal/CustomConfirmModal';
 import MascotGif from '../MascotGif/MascotGif';
 import FeedbackWidget from '../FeedbackWidget/FeedbackWidget';
 
-const LoginNoticeModal = ({ isOpen, onClose, onLogin }) => {
-  if (!isOpen) return null;
+// ============================================================
+// INNER COMPONENT — uses useToast hook (must be inside ToastProvider)
+// ============================================================
+function PackageDealsContent() {
+  const toast = useToast();
 
-  return (
-    <div className="modal-overlay" style={{
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      right: 0, 
-      bottom: 0, 
-      backgroundColor: 'rgba(0, 0, 0, 0.6)', 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center',
-      zIndex: 9999,
-      backdropFilter: 'blur(4px)'
-    }}>
-      <div className="modal-content" style={{
-        backgroundColor: 'white', 
-        padding: '40px 30px', 
-        borderRadius: '12px', 
-        maxWidth: '420px',
-        width: '90%',
-        textAlign: 'center',
-        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
-        animation: 'slideUp 0.3s ease-out'
-      }}>
-        <div style={{ 
-          fontSize: '64px', 
-          marginBottom: '20px',
-          filter: 'drop-shadow(0 4px 8px rgba(255, 140, 0, 0.3))'
-        }}>❤️</div>
-        <h3 style={{ 
-          marginBottom: '15px', 
-          color: '#1f2937',
-          fontSize: '24px',
-          fontWeight: '700'
-        }}>Login Required</h3>
-        <p style={{ 
-          marginBottom: '30px', 
-          color: '#6b7280',
-          fontSize: '15px',
-          lineHeight: '1.6'
-        }}>
-          Please log in to add packages to your wishlist and keep track of your favorite destinations.
-        </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button 
-            onClick={onLogin} 
-            style={{
-              padding: '12px 28px', 
-              backgroundColor: '#FF8C00', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '8px', 
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '15px',
-              transition: 'all 0.3s',
-              boxShadow: '0 4px 12px rgba(255, 140, 0, 0.3)'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#e67e00';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 16px rgba(255, 140, 0, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#FF8C00';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 12px rgba(255, 140, 0, 0.3)';
-            }}
-          >
-            Go to Login
-          </button>
-          <button 
-            onClick={onClose} 
-            style={{
-              padding: '12px 28px', 
-              backgroundColor: '#f3f4f6', 
-              color: '#374151', 
-              border: 'none', 
-              borderRadius: '8px', 
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '15px',
-              transition: 'all 0.3s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#e5e7eb';
-              e.target.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#f3f4f6';
-              e.target.style.transform = 'translateY(0)';
-            }}
-          >
-            Maybe Later
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-function PackageDeals() {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedFilter, setSelectedFilter] = useState('all');
@@ -169,6 +71,7 @@ function PackageDeals() {
   // 2705 Holds raw URL destination param until packages are loaded
   const [pendingDestinationFilter, setPendingDestinationFilter] = useState(null);
   const [shouldScrollToPackages, setShouldScrollToPackages] = useState(false);
+
   const handleLoginRequired = () => {
     console.log('🚨 Login Required triggered!');
     setShowLoginNotice(true);
@@ -640,17 +543,17 @@ function PackageDeals() {
   }, []);
 
   useEffect(() => {
-  if (!shouldScrollToPackages) return;
-  
-  const timer = setTimeout(() => {
-    if (packagesRef.current) {
-      packagesRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    setShouldScrollToPackages(false); // reset
-  }, 400);
+    if (!shouldScrollToPackages) return;
+    
+    const timer = setTimeout(() => {
+      if (packagesRef.current) {
+        packagesRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      setShouldScrollToPackages(false); // reset
+    }, 400);
 
-  return () => clearTimeout(timer);
-}, [shouldScrollToPackages]);
+    return () => clearTimeout(timer);
+  }, [shouldScrollToPackages]);
 
   if (loading) {
     return (
@@ -783,16 +686,7 @@ function PackageDeals() {
         setFavorites(previousState);
         const errorText = await response.text();
         console.error('❌ API Error:', errorText);
-        toast.error('Failed to update wishlist. Please try again.', {
-          style: { 
-            border: '1px solid #ef4444', 
-            color: '#ef4444',
-            fontSize: '14px'
-          },
-          iconTheme: { primary: '#ef4444', secondary: '#fff' },
-          position: 'top-center',
-          duration: 3000,
-        });
+        toast.error('Failed to update wishlist. Please try again.', 'Error', 3000);
         return;
       }
       
@@ -805,19 +699,10 @@ function PackageDeals() {
       }
       
       const successMessage = result.action === 'removed'
-        ? '❤️ Removed from wishlist' 
-        : '❤️ Added to wishlist!';
+        ? 'Removed from wishlist' 
+        : 'Added to wishlist!';
 
-      toast.success(successMessage, {
-        style: { 
-          border: '1px solid #10b981', 
-          color: '#10b981',
-          fontSize: '14px'
-        },
-        iconTheme: { primary: '#10b981', secondary: '#fff' },
-        position: 'top-center',
-        duration: 2000,
-      });
+      toast.success(successMessage, 'Wishlist', 2000);
 
       // ============================================================
       // NOTIFY NAVBAR TO UPDATE WISHLIST COUNT
@@ -835,16 +720,7 @@ function PackageDeals() {
 
     } catch (err) {
       console.error('❌ Error toggling favorite:', err);
-      toast.error('Network error. Please check your connection.', {
-        style: { 
-          border: '1px solid #ef4444', 
-          color: '#ef4444',
-          fontSize: '14px'
-        },
-        iconTheme: { primary: '#ef4444', secondary: '#fff' },
-        position: 'top-center',
-        duration: 3000,
-      });
+      toast.error('Network error. Please check your connection.', 'Connection Error', 3000);
     }
   };
 
@@ -875,19 +751,26 @@ function PackageDeals() {
 
   return (
     <div className="package-deals-page">
-      <Toaster position="top-center" />
+
+      {/* ============================================================
+          CUSTOM CONFIRM MODAL — replaces LoginNoticeModal
+          onConfirm → navigate to /login
+          onCancel  → close the modal
+      ============================================================ */}
+      <CustomConfirmModal
+        isOpen={showLoginNotice}
+        title="Login Required"
+        message="Please log in to add packages to your wishlist and keep track of your favorite destinations."
+        onConfirm={handleGoToLogin}
+        onCancel={() => setShowLoginNotice(false)}
+        type="primary"
+      />
       
       <CurrencyModal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)}
         currency={currency}
         setCurrency={setCurrency}
-      />
-      
-      <LoginNoticeModal 
-        isOpen={showLoginNotice} 
-        onClose={() => setShowLoginNotice(false)}
-        onLogin={handleGoToLogin}
       />
 
       <section className="top-section-bg">
@@ -990,6 +873,17 @@ function PackageDeals() {
         </div>
       </section>
     </div>
+  );
+}
+
+// ============================================================
+// OUTER WRAPPER — provides Toast context to the entire page
+// ============================================================
+function PackageDeals() {
+  return (
+    <ToastProvider>
+      <PackageDealsContent />
+    </ToastProvider>
   );
 }
 
