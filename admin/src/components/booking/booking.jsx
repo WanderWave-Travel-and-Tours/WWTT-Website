@@ -80,6 +80,7 @@ const Booking = () => {
             customerName: b.fullName || 'N/A',
             email: b.email || 'N/A',
             packageName: b.packageName || 'Unknown Package',
+            destination: b.destination || b.packageId?.destination || 'N/A',
             travelDate: b.startDate || 'Not specified',
             startDate: b.startDate,
             endDate: b.endDate,
