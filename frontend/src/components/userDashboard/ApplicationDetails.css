@@ -570,26 +570,27 @@
 
     .ad-header > div:last-child {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        flex-wrap: nowrap;
+        gap: 8px;
         align-items: center;
     }
 
     .ad-title {
-        font-size: 1.35rem;
+        font-size: 1.2rem;
         word-break: break-word;
     }
 
-    /* Cancel booking button — full width on mobile so it doesn't get cut */
+    /* Cancel booking button — auto width, sits beside status pill */
     .ad-cancel-booking-btn {
-        width: 100% !important;
+        flex: 1 !important;
         justify-content: center !important;
-        padding: 11px 16px !important;
-        font-size: 0.82rem !important;
+        padding: 9px 12px !important;
+        font-size: 0.78rem !important;
+        min-width: 0 !important;
     }
 
     .ad-status-pill {
-        width: 100%;
+        flex: 1;
         text-align: center;
         box-sizing: border-box;
     }

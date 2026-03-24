@@ -266,6 +266,14 @@ const Dashboard = () => {
       if (!Array.isArray(bookings)) bookings = [];
       if (!Array.isArray(inquiries)) inquiries = [];
 
+      // ✅ Exclude archived bookings from all stats calculations
+      bookings = bookings.filter((b) => b.isArchive !== 'Yes');
+
+      // ✅ Exclude archived promos from stats count
+      if (Array.isArray(promos)) {
+        promos = promos.filter((p) => p.isArchive !== 'Yes');
+      }
+
       const confirmed = bookings.filter((b) => b.status === "confirmed").length;
       const pending = bookings.filter((b) => b.status === "pending").length;
       const cancelled = bookings.filter((b) => b.status === "cancelled").length;
@@ -444,12 +452,34 @@ const Dashboard = () => {
         packageStats[pkg].revenue += b.totalAmount || 0;
       });
 
-      setTopPackages(Object.entries(packageStats).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5).map(([name, data]) => ({
-          name,
-          bookings: data.bookings,
-          revenue: `₱${data.revenue.toLocaleString()}`,
-          revenueValue: data.revenue,
-        })));
+      // Helper: find matching package by exact title, then by partial-contains
+      const findPkgByName = (storedName) => {
+        if (packageLookup[storedName]) return packageLookup[storedName];
+        const lower = storedName.toLowerCase().trim();
+        return packages.find(p => p.title && p.title.toLowerCase().includes(lower)) || null;
+      };
+
+      // Helper: build display name — prepend duration + destination only when
+      // the stored name doesn't already contain them (e.g. "3D2N TAIPEI (min of 2 pax)" is already complete)
+      const buildTopPkgDisplayName = (storedName, match) => {
+        if (!match) return storedName;
+        const lower = storedName.toLowerCase();
+        const hasDuration    = match.duration    && lower.includes(match.duration.toLowerCase());
+        const hasDestination = match.destination && lower.includes(match.destination.toLowerCase());
+        if (hasDuration || hasDestination) return storedName;
+        const parts = [match.duration, match.destination, storedName].filter(Boolean);
+        return parts.join(' ');
+      };
+
+      setTopPackages(Object.entries(packageStats).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5).map(([name, data]) => {
+          const match = findPkgByName(name);
+          return {
+            name: buildTopPkgDisplayName(name, match),
+            bookings: data.bookings,
+            revenue: `₱${data.revenue.toLocaleString()}`,
+            revenueValue: data.revenue,
+          };
+        }));
 
     } catch (calcErr) {
       console.error("Error in calculations:", calcErr);

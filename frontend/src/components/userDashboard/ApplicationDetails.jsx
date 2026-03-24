@@ -49,6 +49,28 @@ const ApplicationDetails = ({
     // Check if this is a booking-type inquiry
     const isBooking = inquiry.inquiryType === 'BOOKING' || inquiry.inquiryType === 'FLIGHT_BOOKING';
 
+    // ── Smart Display Title ─────────────────────────────────────────────
+    // Build a rich title for bookings: Duration · Destination · PackageName
+    // If packageName is already a full title (e.g. "3D2N TAIPEI (min of 2 pax)"),
+    // use it as-is. If it's just a qualifier (e.g. "Solo", "Min of 2 Pax"),
+    // build a full title from duration + destination + packageName.
+    const QUALIFIER_ONLY_PATTERN_AD = /^(solo\s*\/?\.?\s*joiners?|solo|joiners?|min\.?\s*of\s*\d+\s*pax|private|group)$/i;
+
+    const getBookingDisplayTitle = () => {
+        if (!isBooking) return inquiry.serviceName;
+        const name     = (inquiry.packageName || inquiry.serviceName || '').trim();
+        const dest     = inquiry.packageId?.destination || '';
+        const duration = inquiry.duration || '';
+        if (!QUALIFIER_ONLY_PATTERN_AD.test(name)) {
+            return name || 'N/A';
+        }
+        const parts = [];
+        if (duration) parts.push(duration);
+        if (dest)     parts.push(dest);
+        if (name)     parts.push(name);
+        return parts.length > 1 ? parts.join(' ') : name || 'N/A';
+    };
+
     const formatDate = (date) => {
         if (!date) return 'N/A';
         return new Date(date).toLocaleDateString('en-US', { 
@@ -221,7 +243,7 @@ const ApplicationDetails = ({
             />
             <header className="ad-header">
                 <div>
-                    <h1 className="ad-title">{inquiry.serviceName}</h1>
+                    <h1 className="ad-title">{getBookingDisplayTitle()}</h1>
                     <div className="ad-id-badge">ID: {inquiry._id.slice(-8).toUpperCase()}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

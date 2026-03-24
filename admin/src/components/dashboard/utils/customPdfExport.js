@@ -104,11 +104,27 @@ export const exportCustomToPDF = (stats, customData = [], topPackages = [], cust
             rangePackageStats[pkg].bookings += 1;
             rangePackageStats[pkg].revenue += b.totalAmount || 0;
         });
+
+        const _pkgLookupByName = (allPackages || []).reduce((acc, pkg) => { if (pkg.title) acc[pkg.title] = pkg; return acc; }, {});
+        const _findPkg = (storedName) => {
+            if (_pkgLookupByName[storedName]) return _pkgLookupByName[storedName];
+            const lower = storedName.toLowerCase().trim();
+            return (allPackages || []).find(p => p.title && p.title.toLowerCase().includes(lower)) || null;
+        };
+        const _buildDisplayName = (storedName, match) => {
+            if (!match) return storedName;
+            const lower = storedName.toLowerCase();
+            const hasDuration    = match.duration    && lower.includes(match.duration.toLowerCase());
+            const hasDestination = match.destination && lower.includes(match.destination.toLowerCase());
+            if (hasDuration || hasDestination) return storedName;
+            return [match.duration, match.destination, storedName].filter(Boolean).join(' ');
+        };
+
         const rangeTopPackages = Object.entries(rangePackageStats)
             .sort((a, b) => b[1].revenue - a[1].revenue)
             .slice(0, 5)
             .map(([name, data]) => ({
-                name,
+                name: _buildDisplayName(name, _findPkg(name)),
                 bookings: data.bookings,
                 revenue: `P${data.revenue.toLocaleString()}`,
                 revenueValue: data.revenue
@@ -589,7 +605,7 @@ export const exportCustomToPDF = (stats, customData = [], topPackages = [], cust
         const pvBooking  = pv.bookingPageViews   || 0;
         const pvFlights  = pv.flightsPageViews   || 0;
         const pvServices = pv.servicesPageViews  || 0;
-        const pvRate     = pvPackages > 0 ? ((pvBooking / pvPackages) * 100).toFixed(1) : '0.0';
+        const pvRate     = pvBooking > 0 ? (rangeConfirmedBookings.length / pvBooking * 100).toFixed(1) : '0.0';
         const pvTop      = pv.topViewedPackages  || [];
 
         autoTable(doc, {
@@ -626,7 +642,7 @@ export const exportCustomToPDF = (stats, customData = [], topPackages = [], cust
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(60, 60, 60);
-        doc.text('View-to-Book Rate (Booking views / Package views):', 14, yPos);
+        doc.text('View-to-Book Rate (Confirmed Bookings / Booking Page Views):', 14, yPos);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(139, 92, 246);
         doc.text(pvRate + '%', 120, yPos);

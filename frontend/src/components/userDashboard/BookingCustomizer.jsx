@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Search, Plus, CheckCircle, XCircle, 
-  Package, RotateCcw, AlertCircle, DollarSign
+  Package, RotateCcw, AlertCircle, DollarSign, Building2
 } from 'lucide-react';
 import './BookingCustomizer.css';
 import {
@@ -1048,8 +1048,9 @@ const BookingCustomizer = ({
   // ─────────────────────────────────────────────────────────────
   // SUPPORTED DESTINATIONS GUARD
   //
-  // BookingCustomizer is only available for Philippine domestic
-  // destinations that have seller rates in the system.
+  // BookingCustomizer always renders — HotelCustomizer is visible for ALL
+  // destinations. The "Customize Your Package" left panel (inclusions editor)
+  // is only shown for Philippine domestic destinations that have seller rates.
   //
   // IMPORTANT: When booking.packageId is null (no populate), the destination
   // is not known until fetchPackageByTitle resolves and sets fetchedPackageData.
@@ -1091,18 +1092,13 @@ const BookingCustomizer = ({
     booking?.packageName,
   ].filter(Boolean).join(' ').toLowerCase();
 
-  // If fetchedPackageData has not loaded yet AND no other destination source
-  // is available, show a loading placeholder instead of returning null — this
-  // prevents the component from disappearing permanently when packageId is null.
+  // isDestinationSupported controls ONLY the left panel (inclusions editor).
+  // The right panel (HotelCustomizer) is always shown regardless of destination.
   const isDestinationSupported = destinationSearchString.length > 0 &&
     SUPPORTED_DESTINATIONS.some(dest => destinationSearchString.includes(dest));
 
-  // While fetchedPackageData is still loading (packageId null, no other destination
-  // source known), isDestinationSupported will be false. Once setFetchedPackageData
-  // fires (it's React state), the component re-renders and this guard re-evaluates
-  // with the real destination now included in destinationSearchString — so the
-  // component correctly appears for supported destinations after the async fetch.
-  if (!isDestinationSupported) return null;
+  // Always render — do NOT return null here.
+  // HotelCustomizer must be visible for all bookings/destinations.
 
   // ─────────────────────────────────────────────────────────────
   // RENDER
@@ -1120,185 +1116,11 @@ const BookingCustomizer = ({
         onCancel={closeConfirm}
       />
 
-      <div className="bc-two-col-layout">
-        {/* LEFT — Package Inclusions */}
-        <div className="bc-left-panel">
-
-      {/* ══════════════════════════════════════════════════════════
-          BOOKING DETAILS SECTION
-          Shows Package Name, Duration, Travel Dates, Pax — editable
-          ══════════════════════════════════════════════════════════ */}
-      <div className="bc-booking-details-card">
-        <div className="bc-booking-details-header">
-          <span className="bc-booking-details-accent" />
-          <h3 className="bc-booking-details-title">PACKAGE INCLUSIONS &amp; PRICING</h3>
-          {!isEditingBookingDetails && (
-            <div style={{ marginLeft: 'auto' }}>
-              <button
-                className="bc-edit-btn"
-                onClick={handleStartEditingBookingDetails}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Edit
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="bc-booking-details-grid">
-          {/* Package Name */}
-          <div className="bc-booking-detail-row">
-            <span className="bc-booking-detail-label">Package Name</span>
-            {isEditingBookingDetails ? (
-              <input
-                className="bc-detail-input"
-                type="text"
-                value={bookingDetailsForm.packageName}
-                onChange={(e) => setBookingDetailsForm(f => ({ ...f, packageName: e.target.value }))}
-                placeholder="Package name"
-              />
-            ) : (
-              <span className="bc-booking-detail-value">{booking?.packageName || 'N/A'}</span>
-            )}
-          </div>
-
-          {/* Duration */}
-          <div className="bc-booking-detail-row">
-            <span className="bc-booking-detail-label">Duration</span>
-            {isEditingBookingDetails ? (
-              <input
-                className="bc-detail-input"
-                type="text"
-                value={bookingDetailsForm.duration}
-                onChange={(e) => setBookingDetailsForm(f => ({ ...f, duration: e.target.value }))}
-                placeholder="e.g. 5D4N"
-              />
-            ) : (
-              <span className="bc-booking-detail-value">{booking?.duration || 'N/A'}</span>
-            )}
-          </div>
-
-          {/* Travel Dates */}
-          <div className="bc-booking-detail-row">
-            <span className="bc-booking-detail-label">Travel Dates</span>
-            {isEditingBookingDetails ? (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                <input
-                  className="bc-detail-input"
-                  type="date"
-                  value={bookingDetailsForm.startDate}
-                  onChange={(e) => setBookingDetailsForm(f => ({ ...f, startDate: e.target.value }))}
-                />
-                <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>to</span>
-                <input
-                  className="bc-detail-input"
-                  type="date"
-                  value={bookingDetailsForm.endDate}
-                  onChange={(e) => setBookingDetailsForm(f => ({ ...f, endDate: e.target.value }))}
-                />
-              </div>
-            ) : (
-              <span className="bc-booking-detail-value">
-                {booking?.startDate && booking?.endDate
-                  ? `${formatDate(booking.startDate)} - ${formatDate(booking.endDate)}`
-                  : 'N/A'}
-              </span>
-            )}
-          </div>
-
-          {/* Pax */}
-          <div className="bc-booking-detail-row">
-            <span className="bc-booking-detail-label">Pax</span>
-            {isEditingBookingDetails ? (
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                <label className="bc-pax-label">
-                  <span>Adults</span>
-                  <input
-                    className="bc-detail-input bc-pax-input"
-                    type="number"
-                    min="0"
-                    value={bookingDetailsForm.paxAdult}
-                    onChange={(e) => setBookingDetailsForm(f => ({ ...f, paxAdult: e.target.value }))}
-                  />
-                </label>
-                <label className="bc-pax-label">
-                  <span>Children</span>
-                  <input
-                    className="bc-detail-input bc-pax-input"
-                    type="number"
-                    min="0"
-                    value={bookingDetailsForm.paxChildren}
-                    onChange={(e) => setBookingDetailsForm(f => ({ ...f, paxChildren: e.target.value }))}
-                  />
-                </label>
-                <label className="bc-pax-label">
-                  <span>Infants</span>
-                  <input
-                    className="bc-detail-input bc-pax-input"
-                    type="number"
-                    min="0"
-                    value={bookingDetailsForm.paxInfants}
-                    onChange={(e) => setBookingDetailsForm(f => ({ ...f, paxInfants: e.target.value }))}
-                  />
-                </label>
-              </div>
-            ) : (
-              <span className="bc-booking-detail-value">{getPaxLabel()}</span>
-            )}
-          </div>
-
-          {booking?.selectedRoomType && (
-            <div className="bc-booking-detail-row">
-              <span className="bc-booking-detail-label">Room Type</span>
-              <span className="bc-booking-detail-value">{booking.selectedRoomType}</span>
-            </div>
-          )}
-
-          {booking?.hotelName && (
-            <div className="bc-booking-detail-row">
-              <span className="bc-booking-detail-label">Hotel</span>
-              <span className="bc-booking-detail-value">{booking.hotelName}</span>
-            </div>
-          )}
-        </div>
-
-        {isEditingBookingDetails && (
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            justifyContent: 'flex-end',
-            padding: '10px 16px 14px',
-            borderTop: '1px solid #f1f5f9',
-          }}>
-            <button
-              className="bc-cancel-btn"
-              onClick={handleCancelEditingBookingDetails}
-              disabled={isSavingBookingDetails}
-              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
-            >
-              <XCircle size={13} /> Cancel
-            </button>
-            <button
-              className="pc-save-btn"
-              onClick={handleSaveBookingDetails}
-              disabled={isSavingBookingDetails}
-              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
-            >
-              {isSavingBookingDetails ? (
-                <><div className="pc-spinner" style={{ width: '12px', height: '12px' }} /> Saving...</>
-              ) : (
-                <><CheckCircle size={13} /> Save</>
-              )}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Padded content area below the flush header */}
-      <div className="bc-left-content">
+      <div className={`bc-two-col-layout${isDestinationSupported ? '' : ' bc-hotel-only'}`}>
+        {/* LEFT — Package Inclusions (only for supported destinations) */}
+        {isDestinationSupported && (
+          <div className="bc-left-panel">
+            <div className="bc-left-content">
 
       {/* Header */}
       <div className="pc-header">
@@ -1440,48 +1262,11 @@ const BookingCustomizer = ({
                           )}
                         </div>
 
-                        {/* Meta info row: Supplier, Destination, Pax */}
-                        {(inclusion.supplier || inclusion.destination || inclusion.pax) && (
-                          <div className="pc-inclusion-meta">
-                            {inclusion.supplier && (
-                              <span className="pc-meta-item">
-                                Supplier: <strong>{inclusion.supplier}</strong>
-                              </span>
-                            )}
-                            {inclusion.destination && (
-                              <span className="pc-meta-item">
-                                Destination: <strong>{inclusion.destination}</strong>
-                              </span>
-                            )}
-                            {inclusion.pax && (
-                              <span className="pc-meta-item">
-                                Pax: <strong>{inclusion.pax}</strong>
-                              </span>
-                            )}
-                          </div>
-                        )}
+
                       </div>
                     </div>
 
                     <div className="pc-inclusion-actions">
-                      {inclusion.price > 0 && (
-                        <span
-                          className="pc-inclusion-price"
-                          style={{
-                            color: inclusion.isOriginal
-                              ? (!inclusion.isChecked ? '#dc2626' : '#64748b')
-                              : '#059669',
-                          }}
-                          title={
-                            inclusion.isOriginal
-                              ? (!inclusion.isChecked ? 'Will be deducted from package price' : 'Included in package')
-                              : 'Will be added to package price'
-                          }
-                        >
-                          {formatPrice(inclusion.price)}
-                        </span>
-                      )}
-
                       {!inclusion.isOriginal && (
                         <button
                           className="pc-remove-btn"
@@ -1644,11 +1429,202 @@ const BookingCustomizer = ({
         @keyframes pc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
       `}</style>
 
-      </div>{/* end bc-left-content */}
-        </div>{/* end bc-left-panel */}
+            </div>{/* end bc-left-content */}
+          </div>
+        )}{/* end isDestinationSupported */}
 
         {/* RIGHT — Hotel Selection + Price Summary */}
         <div className="bc-right-panel">
+
+          {/* ── Hotel-only mode: split hotel cards (left) + overview/summary (right) ── */}
+          {!isDestinationSupported ? (
+            <div className="bc-hotel-only-inner">
+              {/* Left: Hotel cards */}
+              <div className="bc-hotel-only-cards">
+                <HotelCustomizer
+                  booking={booking}
+                  onUpdate={onUpdate}
+                  packageDestination={packageDestination}
+                  onHotelPriceChange={setHotelPriceInfo}
+                  onHasUnsavedChanges={setHotelHasUnsaved}
+                  saveRef={hotelSaveRef}
+                  discardRef={hotelDiscardRef}
+                />
+              </div>
+
+              {/* Right: Hotel overview + Price summary + Save bar */}
+              <div className="bc-hotel-only-sidebar">
+                {/* Merged Hotel Overview + Price Summary card */}
+                {(() => {
+                  const savedCustomization = booking?.customizationAdditionalPrice || 0;
+                  const basePrice = (booking?.totalAmount || 0) - savedCustomization;
+                  const hotelDelta = (() => {
+                    if (!hotelPriceInfo?.isUnsaved) return 0;
+                    return hotelPriceInfo.totalHotelCost || 0;
+                  })();
+                  const netChange = hotelDelta;
+                  const newTotal = Math.max(0, basePrice + netChange);
+                  const hasChanges = hotelPriceInfo?.isUnsaved && hotelDelta !== 0;
+                  const isPartial = booking?.paymentType === 'partial';
+                  const alreadyPaid = (booking?.initialPaymentAmount || 0) + (booking?.balancePaidAmount || 0);
+                  const newBalance = isPartial ? Math.max(0, newTotal - alreadyPaid) : null;
+                  const currentBalance = booking?.remainingBalance || 0;
+
+                  return (
+                    <div className="bc-merged-summary">
+                      {/* ── Hotel Overview section ── */}
+                      {hotelPriceInfo?.selectedRoomType && (
+                        <div className="bc-merged-hotel-section">
+                          <div className="bc-merged-section-label">
+                            <Building2 size={12} /> Hotel Selection
+                            {hasChanges && <span className="bc-unsaved-pill" style={{ marginLeft: 'auto' }}>UNSAVED</span>}
+                          </div>
+                          <div className="bc-hotel-overview-row">
+                            <span className="bc-hotel-overview-label">Selected Tier</span>
+                            <span className="bc-hotel-overview-value">
+                              {hotelPriceInfo.selectedRoomType.type
+                                ? (hotelPriceInfo.selectedRoomType.type.toLowerCase().includes('budget')
+                                    ? 'Standard'
+                                    : hotelPriceInfo.selectedRoomType.type)
+                                : '—'}
+                              {hotelPriceInfo.isUnsaved && (
+                                <span className="bc-hotel-overview-unsaved">unsaved</span>
+                              )}
+                            </span>
+                          </div>
+                          {hotelPriceInfo.selectedRoomType.hotelName && (
+                            <div className="bc-hotel-overview-row">
+                              <span className="bc-hotel-overview-label">Hotel</span>
+                              <span className="bc-hotel-overview-value">
+                                {hotelPriceInfo.selectedRoomType.hotelName}
+                              </span>
+                            </div>
+                          )}
+                          <div className="bc-hotel-overview-row" style={{ borderBottom: 'none' }}>
+                            <span className="bc-hotel-overview-label">Rooms Needed</span>
+                            <span className="bc-hotel-overview-value">
+                              {hotelPriceInfo.numberOfRooms} room{hotelPriceInfo.numberOfRooms > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── Divider ── */}
+                      <div className="bc-merged-divider" />
+
+                      {/* ── Price Summary section ── */}
+                      <div className="bc-merged-price-section">
+                        <div className="bc-merged-section-label" style={{ display: 'none' }}>
+                          <DollarSign size={12} /> Price Summary
+                          {hasChanges && <span className="bc-unsaved-pill" style={{ marginLeft: 'auto' }}>UNSAVED</span>}
+                        </div>
+                        <div className="bc-price-row">
+                          <span>Base Package Price</span>
+                          <span style={{ fontWeight: 700 }}>₱{basePrice.toLocaleString()}</span>
+                        </div>
+                        {hasChanges && hotelPriceInfo && (
+                          <div className="bc-price-row highlight">
+                            <span>
+                              Hotel upgrade
+                              <span className="bc-price-count" style={{ marginLeft: 6 }}>
+                                ({hotelPriceInfo.selectedRoomType?.type} · {hotelPriceInfo.numberOfRooms} rm × {hotelPriceInfo.durationNights} nights)
+                              </span>
+                            </span>
+                            <span className="bc-price-added">+₱{(hotelPriceInfo.totalHotelCost || 0).toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div className="bc-price-row total">
+                          <span>Updated Total</span>
+                          <span className="bc-price-total" style={{
+                            color: netChange > 0 ? '#b45309' : '#047857'
+                          }}>
+                            ₱{newTotal.toLocaleString()}
+                            {netChange !== 0 && (
+                              <span className="bc-price-delta" style={{ color: netChange > 0 ? '#b45309' : '#059669' }}>
+                                {netChange > 0 ? '+' : ''}₱{netChange.toLocaleString()}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        {isPartial && (
+                          <>
+                            <div className="bc-price-row bc-payment-row">
+                              <span>Already Paid</span>
+                              <span style={{ fontWeight: 700, color: '#059669' }}>₱{alreadyPaid.toLocaleString()}</span>
+                            </div>
+                            <div className="bc-price-row bc-balance-row">
+                              <span style={{ fontWeight: 800 }}>Remaining Balance</span>
+                              <span style={{
+                                fontWeight: 900,
+                                fontSize: '1rem',
+                                color: newBalance < currentBalance ? '#059669' : newBalance > currentBalance ? '#dc2626' : '#1e293b'
+                              }}>
+                                ₱{(newBalance ?? currentBalance).toLocaleString()}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                        {!hasChanges && (
+                          <p className="bc-price-hint">
+                            Change hotel tier on the left to preview price changes.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* ── Save / Discard bar (inside merged card) ── */}
+                      {hotelHasUnsaved && (
+                        <div className="bc-merged-save-bar">
+                          <p className="bc-merged-save-note">Unsaved hotel tier selection</p>
+                          <div className="bc-merged-save-btns">
+                            <button
+                              className="bc-cancel-btn"
+                              onClick={() => {
+                                showConfirm({
+                                  title: 'Discard Changes',
+                                  message: 'Are you sure you want to discard your hotel selection change?',
+                                  type: 'danger',
+                                  onConfirm: () => {
+                                    closeConfirm();
+                                    if (hotelDiscardRef.current) hotelDiscardRef.current();
+                                  },
+                                });
+                              }}
+                              disabled={isSaving}
+                            >
+                              <XCircle size={13} /> Discard
+                            </button>
+                            <button
+                              className="pc-save-btn"
+                              onClick={() => {
+                                showConfirm({
+                                  title: 'Save Hotel Selection',
+                                  message: 'Are you sure you want to save your hotel tier selection?',
+                                  type: 'primary',
+                                  onConfirm: async () => {
+                                    closeConfirm();
+                                    if (hotelSaveRef.current) await hotelSaveRef.current();
+                                  },
+                                });
+                              }}
+                              disabled={isSaving}
+                            >
+                              {isSaving ? (
+                                <><div className="pc-spinner" /> Saving...</>
+                              ) : (
+                                <><CheckCircle size={13} /> Save Changes</>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          ) : (
+            /* ── Normal two-col mode: hotel stacked above summary ── */
+            <>
           <HotelCustomizer
             booking={booking}
             onUpdate={onUpdate}
@@ -1674,29 +1650,13 @@ const BookingCustomizer = ({
             const netInclusionChange = additions - deductions;
 
             // ── Hotel cost delta ─────────────────────────────────────
-            // Compare the PENDING hotel cost (from hotelPriceInfo) against
-            // the SAVED hotel cost that is already baked into booking.totalAmount.
-            // We use the raw per-night × rooms × nights formula on both sides so
-            // the delta is always computed consistently.
-            //
-            // savedHotelCost: cost already included in booking.totalAmount.
-            //   We cannot know this precisely without storing it, so we set it to 0
-            //   and only show a hotel delta when the user actively switches tiers.
-            //   If hotelPriceInfo.isUnsaved is false it means no pending change.
             const hotelDelta = (() => {
               if (!hotelPriceInfo) return 0;
               if (!hotelPriceInfo.isUnsaved) return 0;
-              // Pending cost of newly selected tier
               const pendingCost = hotelPriceInfo.totalHotelCost || 0;
-              // Cost of previously saved tier (0 if nothing was saved before)
               const savedCost   = (() => {
                 const savedType = hotelPriceInfo.savedRoomType;
                 if (!savedType) return 0;
-                // If savedRoomType === selectedRoomType we wouldn't reach here (isUnsaved false)
-                // We cannot recover the old price directly, so we express the delta vs 0
-                // unless the booking already had a hotel price recorded.
-                // booking.hotelTotalCost is not a field we store, so treat saved as 0
-                // to keep the display simple (shows full pending cost as addition).
                 return 0;
               })();
               return pendingCost - savedCost;
@@ -1720,6 +1680,38 @@ const BookingCustomizer = ({
                   <span>Price Summary</span>
                   {hasChanges && <span className="bc-unsaved-pill">UNSAVED</span>}
                 </div>
+
+                {/* ── Hotel info rows (seamlessly inside price summary) ── */}
+                {hotelPriceInfo?.selectedRoomType && (
+                  <>
+                    <div className="bc-price-row bc-hotel-info-row">
+                      <span>Selected Tier</span>
+                      <span style={{ fontWeight: 700 }}>
+                        {hotelPriceInfo.selectedRoomType.type
+                          ? (hotelPriceInfo.selectedRoomType.type.toLowerCase().includes('budget')
+                              ? 'Standard'
+                              : hotelPriceInfo.selectedRoomType.type)
+                          : '—'}
+                        {hotelPriceInfo.isUnsaved && (
+                          <span className="bc-hotel-overview-unsaved" style={{ marginLeft: 6 }}>unsaved</span>
+                        )}
+                      </span>
+                    </div>
+                    {hotelPriceInfo.selectedRoomType.hotelName && (
+                      <div className="bc-price-row bc-hotel-info-row">
+                        <span>Hotel</span>
+                        <span style={{ fontWeight: 700 }}>{hotelPriceInfo.selectedRoomType.hotelName}</span>
+                      </div>
+                    )}
+                    <div className="bc-price-row bc-hotel-info-row" style={{ marginBottom: 8 }}>
+                      <span>Rooms Needed</span>
+                      <span style={{ fontWeight: 700 }}>
+                        {hotelPriceInfo.numberOfRooms} room{hotelPriceInfo.numberOfRooms > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="bc-hotel-info-divider" />
+                  </>
+                )}
 
                 <div className="bc-price-row">
                   <span>Base Package Price</span>
@@ -1816,11 +1808,7 @@ const BookingCustomizer = ({
             );
           })()}
 
-          {/* ── UNIFIED SAVE ALL CHANGES BAR ────────────────────────────
-               Always at the very bottom of the right panel — below the
-               hotel customizer and price summary — so saving is the last
-               deliberate action after reviewing all changes.
-               ─────────────────────────────────────────────────────── */}
+          {/* ── UNIFIED SAVE ALL CHANGES BAR ── */}
           {(hasUnsavedChanges || hotelHasUnsaved) && (
             <div className="bc-save-bar bc-save-bar-bottom">
               <p className="bc-save-bar-note">
@@ -1905,6 +1893,9 @@ const BookingCustomizer = ({
               </div>
             </div>
           )}
+            </>
+          )}{/* end normal mode */}
+
         </div>{/* end bc-right-panel */}
 
       </div>{/* end bc-two-col-layout */}

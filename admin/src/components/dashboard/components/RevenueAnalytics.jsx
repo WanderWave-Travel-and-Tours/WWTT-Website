@@ -762,15 +762,6 @@ const RevenueAnalytics = ({
               <span className="rev-pv-card-sub">
                 {filteredBookingCounts.totalConfirmedBookings} Booked out of {filteredPageViewStats.bookingPageViews} Booking Page Views
               </span>
-              {onResetViewToBookRate && (
-                <button
-                  className="rev-pv-reset-btn"
-                  onClick={onResetViewToBookRate}
-                  title="Reset View-to-Book Rate"
-                >
-                  Reset Rate
-                </button>
-              )}
             </div>
           </div>
         </div>
