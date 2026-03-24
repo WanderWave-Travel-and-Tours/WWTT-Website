@@ -35,7 +35,6 @@ const Booking = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Confirmation Modal State
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: "",
@@ -70,7 +69,6 @@ const Booking = () => {
       const formatted = bookingsArray
         .filter(b => (b.isArchive || 'No') === 'No')
         .map((b, index) => {
-          // ✅ BAGONG LOGIC: Kung walk-in, automatic CONFIRMED at PAID
           const isWalkin = b.isWalkin || false;
           const actualStatus = isWalkin ? 'confirmed' : (b.status || 'pending');
           
@@ -87,15 +85,15 @@ const Booking = () => {
             duration: b.duration,
             totalAmount: b.totalAmount || 0,
             guests: b.pax?.adult || 1,
-            status: actualStatus, // ✅ Auto-confirmed for walk-in
+            status: actualStatus,
             bookingDate: new Date(b.createdAt).toLocaleDateString('en-CA'),
             message: b.message || '',
             referenceNumber: b.referenceNumber || 'N/A',
             paymentLinkId: b.paymentLinkId,
             paymentType: b.paymentType || 'full',
             initialPaymentAmount: b.initialPaymentAmount || 0,
-            remainingBalance: isWalkin ? 0 : (b.remainingBalance || 0), // ✅ Walk-in = no balance
-            balancePaidAmount: isWalkin ? b.totalAmount : (b.balancePaidAmount || 0), // ✅ Walk-in fully paid
+            remainingBalance: isWalkin ? 0 : (b.remainingBalance || 0),
+            balancePaidAmount: isWalkin ? b.totalAmount : (b.balancePaidAmount || 0),
             balancePaidAt: b.balancePaidAt,
             isWalkin: isWalkin,
             rawData: b,
@@ -120,16 +118,13 @@ const Booking = () => {
   useEffect(() => {
     let filtered = bookings;
 
-    // Status filter
     if (filterStatus !== 'ALL') {
       filtered = filtered.filter(b => b.status.toLowerCase() === filterStatus.toLowerCase());
     }
 
-    // Payment filter
     if (paymentFilter !== 'ALL') {
       if (paymentFilter === 'PENDING_BALANCE') {
         filtered = filtered.filter(b => {
-          // ✅ Walk-in bookings NEVER have pending balance
           if (b.isWalkin) return false;
           return b.paymentType === 'partial' && 
                  b.remainingBalance > 0 && 
@@ -137,21 +132,17 @@ const Booking = () => {
         });
       } else if (paymentFilter === 'FULLY_PAID') {
         filtered = filtered.filter(b => {
-          // ✅ Walk-in bookings are ALWAYS fully paid
           if (b.isWalkin) return true;
-          
           if (b.paymentType === 'full') {
             return b.status === 'confirmed' || b.status === 'fully_paid';
           }
           return b.balancePaidAmount > 0 && (b.totalAmount - b.initialPaymentAmount - b.balancePaidAmount) <= 0;
         });
       } else if (paymentFilter === 'PARTIAL_ONLY') {
-        // ✅ Walk-in bookings are never partial
         filtered = filtered.filter(b => !b.isWalkin && b.paymentType === 'partial');
       }
     }
 
-    // Type filter
     if (typeFilter !== 'ALL') {
       if (typeFilter === 'ONLINE') {
         filtered = filtered.filter(b => b.isWalkin === false);
@@ -160,7 +151,6 @@ const Booking = () => {
       }
     }
 
-    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(b =>
@@ -177,7 +167,6 @@ const Booking = () => {
 
   }, [searchTerm, filterStatus, paymentFilter, typeFilter, bookings]);
 
-  // Helper to Trigger Modal
   const askConfirmation = (title, message, onConfirm, type = "primary") => {
     setConfirmConfig({
       isOpen: true,
@@ -192,14 +181,38 @@ const Booking = () => {
   };
 
   const executeConfirm = async (booking) => {
+    // ===== DEBUG =====
+    console.group('%c🔍 [executeConfirm] DEBUG', 'color: #f59e0b; font-weight: bold;');
+    console.log('Full booking object:', booking);
+    console.log('mongoId value:', booking?.mongoId);
+    console.log('mongoId type:', typeof booking?.mongoId);
+    const url = `https://wanderwaveph.onrender.com/api/bookings/${booking?.mongoId}/confirm`;
+    console.log('Request URL:', url);
+    console.log('Method: PUT');
+    // =================
+
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/confirm`, {
+      const res = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
-      
-      if (!res.ok) throw new Error();
+
+      // ===== DEBUG =====
+      console.log('Response status:', res.status, res.statusText);
+      console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+      // =================
+
+      const responseBody = await res.json().catch(() => ({ _parseError: true }));
+
+      // ===== DEBUG =====
+      console.log('Response body:', responseBody);
+      console.groupEnd();
+      // =================
+
+      if (!res.ok) {
+        throw new Error(responseBody?.message || `Server returned ${res.status} - ${res.statusText}`);
+      }
       
       await fetchBookings();
       toast.success(
@@ -209,8 +222,13 @@ const Booking = () => {
       );
       
     } catch (err) {
+      // ===== DEBUG =====
+      console.error('%c❌ [executeConfirm] FAILED:', 'color: red; font-weight: bold;', err.message);
+      console.groupEnd();
+      // =================
+
       toast.error(
-        'Failed to confirm booking. Please try again.',
+        err.message || 'Failed to confirm booking. Please try again.',
         "Confirmation Failed",
         4000
       );
@@ -229,14 +247,36 @@ const Booking = () => {
   };
 
   const executeCancel = async (booking) => {
+    // ===== DEBUG =====
+    console.group('%c🔍 [executeCancel] DEBUG', 'color: #3b82f6; font-weight: bold;');
+    console.log('Full booking object:', booking);
+    console.log('mongoId value:', booking?.mongoId);
+    const url = `https://wanderwaveph.onrender.com/api/bookings/${booking?.mongoId}/cancel`;
+    console.log('Request URL:', url);
+    console.log('Method: POST');
+    // =================
+
     setActionLoading(true);
     try {
-      const res = await fetch(`https://wanderwaveph.onrender.com/api/bookings/${booking.mongoId}/cancel`, {
-        method: 'PUT',
+      const res = await fetch(url, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      
-      if (!res.ok) throw new Error();
+
+      // ===== DEBUG =====
+      console.log('Response status:', res.status, res.statusText);
+      // =================
+
+      const responseBody = await res.json().catch(() => ({ _parseError: true }));
+
+      // ===== DEBUG =====
+      console.log('Response body:', responseBody);
+      console.groupEnd();
+      // =================
+
+      if (!res.ok) {
+        throw new Error(responseBody?.message || `Server returned ${res.status} - ${res.statusText}`);
+      }
       
       await fetchBookings();
       toast.warning(
@@ -246,8 +286,13 @@ const Booking = () => {
       );
       
     } catch (err) {
+      // ===== DEBUG =====
+      console.error('%c❌ [executeCancel] FAILED:', 'color: red; font-weight: bold;', err.message);
+      console.groupEnd();
+      // =================
+
       toast.error(
-        'Failed to cancel booking. Please try again.',
+        err.message || 'Failed to cancel booking. Please try again.',
         "Cancellation Failed",
         4000
       );
@@ -322,7 +367,6 @@ const Booking = () => {
       .filter(b => b.status === 'confirmed')
       .reduce((sum, b) => sum + b.totalAmount, 0);
 
-    // ✅ Exclude walk-in from pending balance count
     const pendingBalanceCount = bookings.filter(b => 
       !b.isWalkin &&
       b.paymentType === 'partial' && 
@@ -330,7 +374,6 @@ const Booking = () => {
       b.balancePaidAmount === 0
     ).length;
 
-    // ✅ Exclude walk-in from total pending balance
     const totalPendingBalance = bookings
       .filter(b => !b.isWalkin && b.paymentType === 'partial' && b.remainingBalance > 0)
       .reduce((sum, b) => sum + b.remainingBalance, 0);
@@ -493,7 +536,6 @@ const Booking = () => {
         </div>
       </main>
 
-      {/* Detail Modal */}
       <BookingDetailModal
         showModal={showModal}
         selectedBooking={selectedBooking}
@@ -511,7 +553,6 @@ const Booking = () => {
         RotateCcwIcon={RotateCcw}
       />
  
-      {/* Confirmation Modal Component */}
       <CustomConfirmModal 
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}

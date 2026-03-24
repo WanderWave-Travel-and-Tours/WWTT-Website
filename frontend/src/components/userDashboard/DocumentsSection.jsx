@@ -12,7 +12,9 @@ const DocumentsSection = ({
     removeFile, 
     submitDocuments, 
     isUploading, 
-    uploadProgress 
+    uploadProgress,
+    uploadedDocuments = [],
+    isLoadingDocuments = false
 }) => {
     const [draggingSection, setDraggingSection] = useState(null);
 
@@ -260,6 +262,79 @@ const DocumentsSection = ({
                     Ensure all documents are clear and legible before submitting
                 </p>
             </div>
+
+            {/* ── SUBMITTED DOCUMENTS GALLERY ── */}
+            {isLoadingDocuments ? (
+                <div className="ud-submitted-loading">
+                    <div className="ud-submitted-spinner"></div>
+                    <p>Loading submitted documents...</p>
+                </div>
+            ) : uploadedDocuments && uploadedDocuments.length > 0 ? (
+                <div className="ud-submitted-section">
+                    <div className="ud-submitted-header">
+                        <div className="ud-submitted-title-row">
+                            <div className="ud-submitted-icon-wrap">
+                                <Icons.Check />
+                            </div>
+                            <h3>Submitted Documents</h3>
+                        </div>
+                        <span className="ud-submitted-count">{uploadedDocuments.length} file{uploadedDocuments.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="ud-submitted-grid">
+                        {uploadedDocuments.map((doc, idx) => {
+                            const isImage = doc.mimetype?.startsWith('image/') || 
+                                            /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.filename || doc.originalName || '');
+                            const fileUrl = doc.url || `https://wanderwaveph.onrender.com/uploads/documents/${doc.filename}`;
+
+                            return (
+                                <div key={doc._id || idx} className="ud-submitted-card">
+                                    {isImage ? (
+                                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="ud-submitted-img-wrap">
+                                            <img 
+                                                src={fileUrl} 
+                                                alt={doc.originalName || doc.filename || `Document ${idx + 1}`}
+                                                className="ud-submitted-img"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextSibling.style.display = 'flex';
+                                                }}
+                                            />
+                                            <div className="ud-submitted-img-fallback" style={{ display: 'none' }}>
+                                                <Icons.File />
+                                            </div>
+                                            <div className="ud-submitted-img-overlay">
+                                                <span>View</span>
+                                            </div>
+                                        </a>
+                                    ) : (
+                                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="ud-submitted-file-wrap">
+                                            <div className="ud-submitted-file-icon">
+                                                <Icons.File />
+                                            </div>
+                                            <span className="ud-submitted-open-text">Open File</span>
+                                        </a>
+                                    )}
+                                    <div className="ud-submitted-card-info">
+                                        <span className="ud-submitted-name" title={doc.originalName || doc.filename}>
+                                            {doc.originalName || doc.filename || `Document ${idx + 1}`}
+                                        </span>
+                                        {doc.section && (
+                                            <span className="ud-submitted-section-tag">{doc.section}</span>
+                                        )}
+                                        {doc.size && (
+                                            <span className="ud-submitted-size">
+                                                {typeof doc.size === 'number' 
+                                                    ? (doc.size / 1024).toFixed(1) + ' KB' 
+                                                    : doc.size}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 };
