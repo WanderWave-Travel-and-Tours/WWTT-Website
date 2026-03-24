@@ -19,7 +19,6 @@ function PromoSection({ onBookNow }) {
   const [loading, setLoading]           = useState(true);
   const [copiedCode, setCopiedCode]     = useState(null);
   const [overlayOpen, setOverlayOpen]   = useState(false);
-  const [overlayClosing, setOverlayClosing] = useState(false);
   const autoRef                         = useRef(null);
   const animRef                         = useRef(null);
 
@@ -119,7 +118,7 @@ function PromoSection({ onBookNow }) {
   // ── Auto-advance ──
   const startAuto = useCallback(() => {
     clearInterval(autoRef.current);
-    autoRef.current = setInterval(() => navigate('next'), 5000);
+    autoRef.current = setInterval(() => navigate('next'), 8000);
   }, [navigate]);
 
   useEffect(() => {
@@ -166,18 +165,13 @@ function PromoSection({ onBookNow }) {
   const openOverlay = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    setOverlayClosing(false);
     setOverlayOpen(true);
   };
 
   const closeOverlay = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    setOverlayClosing(true);
-    setTimeout(() => {
-      setOverlayOpen(false);
-      setOverlayClosing(false);
-    }, 280);
+    setOverlayOpen(false);
   };
 
   if (loading || promos.length === 0) return null;
@@ -369,34 +363,47 @@ function PromoSection({ onBookNow }) {
     );
 
     const pp = getPrice(promo);
+    const isFlipped = isActive && overlayOpen;
+
     return (
-      <div className="promo-voucher-card">
-        <div className="card-image-side">
-          <img src={promo.image} alt="Promo" className="destination-bg-image"/>
-          <div className="image-overlay"/>
-        </div>
-        {/* Desktop: inline details */}
-        <div className="card-details-side">
-          {renderDetailsContent(promo, pp)}
-        </div>
-        {/* Mobile: See Details button over image */}
-        {isActive && (
-          <button className="mobile-see-details-btn" onClick={openOverlay}>
-            See Details
-          </button>
-        )}
-        {/* Mobile: Details overlay slides up */}
-        {isActive && overlayOpen && (
-          <div className={`mobile-details-overlay${overlayClosing ? ' closing' : ''}`}>
-            <button
-                className="mobile-overlay-close"
-                onClick={(e) => { e.stopPropagation(); e.preventDefault(); setOverlayClosing(true); setTimeout(() => { setOverlayOpen(false); setOverlayClosing(false); }, 280); }}
-              >✕</button>
+      <div className={`promo-voucher-card${isFlipped ? ' card-flipped' : ''}`}>
+        <div className="card-flip-inner">
+          {/* FRONT FACE */}
+          <div className="card-face card-face--front">
+            <div className="card-image-side">
+              <img src={promo.image} alt="Promo" className="destination-bg-image"/>
+              <div className="image-overlay"/>
+            </div>
+            {/* Desktop: inline details */}
             <div className="card-details-side">
               {renderDetailsContent(promo, pp)}
             </div>
+            {/* Mobile: See Details button over image */}
+            {isActive && (
+              <button className="mobile-see-details-btn" onClick={openOverlay}>
+                See Details
+              </button>
+            )}
           </div>
-        )}
+
+          {/* BACK FACE */}
+          <div className="card-face card-face--back">
+            <div className="back-face-header">
+              <h3 className="promo-title back-face-title">All Tours & Packages</h3>
+              <button
+                className="mobile-overlay-close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setOverlayOpen(false);
+                }}
+              >✕</button>
+            </div>
+            <div className="back-face-body">
+              {renderDetailsContent(promo, pp)}
+            </div>
+          </div>
+        </div>
       </div>
     );
   };

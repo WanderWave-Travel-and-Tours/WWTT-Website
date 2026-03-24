@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid #f1f5f9;
   background: white;
   flex-shrink: 0;
@@ -25,15 +25,15 @@
 .hc-header-accent {
   display: inline-block;
   width: 4px;
-  height: 26px;
+  height: 20px;
   background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
   border-radius: 2px;
-  margin-right: 12px;
+  margin-right: 10px;
   flex-shrink: 0;
 }
 
 .hc-header-title {
-  font-size: 1rem;
+  font-size: 0.82rem;
   font-weight: 900;
   color: #1e293b;
   letter-spacing: 0.04em;
@@ -43,10 +43,10 @@
 }
 
 .hc-current-badge {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   background: #dbeafe;
   color: #1e40af;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: 100px;
   font-weight: 700;
   white-space: nowrap;
@@ -55,8 +55,8 @@
 
 /* ── Location tag ────────────────────────────────────────────── */
 .hc-location-tag {
-  padding: 8px 20px;
-  font-size: 0.8rem;
+  padding: 6px 16px;
+  font-size: 0.75rem;
   color: #64748b;
   font-weight: 600;
   background: #f8fafc;
@@ -69,10 +69,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
-  gap: 14px;
+  padding: 32px 24px;
+  gap: 12px;
   color: #64748b;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
 }
 
@@ -115,7 +115,7 @@
 
 /* ── Hotel selector wrap — remove default HotelRoomSelector margin ── */
 .hc-selector-wrap {
-  padding: 16px 16px 0;
+  padding: 10px 12px 0;
   overflow-y: auto;
   flex: 1;
 }
@@ -135,19 +135,19 @@
 
 /* ── Selection summary ───────────────────────────────────────── */
 .hc-selection-summary {
-  margin: 12px 16px 0;
-  padding: 14px 16px;
+  margin: 8px 12px 0;
+  padding: 10px 12px;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border: 1px solid #bfdbfe;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .hc-summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
-  font-size: 0.85rem;
+  padding: 4px 0;
+  font-size: 0.78rem;
   border-bottom: 1px dashed #bfdbfe;
 }
 
@@ -171,34 +171,34 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin: 12px 16px 16px;
-  padding: 14px 16px;
+  gap: 8px;
+  margin: 8px 12px 12px;
+  padding: 10px 12px;
   background: #fffbeb;
   border: 1.5px solid #fde68a;
-  border-radius: 12px;
+  border-radius: 10px;
   flex-wrap: wrap;
 }
 
 .hc-save-bar-note {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   color: #92400e;
   font-weight: 600;
   flex: 1;
-  min-width: 120px;
+  min-width: 100px;
 }
 
 .hc-discard-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 5px;
+  padding: 6px 10px;
   background: white;
   border: 1.5px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 7px;
   color: #374151;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -218,18 +218,18 @@
 .hc-save-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  gap: 5px;
+  padding: 6px 12px;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 7px;
   color: white;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
 
 .hc-save-btn:hover:not(:disabled) {
@@ -289,6 +289,12 @@
 .hc-empty-hint {
   font-size: 0.8rem !important;
   color: #94a3b8 !important;
+}
+
+/* ── Hide the Note disclaimer inside the booking customizer context ── */
+/* hotelRoomSelector shows the note elsewhere (e.g. admin), hide it here only */
+.hc-selector-wrap .hrs-details > div:first-child {
+  display: none;
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */

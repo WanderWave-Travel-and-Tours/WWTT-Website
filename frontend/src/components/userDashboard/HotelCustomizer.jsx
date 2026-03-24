@@ -98,7 +98,9 @@ const HotelCustomizer = ({
   const initialRoomTypeRef = useRef(null); // snapshot used for Discard
 
   // ── Resolve hotel location from package destination ──────────
-  const hotelLocation = resolveHotelLocation(packageDestination);
+  // Falls back to the raw packageDestination so destinations not in
+  // DEST_HOTEL_MAP (e.g. international) can still fetch hotel data.
+  const hotelLocation = resolveHotelLocation(packageDestination) || packageDestination || null;
 
   // ── Pax count for rooms calculation ───────────────────────────
   const numberOfPax =
@@ -333,16 +335,51 @@ const HotelCustomizer = ({
   // RENDER
   // ─────────────────────────────────────────────────────────────
   if (!hotelLocation) {
+    const hasSavedHotel = booking?.selectedRoomType || booking?.hotelName;
     return (
       <div className="hc-container">
         <div className="hc-header">
           <span className="hc-header-accent" />
+          <Building2 size={22} color="#3b82f6" style={{ flexShrink: 0, marginRight: 8 }} />
           <h3 className="hc-header-title">HOTEL SELECTION</h3>
+          {booking?.selectedRoomType && (
+            <span className="hc-current-badge">
+              Current: {booking.selectedRoomType}
+            </span>
+          )}
         </div>
-        <div className="hc-empty">
-          <Building2 size={36} color="#cbd5e1" />
-          <p>Hotel selection is not available for this destination.</p>
-        </div>
+        {hasSavedHotel ? (
+          <div className="hc-selection-summary" style={{ margin: '12px' }}>
+            {booking?.selectedRoomType && (
+              <div className="hc-summary-row">
+                <span className="hc-summary-label">Selected Tier</span>
+                <span className="hc-summary-value">{booking.selectedRoomType}</span>
+              </div>
+            )}
+            {booking?.hotelName && (
+              <div className="hc-summary-row">
+                <span className="hc-summary-label">Hotel</span>
+                <span className="hc-summary-value">{booking.hotelName}</span>
+              </div>
+            )}
+            {booking?.numberOfRooms && (
+              <div className="hc-summary-row">
+                <span className="hc-summary-label">Rooms Needed</span>
+                <span className="hc-summary-value">
+                  {booking.numberOfRooms} room{booking.numberOfRooms > 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
+            <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic' }}>
+              Hotel selection editing is not available for this destination.
+            </p>
+          </div>
+        ) : (
+          <div className="hc-empty">
+            <Building2 size={36} color="#cbd5e1" />
+            <p>Hotel selection is not available for this destination.</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -352,6 +389,7 @@ const HotelCustomizer = ({
       {/* ── Header ── */}
       <div className="hc-header">
         <span className="hc-header-accent" />
+        <Building2 size={22} color="#3b82f6" style={{ flexShrink: 0, marginRight: 8 }} />
         <h3 className="hc-header-title">HOTEL SELECTION</h3>
         {booking?.selectedRoomType && (
           <span className="hc-current-badge">
@@ -440,22 +478,6 @@ const HotelCustomizer = ({
                   </span>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* ── Pending indicator (no own save bar — handled by unified bar in BookingCustomizer) ── */}
-          {hasUnsavedChanges && (
-            <div style={{
-              margin: '8px 16px 0',
-              padding: '8px 14px',
-              background: '#fffbeb',
-              border: '1.5px solid #fde68a',
-              borderRadius: '8px',
-              fontSize: '0.8rem',
-              color: '#92400e',
-              fontWeight: 600,
-            }}>
-              ⚠️ Hotel tier change pending — save below to confirm.
             </div>
           )}
 

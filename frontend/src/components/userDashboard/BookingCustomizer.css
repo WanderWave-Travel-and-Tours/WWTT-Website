@@ -759,6 +759,7 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
 /* Simplified Activity Item Styles */
 .pc-activity-item-simple {
   display: flex;
@@ -853,6 +854,7 @@
     padding: 10px 20px;
   }
 }
+
 /* ══════════════════════════════════════════════════════════
    BOOKING DETAILS CARD
    Shows Package Name, Duration, Travel Dates, Pax
@@ -897,14 +899,14 @@
 }
 
 .bc-booking-details-grid {
-  padding: 4px 0;
+  padding: 0;
 }
 
 .bc-booking-detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
+  padding: 8px 16px;
   border-bottom: 1px dashed #f1f5f9;
   gap: 16px;
 }
@@ -949,8 +951,8 @@
   .bc-booking-detail-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
-    padding: 10px 16px;
+    gap: 3px;
+    padding: 7px 14px;
   }
 
   .bc-booking-detail-value {
@@ -1007,6 +1009,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .bc-cancel-btn:hover:not(:disabled) {
@@ -1054,6 +1057,7 @@
 .pc-checkbox[data-editing="true"] {
   cursor: pointer !important;
 }
+
 /* ══════════════════════════════════════════════════════════
    BOOKING DETAILS EDIT INPUTS
    ══════════════════════════════════════════════════════════ */
@@ -1100,46 +1104,77 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   SAVE CHANGES BAR
-   Appears at bottom when there are unsaved inclusion changes
+   SAVE CHANGES BAR — FIXED ALIGNED LAYOUT
    ══════════════════════════════════════════════════════════ */
 
 .bc-save-bar {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-top: 20px;
-  padding: 16px 20px;
+  gap: 12px;
+  padding: 14px 16px;
   background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
   border: 2px solid #fbbf24;
   border-radius: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .bc-save-bar-note {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #92400e;
   font-weight: 500;
+  flex: 1;
+  min-width: 0;
 }
 
-@media (max-width: 480px) {
+/* Button group — always side by side */
+.bc-save-bar > div,
+.bc-save-bar-btns {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.bc-save-bar .bc-cancel-btn,
+.bc-save-bar .pc-save-btn,
+.bc-save-bar-btns .bc-cancel-btn,
+.bc-save-bar-btns .pc-save-btn {
+  width: auto !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* bottom save bar variant */
+.bc-save-bar-bottom {
+  margin: 0 16px 16px;
+}
+
+/* Only stack to two rows on very narrow screens — never stack buttons */
+@media (max-width: 420px) {
   .bc-save-bar {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .bc-save-bar-note {
+    width: 100%;
+    flex: unset;
     text-align: center;
   }
 
-  .bc-save-bar > div {
-    justify-content: center;
+  .bc-save-bar > div,
+  .bc-save-bar-btns {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
+
 /* ═══════════════════════════════════════════════════════════════════
    pc-* ALIASES
-   The JSX render uses pc-* class names (inherited from PackageCustomizer).
-   The CSS above defines bc-* names. These aliases map pc-* → bc-* styles
-   so both prefixes render identically without changing any JSX.
    ═══════════════════════════════════════════════════════════════════ */
 
 .pc-container {
@@ -1157,7 +1192,6 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
-/* Title row: accent bar + icon + title all inline, tight gap */
 .pc-title-row {
   display: flex;
   align-items: center;
@@ -1165,7 +1199,6 @@
   margin-bottom: 8px;
 }
 
-/* Orange left accent bar — same pattern as bc-booking-details-accent */
 .pc-title-accent {
   display: inline-block;
   width: 4px;
@@ -1208,24 +1241,23 @@
 }
 
 .pc-section {
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .pc-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
+  margin-bottom: 9px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #f1f5f9;
 }
 
-/* Section title with accent bar highlight */
 .pc-section-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 900;
   color: #1e293b;
   margin: 0;
@@ -1270,19 +1302,20 @@
 .pc-inclusions-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
 }
 
 .pc-inclusion-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px;
+  padding: 10px 12px;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
   transition: all 0.2s;
   background: white;
   cursor: pointer;
+  gap: 8px;
 }
 
 .pc-inclusion-item.checked {
@@ -1305,14 +1338,14 @@
 .pc-inclusion-main {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
 .pc-checkbox {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
   margin-top: 2px;
   flex-shrink: 0;
@@ -1332,19 +1365,19 @@
 .pc-inclusion-name {
   font-weight: 600;
   color: #1e293b;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 
 .pc-badge {
   display: inline-block;
-  padding: 3px 10px;
+  padding: 2px 6px;
   background: #dbeafe;
   color: #1e40af;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 700;
   border-radius: 10px;
   flex-shrink: 0;
@@ -1353,13 +1386,13 @@
 .pc-inclusion-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .pc-inclusion-price {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.85rem;
   white-space: nowrap;
 }
 
@@ -1379,6 +1412,30 @@
 .pc-remove-btn:hover {
   color: #dc2626;
   transform: scale(1.1);
+}
+
+.pc-see-all-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px 10px;
+  background: transparent;
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pc-see-all-btn:hover {
+  border-color: #f97316;
+  color: #f97316;
+  background: #fff7ed;
 }
 
 .pc-search-toggle {
@@ -1410,14 +1467,14 @@
 
 .pc-search-panel {
   margin-top: 16px;
-  padding: 20px;
+  padding: 14px;
   background: #f8fafc;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
 }
 
 .pc-info-box {
-  padding: 12px;
+  padding: 10px 12px;
   background: #dbeafe;
   border-left: 3px solid #3b82f6;
   border-radius: 6px;
@@ -1427,7 +1484,7 @@
 .pc-info-box p {
   margin: 0;
   color: #1e40af;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .pc-count {
@@ -1534,7 +1591,7 @@
 }
 
 .pc-activity-destination {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #64748b;
   margin-top: 4px;
 }
@@ -1550,7 +1607,6 @@
   .pc-inclusion-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
   }
 
   .pc-inclusion-main {
@@ -1562,8 +1618,34 @@
     justify-content: flex-end;
   }
 }
+
+@media (max-width: 640px) {
+  .pc-activity-item-simple {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .pc-activity-title {
+    font-size: 0.875rem;
+  }
+
+  .pc-activity-destination {
+    font-size: 0.72rem;
+  }
+
+  .pc-activity-actions-simple .pc-activity-price {
+    font-size: 0.9rem;
+    min-width: 80px;
+  }
+
+  .pc-activity-actions-simple .pc-add-btn {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════
-   CONTAINER — override max-width so it matches bd-card sizing
+   CONTAINER — override max-width
    ══════════════════════════════════════════════════════════════ */
 .pc-container {
   max-width: 100% !important;
@@ -1580,21 +1662,64 @@
 .bc-two-col-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+}
+
+/* When only hotel panel is shown (unsupported destination for inclusions) */
+.bc-two-col-layout.bc-hotel-only {
+  grid-template-columns: 1fr;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Inner two-col for hotel-only mode: cards left, overview+summary right */
+.bc-hotel-only-inner {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
   align-items: start;
+  gap: 0;
+  min-height: 400px;
+}
+
+.bc-hotel-only-cards {
+  border-right: 1px solid #e2e8f0;
+  min-width: 0;
+}
+
+.bc-hotel-only-sidebar {
+  background: #f8fafc;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 20px;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .bc-hotel-only-inner {
+    grid-template-columns: 1fr;
+  }
+  .bc-hotel-only-cards {
+    border-right: none;
+    border-bottom: 1px solid #f1f5f9;
+  }
 }
 
 .bc-left-panel {
   padding: 0;
   border-right: 1px solid #f1f5f9;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .bc-right-panel {
   background: #f8fafc;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Padded wrapper for all content below the flush header in the left column */
 .bc-left-content {
   padding: 20px;
 }
@@ -1615,7 +1740,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LIVE PRICE SUMMARY — enhanced with balance tracking
+   LIVE PRICE SUMMARY
    ══════════════════════════════════════════════════════════════ */
 .bc-price-summary {
   margin: 0 0 16px 0;
@@ -1623,7 +1748,6 @@
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border: 1.5px solid #86efac;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08);
 }
 
 .bc-price-summary-header {
@@ -1718,8 +1842,236 @@
   text-align: center;
 }
 
-/* Price summary when placed inside the right panel */
 .bc-price-summary-right {
-  margin: 0 16px 16px 16px;
-  border-top: 1px solid #d1fae5;
+  margin: 0;
+  border-top: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: none;
+}
+
+/* Save bar attached to bottom of price summary */
+.bc-price-summary-right + .bc-save-bar.bc-save-bar-bottom {
+  margin: 0;
+  border-radius: 0 0 12px 12px;
+  border: 1.5px solid #86efac;
+  border-top: 1px solid #86efac;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.bc-price-summary-right + .bc-save-bar.bc-save-bar-bottom .bc-save-bar-note {
+  color: #065f46;
+}
+
+.bc-price-summary-right + .bc-save-bar.bc-save-bar-bottom .bc-cancel-btn {
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+
+.bc-price-summary-right + .bc-save-bar.bc-save-bar-bottom .bc-cancel-btn:hover:not(:disabled) {
+  background: #d1fae5;
+  border-color: #34d399;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HOTEL OVERVIEW CARD (inside hotel-only sidebar)
+   ══════════════════════════════════════════════════════════════ */
+.bc-hotel-overview {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+}
+
+.bc-hotel-overview::before {
+  content: '🏨 Hotel Selection';
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #bfdbfe;
+}
+
+.bc-hotel-overview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 0.78rem;
+  border-bottom: 1px dashed #bfdbfe;
+  gap: 8px;
+}
+
+.bc-hotel-overview-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.bc-hotel-overview-label {
+  color: #059669;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bc-hotel-overview-value {
+  color: #064e3b;
+  font-weight: 700;
+  text-align: right;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.bc-hotel-overview-unsaved {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 1px 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+/* ── Hide duplicate hotel selection summary inside hotel-only cards column ── */
+/* The sidebar already shows Selected Tier / Hotel / Rooms Needed */
+.bc-hotel-only-cards .hc-selection-summary {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MERGED HOTEL OVERVIEW + PRICE SUMMARY CARD
+   ══════════════════════════════════════════════════════════════ */
+.bc-merged-summary {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1.5px solid #86efac;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* ── Hotel overview section (same green as price summary) ── */
+.bc-merged-hotel-section {
+  background: transparent;
+  padding: 12px 14px 10px;
+}
+
+/* ── Price summary section ── */
+.bc-merged-price-section {
+  padding: 0 14px 12px;
+  background: transparent;
+}
+
+/* ── Section label (shared) ── */
+.bc-merged-section-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+
+.bc-merged-hotel-section .bc-merged-section-label {
+  color: #065f46;
+  border-bottom-color: #86efac;
+}
+
+.bc-merged-price-section .bc-merged-section-label {
+  color: #065f46;
+  border-bottom-color: #86efac;
+}
+
+/* ── Divider between hotel and price sections ── */
+.bc-merged-divider {
+  height: 1px;
+  background: #86efac;
+  margin: 0 14px;
+}
+
+/* ── Save bar inside merged card ── */
+.bc-merged-save-bar {
+  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+  border-top: 1.5px solid #fbbf24;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bc-merged-save-note {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #92400e;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bc-merged-save-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.bc-merged-save-btns .bc-cancel-btn,
+.bc-merged-save-btns .pc-save-btn {
+  padding: 5px 10px !important;
+  font-size: 0.72rem !important;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .bc-merged-save-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .bc-merged-save-note {
+    text-align: center;
+    white-space: normal;
+  }
+  .bc-merged-save-btns {
+    justify-content: center;
+  }
+}
+
+/* ── Hotel info rows inside normal two-col price summary ── */
+.bc-hotel-info-row {
+  color: #047857;
+}
+
+.bc-hotel-info-row > span:first-child {
+  color: #059669;
+  font-weight: 600;
+}
+
+.bc-hotel-info-divider {
+  height: 1px;
+  background: #86efac;
+  margin: 4px 0 10px;
+}
+
+/* ── Hide hc-selection-summary in normal two-col mode (info already in price summary) ── */
+.bc-right-panel .hc-selection-summary {
+  display: none;
 }

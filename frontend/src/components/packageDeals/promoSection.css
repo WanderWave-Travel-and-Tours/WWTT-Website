@@ -109,6 +109,23 @@
   transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), box-shadow 0.5s ease;
 }
 
+/* ── CARD FLIP WRAPPER (desktop: transparent passthrough) ── */
+.card-flip-inner {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+.card-face--front {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+.card-face--back {
+  display: none;
+}
+
 /* ── IMAGE SIDE — exact fit for 967:1200 portrait ── */
 .card-image-side {
   flex: 0 0 290px;
@@ -520,17 +537,183 @@
   .promo-slide--next { transform: translateX(74%)  translateY(6px) scale(0.86); }
   .promo-track { padding: 16px 0 22px; }
 
-  /* Fixed aspect-ratio card — exactly fits 967×1200 image */
+  /* Card itself is transparent — faces own their backgrounds */
   .promo-voucher-card, .coming-soon-card {
     flex-direction: column;
     height: auto;
     aspect-ratio: 967 / 1200;
-    max-height: 72vh; /* never taller than viewport */
+    max-height: 72vh;
     position: relative;
+    overflow: visible;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Perspective on the slide wrapper so card bg never shows during flip */
+  .promo-slide--active {
+    perspective: 1200px;
+  }
+
+  /* ── 3D CARD FLIP ── */
+  .card-flip-inner {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+  }
+
+  .promo-voucher-card.card-flipped .card-flip-inner {
+    transform: rotateY(180deg);
+  }
+
+  /* Both faces: absolute, fills card, clipped to border-radius */
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .card-face--front {
+    display: flex !important;
+    box-shadow: 0 28px 72px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  /* Back face: rotated 180deg — revealed on flip */
+  .card-face--back {
+    display: flex !important;
+    flex-direction: column;
+    transform: rotateY(180deg);
+    background: linear-gradient(160deg, #001020 0%, #002050 100%);
+    box-shadow: 0 28px 72px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.2);
     overflow: hidden;
   }
 
-  /* Image fills entire card as background */
+  /* Dot pattern on back face */
+  .card-face--back::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 18px 18px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Orange glow corner on back face */
+  .card-face--back::after {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(255,140,0,0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── BACK FACE STRUCTURE ── */
+  .back-face-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 12px 18px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    gap: 10px;
+  }
+
+  .back-face-title {
+    font-size: 1.1rem !important;
+    line-height: 1.25;
+    margin: 0;
+    flex: 1;
+  }
+
+  /* Close button — inline with title in header */
+  .card-face--back .mobile-overlay-close {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    z-index: 10;
+    flex-shrink: 0;
+    pointer-events: auto;
+    width: 34px;
+    height: 34px;
+  }
+
+  /* Scrollable body below header */
+  .back-face-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 18px 18px;
+    justify-content: space-between;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  }
+
+  /* Details content inside back face body */
+  .card-face--back .card-details-side {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 18px 18px;
+    background: transparent;
+    justify-content: space-between;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  }
+
+  /* Remove duplicate dot/glow decorations on details-side inside back face */
+  .card-face--back .card-details-side::before,
+  .card-face--back .card-details-side::after { display: none; }
+
+  /* Hide the promo-content title block inside body (title is now in header) */
+  .back-face-body .promo-title,
+  .card-face--back .card-details-side .promo-title { display: none; }
+
+  .card-face--back .promo-header { display: none; }
+  .card-face--back .promo-content { gap: 5px; }
+  .card-face--back .promo-description {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    color: rgba(255,255,255,0.72);
+    margin-top: 2px;
+  }
+  .card-face--back .promo-badges-row { gap: 6px; flex-wrap: wrap; }
+  .card-face--back .deal-type-badge { font-size: 0.6rem; padding: 5px 11px; }
+  .card-face--back .discount-badge { font-size: 0.9rem; padding: 5px 11px; }
+  .card-face--back .promo-perks-row { gap: 5px; }
+  .card-face--back .promo-perk { font-size: 0.65rem; padding: 5px 10px; }
+  .card-face--back .promo-validity-strip { padding: 8px 12px; gap: 8px; }
+  .card-face--back .validity-text { font-size: 0.68rem; }
+  .card-face--back .validity-date { font-size: 0.65rem; padding: 3px 8px; }
+  .card-face--back .promo-min-pax-notice { padding: 8px 12px; gap: 8px; }
+  .card-face--back .promo-min-pax-text { font-size: 0.67rem; }
+  .card-face--back .promo-code-box { padding: 10px 10px 10px 14px; }
+  .card-face--back .code-label { font-size: 0.6rem; margin-bottom: 8px; }
+  .card-face--back .code-value { font-size: 1rem; letter-spacing: 2.5px; }
+  .card-face--back .copy-btn { width: 46px; }
+
+  /* Image fills entire front face as background */
   .card-image-side {
     position: absolute; inset: 0;
     flex: none; width: 100%; height: 100%;
@@ -552,14 +735,7 @@
   }
   .coming-soon-details { display: none; }
   .mobile-see-details-btn  { display: flex !important; }
-  .mobile-details-overlay  { display: flex !important; }
   .carousel-dots { bottom: -42px; }
-
-  /* Min pax notice in mobile overlay */
-  .mobile-details-overlay .promo-min-pax-notice {
-    padding: 6px 10px;
-  }
-  .mobile-details-overlay .promo-min-pax-text { font-size: 0.65rem; }
 }
 
 /* ── MOBILE SMALL (481–600px) ── */
@@ -567,18 +743,20 @@
   .promo-voucher-card, .coming-soon-card {
     aspect-ratio: 4 / 4.5;
     max-height: 68vh;
+    overflow: visible;
   }
 }
 
 /* ── MOBILE XS (≤480px) ── */
 @media (max-width: 480px) {
-  .promo-slide--active { width: 92%; }
+  .promo-slide--active { width: 92%; perspective: 1200px; }
   .promo-slide--prev, .promo-slide--next { width: 92%; left: 4%; }
   .promo-slide--prev { transform: translateX(-72%) translateY(5px) scale(0.85); }
   .promo-slide--next { transform: translateX(72%)  translateY(5px) scale(0.85); }
   .promo-voucher-card, .coming-soon-card {
     aspect-ratio: 4 / 5;
     max-height: 65vh;
+    overflow: visible;
   }
   .mobile-see-details-btn {
     padding: 9px 22px;
@@ -594,6 +772,11 @@
     min-height: 180px;
   }
   .mobile-see-details-btn { bottom: 12px; padding: 8px 20px; font-size: 0.75rem; }
+  .card-face--back .card-details-side { padding: 48px 14px 12px; gap: 5px; }
+  .card-face--back .promo-title { font-size: 0.95rem; }
+  .card-face--back .promo-description { font-size: 0.7rem; display: block; -webkit-line-clamp: unset; overflow: visible; }
+  .card-face--back .promo-min-pax-text { font-size: 0.6rem; }
+  .card-face--back .code-value { font-size: 0.88rem; letter-spacing: 1.5px; }
   .mobile-details-overlay .card-details-side { padding: 14px 16px 14px; gap: 7px; }
   .mobile-details-overlay .promo-title { font-size: 1rem; }
   .mobile-details-overlay .promo-description { -webkit-line-clamp: 2; font-size: 0.75rem; }

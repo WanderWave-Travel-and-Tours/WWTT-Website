@@ -188,8 +188,14 @@ const BookingRightForm = ({
       }
       
       if (savedState.formData.selectedFlight) {
-        setSelectedFlight(savedState.formData.selectedFlight);
-        setBookingWithAirfare(true);
+        const savedFlight = savedState.formData.selectedFlight;
+        // ✅ Only restore if the flight was saved for THIS specific package
+        const flightPackageId = savedFlight._savedForPackage;
+        const currentPackageId = (pkg._id || pkg.id || '').toString();
+        if (!flightPackageId || flightPackageId.toString() === currentPackageId) {
+          setSelectedFlight(savedFlight);
+          setBookingWithAirfare(true);
+        }
       }
       
       if (savedState.formData.selectedRoomType) {
@@ -244,7 +250,8 @@ if (savedState.formData.appliedPromo) {
         // ✅ Never persist quantities for solo/joiners — always resets to default 1 on next visit
         quantities: isSoloJoiners ? { adult: 1 } : quantities,
         currentMonth: currentMonth.toISOString(),
-        selectedFlight,
+        // ✅ Tag flight with package ID so it is never restored for a different package
+        selectedFlight: selectedFlight ? { ...selectedFlight, _savedForPackage: (pkg._id || pkg.id || '').toString() } : null,
         selectedRoomType,
         passengers,
         appliedPromo,
@@ -331,6 +338,7 @@ if (savedState.formData.appliedPromo) {
       const data = JSON.parse(bookingData);
       
       if (data.selectedFlight && data.packageId === pkg._id) {
+        // ✅ Flight was selected — apply it and open booking modal
         setSelectedFlight(data.selectedFlight);
         setBookingWithAirfare(true);
         setSelectedDate(data.selectedDate);
@@ -344,6 +352,12 @@ if (savedState.formData.appliedPromo) {
           setPassengerStep(1);
           setShowModal(true);
         }, 500);
+      } else if (!data.selectedFlight && data.packageId === pkg._id) {
+        // ✅ User went back from /flights without selecting a flight — restore form state cleanly
+        if (data.selectedDate) setSelectedDate(data.selectedDate);
+        if (data.quantities) setQuantities(data.quantities);
+        if (data.currentMonth) setCurrentMonth(new Date(data.currentMonth));
+        sessionStorage.removeItem('pendingBookingData');
       }
     }
   }, [pkg._id]);
@@ -830,7 +844,7 @@ const handleApplyPromo = async () => {
       selectedDate,
       quantities,
       currentMonth: currentMonth.toISOString(),
-      selectedFlight,
+      selectedFlight: selectedFlight ? { ...selectedFlight, _savedForPackage: (pkg._id || pkg.id || '').toString() } : null,
       selectedRoomType,
       passengers,
       appliedPromo,
@@ -1186,113 +1200,7 @@ const handleNextPassenger = async (e) => {
         <br></br>
       </div>
 
-      {!timerExpired && timeRemaining !== null && (
-        <div style={{
-          background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          marginBottom: '20px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-          border: '2px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          <div style={{ 
-            textAlign: 'center',
-            fontSize: '0.95rem',
-            fontWeight: '700',
-            marginBottom: '12px',
-            letterSpacing: '0.5px',
-            textTransform: 'uppercase'
-          }}>
-            ⚡ HURRY - Limited Time Offer!
-          </div>
 
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            gap: '8px',
-            marginBottom: '12px'
-          }}>
-            <div style={{
-              background: 'white',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              minWidth: '70px',
-              textAlign: 'center',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-            }}>
-              <div style={{ 
-                fontSize: '1.8rem', 
-                fontWeight: '800',
-                color: '#ef4444',
-                lineHeight: '1',
-                fontFamily: 'monospace'
-              }}>
-                {Math.floor(timeRemaining / 60000).toString().padStart(2, '0')}
-              </div>
-              <div style={{
-                fontSize: '0.65rem',
-                color: '#6b7280',
-                marginTop: '4px',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                MINUTES
-              </div>
-            </div>
-
-            <div style={{
-              fontSize: '1.5rem',
-              fontWeight: '800',
-              color: 'white',
-              lineHeight: '1'
-            }}>
-              :
-            </div>
-
-            <div style={{
-              background: 'white',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              minWidth: '70px',
-              textAlign: 'center',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-            }}>
-              <div style={{ 
-                fontSize: '1.8rem', 
-                fontWeight: '800',
-                color: '#ef4444',
-                lineHeight: '1',
-                fontFamily: 'monospace'
-              }}>
-                {Math.floor((timeRemaining % 60000) / 1000).toString().padStart(2, '0')}
-              </div>
-              <div style={{
-                fontSize: '0.65rem',
-                color: '#6b7280',
-                marginTop: '4px',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                SECONDS
-              </div>
-            </div>
-          </div>
-
-          <div style={{ 
-            textAlign: 'center',
-            fontSize: '0.85rem',
-            opacity: 0.9,
-            color: '#fbbf24',
-            fontWeight: '600'
-          }}>
-            💰 Save ₱{(originalPriceWithMarkup - basePackageTotal).toLocaleString()}!
-          </div>
-        </div>
-      )}
 
       <div className="brf-calendar-wrapper">
         <div className="brf-calendar-box">

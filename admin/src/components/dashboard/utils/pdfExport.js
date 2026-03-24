@@ -355,7 +355,7 @@ export const exportToPDF = (stats, trendData, topPackages, allPackages = [], pag
         const pvBooking  = pv.bookingPageViews   || 0;
         const pvFlights  = pv.flightsPageViews   || 0;
         const pvServices = pv.servicesPageViews  || 0;
-        const pvRate     = pvPackages > 0 ? ((pvBooking / pvPackages) * 100).toFixed(1) : '0.0';
+        const pvRate     = pvBooking > 0 ? ((stats.confirmedBookings || 0) / pvBooking * 100).toFixed(1) : '0.0';
         const pvTop      = pv.topViewedPackages  || [];
 
         autoTable(doc, {
@@ -392,7 +392,7 @@ export const exportToPDF = (stats, trendData, topPackages, allPackages = [], pag
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(60, 60, 60);
-        doc.text('View-to-Book Rate (Booking views / Package views):', 14, yPos);
+        doc.text('View-to-Book Rate (Confirmed Bookings / Booking Page Views):', 14, yPos);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(139, 92, 246);
         doc.text(pvRate + '%', 120, yPos);

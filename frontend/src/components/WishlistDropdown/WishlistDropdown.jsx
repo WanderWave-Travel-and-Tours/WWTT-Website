@@ -154,7 +154,11 @@ function WishlistDropdown({ isOpen, onClose, currentUser, wishlistCount, onWishl
     
     const packageCode = item.packageDetails.package_code || item.promo_id;
     onClose();
-    
+
+    // ✅ Pass full packageDetails (already fetched from /api/packages/:id inside this
+    // component) as state so the booking page renders immediately without needing
+    // a second fetch. The UI fix was in BookingLeftColumn.css (overflow: visible),
+    // not in removing state.
     navigate(`/packages/${packageCode}`, {
       state: {
         packageData: {
