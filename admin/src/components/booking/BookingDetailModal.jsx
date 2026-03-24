@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, CheckCircle, AlertCircle, XCircle, Check, DollarSign, Calendar, User, Mail, Wallet, CreditCard, FileText, Smartphone, Store, Image, File } from 'lucide-react';
 import './BookingDetailModal.css'; 
 import VoucherPreviewModal from './VoucherPreviewModal';
 
@@ -25,6 +25,34 @@ export const BookingDetailModal = ({
 }) => {
     const [showVoucherPreview, setShowVoucherPreview] = useState(false);
     const [voucherData, setVoucherData] = useState(null);
+    const [submittedDocs, setSubmittedDocs] = useState([]);
+    const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+
+    // Fetch submitted documents whenever the modal opens for a booking
+    useEffect(() => {
+        if (!showModal || !selectedBooking?.mongoId) {
+            setSubmittedDocs([]);
+            return;
+        }
+        const fetchDocs = async () => {
+            setIsLoadingDocs(true);
+            try {
+                const res = await fetch(`http://localhost:5000/api/documents/inquiry/${selectedBooking.mongoId}`);
+                const data = await res.json();
+                if (data.success) {
+                    setSubmittedDocs(data.documents || []);
+                } else {
+                    setSubmittedDocs([]);
+                }
+            } catch (err) {
+                console.error('Error fetching booking documents:', err);
+                setSubmittedDocs([]);
+            } finally {
+                setIsLoadingDocs(false);
+            }
+        };
+        fetchDocs();
+    }, [showModal, selectedBooking?.mongoId]);
 
     if (!showModal || !selectedBooking) return null;
 
@@ -158,6 +186,7 @@ export const BookingDetailModal = ({
 
     return (
         <>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             <div className="modal-overlay" onClick={closeModal}>
                 <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                     <div className="modal-header">
@@ -421,6 +450,117 @@ export const BookingDetailModal = ({
                                 </div>
                             </div>
                         )}
+
+                        {/* SUBMITTED DOCUMENTS */}
+                        <div className="cnm-card">
+                            <div className="cnm-card-header">
+                                <h3 className="cnm-card-title">Submitted Documents</h3>
+                                {!isLoadingDocs && (
+                                    <span className="cnm-badge cnm-badge-amber">
+                                        {submittedDocs.length} file{submittedDocs.length !== 1 ? 's' : ''}
+                                    </span>
+                                )}
+                            </div>
+
+                            {isLoadingDocs ? (
+                                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                                    <div style={{
+                                        width: '32px', height: '32px', border: '3px solid #e2e8f0',
+                                        borderTop: '3px solid #f97316', borderRadius: '50%',
+                                        animation: 'spin 0.8s linear infinite', margin: '0 auto 8px'
+                                    }} />
+                                    <p style={{ margin: 0, fontSize: '14px' }}>Loading documents...</p>
+                                </div>
+                            ) : submittedDocs.length === 0 ? (
+                                <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
+                                    <FileText size={32} style={{ marginBottom: '8px', opacity: 0.4 }} />
+                                    <p style={{ margin: 0, fontSize: '14px' }}>No documents submitted yet.</p>
+                                </div>
+                            ) : (
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                                    gap: '12px',
+                                    padding: '4px 0'
+                                }}>
+                                    {submittedDocs.map((doc, idx) => {
+                                        // Correct field names from Document model:
+                                        // fileUrl, fileName, originalName, fileType, fileSize, section
+                                        const fileUrl = doc.fileUrl || '#';
+                                        const isImage = doc.fileType?.startsWith('image/') ||
+                                            /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.originalName || doc.fileName || '');
+
+                                        return (
+                                            <a
+                                                key={doc._id || idx}
+                                                href={fileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                                    border: '1px solid #e2e8f0', borderRadius: '10px',
+                                                    overflow: 'hidden', textDecoration: 'none',
+                                                    background: '#f8fafc', transition: 'box-shadow 0.2s',
+                                                    cursor: 'pointer'
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+                                                onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                                            >
+                                                {isImage ? (
+                                                    <div style={{ width: '100%', height: '90px', overflow: 'hidden', background: '#e2e8f0', position: 'relative' }}>
+                                                        <img
+                                                            src={fileUrl}
+                                                            alt={doc.originalName || doc.fileName || `Doc ${idx + 1}`}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                            onError={e => {
+                                                                e.target.style.display = 'none';
+                                                                e.target.nextSibling.style.display = 'flex';
+                                                            }}
+                                                        />
+                                                        <div style={{
+                                                            display: 'none', width: '100%', height: '100%',
+                                                            alignItems: 'center', justifyContent: 'center',
+                                                            position: 'absolute', top: 0, left: 0, background: '#f1f5f9'
+                                                        }}>
+                                                            <Image size={28} color="#94a3b8" />
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{
+                                                        width: '100%', height: '90px', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center', background: '#f1f5f9'
+                                                    }}>
+                                                        <File size={32} color="#64748b" />
+                                                    </div>
+                                                )}
+                                                <div style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}>
+                                                    <p style={{
+                                                        margin: '0 0 2px 0', fontSize: '11px', fontWeight: '600',
+                                                        color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}>
+                                                        {doc.originalName || doc.fileName || `Document ${idx + 1}`}
+                                                    </p>
+                                                    {doc.section && (
+                                                        <span style={{
+                                                            fontSize: '10px', color: '#f97316', fontWeight: '600',
+                                                            background: '#fff7ed', padding: '1px 6px', borderRadius: '4px'
+                                                        }}>
+                                                            {doc.section}
+                                                        </span>
+                                                    )}
+                                                    {doc.fileSize && (
+                                                        <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
+                                                            {(doc.fileSize / 1024).toFixed(1)} KB
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </a>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* FOOTER ACTIONS */}
