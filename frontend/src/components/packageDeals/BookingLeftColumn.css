@@ -212,6 +212,10 @@
   flex-shrink: 0;
 }
 
+.blc-icon--active {
+  color: #f97316;
+}
+
 /* --- Content Cards --- */
 .blc-card {
   background: white;

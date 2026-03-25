@@ -22,7 +22,8 @@ const BookingRightForm = ({
   currency = 'PHP',
   exchangeRate = 58,
   timerExpired: timerExpiredFromParent = false,
-  onPaxChange = null
+  onPaxChange = null,
+  onFlightChange = null,
 }) => {
   const navigate = useNavigate();
   const { code } = useParams();
@@ -194,6 +195,7 @@ const BookingRightForm = ({
         const currentPackageId = (pkg._id || pkg.id || '').toString();
         if (!flightPackageId || flightPackageId.toString() === currentPackageId) {
           setSelectedFlight(savedFlight);
+          if (onFlightChange) onFlightChange(savedFlight);
           setBookingWithAirfare(true);
         }
       }
@@ -266,6 +268,23 @@ if (savedState.formData.appliedPromo) {
     if (!userIpAddress || !pkg._id) return;
 
     const timerKey = `timer_${pkg._id}_${userIpAddress}`;
+    const lastResetKey = `lastReset_${pkg._id}_${userIpAddress}`;
+
+    // ✅ FIX: Run daily reset check FIRST before reading storedTimer.
+    // This prevents a stale timerKey from a previous day from immediately
+    // triggering timerExpired=true before the daily reset interval has a chance to run.
+    const today = new Date().toDateString();
+    const lastReset = localStorage.getItem(lastResetKey);
+    if (lastReset !== today) {
+      localStorage.removeItem(timerKey);
+      localStorage.setItem(lastResetKey, today);
+      const startTime = Date.now();
+      localStorage.setItem(timerKey, JSON.stringify({ startTime }));
+      setTimeRemaining(900000);
+      setTimerExpired(false);
+      return; // ✅ Already initialized — no need to read storedTimer below
+    }
+
     const storedTimer = localStorage.getItem(timerKey);
 
     if (storedTimer) {
@@ -325,6 +344,7 @@ if (savedState.formData.appliedPromo) {
       }
     };
 
+    // ✅ Run immediately on mount (in case setInterval hasn't fired yet)
     checkDailyReset();
     const dailyCheck = setInterval(checkDailyReset, 60000);
 
@@ -340,6 +360,7 @@ if (savedState.formData.appliedPromo) {
       if (data.selectedFlight && data.packageId === pkg._id) {
         // ✅ Flight was selected — apply it and open booking modal
         setSelectedFlight(data.selectedFlight);
+        if (onFlightChange) onFlightChange(data.selectedFlight);
         setBookingWithAirfare(true);
         setSelectedDate(data.selectedDate);
         setQuantities(data.quantities);
@@ -893,6 +914,7 @@ const handleApplyPromo = async () => {
 
   const handleRemoveFlight = () => {
     setSelectedFlight(null);
+    if (onFlightChange) onFlightChange(null);
     setBookingWithAirfare(false);
     toast.success('Flight removed from package');
   };
@@ -1866,6 +1888,7 @@ const handleNextPassenger = async (e) => {
       </div>
 
       {/* ✅ Package Preview Modal - shows before booking */}
+            {/* ✅ Package Preview Modal - shows before booking */}
       <PackagePreviewModal
         isOpen={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}
@@ -1873,6 +1896,7 @@ const handleNextPassenger = async (e) => {
         pkg={pkg}
         currency={currency}
         exchangeRate={exchangeRate}
+        
         // ✅ Pass computed prices from BookingRightForm so modal reflects exact same totals
         computedPackageTotal={convertedPackageTotal}
         computedOriginalPrice={convertedOriginalPriceWithMarkup}
@@ -1881,6 +1905,11 @@ const handleNextPassenger = async (e) => {
         appliedPromo={appliedPromo}
         paxCount={totalPassengers}
         timerExpired={timerExpired}
+
+        // ✅ CRITICAL FIX: Pass latest customizationData to modal
+        //     Para mag-update ang Hotel icon kapag inalis sa customizer
+        customizationData={customizationData}
+        selectedFlight={selectedFlight}
       />
 
       <BookingFormModal 

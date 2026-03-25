@@ -1,6 +1,6 @@
 // src/components/PackageDeals/packageCard.jsx - WITH AUTOMATIC TIMER-BASED PRICING
-import React from 'react';
-import { Heart, Star, MapPin, Calendar, Users, ChevronRight, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Heart, Star, MapPin, Calendar, Users, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageHelper';
 import './packageCard.css';
 
@@ -119,30 +119,54 @@ const hasDurationInTitle = (title) => {
   return /(\d+D\d+N)/i.test(title);
 };
 
-// ✅ SVG Rubber Stamp — circular badge style
+// ✅ SVG Rubber Stamp — circular badge style, auto-adjusts font size for long titles
 const RubberStamp = ({ text }) => {
   const cleanText = text.replace(
     /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]|[\u{2B00}-\u{2BFF}]|[\u{FE00}-\u{FEFF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|\u200d|\uFE0F/gu,
     ''
   ).trim().toUpperCase();
 
-  // Split into max 2 lines smartly
   const words = cleanText.split(/[\s\/]+/).filter(Boolean);
-  let line1 = '';
-  let line2 = '';
 
-  if (words.length === 1) {
-    line1 = words[0];
-  } else {
+  // ✅ Split into up to 3 lines for long titles, 2 lines for short
+  let lines = [];
+  if (words.length <= 2) {
+    // 1–2 words: keep on 1 or 2 lines as before
+    if (words.length === 1) {
+      lines = [words[0]];
+    } else {
+      lines = [words[0], words[1]];
+    }
+  } else if (words.length <= 4) {
+    // 3–4 words: split into 2 balanced lines
     const mid = Math.ceil(words.length / 2);
-    line1 = words.slice(0, mid).join(' ');
-    line2 = words.slice(mid).join(' ');
+    lines = [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+  } else {
+    // 5+ words: split into 3 lines
+    const third = Math.ceil(words.length / 3);
+    lines = [
+      words.slice(0, third).join(' '),
+      words.slice(third, third * 2).join(' '),
+      words.slice(third * 2).join(' '),
+    ].filter(Boolean);
   }
 
-  const R = 38;   // circle radius
-  const size = R * 2 + 16; // total SVG size with padding
+  const R = 38;
+  const size = R * 2 + 16;
   const cx = size / 2;
   const cy = size / 2;
+
+  // ✅ Auto font size: shrink based on longest line character count
+  const maxLineLen = Math.max(...lines.map(l => l.length));
+  let fontSize = 10;
+  if (maxLineLen > 14) fontSize = 7;
+  else if (maxLineLen > 11) fontSize = 8;
+  else if (maxLineLen > 8)  fontSize = 9;
+
+  // ✅ Vertical spacing: tighter for 3 lines
+  const lineHeight = lines.length === 3 ? 11 : 15;
+  const totalHeight = (lines.length - 1) * lineHeight;
+  const startY = cy - totalHeight / 2;
 
   return (
     <svg
@@ -161,33 +185,23 @@ const RubberStamp = ({ text }) => {
       {/* Inner solid border */}
       <circle cx={cx} cy={cy} r={R - 5} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
 
-      {/* Text — 1 or 2 lines, always centered */}
-      {line2 ? (
-        <>
-          <text
-            x={cx} y={cy - 7}
-            textAnchor="middle" dominantBaseline="central"
-            fill="#ffffff" fontSize="10" fontWeight="900"
-            fontFamily="'Arial Black', Arial, sans-serif"
-            letterSpacing="1"
-          >{line1}</text>
-          <text
-            x={cx} y={cy + 8}
-            textAnchor="middle" dominantBaseline="central"
-            fill="#ffffff" fontSize="10" fontWeight="900"
-            fontFamily="'Arial Black', Arial, sans-serif"
-            letterSpacing="1"
-          >{line2}</text>
-        </>
-      ) : (
+      {/* Text lines — auto-sized, vertically centered */}
+      {lines.map((line, i) => (
         <text
-          x={cx} y={cy}
-          textAnchor="middle" dominantBaseline="central"
-          fill="#ffffff" fontSize="10" fontWeight="900"
+          key={i}
+          x={cx}
+          y={startY + i * lineHeight}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="#ffffff"
+          fontSize={fontSize}
+          fontWeight="900"
           fontFamily="'Arial Black', Arial, sans-serif"
-          letterSpacing="1"
-        >{line1}</text>
-      )}
+          letterSpacing="0.5"
+        >
+          {line}
+        </text>
+      ))}
     </svg>
   );
 };
@@ -218,10 +232,69 @@ const InclusionsList = ({ inclusions }) => {
         ))}
       </ul>
       {remaining > 0 && (
-        <span className="inclusions-more">+{remaining} more</span>
+        <span className="inclusions-more" style={{ background: '#001b3e', color: '#fff' }}>+{remaining} more</span>
       )}
     </div>
   );
+};
+
+// ============================================================
+// ✅ TIMER CHECK HOOK — reads localStorage to determine if
+//    the discount timer for this package+IP has expired.
+//    Returns: { timerExpired, timerReady }
+//    timerReady = false while IP is still being fetched (avoids flash)
+// ============================================================
+const usePackageTimerExpired = (packageId) => {
+  const [timerExpired, setTimerExpired] = useState(false);
+  const [timerReady, setTimerReady] = useState(false);
+
+  useEffect(() => {
+    if (!packageId) return;
+
+    const checkTimer = (ip) => {
+      const timerKey = `timer_${packageId}_${ip}`;
+      const lastResetKey = `lastReset_${packageId}_${ip}`;
+      const today = new Date().toDateString();
+      const lastReset = localStorage.getItem(lastResetKey);
+
+      // ✅ If it's a new day, timer would be reset on booking page load — treat as NOT expired
+      if (lastReset !== today) {
+        setTimerExpired(false);
+        setTimerReady(true);
+        return;
+      }
+
+      const storedTimer = localStorage.getItem(timerKey);
+      if (!storedTimer) {
+        // No timer yet — user hasn't visited booking page, show discounted price
+        setTimerExpired(false);
+        setTimerReady(true);
+        return;
+      }
+
+      try {
+        const { startTime } = JSON.parse(storedTimer);
+        const elapsed = Date.now() - startTime;
+        const expired = elapsed >= 900000; // 15 minutes
+        setTimerExpired(expired);
+      } catch {
+        setTimerExpired(false);
+      }
+      setTimerReady(true);
+    };
+
+    // ✅ Fetch IP then check timer — same source of truth as booking page
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => checkTimer(data.ip))
+      .catch(() => {
+        // If IP fetch fails, default to non-expired (show discount price)
+        setTimerExpired(false);
+        setTimerReady(true);
+      });
+  }, [packageId]);
+
+  return { timerExpired, timerReady };
 };
 
 function PackageCard({ 
@@ -236,87 +309,68 @@ function PackageCard({
 }) { 
   const currencySymbol = currency === 'PHP' ? '₱' : '$';
 
-  // Apply currency conversion for fallback base price
-  const convertedPrice = currency === 'PHP'
-    ? pkg.price
-    : ((pkg.price / exchangeRate) * 1.30);
+  // ✅ Check timer status for this package
+  const packageId = pkg._id || pkg.id;
+  const { timerExpired, timerReady } = usePackageTimerExpired(packageId);
 
   // ============================================================
-  // ✅ SOLO & MULTIPLE PAX PRICES — directly from database fields
+  // ✅ PRICE COMPUTATION — timer-aware
+  //    Discounted  = pkg.price (base)
+  //    Expired     = pkg.price * 1.10 (original/regular price)
   // ============================================================
-  const hasSoloPaxPrice = pkg.soloPaxPrice != null;
+  const basePrice      = pkg.price || 0;
+  const regularPrice   = Math.round(basePrice * 1.10); // what they pay when timer expires
+  const discountAmount = regularPrice - basePrice;
+  const discountPct    = Math.round((discountAmount / regularPrice) * 100);
+
+  const applyConversion = (phpPrice) =>
+    currency === 'PHP' ? phpPrice : (phpPrice / exchangeRate) * 1.30;
+
+  const displayPrice   = applyConversion(timerExpired ? regularPrice : basePrice);
+  const originalPrice  = applyConversion(regularPrice); // shown as strikethrough when NOT expired
+
+  // ✅ Solo & Multiple Pax prices — also timer-aware
+  const hasSoloPaxPrice     = pkg.soloPaxPrice != null;
   const hasMultiplePaxPrice = pkg.multiplePaxPrice != null;
 
-  const convertedSoloPrice = hasSoloPaxPrice
-    ? (currency === 'PHP' ? pkg.soloPaxPrice : ((pkg.soloPaxPrice / exchangeRate) * 1.30))
-    : null;
+  const soloBase     = pkg.soloPaxPrice || 0;
+  const multiBase    = pkg.multiplePaxPrice || 0;
+  const soloRegular  = Math.round(soloBase * 1.10);
+  const multiRegular = Math.round(multiBase * 1.10);
 
-  const convertedMultiplePaxPrice = hasMultiplePaxPrice
-    ? (currency === 'PHP' ? pkg.multiplePaxPrice : ((pkg.multiplePaxPrice / exchangeRate) * 1.30))
-    : null;
+  const convertedSoloPrice         = hasSoloPaxPrice     ? applyConversion(timerExpired ? soloRegular  : soloBase)  : null;
+  const convertedSoloOriginal      = hasSoloPaxPrice     ? applyConversion(soloRegular)  : null;
+  const convertedMultiplePaxPrice  = hasMultiplePaxPrice ? applyConversion(timerExpired ? multiRegular : multiBase) : null;
+  const convertedMultiOriginal     = hasMultiplePaxPrice ? applyConversion(multiRegular) : null;
 
   // ============================================================
   // PAX EXTRACTION LOGIC
   // ============================================================
   const getPaxNumber = () => {
-    // 1. Check if package has pax field
-    if (pkg.pax) {
-      return pkg.pax;
-    }
+    if (pkg.pax) return pkg.pax;
+    if (pkg.minPax) return pkg.minPax;
 
-    // 2. Check if package has minPax field (for joiners)
-    if (pkg.minPax) {
-      return pkg.minPax;
-    }
-
-    // 3. Extract from title if no pax field
     const title = pkg.name.toLowerCase();
-    
-    // Check for "solo" in title
-    if (title.includes('solo')) {
-      return 1;
-    }
-    
-    // Check for "couple" or "duo" in title
-    if (title.includes('couple') || title.includes('duo')) {
-      return 2;
-    }
-    
-    // Check for "family" (common for 4 pax)
-    if (title.includes('family')) {
-      return 4;
-    }
-    
-    // Check for "group" (common for 6+ pax)
-    if (title.includes('group')) {
-      return 6;
-    }
-    
-    // Try to extract number from title patterns like "2 pax", "3pax", "for 2", etc.
+    if (title.includes('solo')) return 1;
+    if (title.includes('couple') || title.includes('duo')) return 2;
+    if (title.includes('family')) return 4;
+    if (title.includes('group')) return 6;
+
     const paxPatterns = [
-      /(\d+)\s*pax/i,           // "2 pax" or "2pax"
-      /for\s*(\d+)/i,           // "for 2" or "for 4"
-      /(\d+)\s*person/i,        // "2 person" or "2 persons"
-      /(\d+)\s*people/i,        // "2 people"
-      /(\d+)\s*guest/i,         // "2 guest" or "2 guests"
+      /(\d+)\s*pax/i,
+      /for\s*(\d+)/i,
+      /(\d+)\s*person/i,
+      /(\d+)\s*people/i,
+      /(\d+)\s*guest/i,
     ];
-    
     for (const pattern of paxPatterns) {
       const match = title.match(pattern);
       if (match && match[1]) {
         const num = parseInt(match[1]);
-        if (num > 0 && num <= 50) { // Reasonable range
-          return num;
-        }
+        if (num > 0 && num <= 50) return num;
       }
     }
-    
-    // 4. Fallback to maxGuests if available
-    if (pkg.maxGuests) {
-      return pkg.maxGuests;
-    }
-    
-    // 5. Default fallback
+    if (pkg.maxGuests) return pkg.maxGuests;
     return 2;
   };
 
@@ -324,9 +378,7 @@ function PackageCard({
 
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
-    
     if (isLoggedIn) {
-      // Pass package info to parent
       onToggleFavorite(pkg.id, pkg.name, pkg.location);
     } else {
       onLoginRequired();
@@ -346,8 +398,7 @@ function PackageCard({
   const titleHasDuration = hasDurationInTitle(pkg.name);
 
   return (
-    <div className="package-card"
-    >
+    <div className="package-card">
       <button 
         className={`favorite-button ${isFavorite ? 'active' : ''}`}
         onClick={handleFavoriteClick}
@@ -376,9 +427,31 @@ function PackageCard({
             <RubberStamp text={pkg.name} />
           </div>
         )}
+
+        {/* ✅ LIMITED TIME OFFER BADGE — only shown when timer is NOT expired */}
+        {timerReady && !timerExpired && discountPct > 0 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '10px',
+            left: '10px',
+            background: '#001b3e',
+            color: '#fff',
+            fontSize: '0.7rem',
+            fontWeight: '800',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            boxShadow: '0 2px 8px rgba(0,27,62,0.5)',
+            letterSpacing: '0.3px',
+          }}>
+            <Clock size={11} />
+            LIMITED OFFER · SAVE {discountPct}%
+          </div>
+        )}
       </div>
 
-      
       <div className="card-body">
         <div>
           <div className="card-header">
@@ -406,15 +479,34 @@ function PackageCard({
 
         <div className="card-footer">
 
-          {/* ✅ DUAL PRICE DISPLAY: Solo + Multiple Pax — from DB fields */}
+          {/* ✅ DUAL PRICE DISPLAY: Solo + Multiple Pax — timer-aware */}
           <div className="price-info">
 
             {/* ── SOLO PRICE ── */}
             {hasSoloPaxPrice && (
               <div className="price-block">
+                {/* Strikethrough original — only when timer is active (not expired) */}
+                {timerReady && !timerExpired && (
+                  <span style={{
+                    fontSize: '0.72rem',
+                    color: '#94a3b8',
+                    textDecoration: 'line-through',
+                    fontWeight: '500',
+                    display: 'block',
+                    lineHeight: 1,
+                    marginBottom: '1px',
+                  }}>
+                    {currencySymbol}{formatPrice(convertedSoloOriginal)}
+                  </span>
+                )}
                 <div className="price-amount">
                   <span className="currency">{currencySymbol}</span>
-                  <span className="price-value">{formatPrice(convertedSoloPrice)}</span>
+                  <span
+                    className="price-value"
+                    style={{ color: timerReady && !timerExpired ? '#f97316' : undefined }}
+                  >
+                    {timerReady ? formatPrice(convertedSoloPrice) : '—'}
+                  </span>
                 </div>
               </div>
             )}
@@ -428,10 +520,27 @@ function PackageCard({
             {hasMultiplePaxPrice && (
               <div className="price-block">
                 <span className="price-label">2 PAX ABOVE</span>
+                {/* Strikethrough original — only when timer is active */}
+                {timerReady && !timerExpired && (
+                  <span style={{
+                    fontSize: '0.72rem',
+                    color: '#94a3b8',
+                    textDecoration: 'line-through',
+                    fontWeight: '500',
+                    display: 'block',
+                    lineHeight: 1,
+                    marginBottom: '1px',
+                  }}>
+                    {currencySymbol}{formatPrice(convertedMultiOriginal)}
+                  </span>
+                )}
                 <div className="price-amount">
                   <span className="currency">{currencySymbol}</span>
-                  <span className="price-value seller-rate">
-                    {formatPrice(convertedMultiplePaxPrice)}
+                  <span
+                    className="price-value seller-rate"
+                    style={{ color: timerReady && !timerExpired ? '#f97316' : undefined }}
+                  >
+                    {timerReady ? formatPrice(convertedMultiplePaxPrice) : '—'}
                   </span>
                 </div>
               </div>
@@ -440,9 +549,28 @@ function PackageCard({
             {/* ── FALLBACK: show base price if neither pax price is set ── */}
             {!hasSoloPaxPrice && !hasMultiplePaxPrice && (
               <div className="price-block">
+                {/* Strikethrough original — only when timer is active */}
+                {timerReady && !timerExpired && discountPct > 0 && (
+                  <span style={{
+                    fontSize: '0.72rem',
+                    color: '#94a3b8',
+                    textDecoration: 'line-through',
+                    fontWeight: '500',
+                    display: 'block',
+                    lineHeight: 1,
+                    marginBottom: '1px',
+                  }}>
+                    {currencySymbol}{formatPrice(originalPrice)}
+                  </span>
+                )}
                 <div className="price-amount">
                   <span className="currency">{currencySymbol}</span>
-                  <span className="price-value">{formatPrice(convertedPrice)}</span>
+                  <span
+                    className="price-value"
+                    style={{ color: timerReady && !timerExpired ? '#f97316' : undefined }}
+                  >
+                    {timerReady ? formatPrice(displayPrice) : '—'}
+                  </span>
                 </div>
               </div>
             )}
